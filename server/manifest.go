@@ -14,7 +14,7 @@ const manifestStr = `
 {
   "id": "com.mattermost.plugin-incident-response",
   "name": "Incident Response",
-  "description": "This plugin allows users to create customized crisis management workflows.",
+  "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
   "version": "0.1.0",
   "min_server_version": "5.12.0",
   "server": {
