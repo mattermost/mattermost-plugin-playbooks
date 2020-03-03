@@ -31,7 +31,7 @@ func (p *Plugin) OnActivate() error {
 	botID, err := p.Helpers.EnsureBot(&model.Bot{
 		Username:    "incident",
 		DisplayName: "Incident",
-		Description: "A prototype demonstrating incident response workflows in Mattermost.",
+		Description: "A prototype demonstrating incident response management in Mattermost.",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure workflow bot")
