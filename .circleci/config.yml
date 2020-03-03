@@ -1,27 +1,52 @@
 version: 2.1
-executors:
-  default:
-    docker:
-      - image: circleci/golang:1.12-node
 
-jobs:
-  lint:
-    executor:
-      name: default
-    steps:
-      - checkout
-      - run: make check-style
-
-  test:
-    executor:
-      name: default
-    steps:
-      - checkout
-      - run: make test
+orbs:
+  plugin-ci: mattermost/plugin-ci@volatile
 
 workflows:
   version: 2
-  untagged-build:
+  ci:
     jobs:
-      - lint
-      - test
+      - plugin-ci/lint:
+          filters:
+            tags:
+              only: /^v.*/
+      - plugin-ci/coverage:
+          filters:
+            tags:
+              only: /^v.*/
+      - plugin-ci/build:
+          filters:
+            tags:
+              only: /^v.*/
+      - plugin-ci/deploy-ci:
+          filters:
+            branches:
+              only: master
+          context: plugin-ci
+          requires:
+            - plugin-ci/lint
+            - plugin-ci/coverage
+            - plugin-ci/build
+      - plugin-ci/deploy-release:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+          context: plugin-ci
+          requires:
+            - plugin-ci/lint
+            - plugin-ci/coverage
+            - plugin-ci/build
+      - plugin-ci/deploy-release-github:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+          context: matterbuild-github-token
+          requires:
+            - plugin-ci/lint
+            - plugin-ci/coverage
+            - plugin-ci/build
