@@ -1,13 +1,15 @@
 package incident
 
 import (
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 )
 
-// Incident
+// Incident struct
 type Incident struct {
-	ID string
+	ID   string
+	Name string
 }
 
 type Service interface {
@@ -27,9 +29,9 @@ type ServiceImpl struct {
 
 var _ Service = &ServiceImpl{}
 
-func NewService(api plugin.API, helpers plugin.Helpers) *ServiceImpl {
+func NewService(pluginAPI *pluginapi.Client, helpers plugin.Helpers) *ServiceImpl {
 	return &ServiceImpl{
-		store: NewStore(api, helpers),
+		store: NewStore(pluginAPI, helpers),
 	}
 }
 

@@ -192,6 +192,7 @@ github.com/klauspost/cpuid v1.2.0/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgo
 github.com/klauspost/pgzip v1.2.1 h1:oIPZROsWuPHpOdMVWLuJZXwgjhrW8r1yEX8UqMyeNHM=
 github.com/klauspost/pgzip v1.2.1/go.mod h1:Ch1tH69qFZu15pkjo5kYi6mth2Zzwzt50oCQKQE9RUs=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
+github.com/konsorten/go-windows-terminal-sequences v1.0.2 h1:DB17ag19krx9CFsz4o3enTrPXyIXCl+2iCXH/aMAp9s=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
@@ -220,9 +221,12 @@ github.com/mattermost/gosaml2 v0.3.2/go.mod h1:Z429EIOiEi9kbq6yHoApfzlcXpa6dzRDc
 github.com/mattermost/ldap v0.0.0-20191128190019-9f62ba4b8d4d/go.mod h1:HLbgMEI5K131jpxGazJ97AxfPDt31osq36YS1oxFQPQ=
 github.com/mattermost/ldap v3.0.4+incompatible h1:SOeNnz+JNR+foQ3yHkYqijb9MLPhXN2BZP/PdX23VDU=
 github.com/mattermost/ldap v3.0.4+incompatible/go.mod h1:b4reDCcGpBxJ4WX0f224KFY+OR0npin7or7EFpeIko4=
+github.com/mattermost/mattermost-plugin-api v0.0.7 h1:1+yHQZgVFUf4MgFaVnht9UJ0B5GwxGTyuscnnvXeGkg=
+github.com/mattermost/mattermost-plugin-api v0.0.7/go.mod h1:FzIP6CkGZuU1fZd+tEmriPwPgdQ6CJaFlX8qL8SBa74=
 github.com/mattermost/mattermost-plugin-incident-response v0.0.0-20200228162513-8fb70ec7f365 h1:eaK3OCjnUCKxCowrUednZd26l4H4hYI+dS33mBv4ZVg=
 github.com/mattermost/mattermost-plugin-incident-response v0.0.0-20200228162513-8fb70ec7f365/go.mod h1:bmzP74MVJNdWRNUBRWi99606IehlYNcFs+is44yarA4=
 github.com/mattermost/mattermost-plugin-starter-template v0.0.0-20200228162513-8fb70ec7f365 h1:eaK3OCjnUCKxCowrUednZd26l4H4hYI+dS33mBv4ZVg=
+github.com/mattermost/mattermost-plugin-starter-template v0.0.0-20200228162513-8fb70ec7f365/go.mod h1:bmzP74MVJNdWRNUBRWi99606IehlYNcFs+is44yarA4=
 github.com/mattermost/mattermost-server/v5 v5.18.0 h1:In1v/1vrYMEDRHiXe6sA50KJ5WGkE2mLtsIz7YOGsN8=
 github.com/mattermost/mattermost-server/v5 v5.18.0/go.mod h1:10vIYDohcPNDMDk3XlRUjNO9nGk9fnFHEFeSIUYR82k=
 github.com/mattermost/mattermost-server/v5 v5.20.0 h1:4YZ2sfyoMxUHyjjRhvr21D2fjclCi+b+svJHNwyTUn4=
@@ -328,6 +332,7 @@ github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg
 github.com/segmentio/analytics-go v3.1.0+incompatible/go.mod h1:C7CYBtQWk4vRk2RyLu0qOcbHJ18E3F1HV2C/8JvKN48=
 github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c/go.mod h1:kJ9mm9YmoWSkk+oQ+5Cj8DEoRCX2JT6As4kEtIIOp1M=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
+github.com/sirupsen/logrus v1.4.2 h1:SPIRibHv4MatM3XXNO2BJeFLZwZ2LvZgfQ5+UNI2im4=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=
 github.com/smartystreets/assertions v1.0.0/go.mod h1:kHHU4qYBaI3q23Pp3VPrmWhuIUrLW/7eUrw0BU5VaoM=

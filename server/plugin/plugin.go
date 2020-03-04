@@ -3,6 +3,7 @@ package plugin
 import (
 	"net/http"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
@@ -44,7 +45,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.handler = api.NewHandler()
-	p.incidentService = incident.NewService(p.API, p.Helpers)
+	p.incidentService = incident.NewService(pluginapi.NewClient(p.API), p.Helpers)
 	incident.NewHandler(p.handler.APIRouter, p.incidentService)
 
 	p.API.LogDebug("Incident response plugin Activated")
