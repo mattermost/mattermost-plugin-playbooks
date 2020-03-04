@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-starter-template/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 )
 
 type Handler struct {

@@ -3,9 +3,9 @@ package plugin
 import (
 	"net/http"
 
-	"github.com/mattermost/mattermost-plugin-starter-template/server/api"
-	"github.com/mattermost/mattermost-plugin-starter-template/server/config"
-	"github.com/mattermost/mattermost-plugin-starter-template/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
