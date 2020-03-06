@@ -7,10 +7,12 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 )
 
+// Handler Plugin API handler.
 type Handler struct {
 	incidentService Service
 }
 
+// NewHandler Creates a new Plugin API handler.
 func NewHandler(router *mux.Router, incidentService Service) *Handler {
 	handler := &Handler{
 		incidentService: incidentService,

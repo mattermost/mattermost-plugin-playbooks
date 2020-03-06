@@ -26,6 +26,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 	p.handler.ServeHTTP(w, r, c.SourcePluginId)
 }
 
+// OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
 	p.config = config.NewService(p.API)
 
