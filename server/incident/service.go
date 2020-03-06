@@ -12,6 +12,7 @@ type Incident struct {
 	Name string
 }
 
+// Service Incident service interface.
 type Service interface {
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
@@ -23,18 +24,21 @@ type Service interface {
 	GetAllIncidents() ([]Incident, error)
 }
 
+// ServiceImpl implements Incident service interface.
 type ServiceImpl struct {
 	store Store
 }
 
 var _ Service = &ServiceImpl{}
 
+// NewService Creates a new incident service.
 func NewService(pluginAPI *pluginapi.Client, helpers plugin.Helpers) *ServiceImpl {
 	return &ServiceImpl{
 		store: NewStore(pluginAPI, helpers),
 	}
 }
 
+// CreateIncident Creates a new incident.
 func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	return nil, errors.New("not implemented")
 }

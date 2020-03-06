@@ -8,8 +8,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const PluginIDContextValue = "plugin_id"
+type contextKey string
 
+// PluginIDContextKey Key used to store the sourcePluginID for http requests.
+const PluginIDContextKey = "plugin_id"
+
+// Handler Root API handler.
 type Handler struct {
 	APIRouter *mux.Router
 	root      *mux.Router
@@ -31,10 +35,11 @@ func NewHandler() *Handler {
 	return handler
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, fromPluginID string) {
-	h.root.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), PluginIDContextValue, fromPluginID)))
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePluginID string) {
+	h.root.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), contextKey(PluginIDContextKey), sourcePluginID)))
 }
 
+// HandleError Writes err as json into the response.
 func HandleError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	b, _ := json.Marshal(struct {
@@ -47,6 +52,7 @@ func HandleError(w http.ResponseWriter, err error) {
 	_, _ = w.Write(b)
 }
 
+// HandleErrorWithCode Writes code, errTitle and err as json into the response.
 func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err error) {
 	w.WriteHeader(code)
 	b, _ := json.Marshal(struct {
@@ -59,6 +65,7 @@ func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err e
 	_, _ = w.Write(b)
 }
 
+// MattermostAuthorizationRequired Checks if request is authorized.
 func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("Mattermost-User-ID")
@@ -67,7 +74,7 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 			return
 		}
 
-		pluginID, ok := r.Context().Value(PluginIDContextValue).(string)
+		pluginID, ok := r.Context().Value(PluginIDContextKey).(string)
 		if ok && pluginID != "" {
 			next.ServeHTTP(w, r)
 			return

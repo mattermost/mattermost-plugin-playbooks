@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Service Config service interface.
 type Service interface {
 	// GetConfiguration retrieves the active configuration under lock, making it safe to use
 	// concurrently. The active configuration may change underneath the client of this method, but
@@ -27,6 +28,7 @@ type Service interface {
 	UnregisterConfigChangeListener(id string)
 }
 
+// ServiceImpl Implements Service interface.
 type ServiceImpl struct {
 	api plugin.API
 
@@ -41,6 +43,7 @@ type ServiceImpl struct {
 	configChangeListeners map[string]func()
 }
 
+// NewService Creates a new service.
 func NewService(api plugin.API) *ServiceImpl {
 	c := &ServiceImpl{}
 	c.api = api
@@ -94,6 +97,8 @@ func (c *ServiceImpl) UpdateConfiguration(f func(*Configuration)) error {
 	return nil
 }
 
+// RegisterConfigChangeListener registers a function that will called when the config might have
+// been changed. Returns an id which can be used to unregister the listener.
 func (c *ServiceImpl) RegisterConfigChangeListener(listener func()) string {
 	if c.configChangeListeners == nil {
 		c.configChangeListeners = make(map[string]func())
@@ -104,6 +109,7 @@ func (c *ServiceImpl) RegisterConfigChangeListener(listener func()) string {
 	return id
 }
 
+// UnregisterConfigChangeListener unregisters the listener function identified by id.
 func (c *ServiceImpl) UnregisterConfigChangeListener(id string) {
 	delete(c.configChangeListeners, id)
 }
