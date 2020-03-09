@@ -10,10 +10,10 @@ type State int
 
 const (
 	// Open When an incident is open.
-	Open State = iota + 1
+	Open State = iota
 
 	// Closed When an incident is closed.
-	Closed State = 2
+	Closed
 )
 
 // Header struct holds basic information about an incident.

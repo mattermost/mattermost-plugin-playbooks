@@ -1,6 +1,8 @@
 package incident
 
 import (
+	"fmt"
+
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
@@ -65,6 +67,7 @@ func (s *StoreImpl) CreateIncident(incident *Incident) (*Incident, error) {
 		return nil, errors.New("ID should not bet set")
 	}
 	incident.ID = model.NewId()
+	incident.Name = fmt.Sprintf("Incident %s", incident.ID)
 
 	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incident), incident)
 	if err != nil {
