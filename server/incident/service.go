@@ -6,27 +6,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Incident struct
-type Incident struct {
-	ID   string
-	Name string
-}
-
-// Service Incident service interface.
-type Service interface {
-	// CreateIncident Creates a new incident.
-	CreateIncident(incident *Incident) (*Incident, error)
-
-	// GetIncident Gets an incident by ID.
-	GetIncident(ID string) (*Incident, error)
-
-	// GetAllIncidents Gets all incidents.
-	GetAllIncidents() ([]Incident, error)
-}
-
 // ServiceImpl implements Incident service interface.
 type ServiceImpl struct {
-	store Store
+	pluginAPI *pluginapi.Client
+	store     Store
 }
 
 var _ Service = &ServiceImpl{}
@@ -34,13 +17,19 @@ var _ Service = &ServiceImpl{}
 // NewService Creates a new incident service.
 func NewService(pluginAPI *pluginapi.Client, helpers plugin.Helpers) *ServiceImpl {
 	return &ServiceImpl{
-		store: NewStore(pluginAPI, helpers),
+		pluginAPI: pluginAPI,
+		store:     NewStore(pluginAPI, helpers),
 	}
+}
+
+// GetAllHeaders Creates a new incident.
+func (s *ServiceImpl) GetAllHeaders() ([]Header, error) {
+	return s.store.GetAllHeaders()
 }
 
 // CreateIncident Creates a new incident.
 func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
-	return nil, errors.New("not implemented")
+	return s.store.CreateIncident(incident)
 }
 
 // GetIncident Gets an incident by ID.
