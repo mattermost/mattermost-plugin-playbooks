@@ -8,7 +8,6 @@ import manifest from './manifest';
 
 import IncidentIcon from './components/incident_icon';
 import RightHandSidebar from './components/rhs';
-import LefttHandSidebar from './components/lhs';
 
 import {setShowRHSAction} from './actions';
 import reducer from './reducer';
