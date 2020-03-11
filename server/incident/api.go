@@ -1,6 +1,7 @@
 package incident
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,9 +19,9 @@ func NewHandler(router *mux.Router, incidentService Service) *Handler {
 		incidentService: incidentService,
 	}
 
-	incidentRouter := router.PathPrefix("/incident").Subrouter()
+	incidentRouter := router.PathPrefix("/incidents").Subrouter()
 	incidentRouter.HandleFunc("", handler.newIncident).Methods(http.MethodPost)
-	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
+	incidentRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 
 	return handler
 }
@@ -35,12 +36,33 @@ func (h *Handler) newIncident(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) getIncident(w http.ResponseWriter, r *http.Request) {
-	_, err := h.incidentService.GetIncident("")
+func (h *Handler) getIncidents(w http.ResponseWriter, r *http.Request) {
+
+	incident := &Incident{
+		Header: Header{
+			Name:            "Marias Incident",
+			CommanderUserID: "ynudqjdzztg58ku3xk361occhw",
+			State:           Open,
+		},
+	}
+
+	if _, err := h.incidentService.CreateIncident(incident); err != nil {
+		api.HandleError(w, err)
+		return
+	}
+
+	incidentHeaders, err := h.incidentService.GetAllHeaders()
+	if err != nil {
+		api.HandleError(w, err)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(incidentHeaders)
 	if err != nil {
 		api.HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Write(jsonBytes)
 }
