@@ -35,6 +35,29 @@ func (_m *Service) CreateIncident(_a0 *incident.Incident) (*incident.Incident, e
 	return r0, r1
 }
 
+// GetAllHeaders provides a mock function with given fields:
+func (_m *Service) GetAllHeaders() ([]incident.Header, error) {
+	ret := _m.Called()
+
+	var r0 []incident.Header
+	if rf, ok := ret.Get(0).(func() []incident.Header); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]incident.Header)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetAllIncidents provides a mock function with given fields:
 func (_m *Service) GetAllIncidents() ([]incident.Incident, error) {
 	ret := _m.Called()
@@ -58,13 +81,13 @@ func (_m *Service) GetAllIncidents() ([]incident.Incident, error) {
 	return r0, r1
 }
 
-// GetIncident provides a mock function with given fields: ID
-func (_m *Service) GetIncident(ID string) (*incident.Incident, error) {
-	ret := _m.Called(ID)
+// GetIncident provides a mock function with given fields: id
+func (_m *Service) GetIncident(id string) (*incident.Incident, error) {
+	ret := _m.Called(id)
 
 	var r0 *incident.Incident
 	if rf, ok := ret.Get(0).(func(string) *incident.Incident); ok {
-		r0 = rf(ID)
+		r0 = rf(id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*incident.Incident)
@@ -73,10 +96,24 @@ func (_m *Service) GetIncident(ID string) (*incident.Incident, error) {
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(ID)
+		r1 = rf(id)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// NukeDB provides a mock function with given fields:
+func (_m *Service) NukeDB() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

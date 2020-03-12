@@ -18,7 +18,9 @@ func TestAPI(t *testing.T) {
 			test: func(t *testing.T, handler *Handler, writer *httptest.ResponseRecorder) {
 				req := httptest.NewRequest("POST", "/api/v1/nothing", nil)
 				handler.ServeHTTP(writer, req, "")
-				assert.Equal(t, http.StatusNotFound, writer.Result().StatusCode)
+				resp := writer.Result()
+				defer resp.Body.Close()
+				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 			},
 		},
 	} {

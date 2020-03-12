@@ -14,5 +14,4 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.5.1
 	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
-	gopkg.in/olivere/elastic.v5 v5.0.82 // indirect
 )
