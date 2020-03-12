@@ -13,6 +13,8 @@ export function getIncidents() {
 
             dispatch(recievedIncidents(incidents));
 
+            // todo: Fix this unnecessary return given that incidents are stored in the store.
+            // Lint rule: consistent-return
             return {incidents};
         } catch (error) {
             return {error};
