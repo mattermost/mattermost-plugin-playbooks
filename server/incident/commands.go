@@ -14,7 +14,7 @@ import (
 )
 
 const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
-	"* `/workflow start` - Start a new  \n" +
+	"* `/incident start` - Start a new incident. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
