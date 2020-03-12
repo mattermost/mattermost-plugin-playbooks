@@ -44,6 +44,9 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 		return nil, errors.Wrap(err, "failed to create incident")
 	}
 
+	// New incidents are always active
+	incident.IsActive = true
+
 	// Create channel
 	channelDisplayName := fmt.Sprintf("%s %s", "Incident", incident.ID)
 	channelName := fmt.Sprintf("%s_%s", "incident", incident.ID)

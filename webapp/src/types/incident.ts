@@ -4,6 +4,6 @@
 export interface Incident {
     id: string;
     name: string;
-    is_closed: boolean;
+    is_active: boolean;
     commander_user_id: string;
 }
