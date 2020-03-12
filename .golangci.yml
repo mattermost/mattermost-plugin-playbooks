@@ -1,0 +1,79 @@
+service:
+  golangci-lint-version: 1.21.0
+
+run:
+  timeout: 5m
+  skip-files:
+     - example.*.go
+     - server/manifest.go
+  skip-dirs:
+    - build/
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - errcheck
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - golint
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - lll
+    - misspell
+    - scopelint
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unconvert
+    - unused
+    - unparam
+    - varcheck
+    - whitespace
+
+linters-settings:
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - hugeParam
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/mattermost/mattermost-plugin-api
+  golint:
+    min-confidence: 0
+  govet:
+    check-shadowing: true
+    enable-all: true
+  lll:
+    line-length: 150
+  misspell:
+    locale: US
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - goconst
+        - scopelint # https://github.com/kyoh86/scopelint/issues/4
+    - linters:
+      - golint
+      - gocritic
+      path: "server/bot/logger.go"

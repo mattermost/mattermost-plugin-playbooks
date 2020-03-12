@@ -79,6 +79,17 @@ golint:
 	$(GOPATH)/bin/golint -set_exit_status ./...
 	@echo lint success
 
+.PHONY: golangci-lint
+golangci-lint: ## Run golangci-lint on codebase
+# https://stackoverflow.com/a/677212/1027058 (check if a command exists or not)
+	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
+		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
+		exit 1; \
+	fi; \
+
+	@echo Running golangci-lint
+	golangci-lint run ./...
+
 ## Generate mocks.
 mock:
 ifneq ($(HAS_SERVER),)

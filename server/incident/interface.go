@@ -22,12 +22,13 @@ type Header struct {
 	Name            string `json:"name"`
 	State           State  `json:"state"`
 	CommanderUserID string `json:"commander_user_id"`
+	TeamID          string `json:"team_id"`
 }
 
 // Incident struct
 type Incident struct {
 	Header
-	Type string
+	ChannelIDs []string `json:"channel_ids"`
 }
 
 // Service Incident service interface.
@@ -39,8 +40,32 @@ type Service interface {
 	CreateIncident(incident *Incident) (*Incident, error)
 
 	// GetIncident Gets an incident by ID.
-	GetIncident(ID string) (*Incident, error)
+	GetIncident(id string) (*Incident, error)
 
 	// GetAllIncidents Gets all incidents.
 	GetAllIncidents() ([]Incident, error)
+
+	// NukeDB Removes all incident related data.
+	NukeDB() error
+}
+
+// Store Incident store interface.
+type Store interface {
+	// GetAllHeaders Gets all the header information.
+	GetAllHeaders() ([]Header, error)
+
+	// CreateIncident Creates a new incident.
+	CreateIncident(incident *Incident) (*Incident, error)
+
+	// UpdateIncident Creates a new incident.
+	UpdateIncident(incident *Incident) error
+
+	// GetIncident Gets an incident by ID.
+	GetIncident(id string) (*Incident, error)
+
+	// GetAllIncidents Gets all incidents
+	GetAllIncidents() ([]Incident, error)
+
+	// NukeDB Removes all incident related data.
+	NukeDB() error
 }
