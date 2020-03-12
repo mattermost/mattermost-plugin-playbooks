@@ -5,22 +5,11 @@ import "github.com/pkg/errors"
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// State Incident state.
-type State int
-
-const (
-	// Open When an incident is open.
-	Open State = iota
-
-	// Closed When an incident is closed.
-	Closed
-)
-
 // Header struct holds basic information about an incident.
 type Header struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
-	State           State  `json:"state"`
+	IsClosed        bool   `json:"is_closed"`
 	CommanderUserID string `json:"commander_user_id"`
 	TeamID          string `json:"team_id"`
 }
