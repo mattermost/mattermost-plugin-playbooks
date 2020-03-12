@@ -6,8 +6,8 @@ import {RECEIVED_SHOW_RHS_ACTION, RECEIVED_INCIDENTS, ReceivedShowRHSAction, Rec
 import {Incident} from './types/incident';
 import {fetchIncidents} from './client';
 
-export function getIncidents(): (dispatch: Dispatch<AnyAction>) => Promise< {error: any} | {incidents: Incident[]}> {
-    return async (dispatch: Dispatch<AnyAction>): Promise< {error: any} | {incidents: Incident[]}> => {
+export function getIncidents() {
+    return async (dispatch: Dispatch<AnyAction>) => {
         try {
             const incidents = await fetchIncidents();
 
@@ -37,3 +37,4 @@ export function setShowRHSAction(showRHSPluginAction: () => void): ReceivedShowR
         showRHSPluginAction,
     };
 }
+

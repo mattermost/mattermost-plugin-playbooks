@@ -37,20 +37,6 @@ func (h *Handler) newIncident(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getIncidents(w http.ResponseWriter, r *http.Request) {
-
-	incident := &Incident{
-		Header: Header{
-			Name:            "Marias Incident",
-			CommanderUserID: "ynudqjdzztg58ku3xk361occhw",
-			State:           Open,
-		},
-	}
-
-	if _, err := h.incidentService.CreateIncident(incident); err != nil {
-		api.HandleError(w, err)
-		return
-	}
-
 	incidentHeaders, err := h.incidentService.GetAllHeaders()
 	if err != nil {
 		api.HandleError(w, err)
