@@ -62,6 +62,11 @@ func (h *Handler) getIncidents(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incident, err := h.incidentService.GetIncident(vars["id"])
+	if err != nil {
+		api.HandleError(w, err)
+		return
+	}
+
 	jsonBytes, err := json.Marshal(incident)
 	if err != nil {
 		api.HandleError(w, err)

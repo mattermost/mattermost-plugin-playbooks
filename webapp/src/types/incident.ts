@@ -4,6 +4,6 @@
 export interface Incident {
     id: string;
     name: string;
-    state: number; // Will be removed in favor of isClosed
+    is_closed: boolean;
     commander_user_id: string;
 }

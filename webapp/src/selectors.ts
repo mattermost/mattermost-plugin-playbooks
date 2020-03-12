@@ -11,7 +11,7 @@ const getPluginState = (state: GlobalState) => state['plugins-' + pluginId] || {
 export const activeIncidents = (state: GlobalState) => {
     const incidents = getPluginState(state).incidents;
 
-    return incidents ? incidents.filter((incident: Incident) => incident.state === 0) : [];
+    return incidents ? incidents.filter((incident: Incident) => !incident.is_closed) : [];
 };
 
 export const getShowRHSAction = (state: GlobalState) => getPluginState(state).rhsPluginAction;
