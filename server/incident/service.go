@@ -68,6 +68,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 
 	// Save incident with Channel info
 	incident.ChannelIDs = []string{channel.Id}
+	incident.Name = fmt.Sprintf("Incident %s", incident.ID)
 	if err := s.store.UpdateIncident(incident); err != nil {
 		return nil, errors.Wrap(err, "failed to update incident")
 	}
