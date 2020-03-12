@@ -21,6 +21,7 @@ func NewHandler(router *mux.Router, incidentService Service) *Handler {
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
 	incidentsRouter.HandleFunc("", handler.createIncident).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -38,23 +39,38 @@ func (h *Handler) createIncident(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) getIncident(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	incident, err := h.incidentService.GetIncident(vars["id"])
+func (h *Handler) getIncidents(w http.ResponseWriter, r *http.Request) {
+	incidentHeaders, err := h.incidentService.GetAllHeaders()
 	if err != nil {
 		api.HandleError(w, err)
 		return
 	}
 
+	jsonBytes, err := json.Marshal(incidentHeaders)
+	if err != nil {
+		api.HandleError(w, err)
+		return
+	}
+
+	if _, err = w.Write(jsonBytes); err != nil {
+		api.HandleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) getIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incident, err := h.incidentService.GetIncident(vars["id"])
 	jsonBytes, err := json.Marshal(incident)
 	if err != nil {
 		api.HandleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(jsonBytes); err != nil {
 		api.HandleError(w, err)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 }

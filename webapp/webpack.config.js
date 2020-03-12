@@ -2,7 +2,7 @@ var path = require('path');
 
 module.exports = {
     entry: [
-        './src/index.js',
+        './src/index.tsx',
     ],
     resolve: {
         modules: [
@@ -24,6 +24,21 @@ module.exports = {
                         // Babel configuration is in babel.config.js because jest requires it to be there.
                     },
                 },
+            },
+            {
+                test: /\.scss$/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                    },
+                    {
+                        loader: 'sass-loader',
+                        options: {
+                            includePaths: ['node_modules/compass-mixins/lib', 'sass'],
+                        },
+                    },
+                ],
             },
         ],
     },
