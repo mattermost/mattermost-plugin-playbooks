@@ -91,7 +91,7 @@ golangci-lint: ## Run golangci-lint on codebase
 	golangci-lint run ./...
 
 ## Generate mocks.
-mock:
+mocks:
 ifneq ($(HAS_SERVER),)
 	env GO111MODULE=off $(GO) get -u github.com/vektra/mockery/.../
 	$(GOPATH)/bin/mockery -dir server/config -name Service -output server/config/mocks -case=underscore
