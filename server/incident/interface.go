@@ -9,7 +9,7 @@ var ErrNotFound = errors.New("not found")
 type Header struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
-	IsActive        bool   `json:"is_closed"`
+	IsActive        bool   `json:"is_active"`
 	CommanderUserID string `json:"commander_user_id"`
 	TeamID          string `json:"team_id"`
 }
