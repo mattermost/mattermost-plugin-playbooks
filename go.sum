@@ -221,7 +221,6 @@ github.com/mattermost/ldap v3.0.4+incompatible h1:SOeNnz+JNR+foQ3yHkYqijb9MLPhXN
 github.com/mattermost/ldap v3.0.4+incompatible/go.mod h1:b4reDCcGpBxJ4WX0f224KFY+OR0npin7or7EFpeIko4=
 github.com/mattermost/mattermost-plugin-api v0.0.8-0.20200310175040-201a08c4de93 h1:c7KwLvlxhgui/t5mF1uZ3QALdV7ZlNKAJIaL7lrVyhk=
 github.com/mattermost/mattermost-plugin-api v0.0.8-0.20200310175040-201a08c4de93/go.mod h1:FzIP6CkGZuU1fZd+tEmriPwPgdQ6CJaFlX8qL8SBa74=
-github.com/mattermost/mattermost-server v5.11.1+incompatible h1:LPzKY0+2Tic/ik67qIg6VrydRCgxNXZQXOeaiJ2rMBY=
 github.com/mattermost/mattermost-server/v5 v5.20.0 h1:4YZ2sfyoMxUHyjjRhvr21D2fjclCi+b+svJHNwyTUn4=
 github.com/mattermost/mattermost-server/v5 v5.20.0/go.mod h1:m07Izu2s34J6Qrc7zo15TZ09jxu4OF/5LbEFh5d+R7o=
 github.com/mattermost/mattermost-server/v5 v5.20.2 h1:FRHRqBvjPJbhYwqgvYSwvIcK5eRL0BmX6E18De/rWus=

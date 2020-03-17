@@ -86,9 +86,6 @@ func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to end incident")
 	}
-	if incident == nil {
-		return nil, errors.Wrap(err, "failed to end incident. No incidents associated to channel")
-	}
 
 	// Close the incident
 	incident.IsActive = false
@@ -103,11 +100,6 @@ func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
 // GetIncident Gets an incident by ID.
 func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
 	return s.store.GetIncident(id)
-}
-
-// GetAllIncidents Gets all incidents
-func (s *ServiceImpl) GetAllIncidents() ([]Incident, error) {
-	return nil, errors.New("not implemented")
 }
 
 // NukeDB Removes all incident related data.

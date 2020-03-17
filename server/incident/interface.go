@@ -34,9 +34,6 @@ type Service interface {
 	// GetIncident Gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
-	// GetAllIncidents Gets all incidents.
-	GetAllIncidents() ([]Incident, error)
-
 	// NukeDB Removes all incident related data.
 	NukeDB() error
 }

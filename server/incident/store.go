@@ -119,12 +119,7 @@ func (s *StoreImpl) GetIncidentByChannel(channelID string, active bool) (*Incide
 	}
 
 	// Search for which incident has the given channel associated
-	var incidentFound *Incident
 	for _, header := range headers {
-		if incidentFound != nil {
-			break
-		}
-
 		if header.IsActive != active {
 			continue
 		}
@@ -137,12 +132,11 @@ func (s *StoreImpl) GetIncidentByChannel(channelID string, active bool) (*Incide
 		for _, incidentChannelID := range incident.ChannelIDs {
 			if incidentChannelID == channelID {
 
-				incidentFound = incident
-				break
+				return incident, nil
 			}
 		}
 	}
-	return incidentFound, nil
+	return nil, errors.Errorf("channel with id (%s) does not have incidents", channelID)
 }
 
 // NukeDB Removes all incident related data.

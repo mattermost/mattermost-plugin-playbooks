@@ -15,6 +15,7 @@ import (
 
 const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
+	"* `/incident end` - Close the incident of that channel. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -83,16 +84,19 @@ func (r *Runner) actionStart() {
 	})
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		return
 	}
 
 	team, err := r.PluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", errors.Wrapf(err, "failed to get team %s", incident.TeamID)))
+		return
 	}
 
 	channel, err := r.PluginAPI.Channel.Get(incident.ChannelIDs[0])
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", errors.Wrapf(err, "failed to get channel %s", incident.TeamID)))
+		return
 	}
 
 	url := r.PluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
@@ -102,18 +106,22 @@ func (r *Runner) actionStart() {
 
 func (r *Runner) actionEnd() {
 	incident, err := r.IncidentService.EndIncident(r.Args.ChannelId)
+
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		return
 	}
 
 	user, err := r.PluginAPI.User.Get(r.Args.UserId)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		return
 	}
 
 	// Post that @user has ended the incident.
 	if err := r.Poster.PostMessage(r.Args.ChannelId, "%v has been closed by @%v", incident.Name, user.Username); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Failed to post message to incident channel: %v", err))
+		return
 	}
 }
 
@@ -155,6 +163,7 @@ func (r *Runner) Execute() error {
 	case "start":
 		r.actionStart()
 	case "end":
+		r.actionEnd()
 	case "stop":
 		r.actionEnd()
 	case "nuke-db":
