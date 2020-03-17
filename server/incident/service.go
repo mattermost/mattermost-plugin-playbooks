@@ -80,6 +80,26 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	return incident, nil
 }
 
+// EndIncident Completes the incident associated to the given channelID.
+func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
+	incident, err := s.store.GetIncidentByChannel(channelID, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to end incident")
+	}
+	if incident == nil {
+		return nil, errors.Wrap(err, "failed to end incident. No incidents associated to channel")
+	}
+
+	// Close the incident
+	incident.IsActive = false
+
+	if err := s.store.UpdateIncident(incident); err != nil {
+		return nil, errors.Wrap(err, "failed to end incident")
+	}
+
+	return incident, nil
+}
+
 // GetIncident Gets an incident by ID.
 func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
 	return s.store.GetIncident(id)

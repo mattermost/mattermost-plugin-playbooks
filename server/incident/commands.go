@@ -33,7 +33,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start",
+		AutoCompleteDesc: "Available commands: start, end",
 		AutoCompleteHint: "[command]",
 	}
 }
@@ -100,6 +100,23 @@ func (r *Runner) actionStart() {
 	r.postCommandResponse(msg)
 }
 
+func (r *Runner) actionEnd() {
+	incident, err := r.IncidentService.EndIncident(r.Args.ChannelId)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+	}
+
+	user, err := r.PluginAPI.User.Get(r.Args.UserId)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+	}
+
+	// Post that @user has ended the incident.
+	if err := r.Poster.PostMessage(r.Args.ChannelId, "%v has been closed by @%v", incident.Name, user.Username); err != nil {
+		r.postCommandResponse(fmt.Sprintf("Failed to post message to incident channel: %v", err))
+	}
+}
+
 func (r *Runner) actionNukeDB(args []string) {
 	if len(args) != 2 || args[0] != "CONFIRM" || args[1] != "NUKE" {
 		r.postCommandResponse("Are you sure you want to nuke the database (delete all data -- instances, configuration)?" +
@@ -137,6 +154,9 @@ func (r *Runner) Execute() error {
 	switch cmd {
 	case "start":
 		r.actionStart()
+	case "end":
+	case "stop":
+		r.actionEnd()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	default:
