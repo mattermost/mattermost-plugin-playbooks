@@ -108,17 +108,35 @@ func (s *StoreImpl) GetIncident(id string) (*Incident, error) {
 		return nil, errors.Errorf("incident with id (%s) does not exist", id)
 	}
 
-	var incident Incident
-	if err = s.pluginAPI.KV.Get(toIncidentKey(id), &incident); err != nil {
-		return nil, errors.Wrap(err, "failed to get incident")
-	}
-
-	return &incident, nil
+	return s.getIncident(id)
 }
 
-// GetAllIncidents Gets all incidents
-func (s *StoreImpl) GetAllIncidents() ([]Incident, error) {
-	return nil, errors.New("not implemented")
+// GetIncidentByChannel Gets an incident associated to the given channel id.
+func (s *StoreImpl) GetIncidentByChannel(channelID string, active bool) (*Incident, error) {
+	headers, err := s.getIDHeaders()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get all headers value")
+	}
+
+	// Search for which incident has the given channel associated
+	for _, header := range headers {
+		if header.IsActive != active {
+			continue
+		}
+
+		incident, err := s.getIncident(header.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get incident for channel")
+		}
+
+		for _, incidentChannelID := range incident.ChannelIDs {
+			if incidentChannelID == channelID {
+
+				return incident, nil
+			}
+		}
+	}
+	return nil, errors.Wrapf(ErrNotFound, "channel with id (%s) does not have incidents", channelID)
 }
 
 // NukeDB Removes all incident related data.
@@ -138,6 +156,14 @@ func toHeader(headers idHeaderMap) []Header {
 	}
 
 	return result
+}
+
+func (s *StoreImpl) getIncident(incidentID string) (*Incident, error) {
+	var incident Incident
+	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &incident); err != nil {
+		return nil, errors.Wrap(err, "failed to get incident")
+	}
+	return &incident, nil
 }
 
 func (s *StoreImpl) getIDHeaders() (idHeaderMap, error) {

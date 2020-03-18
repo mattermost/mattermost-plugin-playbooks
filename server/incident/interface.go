@@ -9,7 +9,7 @@ var ErrNotFound = errors.New("not found")
 type Header struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
-	IsActive        bool   `json:"is_closed"`
+	IsActive        bool   `json:"is_active"`
 	CommanderUserID string `json:"commander_user_id"`
 	TeamID          string `json:"team_id"`
 }
@@ -28,11 +28,11 @@ type Service interface {
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
+	// EndIncident Completes the incident associated to the given channelId.
+	EndIncident(channelID string) (*Incident, error)
+
 	// GetIncident Gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
-
-	// GetAllIncidents Gets all incidents.
-	GetAllIncidents() ([]Incident, error)
 
 	// NukeDB Removes all incident related data.
 	NukeDB() error
@@ -52,8 +52,8 @@ type Store interface {
 	// GetIncident Gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
-	// GetAllIncidents Gets all incidents
-	GetAllIncidents() ([]Incident, error)
+	// GetIncidentByChannel Gets an incident associated to the given channel id.
+	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
 
 	// NukeDB Removes all incident related data.
 	NukeDB() error
