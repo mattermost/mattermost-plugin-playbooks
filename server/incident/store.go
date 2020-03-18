@@ -136,7 +136,7 @@ func (s *StoreImpl) GetIncidentByChannel(channelID string, active bool) (*Incide
 			}
 		}
 	}
-	return nil, errors.Errorf("channel with id (%s) does not have incidents", channelID)
+	return nil, errors.Wrapf(ErrNotFound, "channel with id (%s) does not have incidents", channelID)
 }
 
 // NukeDB Removes all incident related data.
