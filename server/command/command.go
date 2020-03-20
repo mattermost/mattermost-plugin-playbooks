@@ -1,10 +1,11 @@
-package incident
+package command
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
@@ -44,20 +45,18 @@ type Runner struct {
 	Context         *plugin.Context
 	Args            *model.CommandArgs
 	PluginAPI       *pluginapi.Client
-	Helpers         plugin.Helpers
 	Logger          bot.Logger
 	Poster          bot.Poster
-	IncidentService Service
+	IncidentService incident.Service
 }
 
 // NewCommandRunner creates a command runner.
-func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client, helpers plugin.Helpers,
-	theBot bot.Bot, incidentService Service) *Runner {
+func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
+	theBot bot.Bot, incidentService incident.Service) *Runner {
 	return &Runner{
 		Context:         ctx,
 		Args:            args,
 		PluginAPI:       api,
-		Helpers:         helpers,
 		Logger:          theBot,
 		Poster:          theBot,
 		IncidentService: incidentService,
@@ -76,8 +75,8 @@ func (r *Runner) postCommandResponse(text string) {
 }
 
 func (r *Runner) actionStart() {
-	incident, err := r.IncidentService.CreateIncident(&Incident{
-		Header: Header{
+	incident, err := r.IncidentService.CreateIncident(&incident.Incident{
+		Header: incident.Header{
 			CommanderUserID: r.Args.UserId,
 			TeamID:          r.Args.TeamId,
 		},

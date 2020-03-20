@@ -1,21 +1,21 @@
-package incident
+package api
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 )
 
-// Handler Plugin API handler.
-type Handler struct {
-	incidentService Service
+// IncidentHandler is the API handler.
+type IncidentHandler struct {
+	incidentService incident.Service
 }
 
-// NewHandler Creates a new Plugin API handler.
-func NewHandler(router *mux.Router, incidentService Service) *Handler {
-	handler := &Handler{
+// NewIncidentHandler Creates a new Plugin API handler.
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service) *IncidentHandler {
+	handler := &IncidentHandler{
 		incidentService: incidentService,
 	}
 
@@ -29,52 +29,52 @@ func NewHandler(router *mux.Router, incidentService Service) *Handler {
 	return handler
 }
 
-func (h *Handler) createIncident(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request) {
 	_, err := h.incidentService.CreateIncident(nil)
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) getIncidents(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	incidentHeaders, err := h.incidentService.GetAllHeaders()
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	jsonBytes, err := json.Marshal(incidentHeaders)
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	if _, err = w.Write(jsonBytes); err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) getIncident(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incident, err := h.incidentService.GetIncident(vars["id"])
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	jsonBytes, err := json.Marshal(incident)
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	if _, err = w.Write(jsonBytes); err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
