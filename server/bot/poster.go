@@ -13,7 +13,7 @@ func (b *bot) PostMessage(channelID, format string, args ...interface{}) error {
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 	}
-	if _, err := b.pluginAPI.CreatePost(post); err != nil {
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
 		return err
 	}
 	return nil
@@ -41,18 +41,18 @@ func (b *bot) Ephemeral(userID, channelID, format string, args ...interface{}) {
 		ChannelId: channelID,
 		Message:   fmt.Sprintf(format, args...),
 	}
-	_ = b.pluginAPI.SendEphemeralPost(userID, post)
+	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
 func (b *bot) dm(userID string, post *model.Post) error {
-	channel, err := b.pluginAPI.GetDirectChannel(userID, b.botUserID)
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
 	if err != nil {
-		b.pluginAPI.LogInfo("Couldn't get bot's DM channel", "user_id", userID)
+		b.pluginAPI.Log.Info("Couldn't get bot's DM channel", "user_id", userID)
 		return err
 	}
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
-	if _, err := b.pluginAPI.CreatePost(post); err != nil {
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
 		return err
 	}
 	return nil
