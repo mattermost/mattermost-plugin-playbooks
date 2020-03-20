@@ -4,40 +4,40 @@ import (
 	"fmt"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
-// ServiceImpl implements Incident service interface.
-type ServiceImpl struct {
+// service implements Incident service interface.
+type service struct {
 	pluginAPI *pluginapi.Client
 	store     Store
 	config    config.Service
 	poster    bot.Poster
 }
 
-var _ Service = &ServiceImpl{}
+var _ Service = (*service)(nil)
 
 // NewService Creates a new incident service.
-func NewService(pluginAPI *pluginapi.Client, poster bot.Poster, configService config.Service) *ServiceImpl {
-	return &ServiceImpl{
+func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
+	configService config.Service) Service {
+	return &service{
 		pluginAPI: pluginAPI,
+		store:     store,
 		poster:    poster,
-		store:     NewStore(pluginAPI),
 		config:    configService,
 	}
 }
 
 // GetAllHeaders Creates a new incident.
-func (s *ServiceImpl) GetAllHeaders() ([]Header, error) {
+func (s *service) GetAllHeaders() ([]Header, error) {
 	return s.store.GetAllHeaders()
 }
 
 // CreateIncident Creates a new incident.
-func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
+func (s *service) CreateIncident(incident *Incident) (*Incident, error) {
 	// Create incident
 	incident, err := s.store.CreateIncident(incident)
 	if err != nil {
@@ -81,7 +81,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 }
 
 // EndIncident Completes the incident associated to the given channelID.
-func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
+func (s *service) EndIncident(channelID string) (*Incident, error) {
 	incident, err := s.store.GetIncidentByChannel(channelID, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to end incident")
@@ -98,11 +98,11 @@ func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
 }
 
 // GetIncident Gets an incident by ID.
-func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
+func (s *service) GetIncident(id string) (*Incident, error) {
 	return s.store.GetIncident(id)
 }
 
 // NukeDB Removes all incident related data.
-func (s *ServiceImpl) NukeDB() error {
+func (s *service) NukeDB() error {
 	return s.store.NukeDB()
 }

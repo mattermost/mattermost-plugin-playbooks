@@ -5,6 +5,7 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -52,7 +53,14 @@ func (p *Plugin) OnActivate() error {
 
 	p.handler = api.NewHandler()
 	p.bot = bot.New(p.API, p.configService.GetConfiguration().BotUserID, p.configService)
-	p.incidentService = incident.NewService(pluginapi.NewClient(p.API), p.bot, p.configService)
+	pluginAPIClient := pluginapi.NewClient(p.API)
+	p.incidentService = incident.NewService(
+		pluginAPIClient,
+		pluginkvstore.NewStore(pluginAPIClient),
+		p.bot,
+		p.configService,
+	)
+
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {

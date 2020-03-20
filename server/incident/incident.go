@@ -5,7 +5,7 @@ import "github.com/pkg/errors"
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// Header struct holds basic information about an incident.
+// Header holds the summary information of an incident.
 type Header struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
@@ -14,13 +14,13 @@ type Header struct {
 	TeamID          string `json:"team_id"`
 }
 
-// Incident struct
+// Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
 	ChannelIDs []string `json:"channel_ids"`
 }
 
-// Service Incident service interface.
+// Service is the incident/Service interface.
 type Service interface {
 	// GetAllHeaders Gets all the header information.
 	GetAllHeaders() ([]Header, error)
@@ -28,7 +28,7 @@ type Service interface {
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
-	// EndIncident Completes the incident associated to the given channelId.
+	// EndIncident Completes the incident associated with the given channelId.
 	EndIncident(channelID string) (*Incident, error)
 
 	// GetIncident Gets an incident by ID.

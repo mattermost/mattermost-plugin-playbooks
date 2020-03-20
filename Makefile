@@ -97,6 +97,8 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/config/mock_config/service.go github.com/mattermost/mattermost-plugin-incident-response/server/config Service
 	mockgen -destination server/bot/mock_bot/logger.go github.com/mattermost/mattermost-plugin-incident-response/server/bot Logger
 	mockgen -destination server/bot/mock_bot/poster.go github.com/mattermost/mattermost-plugin-incident-response/server/bot Poster
+	mockgen -destination server/incident/mock_incident/service.go github.com/mattermost/mattermost-plugin-incident-response/server/incident Service
+	mockgen -destination server/incident/mock_incident/store.go github.com/mattermost/mattermost-plugin-incident-response/server/incident Store
 endif
 
 ## Builds the server, if it exists, including support for multiple architectures.
