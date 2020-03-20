@@ -3,20 +3,20 @@ package config
 import (
 	"reflect"
 
+	pluginApi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 )
 
 // NewService Creates a new service.
-func NewService(api plugin.API) Service {
+func NewService(api *pluginApi.Client) Service {
 	c := &config{}
 	c.api = api
 	c.configuration = new(Configuration)
 	c.configChangeListeners = make(map[string]func())
 
 	// api.LoadPluginConfiguration never returns an error, so ignore it.
-	_ = api.LoadPluginConfiguration(c.configuration)
+	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
 
 	return c
 }
@@ -50,7 +50,7 @@ func (c *config) UpdateConfiguration(f func(*Configuration)) error {
 	c.configurationLock.Unlock()
 
 	if !reflect.DeepEqual(oldStorableConfig, newStorableConfig) {
-		if appErr := c.api.SavePluginConfig(newStorableConfig); appErr != nil {
+		if appErr := c.api.Configuration.SavePluginConfig(newStorableConfig); appErr != nil {
 			return errors.New(appErr.Error())
 		}
 	}
@@ -90,7 +90,7 @@ func (c *config) OnConfigurationChange() error {
 	var configuration = new(Configuration)
 
 	// Load the public configuration fields from the Mattermost server configuration.
-	if err := c.api.LoadPluginConfiguration(configuration); err != nil {
+	if err := c.api.Configuration.LoadPluginConfiguration(configuration); err != nil {
 		return errors.Wrap(err, "failed to load plugin configuration")
 	}
 

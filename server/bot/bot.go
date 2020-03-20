@@ -1,9 +1,9 @@
 package bot
 
 import (
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
 // Bot can be used as a Poster and Logger.
@@ -14,7 +14,7 @@ type Bot interface {
 
 type bot struct {
 	configService config.Service
-	pluginAPI     plugin.API
+	pluginAPI     *pluginapi.Client
 	botUserID     string
 	logContext    LogContext
 }
@@ -46,7 +46,7 @@ type Poster interface {
 }
 
 // New creates a new bot poster/logger.
-func New(api plugin.API, botUserID string, configService config.Service) Bot {
+func New(api *pluginapi.Client, botUserID string, configService config.Service) Bot {
 	return &bot{
 		pluginAPI:     api,
 		botUserID:     botUserID,

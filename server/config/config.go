@@ -3,12 +3,12 @@ package config
 import (
 	"sync"
 
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	pluginApi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // Config holds access to the plugin's Configuration.
 type config struct {
-	api plugin.API
+	api *pluginApi.Client
 
 	// configurationLock synchronizes access to the configuration.
 	configurationLock sync.RWMutex

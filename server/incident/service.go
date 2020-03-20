@@ -3,7 +3,7 @@ package incident
 import (
 	"fmt"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	pluginApi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -12,7 +12,7 @@ import (
 
 // service implements Incident service interface.
 type service struct {
-	pluginAPI *pluginapi.Client
+	pluginAPI *pluginApi.Client
 	store     Store
 	config    config.Service
 	poster    bot.Poster
@@ -21,7 +21,7 @@ type service struct {
 var _ Service = (*service)(nil)
 
 // NewService Creates a new incident service.
-func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
+func NewService(pluginAPI *pluginApi.Client, store Store, poster bot.Poster,
 	configService config.Service) Service {
 	return &service{
 		pluginAPI: pluginAPI,

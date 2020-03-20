@@ -1,7 +1,7 @@
 package pluginkvstore
 
 import (
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	pluginApi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -19,11 +19,11 @@ var _ incident.Store = (*incidentStore)(nil)
 
 // incidentStore Implements incident store interface.
 type incidentStore struct {
-	pluginAPI *pluginapi.Client
+	pluginAPI *pluginApi.Client
 }
 
 // NewStore creates a new store for incident service.
-func NewStore(pluginAPI *pluginapi.Client) incident.Store {
+func NewStore(pluginAPI *pluginApi.Client) incident.Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
 	}

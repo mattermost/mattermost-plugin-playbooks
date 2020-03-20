@@ -3,7 +3,7 @@ package plugin
 import (
 	"net/http"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	pluginApi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 
@@ -33,9 +33,10 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
-	p.configService = config.NewService(p.API)
+	pluginAPIClient := pluginApi.NewClient(p.API)
+	p.configService = config.NewService(pluginAPIClient)
 
-	botID, err := p.Helpers.EnsureBot(&model.Bot{
+	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
 		DisplayName: "Incident Bot",
 		Description: "A prototype demonstrating incident response management in Mattermost.",
@@ -52,8 +53,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.handler = api.NewHandler()
-	p.bot = bot.New(p.API, p.configService.GetConfiguration().BotUserID, p.configService)
-	pluginAPIClient := pluginapi.NewClient(p.API)
+	p.bot = bot.New(pluginAPIClient, p.configService.GetConfiguration().BotUserID, p.configService)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
 		pluginkvstore.NewStore(pluginAPIClient),
@@ -73,7 +73,7 @@ func (p *Plugin) OnActivate() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.incidentService)
+	runner := command.NewCommandRunner(c, args, pluginApi.NewClient(p.API), p.bot, p.incidentService)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("workflowplugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)

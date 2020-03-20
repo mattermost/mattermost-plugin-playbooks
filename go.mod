@@ -6,7 +6,7 @@ require (
 	github.com/golang/mock v1.2.0
 	github.com/gorilla/mux v1.7.3
 	github.com/mattermost/ldap v3.0.4+incompatible // indirect
-	github.com/mattermost/mattermost-plugin-api v0.0.8-0.20200310175040-201a08c4de93
+	github.com/mattermost/mattermost-plugin-api v0.0.10-0.20200320215519-decafbcdae6a
 	github.com/mattermost/mattermost-server/v5 v5.20.0
 	github.com/mholt/archiver/v3 v3.3.0
 	github.com/onsi/ginkgo v1.8.0 // indirect
