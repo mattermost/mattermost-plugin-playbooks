@@ -1,6 +1,27 @@
 package config
 
-// Service Config service interface.
+import (
+	"sync"
+
+	"github.com/mattermost/mattermost-server/v5/plugin"
+)
+
+// Config holds access to the plugin's Configuration.
+type config struct {
+	api plugin.API
+
+	// configurationLock synchronizes access to the configuration.
+	configurationLock sync.RWMutex
+
+	// configuration is the active plugin configuration. Consult getConfiguration and
+	// setConfiguration for usage.
+	configuration *Configuration
+
+	// configChangeListeners will be notified when the OnConfigurationChange event has been called.
+	configChangeListeners map[string]func()
+}
+
+// Service is the config/Service interface.
 type Service interface {
 	// GetConfiguration retrieves the active configuration under lock, making it safe to use
 	// concurrently. The active configuration may change underneath the client of this method, but

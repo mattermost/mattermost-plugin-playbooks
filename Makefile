@@ -93,9 +93,8 @@ golangci-lint: ## Run golangci-lint on codebase
 ## Generate mocks.
 mocks:
 ifneq ($(HAS_SERVER),)
-	env GO111MODULE=off $(GO) get -u github.com/vektra/mockery/.../
-	$(GOPATH)/bin/mockery -dir server/config -name Service -output server/config/mocks -case=underscore
-	$(GOPATH)/bin/mockery -dir server/incident -all -output server/incident/mocks -case=underscore
+	go install github.com/golang/mock/mockgen
+	mockgen -destination server/config/mock_config/service.go github.com/mattermost/mattermost-plugin-incident-response/server/config Service
 endif
 
 ## Builds the server, if it exists, including support for multiple architectures.

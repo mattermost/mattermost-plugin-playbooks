@@ -19,7 +19,7 @@ type Plugin struct {
 	plugin.MattermostPlugin
 
 	handler         *api.Handler
-	config          config.Service
+	configService   config.Service
 	incidentService incident.Service
 	logger          bot.Service
 }
@@ -31,7 +31,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
-	p.config = config.NewService(p.API)
+	p.configService = config.NewService(p.API)
 
 	botID, err := p.Helpers.EnsureBot(&model.Bot{
 		Username:    "incident",
@@ -41,7 +41,7 @@ func (p *Plugin) OnActivate() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure workflow bot")
 	}
-	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
+	err = p.configService.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
 	})
@@ -50,8 +50,8 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.handler = api.NewHandler()
-	p.logger = bot.New(p.API, p.config.GetConfiguration().BotUserID, p.config)
-	p.incidentService = incident.NewService(pluginapi.NewClient(p.API), p.logger, p.config)
+	p.logger = bot.New(p.API, p.configService.GetConfiguration().BotUserID, p.configService)
+	p.incidentService = incident.NewService(pluginapi.NewClient(p.API), p.logger, p.configService)
 	incident.NewHandler(p.handler.APIRouter, p.incidentService)
 
 	if err := incident.RegisterCommands(p.API.RegisterCommand); err != nil {

@@ -2,31 +2,15 @@ package config
 
 import (
 	"reflect"
-	"sync"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 )
 
-// ServiceImpl Implements Service interface.
-type ServiceImpl struct {
-	api plugin.API
-
-	// configurationLock synchronizes access to the configuration.
-	configurationLock sync.RWMutex
-
-	// configuration is the active plugin configuration. Consult getConfiguration and
-	// setConfiguration for usage.
-	configuration *Configuration
-
-	// configChangeListeners will be notified when the OnConfigurationChange event has been called.
-	configChangeListeners map[string]func()
-}
-
 // NewService Creates a new service.
-func NewService(api plugin.API) *ServiceImpl {
-	c := &ServiceImpl{}
+func NewService(api plugin.API) Service {
+	c := &config{}
 	c.api = api
 	c.configuration = new(Configuration)
 	c.configChangeListeners = make(map[string]func())
@@ -40,7 +24,7 @@ func NewService(api plugin.API) *ServiceImpl {
 // GetConfiguration retrieves the active configuration under lock, making it safe to use
 // concurrently. The active configuration may change underneath the client of this method, but
 // the struct returned by this API call is considered immutable.
-func (c *ServiceImpl) GetConfiguration() *Configuration {
+func (c *config) GetConfiguration() *Configuration {
 	c.configurationLock.RLock()
 	defer c.configurationLock.RUnlock()
 
@@ -52,7 +36,7 @@ func (c *ServiceImpl) GetConfiguration() *Configuration {
 }
 
 // UpdateConfiguration updates the config and saves it on the server
-func (c *ServiceImpl) UpdateConfiguration(f func(*Configuration)) error {
+func (c *config) UpdateConfiguration(f func(*Configuration)) error {
 	c.configurationLock.Lock()
 
 	if c.configuration == nil {
@@ -80,7 +64,7 @@ func (c *ServiceImpl) UpdateConfiguration(f func(*Configuration)) error {
 
 // RegisterConfigChangeListener registers a function that will called when the config might have
 // been changed. Returns an id which can be used to unregister the listener.
-func (c *ServiceImpl) RegisterConfigChangeListener(listener func()) string {
+func (c *config) RegisterConfigChangeListener(listener func()) string {
 	if c.configChangeListeners == nil {
 		c.configChangeListeners = make(map[string]func())
 	}
@@ -91,13 +75,13 @@ func (c *ServiceImpl) RegisterConfigChangeListener(listener func()) string {
 }
 
 // UnregisterConfigChangeListener unregisters the listener function identified by id.
-func (c *ServiceImpl) UnregisterConfigChangeListener(id string) {
+func (c *config) UnregisterConfigChangeListener(id string) {
 	delete(c.configChangeListeners, id)
 }
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
 // This method satisfies the interface expected by the server. Embed config.Config in the plugin.
-func (c *ServiceImpl) OnConfigurationChange() error {
+func (c *config) OnConfigurationChange() error {
 	// Have we been setup by OnActivate?
 	if c.api == nil {
 		return nil
@@ -130,7 +114,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 // This method panics if setConfiguration is called with the existing configuration. This almost
 // certainly means that the configuration was modified without being cloned and may result in
 // an unsafe access.
-func (c *ServiceImpl) setConfiguration(configuration *Configuration) {
+func (c *config) setConfiguration(configuration *Configuration) {
 	c.configurationLock.Lock()
 	defer c.configurationLock.Unlock()
 
