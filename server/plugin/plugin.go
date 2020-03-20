@@ -21,7 +21,7 @@ type Plugin struct {
 	handler         *api.Handler
 	configService   config.Service
 	incidentService incident.Service
-	logger          bot.Service
+	bot             bot.Bot
 }
 
 // ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
@@ -50,8 +50,8 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.handler = api.NewHandler()
-	p.logger = bot.New(p.API, p.configService.GetConfiguration().BotUserID, p.configService)
-	p.incidentService = incident.NewService(pluginapi.NewClient(p.API), p.logger, p.configService)
+	p.bot = bot.New(p.API, p.configService.GetConfiguration().BotUserID, p.configService)
+	p.incidentService = incident.NewService(pluginapi.NewClient(p.API), p.bot, p.configService)
 	incident.NewHandler(p.handler.APIRouter, p.incidentService)
 
 	if err := incident.RegisterCommands(p.API.RegisterCommand); err != nil {
@@ -64,7 +64,7 @@ func (p *Plugin) OnActivate() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := incident.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.Helpers, p.logger, p.incidentService)
+	runner := incident.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.Helpers, p.bot, p.incidentService)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("workflowplugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
