@@ -5,43 +5,26 @@ import React from 'react';
 import _ from 'lodash';
 
 import {UserProfile} from 'mattermost-redux/types/users';
-import {Channel} from 'mattermost-redux/types/channels';
+import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
 import {Incident} from 'src/types/incident';
 
-import Checkbox from './checkbox';
+import {getDisplayName} from 'src/utils/utils';
+
 import Link from './link';
 import Profile from './profile';
 
 import './incident_details.scss';
-import {getDisplayName} from 'src/utils/utils';
 
 interface Props {
     incident: Incident;
     commander: UserProfile;
     profileUri: string;
-    channelDetails: Channel[];
-    actions: {
-        fetchUser: (id: string) => void;
-        fetchChannel: (id: string) => void;
-    };
+    channelDetails: ChannelWithTeamData[];
+
 }
 
 export default class IncidentDetails extends React.PureComponent<Props> {
-    public componentDidMount(): void {
-        if (!this.props.commander) {
-            this.props.actions.fetchUser(this.props.incident.commander_user_id);
-        }
-    }
-
-    public componentDidUpdate(prevProp: Props): void {
-        if (this.props.incident?.channel_ids && this.props.incident?.channel_ids?.length !== prevProp.incident?.channel_ids?.length) {
-            for (const channelId of this.props.incident.channel_ids) {
-                this.props.actions.fetchChannel(channelId);
-            }
-        }
-    }
-
     public render(): JSX.Element {
         let commanderName = '';
         if (this.props.commander) {
@@ -71,10 +54,11 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 <div className='inner-container'>
                     <div className='title'>{'Channels'}</div>
                     {
-                        this.props.channelDetails.map((channel) => (
+                        this.props.channelDetails.map((channel: ChannelWithTeamData) => (
                             <Link
                                 key={channel.id}
                                 text={channel.display_name}
+                                href={`/${channel.team_name}/channels/${channel.id}`}
                             />
                         ))
                     }

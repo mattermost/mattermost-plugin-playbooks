@@ -2,6 +2,17 @@
 // See LICENSE.txt for license information.
 import {Dispatch, AnyAction} from 'redux';
 
+import {getUser as fetchUser} from 'mattermost-redux/actions/users';
+import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
+import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
+
+import {Channel} from 'mattermost-redux/types/channels';
+
+import {GetStateFunc} from 'types/actions';
+
 import {
     RECEIVED_SHOW_RHS_ACTION,
     RECEIVED_RHS_STATE,
@@ -18,11 +29,31 @@ import {Incident, RHSState} from './types/incident';
 import {fetchIncidents, fetchIncidentDetails} from './client';
 
 export function getIncidentDetails(id: string) {
-    return async (dispatch: Dispatch<AnyAction>) => {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         try {
-            const incidents = await fetchIncidentDetails(id);
+            // Fetch incident
+            const incident = await fetchIncidentDetails(id) as Incident;
 
-            dispatch(receivedIncidentDetails(incidents));
+            // Fetch commander
+            if (!getUser(getState(), incident.commander_user_id)) {
+                dispatch(fetchUser(incident.commander_user_id));
+            }
+
+            // Fetch channel and team data
+            for (const channelId of incident.channel_ids) {
+                let c = getChannel(getState(), channelId) as Channel;
+                if (!c) {
+                    // Must wait to fetch channel data before fetching its team data
+                    /* eslint-disable no-await-in-loop */
+                    await dispatch(fetchChannel(channelId));
+                    c = getChannel(getState(), channelId) as Channel;
+                }
+                if (!getTeam(getState(), c.team_id)) {
+                    dispatch(fetchTeam(c.team_id));
+                }
+            }
+
+            dispatch(receivedIncidentDetails(incident));
         } catch (error) {
             dispatch(receivedError(error));
         }

@@ -2,15 +2,14 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
-import {bindActionCreators, Dispatch} from 'redux';
 
 import {Client4} from 'mattermost-redux/client';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {Channel, ChannelWithTeamData} from 'mattermost-redux/types/channels';
+import {Team} from 'mattermost-redux/types/teams';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getUser as fetchUser} from 'mattermost-redux/actions/users';
-import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
-import {Channel} from 'mattermost-redux/types/channels';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Incident} from 'src/types/incident';
 
@@ -28,12 +27,19 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         lastPictureUpdate = commander.last_picture_update;
     }
 
-    const channelDetails = [] as Channel[];
+    const channelDetails = [] as ChannelWithTeamData[];
     if (ownProps.incident?.channel_ids) {
         for (const channelId of ownProps.incident?.channel_ids) {
-            const c = getChannel(state, channelId);
+            const c = getChannel(state, channelId) as Channel;
             if (c) {
-                channelDetails.push(c);
+                const t = getTeam(state, c.team_id) as Team;
+                const newChannelWithTeamData = {
+                    ...c,
+                    team_display_name: t.display_name,
+                    team_name: t.name,
+                };
+
+                channelDetails.push(newChannelWithTeamData);
             }
         }
     }
@@ -45,14 +51,5 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     };
 }
 
-function mapDispatchToProps(dispatch: Dispatch) {
-    return {
-        actions: bindActionCreators({
-            fetchUser,
-            fetchChannel,
-        }, dispatch),
-    };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(IncidentDetails);
+export default connect(mapStateToProps, null)(IncidentDetails);
 
