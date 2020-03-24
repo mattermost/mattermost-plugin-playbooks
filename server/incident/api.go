@@ -2,21 +2,32 @@ package incident
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-server/v5/model"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/pkg/errors"
 )
 
 // Handler Plugin API handler.
 type Handler struct {
 	incidentService Service
+	pluginAPI       *pluginapi.Client
+	poster          bot.Poster
 }
 
 // NewHandler Creates a new Plugin API handler.
-func NewHandler(router *mux.Router, incidentService Service) *Handler {
+func NewHandler(router *mux.Router, incidentService Service, api *pluginapi.Client, poster bot.Poster) *Handler {
 	handler := &Handler{
 		incidentService: incidentService,
+		pluginAPI:       api,
+		poster:          poster,
 	}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
@@ -25,6 +36,9 @@ func NewHandler(router *mux.Router, incidentService Service) *Handler {
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
+
+	incidentRouter = incidentsRouter.PathPrefix("/dialog").Subrouter()
+	incidentRouter.HandleFunc("", handler.createIncidentFromDialog).Methods(http.MethodPost)
 
 	return handler
 }
@@ -37,6 +51,52 @@ func (h *Handler) createIncident(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
+	request := model.SubmitDialogRequestFromJson(r.Body)
+	if request == nil {
+		api.HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		return
+	}
+
+	incident, err := h.incidentService.CreateIncident(&Incident{
+		Header: Header{
+			CommanderUserID: request.UserId,
+			TeamID:          request.TeamId,
+			Name:            request.Submission[nameDialogField].(string),
+		},
+	})
+
+	if err != nil {
+		api.HandleError(w, err)
+		return
+	}
+
+	if err := h.postIncidentCreated(incident, request.ChannelId); err != nil {
+		api.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) postIncidentCreated(incident *Incident, channelID string) error {
+	team, err := h.pluginAPI.Team.Get(incident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	if err != nil {
+		return err
+	}
+
+	url := h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	msg := fmt.Sprintf("Incident started -> [~%s](%s)", incident.Name, fmt.Sprintf("%s/%s/channels/%s", *url, team.Name, channel.Name))
+	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
+
+	return nil
 }
 
 func (h *Handler) getIncidents(w http.ResponseWriter, r *http.Request) {

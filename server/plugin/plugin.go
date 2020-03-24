@@ -52,7 +52,7 @@ func (p *Plugin) OnActivate() error {
 	p.handler = api.NewHandler()
 	p.logger = bot.New(p.API, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(pluginapi.NewClient(p.API), p.logger, p.config)
-	incident.NewHandler(p.handler.APIRouter, p.incidentService)
+	incident.NewHandler(p.handler.APIRouter, p.incidentService, pluginapi.NewClient(p.API), p.logger)
 
 	if err := incident.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrap(err, "failed register commands")

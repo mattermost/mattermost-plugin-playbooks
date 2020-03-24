@@ -21,6 +21,8 @@ type ServiceImpl struct {
 
 var _ Service = &ServiceImpl{}
 
+const nameDialogField = "incidentName"
+
 // NewService Creates a new incident service.
 func NewService(pluginAPI *pluginapi.Client, poster bot.Poster, configService config.Service) *ServiceImpl {
 	return &ServiceImpl{
@@ -49,7 +51,10 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 
 	// Create channel
 	channelDisplayName := fmt.Sprintf("%s %s", "Incident", incident.ID)
+
+	//channelName := fmt.Sprintf("%s", incident.Name)
 	channelName := fmt.Sprintf("%s_%s", "incident", incident.ID)
+
 	channel := &model.Channel{
 		TeamId:      incident.TeamID,
 		Type:        model.CHANNEL_OPEN,
@@ -68,7 +73,6 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 
 	// Save incident with Channel info
 	incident.ChannelIDs = []string{channel.Id}
-	incident.Name = fmt.Sprintf("Incident %s", incident.ID)
 	if err := s.store.UpdateIncident(incident); err != nil {
 		return nil, errors.Wrap(err, "failed to update incident")
 	}
@@ -78,6 +82,49 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	}
 
 	return incident, nil
+}
+
+// CreateIncidentDialog Opens a interactive dialog to start a new incident.
+func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string) error {
+
+	dialog, err := s.getStartIncidentDialog(commanderID)
+	if err != nil {
+		return err
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("%s/plugins/%s/api/v1/incidents/dialog",
+			*s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL,
+			s.config.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) getStartIncidentDialog(commanderID string) (*model.Dialog, error) {
+	user, err := s.pluginAPI.User.Get(commanderID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Dialog{
+		Title:            "Incident Details",
+		IntroductionText: fmt.Sprintf("**Commander:** %v", getUserDisplayName(user)),
+		Elements: []model.DialogElement{{
+			DisplayName: "Incident Name",
+			Name:        nameDialogField,
+			Type:        "text",
+			HelpText:    "This would also be the name for the incident channel",
+		}},
+		SubmitLabel:    "Start Incident",
+		NotifyOnCancel: false,
+	}, nil
 }
 
 // EndIncident Completes the incident associated to the given channelID.
@@ -105,4 +152,16 @@ func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
 // NukeDB Removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
+}
+
+func getUserDisplayName(user *model.User) string {
+	if user == nil {
+		return ""
+	}
+
+	if user.FirstName != "" && user.LastName != "" {
+		return fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+	}
+
+	return fmt.Sprintf("@%s", user.Username)
 }
