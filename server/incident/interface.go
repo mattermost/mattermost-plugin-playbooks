@@ -28,7 +28,7 @@ type Service interface {
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
-	// CreateIncidentDialog Opens a interactive dialog to start a new incident.
+	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
 	CreateIncidentDialog(commanderID string, triggerID string) error
 
 	// EndIncident Completes the incident associated to the given channelId.

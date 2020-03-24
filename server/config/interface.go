@@ -22,5 +22,6 @@ type Service interface {
 	// UnregisterConfigChangeListener unregisters the listener function identified by id.
 	UnregisterConfigChangeListener(id string)
 
-	GetManifest() model.Manifest
+	// GetManifest gets the plugin manifest.
+	GetManifest() *model.Manifest
 }

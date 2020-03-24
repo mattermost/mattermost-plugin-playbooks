@@ -33,12 +33,10 @@ func NewHandler(router *mux.Router, incidentService Service, api *pluginapi.Clie
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
 	incidentsRouter.HandleFunc("", handler.createIncident).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
-
-	incidentRouter = incidentsRouter.PathPrefix("/dialog").Subrouter()
-	incidentRouter.HandleFunc("", handler.createIncidentFromDialog).Methods(http.MethodPost)
 
 	return handler
 }
@@ -64,7 +62,7 @@ func (h *Handler) createIncidentFromDialog(w http.ResponseWriter, r *http.Reques
 		Header: Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
-			Name:            request.Submission[nameDialogField].(string),
+			Name:            request.Submission[dialogFieldNameKey].(string),
 		},
 	})
 
