@@ -10,6 +10,16 @@ import (
 const timed = "__since"
 const elapsed = "Elapsed"
 
+// Logger interface - a logging system that will tee logs to a DM channel.
+type Logger interface {
+	With(LogContext) Logger
+	Timed() Logger
+	Debugf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
+	Infof(format string, args ...interface{})
+	Warnf(format string, args ...interface{})
+}
+
 // LogContext .
 type LogContext map[string]interface{}
 
@@ -48,7 +58,7 @@ func toKeyValuePairs(in map[string]interface{}) (out []interface{}) {
 }
 
 // With .
-func (b *bot) With(logContext LogContext) Logger {
+func (b *Bot) With(logContext LogContext) Logger {
 	newBot := b.clone()
 	if len(newBot.logContext) == 0 {
 		newBot.logContext = map[string]interface{}{}
@@ -60,14 +70,14 @@ func (b *bot) With(logContext LogContext) Logger {
 }
 
 // Timed .
-func (b *bot) Timed() Logger {
+func (b *Bot) Timed() Logger {
 	return b.With(LogContext{
 		timed: time.Now(),
 	})
 }
 
 // Debugf .
-func (b *bot) Debugf(format string, args ...interface{}) {
+func (b *Bot) Debugf(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
 	b.pluginAPI.Log.Debug(message, toKeyValuePairs(b.logContext)...)
@@ -77,7 +87,7 @@ func (b *bot) Debugf(format string, args ...interface{}) {
 }
 
 // Errorf .
-func (b *bot) Errorf(format string, args ...interface{}) {
+func (b *Bot) Errorf(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
 	b.pluginAPI.Log.Error(message, toKeyValuePairs(b.logContext)...)
@@ -87,7 +97,7 @@ func (b *bot) Errorf(format string, args ...interface{}) {
 }
 
 // Infof .
-func (b *bot) Infof(format string, args ...interface{}) {
+func (b *Bot) Infof(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
 	b.pluginAPI.Log.Info(message, toKeyValuePairs(b.logContext)...)
@@ -97,7 +107,7 @@ func (b *bot) Infof(format string, args ...interface{}) {
 }
 
 // Warnf .
-func (b *bot) Warnf(format string, args ...interface{}) {
+func (b *Bot) Warnf(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
 	b.pluginAPI.Log.Warn(message, toKeyValuePairs(b.logContext)...)
@@ -106,7 +116,7 @@ func (b *bot) Warnf(format string, args ...interface{}) {
 	}
 }
 
-func (b *bot) logToAdmins(level, message string) {
+func (b *Bot) logToAdmins(level, message string) {
 	if b.configService.GetConfiguration().AdminLogVerbose && len(b.logContext) > 0 {
 		message += "\n" + JSONBlock(b.logContext)
 	}

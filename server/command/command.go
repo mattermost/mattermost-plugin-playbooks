@@ -52,13 +52,13 @@ type Runner struct {
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginApi.Client,
-	theBot bot.Bot, incidentService incident.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService incident.Service) *Runner {
 	return &Runner{
 		Context:         ctx,
 		Args:            args,
 		PluginAPI:       api,
-		Logger:          theBot,
-		Poster:          theBot,
+		Logger:          logger,
+		Poster:          poster,
 		IncidentService: incidentService,
 	}
 }
