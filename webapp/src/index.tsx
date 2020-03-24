@@ -19,12 +19,11 @@ export default class Plugin {
         const {showRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, 'Incidents');
         const bindedShowRHSAction = (): void => store.dispatch(showRHSPlugin);
 
-        //Store the showRHS action to use later
+        // Store the showRHS action to use later
         store.dispatch(setShowRHSAction(bindedShowRHSAction));
 
         registry.registerChannelHeaderButtonAction(IncidentIcon, bindedShowRHSAction, 'Incidents', 'Open');
     }
 }
 
-// @ts-ignore
 window.registerPlugin(manifest.id, new Plugin());

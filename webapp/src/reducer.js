@@ -3,7 +3,7 @@
 
 import {combineReducers} from 'redux';
 
-import {RECEIVED_SHOW_RHS_ACTION, RECEIVED_INCIDENTS} from './types/actions';
+import {RECEIVED_SHOW_RHS_ACTION, RECEIVED_INCIDENTS, RECEIVED_INCIDENT_DETAILS} from './types/actions';
 
 function rhsPluginAction(state = null, action) {
     switch (action.type) {
@@ -23,7 +23,17 @@ function incidents(state = null, action) {
     }
 }
 
+function incidentDetails(state = null, action) {
+    switch (action.type) {
+    case RECEIVED_INCIDENT_DETAILS:
+        return action.incidentDetails || {};
+    default:
+        return state;
+    }
+}
+
 export default combineReducers({
     rhsPluginAction,
     incidents,
+    incidentDetails,
 });
