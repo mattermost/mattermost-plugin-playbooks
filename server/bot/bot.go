@@ -8,14 +8,21 @@ import (
 // Bot stores the information for the plugin configuration, and implements the Poster and Logger
 // interfaces.
 type Bot struct {
-	configService config.Service
+	configService Config
 	pluginAPI     *pluginapi.Client
 	botUserID     string
 	logContext    LogContext
 }
 
+// Config defines the methods we need from the Config.
+type Config interface {
+	// GetConfiguration retrieves the active configuration under lock, making it safe to use
+	// concurrently.
+	GetConfiguration() *config.Configuration
+}
+
 // New creates a new bot poster/logger.
-func New(api *pluginapi.Client, botUserID string, configService config.Service) *Bot {
+func New(api *pluginapi.Client, botUserID string, configService Config) *Bot {
 	return &Bot{
 		pluginAPI:     api,
 		botUserID:     botUserID,

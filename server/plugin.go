@@ -1,10 +1,9 @@
-package plugin
+package main
 
 import (
 	"net/http"
 
 	pluginApi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
@@ -21,8 +20,8 @@ type Plugin struct {
 	plugin.MattermostPlugin
 
 	handler         *api.Handler
-	configService   config.Service
-	incidentService incident.Service
+	config          *config.Config
+	incidentService *incident.Service
 	bot             *bot.Bot
 }
 
@@ -34,7 +33,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginApi.NewClient(p.API)
-	p.configService = config.NewService(pluginAPIClient)
+	p.config = config.NewConfig(pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
@@ -44,7 +43,7 @@ func (p *Plugin) OnActivate() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure workflow bot")
 	}
-	err = p.configService.UpdateConfiguration(func(c *config.Configuration) {
+	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
 	})
@@ -53,17 +52,17 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.handler = api.NewHandler()
-	p.bot = bot.New(pluginAPIClient, p.configService.GetConfiguration().BotUserID, p.configService)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
 		pluginkvstore.NewStore(pluginAPIClient),
 		p.bot,
-		p.configService,
+		p.config,
 	)
 
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService)
 
-	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
+	if err := RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrap(err, "failed register commands")
 	}
 
@@ -73,7 +72,7 @@ func (p *Plugin) OnActivate() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginApi.NewClient(p.API), p.bot, p.bot, p.incidentService)
+	runner := NewCommandRunner(c, args, pluginApi.NewClient(p.API), p.bot, p.bot, p.incidentService)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("workflowplugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)

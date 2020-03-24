@@ -10,11 +10,23 @@ import (
 
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
-	incidentService incident.Service
+	incidentService IncidentService
+}
+
+// IncidentService defines the methods we need from the incident.Service
+type IncidentService interface {
+	// CreateIncident Creates a new incident.
+	CreateIncident(incident *incident.Incident) (*incident.Incident, error)
+
+	// GetAllHeaders returns the headers for all incidents.
+	GetAllHeaders() ([]incident.Header, error)
+
+	// GetIncident Gets an incident by ID.
+	GetIncident(id string) (*incident.Incident, error)
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService incident.Service) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService IncidentService) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 	}

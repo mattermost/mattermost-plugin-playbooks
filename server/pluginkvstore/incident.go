@@ -15,9 +15,10 @@ const (
 
 type idHeaderMap map[string]incident.Header
 
+// incidentStore Implements incident store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
-// incidentStore Implements incident store interface.
+// incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
 	pluginAPI *pluginApi.Client
 }
@@ -30,7 +31,7 @@ func NewStore(pluginAPI *pluginApi.Client) incident.Store {
 	return newStore
 }
 
-// GetAllHeaders Creates a new incident.
+// GetAllHeaders Gets all the header information.
 func (s *incidentStore) GetAllHeaders() ([]incident.Header, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {

@@ -1,4 +1,4 @@
-package command
+package main
 
 import (
 	"fmt"
@@ -47,12 +47,24 @@ type Runner struct {
 	PluginAPI       *pluginApi.Client
 	Logger          bot.Logger
 	Poster          bot.Poster
-	IncidentService incident.Service
+	IncidentService IncidentService
+}
+
+// IncidentService defines the methods we need from the incident.Service
+type IncidentService interface {
+	// CreateIncident Creates a new incident.
+	CreateIncident(incident *incident.Incident) (*incident.Incident, error)
+
+	// EndIncident Completes the incident associated to the given channelID.
+	EndIncident(channelID string) (*incident.Incident, error)
+
+	// NukeDB Removes all incident related data.
+	NukeDB() error
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginApi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService incident.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService IncidentService) *Runner {
 	return &Runner{
 		Context:         ctx,
 		Args:            args,

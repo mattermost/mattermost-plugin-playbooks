@@ -1,13 +1,16 @@
 package config
 
 import (
+	"reflect"
 	"sync"
 
 	pluginApi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/pkg/errors"
 )
 
 // Config holds access to the plugin's Configuration.
-type config struct {
+type Config struct {
 	api *pluginApi.Client
 
 	// configurationLock synchronizes access to the configuration.
@@ -21,21 +24,127 @@ type config struct {
 	configChangeListeners map[string]func()
 }
 
-// Service is the config/Service interface.
-type Service interface {
-	// GetConfiguration retrieves the active configuration under lock, making it safe to use
-	// concurrently. The active configuration may change underneath the client of this method, but
-	// the struct returned by this API call is considered immutable.
-	GetConfiguration() *Configuration
+// NewConfig Creates a new Config struct.
+func NewConfig(api *pluginApi.Client) *Config {
+	c := &Config{}
+	c.api = api
+	c.configuration = new(Configuration)
+	c.configChangeListeners = make(map[string]func())
 
-	// UpdateConfiguration updates the config. Any parts of the config that are persisted in the plugin's
-	// section in the server's config will be saved to the server.
-	UpdateConfiguration(f func(*Configuration)) error
+	// api.LoadPluginConfiguration never returns an error, so ignore it.
+	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
 
-	// RegisterConfigChangeListener registers a function that will called when the config might have
-	// been changed. Returns an id which can be used to unregister the listener.
-	RegisterConfigChangeListener(listener func()) string
+	return c
+}
 
-	// UnregisterConfigChangeListener unregisters the listener function identified by id.
-	UnregisterConfigChangeListener(id string)
+// GetConfiguration retrieves the active configuration under lock, making it safe to use
+// concurrently. The active configuration may change underneath the client of this method, but
+// the struct returned by this API call is considered immutable.
+func (c *Config) GetConfiguration() *Configuration {
+	c.configurationLock.RLock()
+	defer c.configurationLock.RUnlock()
+
+	if c.configuration == nil {
+		return &Configuration{}
+	}
+
+	return c.configuration
+}
+
+// UpdateConfiguration updates the config. Any parts of the config that are persisted in the plugin's
+// section in the server's config will be saved to the server.
+func (c *Config) UpdateConfiguration(f func(*Configuration)) error {
+	c.configurationLock.Lock()
+
+	if c.configuration == nil {
+		c.configuration = &Configuration{}
+	}
+
+	oldStorableConfig := c.configuration.serialize()
+	f(c.configuration)
+	newStorableConfig := c.configuration.serialize()
+	// Don't hold the lock longer than necessary, especially since we're calling the api and then listeners.
+	c.configurationLock.Unlock()
+
+	if !reflect.DeepEqual(oldStorableConfig, newStorableConfig) {
+		if appErr := c.api.Configuration.SavePluginConfig(newStorableConfig); appErr != nil {
+			return errors.New(appErr.Error())
+		}
+	}
+
+	for _, f := range c.configChangeListeners {
+		f()
+	}
+
+	return nil
+}
+
+// RegisterConfigChangeListener registers a function that will called when the config might have
+// been changed. Returns an id which can be used to unregister the listener.
+func (c *Config) RegisterConfigChangeListener(listener func()) string {
+	if c.configChangeListeners == nil {
+		c.configChangeListeners = make(map[string]func())
+	}
+
+	id := model.NewId()
+	c.configChangeListeners[id] = listener
+	return id
+}
+
+// UnregisterConfigChangeListener unregisters the listener function identified by id.
+func (c *Config) UnregisterConfigChangeListener(id string) {
+	delete(c.configChangeListeners, id)
+}
+
+// OnConfigurationChange is invoked when configuration changes may have been made.
+// This method satisfies the interface expected by the server. Embed config.Config in the plugin.
+func (c *Config) OnConfigurationChange() error {
+	// Have we been setup by OnActivate?
+	if c.api == nil {
+		return nil
+	}
+
+	var configuration = new(Configuration)
+
+	// Load the public configuration fields from the Mattermost server configuration.
+	if err := c.api.Configuration.LoadPluginConfiguration(configuration); err != nil {
+		return errors.Wrap(err, "failed to load plugin configuration")
+	}
+
+	configuration.BotUserID = c.configuration.BotUserID
+
+	c.setConfiguration(configuration)
+
+	for _, f := range c.configChangeListeners {
+		f()
+	}
+
+	return nil
+}
+
+// setConfiguration replaces the active configuration under lock.
+//
+// Do not call setConfiguration while holding the configurationLock, as sync.Mutex is not
+// reentrant. In particular, avoid using the plugin API entirely, as this may in turn trigger a
+// hook back into the plugin. If that hook attempts to acquire this lock, a deadlock may occur.
+//
+// This method panics if setConfiguration is called with the existing configuration. This almost
+// certainly means that the configuration was modified without being cloned and may result in
+// an unsafe access.
+func (c *Config) setConfiguration(configuration *Configuration) {
+	c.configurationLock.Lock()
+	defer c.configurationLock.Unlock()
+
+	if configuration != nil && c.configuration == configuration {
+		// Ignore assignment if the configuration struct is empty. Go will optimize the
+		// allocation for same to point at the same memory address, breaking the check
+		// above.
+		if reflect.ValueOf(*configuration).NumField() == 0 {
+			return
+		}
+
+		panic("setConfiguration called with the existing configuration")
+	}
+
+	c.configuration = configuration
 }
