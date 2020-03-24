@@ -19,3 +19,5 @@ export const incidentDetails = (state: GlobalState) => {
 };
 
 export const getShowRHSAction = (state: GlobalState) => getPluginState(state).rhsPluginAction;
+
+export const getRHSState = (state: GlobalState) => getPluginState(state).rhsState;

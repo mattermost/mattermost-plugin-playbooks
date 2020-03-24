@@ -4,6 +4,7 @@ import {Dispatch, AnyAction} from 'redux';
 
 import {
     RECEIVED_SHOW_RHS_ACTION,
+    RECEIVED_RHS_STATE,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_ERROR,
@@ -11,8 +12,9 @@ import {
     ReceivedIncidents,
     ReceivedIncidentDetails,
     ReceivedError,
+    ReceivedRHSState,
 } from './types/actions';
-import {Incident} from './types/incident';
+import {Incident, RHSState} from './types/incident';
 import {fetchIncidents, fetchIncidentDetails} from './client';
 
 export function getIncidentDetails(id: string) {
@@ -74,5 +76,14 @@ export function setShowRHSAction(
     return {
         type: RECEIVED_SHOW_RHS_ACTION,
         showRHSPluginAction,
+    };
+}
+
+export function setRHSState(
+    state: RHSState
+): ReceivedRHSState {
+    return {
+        type: RECEIVED_RHS_STATE,
+        state,
     };
 }

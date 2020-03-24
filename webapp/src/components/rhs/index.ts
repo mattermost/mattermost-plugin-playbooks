@@ -6,8 +6,8 @@ import {bindActionCreators, Dispatch} from 'redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {getIncidents, getIncidentDetails} from 'src/actions';
-import {activeIncidents, incidentDetails} from 'src/selectors';
+import {getIncidents, getIncidentDetails, setRHSState} from 'src/actions';
+import {activeIncidents, incidentDetails, getRHSState} from 'src/selectors';
 
 import RightHandSidebar from './rhs_main';
 
@@ -15,6 +15,7 @@ function mapStateToProps(state: GlobalState) {
     return {
         incidents: activeIncidents(state) || [],
         incident: incidentDetails(state),
+        rhsState: getRHSState(state),
     };
 }
 
@@ -23,6 +24,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
         actions: bindActionCreators({
             getIncidents,
             getIncidentDetails,
+            setRHSState,
         }, dispatch),
     };
 }

@@ -8,3 +8,8 @@ export interface Incident {
     commander_user_id: string;
     channel_ids: string[];
 }
+
+export enum RHSState {
+    List,
+    Details,
+}

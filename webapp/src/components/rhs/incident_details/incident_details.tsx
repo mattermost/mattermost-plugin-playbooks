@@ -5,6 +5,7 @@ import React from 'react';
 import _ from 'lodash';
 
 import {UserProfile} from 'mattermost-redux/types/users';
+import {Channel} from 'mattermost-redux/types/channels';
 
 import {Incident} from 'src/types/incident';
 
@@ -18,8 +19,10 @@ interface Props {
     incident: Incident;
     commander: UserProfile;
     profileUri: string;
+    channelDetails: Channel[];
     actions: {
         fetchUser: (id: string) => void;
+        fetchChannel: (id: string) => void;
     };
 }
 
@@ -30,12 +33,21 @@ export default class IncidentDetails extends React.PureComponent<Props> {
         }
     }
 
+    public componentDidUpdate(prevProp: Props): void {
+        if (this.props.incident?.channel_ids && this.props.incident?.channel_ids?.length !== prevProp.incident?.channel_ids?.length) {
+            for (const channelId of this.props.incident.channel_ids) {
+                this.props.actions.fetchChannel(channelId);
+            }
+        }
+    }
+
     public render(): JSX.Element {
         let commanderName = this.props.commander ? `${this.props.commander.first_name} ${this.props.commander.last_name}` : '';
         if (_.trim(commanderName).length === 0) {
             // Use username if name is empty
             commanderName = this.props.commander?.username;
         }
+
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
@@ -65,9 +77,14 @@ export default class IncidentDetails extends React.PureComponent<Props> {
 
                 <div className='inner-container'>
                     <div className='title'>{'Channels'}</div>
-                    <Link
-                        text={'#4281 infrastructure'}
-                    />
+                    {
+                        this.props.channelDetails.map((channel) => (
+                            <Link
+                                key={channel.id}
+                                text={channel.display_name}
+                            />
+                        ))
+                    }
                     <Link
                         text={'#4281 legal'}
                     />
