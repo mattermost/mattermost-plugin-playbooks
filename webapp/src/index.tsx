@@ -26,4 +26,5 @@ export default class Plugin {
     }
 }
 
+// @ts-ignore
 window.registerPlugin(manifest.id, new Plugin());

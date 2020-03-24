@@ -70,18 +70,14 @@ function receivedError(error: string): ReceivedError {
  * Stores`showRHSPlugin` action returned by
  * registerRightHandSidebarComponent in plugin initialization.
  */
-export function setShowRHSAction(
-    showRHSPluginAction: () => void
-): ReceivedShowRHSAction {
+export function setShowRHSAction(showRHSPluginAction: () => void): ReceivedShowRHSAction {
     return {
         type: RECEIVED_SHOW_RHS_ACTION,
         showRHSPluginAction,
     };
 }
 
-export function setRHSState(
-    state: RHSState
-): ReceivedRHSState {
+export function setRHSState(state: RHSState): ReceivedRHSState {
     return {
         type: RECEIVED_RHS_STATE,
         state,

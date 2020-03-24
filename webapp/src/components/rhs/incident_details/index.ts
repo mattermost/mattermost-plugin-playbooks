@@ -21,12 +21,10 @@ type Props = {
 }
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
-    let userId = null;
     let lastPictureUpdate = null;
 
     const commander = getUser(state, ownProps.incident.commander_user_id);
     if (commander) {
-        userId = commander.id;
         lastPictureUpdate = commander.last_picture_update;
     }
 
@@ -42,7 +40,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
 
     return {
         commander,
-        profileUri: Client4.getProfilePictureUrl(userId, lastPictureUpdate),
+        profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
         channelDetails,
     };
 }

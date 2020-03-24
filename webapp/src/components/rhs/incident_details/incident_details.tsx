@@ -14,6 +14,7 @@ import Link from './link';
 import Profile from './profile';
 
 import './incident_details.scss';
+import {getDisplayName} from 'src/utils/utils';
 
 interface Props {
     incident: Incident;
@@ -42,10 +43,9 @@ export default class IncidentDetails extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        let commanderName = this.props.commander ? `${this.props.commander.first_name} ${this.props.commander.last_name}` : '';
-        if (_.trim(commanderName).length === 0) {
-            // Use username if name is empty
-            commanderName = this.props.commander?.username;
+        let commanderName = '';
+        if (this.props.commander) {
+            commanderName = getDisplayName(this.props.commander);
         }
 
         return (
@@ -58,22 +58,15 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     />
                 </div>
 
-                <div className='inner-container'>
-                    <div className='title'>{'Checklist'}</div>
-                    <Checkbox
-                        checked={true}
-                        text={'Triage Issue in Jira'}
-                    />
-                    <Checkbox
-                        text={'Create auxiliary channels'}
-                    />
-                    <Checkbox
-                        text={'Invite Operations Team to Channel'}
-                    />
-                    <Checkbox
-                        text={'Find relevant cluster ids'}
-                    />
-                </div>
+                {/* Checkbox example
+                    <div className='inner-container'>
+                        <div className='title'>{'Checklist'}</div>
+                        <Checkbox
+                            checked={true}
+                            text={'Triage Issue in Jira'}
+                        />
+                    </div>
+                */}
 
                 <div className='inner-container'>
                     <div className='title'>{'Channels'}</div>
@@ -85,12 +78,6 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             />
                         ))
                     }
-                    <Link
-                        text={'#4281 legal'}
-                    />
-                    <Link
-                        text={'#4281 public relation'}
-                    />
                 </div>
             </div>
         );
