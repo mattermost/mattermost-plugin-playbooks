@@ -2,6 +2,8 @@ package incident
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
@@ -20,6 +22,8 @@ type ServiceImpl struct {
 }
 
 var _ Service = &ServiceImpl{}
+
+var regexAllNonSpaceNonWord = regexp.MustCompile(`[^\w\s]`)
 
 const dialogFieldNameKey = "incidentName"
 
@@ -50,16 +54,11 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	incident.IsActive = true
 
 	// Create channel
-	channelDisplayName := fmt.Sprintf("%s %s", "Incident", incident.ID)
-
-	//channelName := fmt.Sprintf("%s", incident.Name)
-	channelName := fmt.Sprintf("%s_%s", "incident", incident.ID)
-
 	channel := &model.Channel{
 		TeamId:      incident.TeamID,
 		Type:        model.CHANNEL_OPEN,
-		DisplayName: channelDisplayName,
-		Name:        channelName,
+		DisplayName: incident.Name,
+		Name:        cleanChannelName(incident.Name),
 		Header:      "The channel used by the incident response plugin.",
 	}
 
@@ -162,4 +161,19 @@ func getUserDisplayName(user *model.User) string {
 	}
 
 	return fmt.Sprintf("@%s", user.Username)
+}
+
+func cleanChannelName(channelName string) string {
+	// Lower case only
+	channelName = strings.ToLower(channelName)
+	// Trim spaces
+	channelName = strings.TrimSpace(channelName)
+	// Change all dashes to whitespace, remove evrything that's not a word or whitespace, all space becomes dashes
+	channelName = strings.ReplaceAll(channelName, "-", " ")
+	channelName = regexAllNonSpaceNonWord.ReplaceAllString(channelName, "")
+	channelName = strings.ReplaceAll(channelName, " ", "-")
+	// Remove leading an trailing dashes
+	channelName = strings.Trim(channelName, "-")
+
+	return channelName
 }
