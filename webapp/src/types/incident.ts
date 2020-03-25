@@ -6,4 +6,10 @@ export interface Incident {
     name: string;
     is_active: boolean;
     commander_user_id: string;
+    channel_ids: string[];
+}
+
+export enum RHSState {
+    List,
+    Details,
 }

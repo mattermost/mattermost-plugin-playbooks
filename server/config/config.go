@@ -22,11 +22,16 @@ type Config struct {
 
 	// configChangeListeners will be notified when the OnConfigurationChange event has been called.
 	configChangeListeners map[string]func()
+
+	// manifest is the plugin manifest
+	manifest *model.Manifest
 }
 
 // NewConfig Creates a new Config struct.
 func NewConfig(api *pluginApi.Client) *Config {
-	c := &Config{}
+	c := &Config{
+		manifest: Manifest,
+	}
 	c.api = api
 	c.configuration = new(Configuration)
 	c.configChangeListeners = make(map[string]func())
@@ -120,6 +125,11 @@ func (c *Config) OnConfigurationChange() error {
 	}
 
 	return nil
+}
+
+// GetManifest gets the plugin manifest.
+func (c *ServiceImpl) GetManifest() *model.Manifest {
+	return c.manifest
 }
 
 // setConfiguration replaces the active configuration under lock.

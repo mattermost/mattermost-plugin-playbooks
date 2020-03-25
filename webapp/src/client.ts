@@ -12,6 +12,10 @@ export function fetchIncidents() {
     return doGet(`${apiUrl}/incidents`);
 }
 
+export function fetchIncidentDetails(id: string) {
+    return doGet(`${apiUrl}/incidents/${id}`);
+}
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 
