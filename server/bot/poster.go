@@ -6,22 +6,6 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-// Poster interface - a small subset of the plugin posting API.
-type Poster interface {
-	// PostMessage posts a simple Direct Message to the specified user
-	PostMessage(channelID, format string, args ...interface{}) error
-
-	// DM posts a simple Direct Message to the specified user
-	DM(userID, format string, args ...interface{}) error
-
-	// DMWithAttachments posts a Direct Message that contains Slack attachments.
-	// Often used to include post actions.
-	DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error
-
-	// Ephemeral sends an ephemeral message to a user
-	Ephemeral(userID, channelID, format string, args ...interface{})
-}
-
 // PostMessage posts a message to a specified channel.
 func (b *Bot) PostMessage(channelID, format string, args ...interface{}) error {
 	post := &model.Post{
@@ -58,6 +42,20 @@ func (b *Bot) Ephemeral(userID, channelID, format string, args ...interface{}) {
 		Message:   fmt.Sprintf(format, args...),
 	}
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+}
+
+// PublishWebsocketEventToTeam sends a websocket event with payload to teamID
+func (b *Bot) PublishWebsocketEventToTeam(event string, payload map[string]interface{}, teamID string) {
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payload, &model.WebsocketBroadcast{
+		TeamId: teamID,
+	})
+}
+
+// PublishWebsocketEventToChannel sends a websocket event with payload to channelID
+func (b *Bot) PublishWebsocketEventToChannel(event string, payload map[string]interface{}, channelID string) {
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payload, &model.WebsocketBroadcast{
+		ChannelId: channelID,
+	})
 }
 
 func (b *Bot) dm(userID string, post *model.Post) error {

@@ -3,7 +3,7 @@
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {id as pluginId} from './manifest';
+import pluginId from './manifest';
 import {Incident} from './types/incident';
 
 const getPluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};

@@ -240,8 +240,6 @@ github.com/mattermost/gosaml2 v0.3.2/go.mod h1:Z429EIOiEi9kbq6yHoApfzlcXpa6dzRDc
 github.com/mattermost/ldap v0.0.0-20191128190019-9f62ba4b8d4d/go.mod h1:HLbgMEI5K131jpxGazJ97AxfPDt31osq36YS1oxFQPQ=
 github.com/mattermost/ldap v3.0.4+incompatible h1:SOeNnz+JNR+foQ3yHkYqijb9MLPhXN2BZP/PdX23VDU=
 github.com/mattermost/ldap v3.0.4+incompatible/go.mod h1:b4reDCcGpBxJ4WX0f224KFY+OR0npin7or7EFpeIko4=
-github.com/mattermost/mattermost-plugin-api v0.0.10-0.20200323151506-efbc4e05edc2 h1:SqAySW7UODEonYklfl+zgrAU186r7xOfFcX648Sx3lc=
-github.com/mattermost/mattermost-plugin-api v0.0.10-0.20200323151506-efbc4e05edc2/go.mod h1:Kc+Ib7pZM2UuwJiF3IviPBJDboMNDdsZFzpfBUMzrRE=
 github.com/mattermost/mattermost-plugin-api v0.0.10-0.20200323160130-6de68935b13c h1:0ntC+UmithaSet68IRAxzR6CptiO5n0DbxPp0T1Cb4g=
 github.com/mattermost/mattermost-plugin-api v0.0.10-0.20200323160130-6de68935b13c/go.mod h1:Kc+Ib7pZM2UuwJiF3IviPBJDboMNDdsZFzpfBUMzrRE=
 github.com/mattermost/mattermost-server/v5 v5.3.2-0.20200313113657-e2883bfe5f37 h1:roF2kU96CwIfAeEronp/Xss51aiQBIZdmnxLyjN5iT4=

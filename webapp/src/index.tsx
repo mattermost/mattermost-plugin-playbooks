@@ -4,7 +4,7 @@
 import {Action, Store} from 'redux';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
-import manifest from './manifest';
+import pluginId from './manifest';
 
 import IncidentIcon from './components/incident_icon';
 import RightHandSidebar from './components/rhs';
@@ -23,8 +23,10 @@ export default class Plugin {
         store.dispatch(setShowRHSAction(bindedShowRHSAction));
 
         registry.registerChannelHeaderButtonAction(IncidentIcon, bindedShowRHSAction, 'Incidents', 'Open');
+
+        registry.registerWebSocketEventHandler(`custom_${pluginId}_`);
     }
 }
 
 // @ts-ignore
-window.registerPlugin(manifest.id, new Plugin());
+window.registerPlugin(pluginId, new Plugin());
