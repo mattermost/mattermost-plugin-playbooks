@@ -10,8 +10,8 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +35,7 @@ type IncidentService interface {
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService IncidentService) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService IncidentService, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		pluginAPI:       api,
@@ -66,32 +66,32 @@ func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request)
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		api.HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
 		return
 	}
 
-	incident, err := h.incidentService.CreateIncident(&Incident{
-		Header: Header{
+	incident, err := h.incidentService.CreateIncident(&incident.Incident{
+		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
-			Name:            request.Submission[dialogFieldNameKey].(string),
+			Name:            request.Submission[incident.DialogFieldNameKey].(string),
 		},
 	})
 
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	if err := h.postIncidentCreated(incident, request.ChannelId); err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *IncidentHandler) postIncidentCreated(incident *Incident, channelID string) error {
+func (h *IncidentHandler) postIncidentCreated(incident *incident.Incident, channelID string) error {
 	team, err := h.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err

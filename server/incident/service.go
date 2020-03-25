@@ -5,45 +5,75 @@ import (
 	"regexp"
 	"strings"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
+	pluginApi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
-// ServiceImpl implements Incident service interface.
-type ServiceImpl struct {
-	pluginAPI *pluginapi.Client
-	store     Store
-	config    config.Service
-	poster    bot.Poster
+// Service holds the information needed by the IncidentService's methods to complete their functions.
+type Service struct {
+	pluginAPI     *pluginApi.Client
+	configService Config
+	store         Store
+	poster        bot.Poster
 }
 
-var _ Service = &ServiceImpl{}
+// Config defines the methods we need from the Config.
+type Config interface {
+	// GetConfiguration retrieves the active configuration under lock, making it safe to use
+	// concurrently.
+	GetConfiguration() *config.Configuration
+
+	// GetManifest gets the plugin manifest.
+	GetManifest() *model.Manifest
+}
+
+// Store defines the methods we need from the Store.
+type Store interface {
+	// GetAllHeaders Gets all the header information.
+	GetAllHeaders() ([]Header, error)
+
+	// CreateIncident Creates a new incident.
+	CreateIncident(incident *Incident) (*Incident, error)
+
+	// UpdateIncident updates an incident.
+	UpdateIncident(incident *Incident) error
+
+	// GetIncident Gets an incident by ID.
+	GetIncident(id string) (*Incident, error)
+
+	// GetIncidentByChannel Gets an incident associated with the given channel id.
+	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
+
+	// NukeDB Removes all incident related data.
+	NukeDB() error
+}
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 
-const dialogFieldNameKey = "incidentName"
+// DialogFieldNameKey is the key for the incident name field used in CreateIncidentDialog
+const DialogFieldNameKey = "incidentName"
 
 // NewService Creates a new incident service.
-func NewService(pluginAPI *pluginapi.Client, poster bot.Poster, configService config.Service) *ServiceImpl {
-	return &ServiceImpl{
-		pluginAPI: pluginAPI,
-		poster:    poster,
-		store:     NewStore(pluginAPI),
-		config:    configService,
+func NewService(pluginAPI *pluginApi.Client, store Store, poster bot.Poster,
+	configService Config) *Service {
+	return &Service{
+		pluginAPI:     pluginAPI,
+		store:         store,
+		poster:        poster,
+		configService: configService,
 	}
 }
 
-// GetAllHeaders Creates a new incident.
-func (s *ServiceImpl) GetAllHeaders() ([]Header, error) {
+// GetAllHeaders returns the headers for all incidents.
+func (s *Service) GetAllHeaders() ([]Header, error) {
 	return s.store.GetAllHeaders()
 }
 
 // CreateIncident Creates a new incident.
-func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
+func (s *Service) CreateIncident(incident *Incident) (*Incident, error) {
 	// Create incident
 	incident, err := s.store.CreateIncident(incident)
 	if err != nil {
@@ -66,7 +96,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 		return nil, errors.Wrap(err, "failed to create channel")
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.CommanderUserID, s.config.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrap(err, "failed to add user to channel")
 	}
 
@@ -84,7 +114,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 }
 
 // CreateIncidentDialog Opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string) error {
+func (s *Service) CreateIncidentDialog(commanderID string, triggerID string) error {
 	dialog, err := s.newIncidentDialog(commanderID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new incident dialog")
@@ -93,7 +123,7 @@ func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string)
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("%s/plugins/%s/api/v1/incidents/dialog",
 			*s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL,
-			s.config.GetManifest().Id),
+			s.configService.GetManifest().Id),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -106,7 +136,7 @@ func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string)
 }
 
 // EndIncident Completes the incident associated to the given channelID.
-func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
+func (s *Service) EndIncident(channelID string) (*Incident, error) {
 	incident, err := s.store.GetIncidentByChannel(channelID, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to end incident")
@@ -123,16 +153,16 @@ func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
 }
 
 // GetIncident Gets an incident by ID.
-func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
+func (s *Service) GetIncident(id string) (*Incident, error) {
 	return s.store.GetIncident(id)
 }
 
 // NukeDB Removes all incident related data.
-func (s *ServiceImpl) NukeDB() error {
+func (s *Service) NukeDB() error {
 	return s.store.NukeDB()
 }
 
-func (s *ServiceImpl) newIncidentDialog(commanderID string) (*model.Dialog, error) {
+func (s *Service) newIncidentDialog(commanderID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch commander user")
@@ -143,7 +173,7 @@ func (s *ServiceImpl) newIncidentDialog(commanderID string) (*model.Dialog, erro
 		IntroductionText: fmt.Sprintf("**Commander:** %v", getUserDisplayName(user)),
 		Elements: []model.DialogElement{{
 			DisplayName: "Channel Name",
-			Name:        dialogFieldNameKey,
+			Name:        DialogFieldNameKey,
 			Type:        "text",
 		}},
 		SubmitLabel:    "Start Incident",

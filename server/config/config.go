@@ -128,7 +128,7 @@ func (c *Config) OnConfigurationChange() error {
 }
 
 // GetManifest gets the plugin manifest.
-func (c *ServiceImpl) GetManifest() *model.Manifest {
+func (c *Config) GetManifest() *model.Manifest {
 	return c.manifest
 }
 

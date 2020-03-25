@@ -60,7 +60,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 	)
 
-	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService)
+	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot)
 
 	if err := RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrap(err, "failed register commands")

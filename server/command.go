@@ -55,6 +55,9 @@ type IncidentService interface {
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *incident.Incident) (*incident.Incident, error)
 
+	// CreateIncidentDialog Opens a interactive dialog to start a new incident.
+	CreateIncidentDialog(commanderID string, triggerID string) error
+
 	// EndIncident Completes the incident associated to the given channelID.
 	EndIncident(channelID string) (*incident.Incident, error)
 
