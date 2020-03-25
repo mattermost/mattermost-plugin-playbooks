@@ -23,7 +23,7 @@ type ServiceImpl struct {
 
 var _ Service = &ServiceImpl{}
 
-var regexAllNonSpaceNonWord = regexp.MustCompile(`[^\w\s]`)
+var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 
 const dialogFieldNameKey = "incidentName"
 
@@ -170,9 +170,9 @@ func cleanChannelName(channelName string) string {
 	channelName = strings.TrimSpace(channelName)
 	// Change all dashes to whitespace, remove evrything that's not a word or whitespace, all space becomes dashes
 	channelName = strings.ReplaceAll(channelName, "-", " ")
-	channelName = regexAllNonSpaceNonWord.ReplaceAllString(channelName, "")
+	channelName = allNonSpaceNonWordRegex.ReplaceAllString(channelName, "")
 	channelName = strings.ReplaceAll(channelName, " ", "-")
-	// Remove leading an trailing dashes
+	// Remove all leading and trailing dashes
 	channelName = strings.Trim(channelName, "-")
 
 	return channelName
