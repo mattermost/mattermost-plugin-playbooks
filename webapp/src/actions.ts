@@ -45,8 +45,7 @@ export function getIncidentDetails(id: string) {
                 if (!c) {
                     // Must wait to fetch channel data before fetching its team data
                     /* eslint-disable no-await-in-loop */
-                    await dispatch(fetchChannel(channelId));
-                    c = getChannel(getState(), channelId) as Channel;
+                    c = await dispatch(fetchChannel(channelId)) as Channel;
                 }
                 if (!getTeam(getState(), c.team_id)) {
                     dispatch(fetchTeam(c.team_id));
