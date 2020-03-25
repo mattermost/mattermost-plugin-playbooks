@@ -5,13 +5,14 @@ import React from 'react';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import {Incident} from '../../../types/incident';
+import {Incident} from 'src/types/incident';
 
 import './incident_item.scss';
 
 interface Props {
     incident: Incident;
     commander: UserProfile;
+    onClick?: () => void;
     actions: {
         fetchUser: (id: string) => void;
     };
@@ -32,6 +33,7 @@ export default class IncidentItem extends React.PureComponent<Props> {
                 <div
                     className='list'
                     key={this.props.incident.id}
+                    onClick={this.props.onClick}
                 >
                     <div>
                         {this.props.incident.name}

@@ -18,9 +18,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-	"experimentalDecorators": true,
+    "experimentalDecorators": true,
     "jsx": "react",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "src": ["src"],
+    },
   },
   "include": [
     "./**/*"
@@ -28,5 +31,5 @@
   "exclude": [
     "dist",
     "!node_modules/@types"
-  ]
+  ],
 }

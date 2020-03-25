@@ -8,7 +8,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 
-import {Incident} from '../../../types/incident';
+import {Incident} from 'src/types/incident';
 
 import IncidentItem from './incident_item';
 

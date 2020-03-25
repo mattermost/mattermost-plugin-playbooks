@@ -14,5 +14,10 @@ export const activeIncidents = (state: GlobalState) => {
     return incidents ? incidents.filter((incident: Incident) => incident.is_active) : [];
 };
 
+export const incidentDetails = (state: GlobalState) => {
+    return getPluginState(state).incidentDetails || {};
+};
+
 export const getShowRHSAction = (state: GlobalState) => getPluginState(state).rhsPluginAction;
 
+export const getRHSState = (state: GlobalState) => getPluginState(state).rhsState;
