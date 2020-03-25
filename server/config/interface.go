@@ -1,5 +1,9 @@
 package config
 
+import (
+	"github.com/mattermost/mattermost-server/v5/model"
+)
+
 // Service Config service interface.
 type Service interface {
 	// GetConfiguration retrieves the active configuration under lock, making it safe to use
@@ -17,4 +21,7 @@ type Service interface {
 
 	// UnregisterConfigChangeListener unregisters the listener function identified by id.
 	UnregisterConfigChangeListener(id string)
+
+	// GetManifest gets the plugin manifest.
+	GetManifest() *model.Manifest
 }

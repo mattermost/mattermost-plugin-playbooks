@@ -22,11 +22,16 @@ type ServiceImpl struct {
 
 	// configChangeListeners will be notified when the OnConfigurationChange event has been called.
 	configChangeListeners map[string]func()
+
+	// manifest is the plugin manifest
+	manifest *model.Manifest
 }
 
 // NewService Creates a new service.
 func NewService(api plugin.API) *ServiceImpl {
-	c := &ServiceImpl{}
+	c := &ServiceImpl{
+		manifest: Manifest,
+	}
 	c.api = api
 	c.configuration = new(Configuration)
 	c.configChangeListeners = make(map[string]func())
@@ -119,6 +124,11 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	}
 
 	return nil
+}
+
+// GetManifest gets the plugin manifest.
+func (c *ServiceImpl) GetManifest() *model.Manifest {
+	return c.manifest
 }
 
 // setConfiguration replaces the active configuration under lock.

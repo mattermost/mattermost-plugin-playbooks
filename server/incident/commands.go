@@ -75,33 +75,11 @@ func (r *Runner) postCommandResponse(text string) {
 	r.Poster.Ephemeral(r.Args.UserId, r.Args.ChannelId, "%s", text)
 }
 
-func (r *Runner) actionStart() {
-	incident, err := r.IncidentService.CreateIncident(&Incident{
-		Header: Header{
-			CommanderUserID: r.Args.UserId,
-			TeamID:          r.Args.TeamId,
-		},
-	})
-	if err != nil {
+func (r *Runner) actionDialogStart() {
+	if err := r.IncidentService.CreateIncidentDialog(r.Args.UserId, r.Args.TriggerId); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
-
-	team, err := r.PluginAPI.Team.Get(incident.TeamID)
-	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error: %v", errors.Wrapf(err, "failed to get team %s", incident.TeamID)))
-		return
-	}
-
-	channel, err := r.PluginAPI.Channel.Get(incident.ChannelIDs[0])
-	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error: %v", errors.Wrapf(err, "failed to get channel %s", incident.TeamID)))
-		return
-	}
-
-	url := r.PluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	msg := fmt.Sprintf("Incident started -> [~%s](%s)", incident.Name, fmt.Sprintf("%s/%s/channels/%s", *url, team.Name, channel.Name))
-	r.postCommandResponse(msg)
 }
 
 func (r *Runner) actionEnd() {
@@ -161,7 +139,7 @@ func (r *Runner) Execute() error {
 
 	switch cmd {
 	case "start":
-		r.actionStart()
+		r.actionDialogStart()
 	case "end":
 		r.actionEnd()
 	case "stop":
