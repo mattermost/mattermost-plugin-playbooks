@@ -4,8 +4,6 @@ import (
 	"net/http"
 
 	pluginApi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
-
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
@@ -20,7 +18,7 @@ type Plugin struct {
 	plugin.MattermostPlugin
 
 	handler         *api.Handler
-	config          *config.Config
+	config          config.Service
 	incidentService *incident.Service
 	bot             *bot.Bot
 }
@@ -33,7 +31,9 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginApi.NewClient(p.API)
-	p.config = config.NewConfig(pluginAPIClient)
+	p.config = config.NewConfigService(pluginAPIClient)
+	//test := config.NewConfigService(pluginAPIClient)
+	//test.GetConfiguration()
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
@@ -55,7 +55,7 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		pluginkvstore.NewStore(pluginAPIClient),
+		incident.NewStore(pluginAPIClient),
 		p.bot,
 		p.config,
 	)

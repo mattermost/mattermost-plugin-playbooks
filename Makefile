@@ -94,9 +94,10 @@ golangci-lint: ## Run golangci-lint on codebase
 mocks:
 ifneq ($(HAS_SERVER),)
 	go install github.com/golang/mock/mockgen
-	mockgen -destination server/bot/mock_bot/logger.go github.com/mattermost/mattermost-plugin-incident-response/server/bot Logger
-	mockgen -destination server/bot/mock_bot/poster.go github.com/mattermost/mattermost-plugin-incident-response/server/bot Poster
-	mockgen -destination server/incident/mock_incident/store.go github.com/mattermost/mattermost-plugin-incident-response/server/incident Store
+	mockgen -destination server/config/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-response/server/config Service
+	mockgen -destination server/bot/mocks/mock_logger.go github.com/mattermost/mattermost-plugin-incident-response/server/bot Logger
+	mockgen -destination server/bot/mocks/mock_poster.go github.com/mattermost/mattermost-plugin-incident-response/server/bot Poster
+	mockgen -destination server/incident/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-response/server/incident Store
 endif
 
 ## Builds the server, if it exists, including support for multiple architectures.

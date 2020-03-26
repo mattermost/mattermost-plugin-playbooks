@@ -15,40 +15,9 @@ import (
 // Service holds the information needed by the IncidentService's methods to complete their functions.
 type Service struct {
 	pluginAPI     *pluginApi.Client
-	configService Config
+	configService config.Service
 	store         Store
 	poster        bot.Poster
-}
-
-// Config defines the methods we need from the Config.
-type Config interface {
-	// GetConfiguration retrieves the active configuration under lock, making it safe to use
-	// concurrently.
-	GetConfiguration() *config.Configuration
-
-	// GetManifest gets the plugin manifest.
-	GetManifest() *model.Manifest
-}
-
-// Store defines the methods we need from the Store.
-type Store interface {
-	// GetAllHeaders Gets all the header information.
-	GetAllHeaders() ([]Header, error)
-
-	// CreateIncident Creates a new incident.
-	CreateIncident(incident *Incident) (*Incident, error)
-
-	// UpdateIncident updates an incident.
-	UpdateIncident(incident *Incident) error
-
-	// GetIncident Gets an incident by ID.
-	GetIncident(id string) (*Incident, error)
-
-	// GetIncidentByChannel Gets an incident associated with the given channel id.
-	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
-
-	// NukeDB Removes all incident related data.
-	NukeDB() error
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -56,9 +25,9 @@ var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 // DialogFieldNameKey is the key for the incident name field used in CreateIncidentDialog
 const DialogFieldNameKey = "incidentName"
 
-// NewService Creates a new incident service.
+// NewService Creates a new incident Service.
 func NewService(pluginAPI *pluginApi.Client, store Store, poster bot.Poster,
-	configService Config) *Service {
+	configService config.Service) *Service {
 	return &Service{
 		pluginAPI:     pluginAPI,
 		store:         store,
