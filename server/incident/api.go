@@ -64,6 +64,7 @@ func (h *Handler) createIncidentFromDialog(w http.ResponseWriter, r *http.Reques
 			TeamID:          request.TeamId,
 			Name:            request.Submission[dialogFieldNameKey].(string),
 		},
+		PostID: request.State,
 	})
 
 	if err != nil {

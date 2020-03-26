@@ -18,6 +18,7 @@ type Header struct {
 type Incident struct {
 	Header
 	ChannelIDs []string `json:"channel_ids"`
+	PostID     string   `json:"post_id"`
 }
 
 // Service Incident service interface.
@@ -29,7 +30,7 @@ type Service interface {
 	CreateIncident(incident *Incident) (*Incident, error)
 
 	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
-	CreateIncidentDialog(commanderID string, triggerID string) error
+	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
 
 	// EndIncident Completes the incident associated to the given channelId.
 	EndIncident(channelID string) (*Incident, error)

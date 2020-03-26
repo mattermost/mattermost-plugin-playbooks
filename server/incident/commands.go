@@ -75,8 +75,13 @@ func (r *Runner) postCommandResponse(text string) {
 	r.Poster.Ephemeral(r.Args.UserId, r.Args.ChannelId, "%s", text)
 }
 
-func (r *Runner) actionDialogStart() {
-	if err := r.IncidentService.CreateIncidentDialog(r.Args.UserId, r.Args.TriggerId); err != nil {
+func (r *Runner) actionDialogStart(args []string) {
+	postID := ""
+	if len(args) > 0 {
+		postID = args[0]
+	}
+
+	if err := r.IncidentService.CreateIncidentDialog(r.Args.UserId, r.Args.TriggerId, postID); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
@@ -139,7 +144,7 @@ func (r *Runner) Execute() error {
 
 	switch cmd {
 	case "start":
-		r.actionDialogStart()
+		r.actionDialogStart(parameters)
 	case "end":
 		r.actionEnd()
 	case "stop":
