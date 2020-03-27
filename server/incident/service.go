@@ -50,12 +50,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 		return nil, errors.Wrap(err, "failed to create incident")
 	}
 
-	team, err := s.pluginAPI.Team.Get(incident.TeamID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create incident")
-	}
-
-	channel, err := s.createIncidentChannel(incident, team)
+	channel, err := s.createIncidentChannel(incident)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create incident")
 	}
@@ -81,8 +76,8 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get incident original post")
 	}
-	postURL := fmt.Sprintf("%s/%s/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, team.Name, incident.PostID)
 
+	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incident.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	if err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
@@ -141,11 +136,12 @@ func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
 }
 
-func (s *ServiceImpl) createIncidentChannel(incident *Incident, team *model.Team) (*model.Channel, error) {
-	postURL := fmt.Sprintf("%s/%s/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, team.Name, incident.PostID)
-
+func (s *ServiceImpl) createIncidentChannel(incident *Incident) (*model.Channel, error) {
 	channelHeader := "The channel was created by the Incident Response plugin."
+
 	if incident.PostID != "" {
+		postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incident.PostID)
+
 		channelHeader = fmt.Sprintf("[Original Post](%s) | %s", postURL, channelHeader)
 	}
 
