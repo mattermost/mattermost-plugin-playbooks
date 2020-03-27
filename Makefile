@@ -275,12 +275,7 @@ endif
 		kill -9 $$DELVE_PID ; \
 	fi
 
-	@echo "\nRestarting plugin via API"
-	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep -o "Token: [0-9a-z]*" | cut -f2 -d' ' 2> /dev/null))
-	@curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/disable > /dev/null && \
-		curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null && \
-		echo "OK." || echo "Sorry, something went wrong. Check that MM_ADMIN_USERNAME and MM_ADMIN_PASSWORD env variables are set correctly."
-
+	./build/bin/reset $(PLUGIN_ID)
 
 .PHONY: debug-plugin
 debug-plugin:
