@@ -22,7 +22,7 @@ Usage:
 func main() {
 	err := pluginctl()
 	if err != nil {
-		fmt.Printf("Failed to deploy: %s\n", err.Error())
+		fmt.Printf("Failed: %s\n", err.Error())
 		fmt.Print(helpText)
 		os.Exit(1)
 	}
