@@ -20,7 +20,7 @@ type Header struct {
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// ServiceImpl Incident service interface.
+// Service is the incident/service interface.
 type Service interface {
 	// GetAllHeaders returns the headers for all incidents.
 	GetAllHeaders() ([]Header, error)
