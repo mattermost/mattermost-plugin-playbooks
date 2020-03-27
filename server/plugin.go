@@ -33,8 +33,6 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
 	p.config = config.NewConfigService(pluginAPIClient)
-	//test := config.NewConfigService(pluginAPIClient)
-	//test.GetConfiguration()
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
