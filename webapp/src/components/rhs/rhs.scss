@@ -1,6 +1,8 @@
 $font-family: Open Sans;
 
 .RightHandSidebar {
+    font-family: $font-family;
+
     .section-header {
         padding: 15px;
         text-align: center;
@@ -12,11 +14,25 @@ $font-family: Open Sans;
             color: var(--center-channel-color-90);
         }
     }
+    .no-incidents {
+        font-size: 14px;
+        text-align: center;
+        color: #3D3C40;
+        margin: 25px;
+
+        .inner-text {
+            padding: 8px 0px;
+        }
+
+        .link{
+            color: #145DBF;
+            font-weight: 600;
+        }
+    }
     .active-list {
         padding: 15px;
         border-top: 1px solid var(--center-channel-color-20);
     }
-
     .navigation-bar {
         display: flex;
         flex-direction: row;
@@ -30,7 +46,6 @@ $font-family: Open Sans;
         }
 
         .title {
-            font-family: $font-family;
             font-style: normal;
             font-weight: normal;
             font-size: 16px;
@@ -56,7 +71,6 @@ $font-family: Open Sans;
 
         .name {
             padding: 0 0 0 8px;
-            font-family: $font-family;
             font-style: normal;
             font-weight: 600;
             font-size: 14px;
