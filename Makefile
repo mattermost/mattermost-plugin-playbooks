@@ -159,7 +159,7 @@ dist:	apply server webapp bundle
 ## and otherwise falls back to trying to copy the plugin to a sibling mattermost-server directory.
 .PHONY: deploy
 deploy: dist
-	./build/bin/deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
+	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
@@ -261,21 +261,17 @@ ifneq ($(HAS_WEBAPP),)
 endif
 
 # Reset the plugin
-.PHONY: reset
-reset:
-ifeq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(CURL)),)
-	$(error In order to use make reset, the following environment variables need to be defined: MM_SERVICESETTINGS_SITEURL, MM_ADMIN_USERNAME, MM_ADMIN_PASSWORD, and you need to have curl installed.)
-endif
-
 # If we were debugging, we have to unattach the delve process or else we can't disable the plugin.
 # NOTE: we are assuming the dlv was listening on port 2346, as in the debug-plugin.sh script.
+.PHONY: reset
+reset:
 	@DELVE_PID=$(shell ps aux | grep "dlv attach.*2346" | grep -v "grep" | awk -F " " '{print $$2}') && \
 	if [ "$$DELVE_PID" -gt 0 ] > /dev/null 2>&1 ; then \
 		echo "Located existing delve process running with PID: $$DELVE_PID. Killing." ; \
 		kill -9 $$DELVE_PID ; \
 	fi
 
-	./build/bin/reset $(PLUGIN_ID)
+	./build/bin/pluginctl reset $(PLUGIN_ID)
 
 .PHONY: debug-plugin
 debug-plugin:
