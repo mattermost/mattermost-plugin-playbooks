@@ -9,6 +9,7 @@ $(shell cd build/manifest && $(GO) build -o ../bin/manifest)
 
 # Ensure that the deployment tools are compiled. Go's caching makes this quick.
 $(shell cd build/deploy && $(GO) build -o ../bin/deploy)
+$(shell cd build/reset && $(GO) build -o ../bin/reset)
 
 # Extract the plugin id from the manifest.
 PLUGIN_ID ?= $(shell build/bin/manifest id)
