@@ -6,6 +6,7 @@ import "github.com/pkg/errors"
 type Incident struct {
 	Header
 	ChannelIDs []string `json:"channel_ids"`
+	PostID     string   `json:"post_id"`
 }
 
 // Header holds the summary information of an incident.
@@ -29,7 +30,7 @@ type Service interface {
 	CreateIncident(incident *Incident) (*Incident, error)
 
 	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
-	CreateIncidentDialog(commanderID string, triggerID string) error
+	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
 
 	// EndIncident Completes the incident associated to the given channelID.
 	EndIncident(channelID string) (*Incident, error)

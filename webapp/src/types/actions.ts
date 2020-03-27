@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {RECEIVED_DIALOG_TRIGGER_ID} from 'mattermost-redux/action_types/integrations';
+
 import pluginId from '../manifest';
 
 import {Incident, RHSState} from './incident';
@@ -34,4 +36,9 @@ export interface ReceivedIncidentDetails {
 export interface ReceivedError {
     type: typeof RECEIVED_ERROR;
     error: string;
+}
+
+export interface SetTriggerId {
+    type: typeof RECEIVED_DIALOG_TRIGGER_ID;
+    data: string;
 }
