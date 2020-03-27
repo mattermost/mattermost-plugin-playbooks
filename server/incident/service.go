@@ -6,38 +6,37 @@ import (
 	"strings"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
-// ServiceImpl implements Incident service interface.
+// ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
 type ServiceImpl struct {
-	pluginAPI *pluginapi.Client
-	store     Store
-	config    config.Service
-	poster    bot.Poster
+	pluginAPI     *pluginapi.Client
+	configService config.Service
+	store         Store
+	poster        bot.Poster
 }
-
-var _ Service = &ServiceImpl{}
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 
-const dialogFieldNameKey = "incidentName"
+// DialogFieldNameKey is the key for the incident name field used in CreateIncidentDialog
+const DialogFieldNameKey = "incidentName"
 
-// NewService Creates a new incident service.
-func NewService(pluginAPI *pluginapi.Client, poster bot.Poster, configService config.Service) *ServiceImpl {
+// NewService Creates a new incident ServiceImpl.
+func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
+	configService config.Service) *ServiceImpl {
 	return &ServiceImpl{
-		pluginAPI: pluginAPI,
-		poster:    poster,
-		store:     NewStore(pluginAPI),
-		config:    configService,
+		pluginAPI:     pluginAPI,
+		store:         store,
+		poster:        poster,
+		configService: configService,
 	}
 }
 
-// GetAllHeaders Creates a new incident.
+// GetAllHeaders returns the headers for all incidents.
 func (s *ServiceImpl) GetAllHeaders() ([]Header, error) {
 	return s.store.GetAllHeaders()
 }
@@ -66,7 +65,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 		return nil, errors.Wrap(err, "failed to create channel")
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.CommanderUserID, s.config.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrap(err, "failed to add user to channel")
 	}
 
@@ -93,7 +92,7 @@ func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string)
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("%s/plugins/%s/api/v1/incidents/dialog",
 			*s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL,
-			s.config.GetManifest().Id),
+			s.configService.GetManifest().Id),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -143,7 +142,7 @@ func (s *ServiceImpl) newIncidentDialog(commanderID string) (*model.Dialog, erro
 		IntroductionText: fmt.Sprintf("**Commander:** %v", getUserDisplayName(user)),
 		Elements: []model.DialogElement{{
 			DisplayName: "Channel Name",
-			Name:        dialogFieldNameKey,
+			Name:        DialogFieldNameKey,
 			Type:        "text",
 		}},
 		SubmitLabel:    "Start Incident",

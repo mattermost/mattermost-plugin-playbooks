@@ -1,15 +1,16 @@
-package incident
+package command
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -41,63 +42,61 @@ func getCommand() *model.Command {
 
 // Runner handles commands.
 type Runner struct {
-	Context         *plugin.Context
-	Args            *model.CommandArgs
-	PluginAPI       *pluginapi.Client
-	Helpers         plugin.Helpers
-	Logger          bot.Logger
-	Poster          bot.Poster
-	IncidentService Service
+	context         *plugin.Context
+	args            *model.CommandArgs
+	pluginAPI       *pluginapi.Client
+	logger          bot.Logger
+	poster          bot.Poster
+	incidentService incident.Service
 }
 
 // NewCommandRunner creates a command runner.
-func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client, helpers plugin.Helpers,
-	theBot bot.Service, incidentService Service) *Runner {
+func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
+	logger bot.Logger, poster bot.Poster, incidentService incident.Service) *Runner {
 	return &Runner{
-		Context:         ctx,
-		Args:            args,
-		PluginAPI:       api,
-		Helpers:         helpers,
-		Logger:          theBot,
-		Poster:          theBot,
-		IncidentService: incidentService,
+		context:         ctx,
+		args:            args,
+		pluginAPI:       api,
+		logger:          logger,
+		poster:          poster,
+		incidentService: incidentService,
 	}
 }
 
 func (r *Runner) isValid() error {
-	if r.Context == nil || r.Args == nil || r.PluginAPI == nil {
+	if r.context == nil || r.args == nil || r.pluginAPI == nil {
 		return errors.New("invalid arguments to command.Runner")
 	}
 	return nil
 }
 
 func (r *Runner) postCommandResponse(text string) {
-	r.Poster.Ephemeral(r.Args.UserId, r.Args.ChannelId, "%s", text)
+	r.poster.Ephemeral(r.args.UserId, r.args.ChannelId, "%s", text)
 }
 
 func (r *Runner) actionDialogStart() {
-	if err := r.IncidentService.CreateIncidentDialog(r.Args.UserId, r.Args.TriggerId); err != nil {
+	if err := r.incidentService.CreateIncidentDialog(r.args.UserId, r.args.TriggerId); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
 }
 
 func (r *Runner) actionEnd() {
-	incident, err := r.IncidentService.EndIncident(r.Args.ChannelId)
+	incident, err := r.incidentService.EndIncident(r.args.ChannelId)
 
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
 
-	user, err := r.PluginAPI.User.Get(r.Args.UserId)
+	user, err := r.pluginAPI.User.Get(r.args.UserId)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
 
 	// Post that @user has ended the incident.
-	if err := r.Poster.PostMessage(r.Args.ChannelId, "%v has been closed by @%v", incident.Name, user.Username); err != nil {
+	if err := r.poster.PostMessage(r.args.ChannelId, "%v has been closed by @%v", incident.Name, user.Username); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Failed to post message to incident channel: %v", err))
 		return
 	}
@@ -110,7 +109,7 @@ func (r *Runner) actionNukeDB(args []string) {
 		return
 	}
 
-	if err := r.IncidentService.NukeDB(); err != nil {
+	if err := r.incidentService.NukeDB(); err != nil {
 		r.postCommandResponse("There was an error while nuking db. Please contact your system administrator.")
 	}
 	r.postCommandResponse("DB has been reset.")
@@ -122,7 +121,7 @@ func (r *Runner) Execute() error {
 		return err
 	}
 
-	split := strings.Fields(r.Args.Command)
+	split := strings.Fields(r.args.Command)
 	command := split[0]
 	parameters := []string{}
 	cmd := ""

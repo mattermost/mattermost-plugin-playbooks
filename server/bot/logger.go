@@ -48,7 +48,7 @@ func toKeyValuePairs(in map[string]interface{}) (out []interface{}) {
 }
 
 // With .
-func (b *ServiceImpl) With(logContext LogContext) Logger {
+func (b *Bot) With(logContext LogContext) Logger {
 	newBot := b.clone()
 	if len(newBot.logContext) == 0 {
 		newBot.logContext = map[string]interface{}{}
@@ -60,53 +60,53 @@ func (b *ServiceImpl) With(logContext LogContext) Logger {
 }
 
 // Timed .
-func (b *ServiceImpl) Timed() Logger {
+func (b *Bot) Timed() Logger {
 	return b.With(LogContext{
 		timed: time.Now(),
 	})
 }
 
 // Debugf .
-func (b *ServiceImpl) Debugf(format string, args ...interface{}) {
+func (b *Bot) Debugf(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
-	b.pluginAPI.LogDebug(message, toKeyValuePairs(b.logContext)...)
+	b.pluginAPI.Log.Debug(message, toKeyValuePairs(b.logContext)...)
 	if level(b.configService.GetConfiguration().AdminLogLevel) >= 4 {
 		b.logToAdmins("DEBUG", message)
 	}
 }
 
 // Errorf .
-func (b *ServiceImpl) Errorf(format string, args ...interface{}) {
+func (b *Bot) Errorf(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
-	b.pluginAPI.LogError(message, toKeyValuePairs(b.logContext)...)
+	b.pluginAPI.Log.Error(message, toKeyValuePairs(b.logContext)...)
 	if level(b.configService.GetConfiguration().AdminLogLevel) >= 1 {
 		b.logToAdmins("ERROR", message)
 	}
 }
 
 // Infof .
-func (b *ServiceImpl) Infof(format string, args ...interface{}) {
+func (b *Bot) Infof(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
-	b.pluginAPI.LogInfo(message, toKeyValuePairs(b.logContext)...)
+	b.pluginAPI.Log.Info(message, toKeyValuePairs(b.logContext)...)
 	if level(b.configService.GetConfiguration().AdminLogLevel) >= 3 {
 		b.logToAdmins("INFO", message)
 	}
 }
 
 // Warnf .
-func (b *ServiceImpl) Warnf(format string, args ...interface{}) {
+func (b *Bot) Warnf(format string, args ...interface{}) {
 	measure(b.logContext)
 	message := fmt.Sprintf(format, args...)
-	b.pluginAPI.LogWarn(message, toKeyValuePairs(b.logContext)...)
+	b.pluginAPI.Log.Warn(message, toKeyValuePairs(b.logContext)...)
 	if level(b.configService.GetConfiguration().AdminLogLevel) >= 2 {
 		b.logToAdmins("WARN", message)
 	}
 }
 
-func (b *ServiceImpl) logToAdmins(level, message string) {
+func (b *Bot) logToAdmins(level, message string) {
 	if b.configService.GetConfiguration().AdminLogVerbose && len(b.logContext) > 0 {
 		message += "\n" + JSONBlock(b.logContext)
 	}

@@ -2,7 +2,6 @@ package incident
 
 import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -14,23 +13,24 @@ const (
 
 type idHeaderMap map[string]Header
 
-var _ Store = &StoreImpl{}
+// incidentStore Implements incident store interface.
+var _ Store = (*incidentStore)(nil)
 
-// StoreImpl Implements incident store interface.
-type StoreImpl struct {
+// incidentStore holds the information needed to fulfill the methods in the store interface.
+type incidentStore struct {
 	pluginAPI *pluginapi.Client
 }
 
-// NewStore creates a new store for incident service.
-func NewStore(pluginAPI *pluginapi.Client) *StoreImpl {
-	newStore := &StoreImpl{
+// NewStore creates a new store for incident ServiceImpl.
+func NewStore(pluginAPI *pluginapi.Client) Store {
+	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
 	}
 	return newStore
 }
 
-// GetAllHeaders Creates a new incident.
-func (s *StoreImpl) GetAllHeaders() ([]Header, error) {
+// GetAllHeaders Gets all the header information.
+func (s *incidentStore) GetAllHeaders() ([]Header, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
@@ -40,7 +40,7 @@ func (s *StoreImpl) GetAllHeaders() ([]Header, error) {
 }
 
 // CreateIncident Creates a new incident.
-func (s *StoreImpl) CreateIncident(incident *Incident) (*Incident, error) {
+func (s *incidentStore) CreateIncident(incident *Incident) (*Incident, error) {
 	if incident == nil {
 		return nil, errors.New("incident is nil")
 	}
@@ -65,7 +65,7 @@ func (s *StoreImpl) CreateIncident(incident *Incident) (*Incident, error) {
 }
 
 // UpdateIncident updates an incident.
-func (s *StoreImpl) UpdateIncident(incident *Incident) error {
+func (s *incidentStore) UpdateIncident(incident *Incident) error {
 	if incident == nil {
 		return errors.New("incident is nil")
 	}
@@ -98,7 +98,7 @@ func (s *StoreImpl) UpdateIncident(incident *Incident) error {
 }
 
 // GetIncident Gets an incident by ID.
-func (s *StoreImpl) GetIncident(id string) (*Incident, error) {
+func (s *incidentStore) GetIncident(id string) (*Incident, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
@@ -112,7 +112,7 @@ func (s *StoreImpl) GetIncident(id string) (*Incident, error) {
 }
 
 // GetIncidentByChannel Gets an incident associated to the given channel id.
-func (s *StoreImpl) GetIncidentByChannel(channelID string, active bool) (*Incident, error) {
+func (s *incidentStore) GetIncidentByChannel(channelID string, active bool) (*Incident, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
@@ -140,7 +140,7 @@ func (s *StoreImpl) GetIncidentByChannel(channelID string, active bool) (*Incide
 }
 
 // NukeDB Removes all incident related data.
-func (s *StoreImpl) NukeDB() error {
+func (s *incidentStore) NukeDB() error {
 	return s.pluginAPI.KV.DeleteAll()
 }
 
@@ -158,7 +158,7 @@ func toHeader(headers idHeaderMap) []Header {
 	return result
 }
 
-func (s *StoreImpl) getIncident(incidentID string) (*Incident, error) {
+func (s *incidentStore) getIncident(incidentID string) (*Incident, error) {
 	var incident Incident
 	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &incident); err != nil {
 		return nil, errors.Wrap(err, "failed to get incident")
@@ -166,7 +166,7 @@ func (s *StoreImpl) getIncident(incidentID string) (*Incident, error) {
 	return &incident, nil
 }
 
-func (s *StoreImpl) getIDHeaders() (idHeaderMap, error) {
+func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	headers := idHeaderMap{}
 	if err := s.pluginAPI.KV.Get(allHeadersKey, &headers); err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
@@ -174,7 +174,7 @@ func (s *StoreImpl) getIDHeaders() (idHeaderMap, error) {
 	return headers, nil
 }
 
-func (s *StoreImpl) updateHeader(incident *Incident) error {
+func (s *incidentStore) updateHeader(incident *Incident) error {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return errors.Wrap(err, "failed to get all headers")

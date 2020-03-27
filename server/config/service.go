@@ -4,14 +4,14 @@ import (
 	"reflect"
 	"sync"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 )
 
-// ServiceImpl Implements Service interface.
+// ServiceImpl holds access to the plugin's Configuration.
 type ServiceImpl struct {
-	api plugin.API
+	api *pluginapi.Client
 
 	// configurationLock synchronizes access to the configuration.
 	configurationLock sync.RWMutex
@@ -27,8 +27,8 @@ type ServiceImpl struct {
 	manifest *model.Manifest
 }
 
-// NewService Creates a new service.
-func NewService(api plugin.API) *ServiceImpl {
+// NewConfigService Creates a new ServiceImpl struct.
+func NewConfigService(api *pluginapi.Client) *ServiceImpl {
 	c := &ServiceImpl{
 		manifest: Manifest,
 	}
@@ -37,7 +37,7 @@ func NewService(api plugin.API) *ServiceImpl {
 	c.configChangeListeners = make(map[string]func())
 
 	// api.LoadPluginConfiguration never returns an error, so ignore it.
-	_ = api.LoadPluginConfiguration(c.configuration)
+	_ = api.Configuration.LoadPluginConfiguration(c.configuration)
 
 	return c
 }
@@ -56,7 +56,8 @@ func (c *ServiceImpl) GetConfiguration() *Configuration {
 	return c.configuration
 }
 
-// UpdateConfiguration updates the config and saves it on the server
+// UpdateConfiguration updates the config. Any parts of the config that are persisted in the plugin's
+// section in the server's config will be saved to the server.
 func (c *ServiceImpl) UpdateConfiguration(f func(*Configuration)) error {
 	c.configurationLock.Lock()
 
@@ -71,7 +72,7 @@ func (c *ServiceImpl) UpdateConfiguration(f func(*Configuration)) error {
 	c.configurationLock.Unlock()
 
 	if !reflect.DeepEqual(oldStorableConfig, newStorableConfig) {
-		if appErr := c.api.SavePluginConfig(newStorableConfig); appErr != nil {
+		if appErr := c.api.Configuration.SavePluginConfig(newStorableConfig); appErr != nil {
 			return errors.New(appErr.Error())
 		}
 	}
@@ -111,7 +112,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 	var configuration = new(Configuration)
 
 	// Load the public configuration fields from the Mattermost server configuration.
-	if err := c.api.LoadPluginConfiguration(configuration); err != nil {
+	if err := c.api.Configuration.LoadPluginConfiguration(configuration); err != nil {
 		return errors.Wrap(err, "failed to load plugin configuration")
 	}
 
