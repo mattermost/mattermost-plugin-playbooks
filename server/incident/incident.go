@@ -20,7 +20,28 @@ type Header struct {
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// Store defines the methods the Service needs from the interfaceStore.
+// ServiceImpl Incident service interface.
+type Service interface {
+	// GetAllHeaders returns the headers for all incidents.
+	GetAllHeaders() ([]Header, error)
+
+	// CreateIncident Creates a new incident.
+	CreateIncident(incident *Incident) (*Incident, error)
+
+	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
+	CreateIncidentDialog(commanderID string, triggerID string) error
+
+	// EndIncident Completes the incident associated to the given channelID.
+	EndIncident(channelID string) (*Incident, error)
+
+	// GetIncident Gets an incident by ID.
+	GetIncident(id string) (*Incident, error)
+
+	// NukeDB Removes all incident related data.
+	NukeDB() error
+}
+
+// Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetAllHeaders Gets all the header information.
 	GetAllHeaders() ([]Header, error)

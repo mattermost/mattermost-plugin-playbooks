@@ -1,7 +1,7 @@
 package incident
 
 import (
-	pluginApi "github.com/mattermost/mattermost-plugin-api"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -18,11 +18,11 @@ var _ Store = (*incidentStore)(nil)
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
-	pluginAPI *pluginApi.Client
+	pluginAPI *pluginapi.Client
 }
 
-// NewStore creates a new store for incident Service.
-func NewStore(pluginAPI *pluginApi.Client) Store {
+// NewStore creates a new store for incident ServiceImpl.
+func NewStore(pluginAPI *pluginapi.Client) Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
 	}

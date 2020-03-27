@@ -10,16 +10,6 @@ import (
 const timed = "__since"
 const elapsed = "Elapsed"
 
-// Logger interface - a logging system that will tee logs to a DM channel.
-type Logger interface {
-	With(LogContext) Logger
-	Timed() Logger
-	Debugf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Warnf(format string, args ...interface{})
-}
-
 // LogContext .
 type LogContext map[string]interface{}
 

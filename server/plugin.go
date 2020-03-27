@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	pluginApi "github.com/mattermost/mattermost-plugin-api"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
@@ -13,13 +13,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Plugin implements the interface expected by the Mattermost server to communicate between the server and plugin processes.
+// Plugin implements the interface expected by the Mattermost server to communicate between the
+// server and plugin processes.
 type Plugin struct {
 	plugin.MattermostPlugin
 
 	handler         *api.Handler
-	config          config.Service
-	incidentService *incident.Service
+	config          *config.ServiceImpl
+	incidentService *incident.ServiceImpl
 	bot             *bot.Bot
 }
 
@@ -30,7 +31,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
-	pluginAPIClient := pluginApi.NewClient(p.API)
+	pluginAPIClient := pluginapi.NewClient(p.API)
 	p.config = config.NewConfigService(pluginAPIClient)
 	//test := config.NewConfigService(pluginAPIClient)
 	//test.GetConfiguration()
@@ -72,7 +73,7 @@ func (p *Plugin) OnActivate() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := NewCommandRunner(c, args, pluginApi.NewClient(p.API), p.bot, p.bot, p.incidentService)
+	runner := NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("workflowplugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)

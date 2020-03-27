@@ -17,13 +17,13 @@ import (
 
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
-	incidentService *incident.Service
+	incidentService incident.Service
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService *incident.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		pluginAPI:       api,

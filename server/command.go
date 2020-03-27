@@ -8,7 +8,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
-	pluginApi "github.com/mattermost/mattermost-plugin-api"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -44,15 +44,15 @@ func getCommand() *model.Command {
 type Runner struct {
 	context         *plugin.Context
 	args            *model.CommandArgs
-	pluginAPI       *pluginApi.Client
+	pluginAPI       *pluginapi.Client
 	logger          bot.Logger
 	poster          bot.Poster
-	incidentService *incident.Service
+	incidentService incident.Service
 }
 
 // NewCommandRunner creates a command runner.
-func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginApi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService *incident.Service) *Runner {
+func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
+	logger bot.Logger, poster bot.Poster, incidentService incident.Service) *Runner {
 	return &Runner{
 		context:         ctx,
 		args:            args,

@@ -5,16 +5,16 @@ import (
 	"regexp"
 	"strings"
 
-	pluginApi "github.com/mattermost/mattermost-plugin-api"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
-// Service holds the information needed by the IncidentService's methods to complete their functions.
-type Service struct {
-	pluginAPI     *pluginApi.Client
+// ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
+type ServiceImpl struct {
+	pluginAPI     *pluginapi.Client
 	configService config.Service
 	store         Store
 	poster        bot.Poster
@@ -25,10 +25,10 @@ var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 // DialogFieldNameKey is the key for the incident name field used in CreateIncidentDialog
 const DialogFieldNameKey = "incidentName"
 
-// NewService Creates a new incident Service.
-func NewService(pluginAPI *pluginApi.Client, store Store, poster bot.Poster,
-	configService config.Service) *Service {
-	return &Service{
+// NewService Creates a new incident ServiceImpl.
+func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
+	configService config.Service) *ServiceImpl {
+	return &ServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
 		poster:        poster,
@@ -37,12 +37,12 @@ func NewService(pluginAPI *pluginApi.Client, store Store, poster bot.Poster,
 }
 
 // GetAllHeaders returns the headers for all incidents.
-func (s *Service) GetAllHeaders() ([]Header, error) {
+func (s *ServiceImpl) GetAllHeaders() ([]Header, error) {
 	return s.store.GetAllHeaders()
 }
 
 // CreateIncident Creates a new incident.
-func (s *Service) CreateIncident(incident *Incident) (*Incident, error) {
+func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	// Create incident
 	incident, err := s.store.CreateIncident(incident)
 	if err != nil {
@@ -83,7 +83,7 @@ func (s *Service) CreateIncident(incident *Incident) (*Incident, error) {
 }
 
 // CreateIncidentDialog Opens a interactive dialog to start a new incident.
-func (s *Service) CreateIncidentDialog(commanderID string, triggerID string) error {
+func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string) error {
 	dialog, err := s.newIncidentDialog(commanderID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new incident dialog")
@@ -105,7 +105,7 @@ func (s *Service) CreateIncidentDialog(commanderID string, triggerID string) err
 }
 
 // EndIncident Completes the incident associated to the given channelID.
-func (s *Service) EndIncident(channelID string) (*Incident, error) {
+func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
 	incident, err := s.store.GetIncidentByChannel(channelID, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to end incident")
@@ -122,16 +122,16 @@ func (s *Service) EndIncident(channelID string) (*Incident, error) {
 }
 
 // GetIncident Gets an incident by ID.
-func (s *Service) GetIncident(id string) (*Incident, error) {
+func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
 	return s.store.GetIncident(id)
 }
 
 // NukeDB Removes all incident related data.
-func (s *Service) NukeDB() error {
+func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
 }
 
-func (s *Service) newIncidentDialog(commanderID string) (*model.Dialog, error) {
+func (s *ServiceImpl) newIncidentDialog(commanderID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch commander user")
