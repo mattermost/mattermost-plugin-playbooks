@@ -17,13 +17,13 @@ export default class StartIncidentPostMenu extends React.PureComponent<Props> {
         this.props.actions.startIncident(this.props.postId);
     };
 
-    public render(): JSX.Element | null {
+    public render(): JSX.Element {
         return (
             <React.Fragment>
                 <li
                     className='MenuItem'
                     role='menuitem'
-                    onClick={() => this.handleClick()}
+                    onClick={this.handleClick}
                 >
                     <button
                         className='style--none'
