@@ -8,6 +8,7 @@ import manifest from './manifest';
 
 import IncidentIcon from './components/incident_icon';
 import RightHandSidebar from './components/rhs';
+import StartIncidentPostMenu from './components/post_menu';
 
 import {setShowRHSAction} from './actions';
 import reducer from './reducer';
@@ -23,6 +24,7 @@ export default class Plugin {
         store.dispatch(setShowRHSAction(bindedShowRHSAction));
 
         registry.registerChannelHeaderButtonAction(IncidentIcon, bindedShowRHSAction, 'Incidents', 'Open');
+        registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
     }
 }
 

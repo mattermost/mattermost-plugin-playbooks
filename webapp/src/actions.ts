@@ -2,14 +2,17 @@
 // See LICENSE.txt for license information.
 import {Dispatch, AnyAction} from 'redux';
 
+import {Client4} from 'mattermost-redux/client';
+
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {Channel} from 'mattermost-redux/types/channels';
+import {IntegrationTypes} from 'mattermost-redux/action_types';
 
 import {GetStateFunc} from 'types/actions';
 
@@ -24,7 +27,9 @@ import {
     ReceivedIncidentDetails,
     ReceivedError,
     ReceivedRHSState,
+    SetTriggerId,
 } from './types/actions';
+
 import {Incident, RHSState} from './types/incident';
 import {fetchIncidents, fetchIncidentDetails} from './client';
 
@@ -65,12 +70,24 @@ export function getIncidents() {
             const incidents = await fetchIncidents();
 
             dispatch(receivedIncidents(incidents));
-
-            // TODO: Fix this unnecessary return given that incidents are stored in the store.
-            // Lint rule: consistent-return
-            return {incidents};
         } catch (error) {
-            return {error};
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function startIncident(postId: string) {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        const currentChanel = getCurrentChannel(getState());
+
+        const args = {channel_id: currentChanel?.id};
+
+        try {
+            const data = await Client4.executeCommand(`/incident start ${postId}`, args);
+
+            dispatch(setTriggerId(data?.trigger_id));
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
         }
     };
 }
@@ -111,5 +128,12 @@ export function setRHSState(state: RHSState): ReceivedRHSState {
     return {
         type: RECEIVED_RHS_STATE,
         state,
+    };
+}
+
+export function setTriggerId(triggerId: string): SetTriggerId {
+    return {
+        type: IntegrationTypes.RECEIVED_DIALOG_TRIGGER_ID,
+        data: triggerId,
     };
 }
