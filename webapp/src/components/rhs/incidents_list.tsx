@@ -5,7 +5,7 @@ import React from 'react';
 
 import {Incident} from 'src/types/incident';
 
-import IncidentListIcon from './icon';
+import IncidentListIcon from './list_icon';
 
 import IncidentItem from './incident_item';
 
@@ -31,7 +31,7 @@ export const IncidentsList = ({incidents, onClick}: Props): JSX.Element => {
                     {messageHtmlToComponent(formatText('You can create incidents by the post dropdown menu, and by the slash command `/incident start`'))}
                 </div>
                 <a
-                    className='mt-5 style--none color--link'
+                    className='link'
                 >
                     {'+ Create new incident'}
                 </a>
