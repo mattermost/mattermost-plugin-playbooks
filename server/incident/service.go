@@ -156,7 +156,7 @@ func (s *ServiceImpl) createIncidentChannel(incident *Incident) (*model.Channel,
 		return nil, errors.Wrap(err, "failed to create incident channel")
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.CommanderUserID, s.config.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrap(err, "failed to add user to channel")
 	}
 

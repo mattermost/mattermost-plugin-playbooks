@@ -80,7 +80,7 @@ func (r *Runner) actionDialogStart(args []string) {
 		postID = args[0]
 	}
 
-	if err := r.IncidentService.CreateIncidentDialog(r.Args.UserId, r.Args.TriggerId, postID); err != nil {
+	if err := r.incidentService.CreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
