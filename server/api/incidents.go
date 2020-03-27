@@ -1,4 +1,4 @@
-package incident
+package api
 
 import (
 	"encoding/json"
@@ -10,21 +10,21 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/pkg/errors"
 )
 
-// Handler Plugin API handler.
-type Handler struct {
-	incidentService Service
+// IncidentHandler is the API handler.
+type IncidentHandler struct {
+	incidentService incident.Service
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 }
 
-// NewHandler Creates a new Plugin API handler.
-func NewHandler(router *mux.Router, incidentService Service, api *pluginapi.Client, poster bot.Poster) *Handler {
-	handler := &Handler{
+// NewIncidentHandler Creates a new Plugin API handler.
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
+	handler := &IncidentHandler{
 		incidentService: incidentService,
 		pluginAPI:       api,
 		poster:          poster,
@@ -41,46 +41,46 @@ func NewHandler(router *mux.Router, incidentService Service, api *pluginapi.Clie
 	return handler
 }
 
-func (h *Handler) createIncident(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request) {
 	_, err := h.incidentService.CreateIncident(nil)
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		api.HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
 		return
 	}
 
-	incident, err := h.incidentService.CreateIncident(&Incident{
-		Header: Header{
+	incident, err := h.incidentService.CreateIncident(&incident.Incident{
+		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
-			Name:            request.Submission[dialogFieldNameKey].(string),
+			Name:            request.Submission[incident.DialogFieldNameKey].(string),
 		},
 		PostID: request.State,
 	})
 
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	if err := h.postIncidentCreated(incident, request.ChannelId); err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) postIncidentCreated(incident *Incident, channelID string) error {
+func (h *IncidentHandler) postIncidentCreated(incident *incident.Incident, channelID string) error {
 	team, err := h.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
@@ -98,42 +98,42 @@ func (h *Handler) postIncidentCreated(incident *Incident, channelID string) erro
 	return nil
 }
 
-func (h *Handler) getIncidents(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	incidentHeaders, err := h.incidentService.GetAllHeaders()
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	jsonBytes, err := json.Marshal(incidentHeaders)
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	if _, err = w.Write(jsonBytes); err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) getIncident(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incident, err := h.incidentService.GetIncident(vars["id"])
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	jsonBytes, err := json.Marshal(incident)
 	if err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 
 	if _, err = w.Write(jsonBytes); err != nil {
-		api.HandleError(w, err)
+		HandleError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

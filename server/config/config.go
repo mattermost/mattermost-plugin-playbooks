@@ -1,10 +1,12 @@
 package config
 
-import (
-	"github.com/mattermost/mattermost-server/v5/model"
-)
+import "github.com/mattermost/mattermost-server/v5/model"
 
-// Service Config service interface.
+// Service is the config.Service interface.
+// NOTE: for now we are defining this here for simplicity. It will be mocked by multiple consumers,
+// so keep the definition in one place -- here. In the future we may move to a
+// consumer-defines-the-interface style (and mocks it themselves), but since this is used
+// internally, at this point the trade-off is not worth it.
 type Service interface {
 	// GetConfiguration retrieves the active configuration under lock, making it safe to use
 	// concurrently. The active configuration may change underneath the client of this method, but

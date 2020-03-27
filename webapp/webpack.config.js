@@ -1,4 +1,14 @@
-var path = require('path');
+const exec = require('child_process').exec;
+
+const path = require('path');
+
+const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
+let mode = 'production';
+let devtool = '';
+if (NPM_TARGET === 'development') {
+    mode = 'development';
+    devtool = 'source-map';
+}
 
 module.exports = {
     entry: [
@@ -57,4 +67,22 @@ module.exports = {
         publicPath: '/',
         filename: 'main.js',
     },
+    devtool,
+    mode,
+    plugins: [
+        {
+            apply: (compiler) => {
+                compiler.hooks.afterEmit.tap('AfterEmitPlugin', () => {
+                    exec('cd .. && make reset', (err, stdout, stderr) => {
+                        if (stdout) {
+                            process.stdout.write(stdout);
+                        }
+                        if (stderr) {
+                            process.stderr.write(stderr);
+                        }
+                    });
+                });
+            },
+        },
+    ],
 };

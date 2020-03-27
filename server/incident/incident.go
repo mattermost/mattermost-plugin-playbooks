@@ -2,10 +2,14 @@ package incident
 
 import "github.com/pkg/errors"
 
-// ErrNotFound used to indicate entity not found.
-var ErrNotFound = errors.New("not found")
+// Incident holds the detailed information of an incident.
+type Incident struct {
+	Header
+	ChannelIDs []string `json:"channel_ids"`
+	PostID     string   `json:"post_id"`
+}
 
-// Header struct holds basic information about an incident.
+// Header holds the summary information of an incident.
 type Header struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
@@ -14,16 +18,12 @@ type Header struct {
 	TeamID          string `json:"team_id"`
 }
 
-// Incident struct
-type Incident struct {
-	Header
-	ChannelIDs []string `json:"channel_ids"`
-	PostID     string   `json:"post_id"`
-}
+// ErrNotFound used to indicate entity not found.
+var ErrNotFound = errors.New("not found")
 
-// Service Incident service interface.
+// Service is the incident/service interface.
 type Service interface {
-	// GetAllHeaders Gets all the header information.
+	// GetAllHeaders returns the headers for all incidents.
 	GetAllHeaders() ([]Header, error)
 
 	// CreateIncident Creates a new incident.
@@ -32,7 +32,7 @@ type Service interface {
 	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
 	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
 
-	// EndIncident Completes the incident associated to the given channelId.
+	// EndIncident Completes the incident associated to the given channelID.
 	EndIncident(channelID string) (*Incident, error)
 
 	// GetIncident Gets an incident by ID.
@@ -42,7 +42,7 @@ type Service interface {
 	NukeDB() error
 }
 
-// Store Incident store interface.
+// Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetAllHeaders Gets all the header information.
 	GetAllHeaders() ([]Header, error)
@@ -50,13 +50,13 @@ type Store interface {
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
-	// UpdateIncident Creates a new incident.
+	// UpdateIncident updates an incident.
 	UpdateIncident(incident *Incident) error
 
 	// GetIncident Gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
-	// GetIncidentByChannel Gets an incident associated to the given channel id.
+	// GetIncidentByChannel Gets an incident associated with the given channel id.
 	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
 
 	// NukeDB Removes all incident related data.

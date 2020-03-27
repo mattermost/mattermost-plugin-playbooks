@@ -25,8 +25,8 @@ func TestAPI(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			mockctrl := gomock.NewController(t)
-			defer mockctrl.Finish()
+			mockCtrl := gomock.NewController(t)
+			defer mockCtrl.Finish()
 
 			handler := NewHandler()
 			writer := httptest.NewRecorder()
