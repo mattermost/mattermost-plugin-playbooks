@@ -8,6 +8,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {Incident} from 'src/types/incident';
 
 import './incident_item.scss';
+import Profile from 'src/components/rhs/profile';
 
 interface Props {
     incident: Incident;
@@ -26,8 +27,6 @@ export default class IncidentItem extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const commanderUsername = this.props.commander ? `@${this.props.commander.username}` : '';
-
         return (
             <div className='IncidentItem'>
                 <div
@@ -35,13 +34,11 @@ export default class IncidentItem extends React.PureComponent<Props> {
                     key={this.props.incident.id}
                     onClick={this.props.onClick}
                 >
-                    <div>
+                    <div className='title'>
                         {this.props.incident.name}
                     </div>
-                    <div
-                        className='light'
-                    >
-                        {'Commander: ' + commanderUsername}
+                    <div>
+                        <Profile userId={this.props.incident.commander_user_id}/>
                     </div>
                 </div>
             </div>
