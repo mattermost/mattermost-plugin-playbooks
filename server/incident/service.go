@@ -62,6 +62,8 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 		return nil, errors.Wrap(err, "failed to update incident")
 	}
 
+	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
+
 	if err = s.poster.PostMessage(channel.Id, "%s", "An incident has occurred."); err != nil {
 		return nil, errors.Wrap(err, "failed to post to incident channel")
 	}
@@ -82,8 +84,6 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	if err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
 		return nil, errors.Wrap(err, "failed to post to incident channel")
 	}
-
-	s.poster.PublishWebsocketEventToTeam("create_incident", nil, incident.TeamID)
 
 	return incident, nil
 }
@@ -124,7 +124,7 @@ func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
 		return nil, errors.Wrap(err, "failed to end incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam("end_incident", nil, incident.TeamID)
+	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
 
 	return incident, nil
 }

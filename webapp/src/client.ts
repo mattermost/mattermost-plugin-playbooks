@@ -4,7 +4,7 @@
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
-import pluginId from './manifest';
+import {pluginId} from './manifest';
 
 const apiUrl = `/plugins/${pluginId}/api/v1`;
 
