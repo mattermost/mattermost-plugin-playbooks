@@ -3,6 +3,8 @@
 
 import React from 'react';
 
+import './profile.scss';
+
 interface Props {
     profileUri: string;
     name: string;
@@ -11,9 +13,9 @@ interface Props {
 export default class Profile extends React.PureComponent<Props> {
     public render(): JSX.Element {
         return (
-            <div className='profile-container'>
+            <div className='Profile'>
                 <img
-                    className='pic'
+                    className='image'
                     src={this.props.profileUri}
                 />
                 <div className='name'>{this.props.name}</div>

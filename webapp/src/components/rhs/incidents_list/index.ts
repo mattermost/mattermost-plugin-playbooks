@@ -6,7 +6,7 @@ import {bindActionCreators, Dispatch} from 'redux';
 
 import {startIncident} from 'src/actions';
 
-import IncidentsList from './incidents_list';
+import IncidentList from './incident_list';
 
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
@@ -16,5 +16,5 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(null, mapDispatchToProps)(IncidentsList);
+export default connect(null, mapDispatchToProps)(IncidentList);
 

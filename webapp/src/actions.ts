@@ -76,7 +76,7 @@ export function getIncidents() {
     };
 }
 
-export function startIncident(postId = '') {
+export function startIncident(postId? : string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const currentChanel = getCurrentChannel(getState());
 
