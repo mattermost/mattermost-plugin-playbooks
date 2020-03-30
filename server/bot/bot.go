@@ -39,6 +39,12 @@ type Poster interface {
 
 	// Ephemeral sends an ephemeral message to a user
 	Ephemeral(userID, channelID, format string, args ...interface{})
+
+	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID
+	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)
+
+	// PublishWebsocketEventToChannel sends a websocket event with payload to channelID
+	PublishWebsocketEventToChannel(event string, payload interface{}, channelID string)
 }
 
 // New creates a new bot poster/logger.

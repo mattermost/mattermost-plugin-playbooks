@@ -9,6 +9,7 @@ import {
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_RHS_STATE,
     RECEIVED_RHS_OPEN,
+    RECEIVED_INCIDENT_UPDATE,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -39,16 +40,21 @@ function rhsOpen(state = false, action) {
     }
 }
 
-function incidents(state = null, action) {
+function incidents(state = [], action) {
     switch (action.type) {
     case RECEIVED_INCIDENTS:
         return action.incidents || [];
+    case RECEIVED_INCIDENT_UPDATE: {
+        const newState = state.filter((incident) => incident.id !== action.incident.id);
+        newState.push(action.incident);
+        return newState;
+    }
     default:
         return state;
     }
 }
 
-function incidentDetails(state = null, action) {
+function incidentDetails(state = {}, action) {
     switch (action.type) {
     case RECEIVED_INCIDENT_DETAILS:
         return action.incidentDetails || {};

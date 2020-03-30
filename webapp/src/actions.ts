@@ -14,7 +14,7 @@ import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {Channel} from 'mattermost-redux/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 
-import {GetStateFunc} from 'types/actions';
+import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -22,6 +22,7 @@ import {
     RECEIVED_RHS_OPEN,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
+    RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
     ReceivedToggleRHSAction,
     ReceivedRHSOpen,
@@ -30,6 +31,7 @@ import {
     ReceivedError,
     ReceivedRHSState,
     SetTriggerId,
+    ReceivedIncidentUpdate,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -78,14 +80,19 @@ export function getIncidents() {
     };
 }
 
-export function startIncident(postId: string) {
+export function startIncident(postId? : string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const currentChanel = getCurrentChannel(getState());
 
         const args = {channel_id: currentChanel?.id};
 
+        let command = '/incident start';
+        if (!postId) {
+            command = `${command} ${postId}`;
+        }
+
         try {
-            const data = await Client4.executeCommand(`/incident start ${postId}`, args);
+            const data = await Client4.executeCommand(command, args);
 
             dispatch(setTriggerId(data?.trigger_id));
         } catch (error) {
@@ -112,6 +119,13 @@ function receivedIncidentDetails(incidentDetails: Incident): ReceivedIncidentDet
     return {
         type: RECEIVED_INCIDENT_DETAILS,
         incidentDetails,
+    };
+}
+
+export function receivedIncidentUpdate(incident: Incident): ReceivedIncidentUpdate {
+    return {
+        type: RECEIVED_INCIDENT_UPDATE,
+        incident,
     };
 }
 

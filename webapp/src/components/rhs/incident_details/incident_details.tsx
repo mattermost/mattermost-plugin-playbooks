@@ -11,8 +11,9 @@ import {Incident} from 'src/types/incident';
 
 import {getDisplayName} from 'src/utils/utils';
 
+import Profile from 'src/components/rhs/profile';
+
 import Link from './link';
-import Profile from './profile';
 
 import './incident_details.scss';
 
@@ -26,18 +27,12 @@ interface Props {
 
 export default class IncidentDetails extends React.PureComponent<Props> {
     public render(): JSX.Element {
-        let commanderName = '';
-        if (this.props.commander) {
-            commanderName = getDisplayName(this.props.commander);
-        }
-
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
                     <div className='title'>{'Commander'}</div>
                     <Profile
-                        profileUri={this.props.profileUri}
-                        name={commanderName}
+                        userId={this.props.incident.commander_user_id}
                     />
                 </div>
 
