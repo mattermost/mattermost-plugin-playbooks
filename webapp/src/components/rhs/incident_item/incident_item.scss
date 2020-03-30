@@ -1,7 +1,19 @@
+$font-family: Open Sans;
+
 .IncidentItem {
     .list {
         cursor: pointer;
         padding: 15px;
         border-top: 1px solid var(--center-channel-color-20);
+    }
+
+    .title {
+        font-family: $font-family;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 20px;
+        color: #4f4f4f;
+        padding: 0 0 8px 0;
     }
 }

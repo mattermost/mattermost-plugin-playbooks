@@ -126,29 +126,4 @@ $font-family: Open Sans;
             color: #3d3c40;
         }
     }
-
-    // Profile component
-    .profile-container {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-
-        .pic {
-            width: 32px;
-            height: 32px;
-            background-color: #bbb;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .name {
-            padding: 0 0 0 8px;
-            font-family: $font-family;
-            font-style: normal;
-            font-weight: 600;
-            font-size: 14px;
-            line-height: 19px;
-            color: #5f646d;
-        }
-    }
 }

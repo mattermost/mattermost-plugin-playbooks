@@ -6,7 +6,8 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {Incident, RHSState} from 'src/types/incident';
 
-import IncidentItem from './incident_item';
+import IncidentList from './incidents_list';
+
 import IncidentDetails from './incident_details';
 
 import './rhs.scss';
@@ -85,13 +86,10 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                     <div>
                         {
                             this.props.rhsState === RHSState.List &&
-                            this.props.incidents.map((i) => (
-                                <IncidentItem
-                                    key={i.id}
-                                    incident={i}
-                                    onClick={() => this.handleClick(i.id)}
-                                />
-                            ))
+                            <IncidentList
+                                incidents={this.props.incidents}
+                                onClick={this.handleClick}
+                            />
                         }
                         {
                             this.props.rhsState === RHSState.Details &&

@@ -76,14 +76,19 @@ export function getIncidents() {
     };
 }
 
-export function startIncident(postId: string) {
+export function startIncident(postId? : string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const currentChanel = getCurrentChannel(getState());
 
         const args = {channel_id: currentChanel?.id};
 
+        let command = '/incident start';
+        if (!postId) {
+            command = `${command} ${postId}`;
+        }
+
         try {
-            const data = await Client4.executeCommand(`/incident start ${postId}`, args);
+            const data = await Client4.executeCommand(command, args);
 
             dispatch(setTriggerId(data?.trigger_id));
         } catch (error) {
