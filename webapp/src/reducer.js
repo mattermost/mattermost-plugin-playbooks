@@ -3,13 +3,13 @@
 
 import {combineReducers} from 'redux';
 
-import {RECEIVED_SHOW_RHS_ACTION, RECEIVED_INCIDENTS, RECEIVED_INCIDENT_DETAILS, RECEIVED_RHS_STATE} from './types/actions';
+import {RECEIVED_TOGGLE_RHS_ACTION, RECEIVED_INCIDENTS, RECEIVED_INCIDENT_DETAILS, RECEIVED_RHS_STATE} from './types/actions';
 import {RHSState} from './types/incident';
 
 function rhsPluginAction(state = null, action) {
     switch (action.type) {
-    case RECEIVED_SHOW_RHS_ACTION:
-        return action.showRHSPluginAction;
+    case RECEIVED_TOGGLE_RHS_ACTION:
+        return action.toggleRHSPluginAction;
     default:
         return state;
     }

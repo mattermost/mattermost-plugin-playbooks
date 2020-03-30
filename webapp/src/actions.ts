@@ -17,12 +17,12 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'types/actions';
 
 import {
-    RECEIVED_SHOW_RHS_ACTION,
+    RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_RHS_STATE,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_ERROR,
-    ReceivedShowRHSAction,
+    ReceivedToggleRHSAction,
     ReceivedIncidents,
     ReceivedIncidentDetails,
     ReceivedError,
@@ -117,10 +117,10 @@ function receivedError(error: string): ReceivedError {
  * Stores`showRHSPlugin` action returned by
  * registerRightHandSidebarComponent in plugin initialization.
  */
-export function setShowRHSAction(showRHSPluginAction: () => void): ReceivedShowRHSAction {
+export function setToggleRHSAction(toggleRHSPluginAction: () => void): ReceivedToggleRHSAction {
     return {
-        type: RECEIVED_SHOW_RHS_ACTION,
-        showRHSPluginAction,
+        type: RECEIVED_TOGGLE_RHS_ACTION,
+        toggleRHSPluginAction,
     };
 }
 
