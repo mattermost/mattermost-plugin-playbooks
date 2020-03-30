@@ -11,7 +11,7 @@ import IncidentIcon from './incident_icon';
 
 function mapStateToProps(state: GlobalState) {
     return {
-        rhsOpen: getRHSOpen(state),
+        isRHSOpen: getRHSOpen(state),
     };
 }
 

@@ -3,14 +3,17 @@
 
 import React from 'react';
 
+import classNames from 'classnames';
+
 interface Props {
-    rhsOpen: boolean;
+    isRHSOpen: boolean;
 }
 
 export default class IncidentIcon extends React.PureComponent<Props> {
     public render(): JSX.Element {
-        const active = this.props.rhsOpen ? ' active' : '';
-
-        return (<i className={'icon fa fa-exclamation' + active}/>);
+        const iconClass = classNames('icon', 'fa', 'fa-exclamation', {
+            active: this.props.isRHSOpen,
+        });
+        return (<i className={iconClass}/>);
     }
 }
