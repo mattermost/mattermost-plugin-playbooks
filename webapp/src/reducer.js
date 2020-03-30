@@ -8,7 +8,7 @@ import {
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_RHS_STATE,
-    RECEIVED_RHS_OPEN
+    RECEIVED_RHS_OPEN,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
