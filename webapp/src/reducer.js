@@ -3,7 +3,13 @@
 
 import {combineReducers} from 'redux';
 
-import {RECEIVED_TOGGLE_RHS_ACTION, RECEIVED_INCIDENTS, RECEIVED_INCIDENT_DETAILS, RECEIVED_RHS_STATE} from './types/actions';
+import {
+    RECEIVED_TOGGLE_RHS_ACTION,
+    RECEIVED_INCIDENTS,
+    RECEIVED_INCIDENT_DETAILS,
+    RECEIVED_RHS_STATE,
+    RECEIVED_RHS_OPEN
+} from './types/actions';
 import {RHSState} from './types/incident';
 
 function rhsPluginAction(state = null, action) {
@@ -19,6 +25,15 @@ function rhsState(state = RHSState.List, action) {
     switch (action.type) {
     case RECEIVED_RHS_STATE:
         return action.state;
+    default:
+        return state;
+    }
+}
+
+function rhsOpen(state = false, action) {
+    switch (action.type) {
+    case RECEIVED_RHS_OPEN:
+        return action.open || false;
     default:
         return state;
     }
@@ -47,4 +62,5 @@ export default combineReducers({
     rhsState,
     incidents,
     incidentDetails,
+    rhsOpen,
 });

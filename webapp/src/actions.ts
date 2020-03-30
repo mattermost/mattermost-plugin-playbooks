@@ -19,10 +19,12 @@ import {GetStateFunc} from 'types/actions';
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_RHS_STATE,
+    RECEIVED_RHS_OPEN,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_ERROR,
     ReceivedToggleRHSAction,
+    ReceivedRHSOpen,
     ReceivedIncidents,
     ReceivedIncidentDetails,
     ReceivedError,
@@ -89,6 +91,13 @@ export function startIncident(postId: string) {
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
+    };
+}
+
+export function setRHSOpen(open: boolean): ReceivedRHSOpen {
+    return {
+        type: RECEIVED_RHS_OPEN,
+        open,
     };
 }
 
