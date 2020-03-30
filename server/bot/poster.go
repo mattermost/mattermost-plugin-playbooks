@@ -62,14 +62,14 @@ func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, 
 }
 
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
-	payloadJson, err := json.Marshal(payload)
+	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		b.With(LogContext{
 			"payload": payload,
 		}).Errorf("could not marshall payload")
-		payloadJson = []byte("null")
+		payloadJSON = []byte("null")
 	}
-	return map[string]interface{}{"payload": string(payloadJson)}
+	return map[string]interface{}{"payload": string(payloadJSON)}
 }
 
 func (b *Bot) dm(userID string, post *model.Post) error {
