@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -42,6 +43,33 @@ func (b *Bot) Ephemeral(userID, channelID, format string, args ...interface{}) {
 		Message:   fmt.Sprintf(format, args...),
 	}
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+}
+
+// PublishWebsocketEventToTeam sends a websocket event with payload to teamID
+func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, teamID string) {
+	payloadMap := b.makePayloadMap(payload)
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+		TeamId: teamID,
+	})
+}
+
+// PublishWebsocketEventToChannel sends a websocket event with payload to channelID
+func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, channelID string) {
+	payloadMap := b.makePayloadMap(payload)
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+		ChannelId: channelID,
+	})
+}
+
+func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		b.With(LogContext{
+			"payload": payload,
+		}).Errorf("could not marshall payload")
+		payloadJSON = []byte("null")
+	}
+	return map[string]interface{}{"payload": string(payloadJSON)}
 }
 
 func (b *Bot) dm(userID string, post *model.Post) error {

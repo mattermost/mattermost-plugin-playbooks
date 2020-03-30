@@ -14,13 +14,14 @@ import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {Channel} from 'mattermost-redux/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 
-import {GetStateFunc} from 'types/actions';
+import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {
     RECEIVED_SHOW_RHS_ACTION,
     RECEIVED_RHS_STATE,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
+    RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
     ReceivedShowRHSAction,
     ReceivedIncidents,
@@ -28,6 +29,7 @@ import {
     ReceivedError,
     ReceivedRHSState,
     SetTriggerId,
+    ReceivedIncidentUpdate,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -108,6 +110,13 @@ function receivedIncidentDetails(incidentDetails: Incident): ReceivedIncidentDet
     return {
         type: RECEIVED_INCIDENT_DETAILS,
         incidentDetails,
+    };
+}
+
+export function receivedIncidentUpdate(incident: Incident): ReceivedIncidentUpdate {
+    return {
+        type: RECEIVED_INCIDENT_UPDATE,
+        incident,
     };
 }
 

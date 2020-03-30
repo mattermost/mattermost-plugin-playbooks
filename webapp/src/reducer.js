@@ -3,7 +3,13 @@
 
 import {combineReducers} from 'redux';
 
-import {RECEIVED_SHOW_RHS_ACTION, RECEIVED_INCIDENTS, RECEIVED_INCIDENT_DETAILS, RECEIVED_RHS_STATE} from './types/actions';
+import {
+    RECEIVED_SHOW_RHS_ACTION,
+    RECEIVED_INCIDENTS,
+    RECEIVED_INCIDENT_DETAILS,
+    RECEIVED_RHS_STATE,
+    RECEIVED_INCIDENT_UPDATE,
+} from './types/actions';
 import {RHSState} from './types/incident';
 
 function rhsPluginAction(state = null, action) {
@@ -24,16 +30,21 @@ function rhsState(state = RHSState.List, action) {
     }
 }
 
-function incidents(state = null, action) {
+function incidents(state = [], action) {
     switch (action.type) {
     case RECEIVED_INCIDENTS:
         return action.incidents || [];
+    case RECEIVED_INCIDENT_UPDATE: {
+        const newState = state.filter((incident) => incident.id !== action.incident.id);
+        newState.push(action.incident);
+        return newState;
+    }
     default:
         return state;
     }
 }
 
-function incidentDetails(state = null, action) {
+function incidentDetails(state = {}, action) {
     switch (action.type) {
     case RECEIVED_INCIDENT_DETAILS:
         return action.incidentDetails || {};
