@@ -29,9 +29,9 @@ import {
     ReceivedIncidentDetails,
     ReceivedError,
     ReceivedRHSState,
-    SetTriggerId,
     ReceivedIncidentUpdate,
     SetLoading,
+    SetTriggerId,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
