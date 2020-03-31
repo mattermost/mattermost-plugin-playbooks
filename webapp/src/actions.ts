@@ -66,22 +66,10 @@ export function getIncidentDetails(id: string) {
     };
 }
 
-export function getIncidentsForCurrentTeam() {
+export function getIncidents() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         try {
             const incidents = await fetchIncidents(getCurrentTeamId(getState()));
-
-            dispatch(receivedIncidents(incidents));
-        } catch (error) {
-            console.error(error); //eslint-disable-line no-console
-        }
-    };
-}
-
-export function getIncidents(teamId?: string) {
-    return async (dispatch: Dispatch<AnyAction>) => {
-        try {
-            const incidents = await fetchIncidents(teamId);
 
             dispatch(receivedIncidents(incidents));
         } catch (error) {
