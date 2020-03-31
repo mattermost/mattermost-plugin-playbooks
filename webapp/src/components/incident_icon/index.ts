@@ -5,7 +5,7 @@ import {connect} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {getRHSOpen} from '../../selectors';
+import {getRHSOpen} from 'src/selectors';
 
 import IncidentIcon from './incident_icon';
 

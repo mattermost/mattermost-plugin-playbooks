@@ -8,7 +8,7 @@ import {
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_RHS_STATE,
-    RECEIVED_RHS_OPEN,
+    SET_RHS_OPEN,
     RECEIVED_INCIDENT_UPDATE,
 } from './types/actions';
 import {RHSState} from './types/incident';
@@ -33,7 +33,7 @@ function rhsState(state = RHSState.List, action) {
 
 function rhsOpen(state = false, action) {
     switch (action.type) {
-    case RECEIVED_RHS_OPEN:
+    case SET_RHS_OPEN:
         return action.open || false;
     default:
         return state;

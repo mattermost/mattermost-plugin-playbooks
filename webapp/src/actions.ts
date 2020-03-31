@@ -19,13 +19,13 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_RHS_STATE,
-    RECEIVED_RHS_OPEN,
+    SET_RHS_OPEN,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
     ReceivedToggleRHSAction,
-    ReceivedRHSOpen,
+    SetRHSOpen,
     ReceivedIncidents,
     ReceivedIncidentDetails,
     ReceivedError,
@@ -101,9 +101,9 @@ export function startIncident(postId? : string) {
     };
 }
 
-export function setRHSOpen(open: boolean): ReceivedRHSOpen {
+export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
-        type: RECEIVED_RHS_OPEN,
+        type: SET_RHS_OPEN,
         open,
     };
 }
