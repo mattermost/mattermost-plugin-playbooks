@@ -50,7 +50,7 @@ export interface SetTriggerId {
     data: string;
 }
 
-export interface ReceivedLoading {
+export interface SetLoading {
     type: typeof SET_LOADING;
     isLoading: boolean;
 }

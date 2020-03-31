@@ -31,7 +31,7 @@ import {
     ReceivedRHSState,
     SetTriggerId,
     ReceivedIncidentUpdate,
-    ReceivedLoading,
+    SetLoading,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -162,7 +162,7 @@ export function setTriggerId(triggerId: string): SetTriggerId {
     };
 }
 
-function setLoading(isLoading: boolean): ReceivedLoading {
+function setLoading(isLoading: boolean): SetLoading {
     return {
         type: SET_LOADING,
         isLoading,
