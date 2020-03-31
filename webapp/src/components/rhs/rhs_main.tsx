@@ -41,7 +41,7 @@ interface Props {
     incident: Incident;
     rhsState: RHSState;
     actions: {
-        getIncidents: () => void;
+        getIncidentsForCurrentTeam: () => void;
         getIncidentDetails: (id: string) => void;
         setRHSState: (state: RHSState) => void;
     };
@@ -49,7 +49,7 @@ interface Props {
 
 export default class RightHandSidebar extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        this.props.actions.getIncidents();
+        this.props.actions.getIncidentsForCurrentTeam();
     }
 
     public handleClick = (id: string) => {

@@ -23,8 +23,8 @@ var ErrNotFound = errors.New("not found")
 
 // Service is the incident/service interface.
 type Service interface {
-	// GetAllHeaders returns the headers for all incidents.
-	GetAllHeaders() ([]Header, error)
+	// GetHeaders returns filtered headers.
+	GetHeaders(filters ...HeaderFilter) ([]Header, error)
 
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
