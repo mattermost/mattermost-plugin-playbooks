@@ -22,6 +22,7 @@ import {
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_INCIDENT_UPDATE,
+    RECEIVED_LOADING,
     RECEIVED_ERROR,
     ReceivedShowRHSAction,
     ReceivedIncidents,
@@ -30,6 +31,7 @@ import {
     ReceivedRHSState,
     SetTriggerId,
     ReceivedIncidentUpdate,
+    ReceivedLoading,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -99,6 +101,14 @@ export function startIncident(postId? : string) {
     };
 }
 
+export function withLoading(action: any) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(setLoading(true));
+        await dispatch(action);
+        dispatch(setLoading(false));
+    };
+}
+
 function receivedIncidents(incidents: Incident[]): ReceivedIncidents {
     return {
         type: RECEIVED_INCIDENTS,
@@ -149,5 +159,12 @@ export function setTriggerId(triggerId: string): SetTriggerId {
     return {
         type: IntegrationTypes.RECEIVED_DIALOG_TRIGGER_ID,
         data: triggerId,
+    };
+}
+
+function setLoading(isLoading: boolean): ReceivedLoading {
+    return {
+        type: RECEIVED_LOADING,
+        isLoading,
     };
 }
