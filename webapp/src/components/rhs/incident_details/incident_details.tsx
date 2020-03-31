@@ -9,8 +9,6 @@ import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
 import {Incident} from 'src/types/incident';
 
-import {getDisplayName} from 'src/utils/utils';
-
 import Profile from 'src/components/rhs/profile';
 
 import Link from './link';
@@ -46,18 +44,21 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     </div>
                 */}
 
-                <div className='inner-container'>
-                    <div className='title'>{'Channels'}</div>
-                    {
-                        this.props.channelDetails.map((channel: ChannelWithTeamData) => (
-                            <Link
-                                key={channel.id}
-                                text={channel.display_name}
-                                href={`/${channel.team_name}/channels/${channel.id}`}
-                            />
-                        ))
-                    }
-                </div>
+                {
+                    this.props.channelDetails.length > 0 &&
+                    <div className='inner-container'>
+                        <div className='title'>{'Channels'}</div>
+                        {
+                            this.props.channelDetails.map((channel: ChannelWithTeamData) => (
+                                <Link
+                                    key={channel.id}
+                                    to={`/${channel.team_name}/channels/${channel.name}`}
+                                    text={channel.display_name}
+                                />
+                            ))
+                        }
+                    </div>
+                }
             </div>
         );
     }
