@@ -1,7 +1,8 @@
-package incident
+package pluginkvstore
 
 import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -11,18 +12,18 @@ const (
 	incidentKey   = "incident_"
 )
 
-type idHeaderMap map[string]Header
+type idHeaderMap map[string]incident.Header
 
 // incidentStore Implements incident store interface.
-var _ Store = (*incidentStore)(nil)
+var _ incident.Store = (*incidentStore)(nil)
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
 	pluginAPI *pluginapi.Client
 }
 
-// NewStore creates a new store for incident ServiceImpl.
-func NewStore(pluginAPI *pluginapi.Client) Store {
+// NewIncidentStore creates a new store for incident ServiceImpl.
+func NewIncidentStore(pluginAPI *pluginapi.Client) incident.Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
 	}
@@ -30,7 +31,7 @@ func NewStore(pluginAPI *pluginapi.Client) Store {
 }
 
 // GetAllHeaders Gets all the header information.
-func (s *incidentStore) GetAllHeaders() ([]Header, error) {
+func (s *incidentStore) GetAllHeaders() ([]incident.Header, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
@@ -40,7 +41,7 @@ func (s *incidentStore) GetAllHeaders() ([]Header, error) {
 }
 
 // CreateIncident Creates a new incident.
-func (s *incidentStore) CreateIncident(incident *Incident) (*Incident, error) {
+func (s *incidentStore) CreateIncident(incident *incident.Incident) (*incident.Incident, error) {
 	if incident == nil {
 		return nil, errors.New("incident is nil")
 	}
@@ -65,7 +66,7 @@ func (s *incidentStore) CreateIncident(incident *Incident) (*Incident, error) {
 }
 
 // UpdateIncident updates an incident.
-func (s *incidentStore) UpdateIncident(incident *Incident) error {
+func (s *incidentStore) UpdateIncident(incident *incident.Incident) error {
 	if incident == nil {
 		return errors.New("incident is nil")
 	}
@@ -98,7 +99,7 @@ func (s *incidentStore) UpdateIncident(incident *Incident) error {
 }
 
 // GetIncident Gets an incident by ID.
-func (s *incidentStore) GetIncident(id string) (*Incident, error) {
+func (s *incidentStore) GetIncident(id string) (*incident.Incident, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
@@ -112,7 +113,7 @@ func (s *incidentStore) GetIncident(id string) (*Incident, error) {
 }
 
 // GetIncidentByChannel Gets an incident associated to the given channel id.
-func (s *incidentStore) GetIncidentByChannel(channelID string, active bool) (*Incident, error) {
+func (s *incidentStore) GetIncidentByChannel(channelID string, active bool) (*incident.Incident, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
@@ -136,7 +137,7 @@ func (s *incidentStore) GetIncidentByChannel(channelID string, active bool) (*In
 			}
 		}
 	}
-	return nil, errors.Wrapf(ErrNotFound, "channel with id (%s) does not have incidents", channelID)
+	return nil, errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have incidents", channelID)
 }
 
 // NukeDB Removes all incident related data.
@@ -149,8 +150,8 @@ func toIncidentKey(incidentID string) string {
 	return incidentKey + incidentID
 }
 
-func toHeader(headers idHeaderMap) []Header {
-	var result []Header
+func toHeader(headers idHeaderMap) []incident.Header {
+	var result []incident.Header
 	for _, value := range headers {
 		result = append(result, value)
 	}
@@ -158,8 +159,8 @@ func toHeader(headers idHeaderMap) []Header {
 	return result
 }
 
-func (s *incidentStore) getIncident(incidentID string) (*Incident, error) {
-	var incident Incident
+func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, error) {
+	var incident incident.Incident
 	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &incident); err != nil {
 		return nil, errors.Wrap(err, "failed to get incident")
 	}
@@ -174,7 +175,7 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	return headers, nil
 }
 
-func (s *incidentStore) updateHeader(incident *Incident) error {
+func (s *incidentStore) updateHeader(incident *incident.Incident) error {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return errors.Wrap(err, "failed to get all headers")
