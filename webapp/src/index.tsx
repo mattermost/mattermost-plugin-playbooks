@@ -19,7 +19,7 @@ export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
         registry.registerReducer(reducer);
 
-        const {showRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, 'Incidents');
+        const {showRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, '');
         const bindedShowRHSAction = (): void => store.dispatch(showRHSPlugin);
 
         // Store the showRHS action to use later

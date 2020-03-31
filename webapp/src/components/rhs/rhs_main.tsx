@@ -41,6 +41,7 @@ interface Props {
     incident: Incident;
     rhsState: RHSState;
     actions: {
+        startIncident: () => void;
         getIncidents: () => void;
         getIncidentDetails: (id: string) => void;
         setRHSState: (state: RHSState) => void;
@@ -74,13 +75,27 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                     className='RightHandSidebar'
                 >
                     {
+                        this.props.rhsState === RHSState.List &&
+                        <div className='navigation-bar'>
+                            <div>
+                                <div className='title'>{'Incident List'}</div>
+                            </div>
+                            <i
+                                className='fa fa-plus'
+                                onClick={this.props.actions.startIncident}
+                            />
+                        </div>
+                    }
+                    {
                         this.props.rhsState !== RHSState.List &&
                         <div className='navigation-bar'>
-                            <i
-                                className='fa fa-chevron-left'
-                                onClick={this.goBack}
-                            />
-                            <div className='title'>{this.props.incident.name}</div>
+                            <div className='incident-details'>
+                                <i
+                                    className='fa fa-chevron-left'
+                                    onClick={this.goBack}
+                                />
+                                <div className='title'>{this.props.incident.name}</div>
+                            </div>
                         </div>
                     }
                     <div>
