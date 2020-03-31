@@ -114,12 +114,11 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var headerFilters []incident.HeaderFilter
-	if teamID != "" {
-		headerFilters = []incident.HeaderFilter{incident.TeamHeaderFilter(teamID)}
+	filterOptions := incident.HeaderFilterOptions{
+		TeamID: teamID,
 	}
 
-	incidentHeaders, err := h.incidentService.GetHeaders(headerFilters...)
+	incidentHeaders, err := h.incidentService.GetHeaders(filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return

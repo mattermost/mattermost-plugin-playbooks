@@ -37,8 +37,8 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 }
 
 // GetHeaders returns filtered headers.
-func (s *ServiceImpl) GetHeaders(filters ...HeaderFilter) ([]Header, error) {
-	return s.store.GetHeaders(filters...)
+func (s *ServiceImpl) GetHeaders(options HeaderFilterOptions) ([]Header, error) {
+	return s.store.GetHeaders(options)
 }
 
 // CreateIncident Creates a new incident.

@@ -18,13 +18,19 @@ type Header struct {
 	TeamID          string `json:"team_id"`
 }
 
+// HeaderFilterOptions specifies the optional parameters when getting headers.
+type HeaderFilterOptions struct {
+	// Gets all the headers with this TeamID.
+	TeamID string
+}
+
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
 // Service is the incident/service interface.
 type Service interface {
 	// GetHeaders returns filtered headers.
-	GetHeaders(filters ...HeaderFilter) ([]Header, error)
+	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
@@ -45,7 +51,7 @@ type Service interface {
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetHeaders returns filtered headers.
-	GetHeaders(filters ...HeaderFilter) ([]Header, error)
+	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
