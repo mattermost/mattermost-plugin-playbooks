@@ -22,8 +22,8 @@ import {
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_INCIDENT_UPDATE,
-    RECEIVED_LOADING,
     RECEIVED_ERROR,
+    SET_LOADING,
     ReceivedShowRHSAction,
     ReceivedIncidents,
     ReceivedIncidentDetails,
@@ -164,7 +164,7 @@ export function setTriggerId(triggerId: string): SetTriggerId {
 
 function setLoading(isLoading: boolean): ReceivedLoading {
     return {
-        type: RECEIVED_LOADING,
+        type: SET_LOADING,
         isLoading,
     };
 }

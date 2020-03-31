@@ -9,7 +9,7 @@ import {
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_RHS_STATE,
     RECEIVED_INCIDENT_UPDATE,
-    RECEIVED_LOADING,
+    SET_LOADING,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -56,7 +56,7 @@ function incidentDetails(state = {}, action) {
 
 function isLoading(state = false, action) {
     switch (action.type) {
-    case RECEIVED_LOADING:
+    case SET_LOADING:
         return action.isLoading || false;
     default:
         return state;
