@@ -44,12 +44,18 @@ interface Props {
         getIncidents: () => void;
         getIncidentDetails: (id: string) => void;
         setRHSState: (state: RHSState) => void;
+        setRHSOpen: (open: boolean) => void;
     };
 }
 
 export default class RightHandSidebar extends React.PureComponent<Props> {
     public componentDidMount(): void {
         this.props.actions.getIncidents();
+        this.props.actions.setRHSOpen(true);
+    }
+
+    public componentWillUnmount(): void {
+        this.props.actions.setRHSOpen(false);
     }
 
     public handleClick = (id: string) => {
