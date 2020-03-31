@@ -6,7 +6,7 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {Incident, RHSState} from 'src/types/incident';
 
-import IncidentList from './incidents_list';
+import IncidentList from './incident_list';
 
 import IncidentDetails from './incident_details';
 

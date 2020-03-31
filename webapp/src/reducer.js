@@ -33,15 +33,21 @@ function rhsState(state = RHSState.List, action) {
 function incidents(state = [], action) {
     switch (action.type) {
     case RECEIVED_INCIDENTS:
-        return action.incidents || [];
+        return sortedDescending(action.incidents) || [];
     case RECEIVED_INCIDENT_UPDATE: {
         const newState = state.filter((incident) => incident.id !== action.incident.id);
         newState.push(action.incident);
-        return newState;
+        return sortedDescending(newState);
     }
     default:
         return state;
     }
+}
+
+function sortedDescending(incidentList) {
+    return incidentList.sort((a, b) => {
+        return b.created_at - a.created_at;
+    });
 }
 
 function incidentDetails(state = {}, action) {
