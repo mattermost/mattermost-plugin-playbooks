@@ -68,10 +68,20 @@ export function getIncidentDetails(id: string) {
     };
 }
 
-export function getIncidents() {
+export function getIncidentsForCurrentTeam() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        dispatch(getIncidents(getCurrentTeamId(getState())));
+    };
+}
+
+/**
+ * Fetches incidents.
+ * @param teamId Gets all incidents if teamId is null.
+ */
+export function getIncidents(teamId?: string) {
+    return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            const incidents = await fetchIncidents(getCurrentTeamId(getState()));
+            const incidents = await fetchIncidents(teamId);
 
             dispatch(receivedIncidents(incidents));
         } catch (error) {
