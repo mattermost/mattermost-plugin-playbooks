@@ -7,6 +7,7 @@ type Incident struct {
 	Header
 	ChannelIDs []string `json:"channel_ids"`
 	PostID     string   `json:"post_id"`
+	PlaybookID string   `json:"playbook_id"`
 }
 
 // Header holds the summary information of an incident.
