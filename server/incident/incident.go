@@ -44,8 +44,8 @@ type Service interface {
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
-	// GetAllHeaders Gets all the header information.
-	GetAllHeaders() ([]Header, error)
+	// GetHeaders returns filtered headers.
+	GetHeaders(filters ...HeaderFilter) ([]Header, error)
 
 	// CreateIncident Creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)

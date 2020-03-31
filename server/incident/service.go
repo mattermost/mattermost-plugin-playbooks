@@ -38,22 +38,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 
 // GetHeaders returns filtered headers.
 func (s *ServiceImpl) GetHeaders(filters ...HeaderFilter) ([]Header, error) {
-	var result []Header
-
-	headers, err := s.store.GetAllHeaders()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, header := range headers {
-		if !headerFilterMatches(header, filters...) {
-			continue
-		}
-
-		result = append(result, header)
-	}
-
-	return result, nil
+	return s.store.GetHeaders(filters...)
 }
 
 // CreateIncident Creates a new incident.
@@ -227,13 +212,4 @@ func cleanChannelName(channelName string) string {
 	channelName = strings.Trim(channelName, "-")
 
 	return channelName
-}
-
-func headerFilterMatches(header Header, filters ...HeaderFilter) bool {
-	for _, filter := range filters {
-		if !filter(header) {
-			return false
-		}
-	}
-	return true
 }
