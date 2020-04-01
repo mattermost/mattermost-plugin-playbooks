@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -36,9 +37,9 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 	}
 }
 
-// GetAllHeaders returns the headers for all incidents.
-func (s *ServiceImpl) GetAllHeaders() ([]Header, error) {
-	return s.store.GetAllHeaders()
+// GetHeaders returns filtered headers.
+func (s *ServiceImpl) GetHeaders(options HeaderFilterOptions) ([]Header, error) {
+	return s.store.GetHeaders(options)
 }
 
 // CreateIncident Creates a new incident.
@@ -57,6 +58,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	// New incidents are always active
 	incident.IsActive = true
 	incident.ChannelIDs = []string{channel.Id}
+	incident.CreatedAt = time.Now().Unix()
 
 	if err = s.store.UpdateIncident(incident); err != nil {
 		return nil, errors.Wrap(err, "failed to update incident")
