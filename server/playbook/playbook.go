@@ -1,5 +1,10 @@
 package playbook
 
+const (
+	ChecklistItemStateUnchecked = "unchecked"
+	ChecklistItemStateChecked   = "checked"
+)
+
 type Playbook struct {
 	ID         string      `json:"id"`
 	Title      string      `json:"title"`

@@ -11,8 +11,18 @@ const (
 	playbookKey = "playbook_"
 )
 
+type KVAPI interface {
+	Set(key string, value interface{}, options ...pluginapi.KVSetOption) (bool, error)
+}
+
 type playbookStore struct {
-	pluginAPI *pluginapi.Client
+	kvAPI KVAPI
+}
+
+func NewPlaybookStore(kvAPI KVAPI) *playbookStore {
+	return &playbookStore{
+		kvAPI: kvAPI,
+	}
 }
 
 // playbookStore Implments the playbook store interface.
@@ -21,7 +31,7 @@ var _ playbook.Store = (*playbookStore)(nil)
 func (p *playbookStore) Create(playbook playbook.Playbook) (string, error) {
 	playbook.ID = model.NewId()
 
-	saved, err := p.pluginAPI.KV.Set(playbookKey+playbook.ID, &playbook)
+	saved, err := p.kvAPI.Set(playbookKey+playbook.ID, &playbook)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to save playbook to KV store")
 	} else if !saved {
