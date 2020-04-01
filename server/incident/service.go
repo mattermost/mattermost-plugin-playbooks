@@ -52,7 +52,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 
 	channel, err := s.createIncidentChannel(incident)
 	if err != nil {
-		return nil, ErrChannelExists
+		return nil, errors.Wrap(ErrChannelExists, err.Error())
 	}
 
 	// New incidents are always active
