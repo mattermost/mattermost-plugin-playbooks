@@ -14,7 +14,9 @@ interface Props {
 export default class Link extends React.PureComponent<Props> {
     private handleClick = (event: React.MouseEvent) => {
         event.preventDefault();
-        WebappUtils.browserHistory.push(this.props.to);
+        if (this.props.to) {
+            WebappUtils.browserHistory.push(this.props.to);
+        }
     }
 
     public render(): JSX.Element {
