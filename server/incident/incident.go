@@ -16,6 +16,7 @@ type Header struct {
 	IsActive        bool   `json:"is_active"`
 	CommanderUserID string `json:"commander_user_id"`
 	TeamID          string `json:"team_id"`
+	CreatedAt       int64  `json:"created_at"`
 }
 
 // ErrNotFound used to indicate entity not found.

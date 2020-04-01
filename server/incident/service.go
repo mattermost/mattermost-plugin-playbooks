@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -57,6 +58,7 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 	// New incidents are always active
 	incident.IsActive = true
 	incident.ChannelIDs = []string{channel.Id}
+	incident.CreatedAt = time.Now().Unix()
 
 	if err = s.store.UpdateIncident(incident); err != nil {
 		return nil, errors.Wrap(err, "failed to update incident")
