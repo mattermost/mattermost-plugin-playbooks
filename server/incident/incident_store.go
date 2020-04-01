@@ -40,11 +40,9 @@ func (s *incidentStore) GetHeaders(options HeaderFilterOptions) ([]Header, error
 	var result []Header
 
 	for _, header := range headers {
-		if !headerFilterMatches(header, options) {
-			continue
+		if headerMatchesFilter(header, options) {
+			result = append(result, header)
 		}
-
-		result = append(result, header)
 	}
 
 	return result, nil
@@ -203,7 +201,7 @@ func (s *incidentStore) updateHeader(incident *Incident) error {
 	return nil
 }
 
-func headerFilterMatches(header Header, options HeaderFilterOptions) bool {
+func headerMatchesFilter(header Header, options HeaderFilterOptions) bool {
 	if options.TeamID != "" {
 		return header.TeamID == options.TeamID
 	}
