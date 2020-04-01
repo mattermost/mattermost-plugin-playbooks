@@ -30,13 +30,22 @@ func NewStore(pluginAPI *pluginapi.Client) Store {
 }
 
 // GetAllHeaders Gets all the header information.
-func (s *incidentStore) GetAllHeaders() ([]Header, error) {
-	headers, err := s.getIDHeaders()
+func (s *incidentStore) GetHeaders(options HeaderFilterOptions) ([]Header, error) {
+	headersMap, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get all headers value")
 	}
 
-	return toHeader(headers), nil
+	headers := toHeader(headersMap)
+	var result []Header
+
+	for _, header := range headers {
+		if headerMatchesFilter(header, options) {
+			result = append(result, header)
+		}
+	}
+
+	return result, nil
 }
 
 // CreateIncident Creates a new incident.
@@ -190,4 +199,12 @@ func (s *incidentStore) updateHeader(incident *Incident) error {
 	}
 
 	return nil
+}
+
+func headerMatchesFilter(header Header, options HeaderFilterOptions) bool {
+	if options.TeamID != "" {
+		return header.TeamID == options.TeamID
+	}
+
+	return true
 }

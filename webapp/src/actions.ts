@@ -8,7 +8,7 @@ import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
 import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {Channel} from 'mattermost-redux/types/channels';
@@ -68,10 +68,20 @@ export function getIncidentDetails(id: string) {
     };
 }
 
-export function getIncidents() {
+export function getIncidentsForCurrentTeam() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        dispatch(getIncidents(getCurrentTeamId(getState())));
+    };
+}
+
+/**
+ * Fetches incidents.
+ * @param teamId Gets all incidents if teamId is null.
+ */
+export function getIncidents(teamId?: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            const incidents = await fetchIncidents();
+            const incidents = await fetchIncidents(teamId);
 
             dispatch(receivedIncidents(incidents));
         } catch (error) {
