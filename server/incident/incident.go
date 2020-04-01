@@ -22,6 +22,9 @@ type Header struct {
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
+// ErrChannelExists is used to indicate a channel with that name already exists.
+var ErrChannelExists = errors.New("channel exists")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetAllHeaders returns the headers for all incidents.
