@@ -37,7 +37,7 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, endIncident as clientEndIncident} from './client';
+import {fetchIncidents, fetchIncidentDetails, clientEndIncident} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
