@@ -6,7 +6,7 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {Incident, RHSState} from 'src/types/incident';
 
-import IncidentList from './incidents_list';
+import IncidentList from './incident_list';
 
 import IncidentDetails from './incident_details';
 
@@ -43,15 +43,21 @@ interface Props {
     isLoading: boolean;
     actions: {
         startIncident: () => void;
-        getIncidents: () => void;
+        getIncidentsForCurrentTeam: () => void;
         getIncidentDetails: (id: string) => void;
         setRHSState: (state: RHSState) => void;
+        setRHSOpen: (open: boolean) => void;
     };
 }
 
 export default class RightHandSidebar extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        this.props.actions.getIncidents();
+        this.props.actions.getIncidentsForCurrentTeam();
+        this.props.actions.setRHSOpen(true);
+    }
+
+    public componentWillUnmount(): void {
+        this.props.actions.setRHSOpen(false);
     }
 
     public handleClick = (id: string) => {

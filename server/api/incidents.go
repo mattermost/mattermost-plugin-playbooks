@@ -99,7 +99,26 @@ func (h *IncidentHandler) postIncidentCreated(incident *incident.Incident, chann
 }
 
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	incidentHeaders, err := h.incidentService.GetAllHeaders()
+	var incidentHeaders []incident.Header
+	teamID := r.URL.Query().Get("team_id")
+
+	// Check permissions
+	userID := r.Header.Get("Mattermost-User-ID")
+	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+	if teamID == "" && !isAdmin {
+		HandleError(w, errors.Errorf("userID %s is not an admin", userID))
+		return
+	}
+	if !isAdmin && !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
+		HandleError(w, errors.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		return
+	}
+
+	filterOptions := incident.HeaderFilterOptions{
+		TeamID: teamID,
+	}
+
+	incidentHeaders, err := h.incidentService.GetHeaders(filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return

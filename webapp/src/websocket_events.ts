@@ -3,12 +3,12 @@
 
 import {Dispatch, AnyAction} from 'redux';
 
-import {WebsocketEvent} from './types/websocket_events';
+import {WebSocketMessage} from './types/websocket_events';
 import {receivedIncidentUpdate} from './actions';
 import {isIncident} from './types/incident';
 
 export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>) {
-    return (msg: WebsocketEvent) => {
+    return (msg: WebSocketMessage) => {
         if (msg.data.payload) {
             const incident = JSON.parse(msg.data.payload);
             if (isIncident(incident)) {

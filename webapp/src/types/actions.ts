@@ -3,11 +3,12 @@
 
 import {RECEIVED_DIALOG_TRIGGER_ID} from 'mattermost-redux/action_types/integrations';
 
-import {pluginId} from '../manifest';
+import {pluginId} from 'src/manifest';
 
 import {Incident, RHSState} from './incident';
 
-export const RECEIVED_SHOW_RHS_ACTION = pluginId + '_show_rhs';
+export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
+export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
 export const RECEIVED_RHS_STATE = pluginId + '_rhs_state';
 export const RECEIVED_INCIDENTS = pluginId + '_received_incidents';
 export const RECEIVED_INCIDENT_DETAILS = pluginId + '_received_incident_details';
@@ -15,9 +16,14 @@ export const RECEIVED_INCIDENT_UPDATE = pluginId + '_received_incident_update';
 export const RECEIVED_ERROR = pluginId + '_received_error';
 export const SET_LOADING = pluginId + '_set_loading';
 
-export interface ReceivedShowRHSAction {
-    type: typeof RECEIVED_SHOW_RHS_ACTION;
-    showRHSPluginAction: () => void;
+export interface ReceivedToggleRHSAction {
+    type: typeof RECEIVED_TOGGLE_RHS_ACTION;
+    toggleRHSPluginAction: () => void;
+}
+
+export interface SetRHSOpen {
+    type: typeof SET_RHS_OPEN;
+    open: boolean;
 }
 
 export interface ReceivedRHSState {
