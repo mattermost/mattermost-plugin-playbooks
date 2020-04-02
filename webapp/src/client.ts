@@ -1,6 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import qs from 'qs';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
@@ -8,8 +9,12 @@ import {pluginId} from './manifest';
 
 const apiUrl = `/plugins/${pluginId}/api/v1`;
 
-export function fetchIncidents() {
-    return doGet(`${apiUrl}/incidents`);
+export function fetchIncidents(teamId?: string) {
+    const queryParams = qs.stringify({
+        team_id: teamId,
+    }, {addQueryPrefix: true});
+
+    return doGet(`${apiUrl}/incidents${queryParams}`);
 }
 
 export function fetchIncidentDetails(id: string) {

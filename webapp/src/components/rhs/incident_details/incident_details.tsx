@@ -47,18 +47,21 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     </div>
                 */}
 
-                <div className='inner-container'>
-                    <div className='title'>{'Channels'}</div>
-                    {
-                        this.props.channelDetails.map((channel: ChannelWithTeamData) => (
-                            <Link
-                                key={channel.id}
-                                text={channel.display_name}
-                                href={`/${channel.team_name}/channels/${channel.id}`}
-                            />
-                        ))
-                    }
-                </div>
+                {
+                    this.props.channelDetails.length > 0 &&
+                    <div className='inner-container'>
+                        <div className='title'>{'Channels'}</div>
+                        {
+                            this.props.channelDetails.map((channel: ChannelWithTeamData) => (
+                                <Link
+                                    key={channel.id}
+                                    to={`/${channel.team_name}/channels/${channel.name}`}
+                                    text={channel.display_name}
+                                />
+                            ))
+                        }
+                    </div>
+                }
 
                 {this.props.allowEndIncident &&
                     <div>
