@@ -128,11 +128,13 @@ $font-family: Open Sans;
     }
 
     .footer-div {
+        border-top: 1px solid #ddd;
         position: absolute;
-        bottom: 0%;
-    }
-
-    .btn {
-        float: right;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        text-align: right;
+        padding: 2rem;
     }
 }
