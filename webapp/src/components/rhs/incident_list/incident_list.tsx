@@ -43,12 +43,18 @@ export default class IncidentList extends React.PureComponent<Props> {
             );
         }
 
-        return this.props.incidents.map((i) => (
-            <IncidentItem
-                key={i.id}
-                incident={i}
-                onClick={() => this.props.onClick(i.id)}
-            />
-        ));
+        return (
+            <div className='IncidentList'>
+                {
+                    this.props.incidents.map((i) => (
+                        <IncidentItem
+                            key={i.id}
+                            incident={i}
+                            onClick={() => this.props.onClick(i.id)}
+                        />
+                    ))
+                }
+            </div>
+        );
     }
 }
