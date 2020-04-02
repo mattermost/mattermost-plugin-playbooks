@@ -64,7 +64,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 }
 
                 {this.props.allowEndIncident &&
-                    <div>
+                    <div className='footer-div'>
                         <button
                             className='btn btn-primary'
                             onClick={() => this.props.actions.endIncident(this.props.incident.id)}
