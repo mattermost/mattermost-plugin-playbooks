@@ -33,8 +33,11 @@ type Service interface {
 	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
 	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
 
-	// EndIncident Completes the incident associated to the given channelID.
-	EndIncident(channelID string) (*Incident, error)
+	// EndIncident Completes the incident with the given ID by the given user.
+	EndIncident(incidentID string, userID string) error
+
+	// EndIncident Completes the incident associated to the given channelID by the given user.
+	EndIncidentByChannel(channelID string, userID string) (*Incident, error)
 
 	// GetIncident Gets an incident by ID.
 	GetIncident(id string) (*Incident, error)

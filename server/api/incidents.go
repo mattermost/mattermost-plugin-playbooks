@@ -37,6 +37,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
+	incidentRouter.HandleFunc("/end", handler.endIncident).Methods(http.MethodPost)
 
 	return handler
 }
@@ -137,4 +138,18 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	err := h.incidentService.EndIncident(vars["id"], userID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
 }

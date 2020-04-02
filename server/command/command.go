@@ -87,22 +87,10 @@ func (r *Runner) actionDialogStart(args []string) {
 }
 
 func (r *Runner) actionEnd() {
-	incident, err := r.incidentService.EndIncident(r.args.ChannelId)
+	_, err := r.incidentService.EndIncidentByChannel(r.args.ChannelId, r.args.UserId)
 
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
-		return
-	}
-
-	user, err := r.pluginAPI.User.Get(r.args.UserId)
-	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
-		return
-	}
-
-	// Post that @user has ended the incident.
-	if err := r.poster.PostMessage(r.args.ChannelId, "%v has been closed by @%v", incident.Name, user.Username); err != nil {
-		r.postCommandResponse(fmt.Sprintf("Failed to post message to incident channel: %v", err))
 		return
 	}
 }

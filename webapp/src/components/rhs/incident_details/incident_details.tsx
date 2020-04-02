@@ -9,8 +9,6 @@ import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
 import {Incident} from 'src/types/incident';
 
-import {getDisplayName} from 'src/utils/utils';
-
 import Profile from 'src/components/rhs/profile';
 
 import Link from './link';
@@ -22,7 +20,10 @@ interface Props {
     commander: UserProfile;
     profileUri: string;
     channelDetails: ChannelWithTeamData[];
-
+    allowEndIncident: boolean;
+    actions: {
+        endIncident: (id: string) => void;
+    };
 }
 
 export default class IncidentDetails extends React.PureComponent<Props> {
@@ -58,6 +59,17 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                         ))
                     }
                 </div>
+
+                {this.props.allowEndIncident &&
+                    <div>
+                        <button
+                            className='btn btn-primary'
+                            onClick={() => this.props.actions.endIncident(this.props.incident.id)}
+                        >
+                            {'End Incident'}
+                        </button>
+                    </div>
+                }
             </div>
         );
     }
