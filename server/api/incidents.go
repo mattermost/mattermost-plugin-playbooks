@@ -7,12 +7,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/pkg/errors"
 )
 
 // IncidentHandler is the API handler.
@@ -59,21 +59,24 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	incident, err := h.incidentService.CreateIncident(&incident.Incident{
+	name := request.Submission[incident.DialogFieldNameKey].(string)
+	newIncident, err := h.incidentService.CreateIncident(&incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
-			Name:            request.Submission[incident.DialogFieldNameKey].(string),
+			Name:            name,
 		},
 		PostID: request.State,
 	})
 
-	if err != nil {
+	if errors.Is(err, incident.ErrChannelExists) {
+		h.poster.Ephemeral(request.UserId, request.ChannelId, "Error: A channel with the name `%v` already exists. Please choose a different name.", name)
+	} else if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	if err := h.postIncidentCreated(incident, request.ChannelId); err != nil {
+	if err := h.postIncidentCreated(newIncident, request.ChannelId); err != nil {
 		HandleError(w, err)
 		return
 	}

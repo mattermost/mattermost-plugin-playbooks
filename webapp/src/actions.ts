@@ -24,6 +24,7 @@ import {
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
+    SET_LOADING,
     ReceivedToggleRHSAction,
     SetRHSOpen,
     ReceivedIncidents,
@@ -32,6 +33,7 @@ import {
     ReceivedRHSState,
     SetTriggerId,
     ReceivedIncidentUpdate,
+    SetLoading,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -123,6 +125,14 @@ export function endIncident(incidentId: string) {
     };
 }
 
+export function withLoading(action: any) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(setLoading(true));
+        await dispatch(action);
+        dispatch(setLoading(false));
+    };
+}
+
 export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,
@@ -180,5 +190,12 @@ export function setTriggerId(triggerId: string): SetTriggerId {
     return {
         type: IntegrationTypes.RECEIVED_DIALOG_TRIGGER_ID,
         data: triggerId,
+    };
+}
+
+function setLoading(isLoading: boolean): SetLoading {
+    return {
+        type: SET_LOADING,
+        isLoading,
     };
 }

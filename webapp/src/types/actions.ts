@@ -14,6 +14,7 @@ export const RECEIVED_INCIDENTS = pluginId + '_received_incidents';
 export const RECEIVED_INCIDENT_DETAILS = pluginId + '_received_incident_details';
 export const RECEIVED_INCIDENT_UPDATE = pluginId + '_received_incident_update';
 export const RECEIVED_ERROR = pluginId + '_received_error';
+export const SET_LOADING = pluginId + '_set_loading';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -53,4 +54,9 @@ export interface ReceivedError {
 export interface SetTriggerId {
     type: typeof RECEIVED_DIALOG_TRIGGER_ID;
     data: string;
+}
+
+export interface SetLoading {
+    type: typeof SET_LOADING;
+    isLoading: boolean;
 }

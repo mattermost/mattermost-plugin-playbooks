@@ -6,8 +6,15 @@ import {bindActionCreators, Dispatch} from 'redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {getIncidentsForCurrentTeam, getIncidentDetails, setRHSState, setRHSOpen} from 'src/actions';
-import {activeIncidents, incidentDetails, getRHSState} from 'src/selectors';
+import {
+    withLoading,
+    startIncident,
+    getIncidentsForCurrentTeam,
+    getIncidentDetails,
+    setRHSState,
+    setRHSOpen,
+} from 'src/actions';
+import {activeIncidents, incidentDetails, getRHSState, isLoading} from 'src/selectors';
 
 import RightHandSidebar from './rhs_main';
 
@@ -16,14 +23,16 @@ function mapStateToProps(state: GlobalState) {
         incidents: activeIncidents(state) || [],
         incident: incidentDetails(state),
         rhsState: getRHSState(state),
+        isLoading: isLoading(state),
     };
 }
 
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
-            getIncidentsForCurrentTeam,
-            getIncidentDetails,
+            startIncident,
+            getIncidentsForCurrentTeam: () => withLoading(getIncidentsForCurrentTeam()),
+            getIncidentDetails: (id: string) => withLoading(getIncidentDetails(id)),
             setRHSState,
             setRHSOpen,
         }, dispatch),
