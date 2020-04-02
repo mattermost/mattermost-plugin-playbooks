@@ -151,7 +151,6 @@ func (s *ServiceImpl) NukeDB() error {
 }
 
 func (s *ServiceImpl) endIncident(incident *Incident, userID string) error {
-
 	// Incident main channel membership is required to end incident
 	incidentMainChannelID := incident.ChannelIDs[0]
 
@@ -170,13 +169,13 @@ func (s *ServiceImpl) endIncident(incident *Incident, userID string) error {
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrap(err, "failed to post end incident message")
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	// Post in the  main incident channel that @user has ended the incident.
 	// Main channel is the only channel in the incident for now.
 	mainChannelID := incident.ChannelIDs[0]
-	if err := s.poster.PostMessage(mainChannelID, "%v has been closed by @%v", incident.Name, user.Username); err != nil {
+	if err := s.poster.PostMessage(mainChannelID, "This incident has been closed by @%v", user.Username); err != nil {
 		return errors.Wrap(err, "failed to post end incident messsage")
 	}
 

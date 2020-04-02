@@ -47,13 +47,13 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     }
 
     // Get the incident main channel. Assuming the first one for now.
-    const incidentChannelId = ownProps.incident?.channel_ids?.length > 0 ? ownProps.incident?.channel_ids[0] : '';
+    const incidentChannelId = ownProps.incident?.channel_ids?.[0] || '';
 
     return {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
         channelDetails,
-        allowEndIncident: incidentChannelId === getCurrentChannel(state).id,
+        allowEndIncident: incidentChannelId === getCurrentChannel(state)?.id,
     };
 }
 

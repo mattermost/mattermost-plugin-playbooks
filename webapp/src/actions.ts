@@ -35,7 +35,7 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, endIncident as stopIncident} from './client';
+import {fetchIncidents, fetchIncidentDetails, endIncident as clientEndIncident} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -114,7 +114,7 @@ export function startIncident(postId? : string) {
 export function endIncident(incidentId: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            await stopIncident(incidentId);
+            await clientEndIncident(incidentId);
 
             dispatch(setRHSState(RHSState.List));
         } catch (error) {
