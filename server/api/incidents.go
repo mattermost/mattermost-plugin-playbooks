@@ -37,7 +37,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
-	incidentRouter.HandleFunc("/end", handler.endIncident).Methods(http.MethodPost)
+	incidentRouter.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
 
 	return handler
 }

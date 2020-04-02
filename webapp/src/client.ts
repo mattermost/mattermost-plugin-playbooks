@@ -21,8 +21,13 @@ export function fetchIncidentDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}`);
 }
 
-export function endIncident(id: string) {
-    return doPost(`${apiUrl}/incidents/${id}/end`);
+export async function endIncident(id: string) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${id}/end`, {
+        method: 'put',
+        body: '',
+    });
+
+    return data;
 }
 
 export const doGet = async (url: string) => {
