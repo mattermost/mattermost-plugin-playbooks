@@ -10,6 +10,7 @@ import {
     RECEIVED_RHS_STATE,
     SET_RHS_OPEN,
     RECEIVED_INCIDENT_UPDATE,
+    SET_LOADING,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -63,10 +64,20 @@ function incidentDetails(state = {}, action) {
     }
 }
 
+function isLoading(state = false, action) {
+    switch (action.type) {
+    case SET_LOADING:
+        return action.isLoading || false;
+    default:
+        return state;
+    }
+}
+
 export default combineReducers({
     rhsPluginAction,
     rhsState,
     incidents,
     incidentDetails,
+    isLoading,
     rhsOpen,
 });

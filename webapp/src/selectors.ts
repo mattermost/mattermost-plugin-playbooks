@@ -31,4 +31,6 @@ export const getShowRHSAction = (state: GlobalState) => getPluginState(state).rh
 
 export const getRHSState = (state: GlobalState) => getPluginState(state).rhsState;
 
+export const isLoading = (state: GlobalState) => getPluginState(state).isLoading;
+
 export const getRHSOpen = (state: GlobalState) => getPluginState(state).rhsOpen;

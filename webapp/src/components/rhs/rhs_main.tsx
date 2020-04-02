@@ -40,6 +40,7 @@ interface Props {
     incidents: Incident[];
     incident: Incident;
     rhsState: RHSState;
+    isLoading: boolean;
     actions: {
         startIncident: () => void;
         getIncidentsForCurrentTeam: () => void;
@@ -81,7 +82,14 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                     className='RightHandSidebar'
                 >
                     {
-                        this.props.rhsState === RHSState.List &&
+                        this.props.isLoading &&
+                        <div className='loading-container'>
+                            <i className='fa fa-spin fa-refresh fa-2x'/>
+                            <span>{'Loading...'}</span>
+                        </div>
+                    }
+                    {
+                        this.props.rhsState === RHSState.List && !this.props.isLoading &&
                         <div className='navigation-bar'>
                             <div>
                                 <div className='title'>{'Incident List'}</div>
@@ -93,7 +101,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                         </div>
                     }
                     {
-                        this.props.rhsState !== RHSState.List &&
+                        this.props.rhsState !== RHSState.List && !this.props.isLoading &&
                         <div className='navigation-bar'>
                             <div className='incident-details'>
                                 <i
@@ -106,14 +114,14 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                     }
                     <div>
                         {
-                            this.props.rhsState === RHSState.List &&
+                            this.props.rhsState === RHSState.List && !this.props.isLoading &&
                             <IncidentList
                                 incidents={this.props.incidents}
                                 onClick={this.handleClick}
                             />
                         }
                         {
-                            this.props.rhsState === RHSState.Details &&
+                            this.props.rhsState === RHSState.Details && !this.props.isLoading &&
                             <IncidentDetails
                                 incident={this.props.incident}
                             />
