@@ -53,7 +53,6 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
         channelDetails,
-
         allowEndIncident: incidentChannelId === getCurrentChannel(state).id,
     };
 }
