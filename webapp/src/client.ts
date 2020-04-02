@@ -21,13 +21,22 @@ export function fetchIncidentDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}`);
 }
 
+export async function clientEndIncident(id: string) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${id}/end`, {
+        method: 'put',
+        body: '',
+    });
+
+    return data;
+}
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 
     return data;
 };
 
-export const doPost = async (url: string, body: string) => {
+export const doPost = async (url: string, body = '') => {
     const {data} = await doFetchWithResponse(url, {
         method: 'post',
         body,

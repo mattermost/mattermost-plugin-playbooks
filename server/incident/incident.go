@@ -36,19 +36,22 @@ type Service interface {
 	// GetHeaders returns filtered headers.
 	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
-	// CreateIncident Creates a new incident.
+	// CreateIncident creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
-	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
+	// CreateIncidentDialog opens an interactive dialog to start a new incident.
 	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
 
-	// EndIncident Completes the incident associated to the given channelID.
-	EndIncident(channelID string) (*Incident, error)
+	// EndIncident completes the incident with the given ID by the given user.
+	EndIncident(incidentID string, userID string) error
 
-	// GetIncident Gets an incident by ID.
+	// EndIncident completes the incident associated to the given channelID by the given user.
+	EndIncidentByChannel(channelID string, userID string) (*Incident, error)
+
+	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
-	// NukeDB Removes all incident related data.
+	// NukeDB removes all incident related data.
 	NukeDB() error
 }
 
@@ -57,18 +60,18 @@ type Store interface {
 	// GetHeaders returns filtered headers.
 	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
-	// CreateIncident Creates a new incident.
+	// CreateIncident creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
 	UpdateIncident(incident *Incident) error
 
-	// GetIncident Gets an incident by ID.
+	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
-	// GetIncidentByChannel Gets an incident associated with the given channel id.
+	// GetIncidentByChannel gets an incident associated with the given channel id.
 	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
 
-	// NukeDB Removes all incident related data.
+	// NukeDB removes all incident related data.
 	NukeDB() error
 }
