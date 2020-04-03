@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 type contextKey string
@@ -50,6 +51,18 @@ func HandleError(w http.ResponseWriter, err error) {
 		Details: err.Error(),
 	})
 	_, _ = w.Write(b)
+}
+
+// ReturnJSON Writes the given pointer to object as json with a success response
+func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
+	jsonBytes, err := json.Marshal(pointerToObject)
+	if err != nil {
+		HandleError(w, errors.Wrap(err, "unable to marshal json"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonBytes)
 }
 
 // HandleErrorWithCode Writes code, errTitle and err as json into the response.

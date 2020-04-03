@@ -9,27 +9,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-type PlaybookHandlerPluginAPI interface {
-}
-
 // IncidentHandler is the API handler.
 type PlaybookHandler struct {
 	playbookService playbook.Service
-	pluginAPI       PlaybookHandlerPluginAPI
 }
 
-func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api PlaybookHandlerPluginAPI) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
-		pluginAPI:       api,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
-	//playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
 
-	//playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
-	//playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
+	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
+	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
 
 	return handler
 }
@@ -62,5 +57,24 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	w.Write(resultBytes)
 }
 
-//func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
-//}
+func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	playbook, err := h.playbookService.Get(vars["id"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, &playbook)
+}
+
+func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
+	playbooks, err := h.playbookService.GetPlaybooks()
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, &playbooks)
+}

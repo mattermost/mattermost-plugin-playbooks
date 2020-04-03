@@ -9,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
@@ -60,8 +61,9 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 	)
-
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot)
+	playbookService := playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV))
+	api.NewPlaybookHandler(p.handler.APIRouter, playbookService)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrap(err, "failed register commands")

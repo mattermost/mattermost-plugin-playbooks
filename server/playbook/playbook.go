@@ -7,6 +7,7 @@ const (
 
 type Playbook struct {
 	ID         string      `json:"id"`
+	ParentID   string      `json:"parent_id"`
 	Title      string      `json:"title"`
 	Checklists []Checklist `json:"checklists"`
 }
@@ -22,10 +23,13 @@ type ChecklistItem struct {
 }
 
 type Service interface {
-	//Get(id string) (Playbook, error)
+	Get(id string) (Playbook, error)
 	Create(playbook Playbook) (string, error)
+	GetPlaybooks() ([]Playbook, error)
 }
 
 type Store interface {
+	Get(id string) (Playbook, error)
 	Create(playbook Playbook) (string, error)
+	GetPlaybooks() ([]Playbook, error)
 }

@@ -33,6 +33,20 @@ func (m *MockKVAPI) EXPECT() *MockKVAPIMockRecorder {
 	return m.recorder
 }
 
+// Get mocks base method
+func (m *MockKVAPI) Get(arg0 string, arg1 interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Get indicates an expected call of Get
+func (mr *MockKVAPIMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockKVAPI)(nil).Get), arg0, arg1)
+}
+
 // Set mocks base method
 func (m *MockKVAPI) Set(arg0 string, arg1 interface{}, arg2 ...mattermost_plugin_api.KVSetOption) (bool, error) {
 	m.ctrl.T.Helper()
