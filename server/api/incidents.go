@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -60,7 +59,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
-	newIncident, err := h.incidentService.CreateIncident(&incident.Incident{
+	_, err := h.incidentService.CreateIncident(&incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
@@ -78,30 +77,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err := h.postIncidentCreated(newIncident, request.ChannelId); err != nil {
-		HandleError(w, err)
-		return
-	}
-
 	w.WriteHeader(http.StatusOK)
-}
-
-func (h *IncidentHandler) postIncidentCreated(incident *incident.Incident, channelID string) error {
-	team, err := h.pluginAPI.Team.Get(incident.TeamID)
-	if err != nil {
-		return err
-	}
-
-	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
-	if err != nil {
-		return err
-	}
-
-	url := h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	msg := fmt.Sprintf("Incident started -> [~%s](%s)", incident.Name, fmt.Sprintf("%s/%s/channels/%s", *url, team.Name, channel.Name))
-	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
-
-	return nil
 }
 
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {

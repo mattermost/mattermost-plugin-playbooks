@@ -12,8 +12,8 @@ import StartIncidentPostMenu from './components/post_menu';
 
 import {setToggleRHSAction} from './actions';
 import reducer from './reducer';
-import {handleWebsocketIncidentUpdate} from './websocket_events';
-import {WEBSOCKET_INCIDENT_UPDATE} from './types/websocket_events';
+import {handleWebsocketIncidentUpdate, handleWebsocketIncidentCreated} from './websocket_events';
+import {WEBSOCKET_INCIDENT_UPDATE, WEBSOCKET_INCIDENT_CREATED} from './types/websocket_events';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
@@ -30,6 +30,9 @@ export default class Plugin {
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATE,
             handleWebsocketIncidentUpdate(store.dispatch));
+
+        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED,
+            handleWebsocketIncidentCreated(store.dispatch, store.getState));
     }
 }
 

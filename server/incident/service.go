@@ -64,9 +64,14 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 		return nil, errors.Wrap(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
+	s.poster.PublishWebsocketEventToTeam("incident_created", incident, incident.TeamID)
 
-	if err = s.poster.PostMessage(channel.Id, "%s", "An incident has occurred."); err != nil {
+	user, err := s.pluginAPI.User.Get(incident.CommanderUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to to resolve user %s", incident.CommanderUserID)
+	}
+
+	if err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
 		return nil, errors.Wrap(err, "failed to post to incident channel")
 	}
 
