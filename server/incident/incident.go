@@ -16,49 +16,62 @@ type Header struct {
 	IsActive        bool   `json:"is_active"`
 	CommanderUserID string `json:"commander_user_id"`
 	TeamID          string `json:"team_id"`
+	CreatedAt       int64  `json:"created_at"`
 }
 
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
+// ErrChannelExists is used to indicate a channel with that name already exists.
+var ErrChannelExists = errors.New("channel exists")
+
+// HeaderFilterOptions specifies the optional parameters when getting headers.
+type HeaderFilterOptions struct {
+	// Gets all the headers with this TeamID.
+	TeamID string
+}
+
 // Service is the incident/service interface.
 type Service interface {
-	// GetAllHeaders returns the headers for all incidents.
-	GetAllHeaders() ([]Header, error)
+	// GetHeaders returns filtered headers.
+	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
-	// CreateIncident Creates a new incident.
+	// CreateIncident creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
-	// CreateIncidentDialog Opens an interactive dialog to start a new incident.
+	// CreateIncidentDialog opens an interactive dialog to start a new incident.
 	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
 
-	// EndIncident Completes the incident associated to the given channelID.
-	EndIncident(channelID string) (*Incident, error)
+	// EndIncident completes the incident with the given ID by the given user.
+	EndIncident(incidentID string, userID string) error
 
-	// GetIncident Gets an incident by ID.
+	// EndIncident completes the incident associated to the given channelID by the given user.
+	EndIncidentByChannel(channelID string, userID string) (*Incident, error)
+
+	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
-	// NukeDB Removes all incident related data.
+	// NukeDB removes all incident related data.
 	NukeDB() error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
-	// GetAllHeaders Gets all the header information.
-	GetAllHeaders() ([]Header, error)
+	// GetHeaders returns filtered headers.
+	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
-	// CreateIncident Creates a new incident.
+	// CreateIncident creates a new incident.
 	CreateIncident(incident *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
 	UpdateIncident(incident *Incident) error
 
-	// GetIncident Gets an incident by ID.
+	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
-	// GetIncidentByChannel Gets an incident associated with the given channel id.
+	// GetIncidentByChannel gets an incident associated with the given channel id.
 	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
 
-	// NukeDB Removes all incident related data.
+	// NukeDB removes all incident related data.
 	NukeDB() error
 }

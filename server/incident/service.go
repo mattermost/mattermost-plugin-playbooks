@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -36,9 +37,9 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 	}
 }
 
-// GetAllHeaders returns the headers for all incidents.
-func (s *ServiceImpl) GetAllHeaders() ([]Header, error) {
-	return s.store.GetAllHeaders()
+// GetHeaders returns filtered headers.
+func (s *ServiceImpl) GetHeaders(options HeaderFilterOptions) ([]Header, error) {
+	return s.store.GetHeaders(options)
 }
 
 // CreateIncident Creates a new incident.
@@ -51,12 +52,13 @@ func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
 
 	channel, err := s.createIncidentChannel(incident)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create incident")
+		return nil, errors.Wrap(ErrChannelExists, err.Error())
 	}
 
 	// New incidents are always active
 	incident.IsActive = true
 	incident.ChannelIDs = []string{channel.Id}
+	incident.CreatedAt = time.Now().Unix()
 
 	if err = s.store.UpdateIncident(incident); err != nil {
 		return nil, errors.Wrap(err, "failed to update incident")
@@ -111,20 +113,29 @@ func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string,
 }
 
 // EndIncident Completes the incident associated to the given channelID.
-func (s *ServiceImpl) EndIncident(channelID string) (*Incident, error) {
+func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
+	incident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to end incident")
+	}
+
+	if err := s.endIncident(incident, userID); err != nil {
+		return errors.Wrap(err, "failed to end incident")
+	}
+
+	return nil
+}
+
+// EndIncidentByChannel Completes the incident associated to the given channelID.
+func (s *ServiceImpl) EndIncidentByChannel(channelID string, userID string) (*Incident, error) {
 	incident, err := s.store.GetIncidentByChannel(channelID, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to end incident")
 	}
 
-	// Close the incident
-	incident.IsActive = false
-
-	if err := s.store.UpdateIncident(incident); err != nil {
+	if err := s.endIncident(incident, userID); err != nil {
 		return nil, errors.Wrap(err, "failed to end incident")
 	}
-
-	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
 
 	return incident, nil
 }
@@ -137,6 +148,38 @@ func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
 // NukeDB Removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
+}
+
+func (s *ServiceImpl) endIncident(incident *Incident, userID string) error {
+	// Incident main channel membership is required to end incident
+	incidentMainChannelID := incident.ChannelIDs[0]
+
+	if !s.pluginAPI.User.HasPermissionToChannel(userID, incidentMainChannelID, model.PERMISSION_READ_CHANNEL) {
+		return errors.New("user does not have permission to end incident")
+	}
+
+	// Close the incident
+	incident.IsActive = false
+
+	if err := s.store.UpdateIncident(incident); err != nil {
+		return errors.Wrap(err, "failed to end incident")
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	// Post in the  main incident channel that @user has ended the incident.
+	// Main channel is the only channel in the incident for now.
+	mainChannelID := incident.ChannelIDs[0]
+	if err := s.poster.PostMessage(mainChannelID, "This incident has been closed by @%v", user.Username); err != nil {
+		return errors.Wrap(err, "failed to post end incident messsage")
+	}
+
+	return nil
 }
 
 func (s *ServiceImpl) createIncidentChannel(incident *Incident) (*model.Channel, error) {

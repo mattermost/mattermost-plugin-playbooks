@@ -33,16 +33,23 @@ $font-family: Open Sans;
         padding: 15px;
         border-top: 1px solid var(--center-channel-color-20);
     }
+
     .navigation-bar {
         display: flex;
         flex-direction: row;
         align-items: baseline;
+        justify-content: space-between;
         padding: 15px 22px 15px 22px;
         background: #f5f5f5;
         border-bottom: 1px solid #dddddd;
 
-        .fa-chevron-left {
+        .fa {
             cursor: pointer;
+            color: var(--center-channel-color-60);
+        }
+
+        .fa-chevron-left {
+            padding: 0px 12px 0px 0px;
         }
 
         .title {
@@ -50,8 +57,29 @@ $font-family: Open Sans;
             font-weight: normal;
             font-size: 16px;
             line-height: 24px;
-            padding: 0px 0px 0px 12px;
             color: #000000;
+        }
+
+        .incident-details {
+            display: flex;
+            align-items: baseline;
+        }
+    }
+
+    .loading-container {
+        background: #ffffff;
+        color: var(--center-channel-color-60);
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+
+        > span {
+            font-style: normal;
+            font-weight: normal;
+            font-size: 16px;
+            line-height: 24px;
+            color: #000000;
+            padding-left: 10px;
         }
     }
 }

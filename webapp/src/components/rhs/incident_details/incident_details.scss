@@ -126,4 +126,15 @@ $font-family: Open Sans;
             color: #3d3c40;
         }
     }
+
+    .footer-div {
+        border-top: 1px solid #ddd;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        text-align: right;
+        padding: 2rem;
+    }
 }

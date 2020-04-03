@@ -8,6 +8,7 @@ export interface Incident {
     commander_user_id: string;
     team_id: string;
     channel_ids: string[];
+    created_at: number;
     post_id?: string;
 }
 
@@ -21,6 +22,7 @@ export function isIncident(arg: any): arg is Incident {
         arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
         arg.channel_ids && Array.isArray(arg.channel_ids) &&
+        arg.created_at && typeof arg.created_at === 'number' &&
         optional;
 }
 

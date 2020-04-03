@@ -27,23 +27,23 @@ type Logger interface {
 
 // Poster interface - a small subset of the plugin posting API.
 type Poster interface {
-	// PostMessage posts a simple Direct Message to the specified user
+	// PostMessage posts a simple Direct Message to the specified user.
 	PostMessage(channelID, format string, args ...interface{}) error
 
-	// DM posts a simple Direct Message to the specified user
+	// DM posts a simple Direct Message to the specified user.
 	DM(userID, format string, args ...interface{}) error
 
 	// DMWithAttachments posts a Direct Message that contains Slack attachments.
 	// Often used to include post actions.
 	DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error
 
-	// Ephemeral sends an ephemeral message to a user
+	// Ephemeral sends an ephemeral message to a user.
 	Ephemeral(userID, channelID, format string, args ...interface{})
 
-	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID
+	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID.
 	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)
 
-	// PublishWebsocketEventToChannel sends a websocket event with payload to channelID
+	// PublishWebsocketEventToChannel sends a websocket event with payload to channelID.
 	PublishWebsocketEventToChannel(event string, payload interface{}, channelID string)
 }
 

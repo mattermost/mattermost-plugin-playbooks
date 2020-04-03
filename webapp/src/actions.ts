@@ -8,7 +8,7 @@ import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
 import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {Channel} from 'mattermost-redux/types/channels';
@@ -17,23 +17,27 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {
-    RECEIVED_SHOW_RHS_ACTION,
+    RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_RHS_STATE,
+    SET_RHS_OPEN,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
-    ReceivedShowRHSAction,
+    SET_LOADING,
+    ReceivedToggleRHSAction,
+    SetRHSOpen,
     ReceivedIncidents,
     ReceivedIncidentDetails,
     ReceivedError,
     ReceivedRHSState,
     SetTriggerId,
     ReceivedIncidentUpdate,
+    SetLoading,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails} from './client';
+import {fetchIncidents, fetchIncidentDetails, clientEndIncident} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -66,10 +70,20 @@ export function getIncidentDetails(id: string) {
     };
 }
 
-export function getIncidents() {
+export function getIncidentsForCurrentTeam() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        dispatch(getIncidents(getCurrentTeamId(getState())));
+    };
+}
+
+/**
+ * Fetches incidents.
+ * @param teamId Gets all incidents if teamId is null.
+ */
+export function getIncidents(teamId?: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            const incidents = await fetchIncidents();
+            const incidents = await fetchIncidents(teamId);
 
             dispatch(receivedIncidents(incidents));
         } catch (error) {
@@ -85,7 +99,7 @@ export function startIncident(postId? : string) {
         const args = {channel_id: currentChanel?.id};
 
         let command = '/incident start';
-        if (!postId) {
+        if (postId) {
             command = `${command} ${postId}`;
         }
 
@@ -96,6 +110,33 @@ export function startIncident(postId? : string) {
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
+    };
+}
+
+export function endIncident(incidentId: string) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        try {
+            await clientEndIncident(incidentId);
+
+            dispatch(setRHSState(RHSState.List));
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function withLoading(action: any) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(setLoading(true));
+        await dispatch(action);
+        dispatch(setLoading(false));
+    };
+}
+
+export function setRHSOpen(open: boolean): SetRHSOpen {
+    return {
+        type: SET_RHS_OPEN,
+        open,
     };
 }
 
@@ -131,10 +172,10 @@ function receivedError(error: string): ReceivedError {
  * Stores`showRHSPlugin` action returned by
  * registerRightHandSidebarComponent in plugin initialization.
  */
-export function setShowRHSAction(showRHSPluginAction: () => void): ReceivedShowRHSAction {
+export function setToggleRHSAction(toggleRHSPluginAction: () => void): ReceivedToggleRHSAction {
     return {
-        type: RECEIVED_SHOW_RHS_ACTION,
-        showRHSPluginAction,
+        type: RECEIVED_TOGGLE_RHS_ACTION,
+        toggleRHSPluginAction,
     };
 }
 
@@ -149,5 +190,12 @@ export function setTriggerId(triggerId: string): SetTriggerId {
     return {
         type: IntegrationTypes.RECEIVED_DIALOG_TRIGGER_ID,
         data: triggerId,
+    };
+}
+
+function setLoading(isLoading: boolean): SetLoading {
+    return {
+        type: SET_LOADING,
+        isLoading,
     };
 }

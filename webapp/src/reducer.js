@@ -4,18 +4,20 @@
 import {combineReducers} from 'redux';
 
 import {
-    RECEIVED_SHOW_RHS_ACTION,
+    RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_RHS_STATE,
+    SET_RHS_OPEN,
     RECEIVED_INCIDENT_UPDATE,
+    SET_LOADING,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
 function rhsPluginAction(state = null, action) {
     switch (action.type) {
-    case RECEIVED_SHOW_RHS_ACTION:
-        return action.showRHSPluginAction;
+    case RECEIVED_TOGGLE_RHS_ACTION:
+        return action.toggleRHSPluginAction;
     default:
         return state;
     }
@@ -25,6 +27,15 @@ function rhsState(state = RHSState.List, action) {
     switch (action.type) {
     case RECEIVED_RHS_STATE:
         return action.state;
+    default:
+        return state;
+    }
+}
+
+function rhsOpen(state = false, action) {
+    switch (action.type) {
+    case SET_RHS_OPEN:
+        return action.open || false;
     default:
         return state;
     }
@@ -53,9 +64,20 @@ function incidentDetails(state = {}, action) {
     }
 }
 
+function isLoading(state = false, action) {
+    switch (action.type) {
+    case SET_LOADING:
+        return action.isLoading || false;
+    default:
+        return state;
+    }
+}
+
 export default combineReducers({
     rhsPluginAction,
     rhsState,
     incidents,
     incidentDetails,
+    isLoading,
+    rhsOpen,
 });
