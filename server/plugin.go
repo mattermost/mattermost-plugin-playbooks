@@ -9,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
@@ -55,7 +56,7 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		incident.NewStore(pluginAPIClient),
+		pluginkvstore.NewIncidentStore(pluginAPIClient),
 		p.bot,
 		p.config,
 	)

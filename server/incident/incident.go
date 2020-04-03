@@ -19,17 +19,17 @@ type Header struct {
 	CreatedAt       int64  `json:"created_at"`
 }
 
-// HeaderFilterOptions specifies the optional parameters when getting headers.
-type HeaderFilterOptions struct {
-	// Gets all the headers with this TeamID.
-	TeamID string
-}
-
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
 // ErrChannelExists is used to indicate a channel with that name already exists.
 var ErrChannelExists = errors.New("channel exists")
+
+// HeaderFilterOptions specifies the optional parameters when getting headers.
+type HeaderFilterOptions struct {
+	// Gets all the headers with this TeamID.
+	TeamID string
+}
 
 // Service is the incident/service interface.
 type Service interface {
