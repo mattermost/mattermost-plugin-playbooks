@@ -99,7 +99,7 @@ export function startIncident(postId? : string) {
         const args = {channel_id: currentChanel?.id};
 
         let command = '/incident start';
-        if (!postId) {
+        if (postId) {
             command = `${command} ${postId}`;
         }
 
