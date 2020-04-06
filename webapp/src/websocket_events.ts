@@ -8,6 +8,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {WebSocketMessage} from './types/websocket_events';
 import {receivedIncidentUpdate} from './actions';
 import {isIncident} from './types/incident';
+import {getClientId} from './selectors';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
@@ -26,19 +27,23 @@ export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>) {
 export function handleWebsocketIncidentCreated(dispatch: Dispatch<AnyAction>, getState: GetStateFunc) {
     return (msg: WebSocketMessage) => {
         if (msg.data.payload) {
-            const incident = JSON.parse(msg.data.payload);
+            const payload = JSON.parse(msg.data.payload);
+            const incident = payload.incident;
+
             if (!isIncident(incident)) {
                 return;
             }
 
             dispatch(receivedIncidentUpdate(incident));
 
-            // Navigate to the newly created channel
-            const mainChannelId = incident.channel_ids?.[0];
-            const currentTeam = getCurrentTeam(getState());
+            if (payload.client_id === getClientId(getState())) {
+                // Navigate to the newly created channel
+                const mainChannelId = incident.channel_ids?.[0];
+                const currentTeam = getCurrentTeam(getState());
 
-            const url = `/${currentTeam.name}/channels/${mainChannelId}`;
-            WebappUtils.browserHistory.push(url);
+                const url = `/${currentTeam.name}/channels/${mainChannelId}`;
+                WebappUtils.browserHistory.push(url);
+            }
         }
     };
 }

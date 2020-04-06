@@ -61,6 +61,14 @@ func (b *Bot) PublishWebsocketEventToChannel(event string, payload interface{}, 
 	})
 }
 
+// PublishWebsocketEventToUser sends a websocket event with payload to userID
+func (b *Bot) PublishWebsocketEventToUser(event string, payload interface{}, userID string) {
+	payloadMap := b.makePayloadMap(payload)
+	b.pluginAPI.Frontend.PublishWebSocketEvent(event, payloadMap, &model.WebsocketBroadcast{
+		UserId: userID,
+	})
+}
+
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
