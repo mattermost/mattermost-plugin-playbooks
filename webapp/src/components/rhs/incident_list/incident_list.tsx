@@ -35,7 +35,7 @@ export default class IncidentList extends React.PureComponent<Props> {
                     </div>
                     <a
                         className='link'
-                        onClick={this.props.actions.startIncident}
+                        onClick={() => this.props.actions.startIncident()}
                     >
                         {'+ Create new incident'}
                     </a>
