@@ -10,6 +10,7 @@ import IncidentIcon from './components/incident_icon';
 import RightHandSidebar from './components/rhs';
 import StartIncidentPostMenu from './components/post_menu';
 
+import {Hooks} from './hooks';
 import {setToggleRHSAction} from './actions';
 import reducer from './reducer';
 import {handleWebsocketIncidentUpdate, handleWebsocketIncidentCreated} from './websocket_events';
@@ -33,6 +34,9 @@ export default class Plugin {
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED,
             handleWebsocketIncidentCreated(store.dispatch, store.getState));
+
+        const hooks = new Hooks(store);
+        registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
     }
 }
 
