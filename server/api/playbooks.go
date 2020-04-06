@@ -25,6 +25,8 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service) *P
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
+	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
+	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
 
 	return handler
 }
@@ -67,6 +69,38 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ReturnJSON(w, &playbook)
+}
+
+func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var playbook playbook.Playbook
+	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
+		HandleError(w, errors.Wrap(err, "unable to decode playbook"))
+		return
+	}
+
+	// Force parsed playbook id to be URL parameter id
+	playbook.ID = vars["id"]
+
+	if err := h.playbookService.Update(playbook); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "OK"}`))
+}
+
+func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	if err := h.playbookService.Delete(vars["id"]); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {

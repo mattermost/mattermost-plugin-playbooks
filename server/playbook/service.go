@@ -21,3 +21,11 @@ func (s *service) Get(id string) (Playbook, error) {
 func (s *service) GetPlaybooks() ([]Playbook, error) {
 	return s.store.GetPlaybooks()
 }
+
+func (s *service) Update(playbook Playbook) error {
+	return s.store.Update(playbook)
+}
+
+func (s *service) Delete(id string) error {
+	return s.store.Delete(id)
+}

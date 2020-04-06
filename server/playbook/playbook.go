@@ -26,10 +26,14 @@ type Service interface {
 	Get(id string) (Playbook, error)
 	Create(playbook Playbook) (string, error)
 	GetPlaybooks() ([]Playbook, error)
+	Update(playbook Playbook) error
+	Delete(id string) error
 }
 
 type Store interface {
 	Get(id string) (Playbook, error)
 	Create(playbook Playbook) (string, error)
 	GetPlaybooks() ([]Playbook, error)
+	Update(playbook Playbook) error
+	Delete(id string) error
 }

@@ -153,6 +153,38 @@ func (r *Runner) actionSelftest() {
 		return
 	}
 
+	gotplaybook.Title = "This is an updated title"
+	if err := r.playbookService.Update(gotplaybook); err != nil {
+		r.postCommandResponse(fmt.Sprintf("Unable to update playbook Err:" + err.Error()))
+		return
+	}
+
+	gotupdated, err := r.playbookService.Get(playbookid)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookid, err.Error()))
+		return
+	}
+
+	if gotupdated.Title != gotplaybook.Title {
+		r.postCommandResponse("Update was ineffective")
+		return
+	}
+
+	todeleteid, err := r.playbookService.Create(testplaybook)
+	if err != nil {
+		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
+		return
+	}
+	if err := r.playbookService.Delete(todeleteid); err != nil {
+		r.postCommandResponse("There was an error while deleteing playbook. Err: " + err.Error())
+		return
+	}
+
+	if deletedPlaybook, _ := r.playbookService.Get(todeleteid); deletedPlaybook.Title != "" {
+		r.postCommandResponse("Playbook should have been vaporised! Where's the kaboom? There was supposed to be an earth-shattering Kaboom!")
+		return
+	}
+
 	r.postCommandResponse("Self test success.")
 }
 

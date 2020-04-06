@@ -133,4 +133,67 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, playbooksBytes, result)
 	})
+
+	t.Run("update playbook", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
+		handler := NewHandler()
+		store := pluginkvstore.NewPlaybookStore(mockkvapi)
+		playbookService := playbook.NewService(store)
+		NewPlaybookHandler(handler.APIRouter, playbookService)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		mockkvapi.EXPECT().Set("playbook_testplaybookid", gomock.Any()).Return(true, nil)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		result, err := ioutil.ReadAll(resp.Body)
+
+		require.NoError(t, err)
+		assert.Equal(t, []byte(`{"status": "OK"}`), result)
+	})
+
+	t.Run("delete playbook", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
+		handler := NewHandler()
+		store := pluginkvstore.NewPlaybookStore(mockkvapi)
+		playbookService := playbook.NewService(store)
+		NewPlaybookHandler(handler.APIRouter, playbookService)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/testplaybookid", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookIndex := struct {
+			Playbooks []string `json:"playbooks"`
+		}{
+			Playbooks: []string{
+				"playbookid1",
+				"testplaybookid",
+				"playbookid2",
+			},
+		}
+		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Set("playbookindex", gomock.Any()).Return(true, nil)
+		mockkvapi.EXPECT().Set("playbook_testplaybookid", nil).Return(true, nil)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		result, err := ioutil.ReadAll(resp.Body)
+
+		require.NoError(t, err)
+		assert.Equal(t, []byte(`{"status": "OK"}`), result)
+	})
 }
