@@ -1,6 +1,6 @@
 package incident
 
-import "github.com/pkg/errors"
+import "errors"
 
 // Incident holds the detailed information of an incident.
 type Incident struct {
