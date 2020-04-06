@@ -4,7 +4,8 @@ type service struct {
 	store Store
 }
 
-func NewService(store Store) *service {
+// NewService returns a new playbook service
+func NewService(store Store) Service {
 	return &service{
 		store: store,
 	}

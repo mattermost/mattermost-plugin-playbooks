@@ -13,29 +13,32 @@ const (
 	indexKey    = "playbookindex"
 )
 
+// KVAPI is the key value store interface for the playbooks store. Modeled after mattermost-plugin-api.
 type KVAPI interface {
 	Set(key string, value interface{}, options ...pluginapi.KVSetOption) (bool, error)
 	Get(key string, out interface{}) error
 }
 
-type playbookStore struct {
+// PlaybookStore is a kvs store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
+type PlaybookStore struct {
 	kvAPI KVAPI
 }
 
-func NewPlaybookStore(kvAPI KVAPI) *playbookStore {
-	return &playbookStore{
+// NewPlaybookStore returns a new playbook store.
+func NewPlaybookStore(kvAPI KVAPI) *PlaybookStore {
+	return &PlaybookStore{
 		kvAPI: kvAPI,
 	}
 }
 
 // playbookStore Implments the playbook store interface.
-var _ playbook.Store = (*playbookStore)(nil)
+var _ playbook.Store = (*PlaybookStore)(nil)
 
 type playbookIndex struct {
 	Playbooks []string `json:"playbooks"`
 }
 
-func (p *playbookStore) getIndex() (playbookIndex, error) {
+func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 	var index playbookIndex
 	if err := p.kvAPI.Get(indexKey, &index); err != nil {
 		return index, fmt.Errorf("unable to get playbook index %w", err)
@@ -44,7 +47,7 @@ func (p *playbookStore) getIndex() (playbookIndex, error) {
 	return index, nil
 }
 
-func (p *playbookStore) addToIndex(playbookid string) error {
+func (p *PlaybookStore) addToIndex(playbookid string) error {
 	index, err := p.getIndex()
 	if err != nil {
 		return err
@@ -65,7 +68,7 @@ func (p *playbookStore) addToIndex(playbookid string) error {
 	return nil
 }
 
-func (p *playbookStore) removeFromIndex(playbookid string) error {
+func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 	index, err := p.getIndex()
 	if err != nil {
 		return err
@@ -92,7 +95,8 @@ func (p *playbookStore) removeFromIndex(playbookid string) error {
 	return nil
 }
 
-func (p *playbookStore) Create(playbook playbook.Playbook) (string, error) {
+// Create creates a new playbook
+func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 	playbook.ID = model.NewId()
 
 	saved, err := p.kvAPI.Set(playbookKey+playbook.ID, &playbook)
@@ -110,7 +114,8 @@ func (p *playbookStore) Create(playbook playbook.Playbook) (string, error) {
 	return playbook.ID, nil
 }
 
-func (p *playbookStore) Get(id string) (playbook.Playbook, error) {
+// Get retrieves a playbook
+func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
 	var out playbook.Playbook
 	err := p.kvAPI.Get(playbookKey+id, &out)
 	if err != nil {
@@ -119,7 +124,8 @@ func (p *playbookStore) Get(id string) (playbook.Playbook, error) {
 	return out, nil
 }
 
-func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
+// GetPlaybooks retrieves all playbooks
+func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	index, err := p.getIndex()
 	if err != nil {
 		return nil, err
@@ -127,8 +133,8 @@ func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 
 	var cumulativeError error
 	playbooks := make([]playbook.Playbook, len(index.Playbooks))
-	for i, playbookId := range index.Playbooks {
-		playbooks[i], err = p.Get(playbookId)
+	for i, playbookID := range index.Playbooks {
+		playbooks[i], err = p.Get(playbookID)
 		if err != nil {
 			if cumulativeError != nil {
 				cumulativeError = fmt.Errorf(err.Error()+"%w", cumulativeError)
@@ -141,7 +147,8 @@ func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	return playbooks, cumulativeError
 }
 
-func (p *playbookStore) Update(updated playbook.Playbook) error {
+// Update updates a playbook
+func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 	if updated.ID == "" {
 		return fmt.Errorf("Updating playbook without ID")
 	}
@@ -156,7 +163,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) error {
 	return nil
 }
 
-func (p *playbookStore) Delete(id string) error {
+// Delete deletes a playbook
+func (p *PlaybookStore) Delete(id string) error {
 	if err := p.removeFromIndex(id); err != nil {
 		return err
 	}

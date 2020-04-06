@@ -154,7 +154,7 @@ func (r *Runner) actionSelftest() {
 	}
 
 	gotplaybook.Title = "This is an updated title"
-	if err := r.playbookService.Update(gotplaybook); err != nil {
+	if err = r.playbookService.Update(gotplaybook); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Unable to update playbook Err:" + err.Error()))
 		return
 	}
@@ -175,7 +175,7 @@ func (r *Runner) actionSelftest() {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
 	}
-	if err := r.playbookService.Delete(todeleteid); err != nil {
+	if err = r.playbookService.Delete(todeleteid); err != nil {
 		r.postCommandResponse("There was an error while deleteing playbook. Err: " + err.Error())
 		return
 	}

@@ -9,11 +9,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// IncidentHandler is the API handler.
+// PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	playbookService playbook.Service
 }
 
+// NewPlaybookHandler returns a new playbook api handler
 func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
