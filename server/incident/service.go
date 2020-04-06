@@ -50,9 +50,9 @@ func (s *ServiceImpl) CreateIncident(inc *Incident) (*Incident, error) {
 		return nil, fmt.Errorf("failed to create incident: %w", err)
 	}
 
-	channel, err2 := s.createIncidentChannel(inc)
-	if err2 != nil {
-		return nil, fmt.Errorf("%w: %s", ErrChannelExists, err2.Error())
+	channel, err := s.createIncidentChannel(inc)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrChannelExists, err.Error())
 	}
 
 	// New incidents are always active

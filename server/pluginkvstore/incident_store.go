@@ -117,7 +117,7 @@ func (s *incidentStore) GetIncident(id string) (*incident.Incident, error) {
 	}
 
 	if _, exists := headers[id]; !exists {
-		return nil, fmt.Errorf("%w: incident with id (%s) does not exist", incident.ErrNotFound, id)
+		return nil, fmt.Errorf("incident with id (%s) does not exist: %w", id, incident.ErrNotFound)
 	}
 
 	return s.getIncident(id)
