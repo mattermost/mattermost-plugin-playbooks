@@ -94,9 +94,9 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                             <div>
                                 <div className='title'>{'Incident List'}</div>
                             </div>
-                            <button
+                            <i
                                 className='fa fa-plus start-incident'
-                                onClick={this.props.actions.startIncident}
+                                onClick={() => this.props.actions.startIncident()}
                             />
                         </div>
                     }
