@@ -43,6 +43,27 @@ func (p *playbookStore) getIndex() (playbookIndex, error) {
 	return index, nil
 }
 
+func (p *playbookStore) addToIndex(playbookid string) error {
+	index, err := p.getIndex()
+	if err != nil {
+		return err
+	}
+
+	newIndex := index
+	newIndex.Playbooks = append([]string(nil), index.Playbooks...)
+	newIndex.Playbooks = append(newIndex.Playbooks, playbookid)
+
+	// Set atomic doesn't seeem to work properly.
+	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
+	if err != nil {
+		return errors.Wrap(err, "Unable to add playbook to index")
+	} else if !saved {
+		return errors.New("Unable add playbook to index KV Set didn't save")
+	}
+
+	return nil
+}
+
 func (p *playbookStore) Create(playbook playbook.Playbook) (string, error) {
 	playbook.ID = model.NewId()
 
@@ -53,12 +74,17 @@ func (p *playbookStore) Create(playbook playbook.Playbook) (string, error) {
 		return "", errors.New("Unable to save playbook to KV store, KV Set didn't save")
 	}
 
+	err = p.addToIndex(playbook.ID)
+	if err != nil {
+		return "", err
+	}
+
 	return playbook.ID, nil
 }
 
 func (p *playbookStore) Get(id string) (playbook.Playbook, error) {
 	var out playbook.Playbook
-	err := p.kvAPI.Get(id, &out)
+	err := p.kvAPI.Get(playbookKey+id, &out)
 	if err != nil {
 		return out, err
 	}

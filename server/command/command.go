@@ -6,6 +6,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -48,11 +49,12 @@ type Runner struct {
 	logger          bot.Logger
 	poster          bot.Poster
 	incidentService incident.Service
+	playbookService playbook.Service
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService incident.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service) *Runner {
 	return &Runner{
 		context:         ctx,
 		args:            args,
@@ -60,6 +62,7 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		logger:          logger,
 		poster:          poster,
 		incidentService: incidentService,
+		playbookService: playbookService,
 	}
 }
 
@@ -93,6 +96,64 @@ func (r *Runner) actionEnd() {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
+}
+
+func (r *Runner) actionSelftest() {
+	if err := r.incidentService.NukeDB(); err != nil {
+		r.postCommandResponse("There was an error while nuking db. Err: " + err.Error())
+		return
+	}
+
+	testplaybook := playbook.Playbook{
+		Title: "testing playbook",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "My list",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do the thing.",
+					},
+					{
+						Title: "Do the other thing.",
+					},
+				},
+			},
+		},
+	}
+	playbookid, err := r.playbookService.Create(testplaybook)
+	if err != nil {
+		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
+		return
+	}
+
+	gotplaybook, err := r.playbookService.Get(playbookid)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookid, err.Error()))
+		return
+	}
+
+	if gotplaybook.Title != testplaybook.Title {
+		r.postCommandResponse(fmt.Sprintf("Retrieved playbook is wrong, ID: %v Playbook: %+v", playbookid, gotplaybook))
+		return
+	}
+
+	if gotplaybook.ID == "" {
+		r.postCommandResponse(fmt.Sprintf("Retrieved playbook has a blank ID"))
+		return
+	}
+
+	gotPlaybooks, err := r.playbookService.GetPlaybooks()
+	if err != nil {
+		r.postCommandResponse("There was an error while retrieving all playbooks. Err: " + err.Error())
+		return
+	}
+
+	if len(gotPlaybooks) != 1 || gotPlaybooks[0].Title != testplaybook.Title {
+		r.postCommandResponse(fmt.Sprintf("Retrieved playbooks are wrong: %+v", gotPlaybooks))
+		return
+	}
+
+	r.postCommandResponse("Self test success.")
 }
 
 func (r *Runner) actionNukeDB(args []string) {
@@ -138,6 +199,9 @@ func (r *Runner) Execute() error {
 		r.actionEnd()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
+	//TODO: Disable in production
+	case "st":
+		r.actionSelftest()
 	default:
 		r.postCommandResponse(helpText)
 	}

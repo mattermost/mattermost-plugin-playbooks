@@ -26,16 +26,6 @@ func jsonPlaybookReader(playbook playbook.Playbook) io.Reader {
 }
 
 func TestPlaybooks(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
-
-	handler := NewHandler()
-	store := pluginkvstore.NewPlaybookStore(mockkvapi)
-	playbookService := playbook.NewService(store)
-	NewPlaybookHandler(handler.APIRouter, playbookService)
-
 	playbooktest := playbook.Playbook{
 		Title: "My Playbook",
 		Checklists: []playbook.Checklist{
@@ -53,7 +43,24 @@ func TestPlaybooks(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("create playbook", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
+		handler := NewHandler()
+		store := pluginkvstore.NewPlaybookStore(mockkvapi)
+		playbookService := playbook.NewService(store)
+		NewPlaybookHandler(handler.APIRouter, playbookService)
+
 		mockkvapi.EXPECT().Set(gomock.Any(), gomock.Any()).Return(true, nil)
+		playbookIndex := struct {
+			Playbooks []string `json:"playbooks"`
+		}{
+			Playbooks: []string{
+				"playbookid1",
+			},
+		}
+		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Set("playbookindex", gomock.Any(), gomock.Any()).Return(true, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(playbooktest))
@@ -66,12 +73,20 @@ func TestPlaybooks(t *testing.T) {
 	})
 
 	t.Run("get playbook", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
+		handler := NewHandler()
+		store := pluginkvstore.NewPlaybookStore(mockkvapi)
+		playbookService := playbook.NewService(store)
+		NewPlaybookHandler(handler.APIRouter, playbookService)
+
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/testplaybookid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get("testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -82,6 +97,14 @@ func TestPlaybooks(t *testing.T) {
 	})
 
 	t.Run("get playbooks", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
+		handler := NewHandler()
+		store := pluginkvstore.NewPlaybookStore(mockkvapi)
+		playbookService := playbook.NewService(store)
+		NewPlaybookHandler(handler.APIRouter, playbookService)
+
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
@@ -96,8 +119,8 @@ func TestPlaybooks(t *testing.T) {
 			},
 		}
 		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Get("playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
-		mockkvapi.EXPECT().Get("playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get("playbook_playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get("playbook_playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
