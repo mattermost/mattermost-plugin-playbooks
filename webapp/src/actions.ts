@@ -92,7 +92,7 @@ export function getIncidents(teamId?: string) {
     };
 }
 
-export function startIncident(postId? : string) {
+export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const currentChanel = getCurrentChannel(getState());
 
@@ -114,11 +114,9 @@ export function startIncident(postId? : string) {
 }
 
 export function endIncident(incidentId: string) {
-    return async (dispatch: Dispatch<AnyAction>) => {
+    return async () => {
         try {
             await clientEndIncident(incidentId);
-
-            dispatch(setRHSState(RHSState.List));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
