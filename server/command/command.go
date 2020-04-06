@@ -89,7 +89,13 @@ func (r *Runner) actionDialogStart(args []string) {
 func (r *Runner) actionEnd() {
 	_, err := r.incidentService.EndIncidentByChannel(r.args.ChannelId, r.args.UserId)
 
-	if err != nil {
+	if errors.Is(err, incident.ErrNotFound) {
+		r.postCommandResponse("This channel is not associated with an incident.")
+		return
+	} else if errors.Is(err, incident.ErrIncidentNotActive) {
+		r.postCommandResponse("This incident has already been closed.")
+		return
+	} else if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}

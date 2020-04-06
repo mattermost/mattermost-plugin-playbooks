@@ -25,6 +25,9 @@ var ErrNotFound = errors.New("not found")
 // ErrChannelExists is used to indicate a channel with that name already exists.
 var ErrChannelExists = errors.New("channel exists")
 
+// ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
+var ErrIncidentNotActive = errors.New("incident not active")
+
 // HeaderFilterOptions specifies the optional parameters when getting headers.
 type HeaderFilterOptions struct {
 	// Gets all the headers with this TeamID.

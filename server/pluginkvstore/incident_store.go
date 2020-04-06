@@ -1,6 +1,8 @@
 package pluginkvstore
 
 import (
+	"fmt"
+
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -115,7 +117,7 @@ func (s *incidentStore) GetIncident(id string) (*incident.Incident, error) {
 	}
 
 	if _, exists := headers[id]; !exists {
-		return nil, errors.Errorf("incident with id (%s) does not exist", id)
+		return nil, errors.Errorf("%w: incident with id (%s) does not exist", incident.ErrNotFound, id)
 	}
 
 	return s.getIncident(id)
@@ -130,23 +132,18 @@ func (s *incidentStore) GetIncidentByChannel(channelID string, active bool) (*in
 
 	// Search for which incident has the given channel associated
 	for _, header := range headers {
-		if header.IsActive != active {
-			continue
-		}
-
-		incident, err := s.getIncident(header.ID)
+		inc, err := s.getIncident(header.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get incident for channel")
+			return nil, errors.Errorf("failed to get incident for id (%s): %w", header.ID, err)
 		}
 
-		for _, incidentChannelID := range incident.ChannelIDs {
+		for _, incidentChannelID := range inc.ChannelIDs {
 			if incidentChannelID == channelID {
-
-				return incident, nil
+				return inc, nil
 			}
 		}
 	}
-	return nil, errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have incidents", channelID)
+	return nil, errors.Errorf("channel with id (%s) does not have an incident: %w", channelID, incident.ErrNotFound)
 }
 
 // NukeDB Removes all incident related data.
@@ -169,11 +166,14 @@ func toHeader(headers idHeaderMap) []incident.Header {
 }
 
 func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, error) {
-	var incident incident.Incident
-	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &incident); err != nil {
-		return nil, errors.Wrap(err, "failed to get incident")
+	var inc incident.Incident
+	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &inc); err != nil {
+		return nil, fmt.Errorf("failed to get incident: %w", err)
 	}
-	return &incident, nil
+	if inc.ID == "" {
+		return nil, incident.ErrNotFound
+	}
+	return &inc, nil
 }
 
 func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {

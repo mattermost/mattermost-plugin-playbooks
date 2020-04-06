@@ -43,51 +43,51 @@ func (s *ServiceImpl) GetHeaders(options HeaderFilterOptions) ([]Header, error) 
 }
 
 // CreateIncident Creates a new incident.
-func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
+func (s *ServiceImpl) CreateIncident(inc *Incident) (*Incident, error) {
 	// Create incident
-	incident, err := s.store.CreateIncident(incident)
+	inc, err := s.store.CreateIncident(inc)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create incident")
 	}
 
-	channel, err := s.createIncidentChannel(incident)
+	channel, err := s.createIncidentChannel(inc)
 	if err != nil {
 		return nil, errors.Wrap(ErrChannelExists, err.Error())
 	}
 
 	// New incidents are always active
-	incident.IsActive = true
-	incident.ChannelIDs = []string{channel.Id}
-	incident.CreatedAt = time.Now().Unix()
+	inc.IsActive = true
+	inc.ChannelIDs = []string{channel.Id}
+	inc.CreatedAt = time.Now().Unix()
 
-	if err = s.store.UpdateIncident(incident); err != nil {
+	if err = s.store.UpdateIncident(inc); err != nil {
 		return nil, errors.Wrap(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
+	s.poster.PublishWebsocketEventToTeam("incident_update", inc, inc.TeamID)
 
 	if err = s.poster.PostMessage(channel.Id, "%s", "An incident has occurred."); err != nil {
 		return nil, errors.Wrap(err, "failed to post to incident channel")
 	}
 
-	if incident.PostID == "" {
-		return incident, nil
+	if inc.PostID == "" {
+		return inc, nil
 	}
 
 	// Post the content and link of the original post
-	post, err := s.pluginAPI.Post.GetPost(incident.PostID)
+	post, err := s.pluginAPI.Post.GetPost(inc.PostID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get incident original post")
 	}
 
-	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incident.PostID)
+	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, inc.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	if err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
 		return nil, errors.Wrap(err, "failed to post to incident channel")
 	}
 
-	return incident, nil
+	return inc, nil
 }
 
 // CreateIncidentDialog Opens a interactive dialog to start a new incident.
@@ -114,12 +114,12 @@ func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string,
 
 // EndIncident Completes the incident associated to the given channelID.
 func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
-	incident, err := s.store.GetIncident(incidentID)
+	inc, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return errors.Wrap(err, "failed to end incident")
+		return errors.Errorf("failed to end incident: %w", err)
 	}
 
-	if err := s.endIncident(incident, userID); err != nil {
+	if err := s.endIncident(inc, userID); err != nil {
 		return errors.Wrap(err, "failed to end incident")
 	}
 
@@ -128,16 +128,19 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 
 // EndIncidentByChannel Completes the incident associated to the given channelID.
 func (s *ServiceImpl) EndIncidentByChannel(channelID string, userID string) (*Incident, error) {
-	incident, err := s.store.GetIncidentByChannel(channelID, true)
+	inc, err := s.store.GetIncidentByChannel(channelID, true)
 	if err != nil {
+		return nil, errors.Errorf("failed to end incident: %w", err)
+	}
+
+	if !inc.IsActive {
+		return nil, ErrIncidentNotActive
+	}
+	if err := s.endIncident(inc, userID); err != nil {
 		return nil, errors.Wrap(err, "failed to end incident")
 	}
 
-	if err := s.endIncident(incident, userID); err != nil {
-		return nil, errors.Wrap(err, "failed to end incident")
-	}
-
-	return incident, nil
+	return inc, nil
 }
 
 // GetIncident Gets an incident by ID.
