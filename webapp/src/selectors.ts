@@ -35,3 +35,4 @@ export const rhsOpen = (state: GlobalState) => pluginState(state).rhsOpen;
 
 export const isLoading = (state: GlobalState) => pluginState(state).isLoading;
 
+export const getClientId = (state: GlobalState) => pluginState(state).clientId;
