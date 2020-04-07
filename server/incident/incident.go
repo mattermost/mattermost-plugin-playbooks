@@ -40,7 +40,7 @@ type Service interface {
 	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
 	// CreateIncident creates a new incident.
-	CreateIncident(incident *Incident) (*Incident, error)
+	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// CreateIncidentDialog opens an interactive dialog to start a new incident.
 	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
@@ -49,7 +49,7 @@ type Service interface {
 	EndIncident(incidentID string, userID string) error
 
 	// EndIncident completes the incident associated to the given channelID by the given user.
-	EndIncidentByChannel(channelID string, userID string) (*Incident, error)
+	EndIncidentByChannel(channelID string, userID string) error
 
 	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
@@ -64,16 +64,16 @@ type Store interface {
 	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
 	// CreateIncident creates a new incident.
-	CreateIncident(incident *Incident) (*Incident, error)
+	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
-	UpdateIncident(incident *Incident) error
+	UpdateIncident(incdnt *Incident) error
 
 	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
 	// GetIncidentByChannel gets an incident associated with the given channel id.
-	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
+	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

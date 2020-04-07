@@ -87,7 +87,7 @@ func (r *Runner) actionDialogStart(args []string) {
 }
 
 func (r *Runner) actionEnd() {
-	_, err := r.incidentService.EndIncidentByChannel(r.args.ChannelId, r.args.UserId)
+	err := r.incidentService.EndIncidentByChannel(r.args.ChannelId, r.args.UserId)
 
 	if errors.Is(err, incident.ErrNotFound) {
 		r.postCommandResponse("This channel is not associated with an incident.")

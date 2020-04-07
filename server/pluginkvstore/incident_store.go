@@ -52,16 +52,16 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 }
 
 // CreateIncident Creates a new incident.
-func (s *incidentStore) CreateIncident(incident *incident.Incident) (*incident.Incident, error) {
-	if incident == nil {
+func (s *incidentStore) CreateIncident(incdnt *incident.Incident) (*incident.Incident, error) {
+	if incdnt == nil {
 		return nil, errors.New("incident is nil")
 	}
-	if incident.ID != "" {
+	if incdnt.ID != "" {
 		return nil, errors.New("ID should not be set")
 	}
-	incident.ID = model.NewId()
+	incdnt.ID = model.NewId()
 
-	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incident.ID), incident)
+	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to store new incident: %w", err)
 	} else if !saved {
@@ -69,19 +69,19 @@ func (s *incidentStore) CreateIncident(incident *incident.Incident) (*incident.I
 	}
 
 	// Update Headers
-	if err := s.updateHeader(incident); err != nil {
+	if err := s.updateHeader(incdnt); err != nil {
 		return nil, fmt.Errorf("failed to update headers: %w", err)
 	}
 
-	return incident, nil
+	return incdnt, nil
 }
 
 // UpdateIncident updates an incident.
-func (s *incidentStore) UpdateIncident(incident *incident.Incident) error {
-	if incident == nil {
+func (s *incidentStore) UpdateIncident(incdnt *incident.Incident) error {
+	if incdnt == nil {
 		return errors.New("incident is nil")
 	}
-	if incident.ID == "" {
+	if incdnt.ID == "" {
 		return errors.New("ID should be set")
 	}
 
@@ -90,11 +90,11 @@ func (s *incidentStore) UpdateIncident(incident *incident.Incident) error {
 		return fmt.Errorf("failed to get all headers value: %w", err)
 	}
 
-	if _, exists := headers[incident.ID]; !exists {
-		return fmt.Errorf("incident with id (%s) does not exist", incident.ID)
+	if _, exists := headers[incdnt.ID]; !exists {
+		return fmt.Errorf("incident with id (%s) does not exist", incdnt.ID)
 	}
 
-	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incident.ID), incident)
+	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
 		return fmt.Errorf("failed to update incident: %w", err)
 	} else if !saved {
@@ -102,7 +102,7 @@ func (s *incidentStore) UpdateIncident(incident *incident.Incident) error {
 	}
 
 	// Update Headers
-	if err := s.updateHeader(incident); err != nil {
+	if err := s.updateHeader(incdnt); err != nil {
 		return fmt.Errorf("failed to update headers: %w", err)
 	}
 
@@ -123,27 +123,27 @@ func (s *incidentStore) GetIncident(id string) (*incident.Incident, error) {
 	return s.getIncident(id)
 }
 
-// GetIncidentByChannel Gets an incident associated to the given channel id.
-func (s *incidentStore) GetIncidentByChannel(channelID string, active bool) (*incident.Incident, error) {
+// GetIncidentIDForChannel Gets an incident associated to the given channel id.
+func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all headers value: %w", err)
+		return "", fmt.Errorf("failed to get all headers value: %w", err)
 	}
 
 	// Search for which incident has the given channel associated
 	for _, header := range headers {
 		inc, err := s.getIncident(header.ID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get incident for id (%s): %w", header.ID, err)
+			return "", fmt.Errorf("failed to get incident for id (%s): %w", header.ID, err)
 		}
 
 		for _, incidentChannelID := range inc.ChannelIDs {
 			if incidentChannelID == channelID {
-				return inc, nil
+				return inc.ID, nil
 			}
 		}
 	}
-	return nil, fmt.Errorf("channel with id (%s) does not have an incident: %w", channelID, incident.ErrNotFound)
+	return "", fmt.Errorf("channel with id (%s) does not have an incident: %w", channelID, incident.ErrNotFound)
 }
 
 // NukeDB Removes all incident related data.
@@ -166,14 +166,14 @@ func toHeader(headers idHeaderMap) []incident.Header {
 }
 
 func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, error) {
-	var inc incident.Incident
-	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &inc); err != nil {
+	var incdnt incident.Incident
+	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &incdnt); err != nil {
 		return nil, fmt.Errorf("failed to get incident: %w", err)
 	}
-	if inc.ID == "" {
+	if incdnt.ID == "" {
 		return nil, incident.ErrNotFound
 	}
-	return &inc, nil
+	return &incdnt, nil
 }
 
 func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
@@ -184,13 +184,13 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	return headers, nil
 }
 
-func (s *incidentStore) updateHeader(incident *incident.Incident) error {
+func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return fmt.Errorf("failed to get all headers: %w", err)
 	}
 
-	headers[incident.ID] = incident.Header
+	headers[incdnt.ID] = incdnt.Header
 
 	// TODO: Should be using CompareAndSet, but deep copy is expensive.
 	if saved, err := s.pluginAPI.KV.Set(allHeadersKey, headers); err != nil {
