@@ -53,6 +53,8 @@ func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
+	clientID := r.URL.Query().Get("client_id")
+
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
 		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
@@ -82,30 +84,14 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err := h.postIncidentCreated(newIncident, request.ChannelId); err != nil {
+	h.poster.PublishWebsocketEventToUser("incident_created", map[string]interface{}{"client_id": clientID, "incident": newIncident}, request.UserId)
+
+	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
 		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (h *IncidentHandler) postIncidentCreated(incident *incident.Incident, channelID string) error {
-	team, err := h.pluginAPI.Team.Get(incident.TeamID)
-	if err != nil {
-		return err
-	}
-
-	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
-	if err != nil {
-		return err
-	}
-
-	url := h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	msg := fmt.Sprintf("Incident started -> [~%s](%s)", incident.Name, fmt.Sprintf("%s/%s/channels/%s", *url, team.Name, channel.Name))
-	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
-
-	return nil
 }
 
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
@@ -180,4 +166,16 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {
+	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	if err != nil {
+		return err
+	}
+
+	msg := fmt.Sprintf("Incident %s started in ~%s", incident.Name, channel.Name)
+	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
+
+	return nil
 }

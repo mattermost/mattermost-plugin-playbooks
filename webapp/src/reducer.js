@@ -11,6 +11,7 @@ import {
     SET_RHS_OPEN,
     RECEIVED_INCIDENT_UPDATE,
     SET_LOADING,
+    SET_CLIENT_ID,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -73,6 +74,15 @@ function isLoading(state = false, action) {
     }
 }
 
+function clientId(state = '', action) {
+    switch (action.type) {
+    case SET_CLIENT_ID:
+        return action.clientId || '';
+    default:
+        return state;
+    }
+}
+
 export default combineReducers({
     rhsPluginAction,
     rhsState,
@@ -80,4 +90,5 @@ export default combineReducers({
     incidentDetails,
     isLoading,
     rhsOpen,
+    clientId,
 });
