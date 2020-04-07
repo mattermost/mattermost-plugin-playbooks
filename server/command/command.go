@@ -75,12 +75,17 @@ func (r *Runner) postCommandResponse(text string) {
 }
 
 func (r *Runner) actionDialogStart(args []string) {
-	postID := ""
+	clientID := ""
 	if len(args) > 0 {
-		postID = args[0]
+		clientID = args[0]
 	}
 
-	if err := r.incidentService.CreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID); err != nil {
+	postID := ""
+	if len(args) == 2 {
+		postID = args[1]
+	}
+
+	if err := r.incidentService.CreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}

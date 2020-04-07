@@ -4,5 +4,6 @@
 import {pluginId} from 'src/manifest';
 
 export const WEBSOCKET_INCIDENT_UPDATE = `custom_${pluginId}_incident_update`;
+export const WEBSOCKET_INCIDENT_CREATED = `custom_${pluginId}_incident_created`;
 
 export {WebSocketMessage} from 'mattermost-redux/actions/websocket';
