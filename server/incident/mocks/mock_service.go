@@ -49,17 +49,17 @@ func (mr *MockServiceMockRecorder) CreateIncident(arg0 interface{}) *gomock.Call
 }
 
 // CreateIncidentDialog mocks base method
-func (m *MockService) CreateIncidentDialog(arg0, arg1, arg2 string) error {
+func (m *MockService) CreateIncidentDialog(arg0, arg1, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateIncidentDialog", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "CreateIncidentDialog", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateIncidentDialog indicates an expected call of CreateIncidentDialog
-func (mr *MockServiceMockRecorder) CreateIncidentDialog(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) CreateIncidentDialog(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncidentDialog", reflect.TypeOf((*MockService)(nil).CreateIncidentDialog), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncidentDialog", reflect.TypeOf((*MockService)(nil).CreateIncidentDialog), arg0, arg1, arg2, arg3)
 }
 
 // EndIncident mocks base method

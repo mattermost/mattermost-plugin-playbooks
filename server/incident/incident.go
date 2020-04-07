@@ -43,7 +43,7 @@ type Service interface {
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// CreateIncidentDialog opens an interactive dialog to start a new incident.
-	CreateIncidentDialog(commanderID string, triggerID string, postID string, clientID string) error
+	CreateIncidentDialog(commanderID, triggerID, postID, clientID string) error
 
 	// EndIncident completes the incident with the given ID by the given user.
 	EndIncident(incidentID string, userID string) error

@@ -66,13 +66,13 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incdnt, incdnt.TeamID)
 
-	user, err := s.pluginAPI.User.Get(incident.CommanderUserID)
+	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to to resolve user %s", incident.CommanderUserID)
+		return nil, fmt.Errorf("failed to to resolve user %s: %w", incdnt.CommanderUserID, err)
 	}
 
 	if err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
-		return nil, errors.Wrap(err, "failed to post to incident channel")
+		return nil, fmt.Errorf("failed to post to incident channel: %w", err)
 	}
 
 	if incdnt.PostID == "" {
@@ -96,7 +96,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 }
 
 // CreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string, postID string, clientID string) error {
+func (s *ServiceImpl) CreateIncidentDialog(commanderID, triggerID, postID, clientID string) error {
 	dialog, err := s.newIncidentDialog(commanderID, postID)
 	if err != nil {
 		return fmt.Errorf("failed to create new incident dialog: %w", err)
