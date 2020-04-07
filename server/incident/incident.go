@@ -19,6 +19,13 @@ type Header struct {
 	CreatedAt       int64  `json:"created_at"`
 }
 
+// DialogState holds the start incident interactive dialog's state as it appears in the client
+// and is submitted back to the server.
+type DialogState struct {
+	PostID   string `json:"post_id"`
+	ClientID string `json:"client_id"`
+}
+
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 

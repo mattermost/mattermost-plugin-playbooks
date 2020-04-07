@@ -53,11 +53,16 @@ func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
-	clientID := r.URL.Query().Get("client_id")
-
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
 		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		return
+	}
+
+	var state incident.DialogState
+	err := json.Unmarshal([]byte(request.State), &state)
+	if err != nil {
+		HandleError(w, fmt.Errorf("failed to unmarshal dialog state: %w", err))
 		return
 	}
 
@@ -68,7 +73,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			TeamID:          request.TeamId,
 			Name:            name,
 		},
-		PostID: request.State,
+		PostID: state.PostID,
 	})
 
 	if errors.Is(err, incident.ErrChannelExists) {
@@ -84,7 +89,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser("incident_created", map[string]interface{}{"client_id": clientID, "incident": newIncident}, request.UserId)
+	h.poster.PublishWebsocketEventToUser("incident_created", map[string]interface{}{"client_id": state.ClientID, "incident": newIncident}, request.UserId)
 
 	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
 		HandleError(w, err)

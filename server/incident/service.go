@@ -1,6 +1,7 @@
 package incident
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -97,7 +98,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 
 // CreateIncidentDialog opens a interactive dialog to start a new incident.
 func (s *ServiceImpl) CreateIncidentDialog(commanderID, triggerID, postID, clientID string) error {
-	dialog, err := s.newIncidentDialog(commanderID, postID)
+	dialog, err := s.newIncidentDialog(commanderID, postID, clientID)
 	if err != nil {
 		return fmt.Errorf("failed to create new incident dialog: %w", err)
 	}
@@ -212,10 +213,18 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 	return channel, nil
 }
 
-func (s *ServiceImpl) newIncidentDialog(commanderID string, postID string) (*model.Dialog, error) {
+func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch commander user: %w", err)
+	}
+
+	state, err := json.Marshal(DialogState{
+		PostID:   postID,
+		ClientID: clientID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal DialogState: %w", err)
 	}
 
 	return &model.Dialog{
@@ -228,7 +237,7 @@ func (s *ServiceImpl) newIncidentDialog(commanderID string, postID string) (*mod
 		}},
 		SubmitLabel:    "Start Incident",
 		NotifyOnCancel: false,
-		State:          postID,
+		State:          string(state),
 	}, nil
 }
 
