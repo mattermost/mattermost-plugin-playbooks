@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 )
 
 const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
@@ -75,21 +75,32 @@ func (r *Runner) postCommandResponse(text string) {
 }
 
 func (r *Runner) actionDialogStart(args []string) {
-	postID := ""
+	clientID := ""
 	if len(args) > 0 {
-		postID = args[0]
+		clientID = args[0]
 	}
 
-	if err := r.incidentService.CreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID); err != nil {
+	postID := ""
+	if len(args) == 2 {
+		postID = args[1]
+	}
+
+	if err := r.incidentService.CreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
 }
 
 func (r *Runner) actionEnd() {
-	_, err := r.incidentService.EndIncidentByChannel(r.args.ChannelId, r.args.UserId)
+	err := r.incidentService.EndIncidentByChannel(r.args.ChannelId, r.args.UserId)
 
-	if err != nil {
+	if errors.Is(err, incident.ErrNotFound) {
+		r.postCommandResponse("This channel is not associated with an incident.")
+		return
+	} else if errors.Is(err, incident.ErrIncidentNotActive) {
+		r.postCommandResponse("This incident has already been closed.")
+		return
+	} else if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}

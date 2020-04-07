@@ -5,13 +5,13 @@ import {connect} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {getRHSOpen} from 'src/selectors';
+import {rhsOpen} from 'src/selectors';
 
 import IncidentIcon from './incident_icon';
 
 function mapStateToProps(state: GlobalState) {
     return {
-        isRHSOpen: getRHSOpen(state),
+        isRHSOpen: rhsOpen(state),
     };
 }
 

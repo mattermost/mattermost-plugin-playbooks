@@ -1,6 +1,7 @@
 package incident
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 )
 
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
@@ -26,7 +26,7 @@ var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 // DialogFieldNameKey is the key for the incident name field used in CreateIncidentDialog
 const DialogFieldNameKey = "incidentName"
 
-// NewService Creates a new incident ServiceImpl.
+// NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 	configService config.Service) *ServiceImpl {
 	return &ServiceImpl{
@@ -42,169 +42,171 @@ func (s *ServiceImpl) GetHeaders(options HeaderFilterOptions) ([]Header, error) 
 	return s.store.GetHeaders(options)
 }
 
-// CreateIncident Creates a new incident.
-func (s *ServiceImpl) CreateIncident(incident *Incident) (*Incident, error) {
+// CreateIncident creates a new incident.
+func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	// Create incident
-	incident, err := s.store.CreateIncident(incident)
+	incdnt, err := s.store.CreateIncident(incdnt)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create incident")
+		return nil, fmt.Errorf("failed to create incident: %w", err)
 	}
 
-	channel, err := s.createIncidentChannel(incident)
+	channel, err := s.createIncidentChannel(incdnt)
 	if err != nil {
-		return nil, errors.Wrap(ErrChannelExists, err.Error())
+		return nil, fmt.Errorf("%w: %s", ErrChannelExists, err.Error())
 	}
 
 	// New incidents are always active
-	incident.IsActive = true
-	incident.ChannelIDs = []string{channel.Id}
-	incident.CreatedAt = time.Now().Unix()
+	incdnt.IsActive = true
+	incdnt.ChannelIDs = []string{channel.Id}
+	incdnt.CreatedAt = time.Now().Unix()
 
-	if err = s.store.UpdateIncident(incident); err != nil {
-		return nil, errors.Wrap(err, "failed to update incident")
+	if err = s.store.UpdateIncident(incdnt); err != nil {
+		return nil, fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
+	s.poster.PublishWebsocketEventToTeam("incident_update", incdnt, incdnt.TeamID)
 
-	if err = s.poster.PostMessage(channel.Id, "%s", "An incident has occurred."); err != nil {
-		return nil, errors.Wrap(err, "failed to post to incident channel")
+	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to to resolve user %s: %w", incdnt.CommanderUserID, err)
 	}
 
-	if incident.PostID == "" {
-		return incident, nil
+	if err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
+		return nil, fmt.Errorf("failed to post to incident channel: %w", err)
+	}
+
+	if incdnt.PostID == "" {
+		return incdnt, nil
 	}
 
 	// Post the content and link of the original post
-	post, err := s.pluginAPI.Post.GetPost(incident.PostID)
+	post, err := s.pluginAPI.Post.GetPost(incdnt.PostID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get incident original post")
+		return nil, fmt.Errorf("failed to get incident original post: %w", err)
 	}
 
-	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incident.PostID)
+	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	if err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
-		return nil, errors.Wrap(err, "failed to post to incident channel")
+		return nil, fmt.Errorf("failed to post to incident channel: %w", err)
 	}
 
-	return incident, nil
+	return incdnt, nil
 }
 
-// CreateIncidentDialog Opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) CreateIncidentDialog(commanderID string, triggerID string, postID string) error {
+// CreateIncidentDialog opens a interactive dialog to start a new incident.
+func (s *ServiceImpl) CreateIncidentDialog(commanderID, triggerID, postID, clientID string) error {
 	dialog, err := s.newIncidentDialog(commanderID, postID)
 	if err != nil {
-		return errors.Wrap(err, "failed to create new incident dialog")
+		return fmt.Errorf("failed to create new incident dialog: %w", err)
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("%s/plugins/%s/api/v1/incidents/dialog",
-			*s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL,
-			s.configService.GetManifest().Id),
+		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/dialog?client_id=%s",
+			s.configService.GetManifest().Id,
+			clientID),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
-		return errors.Wrap(err, "failed to open new incident dialog")
+		return fmt.Errorf("failed to open new incident dialog: %w", err)
 	}
 
 	return nil
 }
 
-// EndIncident Completes the incident associated to the given channelID.
+// EndIncident completes the incident. It returns an ErrIncidentNotActive if the caller tries to
+// end an incident which is not active.
 func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
-	incident, err := s.store.GetIncident(incidentID)
+	incdnt, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return errors.Wrap(err, "failed to end incident")
+		return fmt.Errorf("failed to end incident: %w", err)
 	}
 
-	if err := s.endIncident(incident, userID); err != nil {
-		return errors.Wrap(err, "failed to end incident")
+	if !incdnt.IsActive {
+		return ErrIncidentNotActive
 	}
 
-	return nil
-}
-
-// EndIncidentByChannel Completes the incident associated to the given channelID.
-func (s *ServiceImpl) EndIncidentByChannel(channelID string, userID string) (*Incident, error) {
-	incident, err := s.store.GetIncidentByChannel(channelID, true)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to end incident")
-	}
-
-	if err := s.endIncident(incident, userID); err != nil {
-		return nil, errors.Wrap(err, "failed to end incident")
-	}
-
-	return incident, nil
-}
-
-// GetIncident Gets an incident by ID.
-func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
-	return s.store.GetIncident(id)
-}
-
-// NukeDB Removes all incident related data.
-func (s *ServiceImpl) NukeDB() error {
-	return s.store.NukeDB()
-}
-
-func (s *ServiceImpl) endIncident(incident *Incident, userID string) error {
 	// Incident main channel membership is required to end incident
-	incidentMainChannelID := incident.ChannelIDs[0]
+	incidentMainChannelID := incdnt.ChannelIDs[0]
 
 	if !s.pluginAPI.User.HasPermissionToChannel(userID, incidentMainChannelID, model.PERMISSION_READ_CHANNEL) {
 		return errors.New("user does not have permission to end incident")
 	}
 
 	// Close the incident
-	incident.IsActive = false
+	incdnt.IsActive = false
 
-	if err := s.store.UpdateIncident(incident); err != nil {
-		return errors.Wrap(err, "failed to end incident")
+	if err = s.store.UpdateIncident(incdnt); err != nil {
+		return fmt.Errorf("failed to end incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_update", incident, incident.TeamID)
+	s.poster.PublishWebsocketEventToTeam("incident_update", incdnt, incdnt.TeamID)
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
 	}
 
 	// Post in the  main incident channel that @user has ended the incident.
 	// Main channel is the only channel in the incident for now.
-	mainChannelID := incident.ChannelIDs[0]
+	mainChannelID := incdnt.ChannelIDs[0]
 	if err := s.poster.PostMessage(mainChannelID, "This incident has been closed by @%v", user.Username); err != nil {
-		return errors.Wrap(err, "failed to post end incident messsage")
+		return fmt.Errorf("failed to post end incident messsage: %w", err)
 	}
 
 	return nil
 }
 
-func (s *ServiceImpl) createIncidentChannel(incident *Incident) (*model.Channel, error) {
+// EndIncidentByChannel completes the incident associated to the given channelID.
+func (s *ServiceImpl) EndIncidentByChannel(channelID string, userID string) error {
+	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
+	if err != nil {
+		return fmt.Errorf("failed to end incident: %w", err)
+	}
+
+	if err := s.EndIncident(incidentID, userID); err != nil {
+		return fmt.Errorf("failed to end incident: %w", err)
+	}
+
+	return nil
+}
+
+// GetIncident gets an incident by ID.
+func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
+	return s.store.GetIncident(id)
+}
+
+// NukeDB removes all incident related data.
+func (s *ServiceImpl) NukeDB() error {
+	return s.store.NukeDB()
+}
+
+func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, error) {
 	channelHeader := "The channel was created by the Incident Response plugin."
 
-	if incident.PostID != "" {
-		postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incident.PostID)
+	if incdnt.PostID != "" {
+		postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incdnt.PostID)
 
 		channelHeader = fmt.Sprintf("[Original Post](%s) | %s", postURL, channelHeader)
 	}
 
 	channel := &model.Channel{
-		TeamId:      incident.TeamID,
+		TeamId:      incdnt.TeamID,
 		Type:        model.CHANNEL_PRIVATE,
-		DisplayName: incident.Name,
-		Name:        cleanChannelName(incident.Name),
+		DisplayName: incdnt.Name,
+		Name:        cleanChannelName(incdnt.Name),
 		Header:      channelHeader,
 	}
 
 	if err := s.pluginAPI.Channel.Create(channel); err != nil {
-		return nil, errors.Wrap(err, "failed to create incident channel")
+		return nil, fmt.Errorf("failed to create incident channel: %w", err)
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrap(err, "failed to add user to channel")
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, fmt.Errorf("failed to add user to channel: %w", err)
 	}
 
 	return channel, nil
@@ -213,7 +215,7 @@ func (s *ServiceImpl) createIncidentChannel(incident *Incident) (*model.Channel,
 func (s *ServiceImpl) newIncidentDialog(commanderID string, postID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch commander user")
+		return nil, fmt.Errorf("failed to fetch commander user: %w", err)
 	}
 
 	return &model.Dialog{

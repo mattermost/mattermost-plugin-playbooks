@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
@@ -53,6 +53,8 @@ func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
+	clientID := r.URL.Query().Get("client_id")
+
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
 		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
@@ -70,38 +72,26 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	})
 
 	if errors.Is(err, incident.ErrChannelExists) {
-		h.poster.Ephemeral(request.UserId, request.ChannelId, "Error: A channel with the name `%v` already exists. Please choose a different name.", name)
-		w.WriteHeader(http.StatusOK)
+		resp := &model.SubmitDialogResponse{
+			Errors: map[string]string{
+				incident.DialogFieldNameKey: "A channel with that name already exists. Please select a different name.",
+			},
+		}
+		_, _ = w.Write(resp.ToJson())
 		return
 	} else if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	if err := h.postIncidentCreated(newIncident, request.ChannelId); err != nil {
+	h.poster.PublishWebsocketEventToUser("incident_created", map[string]interface{}{"client_id": clientID, "incident": newIncident}, request.UserId)
+
+	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
 		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (h *IncidentHandler) postIncidentCreated(incident *incident.Incident, channelID string) error {
-	team, err := h.pluginAPI.Team.Get(incident.TeamID)
-	if err != nil {
-		return err
-	}
-
-	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
-	if err != nil {
-		return err
-	}
-
-	url := h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	msg := fmt.Sprintf("Incident started -> [~%s](%s)", incident.Name, fmt.Sprintf("%s/%s/channels/%s", *url, team.Name, channel.Name))
-	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
-
-	return nil
 }
 
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
@@ -112,11 +102,11 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
 	if teamID == "" && !isAdmin {
-		HandleError(w, errors.Errorf("userID %s is not an admin", userID))
+		HandleError(w, fmt.Errorf("userID %s is not an admin", userID))
 		return
 	}
 	if !isAdmin && !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleError(w, errors.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		HandleError(w, fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
 		return
 	}
 
@@ -176,4 +166,16 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {
+	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	if err != nil {
+		return err
+	}
+
+	msg := fmt.Sprintf("Incident %s started in ~%s", incident.Name, channel.Name)
+	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
+
+	return nil
 }

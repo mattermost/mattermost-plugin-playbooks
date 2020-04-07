@@ -14,7 +14,7 @@ import {
     setRHSState,
     setRHSOpen,
 } from 'src/actions';
-import {activeIncidents, incidentDetails, getRHSState, isLoading} from 'src/selectors';
+import {activeIncidents, incidentDetails, rhsState, isLoading} from 'src/selectors';
 
 import RightHandSidebar from './rhs_main';
 
@@ -22,7 +22,7 @@ function mapStateToProps(state: GlobalState) {
     return {
         incidents: activeIncidents(state) || [],
         incident: incidentDetails(state),
-        rhsState: getRHSState(state),
+        rhsState: rhsState(state),
         isLoading: isLoading(state),
     };
 }

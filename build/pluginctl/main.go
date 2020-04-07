@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mholt/archiver/v3"
-	"github.com/pkg/errors"
 )
 
 const helpText = `
@@ -76,7 +76,7 @@ func getClient() (*model.Client4, error) {
 			log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
 			_, resp := client.Login(adminUsername, adminPassword)
 			if resp.Error != nil {
-				return nil, errors.Wrapf(resp.Error, "failed to login as %s: %s", adminUsername, resp.Error.Error())
+				return nil, fmt.Errorf("failed to login as %s: %w", adminUsername, resp.Error)
 			}
 			return client, nil
 		}
@@ -97,7 +97,7 @@ func deploy(client *model.Client4, pluginID, bundlePath string) error {
 func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
 	pluginBundle, err := os.Open(bundlePath)
 	if err != nil {
-		return errors.Wrapf(err, "failed to open %s", bundlePath)
+		return fmt.Errorf("failed to open %s: %w", bundlePath, err)
 	}
 	defer pluginBundle.Close()
 
@@ -124,7 +124,7 @@ func copyPlugin(pluginID, bundlePath string) error {
 	if os.IsNotExist(err) {
 		return errors.New("no supported deployment method available, please install plugin manually")
 	} else if err != nil {
-		return errors.Wrapf(err, "failed to stat %s", targetPath)
+		return fmt.Errorf("failed to stat %s: %w", targetPath, err)
 	}
 
 	log.Printf("Installing plugin to mattermost-server found in %s.", targetPath)
@@ -134,18 +134,18 @@ func copyPlugin(pluginID, bundlePath string) error {
 
 	err = os.MkdirAll(targetPath, 0777)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create %s", targetPath)
+		return fmt.Errorf("failed to create %s: %w", targetPath, err)
 	}
 
 	existingPluginPath := filepath.Join(targetPath, pluginID)
 	err = os.RemoveAll(existingPluginPath)
 	if err != nil {
-		return errors.Wrapf(err, "failed to remove existing existing plugin directory %s", existingPluginPath)
+		return fmt.Errorf("failed to remove existing existing plugin directory %s: %w", existingPluginPath, err)
 	}
 
 	err = archiver.Unarchive(bundlePath, targetPath)
 	if err != nil {
-		return errors.Wrapf(err, "failed to unarchive %s into %s", bundlePath, targetPath)
+		return fmt.Errorf("failed to unarchive %s into %s: %w", bundlePath, targetPath, err)
 	}
 
 	return nil

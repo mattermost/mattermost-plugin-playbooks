@@ -48,19 +48,19 @@ func (mr *MockStoreMockRecorder) CreateIncident(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockStore)(nil).CreateIncident), arg0)
 }
 
-// GetAllHeaders mocks base method
-func (m *MockStore) GetAllHeaders() ([]incident.Header, error) {
+// GetHeaders mocks base method
+func (m *MockStore) GetHeaders(arg0 incident.HeaderFilterOptions) ([]incident.Header, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllHeaders")
+	ret := m.ctrl.Call(m, "GetHeaders", arg0)
 	ret0, _ := ret[0].([]incident.Header)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAllHeaders indicates an expected call of GetAllHeaders
-func (mr *MockStoreMockRecorder) GetAllHeaders() *gomock.Call {
+// GetHeaders indicates an expected call of GetHeaders
+func (mr *MockStoreMockRecorder) GetHeaders(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllHeaders", reflect.TypeOf((*MockStore)(nil).GetAllHeaders))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaders", reflect.TypeOf((*MockStore)(nil).GetHeaders), arg0)
 }
 
 // GetIncident mocks base method
@@ -78,19 +78,19 @@ func (mr *MockStoreMockRecorder) GetIncident(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncident", reflect.TypeOf((*MockStore)(nil).GetIncident), arg0)
 }
 
-// GetIncidentByChannel mocks base method
-func (m *MockStore) GetIncidentByChannel(arg0 string, arg1 bool) (*incident.Incident, error) {
+// GetIncidentIDForChannel mocks base method
+func (m *MockStore) GetIncidentIDForChannel(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIncidentByChannel", arg0, arg1)
-	ret0, _ := ret[0].(*incident.Incident)
+	ret := m.ctrl.Call(m, "GetIncidentIDForChannel", arg0)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetIncidentByChannel indicates an expected call of GetIncidentByChannel
-func (mr *MockStoreMockRecorder) GetIncidentByChannel(arg0, arg1 interface{}) *gomock.Call {
+// GetIncidentIDForChannel indicates an expected call of GetIncidentIDForChannel
+func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentByChannel", reflect.TypeOf((*MockStore)(nil).GetIncidentByChannel), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentIDForChannel", reflect.TypeOf((*MockStore)(nil).GetIncidentIDForChannel), arg0)
 }
 
 // NukeDB mocks base method

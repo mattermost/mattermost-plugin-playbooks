@@ -45,6 +45,9 @@ type Poster interface {
 
 	// PublishWebsocketEventToChannel sends a websocket event with payload to channelID.
 	PublishWebsocketEventToChannel(event string, payload interface{}, channelID string)
+
+	// PublishWebsocketEventToUser sends a websocket event with payload to userID.
+	PublishWebsocketEventToUser(event string, payload interface{}, userID string)
 }
 
 // New creates a new bot poster/logger.
