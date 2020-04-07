@@ -132,14 +132,14 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 
 	// Search for which incident has the given channel associated
 	for _, header := range headers {
-		inc, err := s.getIncident(header.ID)
+		incdnt, err := s.getIncident(header.ID)
 		if err != nil {
 			return "", fmt.Errorf("failed to get incident for id (%s): %w", header.ID, err)
 		}
 
-		for _, incidentChannelID := range inc.ChannelIDs {
+		for _, incidentChannelID := range incdnt.ChannelIDs {
 			if incidentChannelID == channelID {
-				return inc.ID, nil
+				return incdnt.ID, nil
 			}
 		}
 	}
