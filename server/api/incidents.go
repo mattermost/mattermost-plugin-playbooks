@@ -70,14 +70,12 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	})
 
 	if errors.Is(err, incident.ErrChannelExists) {
-		b, _ := json.Marshal(struct {
-			Errors map[string]string `json:"errors"`
-		}{
+		resp := &model.SubmitDialogResponse{
 			Errors: map[string]string{
 				incident.DialogFieldNameKey: "A channel with that name already exists. Please select a different name.",
 			},
-		})
-		_, _ = w.Write(b)
+		}
+		_, _ = w.Write(resp.ToJson())
 		return
 	} else if err != nil {
 		HandleError(w, err)
