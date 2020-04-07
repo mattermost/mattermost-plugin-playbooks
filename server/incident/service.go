@@ -134,7 +134,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	// Close the incident
 	incdnt.IsActive = false
 
-	if err := s.store.UpdateIncident(incdnt); err != nil {
+	if err = s.store.UpdateIncident(incdnt); err != nil {
 		return fmt.Errorf("failed to end incident: %w", err)
 	}
 
