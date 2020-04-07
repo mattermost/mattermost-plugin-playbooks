@@ -7,10 +7,10 @@ import {createSelector} from 'reselect';
 import {pluginId} from './manifest';
 import {Incident} from './types/incident';
 
-const getPluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
-const getIncidents = (state: GlobalState) => getPluginState(state).incidents;
+const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
+const allIncidents = (state: GlobalState) => pluginState(state).incidents;
 
-export const activeIncidents = createSelector(getIncidents,
+export const activeIncidents = createSelector(allIncidents,
     (incidents) => {
         const list = incidents ? incidents.filter((incident: Incident) => incident.is_active) : [];
         return sortedDescending(list);
@@ -24,16 +24,15 @@ const sortedDescending = (incidents: Incident[]) => {
 };
 
 export const incidentDetails = (state: GlobalState) => {
-    return getPluginState(state).incidentDetails || {};
+    return pluginState(state).incidentDetails || {};
 };
 
-export const getShowRHSAction = (state: GlobalState) => getPluginState(state).rhsPluginAction;
+export const showRHSAction = (state: GlobalState) => pluginState(state).rhsPluginAction;
 
-export const getRHSState = (state: GlobalState) => getPluginState(state).rhsState;
+export const rhsState = (state: GlobalState) => pluginState(state).rhsState;
 
-export const isLoading = (state: GlobalState) => getPluginState(state).isLoading;
+export const rhsOpen = (state: GlobalState) => pluginState(state).rhsOpen;
 
-export const getRHSOpen = (state: GlobalState) => getPluginState(state).rhsOpen;
+export const isLoading = (state: GlobalState) => pluginState(state).isLoading;
 
-export const getClientId = (state: GlobalState) => getPluginState(state).clientId;
-
+export const clientId = (state: GlobalState) => pluginState(state).clientId;

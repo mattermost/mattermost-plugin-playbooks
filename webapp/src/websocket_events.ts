@@ -2,24 +2,40 @@
 // See LICENSE.txt for license information.
 
 import {Dispatch, AnyAction} from 'redux';
+
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {rhsState, incidentDetails} from 'src/selectors';
+
 import {WebSocketMessage} from './types/websocket_events';
-import {receivedIncidentUpdate} from './actions';
-import {isIncident} from './types/incident';
-import {getClientId} from './selectors';
+import {receivedIncidentUpdate, setRHSState} from './actions';
+import {isIncident, RHSState} from './types/incident';
+import {clientId} from './selectors';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
-export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>) {
+export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>, getState: GetStateFunc) {
     return (msg: WebSocketMessage) => {
-        if (msg.data.payload) {
-            const incident = JSON.parse(msg.data.payload);
-            if (isIncident(incident)) {
-                dispatch(receivedIncidentUpdate(incident));
-            }
+        if (!msg.data.payload) {
+            return;
+        }
+        const incident = JSON.parse(msg.data.payload);
+        if (!isIncident(incident)) {
+            return;
+        }
+
+        dispatch(receivedIncidentUpdate(incident));
+
+        // If this is also the incident being viewed, and the incident is closed,
+        // then stop viewing that incident
+        if (rhsState(getState()) !== RHSState.Details) {
+            return;
+        }
+        const curId = incidentDetails(getState()).id;
+        if (curId === incident.id && !incident.is_active) {
+            dispatch(setRHSState(RHSState.List));
         }
     };
 }
@@ -39,7 +55,7 @@ export function handleWebsocketIncidentCreated(dispatch: Dispatch<AnyAction>, ge
 
         dispatch(receivedIncidentUpdate(incident));
 
-        if (payload.client_id === getClientId(getState())) {
+        if (payload.client_id === clientId(getState())) {
             // Navigate to the newly created channel
             const mainChannelId = incident.channel_ids?.[0];
             const currentTeam = getCurrentTeam(getState());

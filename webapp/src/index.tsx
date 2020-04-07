@@ -30,7 +30,7 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATE,
-            handleWebsocketIncidentUpdate(store.dispatch));
+            handleWebsocketIncidentUpdate(store.dispatch, store.getState));
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED,
             handleWebsocketIncidentCreated(store.dispatch, store.getState));
