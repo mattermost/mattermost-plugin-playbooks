@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
@@ -102,11 +102,11 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
 	if teamID == "" && !isAdmin {
-		HandleError(w, errors.Errorf("userID %s is not an admin", userID))
+		HandleError(w, fmt.Errorf("userID %s is not an admin", userID))
 		return
 	}
 	if !isAdmin && !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleError(w, errors.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		HandleError(w, fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
 		return
 	}
 
