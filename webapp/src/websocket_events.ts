@@ -11,7 +11,7 @@ import {rhsState, incidentDetails} from 'src/selectors';
 import {WebSocketMessage} from './types/websocket_events';
 import {receivedIncidentUpdate, setRHSState} from './actions';
 import {isIncident, RHSState} from './types/incident';
-import {getClientId} from './selectors';
+import {clientId} from './selectors';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
@@ -52,7 +52,7 @@ export function handleWebsocketIncidentCreated(dispatch: Dispatch<AnyAction>, ge
 
         dispatch(receivedIncidentUpdate(incident));
 
-        if (payload.client_id === getClientId(getState())) {
+        if (payload.client_id === clientId(getState())) {
             // Navigate to the newly created channel
             const mainChannelId = incident.channel_ids?.[0];
             const currentTeam = getCurrentTeam(getState());
