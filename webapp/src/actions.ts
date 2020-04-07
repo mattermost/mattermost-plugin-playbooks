@@ -98,8 +98,12 @@ export function getIncidents(teamId?: string) {
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const currentChanel = getCurrentChannel(getState());
+        const currentTeamId = getCurrentTeamId(getState());
 
-        const args = {channel_id: currentChanel?.id};
+        const args = {
+            channel_id: currentChanel?.id,
+            team_id: currentTeamId,
+        };
 
         // Add unique id
         const clientId = generateId();
