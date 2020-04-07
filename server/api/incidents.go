@@ -72,8 +72,12 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	})
 
 	if errors.Is(err, incident.ErrChannelExists) {
-		h.poster.Ephemeral(request.UserId, request.ChannelId, "Error: A channel with the name `%v` already exists. Please choose a different name.", name)
-		w.WriteHeader(http.StatusOK)
+		resp := &model.SubmitDialogResponse{
+			Errors: map[string]string{
+				incident.DialogFieldNameKey: "A channel with that name already exists. Please select a different name.",
+			},
+		}
+		_, _ = w.Write(resp.ToJson())
 		return
 	} else if err != nil {
 		HandleError(w, err)
