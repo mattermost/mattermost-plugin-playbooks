@@ -27,7 +27,7 @@ export const incidentDetails = (state: GlobalState) => {
     return pluginState(state).incidentDetails || {};
 };
 
-export const showRHSAction = (state: GlobalState) => pluginState(state).rhsPluginAction;
+export const toggleRHSAction = (state: GlobalState) => pluginState(state).rhsPluginAction;
 
 export const rhsState = (state: GlobalState) => pluginState(state).rhsState;
 

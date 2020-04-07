@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import _ from 'lodash';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
@@ -11,7 +10,7 @@ import {Incident} from 'src/types/incident';
 
 import Profile from 'src/components/rhs/profile';
 
-import Link from './link';
+import Link from 'src/components/rhs/link';
 
 import './incident_details.scss';
 

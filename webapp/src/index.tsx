@@ -21,12 +21,12 @@ export default class Plugin {
         registry.registerReducer(reducer);
 
         const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, '');
-        const bindedToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
+        const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
-        // Store the showRHS action to use later
-        store.dispatch(setToggleRHSAction(bindedToggleRHSAction));
+        // Store the toggleRHS action to use later
+        store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
-        registry.registerChannelHeaderButtonAction(IncidentIcon, bindedToggleRHSAction, 'Incidents', 'Incidents');
+        registry.registerChannelHeaderButtonAction(IncidentIcon, boundToggleRHSAction, 'Incidents', 'Incidents');
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATE,
