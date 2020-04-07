@@ -165,18 +165,12 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {
-	team, err := h.pluginAPI.Team.Get(incident.TeamID)
-	if err != nil {
-		return err
-	}
-
 	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
 	if err != nil {
 		return err
 	}
 
-	url := h.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	msg := fmt.Sprintf("Incident started -> [~%s](%s)", incident.Name, fmt.Sprintf("%s/%s/channels/%s", *url, team.Name, channel.Name))
+	msg := fmt.Sprintf("Incident %s started in ~%s", incident.Name, channel.Name)
 	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
 
 	return nil

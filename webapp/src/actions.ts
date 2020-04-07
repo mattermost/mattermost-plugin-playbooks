@@ -26,7 +26,7 @@ import {
     RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
     SET_LOADING,
-    SET_CLIENTID,
+    SET_CLIENT_ID,
     ReceivedToggleRHSAction,
     SetRHSOpen,
     ReceivedIncidents,
@@ -206,9 +206,9 @@ function setLoading(isLoading: boolean): SetLoading {
     };
 }
 
-function setClientId(clientId: string): SetClientId {
+export function setClientId(clientId: string): SetClientId {
     return {
-        type: SET_CLIENTID,
+        type: SET_CLIENT_ID,
         clientId,
     };
 }
