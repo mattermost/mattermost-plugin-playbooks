@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
@@ -27,10 +27,16 @@ interface Props {
     };
 }
 
-export default class IncidentDetails extends React.PureComponent<Props> {
-    public render(): JSX.Element {
-        const [isConfirmingEnd, setConfirmingEnd] = useState(false);
+interface State {
+    isConfirmingEnd: boolean;
+}
 
+export default class IncidentDetails extends React.PureComponent<Props> {
+    state: State = {
+        isConfirmingEnd: false,
+    };
+
+    public render(): JSX.Element {
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
@@ -70,24 +76,22 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 <div className='footer-div'>
                     <button
                         className='btn btn-primary'
-                        onClick={
-
-                            //() => this.props.actions.endIncident(this.props.incident.id)
-                            () => setConfirmingEnd(true)
-                        }
+                        onClick={() => this.setState({isConfirmingEnd: true})}
                     >
                         {'End Incident'}
                     </button>
                 </div>
                 }
 
-                {isConfirmingEnd &&
+                {this.state.isConfirmingEnd &&
                 <ConfirmModal
-                    onCancel={setConfirmingEnd(false)}
-                    onConfirm={setConfirmingEnd(false)}
+                    onCancel={() => this.setState({isConfirmingEnd: false})}
+                    onConfirm={() => this.props.actions.endIncident(this.props.incident.id)}
+                    onExit={() => this.setState({isConfirmingEnd: false})}
+                    confirmButtonText={'Confirm'}
                     show={true}
-                    title={'Test'}
-                    message={'Message test.'}
+                    title={'Confirm End Incident'}
+                    message={`This will end incident ${this.props.incident.name}. It will close the details view in the RHS, and remove the incident from the Incident List. \n \n Are you sure?`}
                 />
                 }
             </div>
