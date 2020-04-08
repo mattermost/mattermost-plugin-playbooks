@@ -202,18 +202,27 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 		Header:      channelHeader,
 	}
 
-	if err := s.pluginAPI.Channel.Create(channel); err != nil {
-		if appErr, ok := err.(*model.AppError); ok {
-			if appErr.Id == "store.sql_channel.save_channel.exists.app_error" {
-				return nil, ErrChannelExists
-			} else if appErr.Id == "model.channel.is_valid.display_name.app_error" {
-				return nil, ErrChannelNameLong
-			} else if appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
-				return nil, ErrChannelNameShort
+	// Loop in case we accidentally chose an existing channel name
+	// Prefer the channel name the user chose. But if it already exists, add some random bits.
+	for succeeded := false; !succeeded; {
+		if err := s.pluginAPI.Channel.Create(channel); err != nil {
+			appErr := err.(*model.AppError)
+
+			// Let the user correct display name errors:
+			if appErr.Id == "model.channel.is_valid.display_name.app_error" {
+				return nil, ErrChannelDisplayNameLong
+			}
+
+			// We can fix channel Name errors:
+			if appErr.Id == "store.sql_channel.save_channel.exists.app_error" ||
+				appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
+				channel.Name = addRandomBits(channel.Name)
+				continue
+			} else {
+				return nil, fmt.Errorf("failed to create incident channel: %w", err)
 			}
 		}
-
-		return nil, fmt.Errorf("failed to create incident channel: %w", err)
+		succeeded = true
 	}
 
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
@@ -278,4 +287,13 @@ func cleanChannelName(channelName string) string {
 	channelName = strings.Trim(channelName, "-")
 
 	return channelName
+}
+
+func addRandomBits(name string) string {
+	// Fix too long names (we're adding 5 chars):
+	if len(name) > 59 {
+		name = name[:59]
+	}
+	randBits := model.NewId()
+	return fmt.Sprintf("%s-%s", name, randBits[:4])
 }
