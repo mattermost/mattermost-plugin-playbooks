@@ -53,9 +53,9 @@ func TestPlaybooks(t *testing.T) {
 
 		mockkvapi.EXPECT().Set(gomock.Any(), gomock.Any()).Return(true, nil)
 		playbookIndex := struct {
-			Playbooks []string `json:"playbooks"`
+			PlaybookIDs []string `json:"playbook_ids"`
 		}{
-			Playbooks: []string{
+			PlaybookIDs: []string{
 				"playbookid1",
 			},
 		}
@@ -111,9 +111,9 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		playbookIndex := struct {
-			Playbooks []string `json:"playbooks"`
+			PlaybookIDs []string `json:"playbook_ids"`
 		}{
-			Playbooks: []string{
+			PlaybookIDs: []string{
 				"playbookid1",
 				"playbookid2",
 			},
@@ -175,9 +175,9 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		playbookIndex := struct {
-			Playbooks []string `json:"playbooks"`
+			PlaybookIDs []string `json:"playbook_ids"`
 		}{
-			Playbooks: []string{
+			PlaybookIDs: []string{
 				"playbookid1",
 				"testplaybookid",
 				"playbookid2",
