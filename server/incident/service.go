@@ -207,10 +207,11 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 		if appErr.Id == "store.sql_channel.save_channel.exists.app_error" {
 			return nil, ErrChannelExists
 		} else if appErr.Id == "model.channel.is_valid.display_name.app_error" {
-			return nil, ErrChannelNameLength
+			return nil, ErrChannelNameLong
+		} else if appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
+			return nil, ErrChannelNameShort
 		}
 
-		// all other errors:
 		return nil, fmt.Errorf("failed to create incident channel: %w", err)
 	}
 

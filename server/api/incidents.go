@@ -72,18 +72,20 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	})
 
 	if err != nil {
+		var msg string
+
 		if errors.Is(err, incident.ErrChannelExists) {
+			msg = "A channel with that name already exists. Please select a different name."
+		} else if errors.Is(err, incident.ErrChannelNameLong) {
+			msg = "The channel name is too long. Please use a name with fewer than 64 characters."
+		} else if errors.Is(err, incident.ErrChannelNameShort) {
+			msg = "The channel name is too short. Please use a name with 2 or more characters."
+		}
+
+		if msg != "" {
 			resp := &model.SubmitDialogResponse{
 				Errors: map[string]string{
-					incident.DialogFieldNameKey: "A channel with that name already exists. Please select a different name.",
-				},
-			}
-			_, _ = w.Write(resp.ToJson())
-			return
-		} else if errors.Is(err, incident.ErrChannelNameLength) {
-			resp := &model.SubmitDialogResponse{
-				Errors: map[string]string{
-					incident.DialogFieldNameKey: "The channel name is too long. Please use a name with fewer than 64 characters.",
+					incident.DialogFieldNameKey: msg,
 				},
 			}
 			_, _ = w.Write(resp.ToJson())
