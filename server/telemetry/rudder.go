@@ -11,6 +11,14 @@ type RudderTelemetry struct {
 	diagnosticID string
 }
 
+const (
+	// EventIncidentNew is the Event string sent to Rudder when a new incident is created
+	EventIncidentNew = "Incident created"
+
+	// EventIncidentEnd is the Event string sent to Rudder when an incident is ended
+	EventIncidentEnd = "Incident finished"
+)
+
 func (t *RudderTelemetry) track(event string, properties map[string]interface{}) {
 	t.client.Enqueue(rudder.Track{
 		UserId:     t.diagnosticID,
@@ -21,28 +29,30 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 
 func incidentProperties(incident *incident.Incident) map[string]interface{} {
 	return map[string]interface{}{
-		"ID":              incident.ID,
-		"Name":            incident.Name,
-		"IsActive":        incident.IsActive,
-		"CommanderUserID": incident.CommanderUserID,
-		"TeamID":          incident.TeamID,
-		"CreatedAt":       incident.CreatedAt,
-		"ChannelIDs":      incident.ChannelIDs,
-		"PostID":          incident.PostID,
+		"Header": map[string]interface{}{
+			"ID":              incident.ID,
+			"Name":            incident.Name,
+			"IsActive":        incident.IsActive,
+			"CommanderUserID": incident.CommanderUserID,
+			"TeamID":          incident.TeamID,
+			"CreatedAt":       incident.CreatedAt,
+		},
+		"ChannelIDs": incident.ChannelIDs,
+		"PostID":     incident.PostID,
 	}
 }
 
 // TrackIncidentNew tracks the creation of the incident passed. The returned
 // error is, for now, always nil
 func (t *RudderTelemetry) TrackIncidentNew(incident *incident.Incident) error {
-	t.track("Incident created", incidentProperties(incident))
+	t.track(EventIncidentNew, incidentProperties(incident))
 	return nil
 }
 
 // TrackIncidentEnd tracks the end of the incident passed. The returned
 // error is, for now, always nil
 func (t *RudderTelemetry) TrackIncidentEnd(incident *incident.Incident) error {
-	t.track("Incident finished", incidentProperties(incident))
+	t.track(EventIncidentEnd, incidentProperties(incident))
 	return nil
 }
 

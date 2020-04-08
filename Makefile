@@ -4,7 +4,7 @@ CURL ?= $(shell command -v curl 2> /dev/null)
 MANIFEST_FILE ?= plugin.json
 GOPATH ?= $(shell go env GOPATH)
 GO_TEST_FLAGS ?= -race
-GO_BUILD_FLAGS ?=
+GO_BUILD_FLAGS ?= -ldflags "-X main.rudderDataplaneURL=$(MM_RUDDER_DATAPLANE_URL) -X main.rudderWriteKey=$(MM_RUDDER_WRITE_KEY)"
 MM_UTILITIES_DIR ?= ../mattermost-utilities
 
 export GO111MODULE=on

@@ -11,8 +11,17 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
+)
+
+// These credentials for Rudder are thought to be populated in build-time,
+// passing the following flags to the go build command:
+// -ldflags "-X main.rudderDataplaneURL=<url> -X main.rudderWriteKey=<write_key>"
+var (
+	rudderDataplaneURL string
+	rudderWriteKey     string
 )
 
 // Plugin implements the interface expected by the Mattermost server to communicate between the
@@ -52,6 +61,17 @@ func (p *Plugin) OnActivate() error {
 		return fmt.Errorf("failed save bot to config: %w", err)
 	}
 
+	diagnosticID := pluginAPIClient.System.GetDiagnosticID()
+	rudderClient, err := telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID)
+	if err != nil {
+		return fmt.Errorf("failed init telemetry client: %w", err)
+	}
+
+	if rudderDataplaneURL == "" || rudderWriteKey == "" {
+		pluginAPIClient.Log.Warn("Rudder credentials are not set. Disabling analytics.")
+		rudderClient.Disable()
+	}
+
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
@@ -59,6 +79,7 @@ func (p *Plugin) OnActivate() error {
 		pluginkvstore.NewIncidentStore(pluginAPIClient),
 		p.bot,
 		p.config,
+		rudderClient,
 	)
 
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot)
