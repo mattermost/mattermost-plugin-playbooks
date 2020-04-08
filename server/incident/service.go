@@ -206,7 +206,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 	// Prefer the channel name the user chose. But if it already exists, add some random bits.
 	for succeeded := false; !succeeded; {
 		if err := s.pluginAPI.Channel.Create(channel); err != nil {
-			appErr := err.(*model.AppError)
+			if appErr, ok := err.(*model.AppError); ok {
 
 				// Let the user correct display name errors:
 				if appErr.Id == "model.channel.is_valid.display_name.app_error" {
