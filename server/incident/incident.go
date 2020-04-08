@@ -25,6 +25,9 @@ var ErrNotFound = errors.New("not found")
 // ErrChannelExists is used to indicate a channel with that name already exists.
 var ErrChannelExists = errors.New("channel exists")
 
+// ErrChannelNameLength is used to indicate a channel name is too long
+var ErrChannelNameLength = errors.New("channel name is too long")
+
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
 
