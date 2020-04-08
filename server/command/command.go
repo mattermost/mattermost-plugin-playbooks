@@ -125,13 +125,36 @@ func (r *Runner) actionSelftest() {
 		Title: "testing playbook",
 		Checklists: []playbook.Checklist{
 			{
-				Title: "My list",
+				Title: "Team A",
 				Items: []playbook.ChecklistItem{
 					{
-						Title: "Do the thing.",
+						Title: "Alert the correct people",
 					},
 					{
-						Title: "Do the other thing.",
+						Title: "Answer stupid questions",
+					},
+					{
+						Title: "Solve the problem",
+					},
+				},
+			},
+			{
+				Title: "Team B",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Panic",
+					},
+					{
+						Title: "Ask stupid questions",
+					},
+					{
+						Title: "Panic",
+					},
+					{
+						Title: "Tell everone else to not panic",
+					},
+					{
+						Title: "Panic",
 					},
 				},
 			},
@@ -199,6 +222,18 @@ func (r *Runner) actionSelftest() {
 
 	if deletedPlaybook, _ := r.playbookService.Get(todeleteid); deletedPlaybook.Title != "" {
 		r.postCommandResponse("Playbook should have been vaporised! Where's the kaboom? There was supposed to be an earth-shattering Kaboom!")
+		return
+	}
+
+	if _, err := r.incidentService.CreateIncident(&incident.Incident{
+		Header: incident.Header{
+			Name:            "Test - " + model.NewId(),
+			TeamID:          r.args.TeamId,
+			CommanderUserID: r.args.UserId,
+		},
+		Playbook: gotplaybook,
+	}); err != nil {
+		r.postCommandResponse("Unable to create test incident: " + err.Error())
 		return
 	}
 

@@ -6,7 +6,10 @@ import React from 'react';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
+import {ChecklistDetails} from 'src/components/checklist/checklist';
+
 import {Incident} from 'src/types/incident';
+import {Checklist} from 'src/types/playbook';
 
 import Profile from 'src/components/rhs/profile';
 
@@ -39,15 +42,14 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     />
                 </div>
 
-                {/* Checkbox example
-                    <div className='inner-container'>
-                        <div className='title'>{'Checklist'}</div>
-                        <Checkbox
-                            checked={true}
-                            text={'Triage Issue in Jira'}
+                {this.props.incident.playbook.checklists.map((checklist: Checklist) => {
+                    return (
+                        <ChecklistDetails
+                            checklist={checklist}
+                            key={checklist.title}
                         />
-                    </div>
-                */}
+                    );
+                })}
 
                 {
                     this.props.channelDetails.length > 0 &&
