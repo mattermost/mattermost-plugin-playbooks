@@ -15,7 +15,7 @@ type Playbook struct {
 	Checklists []Checklist `json:"checklists"`
 }
 
-// Checklist represents a checklist
+// Checklist represents a checklist in a playbook
 type Checklist struct {
 	Title string          `json:"title"`
 	Items []ChecklistItem `json:"items"`
@@ -34,7 +34,6 @@ type Service interface {
 	// Create creates a new playbook
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
-	// TOOD: Future support for filtering
 	GetPlaybooks() ([]Playbook, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
@@ -49,7 +48,6 @@ type Store interface {
 	// Create creates a new playbook
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
-	// TOOD: Future support for filtering
 	GetPlaybooks() ([]Playbook, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error

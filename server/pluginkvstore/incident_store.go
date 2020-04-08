@@ -16,7 +16,7 @@ const (
 
 type idHeaderMap map[string]incident.Header
 
-// incidentStore Implements incident store interface.
+// Ensure incidentStore implments the playbook.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -35,7 +36,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service) *P
 func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {
 	var playbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
-		HandleError(w, errors.Wrap(err, "unable to decode playbook"))
+		HandleError(w, fmt.Errorf("unable to decode playbook: %w", err))
 		return
 	}
 
@@ -50,14 +51,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}{
 		ID: id,
 	}
-	resultBytes, err := json.Marshal(&result)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(resultBytes)
+	ReturnJSON(w, &result)
 }
 
 func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {

@@ -3,10 +3,10 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 )
 
 type contextKey string
@@ -40,7 +40,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePlugin
 	h.root.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), contextKey(PluginIDContextKey), sourcePluginID)))
 }
 
-// HandleError Writes err as json into the response.
+// HandleError writes err as json into the response.
 func HandleError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	b, _ := json.Marshal(struct {
@@ -53,11 +53,11 @@ func HandleError(w http.ResponseWriter, err error) {
 	_, _ = w.Write(b)
 }
 
-// ReturnJSON Writes the given pointer to object as json with a success response
+// ReturnJSON writes the given pointer to object as json with a success response
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 	jsonBytes, err := json.Marshal(pointerToObject)
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "unable to marshal json"))
+		HandleError(w, fmt.Errorf("unable to marshal json: %w", err))
 		return
 	}
 
@@ -65,7 +65,7 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 	w.Write(jsonBytes)
 }
 
-// HandleErrorWithCode Writes code, errTitle and err as json into the response.
+// HandleErrorWithCode writes code, errTitle and err as json into the response.
 func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err error) {
 	w.WriteHeader(code)
 	b, _ := json.Marshal(struct {

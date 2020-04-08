@@ -1,6 +1,7 @@
 package pluginkvstore
 
 import (
+	"errors"
 	"fmt"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -31,38 +32,43 @@ func NewPlaybookStore(kvAPI KVAPI) *PlaybookStore {
 	}
 }
 
-// playbookStore Implments the playbook store interface.
+// Ensure playbookStore implments the playbook.Store interface.
 var _ playbook.Store = (*PlaybookStore)(nil)
 
 type playbookIndex struct {
 	PlaybookIDs []string `json:"playbook_ids"`
 }
 
+func (i *playbookIndex) clone() playbookIndex {
+	newIndex := *i
+	newIndex.PlaybookIDs = append([]string(nil), i.PlaybookIDs...)
+	return newIndex
+}
+
 func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 	var index playbookIndex
 	if err := p.kvAPI.Get(indexKey, &index); err != nil {
-		return index, fmt.Errorf("unable to get playbook index %w", err)
+		return index, fmt.Errorf("unable to get playbook index: %w", err)
 	}
 
 	return index, nil
 }
 
-func (p *PlaybookStore) addToIndex(playbookid string) error {
+func (p *PlaybookStore) addToIndex(playbookID string) error {
 	index, err := p.getIndex()
 	if err != nil {
 		return err
 	}
 
-	newIndex := index
-	newIndex.PlaybookIDs = append([]string(nil), index.PlaybookIDs...)
-	newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookid)
+	newIndex := index.clone()
+	newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookID)
 
 	// Set atomic doesn't seeem to work properly.
 	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
 	if err != nil {
-		return fmt.Errorf("Unable to add playbook to index %w", err)
+		return fmt.Errorf("Unable to add playbook to index: %w", err)
 	} else if !saved {
-		return fmt.Errorf("Unable add playbook to index KV Set didn't save")
+		return errors.New("Unable add playbook to index KV Set didn't save")
 	}
 
 	return nil
@@ -74,9 +80,7 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 		return err
 	}
 
-	newIndex := index
-	newIndex.PlaybookIDs = append([]string(nil), index.PlaybookIDs...)
-
+	newIndex := index.clone()
 	for i := range newIndex.PlaybookIDs {
 		if newIndex.PlaybookIDs[i] == playbookid {
 			newIndex.PlaybookIDs = append(newIndex.PlaybookIDs[:i], newIndex.PlaybookIDs[i+1:]...)
@@ -87,9 +91,9 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 	// Set atomic doesn't seeem to work properly.
 	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
 	if err != nil {
-		return fmt.Errorf("Unable to add playbook to index %w", err)
+		return fmt.Errorf("Unable to add playbook to index: %w", err)
 	} else if !saved {
-		return fmt.Errorf("Unable add playbook to index KV Set didn't save")
+		return errors.New("Unable add playbook to index KV Set didn't save")
 	}
 
 	return nil
@@ -101,9 +105,9 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 
 	saved, err := p.kvAPI.Set(playbookKey+playbook.ID, &playbook)
 	if err != nil {
-		return "", fmt.Errorf("Unable to save playbook to KV store %w", err)
+		return "", fmt.Errorf("Unable to save playbook to KV store: %w", err)
 	} else if !saved {
-		return "", fmt.Errorf("Unable to save playbook to KV store, KV Set didn't save")
+		return "", errors.New("Unable to save playbook to KV store, KV Set didn't save")
 	}
 
 	err = p.addToIndex(playbook.ID)
@@ -124,27 +128,24 @@ func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
 	return out, nil
 }
 
-// GetPlaybooks retrieves all playbooks
+// GetPlaybooks retrieves all playbooks.
+//
+// All playbooks are indexed in a dedicated key value and used to enumerate the existing playbooks.
 func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	index, err := p.getIndex()
 	if err != nil {
 		return nil, err
 	}
 
-	var cumulativeError error
-	playbooks := make([]playbook.Playbook, len(index.PlaybookIDs))
-	for i, playbookID := range index.PlaybookIDs {
-		playbooks[i], err = p.Get(playbookID)
-		if err != nil {
-			if cumulativeError != nil {
-				cumulativeError = fmt.Errorf(err.Error()+"%w", cumulativeError)
-			} else {
-				cumulativeError = err
-			}
-		}
+	playbooks := make([]playbook.Playbook, 0, len(index.PlaybookIDs))
+	for _, playbookID := range index.PlaybookIDs {
+		// Ignoring error here for now. If a playbook is deleted after this function retrieves the index,
+		// and error could be generated here that can be ignored. Other errors are unhelpful to the user.
+		gotPlaybook, _ := p.Get(playbookID)
+		playbooks = append(playbooks, gotPlaybook)
 	}
 
-	return playbooks, cumulativeError
+	return playbooks, nil
 }
 
 // Update updates a playbook
@@ -155,9 +156,9 @@ func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 
 	saved, err := p.kvAPI.Set(playbookKey+updated.ID, &updated)
 	if err != nil {
-		return fmt.Errorf("Unable to update playbook in KV store %w", err)
+		return fmt.Errorf("Unable to update playbook in KV store: %w", err)
 	} else if !saved {
-		return fmt.Errorf("Unable to update playbook in KV store, KV Set didn't save")
+		return errors.New("Unable to update playbook in KV store, KV Set didn't save")
 	}
 
 	return nil

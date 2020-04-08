@@ -115,7 +115,7 @@ func (r *Runner) actionSelftest() {
 		return
 	}
 
-	testplaybook := playbook.Playbook{
+	testPlaybook := playbook.Playbook{
 		Title: "testing playbook",
 		Checklists: []playbook.Checklist{
 			{
@@ -131,20 +131,20 @@ func (r *Runner) actionSelftest() {
 			},
 		},
 	}
-	playbookid, err := r.playbookService.Create(testplaybook)
+	playbookID, err := r.playbookService.Create(testPlaybook)
 	if err != nil {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
 	}
 
-	gotplaybook, err := r.playbookService.Get(playbookid)
+	gotplaybook, err := r.playbookService.Get(playbookID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookid, err.Error()))
+		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookID, err.Error()))
 		return
 	}
 
-	if gotplaybook.Title != testplaybook.Title {
-		r.postCommandResponse(fmt.Sprintf("Retrieved playbook is wrong, ID: %v Playbook: %+v", playbookid, gotplaybook))
+	if gotplaybook.Title != testPlaybook.Title {
+		r.postCommandResponse(fmt.Sprintf("Retrieved playbook is wrong, ID: %v Playbook: %+v", playbookID, gotplaybook))
 		return
 	}
 
@@ -159,7 +159,7 @@ func (r *Runner) actionSelftest() {
 		return
 	}
 
-	if len(gotPlaybooks) != 1 || gotPlaybooks[0].Title != testplaybook.Title {
+	if len(gotPlaybooks) != 1 || gotPlaybooks[0].Title != testPlaybook.Title {
 		r.postCommandResponse(fmt.Sprintf("Retrieved playbooks are wrong: %+v", gotPlaybooks))
 		return
 	}
@@ -170,9 +170,9 @@ func (r *Runner) actionSelftest() {
 		return
 	}
 
-	gotupdated, err := r.playbookService.Get(playbookid)
+	gotupdated, err := r.playbookService.Get(playbookID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookid, err.Error()))
+		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookID, err.Error()))
 		return
 	}
 
@@ -181,7 +181,7 @@ func (r *Runner) actionSelftest() {
 		return
 	}
 
-	todeleteid, err := r.playbookService.Create(testplaybook)
+	todeleteid, err := r.playbookService.Create(testPlaybook)
 	if err != nil {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
