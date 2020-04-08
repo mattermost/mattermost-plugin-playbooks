@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -13,7 +14,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/pkg/errors"
 )
 
 // Plugin implements the interface expected by the Mattermost server to communicate between the
@@ -44,14 +44,14 @@ func (p *Plugin) OnActivate() error {
 		Description: "A prototype demonstrating incident response management in Mattermost.",
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to ensure workflow bot")
+		return fmt.Errorf("failed to ensure workflow bot: %w", err)
 	}
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed save bot to config")
+		return fmt.Errorf("failed save bot to config: %w", err)
 	}
 
 	p.handler = api.NewHandler()
@@ -67,7 +67,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
-		return errors.Wrap(err, "failed register commands")
+		return fmt.Errorf("failed register commands: %w", err)
 	}
 
 	p.API.LogDebug("Incident response plugin Activated")

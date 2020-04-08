@@ -130,3 +130,15 @@ func (mr *MockPosterMockRecorder) PublishWebsocketEventToTeam(arg0, arg1, arg2 i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToTeam", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToTeam), arg0, arg1, arg2)
 }
+
+// PublishWebsocketEventToUser mocks base method
+func (m *MockPoster) PublishWebsocketEventToUser(arg0 string, arg1 interface{}, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PublishWebsocketEventToUser", arg0, arg1, arg2)
+}
+
+// PublishWebsocketEventToUser indicates an expected call of PublishWebsocketEventToUser
+func (mr *MockPosterMockRecorder) PublishWebsocketEventToUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToUser", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToUser), arg0, arg1, arg2)
+}

@@ -1,6 +1,6 @@
 package incident
 
-import "github.com/pkg/errors"
+import "errors"
 
 // Incident holds the detailed information of an incident.
 type Incident struct {
@@ -20,11 +20,21 @@ type Header struct {
 	CreatedAt       int64  `json:"created_at"`
 }
 
+// DialogState holds the start incident interactive dialog's state as it appears in the client
+// and is submitted back to the server.
+type DialogState struct {
+	PostID   string `json:"post_id"`
+	ClientID string `json:"client_id"`
+}
+
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
 // ErrChannelExists is used to indicate a channel with that name already exists.
 var ErrChannelExists = errors.New("channel exists")
+
+// ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
+var ErrIncidentNotActive = errors.New("incident not active")
 
 // HeaderFilterOptions specifies the optional parameters when getting headers.
 type HeaderFilterOptions struct {
@@ -38,16 +48,16 @@ type Service interface {
 	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
 	// CreateIncident creates a new incident.
-	CreateIncident(incident *Incident) (*Incident, error)
+	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// CreateIncidentDialog opens an interactive dialog to start a new incident.
-	CreateIncidentDialog(commanderID string, triggerID string, postID string) error
+	CreateIncidentDialog(commanderID, triggerID, postID, clientID string) error
 
 	// EndIncident completes the incident with the given ID by the given user.
 	EndIncident(incidentID string, userID string) error
 
 	// EndIncident completes the incident associated to the given channelID by the given user.
-	EndIncidentByChannel(channelID string, userID string) (*Incident, error)
+	EndIncidentByChannel(channelID string, userID string) error
 
 	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
@@ -62,16 +72,16 @@ type Store interface {
 	GetHeaders(options HeaderFilterOptions) ([]Header, error)
 
 	// CreateIncident creates a new incident.
-	CreateIncident(incident *Incident) (*Incident, error)
+	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
-	UpdateIncident(incident *Incident) error
+	UpdateIncident(incdnt *Incident) error
 
 	// GetIncident gets an incident by ID.
 	GetIncident(id string) (*Incident, error)
 
 	// GetIncidentByChannel gets an incident associated with the given channel id.
-	GetIncidentByChannel(channelID string, active bool) (*Incident, error)
+	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

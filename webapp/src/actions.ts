@@ -10,6 +10,7 @@ import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
 import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {generateId} from 'mattermost-redux/utils/helpers';
 
 import {Channel} from 'mattermost-redux/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
@@ -25,6 +26,7 @@ import {
     RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
     SET_LOADING,
+    SET_CLIENT_ID,
     ReceivedToggleRHSAction,
     SetRHSOpen,
     ReceivedIncidents,
@@ -34,6 +36,7 @@ import {
     SetTriggerId,
     ReceivedIncidentUpdate,
     SetLoading,
+    SetClientId,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -92,20 +95,27 @@ export function getIncidents(teamId?: string) {
     };
 }
 
-export function startIncident(postId? : string) {
+export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const currentChanel = getCurrentChannel(getState());
+        const currentTeamId = getCurrentTeamId(getState());
 
-        const args = {channel_id: currentChanel?.id};
+        const args = {
+            channel_id: currentChanel?.id,
+            team_id: currentTeamId,
+        };
 
-        let command = '/incident start';
+        // Add unique id
+        const clientId = generateId();
+        dispatch(setClientId(clientId));
+
+        let command = `/incident start ${clientId}`;
         if (postId) {
             command = `${command} ${postId}`;
         }
 
         try {
             const data = await Client4.executeCommand(command, args);
-
             dispatch(setTriggerId(data?.trigger_id));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
@@ -114,11 +124,9 @@ export function startIncident(postId? : string) {
 }
 
 export function endIncident(incidentId: string) {
-    return async (dispatch: Dispatch<AnyAction>) => {
+    return async () => {
         try {
             await clientEndIncident(incidentId);
-
-            dispatch(setRHSState(RHSState.List));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
@@ -197,5 +205,12 @@ function setLoading(isLoading: boolean): SetLoading {
     return {
         type: SET_LOADING,
         isLoading,
+    };
+}
+
+export function setClientId(clientId: string): SetClientId {
+    return {
+        type: SET_CLIENT_ID,
+        clientId,
     };
 }
