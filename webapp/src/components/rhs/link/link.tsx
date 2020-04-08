@@ -3,12 +3,15 @@
 
 import React from 'react';
 
+import {isMobile} from 'src/utils/utils';
+
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
 interface Props {
     text: string;
     to?: string;
+    toggleRHS: () => void;
 }
 
 export default class Link extends React.PureComponent<Props> {
@@ -16,8 +19,11 @@ export default class Link extends React.PureComponent<Props> {
         event.preventDefault();
         if (this.props.to) {
             WebappUtils.browserHistory.push(this.props.to);
+            if (isMobile()) {
+                this.props.toggleRHS();
+            }
         }
-    }
+    };
 
     public render(): JSX.Element {
         return (

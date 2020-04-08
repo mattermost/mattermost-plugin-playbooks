@@ -15,7 +15,7 @@ import {
 } from './types/actions';
 import {RHSState} from './types/incident';
 
-function rhsPluginAction(state = null, action) {
+function toggleRHSFunction(state = null, action) {
     switch (action.type) {
     case RECEIVED_TOGGLE_RHS_ACTION:
         return action.toggleRHSPluginAction;
@@ -84,7 +84,7 @@ function clientId(state = '', action) {
 }
 
 export default combineReducers({
-    rhsPluginAction,
+    toggleRHSFunction,
     rhsState,
     incidents,
     incidentDetails,
