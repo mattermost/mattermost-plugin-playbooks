@@ -1,10 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
+
+import ConfirmModal from 'mattermost-webapp/components/confirm_modal';
 
 import {Incident} from 'src/types/incident';
 
@@ -27,6 +29,8 @@ interface Props {
 
 export default class IncidentDetails extends React.PureComponent<Props> {
     public render(): JSX.Element {
+        const [isConfirmingEnd, setConfirmingEnd] = useState(false);
+
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
@@ -63,14 +67,28 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 }
 
                 {this.props.allowEndIncident &&
-                    <div className='footer-div'>
-                        <button
-                            className='btn btn-primary'
-                            onClick={() => this.props.actions.endIncident(this.props.incident.id)}
-                        >
-                            {'End Incident'}
-                        </button>
-                    </div>
+                <div className='footer-div'>
+                    <button
+                        className='btn btn-primary'
+                        onClick={
+
+                            //() => this.props.actions.endIncident(this.props.incident.id)
+                            () => setConfirmingEnd(true)
+                        }
+                    >
+                        {'End Incident'}
+                    </button>
+                </div>
+                }
+
+                {isConfirmingEnd &&
+                <ConfirmModal
+                    onCancel={setConfirmingEnd(false)}
+                    onConfirm={setConfirmingEnd(false)}
+                    show={true}
+                    title={'Test'}
+                    message={'Message test.'}
+                />
                 }
             </div>
         );

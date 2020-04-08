@@ -6,10 +6,10 @@ import {connect} from 'react-redux';
 
 import {Client4} from 'mattermost-redux/client';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {getUser, getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {Channel, ChannelWithTeamData} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
-import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Incident} from 'src/types/incident';
@@ -46,14 +46,11 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         }
     }
 
-    // Get the incident main channel. Assuming the first one for now.
-    const incidentChannelId = ownProps.incident?.channel_ids?.[0] || '';
-
     return {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
         channelDetails,
-        allowEndIncident: incidentChannelId === getCurrentChannel(state)?.id,
+        allowEndIncident: getCurrentUserId(state) === ownProps.incident.commander_user_id,
     };
 }
 
