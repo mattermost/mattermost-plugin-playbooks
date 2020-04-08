@@ -91,7 +91,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     confirmButtonText={'Confirm'}
                     show={true}
                     title={'Confirm End Incident'}
-                    message={`This will end incident ${this.props.incident.name}. It will close the details view in the RHS, and remove the incident from the Incident List. \n \n Are you sure?`}
+                    message={`This will end incident ${this.props.incident.name}. It will close the details view in the RHS, and remove the incident from the Incident List. Are you sure?`}
                 />
                 }
             </div>
