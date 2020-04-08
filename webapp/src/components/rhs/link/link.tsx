@@ -11,7 +11,7 @@ const WebappUtils = window.WebappUtils;
 interface Props {
     text: string;
     to?: string;
-    toggleRHSAction: () => void;
+    toggleRHS: () => void;
 }
 
 export default class Link extends React.PureComponent<Props> {
@@ -20,7 +20,7 @@ export default class Link extends React.PureComponent<Props> {
         if (this.props.to) {
             WebappUtils.browserHistory.push(this.props.to);
             if (isMobile()) {
-                this.props.toggleRHSAction();
+                this.props.toggleRHS();
             }
         }
     };
