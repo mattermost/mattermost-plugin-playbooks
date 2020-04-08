@@ -13,7 +13,7 @@ const (
 	indexKey    = "playbookindex"
 )
 
-// KVAPI is the key value store interface for the playbooks store. Modeled after mattermost-plugin-api.
+// KVAPI is the key value store interface for the playbooks store. Implemented by mattermost-plugin-api/Client.KV.
 type KVAPI interface {
 	Set(key string, value interface{}, options ...pluginapi.KVSetOption) (bool, error)
 	Get(key string, out interface{}) error
@@ -35,7 +35,7 @@ func NewPlaybookStore(kvAPI KVAPI) *PlaybookStore {
 var _ playbook.Store = (*PlaybookStore)(nil)
 
 type playbookIndex struct {
-	Playbooks []string `json:"playbooks"`
+	PlaybookIDs []string `json:"playbook_ids"`
 }
 
 func (p *PlaybookStore) getIndex() (playbookIndex, error) {
@@ -54,8 +54,8 @@ func (p *PlaybookStore) addToIndex(playbookid string) error {
 	}
 
 	newIndex := index
-	newIndex.Playbooks = append([]string(nil), index.Playbooks...)
-	newIndex.Playbooks = append(newIndex.Playbooks, playbookid)
+	newIndex.PlaybookIDs = append([]string(nil), index.PlaybookIDs...)
+	newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookid)
 
 	// Set atomic doesn't seeem to work properly.
 	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
@@ -75,11 +75,11 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 	}
 
 	newIndex := index
-	newIndex.Playbooks = append([]string(nil), index.Playbooks...)
+	newIndex.PlaybookIDs = append([]string(nil), index.PlaybookIDs...)
 
-	for i := range newIndex.Playbooks {
-		if newIndex.Playbooks[i] == playbookid {
-			newIndex.Playbooks = append(newIndex.Playbooks[:i], newIndex.Playbooks[i+1:]...)
+	for i := range newIndex.PlaybookIDs {
+		if newIndex.PlaybookIDs[i] == playbookid {
+			newIndex.PlaybookIDs = append(newIndex.PlaybookIDs[:i], newIndex.PlaybookIDs[i+1:]...)
 			break
 		}
 	}
@@ -132,8 +132,8 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	}
 
 	var cumulativeError error
-	playbooks := make([]playbook.Playbook, len(index.Playbooks))
-	for i, playbookID := range index.Playbooks {
+	playbooks := make([]playbook.Playbook, len(index.PlaybookIDs))
+	for i, playbookID := range index.PlaybookIDs {
 		playbooks[i], err = p.Get(playbookID)
 		if err != nil {
 			if cumulativeError != nil {
