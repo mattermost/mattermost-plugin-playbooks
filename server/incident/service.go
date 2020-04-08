@@ -208,16 +208,17 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 		if err := s.pluginAPI.Channel.Create(channel); err != nil {
 			appErr := err.(*model.AppError)
 
-			// Let the user correct display name errors:
-			if appErr.Id == "model.channel.is_valid.display_name.app_error" {
-				return nil, ErrChannelDisplayNameLong
-			}
+				// Let the user correct display name errors:
+				if appErr.Id == "model.channel.is_valid.display_name.app_error" {
+					return nil, ErrChannelDisplayNameLong
+				}
 
-			// We can fix channel Name errors:
-			if appErr.Id == "store.sql_channel.save_channel.exists.app_error" ||
-				appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
-				channel.Name = addRandomBits(channel.Name)
-				continue
+				// We can fix channel Name errors:
+				if appErr.Id == "store.sql_channel.save_channel.exists.app_error" ||
+					appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
+					channel.Name = addRandomBits(channel.Name)
+					continue
+				}
 			} else {
 				return nil, fmt.Errorf("failed to create incident channel: %w", err)
 			}
