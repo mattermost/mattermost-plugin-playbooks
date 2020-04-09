@@ -10,7 +10,7 @@ import qs from 'qs';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
-import {setTriggerId} from 'src/actions';
+import {ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
@@ -58,6 +58,15 @@ export async function uncheckItem(incidentID: string, checklistID: number, itemI
     const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}/uncheck`, {
         method: 'put',
         body: '',
+    });
+
+    return data;
+}
+
+export async function clientAddChecklistItem(incidentID: string, checklistID: number, checklistItem: ChecklistItem) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/add`, {
+        method: 'put',
+        body: JSON.stringify(checklistItem),
     });
 
     return data;

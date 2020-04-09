@@ -13,7 +13,7 @@ import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Incident} from 'src/types/incident';
-import {endIncident, modifyChecklistItemState} from 'src/actions';
+import {endIncident, modifyChecklistItemState, addChecklistItem} from 'src/actions';
 
 import IncidentDetails from './incident_details';
 
@@ -63,6 +63,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
         actions: bindActionCreators({
             endIncident,
             modifyChecklistItemState,
+            addChecklistItem,
         }, dispatch),
     };
 }

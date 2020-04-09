@@ -9,7 +9,7 @@ import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 
 import {Incident} from 'src/types/incident';
-import {Checklist} from 'src/types/playbook';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 import Profile from 'src/components/rhs/profile';
 
@@ -27,6 +27,7 @@ interface Props {
     actions: {
         endIncident: () => void;
         modifyChecklistItemState: (incidentID: string, checklistID: number, itemID: number, checked: boolean) => void;
+        addChecklistItem: (incidentID: string, checklistID: number, checklistItem: ChecklistItem) => void;
     };
 }
 
@@ -50,6 +51,9 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             key={checklist.title + index}
                             onChange={(itemID: number, checked: boolean) => {
                                 this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemID, checked);
+                            }}
+                            addItem={(checklistItem: ChecklistItem) => {
+                                this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
                             }}
                         />
                     );
