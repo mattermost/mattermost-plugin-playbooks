@@ -16,7 +16,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
-// These credentials for Rudder are thought to be populated in build-time,
+// These credentials for Rudder need to be populated at build-time,
 // passing the following flags to the go build command:
 // -ldflags "-X main.rudderDataplaneURL=<url> -X main.rudderWriteKey=<write_key>"
 var (
