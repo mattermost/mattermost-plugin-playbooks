@@ -130,10 +130,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 		return ErrIncidentNotActive
 	}
 
-	// Incident main channel membership is required to end incident
-	incidentMainChannelID := incdnt.ChannelIDs[0]
-
-	if !s.pluginAPI.User.HasPermissionToChannel(userID, incidentMainChannelID, model.PERMISSION_READ_CHANNEL) {
+	if userID != incdnt.CommanderUserID {
 		return errors.New("user does not have permission to end incident")
 	}
 
