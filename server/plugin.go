@@ -61,15 +61,16 @@ func (p *Plugin) OnActivate() error {
 		return fmt.Errorf("failed save bot to config: %w", err)
 	}
 
-	diagnosticID := pluginAPIClient.System.GetDiagnosticID()
-	rudderClient, err := telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID)
-	if err != nil {
-		return fmt.Errorf("failed init telemetry client: %w", err)
-	}
-
+	var telemetryClient incident.Telemetry
 	if rudderDataplaneURL == "" || rudderWriteKey == "" {
 		pluginAPIClient.Log.Warn("Rudder credentials are not set. Disabling analytics.")
-		rudderClient.Disable()
+		telemetryClient = &telemetry.NoopTelemetry{}
+	} else {
+		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
+		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID)
+		if err != nil {
+			return fmt.Errorf("failed init telemetry client: %w", err)
+		}
 	}
 
 	p.handler = api.NewHandler()
@@ -79,7 +80,7 @@ func (p *Plugin) OnActivate() error {
 		pluginkvstore.NewIncidentStore(pluginAPIClient),
 		p.bot,
 		p.config,
-		rudderClient,
+		telemetryClient,
 	)
 
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot)
