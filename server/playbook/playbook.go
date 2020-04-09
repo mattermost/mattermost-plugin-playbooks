@@ -1,12 +1,5 @@
 package playbook
 
-const (
-	// ChecklistItemStateUnchecked represents the unchecked state in ChecklistItem.State
-	ChecklistItemStateUnchecked = "unchecked"
-	// ChecklistItemStateChecked represents the checked state in ChecklistItem.State
-	ChecklistItemStateChecked = "checked"
-)
-
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
 	ID         string      `json:"id"`
@@ -23,8 +16,8 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	Title string `json:"title"`
-	State string `json:"state"`
+	Title   string `json:"title"`
+	Checked bool   `json:"checked"`
 }
 
 // Service is the playbook service for managing playbooks
