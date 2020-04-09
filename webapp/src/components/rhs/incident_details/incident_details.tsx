@@ -26,6 +26,7 @@ interface Props {
     allowEndIncident: boolean;
     actions: {
         endIncident: () => void;
+        modifyChecklistItemState: (incidentID: string, checklistID: number, itemID: number, checked: boolean) => void;
     };
 }
 
@@ -42,11 +43,14 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     />
                 </div>
 
-                {this.props.incident.playbook.checklists.map((checklist: Checklist) => {
+                {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => {
                     return (
                         <ChecklistDetails
                             checklist={checklist}
-                            key={checklist.title}
+                            key={checklist.title + index}
+                            onChange={(itemID: number, checked: boolean) => {
+                                this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemID, checked);
+                            }}
                         />
                     );
                 })}

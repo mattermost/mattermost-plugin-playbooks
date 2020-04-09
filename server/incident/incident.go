@@ -74,6 +74,13 @@ type Service interface {
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
 
+	// ModifyCheckedState checks or unchecks the specified checklist item
+	// Indeponant, will not perform any actions if the checklist item is already in the specified state
+	ModifyCheckedState(incidentID, userId string, check bool, checklistNumber int, itemNumber int) error
+
+	// AddChecklistItem adds an item to the specified checklist
+	AddChecklistItem(incidentID, userId string, checklistNumber int, checklistItem playbook.ChecklistItem) error
+
 	// NukeDB removes all incident related data.
 	NukeDB() error
 }

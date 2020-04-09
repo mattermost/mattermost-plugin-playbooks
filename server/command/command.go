@@ -128,7 +128,8 @@ func (r *Runner) actionSelftest() {
 				Title: "Team A",
 				Items: []playbook.ChecklistItem{
 					{
-						Title: "Alert the correct people",
+						Title:   "Alert the correct people",
+						Checked: true,
 					},
 					{
 						Title: "Answer stupid questions",

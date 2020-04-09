@@ -22,9 +22,11 @@ export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>, get
             return;
         }
         const incident = JSON.parse(msg.data.payload);
-        if (!isIncident(incident)) {
-            return;
-        }
+
+        //if (!isIncident(incident)) {
+        //console.log('FUCK');
+        //return;
+        //}
 
         dispatch(receivedIncidentUpdate(incident));
 

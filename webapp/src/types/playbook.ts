@@ -15,8 +15,5 @@ export interface Checklist {
 
 export interface ChecklistItem {
     title: string;
-    state: string;
+    checked: boolean;
 }
-
-export const ChecklistItemStateChecked = 'checked';
-export const ChecklistItemStateUnchecked = 'unchecked';

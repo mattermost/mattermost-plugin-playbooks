@@ -3,51 +3,36 @@
 
 import React from 'react';
 
-import {Checklist, ChecklistItem, ChecklistItemStateChecked} from 'src/types/playbook';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
+
+import {ChecklistItemDetails} from './checklist_item';
 
 interface ChecklistDetailsProps {
-    checklist: Checklist
+    checklist: Checklist;
+    onChange?: (itemNum: number, checked: boolean) => void;
 }
 
-export const ChecklistDetails = ({checklist}:ChecklistDetailsProps): React.ReactElement => {
+export const ChecklistDetails = ({checklist, onChange}: ChecklistDetailsProps): React.ReactElement<ChecklistDetailsProps> => {
     return (
         <div
             key={checklist.title}
             className='inner-container'
         >
             <div className='title'>{checklist.title}</div>
-                {checklist.items.map((checklistItem: ChecklistItem) => {
-                    return ( 
-                            <ChecklistItemDetails
-                                key={checklistItem.title}
-                                checklistItem={checklistItem}
-                            />
-                    )
-                })}
+            {checklist.items.map((checklistItem: ChecklistItem, index: number) => {
+                return (
+                    <ChecklistItemDetails
+                        key={checklistItem.title + index}
+                        checklistItem={checklistItem}
+                        onChange={(checked: boolean) => {
+                            if (onChange) {
+                                onChange(index, checked);
+                            }
+                        }}
+                    />
+                );
+            })}
         </div>
-    )
-}
+    );
+};
 
-interface ChecklistItemDetailsProps {
-    checklistItem: ChecklistItem
-    onChange?: (item: ChecklistItem) => void
-}
-
-export const ChecklistItemDetails = ({checklistItem, onChange}:ChecklistItemDetailsProps): React.ReactElement<ChecklistItemDetailsProps> => {
-    const checked = checklistItem.state == ChecklistItemStateChecked
-    return (
-        <div className='checkbox-container'>
-            <input
-                className='checkbox'
-                type='checkbox'
-                checked={checked}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    if (onChange) {
-                        onChange(event.target.checked);
-                    }
-                }}
-            />
-            <label>{checklistItem.title}</label>
-        </div>
-    )
-}

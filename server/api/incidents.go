@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
 // IncidentHandler is the API handler.
@@ -39,6 +41,15 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
 	incidentRouter.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+
+	checklistsRouter := incidentRouter.PathPrefix("/checklists").Subrouter()
+
+	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
+	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
+
+	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
+	checklistItem.HandleFunc("/check", handler.check).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
 
 	return handler
 }
@@ -209,6 +220,63 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 	err := h.incidentService.EndIncident(request.State, request.UserId)
 	if err != nil {
 		HandleError(w, fmt.Errorf("failed to end incident: %w", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistId, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	itemId, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.incidentService.ModifyCheckedState(id, userID, check, checklistId, itemId); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+func (h *IncidentHandler) check(w http.ResponseWriter, r *http.Request) {
+	h.checkuncheck(w, r, true)
+}
+
+func (h *IncidentHandler) uncheck(w http.ResponseWriter, r *http.Request) {
+	h.checkuncheck(w, r, false)
+}
+
+func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistId, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var checklistItem playbook.ChecklistItem
+	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if err := h.incidentService.AddChecklistItem(id, userID, checklistId, checklistItem); err != nil {
+		HandleError(w, err)
 		return
 	}
 

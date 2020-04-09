@@ -38,7 +38,7 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand} from './client';
+import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand, checkItem, uncheckItem} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -111,6 +111,20 @@ export function startIncident(postId?: string) {
 export function endIncident() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, '/incident end');
+    };
+}
+
+export function modifyChecklistItemState(incidentID: string, checklistID: number, itemID: number, checked: boolean) {
+    return async () => {
+        try {
+            if (checked) {
+                checkItem(incidentID, checklistID, itemID);
+            } else {
+                uncheckItem(incidentID, checklistID, itemID);
+            }
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
     };
 }
 

@@ -45,6 +45,24 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
+export async function checkItem(incidentID: string, checklistID: number, itemID: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}/check`, {
+        method: 'put',
+        body: '',
+    });
+
+    return data;
+}
+
+export async function uncheckItem(incidentID: string, checklistID: number, itemID: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}/uncheck`, {
+        method: 'put',
+        body: '',
+    });
+
+    return data;
+}
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 

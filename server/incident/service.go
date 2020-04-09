@@ -2,6 +2,7 @@ package incident
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -131,6 +133,10 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 		return ErrIncidentNotActive
 	}
 
+	if !s.hasPermissionToModifyIncident(incdnt, userID) {
+		return errors.New("user does not have permission to end incident")
+	}
+
 	// Close the incident
 	incdnt.IsActive = false
 
@@ -205,9 +211,75 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 	return incdnt.CommanderUserID == userID
 }
 
+// CompleteItem checks the specified checklist item
+// Indeponant, will not perform any actions if the checklist item is already checked
+func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, check bool, checklistNumber int, itemNumber int) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return fmt.Errorf("failed to check item: %w", err)
+	}
+
+	if !s.hasPermissionToModifyIncident(incidentToModify, userID) {
+		return errors.New("user does not have permission to end incident")
+	}
+
+	if checklistNumber >= len(incidentToModify.Playbook.Checklists) ||
+		itemNumber >= len(incidentToModify.Playbook.Checklists[checklistNumber].Items) {
+		return errors.New("invalid checklist or item number")
+	}
+
+	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
+	if check {
+		if itemToCheck.Checked {
+			return errors.New("checklist item in wrong state")
+		}
+		itemToCheck.Checked = true
+	} else {
+		if !itemToCheck.Checked {
+			return errors.New("checklist item in wrong state")
+		}
+		itemToCheck.Checked = false
+	}
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+	}
+
+	// Post in the  main incident channel that @user has ended the incident.
+	// Main channel is the only channel in the incident for now.
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	message := "@%v checked off checklist item \"%v\""
+	if !check {
+		message = "@%v unchecked checklist item \"%v\""
+	}
+	if err := s.poster.PostMessage(mainChannelID, message, user.Username, itemToCheck.Title); err != nil {
+		return fmt.Errorf("failed to post end incident messsage: %w", err)
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) AddChecklistItem(incidentID, userId string, checklistNumber int, checklistItem playbook.ChecklistItem) error {
+	return nil
+}
+
 // NukeDB removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
+}
+
+func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {
+	// Incident main channel membership is required to modify incident
+	incidentMainChannelID := incident.ChannelIDs[0]
+	return s.pluginAPI.User.HasPermissionToChannel(userID, incidentMainChannelID, model.PERMISSION_READ_CHANNEL)
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, error) {
