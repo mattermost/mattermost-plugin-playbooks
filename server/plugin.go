@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
@@ -22,7 +23,8 @@ type Plugin struct {
 
 	handler         *api.Handler
 	config          *config.ServiceImpl
-	incidentService *incident.ServiceImpl
+	incidentService incident.Service
+	playbookService playbook.Service
 	bot             *bot.Bot
 }
 
@@ -60,8 +62,9 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 	)
-
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot)
+	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV))
+	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return fmt.Errorf("failed register commands: %w", err)
@@ -73,7 +76,7 @@ func (p *Plugin) OnActivate() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService)
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("workflowplugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
