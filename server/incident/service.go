@@ -53,7 +53,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 
 	channel, err := s.createIncidentChannel(incdnt)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrChannelExists, err.Error())
+		return nil, err
 	}
 
 	// New incidents are always active
@@ -203,6 +203,16 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 	}
 
 	if err := s.pluginAPI.Channel.Create(channel); err != nil {
+		if appErr, ok := err.(*model.AppError); ok {
+			if appErr.Id == "store.sql_channel.save_channel.exists.app_error" {
+				return nil, ErrChannelExists
+			} else if appErr.Id == "model.channel.is_valid.display_name.app_error" {
+				return nil, ErrChannelNameLong
+			} else if appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
+				return nil, ErrChannelNameShort
+			}
+		}
+
 		return nil, fmt.Errorf("failed to create incident channel: %w", err)
 	}
 
@@ -234,6 +244,8 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string) (*
 			DisplayName: "Channel Name",
 			Name:        DialogFieldNameKey,
 			Type:        "text",
+			MinLength:   2,
+			MaxLength:   64,
 		}},
 		SubmitLabel:    "Start Incident",
 		NotifyOnCancel: false,
