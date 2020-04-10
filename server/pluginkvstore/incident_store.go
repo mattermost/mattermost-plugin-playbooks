@@ -32,7 +32,7 @@ func NewIncidentStore(pluginAPI *pluginapi.Client) incident.Store {
 	return newStore
 }
 
-// GetAllHeaders Gets all the header information.
+// GetAllHeaders gets all the header information.
 func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]incident.Header, error) {
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
@@ -51,7 +51,7 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 	return result, nil
 }
 
-// CreateIncident Creates a new incident.
+// CreateIncident creates a new incident.
 func (s *incidentStore) CreateIncident(incdnt *incident.Incident) (*incident.Incident, error) {
 	if incdnt == nil {
 		return nil, errors.New("incident is nil")
@@ -109,21 +109,21 @@ func (s *incidentStore) UpdateIncident(incdnt *incident.Incident) error {
 	return nil
 }
 
-// GetIncident Gets an incident by ID.
-func (s *incidentStore) GetIncident(id string) (*incident.Incident, error) {
+// GetIncident gets an incident by ID.
+func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all headers value: %w", err)
 	}
 
-	if _, exists := headers[id]; !exists {
-		return nil, fmt.Errorf("incident with id (%s) does not exist: %w", id, incident.ErrNotFound)
+	if _, exists := headers[incidentID]; !exists {
+		return nil, fmt.Errorf("incident with id (%s) does not exist: %w", incidentID, incident.ErrNotFound)
 	}
 
-	return s.getIncident(id)
+	return s.getIncident(incidentID)
 }
 
-// GetIncidentIDForChannel Gets an incident associated to the given channel id.
+// GetIncidentIDForChannel gets an incident associated to the given channel id.
 func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
@@ -146,7 +146,7 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 	return "", fmt.Errorf("channel with id (%s) does not have an incident: %w", channelID, incident.ErrNotFound)
 }
 
-// NukeDB Removes all incident related data.
+// NukeDB removes all incident related data.
 func (s *incidentStore) NukeDB() error {
 	return s.pluginAPI.KV.DeleteAll()
 }

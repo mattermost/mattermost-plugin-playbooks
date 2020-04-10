@@ -97,11 +97,11 @@ export function getIncidents(teamId?: string) {
 
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        const currentChanel = getCurrentChannel(getState());
+        const currentChannel = getCurrentChannel(getState());
         const currentTeamId = getCurrentTeamId(getState());
 
         const args = {
-            channel_id: currentChanel?.id,
+            channel_id: currentChannel?.id,
             team_id: currentTeamId,
         };
 
@@ -123,10 +123,21 @@ export function startIncident(postId?: string) {
     };
 }
 
-export function endIncident(incidentId: string) {
-    return async () => {
+export function endIncident() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        const currentChannel = getCurrentChannel(getState());
+        const currentTeamId = getCurrentTeamId(getState());
+
+        const args = {
+            channel_id: currentChannel?.id,
+            team_id: currentTeamId,
+        };
+
+        const command = '/incident end';
+
         try {
-            await clientEndIncident(incidentId);
+            const data = await Client4.executeCommand(command, args);
+            dispatch(setTriggerId(data?.trigger_id));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }

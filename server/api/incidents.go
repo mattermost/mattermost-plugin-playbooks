@@ -33,7 +33,8 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
 	incidentsRouter.HandleFunc("", handler.createIncident).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
-	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -52,6 +53,8 @@ func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 }
 
+// createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
+// the create incident dialog.
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
@@ -159,13 +162,45 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// endIncident handles the /incidents/{id}/end api endpoint.
 func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	if !h.incidentService.IsCommander(vars["id"], userID) {
+		w.WriteHeader(http.StatusForbidden)
+		b, _ := json.Marshal(struct {
+			Error   string `json:"error"`
+			Details string `json:"details"`
+		}{
+			Error:   "Not authorized",
+			Details: "Only the commander may end an incident",
+		})
+		_, _ = w.Write(b)
+	}
+
 	err := h.incidentService.EndIncident(vars["id"], userID)
 	if err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+// endIncidentFromDialog handles the interactive dialog submission when a user confirms they
+// want to end an incident.
+func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
+	request := model.SubmitDialogRequestFromJson(r.Body)
+	if request == nil {
+		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		return
+	}
+
+	err := h.incidentService.EndIncident(request.State, request.UserId)
+	if err != nil {
+		HandleError(w, fmt.Errorf("failed to end incident: %w", err))
 		return
 	}
 

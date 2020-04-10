@@ -6,8 +6,6 @@ import React from 'react';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
-import ConfirmModal from 'mattermost-webapp/components/confirm_modal';
-
 import {Incident} from 'src/types/incident';
 
 import Profile from 'src/components/rhs/profile';
@@ -21,9 +19,10 @@ interface Props {
     commander: UserProfile;
     profileUri: string;
     channelDetails: ChannelWithTeamData[];
+    isCommander: boolean;
     allowEndIncident: boolean;
     actions: {
-        endIncident: (id: string) => void;
+        endIncident: () => void;
     };
 }
 
@@ -72,27 +71,23 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     </div>
                 }
 
-                {this.props.allowEndIncident &&
-                <div className='footer-div'>
-                    <button
-                        className='btn btn-primary'
-                        onClick={() => this.setState({isConfirmingEnd: true})}
-                    >
-                        {'End Incident'}
-                    </button>
-                </div>
-                }
-
-                {this.state.isConfirmingEnd &&
-                <ConfirmModal
-                    onCancel={() => this.setState({isConfirmingEnd: false})}
-                    onConfirm={() => this.props.actions.endIncident(this.props.incident.id)}
-                    onExit={() => this.setState({isConfirmingEnd: false})}
-                    confirmButtonText={'Confirm'}
-                    show={true}
-                    title={'Confirm End Incident'}
-                    message={`This will end incident ${this.props.incident.name}. It will close the details view in the RHS, and remove the incident from the Incident List. Are you sure?`}
-                />
+                {
+                    this.props.isCommander &&
+                    <div className='footer-div'>
+                        <button
+                            className='btn btn-primary'
+                            onClick={() => this.props.actions.endIncident()}
+                            disabled={!this.props.allowEndIncident}
+                        >
+                            {'End Incident'}
+                        </button>
+                        {
+                            !this.props.allowEndIncident &&
+                            <div className='help-text'>
+                                {'To end an incident, you must be viewing the incident channel.'}
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         );

@@ -2,7 +2,6 @@ package incident
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -24,7 +23,7 @@ type ServiceImpl struct {
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 
-// DialogFieldNameKey is the key for the incident name field used in CreateIncidentDialog
+// DialogFieldNameKey is the key for the incident name field used in OpenCreateIncidentDialog
 const DialogFieldNameKey = "incidentName"
 
 // NewService creates a new incident ServiceImpl.
@@ -96,17 +95,16 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	return incdnt, nil
 }
 
-// CreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) CreateIncidentDialog(commanderID, triggerID, postID, clientID string) error {
+// OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
+func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string) error {
 	dialog, err := s.newIncidentDialog(commanderID, postID, clientID)
 	if err != nil {
 		return fmt.Errorf("failed to create new incident dialog: %w", err)
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/dialog?client_id=%s",
-			s.configService.GetManifest().Id,
-			clientID),
+		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/create-dialog",
+			s.configService.GetManifest().Id),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -128,10 +126,6 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 
 	if !incdnt.IsActive {
 		return ErrIncidentNotActive
-	}
-
-	if userID != incdnt.CommanderUserID {
-		return errors.New("user does not have permission to end incident")
 	}
 
 	// Close the incident
@@ -158,23 +152,53 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	return nil
 }
 
-// EndIncidentByChannel completes the incident associated to the given channelID.
-func (s *ServiceImpl) EndIncidentByChannel(channelID string, userID string) error {
-	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
-	if err != nil {
-		return fmt.Errorf("failed to end incident: %w", err)
+// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
+// be ended.
+func (s *ServiceImpl) OpenEndIncidentDialog(incidentID string, triggerID string) error {
+	dialog := model.Dialog{
+		Title:            "Confirm End Incident",
+		SubmitLabel:      "Confirm",
+		IntroductionText: "Are you certain you want to end the incident?",
+		NotifyOnCancel:   false,
+		State:            incidentID,
 	}
 
-	if err := s.EndIncident(incidentID, userID); err != nil {
-		return fmt.Errorf("failed to end incident: %w", err)
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/end-dialog",
+			s.configService.GetManifest().Id),
+		Dialog:    dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return fmt.Errorf("failed to open new incident dialog: %w", err)
 	}
 
 	return nil
 }
 
-// GetIncident gets an incident by ID.
-func (s *ServiceImpl) GetIncident(id string) (*Incident, error) {
-	return s.store.GetIncident(id)
+// GetIncident gets an incident by ID. Returns error if it could not be found.
+func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
+	return s.store.GetIncident(incidentID)
+}
+
+// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
+// if there is no incident associated with this channel.
+func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) string {
+	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
+	if err != nil {
+		return ""
+	}
+	return incidentID
+}
+
+// IsCommander returns true if the userID is the commander for incidentID.
+func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
+	incdnt, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return false
+	}
+	return incdnt.CommanderUserID == userID
 }
 
 // NukeDB removes all incident related data.

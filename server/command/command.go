@@ -74,7 +74,7 @@ func (r *Runner) postCommandResponse(text string) {
 	r.poster.Ephemeral(r.args.UserId, r.args.ChannelId, "%s", text)
 }
 
-func (r *Runner) actionDialogStart(args []string) {
+func (r *Runner) actionStart(args []string) {
 	clientID := ""
 	if len(args) > 0 {
 		clientID = args[0]
@@ -85,14 +85,20 @@ func (r *Runner) actionDialogStart(args []string) {
 		postID = args[1]
 	}
 
-	if err := r.incidentService.CreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID); err != nil {
+	if err := r.incidentService.OpenCreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
 }
 
 func (r *Runner) actionEnd() {
-	err := r.incidentService.EndIncidentByChannel(r.args.ChannelId, r.args.UserId)
+	incidentID := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if !r.incidentService.IsCommander(incidentID, r.args.UserId) {
+		r.postCommandResponse("Only the commander may end an incident.")
+		return
+	}
+
+	err := r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
 
 	if errors.Is(err, incident.ErrNotFound) {
 		r.postCommandResponse("This channel is not associated with an incident.")
@@ -142,10 +148,8 @@ func (r *Runner) Execute() error {
 
 	switch cmd {
 	case "start":
-		r.actionDialogStart(parameters)
+		r.actionStart(parameters)
 	case "end":
-		r.actionEnd()
-	case "stop":
 		r.actionEnd()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
