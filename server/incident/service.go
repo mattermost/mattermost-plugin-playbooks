@@ -218,6 +218,8 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 					appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
 					channel.Name = addRandomBits(channel.Name)
 					continue
+				} else {
+					return nil, fmt.Errorf("failed to create incident channel: %w", err)
 				}
 			} else {
 				return nil, fmt.Errorf("failed to create incident channel: %w", err)
