@@ -7,12 +7,10 @@ import (
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.
 type NoopTelemetry struct{}
 
-// CreateIncident does nothing, always returning a nil error.
-func (t *NoopTelemetry) CreateIncident(incident *incident.Incident) error {
-	return nil
+// CreateIncident does nothing
+func (t *NoopTelemetry) CreateIncident(incident *incident.Incident) {
 }
 
-// EndIncident does nothing, always returning a nil error.
-func (t *NoopTelemetry) EndIncident(incident *incident.Incident) error {
-	return nil
+// EndIncident does nothing
+func (t *NoopTelemetry) EndIncident(incident *incident.Incident) {
 }

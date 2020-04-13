@@ -61,16 +61,12 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 	}
 }
 
-// CreateIncident tracks the creation of the incident passed. The returned
-// error is, for now, always nil.
-func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) error {
+// CreateIncident tracks the creation of the incident passed.
+func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) {
 	t.track(eventCreateIncident, incidentProperties(incident))
-	return nil
 }
 
-// EndIncident tracks the end of the incident passed. The returned
-// error is, for now, always nil.
-func (t *RudderTelemetry) EndIncident(incident *incident.Incident) error {
+// EndIncident tracks the end of the incident passed.
+func (t *RudderTelemetry) EndIncident(incident *incident.Incident) {
 	t.track(eventEndIncident, incidentProperties(incident))
-	return nil
 }
