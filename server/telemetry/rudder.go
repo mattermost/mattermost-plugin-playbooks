@@ -1,6 +1,8 @@
 package telemetry
 
 import (
+	"fmt"
+
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	rudder "github.com/rudderlabs/analytics-go"
 )
@@ -22,6 +24,10 @@ const (
 // NewRudder builds a new RudderTelemetry client that will send the events to
 // dataPlaneURL with the writeKey, identified with the diagnosticID
 func NewRudder(dataPlaneURL, writeKey, diagnosticID string) (*RudderTelemetry, error) {
+	if diagnosticID == "" {
+		return nil, fmt.Errorf("diagnosticID should not be empty")
+	}
+
 	client, err := rudder.NewWithConfig(writeKey, rudder.Config{
 		Endpoint: dataPlaneURL,
 	})
