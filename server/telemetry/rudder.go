@@ -5,7 +5,7 @@ import (
 	rudder "github.com/rudderlabs/analytics-go"
 )
 
-// RudderTelemetry implements Telemetry using a Rudder backend
+// RudderTelemetry implements Telemetry using a Rudder backend.
 type RudderTelemetry struct {
 	client       rudder.Client
 	diagnosticID string
@@ -56,14 +56,14 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 }
 
 // CreatedIncident tracks the creation of the incident passed. The returned
-// error is, for now, always nil
+// error is, for now, always nil.
 func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) error {
 	t.track(eventCreateIncident, incidentProperties(incident))
 	return nil
 }
 
 // EndIncident tracks the end of the incident passed. The returned
-// error is, for now, always nil
+// error is, for now, always nil.
 func (t *RudderTelemetry) EndIncident(incident *incident.Incident) error {
 	t.track(eventEndIncident, incidentProperties(incident))
 	return nil

@@ -86,11 +86,11 @@ type Store interface {
 	NukeDB() error
 }
 
-// Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry
+// Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
 type Telemetry interface {
-	// CreateIncidenttracks the creation of a new incident
+	// CreateIncidenttracks the creation of a new incident.
 	CreateIncident(incident *Incident) error
 
-	// EndIncident tracks the end of an incident
+	// EndIncident tracks the end of an incident.
 	EndIncident(incident *Incident) error
 }
