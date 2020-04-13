@@ -26,15 +26,7 @@ interface Props {
     };
 }
 
-interface State {
-    isConfirmingEnd: boolean;
-}
-
 export default class IncidentDetails extends React.PureComponent<Props> {
-    state: State = {
-        isConfirmingEnd: false,
-    };
-
     public render(): JSX.Element {
         return (
             <div className='IncidentDetails'>

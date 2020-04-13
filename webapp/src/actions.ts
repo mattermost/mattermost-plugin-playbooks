@@ -2,8 +2,6 @@
 // See LICENSE.txt for license information.
 import {Dispatch, AnyAction} from 'redux';
 
-import {Client4} from 'mattermost-redux/client';
-
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
@@ -40,7 +38,7 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, clientEndIncident} from './client';
+import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -114,12 +112,7 @@ export function startIncident(postId?: string) {
             command = `${command} ${postId}`;
         }
 
-        try {
-            const data = await Client4.executeCommand(command, args);
-            dispatch(setTriggerId(data?.trigger_id));
-        } catch (error) {
-            console.error(error); //eslint-disable-line no-console
-        }
+        await clientExecuteCommand(dispatch, command, args);
     };
 }
 
@@ -133,14 +126,7 @@ export function endIncident() {
             team_id: currentTeamId,
         };
 
-        const command = '/incident end';
-
-        try {
-            const data = await Client4.executeCommand(command, args);
-            dispatch(setTriggerId(data?.trigger_id));
-        } catch (error) {
-            console.error(error); //eslint-disable-line no-console
-        }
+        await clientExecuteCommand(dispatch, '/incident end', args);
     };
 }
 

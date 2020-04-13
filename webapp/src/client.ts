@@ -1,9 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
+
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
+
+import {setTriggerId} from 'src/actions';
 
 import {pluginId} from './manifest';
 
@@ -21,13 +25,13 @@ export function fetchIncidentDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}`);
 }
 
-export async function clientEndIncident(id: string) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${id}/end`, {
-        method: 'put',
-        body: '',
-    });
-
-    return data;
+export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, command: string, args?: Record<string, string>) {
+    try {
+        const data = await Client4.executeCommand(command, args);
+        dispatch(setTriggerId(data?.trigger_id));
+    } catch (error) {
+        console.error(error); //eslint-disable-line no-console
+    }
 }
 
 export const doGet = async (url: string) => {
