@@ -19,6 +19,19 @@ const (
 	eventEndIncident = "EndIncident"
 )
 
+// NewRudder builds a new RudderTelemetry client that will send the events to
+// dataPlaneURL with the writeKey, identified with the diagnosticID
+func NewRudder(dataPlaneURL, writeKey, diagnosticID string) (*RudderTelemetry, error) {
+	client, err := rudder.NewWithConfig(writeKey, rudder.Config{
+		Endpoint: dataPlaneURL,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RudderTelemetry{client, diagnosticID}, nil
+}
+
 func (t *RudderTelemetry) track(event string, properties map[string]interface{}) {
 	t.client.Enqueue(rudder.Track{
 		UserId:     t.diagnosticID,
@@ -54,17 +67,4 @@ func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) error {
 func (t *RudderTelemetry) EndIncident(incident *incident.Incident) error {
 	t.track(eventEndIncident, incidentProperties(incident))
 	return nil
-}
-
-// NewRudder builds a new RudderTelemetry client that will send the events to
-// dataPlaneURL with the writeKey, identified with the diagnosticID
-func NewRudder(dataPlaneURL, writeKey, diagnosticID string) (*RudderTelemetry, error) {
-	client, err := rudder.NewWithConfig(writeKey, rudder.Config{
-		Endpoint: dataPlaneURL,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &RudderTelemetry{client, diagnosticID}, nil
 }

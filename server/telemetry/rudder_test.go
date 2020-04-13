@@ -13,6 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var diagnosticID = "dummy_diagnostic_id"
+
+func TestNewRudder(t *testing.T) {
+	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID)
+	require.Equal(t, rudder.diagnosticID, diagnosticID)
+	require.NoError(t, err)
+}
+
 type rudderPayload struct {
 	MessageID string
 	SentAt    time.Time
@@ -30,8 +38,6 @@ type rudderPayload struct {
 		}
 	}
 }
-
-var diagnosticID = "dummy_diagnostic_id"
 
 func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *httptest.Server) {
 	t.Helper()
@@ -141,10 +147,4 @@ func TestRudderTelemetryEndIncident(t *testing.T) {
 	case <-time.After(time.Second * 1):
 		require.Fail(t, "Did not receive Event message")
 	}
-}
-
-func TestNewRudder(t *testing.T) {
-	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID)
-	require.Equal(t, rudder.diagnosticID, diagnosticID)
-	require.NoError(t, err)
 }
