@@ -12,11 +12,11 @@ type RudderTelemetry struct {
 }
 
 const (
-	// EventIncidentNew is the Event string sent to Rudder when a new incident is created
-	EventIncidentNew = "Incident created"
+	// eventCreateIncident is the Event string sent to Rudder when a new incident is created
+	eventCreateIncident = "CreateIncident"
 
-	// EventIncidentEnd is the Event string sent to Rudder when an incident is ended
-	EventIncidentEnd = "Incident finished"
+	// eventEndIncident is the Event string sent to Rudder when an incident is ended
+	eventEndIncident = "EndIncident"
 )
 
 func (t *RudderTelemetry) track(event string, properties map[string]interface{}) {
@@ -42,17 +42,17 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 	}
 }
 
-// TrackIncidentNew tracks the creation of the incident passed. The returned
+// CreatedIncident tracks the creation of the incident passed. The returned
 // error is, for now, always nil
-func (t *RudderTelemetry) TrackIncidentNew(incident *incident.Incident) error {
-	t.track(EventIncidentNew, incidentProperties(incident))
+func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) error {
+	t.track(eventCreateIncident, incidentProperties(incident))
 	return nil
 }
 
-// TrackIncidentEnd tracks the end of the incident passed. The returned
+// EndIncident tracks the end of the incident passed. The returned
 // error is, for now, always nil
-func (t *RudderTelemetry) TrackIncidentEnd(incident *incident.Incident) error {
-	t.track(EventIncidentEnd, incidentProperties(incident))
+func (t *RudderTelemetry) EndIncident(incident *incident.Incident) error {
+	t.track(eventEndIncident, incidentProperties(incident))
 	return nil
 }
 

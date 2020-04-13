@@ -88,9 +88,9 @@ type Store interface {
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry
 type Telemetry interface {
-	// TrackIncidentNew tracks the creation of a new incident
-	TrackIncidentNew(incident *Incident) error
+	// CreateIncidenttracks the creation of a new incident
+	CreateIncident(incident *Incident) error
 
-	// TrackIncidentEnd tracks the end of an incident
-	TrackIncidentEnd(incident *Incident) error
+	// EndIncident tracks the end of an incident
+	EndIncident(incident *Incident) error
 }

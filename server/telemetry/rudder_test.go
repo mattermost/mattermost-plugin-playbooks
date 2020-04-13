@@ -113,31 +113,31 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	require.Equal(t, dummyIncident, incidentFromProperties(actual.Batch[0].Properties))
 }
 
-func TestRudderTelemetryTrackIncidentNew(t *testing.T) {
+func TestRudderTelemetryCreateIncident(t *testing.T) {
 	data := make(chan rudderPayload, 100)
 	rudderClient, rudderServer := setupRudder(t, data)
 	defer rudderServer.Close()
 
-	rudderClient.TrackIncidentNew(dummyIncident)
+	rudderClient.CreateIncident(dummyIncident)
 
 	select {
 	case payload := <-data:
-		assertPayload(t, payload, EventIncidentNew)
+		assertPayload(t, payload, eventCreateIncident)
 	case <-time.After(time.Second * 1):
 		require.Fail(t, "Did not receive Event message")
 	}
 }
 
-func TestRudderTelemetryTrackIncidentEnd(t *testing.T) {
+func TestRudderTelemetryEndIncident(t *testing.T) {
 	data := make(chan rudderPayload, 100)
 	rudderClient, rudderServer := setupRudder(t, data)
 	defer rudderServer.Close()
 
-	rudderClient.TrackIncidentEnd(dummyIncident)
+	rudderClient.EndIncident(dummyIncident)
 
 	select {
 	case payload := <-data:
-		assertPayload(t, payload, EventIncidentEnd)
+		assertPayload(t, payload, eventEndIncident)
 	case <-time.After(time.Second * 1):
 		require.Fail(t, "Did not receive Event message")
 	}

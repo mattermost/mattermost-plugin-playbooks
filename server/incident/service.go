@@ -68,7 +68,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incdnt, incdnt.TeamID)
-	s.telemetry.TrackIncidentNew(incdnt)
+	s.telemetry.CreateIncident(incdnt)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
@@ -148,7 +148,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incdnt, incdnt.TeamID)
-	s.telemetry.TrackIncidentEnd(incdnt)
+	s.telemetry.EndIncident(incdnt)
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
