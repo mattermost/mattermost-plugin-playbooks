@@ -1,6 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
@@ -25,7 +28,15 @@ export function fetchIncidentDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}`);
 }
 
-export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, command: string, args?: Record<string, string>) {
+export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
+    const currentChannel = getCurrentChannel(getState());
+    const currentTeamId = getCurrentTeamId(getState());
+
+    const args = {
+        channel_id: currentChannel?.id,
+        team_id: currentTeamId,
+    };
+
     try {
         const data = await Client4.executeCommand(command, args);
         dispatch(setTriggerId(data?.trigger_id));

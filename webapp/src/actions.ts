@@ -95,14 +95,6 @@ export function getIncidents(teamId?: string) {
 
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        const currentChannel = getCurrentChannel(getState());
-        const currentTeamId = getCurrentTeamId(getState());
-
-        const args = {
-            channel_id: currentChannel?.id,
-            team_id: currentTeamId,
-        };
-
         // Add unique id
         const clientId = generateId();
         dispatch(setClientId(clientId));
@@ -112,21 +104,13 @@ export function startIncident(postId?: string) {
             command = `${command} ${postId}`;
         }
 
-        await clientExecuteCommand(dispatch, command, args);
+        await clientExecuteCommand(dispatch, getState, command);
     };
 }
 
 export function endIncident() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        const currentChannel = getCurrentChannel(getState());
-        const currentTeamId = getCurrentTeamId(getState());
-
-        const args = {
-            channel_id: currentChannel?.id,
-            team_id: currentTeamId,
-        };
-
-        await clientExecuteCommand(dispatch, '/incident end', args);
+        await clientExecuteCommand(dispatch, getState, '/incident end');
     };
 }
 
