@@ -93,7 +93,4 @@ type Telemetry interface {
 
 	// TrackIncidentEnd tracks the end of an incident
 	TrackIncidentEnd(incident *Incident) error
-
-	// Disable makes all subsequent calls to TrackXYZ effectively no-op
-	Disable() error
 }

@@ -56,13 +56,6 @@ func (t *RudderTelemetry) TrackIncidentEnd(incident *incident.Incident) error {
 	return nil
 }
 
-// Disable closes the underlying Rudder client, effectively disabling the
-// subsequent telemetry events. The events tracked before calling Disable are
-// sent immediately to the Rudder server.
-func (t *RudderTelemetry) Disable() error {
-	return t.client.Close()
-}
-
 // NewRudder builds a new RudderTelemetry client that will send the events to
 // dataPlaneURL with the writeKey, identified with the diagnosticID
 func NewRudder(dataPlaneURL, writeKey, diagnosticID string) (*RudderTelemetry, error) {

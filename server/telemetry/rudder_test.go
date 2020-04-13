@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -141,21 +140,6 @@ func TestRudderTelemetryTrackIncidentEnd(t *testing.T) {
 		assertPayload(t, payload, EventIncidentEnd)
 	case <-time.After(time.Second * 1):
 		require.Fail(t, "Did not receive Event message")
-	}
-}
-
-func TestRudderTelemetryDisable(t *testing.T) {
-	data := make(chan rudderPayload, 100)
-	rudderClient, rudderServer := setupRudder(t, data)
-	defer rudderServer.Close()
-
-	rudderClient.Disable()
-	rudderClient.TrackIncidentNew(dummyIncident)
-
-	select {
-	case payload := <-data:
-		require.Fail(t, fmt.Sprintf("Received an unexpected event: %s", payload))
-	case <-time.After(time.Second * 1):
 	}
 }
 

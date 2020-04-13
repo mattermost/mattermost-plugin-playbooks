@@ -16,8 +16,3 @@ func (t *NoopTelemetry) TrackIncidentNew(incident *incident.Incident) error {
 func (t *NoopTelemetry) TrackIncidentEnd(incident *incident.Incident) error {
 	return nil
 }
-
-// Disable does nothing, returning always nil
-func (t *NoopTelemetry) Disable() error {
-	return nil
-}
