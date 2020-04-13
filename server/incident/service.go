@@ -221,9 +221,8 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 				} else {
 					return nil, fmt.Errorf("failed to create incident channel: %w", err)
 				}
-			} else {
-				return nil, fmt.Errorf("failed to create incident channel: %w", err)
 			}
+			return nil, fmt.Errorf("failed to create incident channel: %w", err)
 		}
 		succeeded = true
 	}
