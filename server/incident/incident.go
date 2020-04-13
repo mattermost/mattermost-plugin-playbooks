@@ -30,14 +30,8 @@ type DialogState struct {
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// ErrChannelExists is used to indicate a channel with that name already exists.
-var ErrChannelExists = errors.New("channel exists")
-
-// ErrChannelNameLong is used to indicate a channel name is too long
-var ErrChannelNameLong = errors.New("channel name is too long")
-
-// ErrChannelNameShort is used to indicate a channel name is too short
-var ErrChannelNameShort = errors.New("channel name is too short")
+// ErrChannelDisplayNameLong is used to indicate a channel name is too long
+var ErrChannelDisplayNameLong = errors.New("channel name is too long")
 
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
