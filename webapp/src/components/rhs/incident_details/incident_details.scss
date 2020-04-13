@@ -31,6 +31,21 @@ $font-family: Open Sans;
         }
     }
 
+    // Input
+    .checklist-input {
+        background: #FFFFFF;
+        height: 32px;
+        border: 1px solid rgba(61, 60, 64, 0.2);
+        box-sizing: border-box;
+        border-radius: 4px;
+        font-family: Open Sans;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 16px;
+        padding-left: 5px;
+    }
+
     // Link component
     .link {
         font-family: $font-family;
@@ -53,9 +68,9 @@ $font-family: Open Sans;
 
         // Checkbox
         input[type="checkbox"] {
-            //position: absolute;
-            //opacity: 0;
-            //display: hidden;
+            position: absolute;
+            opacity: 0;
+            display: hidden;
         }
 
         > span {

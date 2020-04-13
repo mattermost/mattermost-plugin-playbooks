@@ -15,6 +15,7 @@ interface ChecklistDetailsProps {
 
 export const ChecklistDetails = ({checklist, onChange, addItem}: ChecklistDetailsProps): React.ReactElement<ChecklistDetailsProps> => {
     const [newvalue, setNewValue] = useState('');
+    const [inputExpanded, setInputExpanded] = useState(false);
 
     return (
         <div
@@ -35,22 +36,36 @@ export const ChecklistDetails = ({checklist, onChange, addItem}: ChecklistDetail
                     />
                 );
             })}
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    addItem({
-                        title: newvalue,
-                        checked: false,
-                    });
-                    setNewValue('');
-                }}
-            >
-                <input
-                    type='text'
-                    value={newvalue}
-                    onChange={(e) => setNewValue(e.target.value)}
-                />
-            </form>
+            {inputExpanded &&
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        addItem({
+                            title: newvalue,
+                            checked: false,
+                        });
+                        setNewValue('');
+                        setInputExpanded(false);
+                    }}
+                >
+                    <input
+                        type='text'
+                        value={newvalue}
+                        className='checklist-input'
+                        placeholder={'Enter a new item'}
+                        onChange={(e) => setNewValue(e.target.value)}
+                    />
+                </form>
+            }
+            {!inputExpanded &&
+            <div>
+                <a
+                    onClick={() => {
+                        setInputExpanded(true);
+                    }}
+                ><strong>{'+ Add new checklist item'}</strong></a>
+            </div>
+            }
         </div>
     );
 };

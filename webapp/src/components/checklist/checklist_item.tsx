@@ -12,16 +12,18 @@ interface ChecklistItemDetailsProps {
 
 export const ChecklistItemDetails = ({checklistItem, onChange}: ChecklistItemDetailsProps): React.ReactElement<ChecklistItemDetailsProps> => {
     return (
-        <div className='checkbox-container'>
+        <div
+            className='checkbox-container'
+            onClick={() => {
+                if (onChange) {
+                    onChange(!checklistItem.checked);
+                }
+            }}
+        >
             <input
                 className='checkbox'
                 type='checkbox'
                 checked={checklistItem.checked}
-                onClick={() => {
-                    if (onChange) {
-                        onChange(!checklistItem.checked);
-                    }
-                }}
             />
             <label>{checklistItem.title}</label>
         </div>
