@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -48,11 +49,12 @@ type Runner struct {
 	logger          bot.Logger
 	poster          bot.Poster
 	incidentService incident.Service
+	playbookService playbook.Service
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService incident.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service) *Runner {
 	return &Runner{
 		context:         ctx,
 		args:            args,
@@ -60,6 +62,7 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		logger:          logger,
 		poster:          poster,
 		incidentService: incidentService,
+		playbookService: playbookService,
 	}
 }
 
@@ -106,6 +109,96 @@ func (r *Runner) actionEnd() {
 	}
 }
 
+func (r *Runner) actionSelftest() {
+	if err := r.incidentService.NukeDB(); err != nil {
+		r.postCommandResponse("There was an error while nuking db. Err: " + err.Error())
+		return
+	}
+
+	testPlaybook := playbook.Playbook{
+		Title: "testing playbook",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "My list",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do the thing.",
+					},
+					{
+						Title: "Do the other thing.",
+					},
+				},
+			},
+		},
+	}
+	playbookID, err := r.playbookService.Create(testPlaybook)
+	if err != nil {
+		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
+		return
+	}
+
+	gotplaybook, err := r.playbookService.Get(playbookID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookID, err.Error()))
+		return
+	}
+
+	if gotplaybook.Title != testPlaybook.Title {
+		r.postCommandResponse(fmt.Sprintf("Retrieved playbook is wrong, ID: %v Playbook: %+v", playbookID, gotplaybook))
+		return
+	}
+
+	if gotplaybook.ID == "" {
+		r.postCommandResponse(fmt.Sprintf("Retrieved playbook has a blank ID"))
+		return
+	}
+
+	gotPlaybooks, err := r.playbookService.GetPlaybooks()
+	if err != nil {
+		r.postCommandResponse("There was an error while retrieving all playbooks. Err: " + err.Error())
+		return
+	}
+
+	if len(gotPlaybooks) != 1 || gotPlaybooks[0].Title != testPlaybook.Title {
+		r.postCommandResponse(fmt.Sprintf("Retrieved playbooks are wrong: %+v", gotPlaybooks))
+		return
+	}
+
+	gotplaybook.Title = "This is an updated title"
+	if err = r.playbookService.Update(gotplaybook); err != nil {
+		r.postCommandResponse(fmt.Sprintf("Unable to update playbook Err:" + err.Error()))
+		return
+	}
+
+	gotupdated, err := r.playbookService.Get(playbookID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("There was an error while retrieving playbook. ID: %v Err: %v", playbookID, err.Error()))
+		return
+	}
+
+	if gotupdated.Title != gotplaybook.Title {
+		r.postCommandResponse("Update was ineffective")
+		return
+	}
+
+	todeleteid, err := r.playbookService.Create(testPlaybook)
+	if err != nil {
+		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
+		return
+	}
+	if err = r.playbookService.Delete(todeleteid); err != nil {
+		r.postCommandResponse("There was an error while deleteing playbook. Err: " + err.Error())
+		return
+	}
+
+	if deletedPlaybook, _ := r.playbookService.Get(todeleteid); deletedPlaybook.Title != "" {
+		r.postCommandResponse("Playbook should have been vaporised! Where's the kaboom? There was supposed to be an earth-shattering Kaboom!")
+		return
+	}
+
+	r.postCommandResponse("Self test success.")
+}
+
 func (r *Runner) actionNukeDB(args []string) {
 	if len(args) != 2 || args[0] != "CONFIRM" || args[1] != "NUKE" {
 		r.postCommandResponse("Are you sure you want to nuke the database (delete all data -- instances, configuration)?" +
@@ -149,6 +242,9 @@ func (r *Runner) Execute() error {
 		r.actionEnd()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
+	//TODO: Disable in production
+	case "st":
+		r.actionSelftest()
 	default:
 		r.postCommandResponse(helpText)
 	}
