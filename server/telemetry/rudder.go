@@ -61,7 +61,7 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 	}
 }
 
-// CreatedIncident tracks the creation of the incident passed. The returned
+// CreateIncident tracks the creation of the incident passed. The returned
 // error is, for now, always nil.
 func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) error {
 	t.track(eventCreateIncident, incidentProperties(incident))
