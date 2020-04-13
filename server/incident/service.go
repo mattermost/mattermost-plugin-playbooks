@@ -158,7 +158,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID string, triggerID string)
 	dialog := model.Dialog{
 		Title:            "Confirm End Incident",
 		SubmitLabel:      "Confirm",
-		IntroductionText: "The incident will become inactive and be removed from the list. Incident history and post-mortem features are coming soon.",
+		IntroductionText: "The incident will become inactive and will be removed from the list. Incident history and post-mortem features are coming soon.",
 		NotifyOnCancel:   false,
 		State:            incidentID,
 	}
