@@ -120,7 +120,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 }
 
 func TestRudderTelemetryCreateIncident(t *testing.T) {
-	data := make(chan rudderPayload, 100)
+	data := make(chan rudderPayload)
 	rudderClient, rudderServer := setupRudder(t, data)
 	defer rudderServer.Close()
 
@@ -135,7 +135,7 @@ func TestRudderTelemetryCreateIncident(t *testing.T) {
 }
 
 func TestRudderTelemetryEndIncident(t *testing.T) {
-	data := make(chan rudderPayload, 100)
+	data := make(chan rudderPayload)
 	rudderClient, rudderServer := setupRudder(t, data)
 	defer rudderServer.Close()
 
