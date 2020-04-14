@@ -20,6 +20,7 @@ type ServiceImpl struct {
 	configService config.Service
 	store         Store
 	poster        bot.Poster
+	telemetry     Telemetry
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -29,12 +30,13 @@ const DialogFieldNameKey = "incidentName"
 
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
-	configService config.Service) *ServiceImpl {
+	configService config.Service, telemetry Telemetry) *ServiceImpl {
 	return &ServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
 		poster:        poster,
 		configService: configService,
+		telemetry:     telemetry,
 	}
 }
 
@@ -66,6 +68,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incdnt, incdnt.TeamID)
+	s.telemetry.CreateIncident(incdnt)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
@@ -145,6 +148,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incdnt, incdnt.TeamID)
+	s.telemetry.EndIncident(incdnt)
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
