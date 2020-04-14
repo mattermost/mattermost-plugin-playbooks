@@ -40,6 +40,7 @@ $font-family: Open Sans;
         line-height: 20px;
         color: #2f80ed;
         cursor: pointer;
+        opacity: unset;
         &:hover {
             text-decoration: underline;
         }

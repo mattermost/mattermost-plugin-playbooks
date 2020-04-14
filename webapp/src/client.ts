@@ -1,9 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
+
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
+
+import {setTriggerId} from 'src/actions';
 
 import {pluginId} from './manifest';
 
@@ -21,13 +28,21 @@ export function fetchIncidentDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}`);
 }
 
-export async function clientEndIncident(id: string) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${id}/end`, {
-        method: 'put',
-        body: '',
-    });
+export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
+    const currentChannel = getCurrentChannel(getState());
+    const currentTeamId = getCurrentTeamId(getState());
 
-    return data;
+    const args = {
+        channel_id: currentChannel?.id,
+        team_id: currentTeamId,
+    };
+
+    try {
+        const data = await Client4.executeCommand(command, args);
+        dispatch(setTriggerId(data?.trigger_id));
+    } catch (error) {
+        console.error(error); //eslint-disable-line no-console
+    }
 }
 
 export const doGet = async (url: string) => {

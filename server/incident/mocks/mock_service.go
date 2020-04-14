@@ -48,20 +48,6 @@ func (mr *MockServiceMockRecorder) CreateIncident(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0)
 }
 
-// CreateIncidentDialog mocks base method
-func (m *MockService) CreateIncidentDialog(arg0, arg1, arg2, arg3 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateIncidentDialog", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateIncidentDialog indicates an expected call of CreateIncidentDialog
-func (mr *MockServiceMockRecorder) CreateIncidentDialog(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncidentDialog", reflect.TypeOf((*MockService)(nil).CreateIncidentDialog), arg0, arg1, arg2, arg3)
-}
-
 // EndIncident mocks base method
 func (m *MockService) EndIncident(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -74,20 +60,6 @@ func (m *MockService) EndIncident(arg0, arg1 string) error {
 func (mr *MockServiceMockRecorder) EndIncident(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndIncident", reflect.TypeOf((*MockService)(nil).EndIncident), arg0, arg1)
-}
-
-// EndIncidentByChannel mocks base method
-func (m *MockService) EndIncidentByChannel(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EndIncidentByChannel", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// EndIncidentByChannel indicates an expected call of EndIncidentByChannel
-func (mr *MockServiceMockRecorder) EndIncidentByChannel(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndIncidentByChannel", reflect.TypeOf((*MockService)(nil).EndIncidentByChannel), arg0, arg1)
 }
 
 // GetHeaders mocks base method
@@ -120,6 +92,34 @@ func (mr *MockServiceMockRecorder) GetIncident(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncident", reflect.TypeOf((*MockService)(nil).GetIncident), arg0)
 }
 
+// GetIncidentIDForChannel mocks base method
+func (m *MockService) GetIncidentIDForChannel(arg0 string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncidentIDForChannel", arg0)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetIncidentIDForChannel indicates an expected call of GetIncidentIDForChannel
+func (mr *MockServiceMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentIDForChannel", reflect.TypeOf((*MockService)(nil).GetIncidentIDForChannel), arg0)
+}
+
+// IsCommander mocks base method
+func (m *MockService) IsCommander(arg0, arg1 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsCommander", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsCommander indicates an expected call of IsCommander
+func (mr *MockServiceMockRecorder) IsCommander(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCommander", reflect.TypeOf((*MockService)(nil).IsCommander), arg0, arg1)
+}
+
 // NukeDB mocks base method
 func (m *MockService) NukeDB() error {
 	m.ctrl.T.Helper()
@@ -132,4 +132,32 @@ func (m *MockService) NukeDB() error {
 func (mr *MockServiceMockRecorder) NukeDB() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockService)(nil).NukeDB))
+}
+
+// OpenCreateIncidentDialog mocks base method
+func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenCreateIncidentDialog", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenCreateIncidentDialog indicates an expected call of OpenCreateIncidentDialog
+func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3)
+}
+
+// OpenEndIncidentDialog mocks base method
+func (m *MockService) OpenEndIncidentDialog(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenEndIncidentDialog", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenEndIncidentDialog indicates an expected call of OpenEndIncidentDialog
+func (mr *MockServiceMockRecorder) OpenEndIncidentDialog(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenEndIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenEndIncidentDialog), arg0, arg1)
 }

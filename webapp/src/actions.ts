@@ -2,8 +2,6 @@
 // See LICENSE.txt for license information.
 import {Dispatch, AnyAction} from 'redux';
 
-import {Client4} from 'mattermost-redux/client';
-
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
@@ -40,7 +38,7 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, clientEndIncident} from './client';
+import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -97,14 +95,6 @@ export function getIncidents(teamId?: string) {
 
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        const currentChanel = getCurrentChannel(getState());
-        const currentTeamId = getCurrentTeamId(getState());
-
-        const args = {
-            channel_id: currentChanel?.id,
-            team_id: currentTeamId,
-        };
-
         // Add unique id
         const clientId = generateId();
         dispatch(setClientId(clientId));
@@ -114,22 +104,13 @@ export function startIncident(postId?: string) {
             command = `${command} ${postId}`;
         }
 
-        try {
-            const data = await Client4.executeCommand(command, args);
-            dispatch(setTriggerId(data?.trigger_id));
-        } catch (error) {
-            console.error(error); //eslint-disable-line no-console
-        }
+        await clientExecuteCommand(dispatch, getState, command);
     };
 }
 
-export function endIncident(incidentId: string) {
-    return async () => {
-        try {
-            await clientEndIncident(incidentId);
-        } catch (error) {
-            console.error(error); //eslint-disable-line no-console
-        }
+export function endIncident() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, '/incident end');
     };
 }
 

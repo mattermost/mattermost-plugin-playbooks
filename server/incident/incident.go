@@ -50,17 +50,25 @@ type Service interface {
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
-	// CreateIncidentDialog opens an interactive dialog to start a new incident.
-	CreateIncidentDialog(commanderID, triggerID, postID, clientID string) error
+	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
+	OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string) error
 
 	// EndIncident completes the incident with the given ID by the given user.
 	EndIncident(incidentID string, userID string) error
 
-	// EndIncident completes the incident associated to the given channelID by the given user.
-	EndIncidentByChannel(channelID string, userID string) error
+	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
+	// be ended.
+	OpenEndIncidentDialog(incidentID string, triggerID string) error
 
-	// GetIncident gets an incident by ID.
-	GetIncident(id string) (*Incident, error)
+	// GetIncident gets an incident by ID. Returns error if it could not be found.
+	GetIncident(incidentID string) (*Incident, error)
+
+	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
+	// if there is no incident associated with this channel.
+	GetIncidentIDForChannel(channelID string) string
+
+	// IsCommander returns true if the userID is the commander for incidentID.
+	IsCommander(incidentID string, userID string) bool
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
@@ -78,7 +86,7 @@ type Store interface {
 	UpdateIncident(incdnt *Incident) error
 
 	// GetIncident gets an incident by ID.
-	GetIncident(id string) (*Incident, error)
+	GetIncident(incidentID string) (*Incident, error)
 
 	// GetIncidentByChannel gets an incident associated with the given channel id.
 	GetIncidentIDForChannel(channelID string) (string, error)

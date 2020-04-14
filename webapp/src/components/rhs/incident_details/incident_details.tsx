@@ -19,14 +19,17 @@ interface Props {
     commander: UserProfile;
     profileUri: string;
     channelDetails: ChannelWithTeamData[];
+    isCommander: boolean;
     allowEndIncident: boolean;
     actions: {
-        endIncident: (id: string) => void;
+        endIncident: () => void;
     };
 }
 
 export default class IncidentDetails extends React.PureComponent<Props> {
     public render(): JSX.Element {
+        const incidentChannelLink = `/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`;
+
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
@@ -62,14 +65,27 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     </div>
                 }
 
-                {this.props.allowEndIncident &&
+                {
+                    this.props.isCommander &&
                     <div className='footer-div'>
                         <button
                             className='btn btn-primary'
-                            onClick={() => this.props.actions.endIncident(this.props.incident.id)}
+                            onClick={() => this.props.actions.endIncident()}
+                            disabled={!this.props.allowEndIncident}
                         >
                             {'End Incident'}
                         </button>
+                        {
+                            !this.props.allowEndIncident &&
+                            <div className='help-text'>
+                                {'Go to '}
+                                <Link
+                                    to={incidentChannelLink}
+                                    text={'the incident channel'}
+                                />
+                                {' to enable this action.'}
+                            </div>
+                        }
                     </div>
                 }
             </div>

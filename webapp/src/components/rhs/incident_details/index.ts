@@ -6,7 +6,7 @@ import {connect} from 'react-redux';
 
 import {Client4} from 'mattermost-redux/client';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {getUser, getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {Channel, ChannelWithTeamData} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
@@ -53,6 +53,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
         channelDetails,
+        isCommander: getCurrentUserId(state) === ownProps.incident.commander_user_id,
         allowEndIncident: incidentChannelId === getCurrentChannel(state)?.id,
     };
 }
