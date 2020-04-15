@@ -116,13 +116,13 @@ export function endIncident() {
     };
 }
 
-export function modifyChecklistItemState(incidentID: string, checklistID: number, itemID: number, checked: boolean) {
+export function modifyChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, checked: boolean) {
     return async () => {
         try {
             if (checked) {
-                checkItem(incidentID, checklistID, itemID);
+                checkItem(incidentID, checklistNum, itemNum);
             } else {
-                uncheckItem(incidentID, checklistID, itemID);
+                uncheckItem(incidentID, checklistNum, itemNum);
             }
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
@@ -130,40 +130,40 @@ export function modifyChecklistItemState(incidentID: string, checklistID: number
     };
 }
 
-export function addChecklistItem(incidentID: string, checklistID: number, checklistItem: ChecklistItem) {
+export function addChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
     return async () => {
         try {
-            await clientAddChecklistItem(incidentID, checklistID, checklistItem);
+            await clientAddChecklistItem(incidentID, checklistNum, checklistItem);
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
     };
 }
 
-export function removeChecklistItem(incidentID: string, checklistID: number, itemID: number) {
+export function removeChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
     return async () => {
         try {
-            await clientRemoveChecklistItem(incidentID, checklistID, itemID);
+            await clientRemoveChecklistItem(incidentID, checklistNum, itemNum);
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
     };
 }
 
-export function editChecklistItem(incidentID: string, checklistID: number, itemID: number, newTitle: string) {
+export function editChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newTitle: string) {
     return async () => {
         try {
-            await clientEditChecklistItem(incidentID, checklistID, itemID, newTitle);
+            await clientEditChecklistItem(incidentID, checklistNum, itemNum, newTitle);
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
     };
 }
 
-export function reorderChecklist(incidentID: string, checklistID: number, itemID: number, newLocation: number) {
+export function reorderChecklist(incidentID: string, checklistNum: number, itemNum: number, newLocation: number) {
     return async () => {
         try {
-            await clientReorderChecklist(incidentID, checklistID, itemID, newLocation);
+            await clientReorderChecklist(incidentID, checklistNum, itemNum, newLocation);
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }

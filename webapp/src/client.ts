@@ -45,8 +45,8 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
-export async function checkItem(incidentID: string, checklistID: number, itemID: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}/check`, {
+export async function checkItem(incidentID: string, checklistNum: number, itemNum: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/check`, {
         method: 'put',
         body: '',
     });
@@ -54,8 +54,8 @@ export async function checkItem(incidentID: string, checklistID: number, itemID:
     return data;
 }
 
-export async function uncheckItem(incidentID: string, checklistID: number, itemID: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}/uncheck`, {
+export async function uncheckItem(incidentID: string, checklistNum: number, itemNum: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/uncheck`, {
         method: 'put',
         body: '',
     });
@@ -63,8 +63,8 @@ export async function uncheckItem(incidentID: string, checklistID: number, itemI
     return data;
 }
 
-export async function clientAddChecklistItem(incidentID: string, checklistID: number, checklistItem: ChecklistItem) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/add`, {
+export async function clientAddChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/add`, {
         method: 'put',
         body: JSON.stringify(checklistItem),
     });
@@ -72,8 +72,8 @@ export async function clientAddChecklistItem(incidentID: string, checklistID: nu
     return data;
 }
 
-export async function clientRemoveChecklistItem(incidentID: string, checklistID: number, itemID: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}`, {
+export async function clientRemoveChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
         body: '',
     });
@@ -81,8 +81,8 @@ export async function clientRemoveChecklistItem(incidentID: string, checklistID:
     return data;
 }
 
-export async function clientEditChecklistItem(incidentID: string, checklistID: number, itemID: number, newTitle: string) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}`, {
+export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newTitle: string) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'PUT',
         body: JSON.stringify({
             title: newTitle,
@@ -92,11 +92,11 @@ export async function clientEditChecklistItem(incidentID: string, checklistID: n
     return data;
 }
 
-export async function clientReorderChecklist(incidentID: string, checklistID: number, itemID: number, newLocation: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/reorder`, {
+export async function clientReorderChecklist(incidentID: string, checklistNum: number, itemNum: number, newLocation: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/reorder`, {
         method: 'PUT',
         body: JSON.stringify({
-            item_num: itemID,
+            item_num: itemNum,
             new_location: newLocation,
         }),
     });

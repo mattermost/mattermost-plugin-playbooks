@@ -26,11 +26,11 @@ interface Props {
     allowEndIncident: boolean;
     actions: {
         endIncident: () => void;
-        modifyChecklistItemState: (incidentID: string, checklistID: number, itemID: number, checked: boolean) => void;
-        addChecklistItem: (incidentID: string, checklistID: number, checklistItem: ChecklistItem) => void;
-        removeChecklistItem: (incidentID: string, checklistID: number, itemID: number) => void;
-        editChecklistItem: (incidentID: string, checklistID: number, itemID: number, newtitle: string) => void;
-        reorderChecklist: (incidentID: string, checklistID: number, itemID: number, newPosition: number) => void;
+        modifyChecklistItemState: (incidentID: string, checklistNum: number, itemNum: number, checked: boolean) => void;
+        addChecklistItem: (incidentID: string, checklistNum: number, checklistItem: ChecklistItem) => void;
+        removeChecklistItem: (incidentID: string, checklistNum: number, itemNum: number) => void;
+        editChecklistItem: (incidentID: string, checklistNum: number, itemNum: number, newtitle: string) => void;
+        reorderChecklist: (incidentID: string, checklistNum: number, itemNum: number, newPosition: number) => void;
     };
 }
 
@@ -52,17 +52,17 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                         <ChecklistDetails
                             checklist={checklist}
                             key={checklist.title + index}
-                            onChange={(itemID: number, checked: boolean) => {
-                                this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemID, checked);
+                            onChange={(itemNum: number, checked: boolean) => {
+                                this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
                             }}
                             addItem={(checklistItem: ChecklistItem) => {
                                 this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
                             }}
-                            removeItem={(itemID: number) => {
-                                this.props.actions.removeChecklistItem(this.props.incident.id, index, itemID);
+                            removeItem={(itemNum: number) => {
+                                this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
                             }}
-                            editItem={(itemID: number, newTitle: string) => {
-                                this.props.actions.editChecklistItem(this.props.incident.id, index, itemID, newTitle);
+                            editItem={(itemNum: number, newTitle: string) => {
+                                this.props.actions.editChecklistItem(this.props.incident.id, index, itemNum, newTitle);
                             }}
                             reorderItems={(itemNum: number, newPosition: number) => {
                                 this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
