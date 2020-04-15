@@ -233,19 +233,19 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	checklistId, err := strconv.Atoi(vars["checklist"])
+	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
-	itemId, err := strconv.Atoi(vars["item"])
+	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.ModifyCheckedState(id, userID, check, checklistId, itemId); err != nil {
+	if err := h.incidentService.ModifyCheckedState(id, userID, check, checklistNum, itemNum); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -265,7 +265,7 @@ func (h *IncidentHandler) uncheck(w http.ResponseWriter, r *http.Request) {
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	checklistId, err := strconv.Atoi(vars["checklist"])
+	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -278,7 +278,7 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := h.incidentService.AddChecklistItem(id, userID, checklistId, checklistItem); err != nil {
+	if err := h.incidentService.AddChecklistItem(id, userID, checklistNum, checklistItem); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -290,19 +290,19 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	checklistId, err := strconv.Atoi(vars["checklist"])
+	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
-	itemId, err := strconv.Atoi(vars["item"])
+	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.RemoveChecklistItem(id, userID, checklistId, itemId); err != nil {
+	if err := h.incidentService.RemoveChecklistItem(id, userID, checklistNum, itemNum); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -314,12 +314,12 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	checklistId, err := strconv.Atoi(vars["checklist"])
+	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
-	itemId, err := strconv.Atoi(vars["item"])
+	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -334,7 +334,7 @@ func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.incidentService.EditChecklistItem(id, userID, checklistId, itemId, params.Title); err != nil {
+	if err := h.incidentService.EditChecklistItem(id, userID, checklistNum, itemNum, params.Title); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -346,7 +346,7 @@ func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	checklistId, err := strconv.Atoi(vars["checklist"])
+	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -362,7 +362,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := h.incidentService.MoveChecklistItem(id, userID, checklistId, modificationParams.ItemNum, modificationParams.NewLocation); err != nil {
+	if err := h.incidentService.MoveChecklistItem(id, userID, checklistNum, modificationParams.ItemNum, modificationParams.NewLocation); err != nil {
 		HandleError(w, err)
 		return
 	}
