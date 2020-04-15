@@ -12,6 +12,21 @@ export interface Incident {
     post_id?: string;
 }
 
+export interface Playbook {
+    id: string;
+    title: string;
+    checklists: CheckList[];
+}
+
+export interface CheckList {
+    title: string;
+    items: ChecklistItem[];
+}
+
+export interface ChecklistItem {
+    title: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isIncident(arg: any): arg is Incident {
     const optional = arg.post_id ? typeof arg.post_id === 'string' : true as boolean;

@@ -16,6 +16,7 @@ export const RECEIVED_INCIDENT_UPDATE = pluginId + '_received_incident_update';
 export const RECEIVED_ERROR = pluginId + '_received_error';
 export const SET_LOADING = pluginId + '_set_loading';
 export const SET_CLIENT_ID = pluginId + '_set_client_id';
+export const SET_PLAYBOOKS_MODAL_OPEN = pluginId + '_set_playbooks_modal_open';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -65,4 +66,9 @@ export interface SetLoading {
 export interface SetClientId {
     type: typeof SET_CLIENT_ID;
     clientId: string;
+}
+
+export interface SetPlaybookModal {
+    type: typeof SET_PLAYBOOKS_MODAL_OPEN;
+    open: boolean;
 }

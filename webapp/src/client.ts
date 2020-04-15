@@ -11,6 +11,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
+import {Playbook} from 'src/types/incident';
 
 import {pluginId} from './manifest';
 
@@ -45,13 +46,23 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
+export function fetchPlaybooks() {
+    return doGet(`${apiUrl}/playbooks/`);
+}
+
+export async function createPlaybook(playbook: Playbook) {
+    const {data} = await doPost(`${apiUrl}/playbooks`, playbook);
+
+    return data;
+}
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 
     return data;
 };
 
-export const doPost = async (url: string, body = '') => {
+export const doPost = async (url: string, body = {}) => {
     const {data} = await doFetchWithResponse(url, {
         method: 'post',
         body,

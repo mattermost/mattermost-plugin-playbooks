@@ -35,6 +35,9 @@ import {
     ReceivedIncidentUpdate,
     SetLoading,
     SetClientId,
+    SetBackstageModal,
+    SET_BACKSTAGE_MODAL_OPEN,
+    SET_PLAYBOOKS_MODAL_OPEN,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -193,5 +196,19 @@ export function setClientId(clientId: string): SetClientId {
     return {
         type: SET_CLIENT_ID,
         clientId,
+    };
+}
+
+export function openPlaybooksModal(): SetBackstageModal {
+    return {
+        type: SET_PLAYBOOKS_MODAL_OPEN,
+        open: true,
+    };
+}
+
+export function closePlaybooksModal(): SetBackstageModal {
+    return {
+        type: SET_PLAYBOOKS_MODAL_OPEN,
+        open: false,
     };
 }

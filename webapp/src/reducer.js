@@ -12,6 +12,7 @@ import {
     RECEIVED_INCIDENT_UPDATE,
     SET_LOADING,
     SET_CLIENT_ID,
+    SET_PLAYBOOKS_MODAL_OPEN,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -83,6 +84,15 @@ function clientId(state = '', action) {
     }
 }
 
+const playbooksModalOpen = (state = false, action) => {
+    switch (action.type) {
+    case SET_PLAYBOOKS_MODAL_OPEN:
+        return action.open || false;
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsState,
@@ -91,4 +101,5 @@ export default combineReducers({
     isLoading,
     rhsOpen,
     clientId,
+    playbooksModalOpen,
 });
