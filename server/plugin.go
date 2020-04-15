@@ -52,7 +52,8 @@ func (p *Plugin) OnActivate() error {
 		DisplayName: "Incident Bot",
 		Description: "A prototype demonstrating incident response management in Mattermost.",
 	},
-		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"))
+		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
+	)
 
 	if err != nil {
 		return fmt.Errorf("failed to ensure workflow bot: %w", err)
