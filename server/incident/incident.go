@@ -76,19 +76,19 @@ type Service interface {
 
 	// ModifyCheckedState checks or unchecks the specified checklist item
 	// Indeponant, will not perform any actions if the checklist item is already in the specified state
-	ModifyCheckedState(incidentID, userId string, check bool, checklistNumber int, itemNumber int) error
+	ModifyCheckedState(incidentID, userID string, check bool, checklistNumber int, itemNumber int) error
 
 	// AddChecklistItem adds an item to the specified checklist
-	AddChecklistItem(incidentID, userId string, checklistNumber int, checklistItem playbook.ChecklistItem) error
+	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
 
 	// RemoveChecklistItem removes an item from the specified checklist
-	RemoveChecklistItem(incidentID, userId string, checklistNumber int, itemNumber int) error
+	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
 
 	// EditChecklistItem changes the title of a specified checklist item
-	EditChecklistItem(incidentID, userId string, checklistNumber int, itemNumber int, newTitle string) error
+	EditChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error
 
 	// ReorderChecklist moves a checklist item from one position to anouther
-	MoveChecklistItem(incidentID, userId string, checklistNumber int, itemNumber int, newLocation int) error
+	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
