@@ -48,6 +48,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
+	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
 	checklistItem.HandleFunc("/check", handler.check).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
 
@@ -276,6 +277,30 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := h.incidentService.AddChecklistItem(id, userID, checklistId, checklistItem); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistId, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	itemId, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.incidentService.RemoveChecklistItem(id, userID, checklistId, itemId); err != nil {
 		HandleError(w, err)
 		return
 	}

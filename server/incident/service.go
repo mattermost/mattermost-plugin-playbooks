@@ -304,6 +304,49 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	return nil
 }
 
+func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return err
+	}
+
+	if !s.hasPermissionToModifyIncident(incidentToModify, userID) {
+		return errors.New("user does not have permission to end incident")
+	}
+
+	if checklistNumber >= len(incidentToModify.Playbook.Checklists) {
+		return errors.New("invalid checklist number")
+	}
+
+	if itemNumber >= len(incidentToModify.Playbook.Checklists[checklistNumber].Items) {
+		return errors.New("invalid item number")
+	}
+
+	itemRemoved := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
+
+	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(incidentToModify.Playbook.Checklists[checklistNumber].Items[:itemNumber], incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber+1:]...)
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+	}
+
+	// Post in the  main incident channel that @user has ended the incident.
+	// Main channel is the only channel in the incident for now.
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	if err := s.poster.PostMessage(mainChannelID, "@%v removed item \"%v\" from %v checklist.", user.Username, itemRemoved.Title, incidentToModify.Playbook.Checklists[checklistNumber].Title); err != nil {
+		return fmt.Errorf("failed to post end incident messsage: %w", err)
+	}
+
+	return nil
+}
+
 // NukeDB removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()

@@ -28,6 +28,8 @@ interface Props {
         endIncident: () => void;
         modifyChecklistItemState: (incidentID: string, checklistID: number, itemID: number, checked: boolean) => void;
         addChecklistItem: (incidentID: string, checklistID: number, checklistItem: ChecklistItem) => void;
+        removeChecklistItem: (incidentID: string, checklistID: number, itemID: number) => void;
+        editChecklistItem: (incidentID: string, checklistID: number, itemID: number, newtitle: string) => void;
     };
 }
 
@@ -54,6 +56,12 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             }}
                             addItem={(checklistItem: ChecklistItem) => {
                                 this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
+                            }}
+                            removeItem={(itemID: number) => {
+                                this.props.actions.removeChecklistItem(this.props.incident.id, index, itemID);
+                            }}
+                            editItem={(itemID: number, newTitle: string) => {
+                                this.props.actions.editChecklistItem(this.props.incident.id, index, itemID, newTitle);
                             }}
                         />
                     );

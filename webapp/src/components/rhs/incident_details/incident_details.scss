@@ -73,6 +73,29 @@ $font-family: Open Sans;
             display: hidden;
         }
 
+        &:hover {
+            .btn-close {
+                opacity: 1;
+            }
+        }
+
+        .btn-close {
+            opacity: 0;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 21px;
+            font-weight: 600;
+            position: relative;
+            width: 24px;
+            height: 20px;
+            line-height: 16px;
+            margin-right: 16px;
+            text-align: center;
+
+            &:hover {
+                opacity: 1;
+            }
+        }
+
         > span {
             padding: 0px 0px 0px 8px;
             font-family: $font-family;

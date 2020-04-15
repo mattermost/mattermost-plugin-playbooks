@@ -72,6 +72,26 @@ export async function clientAddChecklistItem(incidentID: string, checklistID: nu
     return data;
 }
 
+export async function clientRemoveChecklistItem(incidentID: string, checklistID: number, itemID: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}`, {
+        method: 'delete',
+        body: '',
+    });
+
+    return data;
+}
+
+export async function clientEditChecklistItem(incidentID: string, checklistID: number, itemID: number, newTitle: string) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/item/${itemID}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            title: newTitle,
+        }),
+    });
+
+    return data;
+}
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 

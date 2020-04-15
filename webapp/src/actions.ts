@@ -40,7 +40,7 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand, checkItem, uncheckItem, clientAddChecklistItem} from './client';
+import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand, checkItem, uncheckItem, clientAddChecklistItem, clientRemoveChecklistItem, clientEditChecklistItem} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -134,6 +134,26 @@ export function addChecklistItem(incidentID: string, checklistID: number, checkl
     return async () => {
         try {
             await clientAddChecklistItem(incidentID, checklistID, checklistItem);
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function removeChecklistItem(incidentID: string, checklistID: number, itemID: number) {
+    return async () => {
+        try {
+            await clientRemoveChecklistItem(incidentID, checklistID, itemID);
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function editChecklistItem(incidentID: string, checklistID: number, itemID: number, newTitle: string) {
+    return async () => {
+        try {
+            await clientEditChecklistItem(incidentID, checklistID, itemID, newTitle);
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }

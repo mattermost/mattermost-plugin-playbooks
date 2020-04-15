@@ -125,17 +125,38 @@ func (r *Runner) actionSelftest() {
 		Title: "testing playbook",
 		Checklists: []playbook.Checklist{
 			{
-				Title: "Team A",
+				Title: "Checklist",
 				Items: []playbook.ChecklistItem{
 					{
-						Title:   "Alert the correct people",
+						Title: "Create Jira ticket",
+					},
+					{
+						Title:   "Add on-call team members",
 						Checked: true,
 					},
 					{
-						Title: "Answer stupid questions",
+						Title: "Identify blast radius",
 					},
 					{
-						Title: "Solve the problem",
+						Title: "Identify impacted services",
+					},
+					{
+						Title: "Collect server data logs",
+					},
+					{
+						Title: "Identify blast Analyze data logs",
+					},
+					{
+						Title: "Align on plan of attack",
+					},
+					{
+						Title: "Confirm resolution",
+					},
+					{
+						Title: "Writeup root-cause analysis",
+					},
+					{
+						Title: "Review post-mortem",
 					},
 				},
 			},
@@ -156,6 +177,9 @@ func (r *Runner) actionSelftest() {
 					},
 					{
 						Title: "Panic",
+					},
+					{
+						Title: "Delete ME",
 					},
 				},
 			},
@@ -226,15 +250,31 @@ func (r *Runner) actionSelftest() {
 		return
 	}
 
-	if _, err := r.incidentService.CreateIncident(&incident.Incident{
+	createdIncident, err := r.incidentService.CreateIncident(&incident.Incident{
 		Header: incident.Header{
-			Name:            "Test - " + model.NewId(),
+			Name:            "Cloud Incident 4739",
 			TeamID:          r.args.TeamId,
 			CommanderUserID: r.args.UserId,
 		},
 		Playbook: gotplaybook,
-	}); err != nil {
+	})
+	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, true, 0, 0); err != nil {
+		r.postCommandResponse("Unable to modify checked state: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, false, 0, 1); err != nil {
+		r.postCommandResponse("Unable to modify checked state: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.RemoveChecklistItem(createdIncident.ID, r.args.UserId, 1, 5); err != nil {
+		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
 

@@ -81,6 +81,9 @@ type Service interface {
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userId string, checklistNumber int, checklistItem playbook.ChecklistItem) error
 
+	// RemoveChecklistItem removes an item from the specified checklist
+	RemoveChecklistItem(incidentID, userId string, checklistNumber int, itemNumber int) error
+
 	// NukeDB removes all incident related data.
 	NukeDB() error
 }
