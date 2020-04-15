@@ -46,9 +46,11 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("/reorder", handler.reorderChecklist).Methods(http.MethodPut)
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
+	checklistItem.HandleFunc("", handler.itemEdit).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/check", handler.check).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
 
@@ -301,6 +303,66 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.incidentService.RemoveChecklistItem(id, userID, checklistId, itemId); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistId, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	itemId, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		Title string `json:"title"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		HandleError(w, fmt.Errorf("failed to unmarshal edit params state: %w", err))
+		return
+	}
+
+	if err := h.incidentService.EditChecklistItem(id, userID, checklistId, itemId, params.Title); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+}
+
+func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistId, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var modificationParams struct {
+		ItemNum     int `json:"item_num"`
+		NewLocation int `json:"new_location"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if err := h.incidentService.MoveChecklistItem(id, userID, checklistId, modificationParams.ItemNum, modificationParams.NewLocation); err != nil {
 		HandleError(w, err)
 		return
 	}

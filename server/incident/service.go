@@ -347,6 +347,103 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	return nil
 }
 
+// EditChecklistItem changes the title of a specified checklist item
+func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return err
+	}
+
+	if !s.hasPermissionToModifyIncident(incidentToModify, userID) {
+		return errors.New("user does not have permission to end incident")
+	}
+
+	if checklistNumber >= len(incidentToModify.Playbook.Checklists) {
+		return errors.New("invalid checklist number")
+	}
+
+	if itemNumber >= len(incidentToModify.Playbook.Checklists[checklistNumber].Items) {
+		return errors.New("invalid item number")
+	}
+
+	oldTitle := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+	}
+
+	// Post in the  main incident channel that @user has ended the incident.
+	// Main channel is the only channel in the incident for now.
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	if err := s.poster.PostMessage(mainChannelID, "@%v changed checklist item \"%v\" to be \"%v\" in %v checklist.", user.Username, oldTitle, newTitle, incidentToModify.Playbook.Checklists[checklistNumber].Title); err != nil {
+		return fmt.Errorf("failed to post end incident messsage: %w", err)
+	}
+
+	return nil
+}
+
+// MoveChecklistItem moves a checklist item to a new location
+func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return err
+	}
+
+	if !s.hasPermissionToModifyIncident(incidentToModify, userID) {
+		return errors.New("user does not have permission to end incident")
+	}
+
+	if checklistNumber >= len(incidentToModify.Playbook.Checklists) {
+		return errors.New("invalid checklist number")
+	}
+
+	if itemNumber >= len(incidentToModify.Playbook.Checklists[checklistNumber].Items) {
+		return errors.New("invalid item number")
+	}
+
+	if newLocation >= len(incidentToModify.Playbook.Checklists[checklistNumber].Items) {
+		return errors.New("invalid targetNumber")
+	}
+
+	// Move item
+	checklist := incidentToModify.Playbook.Checklists[checklistNumber].Items
+	itemMoved := checklist[itemNumber]
+	// Delete item to move
+	checklist = append(checklist[:itemNumber], checklist[itemNumber+1:]...)
+	// Insert item in new location
+	checklist = append(checklist, playbook.ChecklistItem{})
+	copy(checklist[newLocation+1:], checklist[newLocation:])
+	checklist[newLocation] = itemMoved
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+	}
+
+	// Post in the  main incident channel that @user has ended the incident.
+	// Main channel is the only channel in the incident for now.
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	if err := s.poster.PostMessage(mainChannelID, "@%v moved checklist item \"%v\" in %v checklist.", user.Username, itemMoved.Title, incidentToModify.Playbook.Checklists[checklistNumber].Title); err != nil {
+		return fmt.Errorf("failed to post end incident messsage: %w", err)
+	}
+
+	return nil
+}
+
 // NukeDB removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()

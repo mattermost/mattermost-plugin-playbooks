@@ -84,6 +84,12 @@ type Service interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(incidentID, userId string, checklistNumber int, itemNumber int) error
 
+	// EditChecklistItem changes the title of a specified checklist item
+	EditChecklistItem(incidentID, userId string, checklistNumber int, itemNumber int, newTitle string) error
+
+	// ReorderChecklist moves a checklist item from one position to anouther
+	MoveChecklistItem(incidentID, userId string, checklistNumber int, itemNumber int, newLocation int) error
+
 	// NukeDB removes all incident related data.
 	NukeDB() error
 }

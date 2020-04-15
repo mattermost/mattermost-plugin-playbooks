@@ -39,6 +39,12 @@ interface ChecklistItemDetailsEditProps {
 export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement<ChecklistItemDetailsEditProps> => {
     const [title, setTitle] = useState(checklistItem.title);
 
+    const submit = () => {
+        if (title != checklistItem.title) {
+            onEdit(title);
+        }
+    };
+
     return (
         <div
             className='checkbox-container'
@@ -50,9 +56,14 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                 className='checklist-input'
                 type='text'
                 defaultValue={title}
+                onBlur={submit}
+                onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                        submit();
+                    }
+                }}
                 onChange={(e) => {
                     setTitle(e.target.value);
-                    onEdit(e.target.value);
                 }}
             />
             <span

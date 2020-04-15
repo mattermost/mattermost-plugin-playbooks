@@ -92,6 +92,18 @@ export async function clientEditChecklistItem(incidentID: string, checklistID: n
     return data;
 }
 
+export async function clientReorderChecklist(incidentID: string, checklistID: number, itemID: number, newLocation: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistID}/reorder`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            item_num: itemID,
+            new_location: newLocation,
+        }),
+    });
+
+    return data;
+}
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 

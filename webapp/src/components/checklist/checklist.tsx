@@ -1,9 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 
-import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
+import {DragDropContext, Draggable, Droppable, DropResult} from 'react-beautiful-dnd';
 
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
@@ -15,16 +15,17 @@ interface ChecklistDetailsProps {
     addItem: (checklistItem: ChecklistItem) => void;
     removeItem: (itemNum: number) => void;
     editItem: (itemNum: number, newTitle: string) => void;
+    reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, editItem}: ChecklistDetailsProps): React.ReactElement<ChecklistDetailsProps> => {
+export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, editItem, reorderItems}: ChecklistDetailsProps): React.ReactElement<ChecklistDetailsProps> => {
     const [newvalue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
 
-    const [tempChecklistItems, setTmpChecklistItems] = useState(checklist.items);
+    const [checklistItems, setChecklistItems] = useState(checklist.items);
 
-    const reorder = (list, startIndex, endIndex) => {
+    const reorder = (list: ChecklistItem[], startIndex: number, endIndex: number) => {
         const result = Array.from(list);
         const [removed] = result.splice(startIndex, 1);
         result.splice(endIndex, 0, removed);
@@ -32,7 +33,11 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
         return result;
     };
 
-    const onDragEnd = (result: any) => {
+    useEffect(() => {
+        setChecklistItems(checklist.items);
+    }, [checklist.items]);
+
+    const onDragEnd = (result: DropResult) => {
         if (!result.destination) {
             return;
         }
@@ -41,7 +46,8 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
             return;
         }
 
-        setTmpChecklistItems(reorder(tempChecklistItems, result.source.index, result.destination.index));
+        setChecklistItems(reorder(checklistItems, result.source.index, result.destination.index));
+        reorderItems(result.source.index, result.destination.index);
     };
 
     return (
@@ -70,7 +76,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                             ref={provided.innerRef}
                         >
                             <ChecklistItemDetailsEdit
-                                checklistItem={tempChecklistItems[rubric.source.index]}
+                                checklistItem={checklistItems[rubric.source.index]}
                                 onEdit={(editedTo: string) => {
                                     editItem(rubric.source.index, editedTo);
                                 }}
@@ -87,7 +93,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                             {...provided.droppableProps}
                             className='checklist'
                         >
-                            {tempChecklistItems.map((checklistItem: ChecklistItem, index: number) => {
+                            {checklistItems.map((checklistItem: ChecklistItem, index: number) => {
                                 if (editMode) {
                                     return (
                                         <Draggable
