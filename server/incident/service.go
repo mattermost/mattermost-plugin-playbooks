@@ -64,6 +64,17 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	incdnt.ChannelIDs = []string{channel.Id}
 	incdnt.CreatedAt = time.Now().Unix()
 
+	// For now incidents just start with a blank playbook with one empty checklist
+	incdnt.Playbook = playbook.Playbook{
+		Title: "Default Playbook",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Checklist",
+				Items: []playbook.ChecklistItem{},
+			},
+		},
+	}
+
 	if err = s.store.UpdateIncident(incdnt); err != nil {
 		return nil, fmt.Errorf("failed to update incident: %w", err)
 	}
