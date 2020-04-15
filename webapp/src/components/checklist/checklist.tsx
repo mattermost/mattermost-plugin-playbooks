@@ -3,7 +3,14 @@
 
 import React, {useState, useEffect} from 'react';
 
-import {DragDropContext, Draggable, Droppable, DropResult} from 'react-beautiful-dnd';
+import {
+    DragDropContext,
+    Draggable,
+    Droppable,
+    DropResult,
+    DroppableProvided,
+    DraggableProvided,
+} from 'react-beautiful-dnd';
 
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
@@ -87,10 +94,10 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                         </div>
                     )}
                 >
-                    {(provided) => (
+                    {(droppableProvided: DroppableProvided) => (
                         <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
+                            ref={droppableProvided.innerRef}
+                            {...droppableProvided.droppableProps}
                             className='checklist'
                         >
                             {checklistItems.map((checklistItem: ChecklistItem, index: number) => {
@@ -101,17 +108,16 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                                             key={checklistItem.title + index}
                                             draggableId={checklistItem.title + index}
                                         >
-                                            {(provided, snapshot) => {
+                                            {(draggableProvided: DraggableProvided) => {
                                                 return (
                                                     <div
-                                                        ref={provided.innerRef}
-                                                        {...provided.draggableProps}
-                                                        {...provided.dragHandleProps}
-                                                        style={provided.draggableProps.style}
+                                                        ref={draggableProvided.innerRef}
+                                                        {...draggableProvided.draggableProps}
+                                                        {...draggableProvided.dragHandleProps}
+                                                        style={draggableProvided.draggableProps.style}
                                                     >
                                                         <ChecklistItemDetailsEdit
                                                             checklistItem={checklistItem}
-                                                            index={index}
                                                             onEdit={(editedTo: string) => {
                                                                 editItem(index, editedTo);
                                                             }}
@@ -138,7 +144,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                                     />
                                 );
                             })}
-                            {provided.placeholder}
+                            {droppableProvided.placeholder}
                         </div>
                     )}
                 </Droppable>

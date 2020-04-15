@@ -40,7 +40,7 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
     const [title, setTitle] = useState(checklistItem.title);
 
     const submit = () => {
-        if (title != checklistItem.title) {
+        if (title !== checklistItem.title) {
             onEdit(title);
         }
     };
