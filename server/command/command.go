@@ -160,29 +160,6 @@ func (r *Runner) actionSelftest() {
 					},
 				},
 			},
-			{
-				Title: "Team B",
-				Items: []playbook.ChecklistItem{
-					{
-						Title: "Panic",
-					},
-					{
-						Title: "Ask stupid questions",
-					},
-					{
-						Title: "Panic",
-					},
-					{
-						Title: "Tell everone else to not panic",
-					},
-					{
-						Title: "Panic",
-					},
-					{
-						Title: "Delete ME",
-					},
-				},
-			},
 		},
 	}
 	playbookID, err := r.playbookService.Create(testPlaybook)
@@ -263,17 +240,42 @@ func (r *Runner) actionSelftest() {
 		return
 	}
 
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{Title: "I should be checked and second"}); err != nil {
+		r.postCommandResponse("Unable to add checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{Title: "I should be deleted"}); err != nil {
+		r.postCommandResponse("Unable to add checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{Title: "I should not say this.", Checked: true}); err != nil {
+		r.postCommandResponse("Unable to add checklist item: " + err.Error())
+		return
+	}
+
 	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, true, 0, 0); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, false, 0, 1); err != nil {
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, false, 0, 2); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.RemoveChecklistItem(createdIncident.ID, r.args.UserId, 1, 5); err != nil {
+	if err := r.incidentService.RemoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 1); err != nil {
+		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.EditChecklistItem(createdIncident.ID, r.args.UserId, 0, 1, "I should say this! and be unchecked and first!"); err != nil {
+		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.MoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 0, 1); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
