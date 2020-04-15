@@ -43,6 +43,9 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
         <div
             className='checkbox-container'
         >
+            <i
+                className='fa fa-bars'
+            />
             <input
                 className='checklist-input'
                 type='text'

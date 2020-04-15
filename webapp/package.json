@@ -58,6 +58,7 @@
     "mattermost-redux": "github:mattermost/mattermost-redux#3bb89a5450b94da564d3a286fefb5945a1c3fca8",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
     "node-sass": "^4.13.1",
+    "react-beautiful-dnd": "13.0.0",
     "sass-loader": "^7.1.0",
     "style-loader": "^1.1.3",
     "webpack": "4.35.0",

@@ -3,6 +3,8 @@
 
 import React, {useState} from 'react';
 
+import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
+
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
@@ -20,6 +22,28 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
 
+    const [tempChecklistItems, setTmpChecklistItems] = useState(checklist.items);
+
+    const reorder = (list, startIndex, endIndex) => {
+        const result = Array.from(list);
+        const [removed] = result.splice(startIndex, 1);
+        result.splice(endIndex, 0, removed);
+
+        return result;
+    };
+
+    const onDragEnd = (result: any) => {
+        if (!result.destination) {
+            return;
+        }
+
+        if (result.destination.index === result.source.index) {
+            return;
+        }
+
+        setTmpChecklistItems(reorder(tempChecklistItems, result.source.index, result.destination.index));
+    };
+
     return (
         <div
             key={checklist.title}
@@ -36,34 +60,83 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                     <strong>{editMode ? '(done)' : '(edit)'}</strong>
                 </a>
             </div>
-            {checklist.items.map((checklistItem: ChecklistItem, index: number) => {
-                if (editMode) {
-                    return (
-                        <ChecklistItemDetailsEdit
-                            key={checklistItem.title + index}
-                            checklistItem={checklistItem}
-                            onEdit={(editedTo: string) => {
-                                editItem(index, editedTo);
-                            }}
-                            onRemove={() => {
-                                removeItem(index);
-                            }}
-                        />
-                    );
-                }
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable
+                    droppableId='droppable'
+                    renderClone={(provided, snapshot, rubric) => (
+                        <div
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            ref={provided.innerRef}
+                        >
+                            <ChecklistItemDetailsEdit
+                                checklistItem={tempChecklistItems[rubric.source.index]}
+                                onEdit={(editedTo: string) => {
+                                    editItem(rubric.source.index, editedTo);
+                                }}
+                                onRemove={() => {
+                                    removeItem(rubric.source.index);
+                                }}
+                            />
+                        </div>
+                    )}
+                >
+                    {(provided) => (
+                        <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className='checklist'
+                        >
+                            {tempChecklistItems.map((checklistItem: ChecklistItem, index: number) => {
+                                if (editMode) {
+                                    return (
+                                        <Draggable
+                                            index={index}
+                                            key={checklistItem.title + index}
+                                            draggableId={checklistItem.title + index}
+                                        >
+                                            {(provided, snapshot) => {
+                                                return (
+                                                    <div
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+                                                        style={provided.draggableProps.style}
+                                                    >
+                                                        <ChecklistItemDetailsEdit
+                                                            checklistItem={checklistItem}
+                                                            index={index}
+                                                            onEdit={(editedTo: string) => {
+                                                                editItem(index, editedTo);
+                                                            }}
+                                                            onRemove={() => {
+                                                                removeItem(index);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                );
+                                            }}
+                                        </Draggable>
+                                    );
+                                }
 
-                return (
-                    <ChecklistItemDetails
-                        key={checklistItem.title + index}
-                        checklistItem={checklistItem}
-                        onChange={(checked: boolean) => {
-                            if (onChange) {
-                                onChange(index, checked);
-                            }
-                        }}
-                    />
-                );
-            })}
+                                return (
+                                    <ChecklistItemDetails
+                                        key={checklistItem.title + index}
+                                        checklistItem={checklistItem}
+                                        onChange={(checked: boolean) => {
+                                            if (onChange) {
+                                                onChange(index, checked);
+                                            }
+                                        }}
+                                    />
+                                );
+                            })}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
             {inputExpanded &&
                 <form
                     onSubmit={(e) => {
