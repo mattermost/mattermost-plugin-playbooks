@@ -23,11 +23,6 @@ export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>, get
         }
         const incident = JSON.parse(msg.data.payload);
 
-        //if (!isIncident(incident)) {
-        //console.log('FUCK');
-        //return;
-        //}
-
         dispatch(receivedIncidentUpdate(incident));
 
         // If this is also the incident being viewed, and the incident is closed,
