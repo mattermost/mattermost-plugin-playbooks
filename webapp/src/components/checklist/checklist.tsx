@@ -16,7 +16,7 @@ import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 
-interface ChecklistDetailsProps {
+interface Props {
     checklist: Checklist;
     onChange?: (itemNum: number, checked: boolean) => void;
     addItem: (checklistItem: ChecklistItem) => void;
@@ -25,7 +25,7 @@ interface ChecklistDetailsProps {
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, editItem, reorderItems}: ChecklistDetailsProps): React.ReactElement<ChecklistDetailsProps> => {
+export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement<Props> => {
     const [newvalue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
