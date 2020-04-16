@@ -62,26 +62,29 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     </div>
                 }
 
-                <div className='footer-div'>
-                    <button
-                        className='btn btn-primary'
-                        onClick={() => this.props.actions.endIncident()}
-                        disabled={!this.props.allowEndIncident}
-                    >
-                        {'End Incident'}
-                    </button>
-                    {
-                        !this.props.allowEndIncident && this.props.channelDetails?.length > 0 &&
-                        <div className='help-text'>
-                            {'Go to '}
-                            <Link
-                                to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
-                                text={'the incident channel'}
-                            />
-                            {' to enable this action.'}
-                        </div>
-                    }
-                </div>
+                {
+                    this.props.channelDetails?.length > 0 &&
+                    <div className='footer-div'>
+                        <button
+                            className='btn btn-primary'
+                            onClick={() => this.props.actions.endIncident()}
+                            disabled={!this.props.allowEndIncident}
+                        >
+                            {'End Incident'}
+                        </button>
+                        {
+                            !this.props.allowEndIncident && this.props.channelDetails?.length > 0 &&
+                            <div className='help-text'>
+                                {'Go to '}
+                                <Link
+                                    to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
+                                    text={'the incident channel'}
+                                />
+                                {' to enable this action.'}
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         );
     }
