@@ -13,6 +13,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
 )
 
 // IncidentHandler is the API handler.
@@ -175,21 +176,13 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	// Check permissions. Note: this is duplicated in command.go until we have a proper
-	// permissions package.
-	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
-	if !isAdmin {
-		incident, err := h.incidentService.GetIncident(vars["id"])
-		if err != nil {
-			HandleError(w, err)
+	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 			return
 		}
-		isChannelMember := h.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelIDs[0], model.PERMISSION_READ_CHANNEL)
-		if !isChannelMember {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				fmt.Errorf("userID `%s` is not an admin or channel member", userID))
-			return
-		}
+		HandleError(w, err)
+		return
 	}
 
 	err := h.incidentService.EndIncident(vars["id"], userID)
