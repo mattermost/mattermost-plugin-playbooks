@@ -74,7 +74,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             {'End Incident'}
                         </button>
                         {
-                            !this.props.allowEndIncident && this.props.channelDetails && this.props.channelDetails.length > 0 &&
+                            !this.props.allowEndIncident && this.props.channelDetails?.length > 0 &&
                             <div className='help-text'>
                                 {'Go to '}
                                 <Link
