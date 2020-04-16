@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-// ErrErrNoPermissions if the error is caused by the user not having permissions
+// ErrNoPermissions if the error is caused by the user not having permissions
 var ErrNoPermissions = errors.New("is not an admin or channel member")
 
 // CheckHasPermissionsToIncidentChannel returns an error if the user does not have permissions to the incident channel.
