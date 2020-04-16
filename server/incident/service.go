@@ -144,10 +144,6 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 		return ErrIncidentNotActive
 	}
 
-	if !s.hasPermissionToModifyIncident(incdnt, userID) {
-		return errors.New("user does not have permission to end incident")
-	}
-
 	// Close the incident
 	incdnt.IsActive = false
 
