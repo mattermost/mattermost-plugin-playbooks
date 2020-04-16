@@ -8,16 +8,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	rudder "github.com/rudderlabs/analytics-go"
 	"github.com/stretchr/testify/require"
 )
 
-var diagnosticID = "dummy_diagnostic_id"
+var (
+	diagnosticID  = "dummy_diagnostic_id"
+	serverVersion = "dummy_server_version"
+)
 
 func TestNewRudder(t *testing.T) {
-	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID)
+	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID, serverVersion)
 	require.Equal(t, rudder.diagnosticID, diagnosticID)
+	require.Equal(t, rudder.serverVersion, serverVersion)
 	require.NoError(t, err)
 }
 
@@ -61,7 +66,7 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 	})
 	require.NoError(t, err)
 
-	return &RudderTelemetry{client, diagnosticID}, server
+	return &RudderTelemetry{client, diagnosticID, serverVersion}, server
 }
 
 var dummyIncident = &incident.Incident{
@@ -83,15 +88,12 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	incidentFromProperties := func(properties map[string]interface{}) *incident.Incident {
 		require.Contains(t, properties, "ChannelIDs")
 		require.Contains(t, properties, "PostID")
-		require.Contains(t, properties, "Header")
 
-		header := properties["Header"].(map[string]interface{})
-		require.Contains(t, header, "ID")
-		require.Contains(t, header, "Name")
-		require.Contains(t, header, "IsActive")
-		require.Contains(t, header, "CommanderUserID")
-		require.Contains(t, header, "TeamID")
-		require.Contains(t, header, "CreatedAt")
+		require.Contains(t, properties, "ID")
+		require.Contains(t, properties, "IsActive")
+		require.Contains(t, properties, "CommanderUserID")
+		require.Contains(t, properties, "TeamID")
+		require.Contains(t, properties, "CreatedAt")
 
 		ids := properties["ChannelIDs"].([]interface{})
 		channelIDs := make([]string, len(ids))
@@ -101,12 +103,12 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 
 		return &incident.Incident{
 			Header: incident.Header{
-				ID:              header["ID"].(string),
-				Name:            header["Name"].(string),
-				IsActive:        header["IsActive"].(bool),
-				CommanderUserID: header["CommanderUserID"].(string),
-				TeamID:          header["TeamID"].(string),
-				CreatedAt:       int64(header["CreatedAt"].(float64)),
+				ID:              properties["ID"].(string),
+				Name:            dummyIncident.Name, // not included in the tracked event
+				IsActive:        properties["IsActive"].(bool),
+				CommanderUserID: properties["CommanderUserID"].(string),
+				TeamID:          properties["TeamID"].(string),
+				CreatedAt:       int64(properties["CreatedAt"].(float64)),
 			},
 			ChannelIDs: channelIDs,
 			PostID:     properties["PostID"].(string),
@@ -116,7 +118,14 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	require.Len(t, actual.Batch, 1)
 	require.Equal(t, diagnosticID, actual.Batch[0].UserID)
 	require.Equal(t, expectedEvent, actual.Batch[0].Event)
-	require.Equal(t, dummyIncident, incidentFromProperties(actual.Batch[0].Properties))
+
+	properties := actual.Batch[0].Properties
+	require.Contains(t, properties, "ServerVersion")
+	require.Equal(t, properties["ServerVersion"], serverVersion)
+	require.Contains(t, properties, "PluginVersion")
+	require.Equal(t, properties["PluginVersion"], config.Manifest.Version)
+
+	require.Equal(t, dummyIncident, incidentFromProperties(properties))
 }
 
 func TestRudderTelemetryCreateIncident(t *testing.T) {
