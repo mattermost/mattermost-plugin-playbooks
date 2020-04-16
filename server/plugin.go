@@ -69,7 +69,8 @@ func (p *Plugin) OnActivate() error {
 		telemetryClient = &telemetry.NoopTelemetry{}
 	} else {
 		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
-		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID)
+		serverVersion := pluginAPIClient.System.GetServerVersion()
+		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, serverVersion)
 		if err != nil {
 			return fmt.Errorf("failed init telemetry client: %w", err)
 		}
