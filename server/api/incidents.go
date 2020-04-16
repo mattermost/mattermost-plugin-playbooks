@@ -175,16 +175,21 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.incidentService.IsCommander(vars["id"], userID) {
-		w.WriteHeader(http.StatusForbidden)
-		b, _ := json.Marshal(struct {
-			Error   string `json:"error"`
-			Details string `json:"details"`
-		}{
-			Error:   "Not authorized",
-			Details: "Only the commander may end an incident",
-		})
-		_, _ = w.Write(b)
+	// Check permissions. Note: this is duplicated in command.go until we have a proper
+	// permissions package.
+	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+	if !isAdmin {
+		incident, err := h.incidentService.GetIncident(vars["id"])
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+		isChannelMember := h.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelIDs[0], model.PERMISSION_READ_CHANNEL)
+		if !isChannelMember {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				fmt.Errorf("userID `%s` is not an admin or channel member", userID))
+			return
+		}
 	}
 
 	err := h.incidentService.EndIncident(vars["id"], userID)
@@ -194,7 +199,6 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
 }
 
 // endIncidentFromDialog handles the interactive dialog submission when a user confirms they
@@ -213,7 +217,6 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {

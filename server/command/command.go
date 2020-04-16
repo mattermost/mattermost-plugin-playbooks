@@ -96,9 +96,21 @@ func (r *Runner) actionStart(args []string) {
 
 func (r *Runner) actionEnd() {
 	incidentID := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if !r.incidentService.IsCommander(incidentID, r.args.UserId) {
-		r.postCommandResponse("Only the commander may end an incident.")
-		return
+
+	// Check permissions. Note: this is duplicated in api/incidents.go until we have a proper
+	// permissions package.
+	isAdmin := r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM)
+	if !isAdmin {
+		incident, err := r.incidentService.GetIncident(incidentID)
+		if err != nil {
+			r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+			return
+		}
+		isChannelMember := r.pluginAPI.User.HasPermissionToChannel(r.args.UserId, incident.ChannelIDs[0], model.PERMISSION_READ_CHANNEL)
+		if !isChannelMember {
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
+		}
 	}
 
 	err := r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)

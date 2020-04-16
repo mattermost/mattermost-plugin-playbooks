@@ -19,7 +19,6 @@ interface Props {
     commander: UserProfile;
     profileUri: string;
     channelDetails: ChannelWithTeamData[];
-    isCommander: boolean;
     allowEndIncident: boolean;
     actions: {
         endIncident: () => void;
