@@ -248,6 +248,12 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return err
 	}
 
+	if newState {
+		s.telemetry.CheckChecklistItem(incidentID, userID)
+	} else {
+		s.telemetry.UncheckChecklistItem(incidentID, userID)
+	}
+
 	return nil
 }
 
@@ -271,6 +277,8 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
 		return err
 	}
+
+	s.telemetry.AddChecklistItem(incidentID, userID)
 
 	return nil
 }
@@ -297,6 +305,8 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 		return err
 	}
 
+	s.telemetry.RemoveChecklistItem(incidentID, userID)
+
 	return nil
 }
 
@@ -321,6 +331,8 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
 		return err
 	}
+
+	s.telemetry.EditChecklistItem(incidentID, userID)
 
 	return nil
 }

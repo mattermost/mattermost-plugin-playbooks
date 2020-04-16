@@ -15,12 +15,15 @@ type RudderTelemetry struct {
 	serverVersion string
 }
 
+// Unique strings that identify each of the tracked events
 const (
-	// eventCreateIncident is the Event string sent to Rudder when a new incident is created
-	eventCreateIncident = "CreateIncident"
-
-	// eventEndIncident is the Event string sent to Rudder when an incident is ended
-	eventEndIncident = "EndIncident"
+	eventCreateIncident       = "CreateIncident"
+	eventEndIncident          = "EndIncident"
+	eventAddChecklistItem     = "AddChecklistItem"
+	eventRemoveChecklistItem  = "RemoveChecklistItem"
+	eventEditChecklistItem    = "EditChecklistItem"
+	eventCheckChecklistItem   = "CheckChecklistItem"
+	eventUncheckChecklistItem = "UncheckChecklistItem"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -78,4 +81,41 @@ func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) {
 // EndIncident tracks the end of the incident passed.
 func (t *RudderTelemetry) EndIncident(incident *incident.Incident) {
 	t.track(eventEndIncident, incidentProperties(incident))
+}
+
+func checklistItemProperties(incidentID, userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"IncidentID": incidentID,
+		"UserID":     userID,
+	}
+}
+
+// AddChecklistItem tracks the creation of a new checklist item by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) AddChecklistItem(incidentID, userID string) {
+	t.track(eventAddChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// RemoveChecklistItem tracks the removal of a checklist item by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) RemoveChecklistItem(incidentID, userID string) {
+	t.track(eventRemoveChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// EditChecklistItem tracks the update of a checklist item by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) EditChecklistItem(incidentID, userID string) {
+	t.track(eventEditChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// CheckChecklistItem tracks the checking of unchecked item y the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) CheckChecklistItem(incidentID, userID string) {
+	t.track(eventCheckChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// UncheckChecklistItem tracks the uncheking of checked item y the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) UncheckChecklistItem(incidentID, userID string) {
+	t.track(eventUncheckChecklistItem, checklistItemProperties(incidentID, userID))
 }
