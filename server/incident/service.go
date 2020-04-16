@@ -219,7 +219,7 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 }
 
 // ModifyCheckedState checks or unchecks the specified checklist item
-// Indeponant, will not perform any actions if the checklist item is already checked
+// Indeponant, will not perform any actions if the checklist item is already in the given checked state
 func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, check bool, checklistNumber int, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
@@ -282,7 +282,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	return nil
 }
 
-// RemoveChecklistItem remove the item at the given index from the given checklist
+// RemoveChecklistItem removes the item at the given index from the given checklist
 func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
