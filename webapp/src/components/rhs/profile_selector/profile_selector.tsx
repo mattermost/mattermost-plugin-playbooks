@@ -15,7 +15,7 @@ import ProfileButton from 'src/components/rhs/profile_selector/profile_button/pr
 
 type Props = {
     commanderId: string;
-    channelId: string;
+    channelId?: string;
     incidentId: string;
 }
 
@@ -37,21 +37,27 @@ export default function ProfileSelector(props: Props) {
     };
 
     const [selected, setSelected] = useState<Option | null>(null);
-    const onSelectedChange = (value: Option) => {
+    const onSelectedChange = async (value: Option) => {
         toggleOpen();
         if (value.value.id === selected?.value.id) {
             return;
         }
-
-        setCommander(props.incidentId, value.value.id);
-
-        // TODO: For now assume it worked.
-        setSelected(value);
+        const response = await setCommander(props.incidentId, value.value.id);
+        if (response.status === 'OK') {
+            setSelected(value);
+        } else if (response.error) {
+            // TODO: will be presented to the user after https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
+        }
     };
 
     const [options, setOptions] = useState<Option[]>([]);
     useEffect(() => {
         async function fetchUsers() {
+            if (!props.channelId) {
+                return;
+            }
+
             const users = await fetchUsersInChannel(props.channelId);
             const optionList = users.map((user) => {
                 return ({

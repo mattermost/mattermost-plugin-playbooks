@@ -70,6 +70,9 @@ type Service interface {
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
 
+	// ChangeCommander will change the commander for incidentID.
+	ChangeCommander(incidentID string, commanderID string) error
+
 	// NukeDB removes all incident related data.
 	NukeDB() error
 }

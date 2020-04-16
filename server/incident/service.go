@@ -205,6 +205,39 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 	return incdnt.CommanderUserID == userID
 }
 
+// ChangeCommander will change the commander for incidentID.
+func (s *ServiceImpl) ChangeCommander(incidentID string, commanderID string) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return err
+	}
+
+	oldCommander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", incidentToModify.CommanderUserID, err)
+	}
+	newCommander, err := s.pluginAPI.User.Get(commanderID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", commanderID, err)
+	}
+
+	incidentToModify.CommanderUserID = commanderID
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	modifyMessage := fmt.Sprintf("The incident commander was changed from @%s to @%s.",
+		oldCommander.Username, newCommander.Username)
+	if err := s.poster.PostMessage(mainChannelID, modifyMessage); err != nil {
+		return fmt.Errorf("failed to post change commander messsage: %w", err)
+	}
+
+	return nil
+}
+
 // NukeDB removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()

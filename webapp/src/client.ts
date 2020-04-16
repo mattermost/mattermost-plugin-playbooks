@@ -50,9 +50,14 @@ export async function fetchUsersInChannel(channelId: string): Promise<UserProfil
     return Client4.getProfilesInChannel(channelId, 0, 200);
 }
 
-export function setCommander(incidentId: string, commanderId: string) {
-    const body = `{"commanderId": ${commanderId}`;
-    doPost(`${apiUrl}/incidents/${incidentId}/change-commander`, body);
+export async function setCommander(incidentId: string, commanderId: string) {
+    const body = `{"commander_id": "${commanderId}"}`;
+    try {
+        const data = await doPost(`${apiUrl}/incidents/${incidentId}/change-commander`, body);
+        return data;
+    } catch (error) {
+        return {error};
+    }
 }
 
 export const doGet = async (url: string) => {

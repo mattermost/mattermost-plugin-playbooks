@@ -211,18 +211,40 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
+// changeCommander handles the /incidents/{id}/change-commander api endpoint.
 func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.incidentService.IsCommander(vars["id"], userID) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-			errors.New("only the commander may change commander"))
+	// Check permissions. Note: this is duplicated in command.go until we have a proper
+	// permissions package.
+	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+	if !isAdmin {
+		incident, err := h.incidentService.GetIncident(vars["id"])
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+		isChannelMember := h.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelIDs[0], model.PERMISSION_READ_CHANNEL)
+		if !isChannelMember {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				fmt.Errorf("userID `%s` is not an admin or channel member", userID))
+			return
+		}
+	}
+
+	var params struct {
+		CommanderId string `json:"commander_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		HandleError(w, fmt.Errorf("could not decode request body: %w", err))
 		return
 	}
 
-	// TODO: do the change here
-	// TODO: make the post (look at Christopher's PR)
+	if err := h.incidentService.ChangeCommander(vars["id"], params.CommanderId); err != nil {
+		HandleError(w, err)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
