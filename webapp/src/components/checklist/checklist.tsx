@@ -25,7 +25,7 @@ interface Props {
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement<Props> => {
+export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
     const [newvalue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);

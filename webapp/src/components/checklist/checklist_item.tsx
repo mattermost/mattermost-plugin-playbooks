@@ -10,7 +10,7 @@ interface ChecklistItemDetailsProps {
     onChange?: (item: boolean) => void;
 }
 
-export const ChecklistItemDetails = ({checklistItem, onChange}: ChecklistItemDetailsProps): React.ReactElement<ChecklistItemDetailsProps> => {
+export const ChecklistItemDetails = ({checklistItem, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
     return (
         <div
             className='checkbox-container'
@@ -36,7 +36,7 @@ interface ChecklistItemDetailsEditProps {
     onRemove: () => void;
 }
 
-export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement<ChecklistItemDetailsEditProps> => {
+export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
     const [title, setTitle] = useState(checklistItem.title);
 
     const submit = () => {
