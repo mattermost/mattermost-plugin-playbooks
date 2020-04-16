@@ -40,7 +40,17 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand, checkItem, uncheckItem, clientAddChecklistItem, clientRemoveChecklistItem, clientRenameChecklistItem, clientReorderChecklist} from './client';
+import {
+    fetchIncidents,
+    fetchIncidentDetails,
+    clientExecuteCommand,
+    checkItem,
+    uncheckItem,
+    clientAddChecklistItem,
+    clientRemoveChecklistItem,
+    clientRenameChecklistItem,
+    clientReorderChecklist,
+} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {

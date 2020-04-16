@@ -47,29 +47,27 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     />
                 </div>
 
-                {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => {
-                    return (
-                        <ChecklistDetails
-                            checklist={checklist}
-                            key={checklist.title + index}
-                            onChange={(itemNum: number, checked: boolean) => {
-                                this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
-                            }}
-                            addItem={(checklistItem: ChecklistItem) => {
-                                this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
-                            }}
-                            removeItem={(itemNum: number) => {
-                                this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
-                            }}
-                            editItem={(itemNum: number, newTitle: string) => {
-                                this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
-                            }}
-                            reorderItems={(itemNum: number, newPosition: number) => {
-                                this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
-                            }}
-                        />
-                    );
-                })}
+                {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
+                    <ChecklistDetails
+                        checklist={checklist}
+                        key={checklist.title + index}
+                        onChange={(itemNum: number, checked: boolean) => {
+                            this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
+                        }}
+                        addItem={(checklistItem: ChecklistItem) => {
+                            this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
+                        }}
+                        removeItem={(itemNum: number) => {
+                            this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
+                        }}
+                        editItem={(itemNum: number, newTitle: string) => {
+                            this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
+                        }}
+                        reorderItems={(itemNum: number, newPosition: number) => {
+                            this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
+                        }}
+                    />
+                ))}
 
                 {
                     this.props.channelDetails.length > 0 &&
