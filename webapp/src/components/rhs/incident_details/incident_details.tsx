@@ -29,7 +29,7 @@ interface Props {
         modifyChecklistItemState: (incidentID: string, checklistNum: number, itemNum: number, checked: boolean) => void;
         addChecklistItem: (incidentID: string, checklistNum: number, checklistItem: ChecklistItem) => void;
         removeChecklistItem: (incidentID: string, checklistNum: number, itemNum: number) => void;
-        editChecklistItem: (incidentID: string, checklistNum: number, itemNum: number, newtitle: string) => void;
+        renameChecklistItem: (incidentID: string, checklistNum: number, itemNum: number, newtitle: string) => void;
         reorderChecklist: (incidentID: string, checklistNum: number, itemNum: number, newPosition: number) => void;
     };
 }
@@ -62,7 +62,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                                 this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
                             }}
                             editItem={(itemNum: number, newTitle: string) => {
-                                this.props.actions.editChecklistItem(this.props.incident.id, index, itemNum, newTitle);
+                                this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
                             }}
                             reorderItems={(itemNum: number, newPosition: number) => {
                                 this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);

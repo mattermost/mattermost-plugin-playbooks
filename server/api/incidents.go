@@ -50,7 +50,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
-	checklistItem.HandleFunc("", handler.itemEdit).Methods(http.MethodPut)
+	checklistItem.HandleFunc("", handler.itemRename).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/check", handler.check).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
 
@@ -311,7 +311,7 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
 }
 
-func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
@@ -334,7 +334,7 @@ func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.incidentService.EditChecklistItem(id, userID, checklistNum, itemNum, params.Title); err != nil {
+	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title); err != nil {
 		HandleError(w, err)
 		return
 	}

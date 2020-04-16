@@ -311,8 +311,8 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	return nil
 }
 
-// EditChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error {
+// RenameChecklistItem changes the title of a specified checklist item
+func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err

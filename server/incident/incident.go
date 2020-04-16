@@ -75,7 +75,7 @@ type Service interface {
 	IsCommander(incidentID string, userID string) bool
 
 	// ModifyCheckedState checks or unchecks the specified checklist item
-	// Indeponant, will not perform any actions if the checklist item is already in the specified state
+	// Idempotent, will not perform any actions if the checklist item is already in the specified state
 	ModifyCheckedState(incidentID, userID string, check bool, checklistNumber int, itemNumber int) error
 
 	// AddChecklistItem adds an item to the specified checklist
@@ -84,10 +84,10 @@ type Service interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
 
-	// EditChecklistItem changes the title of a specified checklist item
-	EditChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error
+	// RenameChecklistItem changes the title of a specified checklist item
+	RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error
 
-	// ReorderChecklist moves a checklist item from one position to anouther
+	// MoveChecklistItem moves a checklist item from one position to anouther
 	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
 
 	// NukeDB removes all incident related data.
