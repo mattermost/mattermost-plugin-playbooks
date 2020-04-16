@@ -34,3 +34,7 @@ func (t *NoopTelemetry) CheckChecklistItem(incidentID, userID string) {
 // UncheckChecklistItem does nothing.
 func (t *NoopTelemetry) UncheckChecklistItem(incidentID, userID string) {
 }
+
+// MoveChecklistItem does nothing.
+func (t *NoopTelemetry) MoveChecklistItem(incidentID, userID string) {
+}

@@ -123,6 +123,10 @@ type Telemetry interface {
 	// EndIncident tracks the end of an incident.
 	EndIncident(incident *Incident)
 
+	// UncheckChecklistItem tracks the uncheking of checked item by the user
+	// identified by userID in the incident identified by incidentID.
+	ModifyCheckedState(incidentID, userID string, newState bool)
+
 	// AddChecklistItem tracks the creation of a new checklist item by the user
 	// identified by userID in the incident identified by incidentID.
 	AddChecklistItem(incidentID, userID string)
@@ -131,15 +135,11 @@ type Telemetry interface {
 	// identified by userID in the incident identified by incidentID.
 	RemoveChecklistItem(incidentID, userID string)
 
-	// EditChecklistItem tracks the update of a checklist item by the user
+	// RenameChecklistItem tracks the update of a checklist item by the user
 	// identified by userID in the incident identified by incidentID.
-	EditChecklistItem(incidentID, userID string)
+	RenameChecklistItem(incidentID, userID string)
 
-	// CheckChecklistItem tracks the checking of an unchecked item by the user
+	// MoveChecklistItem tracks the uncheking of checked item by the user
 	// identified by userID in the incident identified by incidentID.
-	CheckChecklistItem(incidentID, userID string)
-
-	// UncheckChecklistItem tracks the uncheking of checked item by the user
-	// identified by userID in the incident identified by incidentID.
-	UncheckChecklistItem(incidentID, userID string)
+	MoveChecklistItem(incidentID, userID string)
 }

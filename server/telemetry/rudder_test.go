@@ -128,6 +128,31 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	require.Equal(t, dummyIncident, incidentFromProperties(properties))
 }
 
+func TestRudderTelemetry(t *testing.T) {
+	data := make(chan rudderPayload)
+	rudderClient, rudderServer := setupRudder(t, data)
+	defer rudderServer.Close()
+
+	for name, tc := range map[string]struct {
+		Event      string
+		FuncToTest func()
+	}{
+		"create incident":    {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident) }},
+		"add checklist item": {eventAddChecklistItem, func() { rudderClient.AddChecklistItem("testincidentid", "testuserid") }},
+	} {
+		t.Run(name, func(t *testing.T) {
+			tc.FuncToTest()
+
+			select {
+			case payload := <-data:
+				assertPayload(t, payload, tc.Event)
+			case <-time.After(time.Second * 1):
+				require.Fail(t, "Did not receive Event message")
+			}
+		})
+	}
+}
+
 func TestRudderTelemetryCreateIncident(t *testing.T) {
 	data := make(chan rudderPayload)
 	rudderClient, rudderServer := setupRudder(t, data)

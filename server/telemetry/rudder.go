@@ -24,6 +24,7 @@ const (
 	eventEditChecklistItem    = "EditChecklistItem"
 	eventCheckChecklistItem   = "CheckChecklistItem"
 	eventUncheckChecklistItem = "UncheckChecklistItem"
+	eventMoveChecklistItem    = "MoveChecklistItem"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -102,9 +103,9 @@ func (t *RudderTelemetry) RemoveChecklistItem(incidentID, userID string) {
 	t.track(eventRemoveChecklistItem, checklistItemProperties(incidentID, userID))
 }
 
-// EditChecklistItem tracks the update of a checklist item by the user
+// RenameChecklistItem tracks the update of a checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) EditChecklistItem(incidentID, userID string) {
+func (t *RudderTelemetry) RenameChecklistItem(incidentID, userID string) {
 	t.track(eventEditChecklistItem, checklistItemProperties(incidentID, userID))
 }
 
@@ -118,4 +119,10 @@ func (t *RudderTelemetry) CheckChecklistItem(incidentID, userID string) {
 // identified by userID in the incident identified by incidentID.
 func (t *RudderTelemetry) UncheckChecklistItem(incidentID, userID string) {
 	t.track(eventUncheckChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// UncheckChecklistItem tracks the uncheking of checked item y the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) MoveChecklistItem(incidentID, userID string) {
+	t.track(eventMoveChecklistItem, checklistItemProperties(incidentID, userID))
 }
