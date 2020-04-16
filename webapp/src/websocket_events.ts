@@ -22,6 +22,9 @@ export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>, get
             return;
         }
         const incident = JSON.parse(msg.data.payload);
+        if (!isIncident(incident)) {
+            return;
+        }
 
         dispatch(receivedIncidentUpdate(incident));
 
