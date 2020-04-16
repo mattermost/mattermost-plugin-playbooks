@@ -28,8 +28,6 @@ interface Props {
 
 export default class IncidentDetails extends React.PureComponent<Props> {
     public render(): JSX.Element {
-        const incidentChannelLink = `/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`;
-
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
@@ -76,11 +74,11 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             {'End Incident'}
                         </button>
                         {
-                            !this.props.allowEndIncident &&
+                            !this.props.allowEndIncident && this.props.channelDetails && this.props.channelDetails.length > 0 &&
                             <div className='help-text'>
                                 {'Go to '}
                                 <Link
-                                    to={incidentChannelLink}
+                                    to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
                                     text={'the incident channel'}
                                 />
                                 {' to enable this action.'}
