@@ -220,14 +220,14 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 
 // ModifyCheckedState checks or unchecks the specified checklist item
 // Indeponant, will not perform any actions if the checklist item is already in the given checked state
-func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, check bool, checklistNumber int, itemNumber int) error {
+func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
 	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
-	if check {
+	if newState {
 		if itemToCheck.Checked {
 			return nil
 		}
@@ -248,7 +248,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, check bool, 
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
-	if !check {
+	if !newState {
 		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
 	}
 	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
