@@ -59,16 +59,14 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 
 func incidentProperties(incident *incident.Incident) map[string]interface{} {
 	return map[string]interface{}{
-		"Header": map[string]interface{}{
-			"ID":              incident.ID,
-			"Name":            incident.Name,
-			"IsActive":        incident.IsActive,
-			"CommanderUserID": incident.CommanderUserID,
-			"TeamID":          incident.TeamID,
-			"CreatedAt":       incident.CreatedAt,
-		},
-		"ChannelIDs": incident.ChannelIDs,
-		"PostID":     incident.PostID,
+		"ID":              incident.ID,
+		"IsActive":        incident.IsActive,
+		"CommanderUserID": incident.CommanderUserID,
+		"TeamID":          incident.TeamID,
+		"CreatedAt":       incident.CreatedAt,
+		"ChannelIDs":      incident.ChannelIDs,
+		"PostID":          incident.PostID,
+		// TODO: Add ChecklistItemsCount when ready
 	}
 }
 
