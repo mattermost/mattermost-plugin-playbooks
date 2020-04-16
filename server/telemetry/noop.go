@@ -23,16 +23,12 @@ func (t *NoopTelemetry) AddChecklistItem(incidentID, userID string) {
 func (t *NoopTelemetry) RemoveChecklistItem(incidentID, userID string) {
 }
 
-// EditChecklistItem does nothing.
-func (t *NoopTelemetry) EditChecklistItem(incidentID, userID string) {
+// RenameChecklistItem does nothing.
+func (t *NoopTelemetry) RenameChecklistItem(incidentID, userID string) {
 }
 
-// CheckChecklistItem does nothing.
-func (t *NoopTelemetry) CheckChecklistItem(incidentID, userID string) {
-}
-
-// UncheckChecklistItem does nothing.
-func (t *NoopTelemetry) UncheckChecklistItem(incidentID, userID string) {
+// ModifyCheckedState does nothing.
+func (t *NoopTelemetry) ModifyCheckedState(incidentID, userID string, newState bool) {
 }
 
 // MoveChecklistItem does nothing.
