@@ -32,4 +32,3 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
 }
 
 export default connect(mapStateToProps, null)(Profile);
-

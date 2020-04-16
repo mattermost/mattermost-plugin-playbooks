@@ -42,15 +42,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePlugin
 
 // HandleError writes err as json into the response.
 func HandleError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusInternalServerError)
-	b, _ := json.Marshal(struct {
-		Error   string `json:"error"`
-		Details string `json:"details"`
-	}{
-		Error:   "An internal error has occurred. Check app server logs for details.",
-		Details: err.Error(),
-	})
-	_, _ = w.Write(b)
+	HandleErrorWithCode(w, http.StatusInternalServerError,
+		"An internal error has occurred. Check app server logs for details.", err)
 }
 
 // ReturnJSON writes the given pointer to object as json with a success response

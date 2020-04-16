@@ -39,6 +39,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
 	incidentRouter.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+	incidentRouter.HandleFunc("/change-commander", handler.changeCommander).Methods(http.MethodPost)
 
 	return handler
 }
@@ -176,15 +177,9 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !h.incidentService.IsCommander(vars["id"], userID) {
-		w.WriteHeader(http.StatusForbidden)
-		b, _ := json.Marshal(struct {
-			Error   string `json:"error"`
-			Details string `json:"details"`
-		}{
-			Error:   "Not authorized",
-			Details: "Only the commander may end an incident",
-		})
-		_, _ = w.Write(b)
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+			errors.New("only the commander may end an incident"))
+		return
 	}
 
 	err := h.incidentService.EndIncident(vars["id"], userID)
@@ -194,7 +189,7 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 // endIncidentFromDialog handles the interactive dialog submission when a user confirms they
@@ -213,7 +208,24 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.incidentService.IsCommander(vars["id"], userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+			errors.New("only the commander may change commander"))
+		return
+	}
+
+	// TODO: do the change here
+	// TODO: make the post (look at Christopher's PR)
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {
