@@ -51,7 +51,7 @@ export function fetchPlaybooks() {
 }
 
 export async function createPlaybook(playbook: Playbook) {
-    const {data} = await doPost(`${apiUrl}/playbooks`, playbook);
+    const {data} = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
 
     return data;
 }
@@ -63,6 +63,9 @@ export const doGet = async (url: string) => {
 };
 
 export const doPost = async (url: string, body = {}) => {
+    console.log('DOING POST. Body: ');
+    console.log(body);
+
     const {data} = await doFetchWithResponse(url, {
         method: 'post',
         body,

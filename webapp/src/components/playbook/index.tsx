@@ -6,7 +6,7 @@ import {closePlaybooksModal} from 'src/actions';
 
 import {playbookModalOpen} from 'src/selectors';
 
-import {ConfigurePlaybookModal} from './configure_playbook';
+import ConfigurePlaybookModal from './configure_playbook';
 
 const mapStateToProps = (state: object): object => {
     return {
@@ -20,4 +20,4 @@ const mapDispatchToProps = (dispatch: Dispatch): object =>
         close: closePlaybooksModal,
     }, dispatch);
 
-export default connect(mapStateToProps, null)(ConfigurePlaybookModal);
+export default connect(mapStateToProps, mapDispatchToProps)(ConfigurePlaybookModal);

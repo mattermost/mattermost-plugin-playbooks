@@ -13,9 +13,10 @@ export interface Incident {
 }
 
 export interface Playbook {
-    id: string;
+    id?: string;
+    parent_id?: string;
     title: string;
-    checklists: CheckList[];
+    checklists?: CheckList[];
 }
 
 export interface CheckList {

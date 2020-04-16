@@ -18,26 +18,29 @@ interface Props {
 export default class ConfigurePlaybookModal extends React.PureComponent<Props> {
     constructor(props: Props) {
         super(props);
+
+        console.log('Original PLAYBOOK: ');
+        console.log(this.props.playbook);
+
         this.state = {
             title: this.props.playbook.title,
         };
     }
 
     public onClose = (): void => {
-        close();
+        this.props.close();
     };
 
     public onSave = (): void => {
         console.log('SAVING PLAYBOOK: ');
-        console.log(this.props.playbook);
 
-        const newPlaybook = {
+        const newPlaybook: Playbook = {
             title: this.state.title,
-            id: '',
-            checklist: [],
         };
 
-        createPlaybook({title: this.state.title});
+        console.log(newPlaybook);
+
+        createPlaybook(newPlaybook);
     };
 
     public handleTitleChange = (e) => {
@@ -47,8 +50,8 @@ export default class ConfigurePlaybookModal extends React.PureComponent<Props> {
     public render(): JSX.Element {
         return (
             <FullScreenModal
-                show={visible}
-                onClose={onClose}
+                show={this.props.visible}
+                onClose={this.onClose}
             >
                 <div>
                     <input
@@ -58,14 +61,15 @@ export default class ConfigurePlaybookModal extends React.PureComponent<Props> {
                         placeholder='Attribute Label'
                         value={this.state.title}
 
-                        onChange={this.handleNameInput}
+                        onChange={this.handleTitleChange}
                     />
                 </div>
                 <div>
                     <button
                         className='btn btn-primary'
 
-                    // onClick={() => this.props.actions.endIncident()}
+                        onClick={this.onSave}
+
                     //  disabled={!this.props.allowEndIncident}
                     >
                         {'Save Playbook'}
