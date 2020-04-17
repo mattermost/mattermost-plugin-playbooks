@@ -49,7 +49,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
             setNewValue('');
             setInputExpanded(false);
         }
-    }
+    };
 
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) {
@@ -109,7 +109,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                         >
                             {
                                 !checklistItems.length && editMode &&
-                                <div className='light mt-1 mb-2'>You don't have any checklist items to edit yet.</div>
+                                <div className='light mt-1 mb-2'>{'You don\'t have any checklist items to edit yet.'}</div>
                             }
                             {checklistItems.map((checklistItem: ChecklistItem, index: number) => {
                                 if (editMode) {
@@ -173,7 +173,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                     }}
                 >
                     <input
-                        autoFocus
+                        autoFocus={true}
                         type='text'
                         value={newvalue}
                         className='form-control mt-2'
@@ -181,7 +181,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                         onKeyDown={(e) => onEscapeKey(e)}
                         onChange={(e) => setNewValue(e.target.value)}
                     />
-                    <small className='light mt-1 d-block'>Press Enter to Add Item or Escape to Cancel</small>
+                    <small className='light mt-1 d-block'>{'Press Enter to Add Item or Escape to Cancel'}</small>
                 </form>
             }
             {!inputExpanded &&
