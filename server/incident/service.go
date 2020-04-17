@@ -2,6 +2,7 @@ package incident
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -61,6 +63,17 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	incdnt.IsActive = true
 	incdnt.ChannelIDs = []string{channel.Id}
 	incdnt.CreatedAt = time.Now().Unix()
+
+	// For now incidents just start with a blank playbook with one empty checklist
+	incdnt.Playbook = playbook.Playbook{
+		Title: "Default Playbook",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Checklist",
+				Items: []playbook.ChecklistItem{},
+			},
+		},
+	}
 
 	if err = s.store.UpdateIncident(incdnt); err != nil {
 		return nil, fmt.Errorf("failed to update incident: %w", err)
@@ -205,9 +218,202 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 	return incdnt.CommanderUserID == userID
 }
 
+// ModifyCheckedState checks or unchecks the specified checklist item
+// Indeponant, will not perform any actions if the checklist item is already in the given checked state
+func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
+	if newState == itemToCheck.Checked {
+		return nil
+	}
+	itemToCheck.Checked = newState
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
+	if !newState {
+		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
+	}
+	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AddChecklistItem adds an item to the specified checklist
+func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error {
+	incidentToModify, err := s.checklistParamsVerify(incidentID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(incidentToModify.Playbook.Checklists[checklistNumber].Items, checklistItem)
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	modifyMessage := fmt.Sprintf("added item \"%v\" to %v checklist.", checklistItem.Title, incidentToModify.Playbook.Checklists[checklistNumber].Title)
+	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveChecklistItem removes the item at the given index from the given checklist
+func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	itemRemoved := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
+	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(incidentToModify.Playbook.Checklists[checklistNumber].Items[:itemNumber], incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber+1:]...)
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	modifyMessage := fmt.Sprintf("removed item \"%v\" from checklist.", itemRemoved.Title)
+	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RenameChecklistItem changes the title of a specified checklist item
+func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	oldTitle := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	modifyMessage := fmt.Sprintf("changed checklist item \"%v\" to be \"%v\" in checklist.", oldTitle, newTitle)
+	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// MoveChecklistItem moves a checklist item to a new location
+func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	if newLocation >= len(incidentToModify.Playbook.Checklists[checklistNumber].Items) {
+		return errors.New("invalid targetNumber")
+	}
+
+	// Move item
+	checklist := incidentToModify.Playbook.Checklists[checklistNumber].Items
+	itemMoved := checklist[itemNumber]
+	// Delete item to move
+	checklist = append(checklist[:itemNumber], checklist[itemNumber+1:]...)
+	// Insert item in new location
+	checklist = append(checklist, playbook.ChecklistItem{})
+	copy(checklist[newLocation+1:], checklist[newLocation:])
+	checklist[newLocation] = itemMoved
+	incidentToModify.Playbook.Checklists[checklistNumber].Items = checklist
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	modifyMessage := fmt.Sprintf("moved checklist item \"%v\" in checklist.", itemMoved.Title)
+	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve incident: %w", err)
+	}
+
+	if !s.hasPermissionToModifyIncident(incidentToModify, userID) {
+		return nil, errors.New("user does not have permission to modify incident")
+	}
+
+	if checklistNumber >= len(incidentToModify.Playbook.Checklists) {
+		return nil, errors.New("invalid checklist number")
+	}
+
+	return incidentToModify, nil
+}
+
+func (s *ServiceImpl) modificationMessage(userID, channelID, message string) error {
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+	}
+
+	if err := s.poster.PostMessage(channelID, user.Username+" "+message); err != nil {
+		return fmt.Errorf("failed to post end incident messsage: %w", err)
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, checklistNumber int, itemNumber int) (*Incident, error) {
+	incidentToModify, err := s.checklistParamsVerify(incidentID, userID, checklistNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemNumber >= len(incidentToModify.Playbook.Checklists[checklistNumber].Items) {
+		return nil, errors.New("invalid item number")
+	}
+
+	return incidentToModify, nil
+}
+
 // NukeDB removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
+}
+
+func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {
+	// Incident main channel membership is required to modify incident
+	incidentMainChannelID := incident.ChannelIDs[0]
+	return s.pluginAPI.User.HasPermissionToChannel(userID, incidentMainChannelID, model.PERMISSION_READ_CHANNEL)
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, error) {

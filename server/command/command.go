@@ -131,13 +131,38 @@ func (r *Runner) actionSelftest() {
 		Title: "testing playbook",
 		Checklists: []playbook.Checklist{
 			{
-				Title: "My list",
+				Title: "Checklist",
 				Items: []playbook.ChecklistItem{
 					{
-						Title: "Do the thing.",
+						Title: "Create Jira ticket",
 					},
 					{
-						Title: "Do the other thing.",
+						Title:   "Add on-call team members",
+						Checked: true,
+					},
+					{
+						Title: "Identify blast radius",
+					},
+					{
+						Title: "Identify impacted services",
+					},
+					{
+						Title: "Collect server data logs",
+					},
+					{
+						Title: "Identify blast Analyze data logs",
+					},
+					{
+						Title: "Align on plan of attack",
+					},
+					{
+						Title: "Confirm resolution",
+					},
+					{
+						Title: "Writeup root-cause analysis",
+					},
+					{
+						Title: "Review post-mortem",
 					},
 				},
 			},
@@ -205,6 +230,59 @@ func (r *Runner) actionSelftest() {
 
 	if deletedPlaybook, _ := r.playbookService.Get(todeleteid); deletedPlaybook.Title != "" {
 		r.postCommandResponse("Playbook should have been vaporised! Where's the kaboom? There was supposed to be an earth-shattering Kaboom!")
+		return
+	}
+
+	createdIncident, err := r.incidentService.CreateIncident(&incident.Incident{
+		Header: incident.Header{
+			Name:            "Cloud Incident 4739",
+			TeamID:          r.args.TeamId,
+			CommanderUserID: r.args.UserId,
+		},
+		Playbook: gotplaybook,
+	})
+	if err != nil {
+		r.postCommandResponse("Unable to create test incident: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{Title: "I should be checked and second"}); err != nil {
+		r.postCommandResponse("Unable to add checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{Title: "I should be deleted"}); err != nil {
+		r.postCommandResponse("Unable to add checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{Title: "I should not say this.", Checked: true}); err != nil {
+		r.postCommandResponse("Unable to add checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, true, 0, 0); err != nil {
+		r.postCommandResponse("Unable to modify checked state: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, false, 0, 2); err != nil {
+		r.postCommandResponse("Unable to modify checked state: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.RemoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 1); err != nil {
+		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.RenameChecklistItem(createdIncident.ID, r.args.UserId, 0, 1, "I should say this! and be unchecked and first!"); err != nil {
+		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
+		return
+	}
+
+	if err := r.incidentService.MoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 0, 1); err != nil {
+		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
 

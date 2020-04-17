@@ -1,13 +1,17 @@
 package incident
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+)
 
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	ChannelIDs         []string `json:"channel_ids"`
-	PostID             string   `json:"post_id"`
-	PlaybookInstanceID string   `json:"playbook_instance_id"`
+	ChannelIDs []string          `json:"channel_ids"`
+	PostID     string            `json:"post_id"`
+	Playbook   playbook.Playbook `json:"playbook"`
 }
 
 // Header holds the summary information of an incident.
@@ -69,6 +73,22 @@ type Service interface {
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
+
+	// ModifyCheckedState checks or unchecks the specified checklist item
+	// Idempotent, will not perform any actions if the checklist item is already in the specified state
+	ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error
+
+	// AddChecklistItem adds an item to the specified checklist
+	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
+
+	// RemoveChecklistItem removes an item from the specified checklist
+	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
+
+	// RenameChecklistItem changes the title of a specified checklist item
+	RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error
+
+	// MoveChecklistItem moves a checklist item from one position to anouther
+	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
