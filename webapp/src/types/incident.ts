@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Playbook, isPlaybook} from './playbook';
+
 export interface Incident {
     id: string;
     name: string;
@@ -10,6 +12,7 @@ export interface Incident {
     channel_ids: string[];
     created_at: number;
     post_id?: string;
+    playbook: Playbook;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,9 +24,11 @@ export function isIncident(arg: any): arg is Incident {
         typeof arg.is_active === 'boolean' &&
         arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
-        arg.channel_ids && Array.isArray(arg.channel_ids) &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        arg.channel_ids && Array.isArray(arg.channel_ids) && arg.channel_ids.every((item: any) => typeof item === 'string') &&
         arg.created_at && typeof arg.created_at === 'number' &&
-        optional;
+        optional &&
+        arg.playbook && isPlaybook(arg.playbook);
 }
 
 export enum RHSState {

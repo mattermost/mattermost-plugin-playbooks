@@ -12,6 +12,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
+import {ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
@@ -58,6 +59,65 @@ export async function setCommander(incidentId: string, commanderId: string) {
     } catch (error) {
         return {error};
     }
+}
+
+export async function checkItem(incidentID: string, checklistNum: number, itemNum: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/check`, {
+        method: 'put',
+        body: '',
+    });
+
+    return data;
+}
+
+export async function uncheckItem(incidentID: string, checklistNum: number, itemNum: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/uncheck`, {
+        method: 'put',
+        body: '',
+    });
+
+    return data;
+}
+
+export async function clientAddChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/add`, {
+        method: 'put',
+        body: JSON.stringify(checklistItem),
+    });
+
+    return data;
+}
+
+export async function clientRemoveChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
+        method: 'delete',
+        body: '',
+    });
+
+    return data;
+}
+
+export async function clientRenameChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newTitle: string) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
+        method: 'put',
+        body: JSON.stringify({
+            title: newTitle,
+        }),
+    });
+
+    return data;
+}
+
+export async function clientReorderChecklist(incidentID: string, checklistNum: number, itemNum: number, newLocation: number) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/reorder`, {
+        method: 'put',
+        body: JSON.stringify({
+            item_num: itemNum,
+            new_location: newLocation,
+        }),
+    });
+
+    return data;
 }
 
 export const doGet = async (url: string) => {

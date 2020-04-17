@@ -6,7 +6,10 @@ import React from 'react';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
+import {ChecklistDetails} from 'src/components/checklist/checklist';
+
 import {Incident} from 'src/types/incident';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 import ProfileSelector from 'src/components/rhs/profile_selector/profile_selector';
 import Link from 'src/components/rhs/link';
@@ -22,6 +25,11 @@ interface Props {
     allowEndIncident: boolean;
     actions: {
         endIncident: () => void;
+        modifyChecklistItemState: (incidentID: string, checklistNum: number, itemNum: number, checked: boolean) => void;
+        addChecklistItem: (incidentID: string, checklistNum: number, checklistItem: ChecklistItem) => void;
+        removeChecklistItem: (incidentID: string, checklistNum: number, itemNum: number) => void;
+        renameChecklistItem: (incidentID: string, checklistNum: number, itemNum: number, newtitle: string) => void;
+        reorderChecklist: (incidentID: string, checklistNum: number, itemNum: number, newPosition: number) => void;
     };
 }
 
@@ -40,15 +48,27 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     />
                 </div>
 
-                {/* Checkbox example
-                    <div className='inner-container'>
-                        <div className='title'>{'Checklist'}</div>
-                        <Checkbox
-                            checked={true}
-                            text={'Triage Issue in Jira'}
-                        />
-                    </div>
-                */}
+                {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
+                    <ChecklistDetails
+                        checklist={checklist}
+                        key={checklist.title + index}
+                        onChange={(itemNum: number, checked: boolean) => {
+                            this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
+                        }}
+                        addItem={(checklistItem: ChecklistItem) => {
+                            this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
+                        }}
+                        removeItem={(itemNum: number) => {
+                            this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
+                        }}
+                        editItem={(itemNum: number, newTitle: string) => {
+                            this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
+                        }}
+                        reorderItems={(itemNum: number, newPosition: number) => {
+                            this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
+                        }}
+                    />
+                ))}
 
                 {
                     this.props.channelDetails.length > 0 &&

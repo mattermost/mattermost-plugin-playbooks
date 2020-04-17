@@ -3,7 +3,6 @@ package playbook
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
 	ID         string      `json:"id"`
-	ParentID   string      `json:"parent_id"`
 	Title      string      `json:"title"`
 	Checklists []Checklist `json:"checklists"`
 }
