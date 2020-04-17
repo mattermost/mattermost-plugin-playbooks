@@ -14,6 +14,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
@@ -189,16 +190,13 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !h.incidentService.IsCommander(vars["id"], userID) {
-		w.WriteHeader(http.StatusForbidden)
-		b, _ := json.Marshal(struct {
-			Error   string `json:"error"`
-			Details string `json:"details"`
-		}{
-			Error:   "Not authorized",
-			Details: "Only the commander may end an incident",
-		})
-		_, _ = w.Write(b)
+	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+			return
+		}
+		HandleError(w, err)
+		return
 	}
 
 	err := h.incidentService.EndIncident(vars["id"], userID)
@@ -208,7 +206,7 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 // endIncidentFromDialog handles the interactive dialog submission when a user confirms they
@@ -227,7 +225,7 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {
@@ -251,7 +249,7 @@ func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, c
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) check(w http.ResponseWriter, r *http.Request) {
@@ -284,7 +282,7 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
@@ -308,7 +306,7 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
@@ -340,7 +338,7 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Request) {
@@ -368,7 +366,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {

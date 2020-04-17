@@ -22,7 +22,6 @@ interface Props {
     commander: UserProfile;
     profileUri: string;
     channelDetails: ChannelWithTeamData[];
-    isCommander: boolean;
     allowEndIncident: boolean;
     actions: {
         endIncident: () => void;
@@ -85,7 +84,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 }
 
                 {
-                    this.props.isCommander &&
+                    this.props.channelDetails?.length > 0 &&
                     <div className='footer-div'>
                         <button
                             className='btn btn-primary'
