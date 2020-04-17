@@ -61,8 +61,7 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 		data <- p
 	}))
 
-	client, err := rudder.NewWithConfig("dummy_key", rudder.Config{
-		Endpoint:  server.URL,
+	client, err := rudder.NewWithConfig("dummy_key", server.URL, rudder.Config{
 		BatchSize: 1,
 		Interval:  1 * time.Millisecond,
 		Verbose:   true,

@@ -40,9 +40,7 @@ func NewRudder(dataPlaneURL, writeKey, diagnosticID string, serverVersion string
 		return nil, fmt.Errorf("serverVersion should not be empty")
 	}
 
-	client, err := rudder.NewWithConfig(writeKey, rudder.Config{
-		Endpoint: dataPlaneURL,
-	})
+	client, err := rudder.NewWithConfig(writeKey, dataPlaneURL, rudder.Config{})
 	if err != nil {
 		return nil, err
 	}
