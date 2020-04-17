@@ -36,9 +36,6 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service) *P
 func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {
 	var playbook playbook.Playbook
 
-	fmt.Printf("_---- CREATE PLAYBOOK -----")
-	fmt.Printf(r.Body)
-
 	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
 		HandleError(w, fmt.Errorf("unable to decode playbook: %w", err))
 		return

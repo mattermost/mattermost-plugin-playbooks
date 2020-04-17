@@ -12,6 +12,7 @@ import {createPlaybook} from 'src/client';
 interface Props {
     visible: boolean;
     close: () => object;
+    fetchPlaybooks: () => void;
     playbook: Playbook;
 }
 
@@ -19,12 +20,21 @@ export default class ConfigurePlaybookModal extends React.PureComponent<Props> {
     constructor(props: Props) {
         super(props);
 
-        console.log('Original PLAYBOOK: ');
-        console.log(this.props.playbook);
-
         this.state = {
-            title: this.props.playbook.title,
+            title: this.props.playbook?.title,
         };
+    }
+
+    public componentDidUpdate(prevProps: Props) {
+        if (this.props.playbook !== prevProps.playbook) {
+            this.setState({title: this.props.playbook.title});
+        }
+    }
+
+    public componentDidMount(): void {
+        if (!this.props.playbook) {
+            this.props.fetchPlaybooks();
+        }
     }
 
     public onClose = (): void => {
@@ -32,13 +42,9 @@ export default class ConfigurePlaybookModal extends React.PureComponent<Props> {
     };
 
     public onSave = (): void => {
-        console.log('SAVING PLAYBOOK: ');
-
         const newPlaybook: Playbook = {
             title: this.state.title,
         };
-
-        console.log(newPlaybook);
 
         createPlaybook(newPlaybook);
     };
@@ -67,14 +73,16 @@ export default class ConfigurePlaybookModal extends React.PureComponent<Props> {
                 <div>
                     <button
                         className='btn btn-primary'
-
                         onClick={this.onSave}
-
-                    //  disabled={!this.props.allowEndIncident}
                     >
-                        {'Save Playbook'}
+                        {'Save'}
                     </button>
-
+                    <button
+                        className='btn'
+                        onClick={this.props.close}
+                    >
+                        {'Cancel'}
+                    </button>
                 </div>
             </FullScreenModal>
         );

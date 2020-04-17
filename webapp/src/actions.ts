@@ -35,13 +35,14 @@ import {
     ReceivedIncidentUpdate,
     SetLoading,
     SetClientId,
-    SetBackstageModal,
-    SET_BACKSTAGE_MODAL_OPEN,
+    SetPlaybookModal,
     SET_PLAYBOOKS_MODAL_OPEN,
+    ReceivedPlaybooks,
+    RECEIVED_PlAYBOOKS,
 } from './types/actions';
 
-import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand} from './client';
+import {Incident, RHSState, Playbook} from './types/incident';
+import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand, clientFetchPlaybooks} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -114,6 +115,17 @@ export function startIncident(postId?: string) {
 export function endIncident() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, '/incident end');
+    };
+}
+
+export function fetchPlaybooks() {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        try {
+            const playbooks = await clientFetchPlaybooks();
+            dispatch(receivedPlaybooks(playbooks));
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
     };
 }
 
@@ -199,16 +211,23 @@ export function setClientId(clientId: string): SetClientId {
     };
 }
 
-export function openPlaybooksModal(): SetBackstageModal {
+export function openPlaybooksModal(): SetPlaybookModal {
     return {
         type: SET_PLAYBOOKS_MODAL_OPEN,
         open: true,
     };
 }
 
-export function closePlaybooksModal(): SetBackstageModal {
+export function closePlaybooksModal(): SetPlaybookModal {
     return {
         type: SET_PLAYBOOKS_MODAL_OPEN,
         open: false,
+    };
+}
+
+function receivedPlaybooks(playbooks: Playbook[]): ReceivedPlaybooks {
+    return {
+        type: RECEIVED_PlAYBOOKS,
+        playbooks,
     };
 }

@@ -5,7 +5,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {createSelector} from 'reselect';
 
 import {pluginId} from './manifest';
-import {Incident} from './types/incident';
+import {Incident, Playbook} from './types/incident';
 
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 const allIncidents = (state: GlobalState) => pluginState(state).incidents;
@@ -38,3 +38,9 @@ export const isLoading = (state: GlobalState) => pluginState(state).isLoading;
 export const clientId = (state: GlobalState) => pluginState(state).clientId;
 
 export const playbookModalOpen = (state: GlobalState) => pluginState(state).playbooksModalOpen;
+
+//export const playbooks = (state: GlobalState): Playbook[] => pluginState(state).playbooks;
+
+export const playbooks = (state: GlobalState) => {
+    return pluginState(state).playbooks;
+};

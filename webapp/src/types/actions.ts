@@ -5,7 +5,7 @@ import {RECEIVED_DIALOG_TRIGGER_ID} from 'mattermost-redux/action_types/integrat
 
 import {pluginId} from 'src/manifest';
 
-import {Incident, RHSState} from './incident';
+import {Incident, RHSState, Playbook} from './incident';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
@@ -13,6 +13,7 @@ export const RECEIVED_RHS_STATE = pluginId + '_rhs_state';
 export const RECEIVED_INCIDENTS = pluginId + '_received_incidents';
 export const RECEIVED_INCIDENT_DETAILS = pluginId + '_received_incident_details';
 export const RECEIVED_INCIDENT_UPDATE = pluginId + '_received_incident_update';
+export const RECEIVED_PlAYBOOKS = pluginId + '_received_playbooks';
 export const RECEIVED_ERROR = pluginId + '_received_error';
 export const SET_LOADING = pluginId + '_set_loading';
 export const SET_CLIENT_ID = pluginId + '_set_client_id';
@@ -71,4 +72,9 @@ export interface SetClientId {
 export interface SetPlaybookModal {
     type: typeof SET_PLAYBOOKS_MODAL_OPEN;
     open: boolean;
+}
+
+export interface ReceivedPlaybooks {
+    type: typeof RECEIVED_PlAYBOOKS;
+    playbooks: Playbook[];
 }
