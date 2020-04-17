@@ -43,32 +43,44 @@ $font-family: Open Sans;
         flex-direction: row;
         align-items: baseline;
         justify-content: space-between;
-        padding: 10px 22px 10px 22px;
-        background: #f5f5f5;
-        border-bottom: 1px solid #dddddd;
+        padding: 0.8rem 1.6rem 0.8rem 2rem;
+        background: var(--center-channel-color-04);
+        border-bottom: 1px solid var(--center-channel-color-16);
 
         .fa {
             cursor: pointer;
             color: var(--center-channel-color-60);
-        }
-
-        .fa-chevron-left {
-            padding: 0px 12px 0px 0px;
+            font-size: 2rem;
+            padding-right: 1.2rem;
         }
 
         .start-incident {
+            font-size: 16px;
             border: 0;
             background: transparent;
-            width: 40px;
-            height: 30px;
+            width: 3.2rem;
+            height: 3.2rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            color: var(--center-channel-color-56);
+
+            &:hover {
+                background: var(--center-channel-color-08);
+                color: var(--center-channel-color-72);
+            }
+
+            &:active  {
+                background: var(--button-bg-08);
+                color: var(--button-bg);
+            }
         }
 
         .title {
-            font-style: normal;
-            font-weight: normal;
             font-size: 16px;
             line-height: 34px;
-            color: #000000;
         }
 
         .incident-details {
@@ -78,19 +90,7 @@ $font-family: Open Sans;
     }
 
     .loading-container {
-        background: #ffffff;
-        color: var(--center-channel-color-60);
-        display: flex;
-        justify-content: center;
+        text-align: center;
         padding: 20px;
-
-        > span {
-            font-style: normal;
-            font-weight: normal;
-            font-size: 16px;
-            line-height: 24px;
-            color: #000000;
-            padding-left: 10px;
-        }
     }
 }

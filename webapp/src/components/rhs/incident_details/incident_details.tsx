@@ -6,7 +6,10 @@ import React from 'react';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
+import {ChecklistDetails} from 'src/components/checklist/checklist';
+
 import {Incident} from 'src/types/incident';
+import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 import Profile from 'src/components/rhs/profile';
 
@@ -19,17 +22,20 @@ interface Props {
     commander: UserProfile;
     profileUri: string;
     channelDetails: ChannelWithTeamData[];
-    isCommander: boolean;
-    allowEndIncident: boolean;
+    involvedInIncident: boolean;
+    viewingIncidentChannel: boolean;
     actions: {
         endIncident: () => void;
+        modifyChecklistItemState: (incidentID: string, checklistNum: number, itemNum: number, checked: boolean) => void;
+        addChecklistItem: (incidentID: string, checklistNum: number, checklistItem: ChecklistItem) => void;
+        removeChecklistItem: (incidentID: string, checklistNum: number, itemNum: number) => void;
+        renameChecklistItem: (incidentID: string, checklistNum: number, itemNum: number, newtitle: string) => void;
+        reorderChecklist: (incidentID: string, checklistNum: number, itemNum: number, newPosition: number) => void;
     };
 }
 
 export default class IncidentDetails extends React.PureComponent<Props> {
     public render(): JSX.Element {
-        const incidentChannelLink = `/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`;
-
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
@@ -39,18 +45,31 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     />
                 </div>
 
-                {/* Checkbox example
-                    <div className='inner-container'>
-                        <div className='title'>{'Checklist'}</div>
-                        <Checkbox
-                            checked={true}
-                            text={'Triage Issue in Jira'}
-                        />
-                    </div>
-                */}
+                {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
+                    <ChecklistDetails
+                        checklist={checklist}
+                        enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                        key={checklist.title + index}
+                        onChange={(itemNum: number, checked: boolean) => {
+                            this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
+                        }}
+                        addItem={(checklistItem: ChecklistItem) => {
+                            this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
+                        }}
+                        removeItem={(itemNum: number) => {
+                            this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
+                        }}
+                        editItem={(itemNum: number, newTitle: string) => {
+                            this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
+                        }}
+                        reorderItems={(itemNum: number, newPosition: number) => {
+                            this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
+                        }}
+                    />
+                ))}
 
                 {
-                    this.props.channelDetails.length > 0 &&
+                    this.props.involvedInIncident &&
                     <div className='inner-container'>
                         <div className='title'>{'Channels'}</div>
                         {
@@ -66,24 +85,24 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 }
 
                 {
-                    this.props.isCommander &&
+                    this.props.involvedInIncident &&
                     <div className='footer-div'>
                         <button
                             className='btn btn-primary'
                             onClick={() => this.props.actions.endIncident()}
-                            disabled={!this.props.allowEndIncident}
+                            disabled={!this.props.viewingIncidentChannel}
                         >
                             {'End Incident'}
                         </button>
                         {
-                            !this.props.allowEndIncident &&
+                            this.props.involvedInIncident && !this.props.viewingIncidentChannel &&
                             <div className='help-text'>
                                 {'Go to '}
                                 <Link
-                                    to={incidentChannelLink}
+                                    to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
                                     text={'the incident channel'}
                                 />
-                                {' to enable this action.'}
+                                {' to make changes.'}
                             </div>
                         }
                     </div>

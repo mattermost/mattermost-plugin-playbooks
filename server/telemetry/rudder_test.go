@@ -8,16 +8,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	rudder "github.com/rudderlabs/analytics-go"
 	"github.com/stretchr/testify/require"
 )
 
-var diagnosticID = "dummy_diagnostic_id"
+var (
+	diagnosticID    = "dummy_diagnostic_id"
+	serverVersion   = "dummy_server_version"
+	dummyIncidentID = "dummy_incident_id"
+	dummyUserID     = "dummy_user_id"
+)
 
 func TestNewRudder(t *testing.T) {
-	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID)
+	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID, serverVersion)
 	require.Equal(t, rudder.diagnosticID, diagnosticID)
+	require.Equal(t, rudder.serverVersion, serverVersion)
 	require.NoError(t, err)
 }
 
@@ -53,15 +61,14 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 		data <- p
 	}))
 
-	client, err := rudder.NewWithConfig("dummy_key", rudder.Config{
-		Endpoint:  server.URL,
+	client, err := rudder.NewWithConfig("dummy_key", server.URL, rudder.Config{
 		BatchSize: 1,
 		Interval:  1 * time.Millisecond,
 		Verbose:   true,
 	})
 	require.NoError(t, err)
 
-	return &RudderTelemetry{client, diagnosticID}, server
+	return &RudderTelemetry{client, diagnosticID, serverVersion}, server
 }
 
 var dummyIncident = &incident.Incident{
@@ -75,6 +82,17 @@ var dummyIncident = &incident.Incident{
 	},
 	ChannelIDs: []string{"channel_id_1"},
 	PostID:     "post_id",
+	Playbook: playbook.Playbook{
+		Title: "test",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Checklist",
+				Items: []playbook.ChecklistItem{
+					{Title: "Test Item"},
+				},
+			},
+		},
+	},
 }
 
 func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
@@ -83,15 +101,14 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	incidentFromProperties := func(properties map[string]interface{}) *incident.Incident {
 		require.Contains(t, properties, "ChannelIDs")
 		require.Contains(t, properties, "PostID")
-		require.Contains(t, properties, "Header")
 
-		header := properties["Header"].(map[string]interface{})
-		require.Contains(t, header, "ID")
-		require.Contains(t, header, "Name")
-		require.Contains(t, header, "IsActive")
-		require.Contains(t, header, "CommanderUserID")
-		require.Contains(t, header, "TeamID")
-		require.Contains(t, header, "CreatedAt")
+		require.Contains(t, properties, "ID")
+		require.Contains(t, properties, "IsActive")
+		require.Contains(t, properties, "CommanderUserID")
+		require.Contains(t, properties, "TeamID")
+		require.Contains(t, properties, "CreatedAt")
+		require.Contains(t, properties, "NumChecklists")
+		require.Contains(t, properties, "TotalChecklistItems")
 
 		ids := properties["ChannelIDs"].([]interface{})
 		channelIDs := make([]string, len(ids))
@@ -101,50 +118,66 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 
 		return &incident.Incident{
 			Header: incident.Header{
-				ID:              header["ID"].(string),
-				Name:            header["Name"].(string),
-				IsActive:        header["IsActive"].(bool),
-				CommanderUserID: header["CommanderUserID"].(string),
-				TeamID:          header["TeamID"].(string),
-				CreatedAt:       int64(header["CreatedAt"].(float64)),
+				ID:              properties["ID"].(string),
+				Name:            dummyIncident.Name, // not included in the tracked event
+				IsActive:        properties["IsActive"].(bool),
+				CommanderUserID: properties["CommanderUserID"].(string),
+				TeamID:          properties["TeamID"].(string),
+				CreatedAt:       int64(properties["CreatedAt"].(float64)),
 			},
 			ChannelIDs: channelIDs,
 			PostID:     properties["PostID"].(string),
+			Playbook:   dummyIncident.Playbook, // not included as self in tracked event
 		}
 	}
 
 	require.Len(t, actual.Batch, 1)
 	require.Equal(t, diagnosticID, actual.Batch[0].UserID)
 	require.Equal(t, expectedEvent, actual.Batch[0].Event)
-	require.Equal(t, dummyIncident, incidentFromProperties(actual.Batch[0].Properties))
-}
 
-func TestRudderTelemetryCreateIncident(t *testing.T) {
-	data := make(chan rudderPayload)
-	rudderClient, rudderServer := setupRudder(t, data)
-	defer rudderServer.Close()
+	properties := actual.Batch[0].Properties
+	require.Contains(t, properties, "ServerVersion")
+	require.Equal(t, properties["ServerVersion"], serverVersion)
+	require.Contains(t, properties, "PluginVersion")
+	require.Equal(t, properties["PluginVersion"], config.Manifest.Version)
 
-	rudderClient.CreateIncident(dummyIncident)
-
-	select {
-	case payload := <-data:
-		assertPayload(t, payload, eventCreateIncident)
-	case <-time.After(time.Second * 1):
-		require.Fail(t, "Did not receive Event message")
+	if expectedEvent == eventCreateIncident || expectedEvent == eventEndIncident {
+		require.Equal(t, dummyIncident, incidentFromProperties(properties))
+	} else {
+		require.Contains(t, properties, "IncidentID")
+		require.Equal(t, properties["IncidentID"], dummyIncidentID)
+		require.Contains(t, properties, "UserID")
+		require.Equal(t, properties["UserID"], dummyUserID)
 	}
 }
 
-func TestRudderTelemetryEndIncident(t *testing.T) {
+func TestRudderTelemetry(t *testing.T) {
 	data := make(chan rudderPayload)
 	rudderClient, rudderServer := setupRudder(t, data)
 	defer rudderServer.Close()
 
-	rudderClient.EndIncident(dummyIncident)
+	for name, tc := range map[string]struct {
+		Event      string
+		FuncToTest func()
+	}{
+		"create incident":                       {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident) }},
+		"end incident":                          {eventEndIncident, func() { rudderClient.EndIncident(dummyIncident) }},
+		"add checklist item":                    {eventAddChecklistItem, func() { rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID) }},
+		"remove checklist item":                 {eventRemoveChecklistItem, func() { rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID) }},
+		"rename checklist item":                 {eventRenameChecklistItem, func() { rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID) }},
+		"modify checked checklist item check":   {eventCheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true) }},
+		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false) }},
+		"move checklist item":                   {eventMoveChecklistItem, func() { rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID) }},
+	} {
+		t.Run(name, func(t *testing.T) {
+			tc.FuncToTest()
 
-	select {
-	case payload := <-data:
-		assertPayload(t, payload, eventEndIncident)
-	case <-time.After(time.Second * 1):
-		require.Fail(t, "Did not receive Event message")
+			select {
+			case payload := <-data:
+				assertPayload(t, payload, tc.Event)
+			case <-time.After(time.Second * 1):
+				require.Fail(t, "Did not receive Event message")
+			}
+		})
 	}
 }

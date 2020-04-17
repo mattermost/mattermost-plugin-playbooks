@@ -62,6 +62,11 @@ function incidentDetails(state = {}, action) {
     switch (action.type) {
     case RECEIVED_INCIDENT_DETAILS:
         return action.incidentDetails || {};
+    case RECEIVED_INCIDENT_UPDATE:
+        if (state.id === action.incident.id) {
+            return action.incident;
+        }
+        return state;
     default:
         return state;
     }

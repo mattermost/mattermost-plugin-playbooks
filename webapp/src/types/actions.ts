@@ -6,6 +6,7 @@ import {RECEIVED_DIALOG_TRIGGER_ID} from 'mattermost-redux/action_types/integrat
 import {pluginId} from 'src/manifest';
 
 import {Incident, RHSState, Playbook} from './incident';
+import {Playbook} from './playbook';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
@@ -42,6 +43,7 @@ export interface ReceivedIncidents {
 export interface ReceivedIncidentDetails {
     type: typeof RECEIVED_INCIDENT_DETAILS;
     incidentDetails: Incident;
+    playbook: Playbook;
 }
 
 export interface ReceivedIncidentUpdate {

@@ -14,6 +14,7 @@ import {
     setRHSState,
     setRHSOpen,
 } from 'src/actions';
+
 import {activeIncidents, incidentDetails, rhsState, isLoading} from 'src/selectors';
 
 import RightHandSidebar from './rhs_main';
