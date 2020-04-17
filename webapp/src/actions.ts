@@ -15,6 +15,8 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
+import {ChecklistItem} from 'src/types/playbook';
+
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_RHS_STATE,
@@ -38,7 +40,17 @@ import {
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
-import {fetchIncidents, fetchIncidentDetails, clientExecuteCommand} from './client';
+import {
+    fetchIncidents,
+    fetchIncidentDetails,
+    clientExecuteCommand,
+    checkItem,
+    uncheckItem,
+    clientAddChecklistItem,
+    clientRemoveChecklistItem,
+    clientRenameChecklistItem,
+    clientReorderChecklist,
+} from './client';
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -111,6 +123,60 @@ export function startIncident(postId?: string) {
 export function endIncident() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, '/incident end');
+    };
+}
+
+export function modifyChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, checked: boolean) {
+    return async () => {
+        try {
+            if (checked) {
+                checkItem(incidentID, checklistNum, itemNum);
+            } else {
+                uncheckItem(incidentID, checklistNum, itemNum);
+            }
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function addChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
+    return async () => {
+        try {
+            await clientAddChecklistItem(incidentID, checklistNum, checklistItem);
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function removeChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
+    return async () => {
+        try {
+            await clientRemoveChecklistItem(incidentID, checklistNum, itemNum);
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function renameChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newTitle: string) {
+    return async () => {
+        try {
+            await clientRenameChecklistItem(incidentID, checklistNum, itemNum, newTitle);
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
+    };
+}
+
+export function reorderChecklist(incidentID: string, checklistNum: number, itemNum: number, newLocation: number) {
+    return async () => {
+        try {
+            await clientReorderChecklist(incidentID, checklistNum, itemNum, newLocation);
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
     };
 }
 

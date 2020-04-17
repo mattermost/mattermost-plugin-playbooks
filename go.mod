@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/lib/pq v1.3.0 // indirect
 	github.com/mattermost/ldap v3.0.4+incompatible // indirect
-	github.com/mattermost/mattermost-plugin-api v0.0.10-0.20200414234534-fccce72b9f11
+	github.com/mattermost/mattermost-plugin-api v0.0.10
 	github.com/mattermost/mattermost-server/v5 v5.21.0
 	github.com/mholt/archiver/v3 v3.3.0
 	github.com/oklog/run v1.1.0 // indirect

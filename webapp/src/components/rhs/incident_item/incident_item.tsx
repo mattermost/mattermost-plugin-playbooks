@@ -34,8 +34,8 @@ export default class IncidentItem extends React.PureComponent<Props> {
                     key={this.props.incident.id}
                     onClick={this.props.onClick}
                 >
-                    <div className='title'>
-                        {this.props.incident.name}
+                    <div className='pb-2'>
+                        <strong>{this.props.incident.name}</strong>
                     </div>
                     <div>
                         <Profile userId={this.props.incident.commander_user_id}/>
