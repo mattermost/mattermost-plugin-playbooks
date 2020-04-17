@@ -166,8 +166,8 @@ func TestRudderTelemetry(t *testing.T) {
 		"add checklist item":                    {eventAddChecklistItem, func() { rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID) }},
 		"remove checklist item":                 {eventRemoveChecklistItem, func() { rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID) }},
 		"rename checklist item":                 {eventRenameChecklistItem, func() { rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID) }},
-		"modify checked checklist item check":   {eventModifyCheckedStateChecked, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true) }},
-		"modify checked checklist item uncheck": {eventModifyCheckedStateUnchecked, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false) }},
+		"modify checked checklist item check":   {eventCheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true) }},
+		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false) }},
 		"move checklist item":                   {eventMoveChecklistItem, func() { rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID) }},
 	} {
 		t.Run(name, func(t *testing.T) {

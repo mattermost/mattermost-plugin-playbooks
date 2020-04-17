@@ -17,14 +17,14 @@ type RudderTelemetry struct {
 
 // Unique strings that identify each of the tracked events
 const (
-	eventCreateIncident              = "CreateIncident"
-	eventEndIncident                 = "EndIncident"
-	eventAddChecklistItem            = "AddChecklistItem"
-	eventRemoveChecklistItem         = "RemoveChecklistItem"
-	eventRenameChecklistItem         = "RenameChecklistItem"
-	eventModifyCheckedStateChecked   = "ModifyCheckedStateChecked"
-	eventModifyCheckedStateUnchecked = "ModifyCheckedStateUnchecked"
-	eventMoveChecklistItem           = "MoveChecklistItem"
+	eventCreateIncident       = "CreateIncident"
+	eventEndIncident          = "EndIncident"
+	eventAddChecklistItem     = "AddChecklistItem"
+	eventRemoveChecklistItem  = "RemoveChecklistItem"
+	eventRenameChecklistItem  = "RenameChecklistItem"
+	eventCheckChecklistItem   = "CheckChecklistItem"
+	eventUncheckChecklistItem = "UncheckChecklistItem"
+	eventMoveChecklistItem    = "MoveChecklistItem"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -119,9 +119,9 @@ func (t *RudderTelemetry) RenameChecklistItem(incidentID, userID string) {
 // identified by userID in the incident identified by incidentID.
 func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, newState bool) {
 	if newState {
-		t.track(eventModifyCheckedStateChecked, checklistItemProperties(incidentID, userID))
+		t.track(eventCheckChecklistItem, checklistItemProperties(incidentID, userID))
 	} else {
-		t.track(eventModifyCheckedStateUnchecked, checklistItemProperties(incidentID, userID))
+		t.track(eventUncheckChecklistItem, checklistItemProperties(incidentID, userID))
 	}
 }
 
