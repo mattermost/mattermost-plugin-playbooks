@@ -15,12 +15,16 @@ type RudderTelemetry struct {
 	serverVersion string
 }
 
+// Unique strings that identify each of the tracked events
 const (
-	// eventCreateIncident is the Event string sent to Rudder when a new incident is created
-	eventCreateIncident = "CreateIncident"
-
-	// eventEndIncident is the Event string sent to Rudder when an incident is ended
-	eventEndIncident = "EndIncident"
+	eventCreateIncident       = "CreateIncident"
+	eventEndIncident          = "EndIncident"
+	eventAddChecklistItem     = "AddChecklistItem"
+	eventRemoveChecklistItem  = "RemoveChecklistItem"
+	eventRenameChecklistItem  = "RenameChecklistItem"
+	eventCheckChecklistItem   = "CheckChecklistItem"
+	eventUncheckChecklistItem = "UncheckChecklistItem"
+	eventMoveChecklistItem    = "MoveChecklistItem"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -58,15 +62,21 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 }
 
 func incidentProperties(incident *incident.Incident) map[string]interface{} {
+	totalChecklistItems := 0
+	for _, checklist := range incident.Playbook.Checklists {
+		totalChecklistItems += len(checklist.Items)
+	}
+
 	return map[string]interface{}{
-		"ID":              incident.ID,
-		"IsActive":        incident.IsActive,
-		"CommanderUserID": incident.CommanderUserID,
-		"TeamID":          incident.TeamID,
-		"CreatedAt":       incident.CreatedAt,
-		"ChannelIDs":      incident.ChannelIDs,
-		"PostID":          incident.PostID,
-		// TODO: Add ChecklistItemsCount when ready
+		"ID":                  incident.ID,
+		"IsActive":            incident.IsActive,
+		"CommanderUserID":     incident.CommanderUserID,
+		"TeamID":              incident.TeamID,
+		"CreatedAt":           incident.CreatedAt,
+		"ChannelIDs":          incident.ChannelIDs,
+		"PostID":              incident.PostID,
+		"NumChecklists":       len(incident.Playbook.Checklists),
+		"TotalChecklistItems": totalChecklistItems,
 	}
 }
 
@@ -78,4 +88,45 @@ func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) {
 // EndIncident tracks the end of the incident passed.
 func (t *RudderTelemetry) EndIncident(incident *incident.Incident) {
 	t.track(eventEndIncident, incidentProperties(incident))
+}
+
+func checklistItemProperties(incidentID, userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"IncidentID": incidentID,
+		"UserID":     userID,
+	}
+}
+
+// AddChecklistItem tracks the creation of a new checklist item by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) AddChecklistItem(incidentID, userID string) {
+	t.track(eventAddChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// RemoveChecklistItem tracks the removal of a checklist item by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) RemoveChecklistItem(incidentID, userID string) {
+	t.track(eventRemoveChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// RenameChecklistItem tracks the update of a checklist item by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) RenameChecklistItem(incidentID, userID string) {
+	t.track(eventRenameChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// ModifyCheckedState tracks the checking and unchecking of items by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, newState bool) {
+	if newState {
+		t.track(eventCheckChecklistItem, checklistItemProperties(incidentID, userID))
+	} else {
+		t.track(eventUncheckChecklistItem, checklistItemProperties(incidentID, userID))
+	}
+}
+
+// MoveChecklistItem tracks the movment of checklist items by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) MoveChecklistItem(incidentID, userID string) {
+	t.track(eventMoveChecklistItem, checklistItemProperties(incidentID, userID))
 }

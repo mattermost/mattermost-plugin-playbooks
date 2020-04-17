@@ -7,6 +7,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
@@ -96,8 +97,13 @@ func (r *Runner) actionStart(args []string) {
 
 func (r *Runner) actionEnd() {
 	incidentID := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if !r.incidentService.IsCommander(incidentID, r.args.UserId) {
-		r.postCommandResponse("Only the commander may end an incident.")
+
+	if err := permissions.CheckHasPermissionsToIncidentChannel(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
 		return
 	}
 
