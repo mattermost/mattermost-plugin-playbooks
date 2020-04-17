@@ -82,11 +82,18 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                     className='RightHandSidebar'
                 >
                     {
-                        this.props.isLoading &&
-                        <div className='loading-container'>
-                            <i className='fa fa-spin fa-refresh fa-2x'/>
-                            <span>{'Loading...'}</span>
-                        </div>
+                        this.props.isLoading && !this.props.incident.name &&
+                        <React.Fragment>
+                            <div className='navigation-bar'>
+                                <div className='incident-details'>
+                                    <div className='title'>{'Incident List'}</div>
+                                </div>
+                            </div>
+                            <div className='loading-container'>
+                                <i className='fa fa-spin fa-spinner mr-2'/>
+                                <span>{'Loading...'}</span>
+                            </div>
+                        </React.Fragment>
                     }
                     {
                         this.props.rhsState === RHSState.List && !this.props.isLoading &&
@@ -99,7 +106,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                                 onClick={() => this.props.actions.startIncident()}
                             >
                                 <i
-                                    className='fa fa-plus'
+                                    className='icon icon-plus'
                                 />
                             </button>
                         </div>
@@ -109,7 +116,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                         <div className='navigation-bar'>
                             <div className='incident-details'>
                                 <i
-                                    className='fa fa-chevron-left'
+                                    className='fa fa-angle-left'
                                     onClick={this.goBack}
                                 />
                                 <div className='title'>{this.props.incident.name}</div>

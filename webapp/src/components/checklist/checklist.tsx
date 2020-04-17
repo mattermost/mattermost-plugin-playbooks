@@ -44,6 +44,13 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
         setChecklistItems(checklist.items);
     }, [checklist.items]);
 
+    const onEscapeKey = (e: {key: string}) => {
+        if (e.key === 'Escape') {
+            setNewValue('');
+            setInputExpanded(false);
+        }
+    }
+
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) {
             return;
@@ -70,7 +77,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                         setEditMode(!editMode);
                     }}
                 >
-                    <strong>{editMode ? '(done)' : '(edit)'}</strong>
+                    <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
                 </a>
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
@@ -100,6 +107,10 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                             {...droppableProvided.droppableProps}
                             className='checklist'
                         >
+                            {
+                                !checklistItems.length && editMode &&
+                                <div className='light mt-1 mb-1'>You don't have any checklist items to edit yet.</div>
+                            }
                             {checklistItems.map((checklistItem: ChecklistItem, index: number) => {
                                 if (editMode) {
                                     return (
@@ -162,21 +173,28 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                     }}
                 >
                     <input
+                        autoFocus
                         type='text'
                         value={newvalue}
-                        className='checklist-input'
+                        className='form-control mt-2'
                         placeholder={'Enter a new item'}
+                        onKeyDown={(e) => onEscapeKey(e)}
                         onChange={(e) => setNewValue(e.target.value)}
                     />
+                    <small className='light mt-1 d-block'>Press Enter to Add Item or Escape to Cancel</small>
                 </form>
             }
             {!inputExpanded &&
-            <div>
+            <div className='IncidentDetails__add-item'>
                 <a
+                    href='#'
                     onClick={() => {
                         setInputExpanded(true);
                     }}
-                ><strong>{'+ Add new checklist item'}</strong></a>
+                >
+                    <i className='icon icon-plus'/>
+                    {'Add new checklist item'}
+                </a>
             </div>
             }
         </div>

@@ -9,38 +9,27 @@ $font-family: Open Sans;
         padding: 0 0 24px 0;
     }
 
+    &__add-item {
+        align-items: center;
+        display: flex;
+        height: 3.2rem;
+    }
+
     .inner-container {
         display: flex;
         flex-direction: column;
 
-        .checklist {
-            > div {
-                padding: 4px 0 4px 0;
-            }
-        }
-
         .title {
-            font-family: $font-family;
-            font-style: normal;
             font-weight: 600;
-            font-size: 14px;
-            line-height: 20px;
-            color: #4f4f4f;
-            padding: 4px 0 4px 0;
+            padding: 0 0 8px;
         }
     }
 
 
     // Link component
     .link {
-        font-family: $font-family;
-        font-style: normal;
-        font-weight: normal;
-        font-size: 14px;
-        line-height: 20px;
-        color: #2f80ed;
         cursor: pointer;
-        opacity: unset;
+
         &:hover {
             text-decoration: underline;
         }
@@ -48,7 +37,7 @@ $font-family: Open Sans;
 
 
     .footer-div {
-        border-top: 1px solid #ddd;
+        border-top: 1px solid var(--center-channel-color-16);
         position: absolute;
         bottom: 0;
         left: 0;
@@ -61,8 +50,13 @@ $font-family: Open Sans;
 
 // Checkbox component
 .checkbox-container {
-    display: flex;
     align-items: center;
+    display: flex;
+    padding: 0.6rem 0;
+
+    &:first-child {
+        padding-top: 0.2rem;
+    }
 
     // Checkbox
     input[type="checkbox"] {
@@ -72,26 +66,25 @@ $font-family: Open Sans;
     }
 
     &:hover {
-        .btn-close {
+        .checkbox-container__close {
             opacity: 1;
         }
     }
 
-    .fa-bars {
-        padding: 0px 12px 0px 0px;
+    .icon-bars {
+        padding: 0 0.8rem 0 0;
     }
 
-    .btn-close {
+    .checkbox-container__close {
+        cursor: pointer;
         opacity: 0;
-        font-family: 'Open Sans', sans-serif;
-        font-size: 21px;
-        font-weight: 600;
-        position: relative;
-        width: 24px;
-        height: 20px;
-        line-height: 16px;
-        margin-right: 16px;
-        text-align: center;
+        width: 3.2rem;
+        height: 3.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: var(--error-text);
 
         &:hover {
             opacity: 1;
@@ -109,6 +102,7 @@ $font-family: Open Sans;
     }
 
     input[type="checkbox"] + label {
+        margin: 0;
         position: relative;
         cursor: pointer;
     }
@@ -135,16 +129,17 @@ $font-family: Open Sans;
 
     input[type="checkbox"] + label:after {
         /* Font Awesome */
-        font-family: FontAwesome;
+        font-family: mattermosticons;
         text-rendering: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        content: "\f00c"; /* fa-check */
+        content: "\f12c"; /* icon-check */
 
-        font-size: 14px;
+        font-size: 11px;
         position: absolute;
-        top: 0px;
-        left: 3px;
+        top: 3px;
+        left: 4px;
+        font-weight: bold;
         color: #ffffff;
 
         transition: transform 0.15s;
@@ -156,30 +151,8 @@ $font-family: Open Sans;
     }
 
     label {
-        height: 20px;
-        padding: 0px 20 + 8px;
-
-        font-family: $font-family;
-        font-style: normal;
+        padding: 0 0 0 32px;
         font-weight: normal;
-        font-size: 14px;
-        line-height: 20px;
-        color: #3d3c40;
     }
 }
 
-// Input
-.checklist-input {
-    flex-grow: 1;
-    background: #FFFFFF;
-    height: 32px;
-    border: 1px solid rgba(61, 60, 64, 0.2);
-    box-sizing: border-box;
-    border-radius: 4px;
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 12px;
-    line-height: 16px;
-    padding-left: 5px;
-}

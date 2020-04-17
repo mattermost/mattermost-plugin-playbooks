@@ -50,10 +50,10 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
             className='checkbox-container'
         >
             <i
-                className='fa fa-bars'
+                className='icon icon-menu pr-2'
             />
             <input
-                className='checklist-input'
+                className='form-control'
                 type='text'
                 defaultValue={title}
                 onBlur={submit}
@@ -68,9 +68,9 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
             />
             <span
                 onClick={onRemove}
-                className='btn-close'
+                className='checkbox-container__close'
             >
-                {'×'}
+                <i className='icon icon-close'/>
             </span>
         </div>
     );
