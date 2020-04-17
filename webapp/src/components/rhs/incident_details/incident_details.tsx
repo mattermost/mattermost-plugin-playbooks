@@ -48,6 +48,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
                     <ChecklistDetails
                         checklist={checklist}
+                        enableEdit={this.props.channelDetails?.length > 0}
                         key={checklist.title + index}
                         onChange={(itemNum: number, checked: boolean) => {
                             this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);

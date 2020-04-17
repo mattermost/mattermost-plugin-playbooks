@@ -18,6 +18,7 @@ import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 
 interface Props {
     checklist: Checklist;
+    enableEdit: boolean;
     onChange?: (itemNum: number, checked: boolean) => void;
     addItem: (checklistItem: ChecklistItem) => void;
     removeItem: (itemNum: number) => void;
@@ -25,7 +26,7 @@ interface Props {
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
     const [newvalue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -72,13 +73,15 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
             <div className='title'>
                 {checklist.title}
                 {' '}
-                <a
-                    onClick={() => {
-                        setEditMode(!editMode);
-                    }}
-                >
-                    <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
-                </a>
+                { enableEdit &&
+                    <a
+                        onClick={() => {
+                            setEditMode(!editMode);
+                        }}
+                    >
+                        <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
+                    </a>
+                }
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
@@ -184,18 +187,18 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                     <small className='light mt-1 d-block'>{'Press Enter to Add Item or Escape to Cancel'}</small>
                 </form>
             }
-            {!inputExpanded &&
-            <div className='IncidentDetails__add-item'>
-                <a
-                    href='#'
-                    onClick={() => {
-                        setInputExpanded(true);
-                    }}
-                >
-                    <i className='icon icon-plus'/>
-                    {'Add new checklist item'}
-                </a>
-            </div>
+            {enableEdit && !inputExpanded &&
+                <div className='IncidentDetails__add-item'>
+                    <a
+                        href='#'
+                        onClick={() => {
+                            setInputExpanded(true);
+                        }}
+                    >
+                        <i className='icon icon-plus'/>
+                        {'Add new checklist item'}
+                    </a>
+                </div>
             }
         </div>
     );
