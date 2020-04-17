@@ -225,7 +225,7 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {
@@ -249,7 +249,7 @@ func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, c
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) check(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +282,7 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
@@ -306,7 +306,7 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
@@ -338,7 +338,7 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("{\"status\": \"OK\"}"))
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Request) {
