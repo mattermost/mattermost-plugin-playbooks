@@ -238,6 +238,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
@@ -265,6 +266,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+	s.telemetry.AddChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("added item \"%v\" to %v checklist.", checklistItem.Title, incidentToModify.Playbook.Checklists[checklistNumber].Title)
@@ -290,6 +292,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+	s.telemetry.RemoveChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("removed item \"%v\" from checklist.", itemRemoved.Title)
@@ -315,6 +318,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+	s.telemetry.RenameChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("changed checklist item \"%v\" to be \"%v\" in checklist.", oldTitle, newTitle)
@@ -352,6 +356,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	}
 
 	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+	s.telemetry.MoveChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("moved checklist item \"%v\" in checklist.", itemMoved.Title)
