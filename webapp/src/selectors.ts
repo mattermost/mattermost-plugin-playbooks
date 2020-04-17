@@ -14,7 +14,7 @@ export const activeIncidents = createSelector(allIncidents,
     (incidents) => {
         const list = incidents ? incidents.filter((incident: Incident) => incident.is_active) : [];
         return sortedDescending(list);
-    }
+    },
 );
 
 const sortedDescending = (incidents: Incident[]) => {
