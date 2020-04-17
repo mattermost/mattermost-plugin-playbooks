@@ -107,6 +107,10 @@ $font-family: Open Sans;
         cursor: pointer;
     }
 
+    input[type="checkbox"]:disabled + label {
+        cursor: default;
+    }
+
     input[type="checkbox"] + label:before {
         content: "";
         position: absolute;

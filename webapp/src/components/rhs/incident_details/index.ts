@@ -56,11 +56,16 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     // Get the incident main channel. Assuming the first one for now.
     const incidentChannelId = ownProps.incident?.channel_ids?.[0] || '';
 
+    // Having the incident channel in your details list is a proxy for being
+    // involved in the incident (having permissions to it) for now.
+    const involvedInIncident = channelDetails?.length > 0;
+
     return {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
         channelDetails,
-        allowEndIncident: incidentChannelId === getCurrentChannel(state)?.id,
+        viewingIncidentChannel: incidentChannelId === getCurrentChannel(state)?.id,
+        involvedInIncident,
     };
 }
 
