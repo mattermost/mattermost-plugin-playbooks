@@ -123,7 +123,7 @@ type Telemetry interface {
 	// EndIncident tracks the end of an incident.
 	EndIncident(incident *Incident)
 
-	// UncheckChecklistItem tracks the uncheking of checked item by the user
+	// ModifyCheckedState tracks the checking and unchecking of items by the user
 	// identified by userID in the incident identified by incidentID.
 	ModifyCheckedState(incidentID, userID string, newState bool)
 
