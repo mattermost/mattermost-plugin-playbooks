@@ -109,7 +109,7 @@ export const ChecklistDetails = ({checklist, onChange, addItem, removeItem, edit
                         >
                             {
                                 !checklistItems.length && editMode &&
-                                <div className='light mt-1 mb-1'>You don't have any checklist items to edit yet.</div>
+                                <div className='light mt-1 mb-2'>You don't have any checklist items to edit yet.</div>
                             }
                             {checklistItems.map((checklistItem: ChecklistItem, index: number) => {
                                 if (editMode) {
