@@ -150,8 +150,9 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, remo
                                     <ChecklistItemDetails
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
+                                        disabled={!enableEdit}
                                         onChange={(checked: boolean) => {
-                                            if (onChange && enableEdit) {
+                                            if (onChange) {
                                                 onChange(index, checked);
                                             }
                                         }}
