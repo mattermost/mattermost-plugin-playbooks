@@ -2,6 +2,7 @@
     border: none;
     background-color: unset;
     padding: unset;
+    cursor: unset;
 
     .profile {
         display: flex;
@@ -9,8 +10,12 @@
         align-items: center;
         border-radius: 100px;
 
-        &:hover {
-            background: rgba(20, 93, 191, 0.08);
+        &.active {
+            cursor: pointer;
+
+            &:hover {
+                background: rgba(20, 93, 191, 0.08);
+            }
         }
 
         .image {

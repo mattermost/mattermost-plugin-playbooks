@@ -18,6 +18,7 @@ interface Props {
     commanderId: string;
     channelId?: string;
     incidentId: string;
+    enableEdit: boolean;
 }
 
 interface Option {
@@ -88,8 +89,9 @@ export default function ProfileSelector(props: Props) {
             onClose={toggleOpen}
             target={
                 <ProfileButton
+                    enableEdit={props.enableEdit}
                     user={selected?.value}
-                    onClick={toggleOpen}
+                    onClick={props.enableEdit ? toggleOpen : null}
                 />
             }
         >

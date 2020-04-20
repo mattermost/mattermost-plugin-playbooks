@@ -43,6 +43,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     <div className='title'>{'Commander'}</div>
                     <ProfileSelector
                         commanderId={this.props.incident.commander_user_id}
+                        enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
                         channelId={incidentChannel?.id}
                         incidentId={this.props.incident.id}
                     />
