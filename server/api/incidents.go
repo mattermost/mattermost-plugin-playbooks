@@ -234,32 +234,24 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	// Check permissions. Note: this is duplicated in command.go until we have a proper
-	// permissions package.
-	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
-	if !isAdmin {
-		incident, err := h.incidentService.GetIncident(vars["id"])
-		if err != nil {
-			HandleError(w, err)
+	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 			return
 		}
-		isChannelMember := h.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelIDs[0], model.PERMISSION_READ_CHANNEL)
-		if !isChannelMember {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				fmt.Errorf("userID `%s` is not an admin or channel member", userID))
-			return
-		}
+		HandleError(w, err)
+		return
 	}
 
 	var params struct {
-		CommanderId string `json:"commander_id"`
+		CommanderID string `json:"commander_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		HandleError(w, fmt.Errorf("could not decode request body: %w", err))
 		return
 	}
 
-	if err := h.incidentService.ChangeCommander(vars["id"], params.CommanderId); err != nil {
+	if err := h.incidentService.ChangeCommander(vars["id"], params.CommanderID); err != nil {
 		HandleError(w, err)
 		return
 	}

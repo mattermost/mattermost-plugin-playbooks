@@ -1,34 +1,29 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {toggle} from 'mattermost-webapp/actions/views/lhs';
 import React, {useEffect, useState} from 'react';
 
 import Select, {defaultTheme} from 'react-select';
 
-import {Client4} from 'mattermost-redux/client';
+import {css} from '@emotion/core';
+
 import {UserProfile} from 'mattermost-redux/types/users';
+
 import {fetchUsersInChannel, setCommander} from 'src/client';
 
 import Profile from 'src/components/rhs/profile';
 import ProfileButton from 'src/components/rhs/profile_selector/profile_button/profile_button';
 
-type Props = {
+interface Props {
     commanderId: string;
     channelId?: string;
     incidentId: string;
 }
 
-type Option = {
+interface Option {
     value: UserProfile;
     label: JSX.Element;
 }
-
-const {colors} = defaultTheme;
-const selectStyles = {
-    control: (provided) => ({...provided, minWidth: 240, margin: 8}),
-    menu: () => ({boxShadow: 'inset 0 1px 0 rgba(0, 0, 0, 0.1)'}),
-};
 
 export default function ProfileSelector(props: Props) {
     const [isOpen, setOpen] = useState(false);
@@ -36,22 +31,11 @@ export default function ProfileSelector(props: Props) {
         setOpen(!isOpen);
     };
 
-    const [selected, setSelected] = useState<Option | null>(null);
-    const onSelectedChange = async (value: Option) => {
-        toggleOpen();
-        if (value.value.id === selected?.value.id) {
-            return;
-        }
-        const response = await setCommander(props.incidentId, value.value.id);
-        if (response.status === 'OK') {
-            setSelected(value);
-        } else if (response.error) {
-            // TODO: will be presented to the user after https://mattermost.atlassian.net/browse/MM-24271
-            console.log(response.error); // eslint-disable-line no-console
-        }
-    };
+    const [userOptions, setUserOptions] = useState<Option[]>([]);
 
-    const [options, setOptions] = useState<Option[]>([]);
+    // Fill in the userOptions, but only once on mount. This means we won't update when channel
+    // membership changes.
+    // TODO: get the user list from the store https://mattermost.atlassian.net/browse/MM-24329
     useEffect(() => {
         async function fetchUsers() {
             if (!props.channelId) {
@@ -65,15 +49,38 @@ export default function ProfileSelector(props: Props) {
                     label: <Profile userId={user.id}/>,
                 });
             });
-            const commander = optionList.find((option: Option) => option.value.id === props.commanderId);
-            if (commander) {
-                setSelected(commander);
-            }
-            setOptions(optionList);
+            setUserOptions(optionList);
         }
 
         fetchUsers();
     }, []);
+
+    const [selected, setSelected] = useState<Option | null>(null);
+
+    // Whenever the commanderId changes we have to set the selected, but we can only do this once we
+    // have userOptions
+    useEffect(() => {
+        if (userOptions === []) {
+            return;
+        }
+
+        const commander = userOptions.find((option: Option) => option.value.id === props.commanderId);
+        if (commander) {
+            setSelected(commander);
+        }
+    }, [userOptions, props.commanderId]);
+
+    const onSelectedChange = async (value: Option) => {
+        toggleOpen();
+        if (value.value.id === selected?.value.id) {
+            return;
+        }
+        const response = await setCommander(props.incidentId, value.value.id);
+        if (response.error) {
+            // TODO: will be presented to the user after https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
+        }
+    };
 
     return (
         <Dropdown
@@ -89,13 +96,13 @@ export default function ProfileSelector(props: Props) {
             <Select
                 autoFocus={true}
                 backspaceRemovesValue={false}
-                components={{DropdownIndicator, IndicatorSeparator: null}}
+                components={{DropdownIndicator: null, IndicatorSeparator: null}}
                 controlShouldRenderValue={false}
                 hideSelectedOptions={false}
                 isClearable={false}
                 menuIsOpen={true}
-                options={options}
-                placeholder={'Search...'}
+                options={userOptions}
+                placeholder={<div><i className={'fa fa-search mr-2'}/><span>{'Search...'}</span></div>}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
@@ -105,9 +112,39 @@ export default function ProfileSelector(props: Props) {
     );
 }
 
-// styled components
+// styles for the select component
+const selectStyles = {
+    control: (provided) => ({...provided, minWidth: 240, margin: 8}),
+    menu: () => ({boxShadow: 'inset 0 1px 0 rgba(0, 0, 0, 0.1)'}),
+    option: (provided, state) => {
+        const hoverColor = 'rgba(20, 93, 191, 0.08)';
+        const bgHover = state.isFocused ? hoverColor : 'transparent';
+        return {
+            ...provided,
+            backgroundColor: state.isSelected ? hoverColor : bgHover,
+            color: 'unset',
+        };
+    },
+};
 
-const Menu = props => {
+// styled components
+interface DropdownProps {
+    children: JSX.Element;
+    isOpen: boolean;
+    target: JSX.Element;
+    onClose: () => void;
+}
+
+const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
+    <div css={{position: 'relative'}}>
+        {target}
+        {isOpen ? <Menu>{children}</Menu> : null}
+        {isOpen ? <Blanket onClick={onClose}/> : null}
+    </div>
+);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Menu = (props: Record<string, any>) => {
     const shadow = 'hsla(218, 50%, 10%, 0.1)';
     return (
         <div
@@ -123,7 +160,9 @@ const Menu = props => {
         />
     );
 };
-const Blanket = props => (
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Blanket = (props: Record<string, any>) => (
     <div
         css={{
             bottom: 0,
@@ -136,40 +175,4 @@ const Blanket = props => (
         {...props}
     />
 );
-const Dropdown = ({children, isOpen, target, onClose}) => (
-    <div css={{position: 'relative'}}>
-        {target}
-        {isOpen ? <Menu>{children}</Menu> : null}
-        {isOpen ? <Blanket onClick={onClose}/> : null}
-    </div>
-);
-const Svg = p => (
-    <svg
-        width='24'
-        height='24'
-        viewBox='0 0 24 24'
-        focusable='false'
-        role='presentation'
-        {...p}
-    />
-);
-const DropdownIndicator = () => (
-    <div css={{color: colors.neutral20, height: 24, width: 32}}>
-        <Svg>
-            <path
-                d='M16.436 15.085l3.94 4.01a1 1 0 0 1-1.425 1.402l-3.938-4.006a7.5 7.5 0 1 1 1.423-1.406zM10.5 16a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z'
-                fill='currentColor'
-                fillRule='evenodd'
-            />
-        </Svg>
-    </div>
-);
-const ChevronDown = () => (
-    <Svg style={{marginRight: -6}}>
-        <path
-            d='M8.292 10.293a1.009 1.009 0 0 0 0 1.419l2.939 2.965c.218.215.5.322.779.322s.556-.107.769-.322l2.93-2.955a1.01 1.01 0 0 0 0-1.419.987.987 0 0 0-1.406 0l-2.298 2.317-2.307-2.327a.99.99 0 0 0-1.406 0z'
-            fill='currentColor'
-            fillRule='evenodd'
-        />
-    </Svg>
-);
+

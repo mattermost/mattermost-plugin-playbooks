@@ -23,14 +23,17 @@ export default function ProfileButton(props: Props) {
     const name = getDisplayName(props.user);
 
     return (
-        <button onClick={props.onClick}>
-            <div className='profile_button'>
+        <button
+            onClick={props.onClick}
+            className={'profile-button'}
+        >
+            <div className='profile'>
                 <img
                     className='image'
                     src={profileUri}
                 />
                 <div className='name'>{name}</div>
-                <i className='fa fa-chevron-down'/>
+                <i className='icon-chevron-down ml-2 mr-3'/>
             </div>
         </button>
     );

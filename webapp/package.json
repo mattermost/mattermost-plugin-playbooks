@@ -26,6 +26,7 @@
     "@babel/preset-react": "7.0.0",
     "@babel/preset-typescript": "7.3.3",
     "@babel/runtime": "7.4.5",
+    "@emotion/core": "^10.0.28",
     "@types/enzyme": "3.10.4",
     "@types/jest": "24.0.25",
     "@types/node": "12.12.24",
@@ -66,13 +67,14 @@
     "webpack-cli": "3.3.5"
   },
   "dependencies": {
+    "@emotion/babel-preset-css-prop": "^10.0.27",
+    "@emotion/core": "^10.0.28",
     "@types/qs": "^6.9.1",
     "@types/react-custom-scrollbars": "^4.0.6",
     "@types/react-redux": "^7.1.7",
     "@types/react-select": "^3.0.11",
     "classnames": "2.2.6",
     "core-js": "3.6.2",
-    "emotion": "^10.0.27",
     "qs": "^6.9.3",
     "react": "16.8.6",
     "react-redux": "5.0.7",

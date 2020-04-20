@@ -1,22 +1,37 @@
-.profile_button {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+.profile-button {
+    border: none;
+    background-color: unset;
+    padding: unset;
 
-    .image {
-        width: 32px;
-        height: 32px;
-        background-color: #bbb;
-        border-radius: 50%;
-        display: inline-block;
-    }
+    .profile {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        border-radius: 100px;
 
-    .name {
-        padding: 0 0 0 8px;
-        font-style: normal;
-        font-weight: 600;
-        font-size: 14px;
-        line-height: 19px;
-        color: #5f646d;
+        &:hover {
+            background: rgba(20, 93, 191, 0.08);
+        }
+
+        .image {
+            width: 32px;
+            height: 32px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .name {
+            padding: 0 0 0 8px;
+            font-style: normal;
+            font-weight: 600;
+            font-size: 14px;
+            line-height: 19px;
+            color: #5f646d;
+        }
+
+        .icon-chevron-down {
+            color: gray;
+        }
     }
 }
