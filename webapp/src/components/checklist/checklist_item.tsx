@@ -3,6 +3,8 @@
 
 import React, {useState} from 'react';
 
+import moment from 'moment';
+
 import {ChecklistItem} from 'src/types/playbook';
 
 interface ChecklistItemDetailsProps {
@@ -14,8 +16,8 @@ interface ChecklistItemDetailsProps {
 export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
     let timestamp = '';
     if (checklistItem.checked) {
-        const checkedModified = new Date(checklistItem.checked_modified);
-        timestamp = '(' + checkedModified.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + ')';
+        const checkedModified = moment(checklistItem.checked_modified);
+        timestamp = '(' + checkedModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
     }
 
     return (
