@@ -21,7 +21,8 @@ interface Props {
     commander: UserProfile;
     profileUri: string;
     channelDetails: ChannelWithTeamData[];
-    allowEndIncident: boolean;
+    involvedInIncident: boolean;
+    viewingIncidentChannel: boolean;
     actions: {
         endIncident: () => void;
         modifyChecklistItemState: (incidentID: string, checklistNum: number, itemNum: number, checked: boolean) => void;
@@ -50,6 +51,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
                     <ChecklistDetails
                         checklist={checklist}
+                        enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
                         key={checklist.title + index}
                         onChange={(itemNum: number, checked: boolean) => {
                             this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
@@ -70,7 +72,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 ))}
 
                 {
-                    this.props.channelDetails.length > 0 &&
+                    this.props.involvedInIncident &&
                     <div className='inner-container'>
                         <div className='title'>{'Channels'}</div>
                         {
@@ -86,24 +88,24 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                 }
 
                 {
-                    this.props.channelDetails?.length > 0 &&
+                    this.props.involvedInIncident &&
                     <div className='footer-div'>
                         <button
                             className='btn btn-primary'
                             onClick={() => this.props.actions.endIncident()}
-                            disabled={!this.props.allowEndIncident}
+                            disabled={!this.props.viewingIncidentChannel}
                         >
                             {'End Incident'}
                         </button>
                         {
-                            !this.props.allowEndIncident && this.props.channelDetails?.length > 0 &&
+                            this.props.involvedInIncident && !this.props.viewingIncidentChannel &&
                             <div className='help-text'>
                                 {'Go to '}
                                 <Link
                                     to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
                                     text={'the incident channel'}
                                 />
-                                {' to enable this action.'}
+                                {' to make changes.'}
                             </div>
                         }
                     </div>

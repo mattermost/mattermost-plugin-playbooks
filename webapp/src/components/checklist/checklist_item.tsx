@@ -7,15 +7,16 @@ import {ChecklistItem} from 'src/types/playbook';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
+    disabled: boolean;
     onChange?: (item: boolean) => void;
 }
 
-export const ChecklistItemDetails = ({checklistItem, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
+export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
     return (
         <div
-            className='checkbox-container'
+            className={'checkbox-container' + (disabled ? ' light' : '')}
             onClick={() => {
-                if (onChange) {
+                if (!disabled && onChange) {
                     onChange(!checklistItem.checked);
                 }
             }}
@@ -23,6 +24,7 @@ export const ChecklistItemDetails = ({checklistItem, onChange}: ChecklistItemDet
             <input
                 className='checkbox'
                 type='checkbox'
+                disabled={disabled}
                 checked={checklistItem.checked}
             />
             <label>{checklistItem.title}</label>
