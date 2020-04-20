@@ -186,7 +186,7 @@ func (r *Runner) actionSelftest() {
 	}
 
 	if gotplaybook.ID == "" {
-		r.postCommandResponse(fmt.Sprintf("Retrieved playbook has a blank ID"))
+		r.postCommandResponse("Retrieved playbook has a blank ID")
 		return
 	}
 
