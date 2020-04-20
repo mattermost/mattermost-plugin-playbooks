@@ -12,6 +12,12 @@ interface ChecklistItemDetailsProps {
 }
 
 export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
+    let timestamp = '';
+    if (checklistItem.checked) {
+        const checkedModified = new Date(checklistItem.checked_modified);
+        timestamp = '(' + checkedModified.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + ')';
+    }
+
     return (
         <div
             className={'checkbox-container' + (disabled ? ' light' : '')}
@@ -27,7 +33,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
                 disabled={disabled}
                 checked={checklistItem.checked}
             />
-            <label>{checklistItem.title}</label>
+            <label>{checklistItem.title}{' '}<span className={'light small'}>{timestamp}</span></label>
         </div>
     );
 };
