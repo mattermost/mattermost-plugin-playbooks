@@ -36,7 +36,7 @@ export default function ProfileSelector(props: Props) {
 
     // Fill in the userOptions, but only once on mount. This means we won't update when channel
     // membership changes.
-    // TODO: get the user list from the store https://mattermost.atlassian.net/browse/MM-24329
+    // TODO: Is there any way to get the user list from the store? https://mattermost.atlassian.net/browse/MM-24329
     useEffect(() => {
         async function fetchUsers() {
             if (!props.channelId) {
@@ -78,7 +78,7 @@ export default function ProfileSelector(props: Props) {
         }
         const response = await setCommander(props.incidentId, value.value.id);
         if (response.error) {
-            // TODO: will be presented to the user after https://mattermost.atlassian.net/browse/MM-24271
+            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
         }
     };
@@ -90,8 +90,8 @@ export default function ProfileSelector(props: Props) {
             target={
                 <ProfileButton
                     enableEdit={props.enableEdit}
-                    user={selected?.value}
-                    onClick={props.enableEdit ? toggleOpen : null}
+                    userId={props.commanderId}
+                    onClick={props.enableEdit ? toggleOpen : () => null}
                 />
             }
         >
@@ -145,7 +145,6 @@ const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
     </div>
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Menu = (props: Record<string, any>) => {
     const shadow = 'hsla(218, 50%, 10%, 0.1)';
     return (
@@ -163,7 +162,6 @@ const Menu = (props: Record<string, any>) => {
     );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Blanket = (props: Record<string, any>) => (
     <div
         css={{

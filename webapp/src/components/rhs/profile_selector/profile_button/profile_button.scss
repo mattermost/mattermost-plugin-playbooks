@@ -4,10 +4,7 @@
     padding: unset;
     cursor: unset;
 
-    .profile {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
+    .Profile {
         border-radius: 100px;
 
         &.active {
@@ -16,23 +13,6 @@
             &:hover {
                 background: rgba(20, 93, 191, 0.08);
             }
-        }
-
-        .image {
-            width: 32px;
-            height: 32px;
-            background-color: #bbb;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .name {
-            padding: 0 0 0 8px;
-            font-style: normal;
-            font-weight: 600;
-            font-size: 14px;
-            line-height: 19px;
-            color: #5f646d;
         }
 
         .icon-chevron-down {
