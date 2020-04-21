@@ -7,6 +7,7 @@ import IncidentPostMenuIcon from './icon';
 
 interface Props {
     postId: string;
+    isSystemMessage: boolean;
     actions: {
         startIncident: (postId: string) => void;
     };
@@ -17,7 +18,11 @@ export default class StartIncidentPostMenu extends React.PureComponent<Props> {
         this.props.actions.startIncident(this.props.postId);
     };
 
-    public render(): JSX.Element {
+    public render(): React.ReactNode {
+        if (this.props.isSystemMessage) {
+            return null;
+        }
+
         return (
             <React.Fragment>
                 <li
