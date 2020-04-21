@@ -75,7 +75,7 @@ type Service interface {
 	IsCommander(incidentID string, userID string) bool
 
 	// ChangeCommander will change the commander for incidentID.
-	ChangeCommander(incidentID string, commanderID string) error
+	ChangeCommander(incidentID string, userID string, commanderID string) error
 
 	// ModifyCheckedState checks or unchecks the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already in the specified state

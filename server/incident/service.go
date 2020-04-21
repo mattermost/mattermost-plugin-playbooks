@@ -219,7 +219,7 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 }
 
 // ChangeCommander will change the commander for incidentID.
-func (s *ServiceImpl) ChangeCommander(incidentID string, commanderID string) error {
+func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commanderID string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return err
@@ -242,10 +242,10 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, commanderID string) err
 	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
-	modifyMessage := fmt.Sprintf("The incident commander was changed from @%s to @%s.",
+	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
 		oldCommander.Username, newCommander.Username)
-	if err := s.poster.PostMessage(mainChannelID, modifyMessage); err != nil {
-		return fmt.Errorf("failed to post change commander messsage: %w", err)
+	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return err
 	}
 
 	return nil

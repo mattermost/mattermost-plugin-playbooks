@@ -71,7 +71,7 @@ func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err e
 	_, _ = w.Write(b)
 }
 
-// MattermostAuthorizationRequired Checks if request is authorized.
+// MattermostAuthorizationRequired checks if request is authorized.
 func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("Mattermost-User-ID")

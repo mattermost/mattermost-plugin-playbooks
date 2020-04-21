@@ -41,8 +41,11 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
-	incidentRouter.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
-	incidentRouter.HandleFunc("/change-commander", handler.changeCommander).Methods(http.MethodPost)
+
+	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
+	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
+	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/change-commander", handler.changeCommander).Methods(http.MethodPost)
 
 	checklistsRouter := incidentRouter.PathPrefix("/checklists").Subrouter()
 
@@ -57,6 +60,26 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
 
 	return handler
+}
+
+// permissionsToIncidentChannelRequired checks that the requester is admin or has read access
+// to the primary incident channel.
+func (h *IncidentHandler) permissionsToIncidentChannelRequired(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := r.Header.Get("Mattermost-User-ID")
+
+		if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+			if errors.Is(err, permissions.ErrNoPermissions) {
+				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+				return
+			}
+			HandleError(w, err)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request) {
@@ -191,15 +214,6 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-			return
-		}
-		HandleError(w, err)
-		return
-	}
-
 	err := h.incidentService.EndIncident(vars["id"], userID)
 	if err != nil {
 		HandleError(w, err)
@@ -234,15 +248,6 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-			return
-		}
-		HandleError(w, err)
-		return
-	}
-
 	var params struct {
 		CommanderID string `json:"commander_id"`
 	}
@@ -251,7 +256,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := h.incidentService.ChangeCommander(vars["id"], params.CommanderID); err != nil {
+	if err := h.incidentService.ChangeCommander(vars["id"], userID, params.CommanderID); err != nil {
 		HandleError(w, err)
 		return
 	}
