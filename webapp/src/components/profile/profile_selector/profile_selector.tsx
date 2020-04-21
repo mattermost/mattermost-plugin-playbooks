@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 
-import Select, {defaultTheme} from 'react-select';
+import Select from 'react-select';
 
 import {css} from '@emotion/core';
 
@@ -11,8 +11,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 
 import {fetchUsersInChannel, setCommander} from 'src/client';
 
-import Profile from 'src/components/rhs/profile';
-import ProfileButton from 'src/components/rhs/profile_selector/profile_button/profile_button';
+import Profile from 'src/components/profile';
+import ProfileButton from 'src/components/profile/profile_selector/profile_button/profile_button';
 import {getUserDescription} from 'src/utils/utils';
 
 interface Props {

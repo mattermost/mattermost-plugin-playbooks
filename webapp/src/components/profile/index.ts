@@ -9,7 +9,7 @@ import {Client4} from 'mattermost-redux/client';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import Profile from './profile';
+import Profile from 'src/components/profile/profile';
 
 type Props = {
     userId: string;

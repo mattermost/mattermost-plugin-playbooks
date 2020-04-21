@@ -74,7 +74,8 @@ type Service interface {
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
 
-	// ChangeCommander will change the commander for incidentID.
+	// ChangeCommander processes a request from userID to change the commander for incidentID
+	// to commanderID.
 	ChangeCommander(incidentID string, userID string, commanderID string) error
 
 	// ModifyCheckedState checks or unchecks the specified checklist item

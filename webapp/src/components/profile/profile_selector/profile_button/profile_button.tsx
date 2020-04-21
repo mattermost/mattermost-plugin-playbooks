@@ -3,8 +3,8 @@
 
 import React from 'react';
 
-import './profile_button.scss';
-import Profile from 'src/components/rhs/profile';
+import 'src/components/profile/profile_selector/profile_button/profile_button.scss';
+import Profile from 'src/components/profile';
 
 interface Props {
     userId: string;
@@ -26,7 +26,7 @@ export default function ProfileButton(props: Props) {
     return (
         <button
             onClick={props.onClick}
-            className={'profile-button'}
+            className={'ProfileButton'}
         >
             <Profile
                 userId={props.userId}

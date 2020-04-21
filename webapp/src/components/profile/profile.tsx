@@ -5,7 +5,7 @@ import React from 'react';
 
 import classNames from 'classnames';
 
-import './profile.scss';
+import 'src/components/profile/profile.scss';
 
 interface Props {
     profileUri: string;

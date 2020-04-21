@@ -218,7 +218,8 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 	return incdnt.CommanderUserID == userID
 }
 
-// ChangeCommander will change the commander for incidentID.
+// ChangeCommander processes a request from userID to change the commander for incidentID
+// to commanderID.
 func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commanderID string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
