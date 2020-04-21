@@ -10,8 +10,9 @@ import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {Channel, ChannelWithTeamData} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {toggleRHS} from 'src/selectors';
 import {Incident} from 'src/types/incident';
 import {
     endIncident,
@@ -66,6 +67,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         channelDetails,
         viewingIncidentChannel: incidentChannelId === getCurrentChannel(state)?.id,
         involvedInIncident,
+        teamName: getCurrentTeam(state).name,
     };
 }
 
@@ -78,6 +80,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
             removeChecklistItem,
             renameChecklistItem,
             reorderChecklist,
+            toggleRHS,
         }, dispatch),
     };
 }
