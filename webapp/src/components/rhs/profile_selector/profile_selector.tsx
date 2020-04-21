@@ -23,8 +23,9 @@ interface Props {
 }
 
 interface Option {
-    value: UserProfile;
+    value: string;
     label: JSX.Element;
+    userId: string;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -55,16 +56,21 @@ export default function ProfileSelector(props: Props) {
                 );
             };
 
+            const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
+                return '@' + userName + getUserDescription(firstName, lastName, nickName);
+            };
+
             const users = await fetchUsersInChannel(props.channelId);
-            const optionList = users.map((user) => {
+            const optionList = users.map((user: UserProfile) => {
                 return ({
-                    value: user,
+                    value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
                     label: (
                         <Profile
                             userId={user.id}
                             nameFormatter={formatName}
                         />
                     ),
+                    userId: user.id,
                 });
             });
             setUserOptions(optionList);
@@ -82,7 +88,7 @@ export default function ProfileSelector(props: Props) {
             return;
         }
 
-        const commander = userOptions.find((option: Option) => option.value.id === props.commanderId);
+        const commander = userOptions.find((option: Option) => option.userId === props.commanderId);
         if (commander) {
             setSelected(commander);
         }
@@ -90,10 +96,10 @@ export default function ProfileSelector(props: Props) {
 
     const onSelectedChange = async (value: Option) => {
         toggleOpen();
-        if (value.value.id === selected?.value.id) {
+        if (value.userId === selected?.userId) {
             return;
         }
-        const response = await setCommander(props.incidentId, value.value.id);
+        const response = await setCommander(props.incidentId, value.userId);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
