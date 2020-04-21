@@ -219,7 +219,7 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 }
 
 // ChangeCommander processes a request from userID to change the commander for incidentID
-// to commanderID.
+// to commanderID. Changing to the same commanderID is a no-op.
 func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commanderID string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
@@ -229,7 +229,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 	if !incidentToModify.IsActive {
 		return ErrIncidentNotActive
 	} else if incidentToModify.CommanderUserID == commanderID {
-		return fmt.Errorf("incident commander is already userId: %s", commanderID)
+		return nil
 	}
 
 	oldCommander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)

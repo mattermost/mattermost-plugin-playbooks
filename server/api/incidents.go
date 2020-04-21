@@ -256,6 +256,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Check if the target user (params.CommanderID) has permissions
 	if err := permissions.CheckHasPermissionsToIncidentChannel(params.CommanderID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
