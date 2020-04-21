@@ -18,7 +18,7 @@ export default class StartIncidentPostMenu extends React.PureComponent<Props> {
         this.props.actions.startIncident(this.props.postId);
     };
 
-    public render(): React.ReactNode {
+    public render() {
         if (this.props.isSystemMessage) {
             return null;
         }
