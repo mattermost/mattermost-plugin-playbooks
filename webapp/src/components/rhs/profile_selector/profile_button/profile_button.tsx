@@ -13,7 +13,16 @@ interface Props {
 }
 
 export default function ProfileButton(props: Props) {
-    const downChevron = props.enableEdit ? <i className='icon-chevron-down ml-2 mr-3'/> : <></>;
+    const downChevron = props.enableEdit ? <i className='icon-chevron-down ml-2 mr-2'/> : <></>;
+
+    const formatName = (preferredName: string, userName: string) => {
+        let name = preferredName;
+        if (preferredName === userName) {
+            name = '@' + name;
+        }
+        return <span>{name}</span>;
+    };
+
     return (
         <button
             onClick={props.onClick}
@@ -23,6 +32,7 @@ export default function ProfileButton(props: Props) {
                 userId={props.userId}
                 classNames={{active: props.enableEdit}}
                 extra={downChevron}
+                nameFormatter={formatName}
             />
         </button>
     );

@@ -14,5 +14,10 @@
     .name {
         padding: 0 0 0 8px;
         font-weight: 600;
+
+        .description {
+            opacity: 0.5;
+            margin-left: 5px;
+        }
     }
 }

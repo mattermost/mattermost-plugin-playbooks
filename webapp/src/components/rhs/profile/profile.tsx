@@ -9,7 +9,7 @@ import './profile.scss';
 
 interface Props {
     profileUri: string;
-    name: string;
+    name?: JSX.Element;
     classNames?: Record<string, boolean>;
     extra?: JSX.Element;
 }

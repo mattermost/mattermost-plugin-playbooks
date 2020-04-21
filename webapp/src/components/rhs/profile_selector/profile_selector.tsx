@@ -13,6 +13,7 @@ import {fetchUsersInChannel, setCommander} from 'src/client';
 
 import Profile from 'src/components/rhs/profile';
 import ProfileButton from 'src/components/rhs/profile_selector/profile_button/profile_button';
+import {getUserDescription} from 'src/utils/utils';
 
 interface Props {
     commanderId: string;
@@ -43,11 +44,27 @@ export default function ProfileSelector(props: Props) {
                 return;
             }
 
+            const formatName = (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
+                const name = '@' + userName;
+                const description = getUserDescription(firstName, lastName, nickName);
+                return (
+                    <>
+                        <span>{name}</span>
+                        {description && <span className={'description'}>{description}</span>}
+                    </>
+                );
+            };
+
             const users = await fetchUsersInChannel(props.channelId);
             const optionList = users.map((user) => {
                 return ({
                     value: user,
-                    label: <Profile userId={user.id}/>,
+                    label: (
+                        <Profile
+                            userId={user.id}
+                            nameFormatter={formatName}
+                        />
+                    ),
                 });
             });
             setUserOptions(optionList);
@@ -104,7 +121,7 @@ export default function ProfileSelector(props: Props) {
                 isClearable={false}
                 menuIsOpen={true}
                 options={userOptions}
-                placeholder={<div><i className={'fa fa-search mr-2'}/><span>{'Search...'}</span></div>}
+                placeholder={<div><i className={'fa fa-search mr-2'}/><span>{'Search'}</span></div>}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}

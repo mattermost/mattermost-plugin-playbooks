@@ -13,6 +13,7 @@ import Profile from './profile';
 
 type Props = {
     userId: string;
+    nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
 }
 
 function mapStateToProps(state: GlobalState, props: Props) {
@@ -21,9 +22,10 @@ function mapStateToProps(state: GlobalState, props: Props) {
 
     const user = getUser(state, props.userId);
     if (user) {
-        name = displayUsername(user, getTeammateNameDisplaySetting(state));
-        if (name === user.username) {
-            name = '@' + name;
+        const preferredName = displayUsername(user, getTeammateNameDisplaySetting(state));
+        name = preferredName;
+        if (props.nameFormatter) {
+            name = props.nameFormatter(preferredName, user.username, user.first_name, user.last_name, user.nickname);
         }
         profileUri = Client4.getProfilePictureUrl(props.userId, user.last_picture_update);
     }
