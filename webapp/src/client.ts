@@ -54,7 +54,7 @@ export async function fetchUsersInChannel(channelId: string): Promise<UserProfil
 export async function setCommander(incidentId: string, commanderId: string) {
     const body = `{"commander_id": "${commanderId}"}`;
     try {
-        const data = await doPost(`${apiUrl}/incidents/${incidentId}/change-commander`, body);
+        const data = await doPost(`${apiUrl}/incidents/${incidentId}/commander`, body);
         return data;
     } catch (error) {
         return {error};

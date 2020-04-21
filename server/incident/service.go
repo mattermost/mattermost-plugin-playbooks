@@ -225,6 +225,12 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 		return err
 	}
 
+	if !incidentToModify.IsActive {
+		return ErrIncidentNotActive
+	} else if incidentToModify.CommanderUserID == commanderID {
+		return fmt.Errorf("incident commander is already userId: %s", commanderID)
+	}
+
 	oldCommander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
 	if err != nil {
 		return fmt.Errorf("failed to to resolve user %s: %w", incidentToModify.CommanderUserID, err)

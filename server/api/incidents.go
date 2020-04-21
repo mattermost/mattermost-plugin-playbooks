@@ -45,7 +45,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
-	incidentRouterAuthorized.HandleFunc("/change-commander", handler.changeCommander).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
 	checklistsRouter := incidentRouter.PathPrefix("/checklists").Subrouter()
 
@@ -253,6 +253,16 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		HandleError(w, fmt.Errorf("could not decode request body: %w", err))
+		return
+	}
+
+	if err := permissions.CheckHasPermissionsToIncidentChannel(params.CommanderID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				fmt.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
+			return
+		}
+		HandleError(w, err)
 		return
 	}
 
