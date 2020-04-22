@@ -44,11 +44,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePlugin
 func HandleError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	b, _ := json.Marshal(struct {
-		Error  string            `json:"error"`
-		Errors map[string]string `json:"errors"`
+		Error   string `json:"error"`
+		Details string `json:"details"`
 	}{
-		Error:  "An internal error has occurred. Check app server logs for details",
-		Errors: map[string]string{"details": err.Error()},
+		Error:   "An internal error has occurred. Check app server logs for details.",
+		Details: err.Error(),
 	})
 	_, _ = w.Write(b)
 }
@@ -69,11 +69,11 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err error) {
 	w.WriteHeader(code)
 	b, _ := json.Marshal(struct {
-		Error  string            `json:"error"`
-		Errors map[string]string `json:"errors"`
+		Error   string `json:"error"`
+		Details string `json:"details"`
 	}{
-		Error:  errTitle,
-		Errors: map[string]string{"details": err.Error()},
+		Error:   errTitle,
+		Details: err.Error(),
 	})
 	_, _ = w.Write(b)
 }
