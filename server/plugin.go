@@ -88,9 +88,10 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		telemetryClient,
 	)
-	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot)
+
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV))
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService)
+	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return fmt.Errorf("failed register commands: %w", err)
