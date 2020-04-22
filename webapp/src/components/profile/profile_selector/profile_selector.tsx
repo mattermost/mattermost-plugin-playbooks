@@ -140,7 +140,7 @@ export default function ProfileSelector(props: Props) {
 // styles for the select component
 const selectStyles = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
-    menu: () => ({boxShadow: 'inset 0 1px 0 rgba(0, 0, 0, 0.1)'}),
+    menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
         const hoverColor = 'rgba(20, 93, 191, 0.08)';
         const bgHover = state.isFocused ? hoverColor : 'transparent';

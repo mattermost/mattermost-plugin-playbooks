@@ -8,6 +8,8 @@ import {connect} from 'react-redux';
 import {Client4} from 'mattermost-redux/client';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {getUser as fetchUser} from 'mattermost-redux/actions/users';
+import {bindActionCreators, Dispatch} from 'redux';
 
 import Profile from 'src/components/profile/profile';
 
@@ -36,4 +38,12 @@ function mapStateToProps(state: GlobalState, props: Props) {
     };
 }
 
-export default connect(mapStateToProps, null)(Profile);
+function mapDispatchToProps(dispatch: Dispatch) {
+    return {
+        actions: bindActionCreators({
+            fetchUser,
+        }, dispatch),
+    };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Profile);

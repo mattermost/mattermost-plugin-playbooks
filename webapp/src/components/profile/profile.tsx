@@ -8,13 +8,21 @@ import classNames from 'classnames';
 import 'src/components/profile/profile.scss';
 
 interface Props {
-    profileUri: string;
-    name?: JSX.Element;
+    profileUri?: string;
+    userId: string;
+    name?: JSX.Element | string;
     classNames?: Record<string, boolean>;
     extra?: JSX.Element;
+    actions: {
+        fetchUser: (id: string) => void;
+    };
 }
 
 export default function Profile(props: Props) {
+    if (!props.name) {
+        props.actions.fetchUser(props.userId);
+    }
+
     return (
         <div className={classNames('Profile', props.classNames)}>
             <img
