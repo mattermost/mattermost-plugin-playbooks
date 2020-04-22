@@ -88,15 +88,16 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
 
-	var playbook *playbook.Playbook
+	var playbookTemplate *playbook.Playbook
 	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
 		if playbookID != "" && playbookID != "-1" {
-			pb, err := h.playbookService.Get(playbookID)
+			var pb playbook.Playbook
+			pb, err = h.playbookService.Get(playbookID)
 			if err != nil {
 				HandleError(w, fmt.Errorf("failed to get playbook: %w", err))
 				return
 			}
-			playbook = &pb
+			playbookTemplate = &pb
 		}
 	}
 
@@ -107,7 +108,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			Name:            name,
 		},
 		PostID:   state.PostID,
-		Playbook: playbook,
+		Playbook: playbookTemplate,
 	})
 
 	if err != nil {
