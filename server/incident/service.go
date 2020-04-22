@@ -503,18 +503,18 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 		IntroductionText: fmt.Sprintf("**Commander:** %v", getUserDisplayName(user)),
 		Elements: []model.DialogElement{
 			{
-				DisplayName: "Playbook",
-				Name:        DialogFieldPlaybookIDKey,
-				Type:        "select",
-				Options:     options,
-				Optional:    true,
-			},
-			{
 				DisplayName: "Channel Name",
 				Name:        DialogFieldNameKey,
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
+			},
+			{
+				DisplayName: "Playbook",
+				Name:        DialogFieldPlaybookIDKey,
+				Type:        "select",
+				Options:     options,
+				Optional:    true,
 			},
 		},
 		SubmitLabel:    "Start Incident",
