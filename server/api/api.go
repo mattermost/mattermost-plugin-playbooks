@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 type contextKey string
@@ -50,6 +51,7 @@ func HandleError(w http.ResponseWriter, err error) {
 		Error:   "An internal error has occurred. Check app server logs for details.",
 		Details: err.Error(),
 	})
+	logrus.Warn(string(b))
 	_, _ = w.Write(b)
 }
 
@@ -75,6 +77,7 @@ func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err e
 		Error:   errTitle,
 		Details: err.Error(),
 	})
+	logrus.Warn(string(b))
 	_, _ = w.Write(b)
 }
 
