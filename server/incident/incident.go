@@ -9,9 +9,9 @@ import (
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	ChannelIDs []string          `json:"channel_ids"`
-	PostID     string            `json:"post_id"`
-	Playbook   playbook.Playbook `json:"playbook"`
+	ChannelIDs []string           `json:"channel_ids"`
+	PostID     string             `json:"post_id"`
+	Playbook   *playbook.Playbook `json:"playbook"`
 }
 
 // Header holds the summary information of an incident.
@@ -55,7 +55,7 @@ type Service interface {
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
-	OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string) error
+	OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error
 
 	// EndIncident completes the incident with the given ID by the given user.
 	EndIncident(incidentID string, userID string) error
