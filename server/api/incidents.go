@@ -164,15 +164,29 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// getincident handles the /incidents/{id} endpoint
 func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	incident, err := h.incidentService.GetIncident(vars["id"])
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	// User must have permission to the team that this incident belongs to. They do not have to have
+	// permissions to the incident channel.
+	if err := permissions.CheckHasPermissionsToIncidentTeam(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+			return
+		}
+		HandleError(w, err)
+		return
+	}
+
+	incidentToGet, err := h.incidentService.GetIncident(vars["id"])
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	jsonBytes, err := json.Marshal(incident)
+	jsonBytes, err := json.Marshal(incidentToGet)
 	if err != nil {
 		HandleError(w, err)
 		return
