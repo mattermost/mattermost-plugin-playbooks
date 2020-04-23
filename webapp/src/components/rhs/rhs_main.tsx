@@ -103,20 +103,22 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                             <div>
                                 <div className='title'>{'Incident List'}</div>
                             </div>
-                            <button
-                                className='start-incident'
-                                onClick={() => this.props.actions.openBackstageModal()}
-                            >
-                                <PlaybookIcon/>
-                            </button>
-                            <button
-                                className='start-incident'
-                                onClick={() => this.props.actions.startIncident()}
-                            >
-                                <i
-                                    className='icon icon-plus'
-                                />
-                            </button>
+                            <div>
+                                <button
+                                    className='action-buttons'
+                                    onClick={() => this.props.actions.openBackstageModal()}
+                                >
+                                    <PlaybookIcon/>
+                                </button>
+                                <button
+                                    className='action-buttons'
+                                    onClick={() => this.props.actions.startIncident()}
+                                >
+                                    <i
+                                        className='icon icon-plus'
+                                    />
+                                </button>
+                            </div>
                         </div>
                     }
                     {

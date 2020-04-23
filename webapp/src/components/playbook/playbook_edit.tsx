@@ -25,6 +25,7 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
             title: this.props.playbook?.title,
             checklists: this.props.playbook.checklists,
             newPlaybook: !this.props.playbook.id,
+            changesMade: false,
         };
     }
 
@@ -39,6 +40,13 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
         this.props.onClose();
     };
 
+    public updateChecklist(newChecklist: Checklist[]) {
+        this.setState({
+            checklists: newChecklist,
+            changesMade: true,
+        });
+    }
+
     public onAddItem = (checklistItem: ChecklistItem, checklistIndex: number): void => {
         const allChecklists = Object.assign([], this.state.checklists);
         const changedChecklist = Object.assign({}, this.state.checklists[checklistIndex]);
@@ -46,7 +54,7 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
         changedChecklist.items = [...changedChecklist.items, checklistItem];
         allChecklists[checklistIndex] = changedChecklist;
 
-        this.setState({checklists: allChecklists});
+        this.updateChecklist(allChecklists);
     }
 
     public onDeleteItem = (checklistItemIndex: number, checklistIndex: number): void => {
@@ -58,7 +66,7 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
             ...changedChecklist.items.slice(checklistItemIndex + 1, changedChecklist.items.length)];
         allChecklists[checklistIndex] = changedChecklist;
 
-        this.setState({checklists: allChecklists});
+        this.updateChecklist(allChecklists);
     }
 
     public onEditItem = (checklistItemIndex: number, newTitle: string, checklistIndex: number): void => {
@@ -68,7 +76,7 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
         changedChecklist.items[checklistItemIndex].title = newTitle;
         allChecklists[checklistIndex] = changedChecklist;
 
-        this.setState({checklists: allChecklists});
+        this.updateChecklist(allChecklists);
     }
 
     public onReoderItem = (checklistItemIndex: number, newIndex: number, checklistIndex: number): void => {
@@ -90,11 +98,14 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
 
         allChecklists[checklistIndex] = changedChecklist;
 
-        this.setState({checklists: allChecklists});
+        this.updateChecklist(allChecklists);
     }
 
     public handleTitleChange = (e) => {
-        this.setState({title: e.target.value});
+        this.setState({
+            title: e.target.value,
+            changesMade: true,
+        });
     }
 
     public render(): JSX.Element {
@@ -119,9 +130,10 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
                         </button>
                         <button
                             className='btn btn-primary'
+                            disabled={!this.state.changesMade}
                             onClick={this.onSave}
                         >
-                            {'Save'}
+                            {'Save Playbook'}
                         </button>
                     </div>
                 </div>
