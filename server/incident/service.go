@@ -26,8 +26,11 @@ type ServiceImpl struct {
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 
-// DialogFieldNameKey is the key for the incident name field used in OpenCreateIncidentDialog
+// DialogFieldNameKey is the key for the incident name field used in OpenCreateIncidentDialog.
 const DialogFieldNameKey = "incidentName"
+
+// DialogFieldPlaybookIDKey is the key for the playbook ID field used in OpenCreateIncidentDialog.
+const DialogFieldPlaybookIDKey = "playbookID"
 
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
@@ -64,15 +67,17 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	incdnt.ChannelIDs = []string{channel.Id}
 	incdnt.CreatedAt = time.Now().Unix()
 
-	// For now incidents just start with a blank playbook with one empty checklist
-	incdnt.Playbook = playbook.Playbook{
-		Title: "Default Playbook",
-		Checklists: []playbook.Checklist{
-			{
-				Title: "Checklist",
-				Items: []playbook.ChecklistItem{},
+	// Start with a blank playbook with one empty checklist if one isn't provided
+	if incdnt.Playbook == nil {
+		incdnt.Playbook = &playbook.Playbook{
+			Title: "Default Playbook",
+			Checklists: []playbook.Checklist{
+				{
+					Title: "Checklist",
+					Items: []playbook.ChecklistItem{},
+				},
 			},
-		},
+		}
 	}
 
 	if err = s.store.UpdateIncident(incdnt); err != nil {
@@ -112,8 +117,8 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 }
 
 // OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string) error {
-	dialog, err := s.newIncidentDialog(commanderID, postID, clientID)
+func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error {
+	dialog, err := s.newIncidentDialog(commanderID, postID, clientID, playbooks)
 	if err != nil {
 		return fmt.Errorf("failed to create new incident dialog: %w", err)
 	}
@@ -468,7 +473,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 	return channel, nil
 }
 
-func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string) (*model.Dialog, error) {
+func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, playbooks []playbook.Playbook) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch commander user: %w", err)
@@ -482,16 +487,36 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string) (*
 		return nil, fmt.Errorf("failed to marshal DialogState: %w", err)
 	}
 
+	options := []*model.PostActionOptions{{
+		Text:  "None",
+		Value: "-1",
+	}}
+	for _, playbook := range playbooks {
+		options = append(options, &model.PostActionOptions{
+			Text:  playbook.Title,
+			Value: playbook.ID,
+		})
+	}
+
 	return &model.Dialog{
 		Title:            "Incident Details",
 		IntroductionText: fmt.Sprintf("**Commander:** %v", getUserDisplayName(user)),
-		Elements: []model.DialogElement{{
-			DisplayName: "Channel Name",
-			Name:        DialogFieldNameKey,
-			Type:        "text",
-			MinLength:   2,
-			MaxLength:   64,
-		}},
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Channel Name",
+				Name:        DialogFieldNameKey,
+				Type:        "text",
+				MinLength:   2,
+				MaxLength:   64,
+			},
+			{
+				DisplayName: "Playbook",
+				Name:        DialogFieldPlaybookIDKey,
+				Type:        "select",
+				Options:     options,
+				Optional:    true,
+			},
+		},
 		SubmitLabel:    "Start Incident",
 		NotifyOnCancel: false,
 		State:          string(state),

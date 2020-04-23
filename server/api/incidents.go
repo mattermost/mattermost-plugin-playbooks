@@ -21,14 +21,16 @@ import (
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
+	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService incident.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
+		playbookService: playbookService,
 		pluginAPI:       api,
 		poster:          poster,
 	}
@@ -85,13 +87,28 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
+
+	var playbookTemplate *playbook.Playbook
+	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
+		if playbookID != "" && playbookID != "-1" {
+			var pb playbook.Playbook
+			pb, err = h.playbookService.Get(playbookID)
+			if err != nil {
+				HandleError(w, fmt.Errorf("failed to get playbook: %w", err))
+				return
+			}
+			playbookTemplate = &pb
+		}
+	}
+
 	newIncident, err := h.incidentService.CreateIncident(&incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
 			Name:            name,
 		},
-		PostID: state.PostID,
+		PostID:   state.PostID,
+		Playbook: playbookTemplate,
 	})
 
 	if err != nil {

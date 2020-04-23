@@ -82,7 +82,7 @@ var dummyIncident = &incident.Incident{
 	},
 	ChannelIDs: []string{"channel_id_1"},
 	PostID:     "post_id",
-	Playbook: playbook.Playbook{
+	Playbook: &playbook.Playbook{
 		Title: "test",
 		Checklists: []playbook.Checklist{
 			{
