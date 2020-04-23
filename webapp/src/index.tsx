@@ -20,7 +20,7 @@ export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
         registry.registerReducer(reducer);
 
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, '');
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, null);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
