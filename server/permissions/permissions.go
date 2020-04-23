@@ -48,7 +48,7 @@ func CheckHasPermissionsToIncidentTeam(userID, incidentID string, pluginAPI *plu
 		return err
 	}
 
-	isTeamMember := pluginAPI.User.HasPermissionToTeam(userID, channel.Id, model.PERMISSION_VIEW_TEAM)
+	isTeamMember := pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_VIEW_TEAM)
 	if !isTeamMember {
 		return fmt.Errorf("userID `%s`: %w", userID, ErrNoPermissions)
 	}
