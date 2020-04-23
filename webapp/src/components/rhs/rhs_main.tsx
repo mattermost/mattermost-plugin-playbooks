@@ -11,6 +11,7 @@ import IncidentList from './incident_list';
 import IncidentDetails from './incident_details';
 
 import './rhs.scss';
+import PlaybookIcon from './playbook_icon';
 
 export function renderView(props: any): JSX.Element {
     return (
@@ -47,6 +48,7 @@ interface Props {
         getIncidentDetails: (id: string) => void;
         setRHSState: (state: RHSState) => void;
         setRHSOpen: (open: boolean) => void;
+        openBackstageModal: () => void;
     };
 }
 
@@ -101,6 +103,12 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                             <div>
                                 <div className='title'>{'Incident List'}</div>
                             </div>
+                            <button
+                                className='start-incident'
+                                onClick={() => this.props.actions.openBackstageModal()}
+                            >
+                                <PlaybookIcon/>
+                            </button>
                             <button
                                 className='start-incident'
                                 onClick={() => this.props.actions.startIncident()}

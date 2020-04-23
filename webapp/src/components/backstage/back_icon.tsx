@@ -9,13 +9,17 @@ const BackIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['button']>)
             {...props}
         >
             <svg
-                width='24px'
-                height='24px'
-                viewBox='0 0 24 24'
-                role='icon'
+                width='8px'
+                height='12px'
+                viewBox='0 0 8 12'
+                fill='none'
                 aria-label={'back'}
+                xmlns='http://www.w3.org/2000/svg'
             >
-                <path d='M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z'/>
+                <path
+                    d='M7.06 10.14L2.92 5.99999L7.06 1.85999L5.8 0.599987L0.4 5.99999L5.8 11.4L7.06 10.14Z'
+                    fill='white'
+                />
             </svg>
         </button>
     );

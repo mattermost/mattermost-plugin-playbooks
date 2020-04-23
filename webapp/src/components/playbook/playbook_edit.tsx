@@ -1,0 +1,166 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import React from 'react';
+
+import {Playbook, Checklist, ChecklistItem} from 'src/types/playbook';
+import {createPlaybook} from 'src/client';
+
+import {ChecklistDetails} from 'src/components/checklist/checklist';
+
+import BackIcon from './back_icon';
+
+import './playbook.scss';
+
+interface Props {
+    playbook: Playbook;
+    onClose: () => void;
+}
+
+export default class PlaybookEdit extends React.PureComponent<Props> {
+    constructor(props: Props) {
+        super(props);
+
+        this.state = {
+            title: this.props.playbook?.title,
+            checklists: this.props.playbook.checklists,
+            newPlaybook: !this.props.playbook.id,
+        };
+    }
+
+    public onSave = (): void => {
+        const newPlaybook: Playbook = {
+            title: this.state.title,
+            checklists: this.state.checklists,
+        };
+
+        createPlaybook(newPlaybook);
+
+        this.props.onClose();
+    };
+
+    public onAddItem = (checklistItem: ChecklistItem, checklistIndex: number): void => {
+        const allChecklists = Object.assign([], this.state.checklists);
+        const changedChecklist = Object.assign({}, this.state.checklists[checklistIndex]);
+
+        changedChecklist.items = [...changedChecklist.items, checklistItem];
+        allChecklists[checklistIndex] = changedChecklist;
+
+        this.setState({checklists: allChecklists});
+    }
+
+    public onDeleteItem = (checklistItemIndex: number, checklistIndex: number): void => {
+        const allChecklists = Object.assign([], this.state.checklists);
+        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]);
+
+        changedChecklist.items = [
+            ...changedChecklist.items.slice(0, checklistItemIndex),
+            ...changedChecklist.items.slice(checklistItemIndex + 1, changedChecklist.items.length)];
+        allChecklists[checklistIndex] = changedChecklist;
+
+        this.setState({checklists: allChecklists});
+    }
+
+    public onEditItem = (checklistItemIndex: number, newTitle: string, checklistIndex: number): void => {
+        const allChecklists = Object.assign([], this.state.checklists);
+        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]);
+
+        changedChecklist.items[checklistItemIndex].title = newTitle;
+        allChecklists[checklistIndex] = changedChecklist;
+
+        this.setState({checklists: allChecklists});
+    }
+
+    public onReoderItem = (checklistItemIndex: number, newIndex: number, checklistIndex: number): void => {
+        const allChecklists = Object.assign([], this.state.checklists);
+        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]);
+
+        const itemToMove = changedChecklist.items[checklistItemIndex];
+
+        // Remove from current index
+        changedChecklist.items = [
+            ...changedChecklist.items.slice(0, checklistItemIndex),
+            ...changedChecklist.items.slice(checklistItemIndex + 1, changedChecklist.items.length)];
+
+        // Add in new index
+        changedChecklist.items = [
+            ...changedChecklist.items.slice(0, newIndex),
+            itemToMove,
+            ...changedChecklist.items.slice(newIndex, changedChecklist.items.length + 1)];
+
+        allChecklists[checklistIndex] = changedChecklist;
+
+        this.setState({checklists: allChecklists});
+    }
+
+    public handleTitleChange = (e) => {
+        this.setState({title: e.target.value});
+    }
+
+    public render(): JSX.Element {
+        const title = this.state.newPlaybook ? 'New Playbook' : 'Edit Playbook';
+
+        return (
+            <div className='Playbook'>
+                <div className='header'>
+                    <div className='title'>
+                        <BackIcon
+                            className='back-icon'
+                            onClick={this.props.onClose}
+                        />
+                        {title}
+                    </div>
+                    <div className='header-button-div'>
+                        <button
+                            className='btn'
+                            onClick={this.props.onClose}
+                        >
+                            {'Cancel'}
+                        </button>
+                        <button
+                            className='btn btn-primary'
+                            onClick={this.onSave}
+                        >
+                            {'Save'}
+                        </button>
+                    </div>
+                </div>
+                <div className='playbook-fields'>
+                    <input
+                        id={'playbook-name'}
+                        className='form-control input-name'
+                        type='text'
+                        placeholder='Playbook Name'
+                        value={this.state.title}
+
+                        onChange={this.handleTitleChange}
+                    />
+                    <div className='cheklist-container'>
+                        <div className='checkbox-container'>
+                            {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
+                                <ChecklistDetails
+                                    checklist={checklist}
+                                    enableEdit={true}
+                                    key={checklist.title + checklistIndex}
+
+                                    addItem={(checklistItem: ChecklistItem) => {
+                                        this.onAddItem(checklistItem, checklistIndex);
+                                    }}
+                                    removeItem={(chceklistItemIndex: number) => {
+                                        this.onDeleteItem(chceklistItemIndex, checklistIndex);
+                                    }}
+                                    editItem={(checklistItemIndex: number, newTitle: string) => {
+                                        this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
+                                    }}
+                                    reorderItems={(checklistItemIndex: number, newPosition: number) => {
+                                        this.onReoderItem(checklistItemIndex, newPosition, checklistIndex);
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}

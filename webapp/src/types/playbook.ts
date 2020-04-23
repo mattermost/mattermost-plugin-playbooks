@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 export interface Playbook {
-    id: string;
+    id?: string;
     title: string;
     checklists: Checklist[];
 }
@@ -15,6 +15,16 @@ export interface Checklist {
 export interface ChecklistItem {
     title: string;
     checked: boolean;
+}
+
+export function newPlaybook(): Playbook {
+    return {
+        title: '',
+        checklists: [{
+            title: 'Checklist',
+            items: [],
+        }],
+    };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

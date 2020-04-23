@@ -11,8 +11,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
-import {Playbook} from 'src/types/incident';
-import {ChecklistItem} from 'src/types/playbook';
+import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 

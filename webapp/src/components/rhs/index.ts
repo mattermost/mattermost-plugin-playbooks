@@ -13,6 +13,7 @@ import {
     getIncidentDetails,
     setRHSState,
     setRHSOpen,
+    openBackstageModal,
 } from 'src/actions';
 
 import {activeIncidents, incidentDetails, rhsState, isLoading} from 'src/selectors';
@@ -36,6 +37,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
             getIncidentDetails: (id: string) => withLoading(getIncidentDetails(id)),
             setRHSState,
             setRHSOpen,
+            openBackstageModal,
         }, dispatch),
     };
 }

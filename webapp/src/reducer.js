@@ -12,8 +12,8 @@ import {
     RECEIVED_INCIDENT_UPDATE,
     SET_LOADING,
     SET_CLIENT_ID,
-    SET_PLAYBOOKS_MODAL_OPEN,
     RECEIVED_PlAYBOOKS,
+    SET_BACKSTAGE_MODAL_OPEN,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -90,19 +90,19 @@ function clientId(state = '', action) {
     }
 }
 
-function playbooksModalOpen(state = false, action) {
+function playbooks(state = [], action) {
     switch (action.type) {
-    case SET_PLAYBOOKS_MODAL_OPEN:
-        return action.open || false;
+    case RECEIVED_PlAYBOOKS:
+        return action.playbooks || [];
     default:
         return state;
     }
 }
 
-function playbooks(state = [], action) {
+function backstageModalOpen(state = false, action) {
     switch (action.type) {
-    case RECEIVED_PlAYBOOKS:
-        return action.playbooks || [];
+    case SET_BACKSTAGE_MODAL_OPEN:
+        return action.open || false;
     default:
         return state;
     }
@@ -116,6 +116,6 @@ export default combineReducers({
     isLoading,
     rhsOpen,
     clientId,
-    playbooksModalOpen,
     playbooks,
+    backstageModalOpen,
 });

@@ -9,10 +9,10 @@ import {pluginId} from './manifest';
 import IncidentIcon from './components/incident_icon';
 import RightHandSidebar from './components/rhs';
 import StartIncidentPostMenu from './components/post_menu';
-import ConfigurePlaybookModal from './components/playbook';
+import BackstageModal from './components/backstage/backstage_modal';
 
 import {Hooks} from './hooks';
-import {setToggleRHSAction, openPlaybooksModal} from './actions';
+import {setToggleRHSAction} from './actions';
 import reducer from './reducer';
 import {handleWebsocketIncidentUpdate, handleWebsocketIncidentCreated} from './websocket_events';
 import {WEBSOCKET_INCIDENT_UPDATE, WEBSOCKET_INCIDENT_CREATED} from './types/websocket_events';
@@ -39,10 +39,7 @@ export default class Plugin {
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
 
-        registry.registerRootComponent(ConfigurePlaybookModal);
-        registry.registerMainMenuAction('Incidents Backstage', async () => {
-            store.dispatch(openPlaybooksModal());
-        });
+        registry.registerRootComponent(BackstageModal);
     }
 }
 

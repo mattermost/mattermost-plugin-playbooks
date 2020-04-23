@@ -37,13 +37,15 @@ import {
     ReceivedIncidentUpdate,
     SetLoading,
     SetClientId,
-    SetPlaybookModal,
-    SET_PLAYBOOKS_MODAL_OPEN,
     ReceivedPlaybooks,
     RECEIVED_PlAYBOOKS,
+    SetBackstageModal,
+    SET_BACKSTAGE_MODAL_OPEN,
 } from './types/actions';
 
-import {Incident, RHSState, Playbook} from './types/incident';
+import {Incident, RHSState} from './types/incident';
+import {Playbook} from './types/playbook';
+
 import {
     fetchIncidents,
     fetchIncidentDetails,
@@ -278,23 +280,23 @@ export function setClientId(clientId: string): SetClientId {
     };
 }
 
-export function openPlaybooksModal(): SetPlaybookModal {
-    return {
-        type: SET_PLAYBOOKS_MODAL_OPEN,
-        open: true,
-    };
-}
-
-export function closePlaybooksModal(): SetPlaybookModal {
-    return {
-        type: SET_PLAYBOOKS_MODAL_OPEN,
-        open: false,
-    };
-}
-
 function receivedPlaybooks(playbooks: Playbook[]): ReceivedPlaybooks {
     return {
         type: RECEIVED_PlAYBOOKS,
         playbooks,
+    };
+}
+
+export function openBackstageModal(): SetBackstageModal {
+    return {
+        type: SET_BACKSTAGE_MODAL_OPEN,
+        open: true,
+    };
+}
+
+export function closeBackstageModal(): SetBackstageModal {
+    return {
+        type: SET_BACKSTAGE_MODAL_OPEN,
+        open: false,
     };
 }
