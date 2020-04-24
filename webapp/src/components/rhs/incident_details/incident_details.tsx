@@ -97,44 +97,44 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     </div>
                 }
 
-                {
-                    this.props.involvedInIncident &&
-                    <div className='footer-div'>
-                        <button
-                            className='btn btn-primary'
-                            onClick={() => this.props.actions.endIncident()}
-                            disabled={!this.props.viewingIncidentChannel}
-                        >
-                            {'End Incident'}
-                        </button>
-                        {
-                            this.props.involvedInIncident && !this.props.viewingIncidentChannel &&
-                            <div className='help-text'>
-                                {'Go to '}
-                                <Link
-                                    to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
-                                    text={'the incident channel'}
-                                />
-                                {' to make changes.'}
-                            </div>
-                        }
-                    </div>
-                }
+                <div className='footer-div'>
+                    {
+                        this.props.involvedInIncident &&
+                        <>
+                            <button
+                                className='btn btn-primary'
+                                onClick={() => this.props.actions.endIncident()}
+                                disabled={!this.props.viewingIncidentChannel}
+                            >
+                                {'End Incident'}
+                            </button>
+                            {
+                                !this.props.viewingIncidentChannel &&
+                                <div className='help-text'>
+                                    {'Go to '}
+                                    <Link
+                                        to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
+                                        text={'the incident channel'}
+                                    />
+                                    {' to make changes.'}
+                                </div>
+                            }
+                        </>
+                    }
 
-                {
-                    !this.props.involvedInIncident &&
-                    <div className='footer-div'>
+                    {
+                        !this.props.involvedInIncident &&
                         <div className='help-text'>
-                            {'You are not part of the incident, contact '}
+                            {'You are not a participant in the incident. Contact '}
                             <a
                                 onClick={() => this.moveToDM(this.props.commander.username)}
                             >
                                 {'@' + this.props.commander.username}
                             </a>
-                            {' to request access. '}
+                            {' to request access.'}
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         );
     }
