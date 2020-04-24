@@ -5,14 +5,19 @@
     cursor: unset;
 
     .Profile {
+        -webkit-transition: all 0.15s ease;
+        -webkit-transition-delay: 0s;
+        -moz-transition: all 0.15s ease;
+        -o-transition: all 0.15s ease;
+        transition: all 0.15s ease false;
         border-radius: 100px;
 
         &.active {
             cursor: pointer;
+        }
 
-            &:hover {
-                background: rgba(20, 93, 191, 0.08);
-            }
+        &:hover {
+            background: var(--center-channel-color-08);
         }
 
         .icon-chevron-down {

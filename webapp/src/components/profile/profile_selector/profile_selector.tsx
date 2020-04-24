@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 
-import Select from 'react-select';
+import ReactSelect from 'react-select';
 
 import {css} from '@emotion/core';
 
@@ -11,6 +11,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 
 import {fetchUsersInChannel, setCommander} from 'src/client';
 
+import './profile_selector.scss';
 import Profile from 'src/components/profile';
 import ProfileButton from 'src/components/profile/profile_selector/profile_button/profile_button';
 import {getUserDescription} from 'src/utils/utils';
@@ -118,7 +119,7 @@ export default function ProfileSelector(props: Props) {
                 />
             }
         >
-            <Select
+            <ReactSelect
                 autoFocus={true}
                 backspaceRemovesValue={false}
                 components={{DropdownIndicator: null, IndicatorSeparator: null}}
@@ -127,11 +128,13 @@ export default function ProfileSelector(props: Props) {
                 isClearable={false}
                 menuIsOpen={true}
                 options={userOptions}
-                placeholder={<div><i className={'fa fa-search mr-2'}/><span>{'Search'}</span></div>}
+                placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
                 onChange={(option) => onSelectedChange(option as Option)}
+                classNamePrefix='react-select-auto react-select'
+                className='react-select'
             />
         </Dropdown>
     );
@@ -161,7 +164,10 @@ interface DropdownProps {
 }
 
 const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
-    <div css={{position: 'relative'}}>
+    <div
+        className={`profile-dropdown${isOpen ? ' profile-dropdown--active' : ''}`}
+        css={{position: 'relative'}}
+    >
         {target}
         {isOpen ? <Menu>{children}</Menu> : null}
         {isOpen ? <Blanket onClick={onClose}/> : null}

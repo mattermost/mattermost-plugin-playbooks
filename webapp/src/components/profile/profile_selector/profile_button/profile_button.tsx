@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import 'src/components/profile/profile_selector/profile_button/profile_button.scss';
+import './profile_button.scss';
 import Profile from 'src/components/profile';
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function ProfileButton(props: Props) {
-    const downChevron = props.enableEdit ? <i className='icon-chevron-down ml-2 mr-2'/> : <></>;
+    const downChevron = props.enableEdit ? <i className='icon-chevron-down ml-1 mr-2'/> : <></>;
 
     const formatName = (preferredName: string, userName: string) => {
         let name = preferredName;
