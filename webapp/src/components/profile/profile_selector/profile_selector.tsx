@@ -169,25 +169,14 @@ const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
         css={{position: 'relative'}}
     >
         {target}
-        {isOpen ? <Menu>{children}</Menu> : null}
+        {isOpen ? <Menu className='react-select__container'>{children}</Menu> : null}
         {isOpen ? <Blanket onClick={onClose}/> : null}
     </div>
 );
 
 const Menu = (props: Record<string, any>) => {
-    const shadow = 'hsla(218, 50%, 10%, 0.1)';
     return (
-        <div
-            css={{
-                backgroundColor: 'white',
-                borderRadius: 4,
-                boxShadow: `0 0 0 1px ${shadow}, 0 4px 11px ${shadow}`,
-                marginTop: 8,
-                position: 'absolute',
-                zIndex: 2,
-            }}
-            {...props}
-        />
+        <div {...props}/>
     );
 };
 
