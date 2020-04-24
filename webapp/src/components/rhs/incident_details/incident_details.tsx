@@ -5,6 +5,10 @@ import React from 'react';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
+import {Permissions} from 'mattermost-redux/constants';
+
+import ChannelPermissionGate
+    from 'mattermost-webapp/components/permissions_gates/channel_permission_gate';
 
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 
@@ -36,7 +40,8 @@ interface Props {
 export default class IncidentDetails extends React.PureComponent<Props> {
     public render(): JSX.Element {
         const incidentChannel = this.props.channelDetails?.length > 0 ? this.props.channelDetails[0] : null;
-
+        console.log('<><> IncidentDetails, incidentChannel:');
+        console.log(incidentChannel);
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
@@ -49,31 +54,34 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     />
                 </div>
 
-                {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
-                    <ChecklistDetails
-                        checklist={checklist}
-                        enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
-                        key={checklist.title + index}
-                        onChange={(itemNum: number, checked: boolean) => {
-                            this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
-                        }}
-                        addItem={(checklistItem: ChecklistItem) => {
-                            this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
-                        }}
-                        removeItem={(itemNum: number) => {
-                            this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
-                        }}
-                        editItem={(itemNum: number, newTitle: string) => {
-                            this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
-                        }}
-                        reorderItems={(itemNum: number, newPosition: number) => {
-                            this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
-                        }}
-                    />
-                ))}
+                <ChannelPermissionGate
+                    channelId={incidentChannel?.id}
+                    teamId={incidentChannel?.team_id}
+                    permissions={[Permissions.READ_CHANNEL]}
+                >
+                    {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
+                        <ChecklistDetails
+                            checklist={checklist}
+                            enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                            key={checklist.title + index}
+                            onChange={(itemNum: number, checked: boolean) => {
+                                this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
+                            }}
+                            addItem={(checklistItem: ChecklistItem) => {
+                                this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
+                            }}
+                            removeItem={(itemNum: number) => {
+                                this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
+                            }}
+                            editItem={(itemNum: number, newTitle: string) => {
+                                this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
+                            }}
+                            reorderItems={(itemNum: number, newPosition: number) => {
+                                this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
+                            }}
+                        />
+                    ))}
 
-                {
-                    this.props.involvedInIncident &&
                     <div className='inner-container'>
                         <div className='title'>{'Channels'}</div>
                         {
@@ -86,10 +94,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             ))
                         }
                     </div>
-                }
 
-                {
-                    this.props.involvedInIncident &&
                     <div className='footer-div'>
                         <button
                             className='btn btn-primary'
@@ -110,7 +115,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             </div>
                         }
                     </div>
-                }
+                </ChannelPermissionGate>
             </div>
         );
     }
