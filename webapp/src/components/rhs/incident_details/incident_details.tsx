@@ -5,10 +5,6 @@ import React from 'react';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
-import {Permissions} from 'mattermost-redux/constants';
-
-import ChannelPermissionGate
-    from 'mattermost-webapp/components/permissions_gates/channel_permission_gate';
 
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 
@@ -53,8 +49,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const incidentChannel = this.props.channelDetails?.length > 0 ? this.props.channelDetails[0] : null;
-        console.log('<><> IncidentDetails, incidentChannel:');
-        console.log(incidentChannel);
+
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
