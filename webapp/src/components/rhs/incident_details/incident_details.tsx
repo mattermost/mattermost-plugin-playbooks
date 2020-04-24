@@ -11,8 +11,7 @@ import {ChecklistDetails} from 'src/components/checklist/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
-import Profile from 'src/components/rhs/profile';
-
+import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
 import Link from 'src/components/rhs/link';
 
 import './incident_details.scss';
@@ -36,12 +35,17 @@ interface Props {
 
 export default class IncidentDetails extends React.PureComponent<Props> {
     public render(): JSX.Element {
+        const incidentChannel = this.props.channelDetails?.length > 0 ? this.props.channelDetails[0] : null;
+
         return (
             <div className='IncidentDetails'>
                 <div className='inner-container'>
                     <div className='title'>{'Commander'}</div>
-                    <Profile
-                        userId={this.props.incident.commander_user_id}
+                    <ProfileSelector
+                        commanderId={this.props.incident.commander_user_id}
+                        enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                        channelId={incidentChannel?.id}
+                        incidentId={this.props.incident.id}
                     />
                 </div>
 

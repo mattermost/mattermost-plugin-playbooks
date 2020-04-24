@@ -1,0 +1,32 @@
+.Profile {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .image {
+        width: 24px;
+        height: 24px;
+        background-color: #bbb;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .name {
+        padding: 0 0 0 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        .description {
+            color: var(--center-channel-color-56);
+            margin-left: 4px;
+        }
+    }
+}
+
+.ProfileButton {
+    .image {
+        width: 32px;
+        height: 32px;
+    }
+}

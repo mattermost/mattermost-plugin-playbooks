@@ -223,6 +223,46 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 	return incdnt.CommanderUserID == userID
 }
 
+// ChangeCommander processes a request from userID to change the commander for incidentID
+// to commanderID. Changing to the same commanderID is a no-op.
+func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commanderID string) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return err
+	}
+
+	if !incidentToModify.IsActive {
+		return ErrIncidentNotActive
+	} else if incidentToModify.CommanderUserID == commanderID {
+		return nil
+	}
+
+	oldCommander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", incidentToModify.CommanderUserID, err)
+	}
+	newCommander, err := s.pluginAPI.User.Get(commanderID)
+	if err != nil {
+		return fmt.Errorf("failed to to resolve user %s: %w", commanderID, err)
+	}
+
+	incidentToModify.CommanderUserID = commanderID
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+
+	mainChannelID := incidentToModify.ChannelIDs[0]
+	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
+		oldCommander.Username, newCommander.Username)
+	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // ModifyCheckedState checks or unchecks the specified checklist item
 // Indeponant, will not perform any actions if the checklist item is already in the given checked state
 func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error {
