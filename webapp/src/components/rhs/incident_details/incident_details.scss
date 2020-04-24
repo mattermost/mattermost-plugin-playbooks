@@ -29,12 +29,12 @@ $font-family: Open Sans;
     // Link component
     .link {
         cursor: pointer;
+        opacity: unset;
 
         &:hover {
             text-decoration: underline;
         }
     }
-
 
     .footer-div {
         border-top: 1px solid var(--center-channel-color-16);
@@ -45,6 +45,10 @@ $font-family: Open Sans;
         height: auto;
         text-align: right;
         padding: 2rem;
+
+        a {
+            opacity: unset;
+        }
     }
 }
 
