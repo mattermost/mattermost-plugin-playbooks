@@ -29,7 +29,7 @@ export default function RhsHeader(props: Props) {
     const headerButtons = (
         <div className={'header-buttons'}>
             <button
-                className='start-incident'
+                className='navigation-bar__button'
                 onClick={() => props.actions.startIncident()}
             >
                 <i
@@ -37,7 +37,7 @@ export default function RhsHeader(props: Props) {
                 />
             </button>
             <button
-                className='start-incident'
+                className='navigation-bar__button ml-1'
                 onClick={closeRhs}
             >
                 <i
