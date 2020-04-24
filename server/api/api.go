@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 type contextKey string
@@ -42,8 +43,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePlugin
 
 // HandleError writes err as json into the response.
 func HandleError(w http.ResponseWriter, err error) {
-	HandleErrorWithCode(w, http.StatusInternalServerError,
-		"An internal error has occurred. Check app server logs for details.", err)
+	w.WriteHeader(http.StatusInternalServerError)
+	b, _ := json.Marshal(struct {
+		Error   string `json:"error"`
+		Details string `json:"details"`
+	}{
+		Error:   "An internal error has occurred. Check app server logs for details.",
+		Details: err.Error(),
+	})
+	logrus.Warn(string(b))
+	_, _ = w.Write(b)
 }
 
 // ReturnJSON writes the given pointer to object as json with a success response
@@ -68,6 +77,7 @@ func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err e
 		Error:   errTitle,
 		Details: err.Error(),
 	})
+	logrus.Warn(string(b))
 	_, _ = w.Write(b)
 }
 

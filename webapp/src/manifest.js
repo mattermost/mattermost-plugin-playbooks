@@ -5,7 +5,7 @@ const manifest = JSON.parse(`
     "id": "com.mattermost.plugin-incident-response",
     "name": "Incident Response",
     "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
-    "version": "0.2.0",
+    "version": "0.2.2",
     "min_server_version": "5.12.0",
     "server": {
         "executables": {

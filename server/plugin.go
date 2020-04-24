@@ -15,6 +15,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/sirupsen/logrus"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -46,6 +47,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
 	p.config = config.NewConfigService(pluginAPIClient)
+	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
@@ -88,9 +90,10 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		telemetryClient,
 	)
-	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot)
+
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV))
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService)
+	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return fmt.Errorf("failed register commands: %w", err)

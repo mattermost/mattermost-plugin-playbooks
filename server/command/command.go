@@ -89,7 +89,13 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	if err := r.incidentService.OpenCreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID); err != nil {
+	playbooks, err := r.playbookService.GetPlaybooks()
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		return
+	}
+
+	if err := r.incidentService.OpenCreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID, playbooks); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
@@ -239,7 +245,7 @@ func (r *Runner) actionSelftest() {
 			TeamID:          r.args.TeamId,
 			CommanderUserID: r.args.UserId,
 		},
-		Playbook: gotplaybook,
+		Playbook: &gotplaybook,
 	})
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
