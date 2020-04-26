@@ -4,6 +4,7 @@
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {UserProfile} from 'mattermost-redux/types/users';
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
@@ -62,6 +63,20 @@ export async function savePlaybook(playbook: Playbook) {
     });
 
     return data;
+}
+
+export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
+    return Client4.getProfilesInChannel(channelId, 0, 200);
+}
+
+export async function setCommander(incidentId: string, commanderId: string) {
+    const body = `{"commander_id": "${commanderId}"}`;
+    try {
+        const data = await doPost(`${apiUrl}/incidents/${incidentId}/commander`, body);
+        return data;
+    } catch (error) {
+        return {error};
+    }
 }
 
 export async function checkItem(incidentID: string, checklistNum: number, itemNum: number) {

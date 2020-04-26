@@ -21,14 +21,16 @@ import (
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
+	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService incident.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
+		playbookService: playbookService,
 		pluginAPI:       api,
 		poster:          poster,
 	}
@@ -41,7 +43,11 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
-	incidentRouter.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+
+	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
+	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
+	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
 	checklistsRouter := incidentRouter.PathPrefix("/checklists").Subrouter()
 
@@ -56,6 +62,26 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, ap
 	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
 
 	return handler
+}
+
+// permissionsToIncidentChannelRequired checks that the requester is admin or has read access
+// to the primary incident channel.
+func (h *IncidentHandler) permissionsToIncidentChannelRequired(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := r.Header.Get("Mattermost-User-ID")
+
+		if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+			if errors.Is(err, permissions.ErrNoPermissions) {
+				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+				return
+			}
+			HandleError(w, err)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request) {
@@ -85,13 +111,28 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
+
+	var playbookTemplate *playbook.Playbook
+	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
+		if playbookID != "" && playbookID != "-1" {
+			var pb playbook.Playbook
+			pb, err = h.playbookService.Get(playbookID)
+			if err != nil {
+				HandleError(w, fmt.Errorf("failed to get playbook: %w", err))
+				return
+			}
+			playbookTemplate = &pb
+		}
+	}
+
 	newIncident, err := h.incidentService.CreateIncident(&incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
 			Name:            name,
 		},
-		PostID: state.PostID,
+		PostID:   state.PostID,
+		Playbook: playbookTemplate,
 	})
 
 	if err != nil {
@@ -190,15 +231,6 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-			return
-		}
-		HandleError(w, err)
-		return
-	}
-
 	err := h.incidentService.EndIncident(vars["id"], userID)
 	if err != nil {
 		HandleError(w, err)
@@ -221,6 +253,39 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 	err := h.incidentService.EndIncident(request.State, request.UserId)
 	if err != nil {
 		HandleError(w, fmt.Errorf("failed to end incident: %w", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// changeCommander handles the /incidents/{id}/change-commander api endpoint.
+func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		CommanderID string `json:"commander_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		HandleError(w, fmt.Errorf("could not decode request body: %w", err))
+		return
+	}
+
+	// Check if the target user (params.CommanderID) has permissions
+	if err := permissions.CheckHasPermissionsToIncidentChannel(params.CommanderID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				fmt.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
+			return
+		}
+		HandleError(w, err)
+		return
+	}
+
+	if err := h.incidentService.ChangeCommander(vars["id"], userID, params.CommanderID); err != nil {
+		HandleError(w, err)
 		return
 	}
 

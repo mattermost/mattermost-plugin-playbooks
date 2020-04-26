@@ -8,7 +8,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {Incident} from 'src/types/incident';
 
 import './incident_item.scss';
-import Profile from 'src/components/rhs/profile';
+import Profile from 'src/components/profile';
 
 interface Props {
     incident: Incident;

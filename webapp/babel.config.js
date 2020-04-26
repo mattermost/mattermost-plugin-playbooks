@@ -23,6 +23,7 @@ const config = {
             allExtensions: true,
             isTSX: true,
         }],
+        ['@emotion/babel-preset-css-prop'],
     ],
     plugins: [
         '@babel/plugin-proposal-class-properties',
