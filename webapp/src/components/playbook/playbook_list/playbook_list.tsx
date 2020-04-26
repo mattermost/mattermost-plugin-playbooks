@@ -13,7 +13,12 @@ interface Props {
     fetchPlaybooks: () => void;
 }
 
-export default class PlaybookList extends React.PureComponent<Props> {
+interface State {
+    editMode: boolean;
+    selectedPlaybook?: Playbook | null;
+}
+
+export default class PlaybookList extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
 
@@ -29,6 +34,8 @@ export default class PlaybookList extends React.PureComponent<Props> {
 
     public toggleEditMode = () => {
         this.setState({editMode: !this.state.editMode});
+
+        // TODO - Remove when we handle socket events for update
         this.props.fetchPlaybooks();
     }
 
@@ -65,6 +72,13 @@ export default class PlaybookList extends React.PureComponent<Props> {
                                         <div className='col-sm-2'> {'Actions'}</div>
                                     </div>
                                 }
+                                {
+                                    !this.props.playbooks.length &&
+                                    <div className='empty-list'>
+                                        {'There are no playbooks defined yet.'}
+                                    </div>
+                                }
+
                                 {
                                     this.props.playbooks.map((p) => (
                                         <div

@@ -38,9 +38,9 @@ import {
     SetLoading,
     SetClientId,
     ReceivedPlaybooks,
-    RECEIVED_PlAYBOOKS,
     SetBackstageModal,
     SET_BACKSTAGE_MODAL_OPEN,
+    RECEIVED_PLAYBOOK,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -282,7 +282,7 @@ export function setClientId(clientId: string): SetClientId {
 
 function receivedPlaybooks(playbooks: Playbook[]): ReceivedPlaybooks {
     return {
-        type: RECEIVED_PlAYBOOKS,
+        type: RECEIVED_PLAYBOOK,
         playbooks,
     };
 }

@@ -50,8 +50,16 @@ export function clientFetchPlaybooks() {
     return doGet(`${apiUrl}/playbooks`);
 }
 
-export async function createPlaybook(playbook: Playbook) {
-    const {data} = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
+export async function savePlaybook(playbook: Playbook) {
+    if (!playbook.id) {
+        const {data} = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
+        return data;
+    }
+
+    const {data} = await doFetchWithResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+        method: 'put',
+        body: JSON.stringify(playbook),
+    });
 
     return data;
 }
@@ -122,9 +130,6 @@ export const doGet = async (url: string) => {
 };
 
 export const doPost = async (url: string, body = {}) => {
-    console.log('DOING POST. Body: ');
-    console.log(body);
-
     const {data} = await doFetchWithResponse(url, {
         method: 'post',
         body,

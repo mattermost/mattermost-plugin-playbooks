@@ -12,8 +12,8 @@ import {
     RECEIVED_INCIDENT_UPDATE,
     SET_LOADING,
     SET_CLIENT_ID,
-    RECEIVED_PlAYBOOKS,
     SET_BACKSTAGE_MODAL_OPEN,
+    RECEIVED_PLAYBOOK,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -92,7 +92,7 @@ function clientId(state = '', action) {
 
 function playbooks(state = [], action) {
     switch (action.type) {
-    case RECEIVED_PlAYBOOKS:
+    case RECEIVED_PLAYBOOK:
         return action.playbooks || [];
     default:
         return state;

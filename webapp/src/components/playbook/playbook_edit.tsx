@@ -4,7 +4,7 @@
 import React from 'react';
 
 import {Playbook, Checklist, ChecklistItem} from 'src/types/playbook';
-import {createPlaybook} from 'src/client';
+import {savePlaybook} from 'src/client';
 
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 
@@ -17,7 +17,14 @@ interface Props {
     onClose: () => void;
 }
 
-export default class PlaybookEdit extends React.PureComponent<Props> {
+interface State{
+    title: string;
+    checklists: Checklist[];
+    newPlaybook: boolean;
+    changesMade: boolean;
+}
+
+export default class PlaybookEdit extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
 
@@ -31,11 +38,12 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
 
     public onSave = (): void => {
         const newPlaybook: Playbook = {
+            id: this.props.playbook.id,
             title: this.state.title,
             checklists: this.state.checklists,
         };
 
-        createPlaybook(newPlaybook);
+        savePlaybook(newPlaybook);
 
         this.props.onClose();
     };
@@ -48,7 +56,7 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
     }
 
     public onAddItem = (checklistItem: ChecklistItem, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], this.state.checklists);
+        const allChecklists = Object.assign([], this.state.checklists) as Checklist[];
         const changedChecklist = Object.assign({}, this.state.checklists[checklistIndex]);
 
         changedChecklist.items = [...changedChecklist.items, checklistItem];
@@ -58,8 +66,8 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
     }
 
     public onDeleteItem = (checklistItemIndex: number, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], this.state.checklists);
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]);
+        const allChecklists = Object.assign([], this.state.checklists) as Checklist[];
+        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
 
         changedChecklist.items = [
             ...changedChecklist.items.slice(0, checklistItemIndex),
@@ -70,8 +78,8 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
     }
 
     public onEditItem = (checklistItemIndex: number, newTitle: string, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], this.state.checklists);
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]);
+        const allChecklists = Object.assign([], this.state.checklists) as Checklist[];
+        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
 
         changedChecklist.items[checklistItemIndex].title = newTitle;
         allChecklists[checklistIndex] = changedChecklist;
@@ -80,8 +88,8 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
     }
 
     public onReoderItem = (checklistItemIndex: number, newIndex: number, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], this.state.checklists);
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]);
+        const allChecklists = Object.assign([], this.state.checklists) as Checklist[];
+        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
 
         const itemToMove = changedChecklist.items[checklistItemIndex];
 
@@ -101,7 +109,7 @@ export default class PlaybookEdit extends React.PureComponent<Props> {
         this.updateChecklist(allChecklists);
     }
 
-    public handleTitleChange = (e) => {
+    public handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({
             title: e.target.value,
             changesMade: true,
