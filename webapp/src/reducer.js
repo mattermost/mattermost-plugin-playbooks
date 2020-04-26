@@ -13,7 +13,7 @@ import {
     SET_LOADING,
     SET_CLIENT_ID,
     SET_BACKSTAGE_MODAL_OPEN,
-    RECEIVED_PLAYBOOK,
+    RECEIVED_PLAYBOOKS,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -92,17 +92,20 @@ function clientId(state = '', action) {
 
 function playbooks(state = [], action) {
     switch (action.type) {
-    case RECEIVED_PLAYBOOK:
+    case RECEIVED_PLAYBOOKS:
         return action.playbooks || [];
     default:
         return state;
     }
 }
 
-function backstageModalOpen(state = false, action) {
+function backstageModal(state = false, action) {
     switch (action.type) {
     case SET_BACKSTAGE_MODAL_OPEN:
-        return action.open || false;
+        return {
+            open: action.open || false,
+            selectedArea: action.selectedArea,
+        };
     default:
         return state;
     }
@@ -117,5 +120,5 @@ export default combineReducers({
     rhsOpen,
     clientId,
     playbooks,
-    backstageModalOpen,
+    backstageModal,
 });

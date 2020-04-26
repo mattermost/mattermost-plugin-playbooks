@@ -1,8 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React from 'react';
 import {CSSTransition} from 'react-transition-group';
+
+import {BackstageArea} from 'src/types/backstage';
 
 import Backstage from '../backstage';
 
@@ -12,9 +14,10 @@ const ANIMATION_DURATION = 100;
 interface Props {
     show: boolean;
     close: () => void;
+    selectedArea: BackstageArea;
 }
 
-const BackstageModal = ({show, close}: Props): React.ReactElement => {
+const BackstageModal = ({show, close, selectedArea}: Props): React.ReactElement => {
     return (
         <CSSTransition
             in={show}
@@ -25,7 +28,10 @@ const BackstageModal = ({show, close}: Props): React.ReactElement => {
             appear={true}
         >
             <div className='FullScreenModal'>
-                <Backstage onBack={close}/>
+                <Backstage
+                    onBack={close}
+                    selectedArea={selectedArea}
+                />
             </div>
         </CSSTransition>
     );

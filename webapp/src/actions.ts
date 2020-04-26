@@ -40,11 +40,12 @@ import {
     ReceivedPlaybooks,
     SetBackstageModal,
     SET_BACKSTAGE_MODAL_OPEN,
-    RECEIVED_PLAYBOOK,
+    RECEIVED_PLAYBOOKS,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
 import {Playbook} from './types/playbook';
+import {BackstageArea} from './types/backstage';
 
 import {
     fetchIncidents,
@@ -282,15 +283,16 @@ export function setClientId(clientId: string): SetClientId {
 
 function receivedPlaybooks(playbooks: Playbook[]): ReceivedPlaybooks {
     return {
-        type: RECEIVED_PLAYBOOK,
+        type: RECEIVED_PLAYBOOKS,
         playbooks,
     };
 }
 
-export function openBackstageModal(): SetBackstageModal {
+export function openBackstageModal(selectedArea: BackstageArea): SetBackstageModal {
     return {
         type: SET_BACKSTAGE_MODAL_OPEN,
         open: true,
+        selectedArea,
     };
 }
 

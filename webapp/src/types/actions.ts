@@ -7,6 +7,7 @@ import {pluginId} from 'src/manifest';
 
 import {Incident, RHSState} from './incident';
 import {Playbook} from './playbook';
+import {BackstageArea} from './backstage';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
@@ -79,4 +80,5 @@ export interface ReceivedPlaybooks {
 export interface SetBackstageModal {
     type: typeof SET_BACKSTAGE_MODAL_OPEN;
     open: boolean;
+    selectedArea?: BackstageArea;
 }

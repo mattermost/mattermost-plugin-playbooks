@@ -42,4 +42,5 @@ export const playbookModalOpen = (state: GlobalState) => pluginState(state).play
 
 export const playbooks = (state: GlobalState): Playbook[] => pluginState(state).playbooks;
 
-export const backstageModalOpen = (state: GlobalState) => pluginState(state).backstageModalOpen;
+export const backstageModal = (state: GlobalState) => pluginState(state).backstageModal;
+

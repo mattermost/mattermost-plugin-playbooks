@@ -4,13 +4,14 @@ import {connect} from 'react-redux';
 
 import {closeBackstageModal} from 'src/actions';
 
-import {backstageModalOpen} from 'src/selectors';
+import {backstageModal} from 'src/selectors';
 
 import BackstageModal from './backstage_modal';
 
 const mapStateToProps = (state: object): object => {
     return {
-        show: backstageModalOpen(state),
+        show: backstageModal(state).open,
+        selectedArea: backstageModal(state).selectedArea,
     };
 };
 

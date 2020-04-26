@@ -3,18 +3,18 @@
 
 import React from 'react';
 
+import {BackstageArea} from 'src/types/backstage';
 import PlaybookList from 'src/components/playbook/playbook_list';
 
 import BackIcon from './back_icon';
 import './backstage.scss';
 
 interface Props {
-    show: boolean;
-    children: React.ReactElement;
     onBack: () => void;
+    selectedArea: BackstageArea;
 }
 
-const Backstage = ({onBack}: Props): React.ReactElement => {
+const Backstage = ({onBack, selectedArea}: Props): React.ReactElement => {
     return (
         <div className='Backstage'>
             <div className='sidebar'>
@@ -26,22 +26,21 @@ const Backstage = ({onBack}: Props): React.ReactElement => {
                     {'Back to Mattermost'}
                 </div>
                 <div className='menu'>
-                    <div className='menu-title inactive'>
+                    <div className={'menu-title ' + (selectedArea === BackstageArea.Dashboard ? 'active' : 'inactive')} >
                         {'Dashboard'}
                     </div>
-                    <div className='menu-title inactive'>
+                    <div className={'menu-title ' + (selectedArea === BackstageArea.Incidents ? 'active' : 'inactive')} >
                         {'Incidents'}
                     </div>
-                    <div className='menu-title inactive'>
-                        {'Services'}
-                    </div>
-                    <div className='menu-title active'>
+                    <div className={'menu-title ' + (selectedArea === BackstageArea.Playbooks ? 'active' : 'inactive')} >
                         {'Playbooks'}
                     </div>
                 </div>
             </div>
             <div className='content-container'>
-                <PlaybookList/>
+                { selectedArea === BackstageArea.Playbooks &&
+                    <PlaybookList/> }
+
             </div>
         </div>
     );

@@ -5,6 +5,7 @@ import React from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
 import {Incident, RHSState} from 'src/types/incident';
+import {BackstageArea} from 'src/types/backstage';
 
 import IncidentList from './incident_list';
 
@@ -48,7 +49,7 @@ interface Props {
         getIncidentDetails: (id: string) => void;
         setRHSState: (state: RHSState) => void;
         setRHSOpen: (open: boolean) => void;
-        openBackstageModal: () => void;
+        openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
 
@@ -106,7 +107,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                             <div>
                                 <button
                                     className='action-buttons'
-                                    onClick={() => this.props.actions.openBackstageModal()}
+                                    onClick={() => this.props.actions.openBackstageModal(BackstageArea.Playbooks)}
                                 >
                                     <PlaybookIcon/>
                                 </button>
