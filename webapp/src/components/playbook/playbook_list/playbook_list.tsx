@@ -34,9 +34,6 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
 
     public toggleEditMode = () => {
         this.setState({editMode: !this.state.editMode});
-
-        // TODO - Remove when we handle socket events for update
-        this.props.fetchPlaybooks();
     }
 
     public editPlaybook = (playbook?: Playbook) => {
