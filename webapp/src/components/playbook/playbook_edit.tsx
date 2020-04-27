@@ -36,14 +36,14 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
         };
     }
 
-    public onSave = (): void => {
+    public onSave = async () => {
         const newPlaybook: Playbook = {
             id: this.props.playbook.id,
             title: this.state.title,
             checklists: this.state.checklists,
         };
 
-        savePlaybook(newPlaybook);
+        await savePlaybook(newPlaybook);
 
         this.props.onClose();
     };
