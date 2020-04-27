@@ -1,56 +1,54 @@
 .Backstage {
-  .sidebar{
-    background: #3D3C40;
-    position: absolute;
-    left: 0%;
-    right: 0%;
-    top: 0%;
-    bottom: 0%;
-    width:30%;
+    &__sidebar {
+        background: var(--center-channel-color);
+        position: absolute;
+        left: 0%;
+        right: 0%;
+        top: 0%;
+        bottom: 0%;
+        width: 32rem;
+        font-family: Open Sans;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 16px;
+        line-height: 24px;
+        color: var(--center-channel-bg);
 
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 16px;
-    line-height: 24px;
-    color: #FFFFFF;
+        &__header {
+            padding: 32px 0px 0px 32px;
+        }
 
-    .header{
-      padding: 32px 0px 0px 32px;
+        .menu {
+            padding-top: 48px;
+            width: 100%;
+            font-weight: 600;
+
+            .menu-title {
+                height: 48px;
+                padding-left: 32px;
+                line-height: 48px;
+            }
+
+            .inactive {
+                opacity: 0.56;
+            }
+
+            .active {
+                color: white;
+                opacity: 1;
+                background: #232323;
+            }
+        }
+
+        .back-icon {
+            background-color: transparent;
+            border-width: 0px;
+        }
     }
 
-    .menu{
-      padding-top: 48px;
-      width: 100%;
-      color: #FFFFFF;
-      opacity: 0.6;
-      font-weight: 600;
-
-      .menu-title{
-        height:48px;
-        padding-left: 32px;
-        line-height: 48px;
-      }
-
-      .inactive{
-        opacity: 0.6;
-      }
-
-      .active{
-        opacity: 1;
-        background: #232323;
-      }
+    .content-container {
+        position: absolute;
+        left: 32rem;
+        width: calc(100% - 32rem);
     }
-    
-    .back-icon {
-      background-color: transparent;
-      border-width: 0px;
-    }
-  }
-
-  .content-container {
-    position: absolute;
-    left: 30%;
-    width: 70%;
-  }
 }

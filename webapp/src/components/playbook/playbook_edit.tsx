@@ -124,14 +124,14 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                 <div className='header'>
                     <div className='title'>
                         <BackIcon
-                            className='back-icon'
+                            className='back-icon mr-4'
                             onClick={this.props.onClose}
                         />
                         {title}
                     </div>
                     <div className='header-button-div'>
                         <button
-                            className='btn'
+                            className='btn btn-link mr-2'
                             onClick={this.props.onClose}
                         >
                             {'Cancel'}

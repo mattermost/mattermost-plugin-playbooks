@@ -17,13 +17,17 @@ interface Props {
 const Backstage = ({onBack, selectedArea}: Props): React.ReactElement => {
     return (
         <div className='Backstage'>
-            <div className='sidebar'>
-                <div className='header'>
-                    <BackIcon
-                        className='back-icon'
+            <div className='Backstage__sidebar'>
+                <div className='Backstage__sidebar__header'>
+                    <div
+                        className='cursor--pointer'
                         onClick={onBack}
-                    />
-                    {'Back to Mattermost'}
+                    >
+                        <BackIcon
+                            className='back-icon'
+                        />
+                        {'Back to Mattermost'}
+                    </div>
                 </div>
                 <div className='menu'>
                     <div className={'menu-title ' + (selectedArea === BackstageArea.Dashboard ? 'active' : 'inactive')} >

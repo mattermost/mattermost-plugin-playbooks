@@ -104,15 +104,15 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                             <div>
                                 <div className='title'>{'Incident List'}</div>
                             </div>
-                            <div>
+                            <div className='d-flex align-items-center'>
                                 <button
-                                    className='action-buttons'
+                                    className='navigation-bar__button'
                                     onClick={() => this.props.actions.openBackstageModal(BackstageArea.Playbooks)}
                                 >
                                     <PlaybookIcon/>
                                 </button>
                                 <button
-                                    className='action-buttons'
+                                    className='navigation-bar__button'
                                     onClick={() => this.props.actions.startIncident()}
                                 >
                                     <i

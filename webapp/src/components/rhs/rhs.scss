@@ -41,7 +41,7 @@ $font-family: Open Sans;
     .navigation-bar {
         display: flex;
         flex-direction: row;
-        align-items: baseline;
+        align-items: flex-end;
         justify-content: space-between;
         padding: 0.8rem 1.6rem 0.8rem 2rem;
         background: var(--center-channel-color-04);
@@ -54,7 +54,8 @@ $font-family: Open Sans;
             padding-right: 1.2rem;
         }
 
-        .action-buttons {
+        &__button {
+            display: flex;
             font-size: 16px;
             border: 0;
             background: transparent;
@@ -64,16 +65,19 @@ $font-family: Open Sans;
             align-items: center;
             justify-content: center;
             border-radius: 4px;
+            fill: var(--center-channel-color-56);
             color: var(--center-channel-color-56);
 
             &:hover {
                 background: var(--center-channel-color-08);
                 color: var(--center-channel-color-72);
+                fill: var(--center-channel-color-72);
             }
 
             &:active  {
                 background: var(--button-bg-08);
                 color: var(--button-bg);
+                fill: var(--button-bg);
             }
         }
 

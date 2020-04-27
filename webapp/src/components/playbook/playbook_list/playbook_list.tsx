@@ -58,20 +58,23 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                         className='btn btn-primary'
                                         onClick={() => this.editPlaybook()}
                                     >
-                                        {'+ New Playbook'}
+                                        <i className='icon icon-plus mr-1'/>
+                                        {'New Playbook'}
                                     </button>
                                 </div>
                             </div>
                             <div className='playbook-list'>
                                 {
-                                    <div className='list-header row'>
-                                        <div className='col-sm-10'> {'Name'} </div>
-                                        <div className='col-sm-2'> {'Actions'}</div>
+                                    <div className='list-header'>
+                                        <div className='row'>
+                                            <div className='col-sm-10'> {'Name'} </div>
+                                            <div className='col-sm-2'> {'Actions'}</div>
+                                        </div>
                                     </div>
                                 }
                                 {
                                     !this.props.playbooks.length &&
-                                    <div className='empty-list'>
+                                    <div className='text-center pt-8'>
                                         {'There are no playbooks defined yet.'}
                                     </div>
                                 }
