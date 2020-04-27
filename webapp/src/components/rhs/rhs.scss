@@ -20,7 +20,7 @@ $font-family: Open Sans;
     .no-incidents {
         font-size: 14px;
         text-align: center;
-        color: #3D3C40;
+        color: var(--center-channel-color);
         margin: 25px;
 
         .inner-text {
@@ -28,7 +28,6 @@ $font-family: Open Sans;
         }
 
         .link {
-            color: #145DBF;
             font-weight: 600;
         }
     }
