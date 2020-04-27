@@ -2,16 +2,17 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
-
-import {GlobalState} from 'mattermost-redux/types/store';
+import {bindActionCreators, Dispatch} from 'redux';
 
 import Link from 'src/components/rhs/link/link';
-import {toggleRHS} from 'src/selectors';
+import {toggleRHS} from 'src/actions';
 
-function mapStateToProps(state: GlobalState) {
+function mapDispatchToProps(dispatch: Dispatch) {
     return {
-        toggleRHS: toggleRHS(state),
+        actions: bindActionCreators({
+            toggleRHS,
+        }, dispatch),
     };
 }
 
-export default connect(mapStateToProps, null)(Link);
+export default connect(null, mapDispatchToProps)(Link);

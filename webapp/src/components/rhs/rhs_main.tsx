@@ -6,7 +6,7 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {Incident, RHSState} from 'src/types/incident';
 
-import RhsHeader from 'src/components/rhs_header';
+import RHSHeader from 'src/components/rhs_header';
 
 import IncidentList from './incident_list';
 
@@ -70,7 +70,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
     public render(): JSX.Element {
         return (
             <React.Fragment>
-                <RhsHeader/>
+                <RHSHeader/>
                 {this.props.isLoading && !this.props.incident.name &&
                     <div className='loading-container'>
                         <i className='fa fa-spin fa-spinner mr-2'/>

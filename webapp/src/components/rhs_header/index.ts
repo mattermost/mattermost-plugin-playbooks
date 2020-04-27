@@ -10,18 +10,18 @@ import {
     startIncident,
     setRHSState,
     setRHSOpen,
+    toggleRHS,
 } from 'src/actions';
 
-import {incidentDetails, rhsState, isLoading, toggleRHS} from 'src/selectors';
+import {incidentDetails, rhsState, isLoading} from 'src/selectors';
 
-import RhsHeader from './rhs_header';
+import RHSHeader from './rhs_header';
 
 function mapStateToProps(state: GlobalState) {
     return {
         incident: incidentDetails(state),
         rhsState: rhsState(state),
         isLoading: isLoading(state),
-        toggleRHS: toggleRHS(state),
     };
 }
 
@@ -31,8 +31,9 @@ function mapDispatchToProps(dispatch: Dispatch) {
             startIncident,
             setRHSState,
             setRHSOpen,
+            toggleRHS,
         }, dispatch),
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(RhsHeader);
+export default connect(mapStateToProps, mapDispatchToProps)(RHSHeader);

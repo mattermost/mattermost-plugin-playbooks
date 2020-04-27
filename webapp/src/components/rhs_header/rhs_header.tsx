@@ -9,21 +9,21 @@ interface Props {
     rhsState: RHSState;
     incident: Incident;
     isLoading: boolean;
-    toggleRHS: () => void;
     actions: {
         startIncident: () => void;
         setRHSState: (state: RHSState) => void;
         setRHSOpen: (open: boolean) => void;
+        toggleRHS: () => void;
     };
 }
 
-export default function RhsHeader(props: Props) {
+export default function RHSHeader(props: Props) {
     const goBack = () => {
         props.actions.setRHSState(RHSState.List);
     };
 
-    const closeRhs = () => {
-        props.toggleRHS();
+    const closeRHS = () => {
+        props.actions.toggleRHS();
     };
 
     const headerButtons = (
@@ -38,7 +38,7 @@ export default function RhsHeader(props: Props) {
             </button>
             <button
                 className='navigation-bar__button ml-1'
-                onClick={closeRhs}
+                onClick={closeRHS}
             >
                 <i
                     className='icon icon-close'

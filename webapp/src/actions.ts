@@ -16,6 +16,7 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {ChecklistItem} from 'src/types/playbook';
+import {selectToggleRHS} from 'src/selectors';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -259,5 +260,11 @@ export function setClientId(clientId: string): SetClientId {
     return {
         type: SET_CLIENT_ID,
         clientId,
+    };
+}
+
+export function toggleRHS() {
+    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        selectToggleRHS(getState())();
     };
 }
