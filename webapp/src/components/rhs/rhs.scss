@@ -2,6 +2,7 @@ $font-family: Open Sans;
 
 .RightHandSidebar {
     font-family: $font-family;
+    height: 100%;
 
     .section-header {
         padding: 15px;
@@ -37,70 +38,73 @@ $font-family: Open Sans;
         padding: 15px;
         border-top: 1px solid var(--center-channel-color-20);
     }
-}
 
-.loading-container {
-    text-align: center;
-    padding: 20px;
-}
-
-.navigation-bar {
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: 0.8rem 1.6rem 0.8rem 2rem;
-    background: var(--center-channel-color-04);
-    border-bottom: 1px solid var(--center-channel-color-16);
-
-    .fa {
-        cursor: pointer;
-        color: var(--center-channel-color-60);
-        font-size: 2rem;
-        padding-right: 1.2rem;
+    .loading-container {
+        text-align: center;
+        padding: 20px;
     }
 
-    .header-buttons {
-        font-size: 16px;
-        border: 0;
-        background: transparent;
-        padding: 0;
+    .navigation-bar {
         display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 0.8rem 1.6rem 0.8rem 2rem;
+        background: var(--center-channel-color-04);
+        border-bottom: 1px solid var(--center-channel-color-16);
 
-    &__button {
-        font-size: 16px;
-        border: 0;
-        background: transparent;
-        width: 3.2rem;
-        height: 3.2rem;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        color: var(--center-channel-color-56);
-
-        &:hover {
-            background: var(--center-channel-color-08);
-            color: var(--center-channel-color-72);
+        .fa {
+            cursor: pointer;
+            color: var(--center-channel-color-60);
+            font-size: 2rem;
+            padding-right: 1.2rem;
         }
 
-        &:active  {
-            background: var(--button-bg-08);
-            color: var(--button-bg);
+        .header-buttons {
+            font-size: 16px;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            display: flex;	 
+            align-items: center;
+            justify-content: center;
         }
-    }
 
-    .title {
-        font-size: 16px;
-        line-height: 34px;
-    }
+        &__button {
+            display: flex;
+            font-size: 16px;
+            border: 0;
+            background: transparent;
+            width: 3.2rem;
+            height: 3.2rem;
+            padding: 0;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            fill: var(--center-channel-color-56);
+            color: var(--center-channel-color-56);
 
-    .incident-details {
-        display: flex;
-        align-items: baseline;
+            &:hover {
+                background: var(--center-channel-color-08);
+                color: var(--center-channel-color-72);
+                fill: var(--center-channel-color-72);
+            }
+
+            &:active  {
+                background: var(--button-bg-08);
+                color: var(--button-bg);
+                fill: var(--button-bg);
+            }
+        }
+
+        .title {
+            font-size: 16px;
+            line-height: 34px;
+        }
+
+        .incident-details {
+            display: flex;
+            align-items: baseline;
+        }
     }
 }

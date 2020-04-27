@@ -6,6 +6,7 @@ import {createSelector} from 'reselect';
 
 import {pluginId} from './manifest';
 import {Incident} from './types/incident';
+import {Playbook} from './types/playbook';
 
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 const allIncidents = (state: GlobalState) => pluginState(state).incidents;
@@ -36,3 +37,10 @@ export const rhsOpen = (state: GlobalState) => pluginState(state).rhsOpen;
 export const isLoading = (state: GlobalState) => pluginState(state).isLoading;
 
 export const clientId = (state: GlobalState) => pluginState(state).clientId;
+
+export const playbookModalOpen = (state: GlobalState) => pluginState(state).playbooksModalOpen;
+
+export const playbooks = (state: GlobalState): Playbook[] => pluginState(state).playbooks;
+
+export const backstageModal = (state: GlobalState) => pluginState(state).backstageModal;
+

@@ -12,7 +12,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
-import {ChecklistItem} from 'src/types/playbook';
+import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
@@ -45,6 +45,24 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     } catch (error) {
         console.error(error); //eslint-disable-line no-console
     }
+}
+
+export function clientFetchPlaybooks() {
+    return doGet(`${apiUrl}/playbooks`);
+}
+
+export async function savePlaybook(playbook: Playbook) {
+    if (!playbook.id) {
+        const {data} = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
+        return data;
+    }
+
+    const {data} = await doFetchWithResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+        method: 'put',
+        body: JSON.stringify(playbook),
+    });
+
+    return data;
 }
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
@@ -126,7 +144,7 @@ export const doGet = async (url: string) => {
     return data;
 };
 
-export const doPost = async (url: string, body = '') => {
+export const doPost = async (url: string, body = {}) => {
     const {data} = await doFetchWithResponse(url, {
         method: 'post',
         body,

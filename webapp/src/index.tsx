@@ -9,6 +9,7 @@ import {pluginId} from './manifest';
 import IncidentIcon from './components/incident_icon';
 import RightHandSidebar from './components/rhs';
 import StartIncidentPostMenu from './components/post_menu';
+import BackstageModal from './components/backstage/backstage_modal';
 
 import {Hooks} from './hooks';
 import {setToggleRHSAction} from './actions';
@@ -37,6 +38,8 @@ export default class Plugin {
 
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
+
+        registry.registerRootComponent(BackstageModal);
     }
 }
 

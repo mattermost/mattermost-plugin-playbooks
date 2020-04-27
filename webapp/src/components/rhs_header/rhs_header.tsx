@@ -4,6 +4,9 @@
 import React from 'react';
 
 import {RHSState, Incident} from 'src/types/incident';
+import {BackstageArea} from 'src/types/backstage';
+
+import PlaybookIcon from './playbook_icon';
 
 interface Props {
     rhsState: RHSState;
@@ -14,6 +17,7 @@ interface Props {
         setRHSState: (state: RHSState) => void;
         setRHSOpen: (open: boolean) => void;
         toggleRHS: () => void;
+        openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
 
@@ -28,6 +32,12 @@ export default function RHSHeader(props: Props) {
 
     const headerButtons = (
         <div className={'header-buttons'}>
+            <button
+                className='navigation-bar__button'
+                onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+            >
+                <PlaybookIcon/>
+            </button>
             <button
                 className='navigation-bar__button'
                 onClick={() => props.actions.startIncident()}

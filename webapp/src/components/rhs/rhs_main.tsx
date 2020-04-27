@@ -69,7 +69,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         return (
-            <React.Fragment>
+            <div className='RightHandSidebar'>
                 <RHSHeader/>
                 {this.props.isLoading && !this.props.incident.name &&
                     <div className='loading-container'>
@@ -84,7 +84,6 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                     renderThumbHorizontal={renderThumbHorizontal}
                     renderThumbVertical={renderThumbVertical}
                     renderView={renderView}
-                    className='RightHandSidebar'
                 >
                     <div>
                         {
@@ -102,7 +101,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                         }
                     </div>
                 </Scrollbars>
-            </React.Fragment>
+            </div>
         );
     }
 }

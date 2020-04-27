@@ -11,6 +11,7 @@ import {
     setRHSState,
     setRHSOpen,
     toggleRHS,
+    openBackstageModal,
 } from 'src/actions';
 
 import {incidentDetails, rhsState, isLoading} from 'src/selectors';
@@ -32,6 +33,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
             setRHSState,
             setRHSOpen,
             toggleRHS,
+            openBackstageModal,
         }, dispatch),
     };
 }

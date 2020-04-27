@@ -38,9 +38,16 @@ import {
     ReceivedIncidentUpdate,
     SetLoading,
     SetClientId,
+    ReceivedPlaybooks,
+    SetBackstageModal,
+    SET_BACKSTAGE_MODAL_OPEN,
+    RECEIVED_PLAYBOOKS,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
+import {Playbook} from './types/playbook';
+import {BackstageArea} from './types/backstage';
+
 import {
     fetchIncidents,
     fetchIncidentDetails,
@@ -51,6 +58,7 @@ import {
     clientRemoveChecklistItem,
     clientRenameChecklistItem,
     clientReorderChecklist,
+    clientFetchPlaybooks,
 } from './client';
 
 export function getIncidentDetails(id: string) {
@@ -124,6 +132,17 @@ export function startIncident(postId?: string) {
 export function endIncident() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, '/incident end');
+    };
+}
+
+export function fetchPlaybooks() {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        try {
+            const playbooks = await clientFetchPlaybooks();
+            dispatch(receivedPlaybooks(playbooks));
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
     };
 }
 
@@ -260,6 +279,28 @@ export function setClientId(clientId: string): SetClientId {
     return {
         type: SET_CLIENT_ID,
         clientId,
+    };
+}
+
+function receivedPlaybooks(playbooks: Playbook[]): ReceivedPlaybooks {
+    return {
+        type: RECEIVED_PLAYBOOKS,
+        playbooks,
+    };
+}
+
+export function openBackstageModal(selectedArea: BackstageArea): SetBackstageModal {
+    return {
+        type: SET_BACKSTAGE_MODAL_OPEN,
+        open: true,
+        selectedArea,
+    };
+}
+
+export function closeBackstageModal(): SetBackstageModal {
+    return {
+        type: SET_BACKSTAGE_MODAL_OPEN,
+        open: false,
     };
 }
 
