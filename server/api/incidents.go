@@ -164,7 +164,7 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// getIncident handles the /incidents/{id} endpoint
+// getIncident handles the /incidents/{id} endpoint.
 func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
