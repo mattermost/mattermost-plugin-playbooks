@@ -11,6 +11,7 @@ interface Props {
     actions: {
         startIncident: (postId: string) => void;
     };
+    theme: Record<string, string>;
 }
 
 export default class StartIncidentPostMenu extends React.PureComponent<Props> {
@@ -35,7 +36,7 @@ export default class StartIncidentPostMenu extends React.PureComponent<Props> {
                         role='presentation'
                         onClick={this.handleClick}
                     >
-                        <IncidentPostMenuIcon/>
+                        <IncidentPostMenuIcon theme={this.props.theme}/>
                         {'Start incident'}
                     </button>
                 </li>
