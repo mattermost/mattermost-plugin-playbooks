@@ -28,12 +28,12 @@ const Backstage = ({onBack, selectedArea}: Props): React.ReactElement => {
                     </div>
                 </div>
                 <div className='menu'>
-                    <div className={classNames('menu-title', {active: selectedArea === BackstageArea.Dashboard})}>
+                    {/*<div className={classNames('menu-title', {active: selectedArea === BackstageArea.Dashboard})}>
                         {'Dashboard'}
                     </div>
                     <div className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}>
                         {'Incidents'}
-                    </div>
+                    </div>*/}
                     <div className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}>
                         {'Playbooks'}
                     </div>
