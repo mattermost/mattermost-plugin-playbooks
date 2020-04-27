@@ -3,6 +3,8 @@
 
 import React, {useState} from 'react';
 
+import moment from 'moment';
+
 import {ChecklistItem} from 'src/types/playbook';
 
 interface ChecklistItemDetailsProps {
@@ -12,6 +14,12 @@ interface ChecklistItemDetailsProps {
 }
 
 export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
+    let timestamp = '';
+    if (checklistItem.checked) {
+        const checkedModified = moment(checklistItem.checked_modified);
+        timestamp = '(' + checkedModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
+    }
+
     return (
         <div
             className={'checkbox-container' + (disabled ? ' light' : '')}
@@ -27,7 +35,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
                 disabled={disabled}
                 checked={checklistItem.checked}
             />
-            <label>{checklistItem.title}</label>
+            <label>{checklistItem.title}{' '}<span className={'light small'}>{timestamp}</span></label>
         </div>
     );
 };

@@ -276,6 +276,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return nil
 	}
 	itemToCheck.Checked = newState
+	itemToCheck.CheckedModified = time.Now()
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
