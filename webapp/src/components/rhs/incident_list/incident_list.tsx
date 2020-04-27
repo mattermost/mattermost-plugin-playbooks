@@ -22,9 +22,6 @@ interface Props {
 
 export default class IncidentList extends React.PureComponent<Props> {
     public render(): JSX.Element {
-        console.log('<><> IncidentList, theme:');
-        console.log(this.props.theme);
-
         if (this.props.incidents.length === 0) {
             return (
                 <div className='no-incidents'>
