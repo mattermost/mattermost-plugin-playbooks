@@ -2,6 +2,7 @@ $font-family: Open Sans;
 
 .RightHandSidebar {
     font-family: $font-family;
+    height: 100%;
 
     .section-header {
         padding: 15px;
@@ -38,6 +39,11 @@ $font-family: Open Sans;
         border-top: 1px solid var(--center-channel-color-20);
     }
 
+    .loading-container {
+        text-align: center;
+        padding: 20px;
+    }
+
     .navigation-bar {
         display: flex;
         flex-direction: row;
@@ -52,6 +58,16 @@ $font-family: Open Sans;
             color: var(--center-channel-color-60);
             font-size: 2rem;
             padding-right: 1.2rem;
+        }
+
+        .header-buttons {
+            font-size: 16px;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            display: flex;	 
+            align-items: center;
+            justify-content: center;
         }
 
         &__button {
@@ -90,10 +106,5 @@ $font-family: Open Sans;
             display: flex;
             align-items: baseline;
         }
-    }
-
-    .loading-container {
-        text-align: center;
-        padding: 20px;
     }
 }

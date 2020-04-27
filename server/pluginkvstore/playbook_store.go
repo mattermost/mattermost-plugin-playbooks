@@ -66,9 +66,9 @@ func (p *PlaybookStore) addToIndex(playbookID string) error {
 	// Set atomic doesn't seeem to work properly.
 	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
 	if err != nil {
-		return fmt.Errorf("Unable to add playbook to index: %w", err)
+		return fmt.Errorf("unable to add playbook to index: %w", err)
 	} else if !saved {
-		return errors.New("Unable add playbook to index KV Set didn't save")
+		return errors.New("unable add playbook to index KV Set didn't save")
 	}
 
 	return nil
@@ -91,9 +91,9 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 	// Set atomic doesn't seeem to work properly.
 	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
 	if err != nil {
-		return fmt.Errorf("Unable to add playbook to index: %w", err)
+		return fmt.Errorf("unable to add playbook to index: %w", err)
 	} else if !saved {
-		return errors.New("Unable add playbook to index KV Set didn't save")
+		return errors.New("unable add playbook to index KV Set didn't save")
 	}
 
 	return nil
@@ -105,9 +105,9 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 
 	saved, err := p.kvAPI.Set(playbookKey+playbook.ID, &playbook)
 	if err != nil {
-		return "", fmt.Errorf("Unable to save playbook to KV store: %w", err)
+		return "", fmt.Errorf("unable to save playbook to KV store: %w", err)
 	} else if !saved {
-		return "", errors.New("Unable to save playbook to KV store, KV Set didn't save")
+		return "", errors.New("unable to save playbook to KV store, KV Set didn't save")
 	}
 
 	err = p.addToIndex(playbook.ID)
@@ -151,14 +151,14 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 // Update updates a playbook
 func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 	if updated.ID == "" {
-		return fmt.Errorf("Updating playbook without ID")
+		return fmt.Errorf("updating playbook without ID")
 	}
 
 	saved, err := p.kvAPI.Set(playbookKey+updated.ID, &updated)
 	if err != nil {
-		return fmt.Errorf("Unable to update playbook in KV store: %w", err)
+		return fmt.Errorf("unable to update playbook in KV store: %w", err)
 	} else if !saved {
-		return errors.New("Unable to update playbook in KV store, KV Set didn't save")
+		return errors.New("unable to update playbook in KV store, KV Set didn't save")
 	}
 
 	return nil

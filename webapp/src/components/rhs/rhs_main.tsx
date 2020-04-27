@@ -5,14 +5,14 @@ import React from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
 import {Incident, RHSState} from 'src/types/incident';
-import {BackstageArea} from 'src/types/backstage';
+
+import RHSHeader from 'src/components/rhs_header';
 
 import IncidentList from './incident_list';
 
 import IncidentDetails from './incident_details';
 
 import './rhs.scss';
-import PlaybookIcon from './playbook_icon';
 
 export function renderView(props: any): JSX.Element {
     return (
@@ -49,7 +49,6 @@ interface Props {
         getIncidentDetails: (id: string) => void;
         setRHSState: (state: RHSState) => void;
         setRHSOpen: (open: boolean) => void;
-        openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
 
@@ -68,13 +67,16 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
         this.props.actions.setRHSState(RHSState.Details);
     }
 
-    public goBack = () => {
-        this.props.actions.setRHSState(RHSState.List);
-    }
-
     public render(): JSX.Element {
         return (
-            <React.Fragment>
+            <div className='RightHandSidebar'>
+                <RHSHeader/>
+                {this.props.isLoading && !this.props.incident.name &&
+                    <div className='loading-container'>
+                        <i className='fa fa-spin fa-spinner mr-2'/>
+                        <span>{'Loading...'}</span>
+                    </div>
+                }
                 <Scrollbars
                     autoHide={true}
                     autoHideTimeout={500}
@@ -82,58 +84,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                     renderThumbHorizontal={renderThumbHorizontal}
                     renderThumbVertical={renderThumbVertical}
                     renderView={renderView}
-                    className='RightHandSidebar'
                 >
-                    {
-                        this.props.isLoading && !this.props.incident.name &&
-                        <React.Fragment>
-                            <div className='navigation-bar'>
-                                <div className='incident-details'>
-                                    <div className='title'>{'Incident List'}</div>
-                                </div>
-                            </div>
-                            <div className='loading-container'>
-                                <i className='fa fa-spin fa-spinner mr-2'/>
-                                <span>{'Loading...'}</span>
-                            </div>
-                        </React.Fragment>
-                    }
-                    {
-                        this.props.rhsState === RHSState.List && !this.props.isLoading &&
-                        <div className='navigation-bar'>
-                            <div>
-                                <div className='title'>{'Incident List'}</div>
-                            </div>
-                            <div className='d-flex align-items-center'>
-                                <button
-                                    className='navigation-bar__button'
-                                    onClick={() => this.props.actions.openBackstageModal(BackstageArea.Playbooks)}
-                                >
-                                    <PlaybookIcon/>
-                                </button>
-                                <button
-                                    className='navigation-bar__button'
-                                    onClick={() => this.props.actions.startIncident()}
-                                >
-                                    <i
-                                        className='icon icon-plus'
-                                    />
-                                </button>
-                            </div>
-                        </div>
-                    }
-                    {
-                        this.props.rhsState !== RHSState.List && !this.props.isLoading &&
-                        <div className='navigation-bar'>
-                            <div className='incident-details'>
-                                <i
-                                    className='fa fa-angle-left'
-                                    onClick={this.goBack}
-                                />
-                                <div className='title'>{this.props.incident.name}</div>
-                            </div>
-                        </div>
-                    }
                     <div>
                         {
                             this.props.rhsState === RHSState.List && !this.props.isLoading &&
@@ -150,7 +101,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                         }
                     </div>
                 </Scrollbars>
-            </React.Fragment>
+            </div>
         );
     }
 }

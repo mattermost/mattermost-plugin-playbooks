@@ -276,6 +276,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return nil
 	}
 	itemToCheck.Checked = newState
+	itemToCheck.CheckedModified = time.Now()
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
@@ -483,27 +484,27 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 		Header:      channelHeader,
 	}
 
-	// Loop in case we accidentally chose an existing channel name
-	// Prefer the channel name the user chose. But if it already exists, add some random bits.
-	for succeeded := false; !succeeded; {
-		if err := s.pluginAPI.Channel.Create(channel); err != nil {
-			if appErr, ok := err.(*model.AppError); ok {
-
-				// Let the user correct display name errors:
-				if appErr.Id == "model.channel.is_valid.display_name.app_error" {
-					return nil, ErrChannelDisplayNameLong
-				}
-
-				// We can fix channel Name errors:
-				if appErr.Id == "store.sql_channel.save_channel.exists.app_error" ||
-					appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
-					channel.Name = addRandomBits(channel.Name)
-					continue
-				}
+	// Prefer the channel name the user chose. But if it already exists, add some random bits
+	// and try exactly once more.
+	err := s.pluginAPI.Channel.Create(channel)
+	if err != nil {
+		if appErr, ok := err.(*model.AppError); ok {
+			// Let the user correct display name errors:
+			if appErr.Id == "model.channel.is_valid.display_name.app_error" ||
+				appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
+				return nil, ErrChannelDisplayNameLong
 			}
+
+			// We can fix channel Name errors:
+			if appErr.Id == "store.sql_channel.save_channel.exists.app_error" {
+				channel.Name = addRandomBits(channel.Name)
+				err = s.pluginAPI.Channel.Create(channel)
+			}
+		}
+
+		if err != nil {
 			return nil, fmt.Errorf("failed to create incident channel: %w", err)
 		}
-		succeeded = true
 	}
 
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
@@ -580,7 +581,7 @@ func cleanChannelName(channelName string) string {
 	channelName = strings.ToLower(channelName)
 	// Trim spaces
 	channelName = strings.TrimSpace(channelName)
-	// Change all dashes to whitespace, remove evrything that's not a word or whitespace, all space becomes dashes
+	// Change all dashes to whitespace, remove everything that's not a word or whitespace, all space becomes dashes
 	channelName = strings.ReplaceAll(channelName, "-", " ")
 	channelName = allNonSpaceNonWordRegex.ReplaceAllString(channelName, "")
 	channelName = strings.ReplaceAll(channelName, " ", "-")

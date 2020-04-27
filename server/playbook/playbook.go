@@ -1,5 +1,7 @@
 package playbook
 
+import "time"
+
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
 	ID         string      `json:"id"`
@@ -15,8 +17,9 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	Title   string `json:"title"`
-	Checked bool   `json:"checked"`
+	Title           string    `json:"title"`
+	Checked         bool      `json:"checked"`
+	CheckedModified time.Time `json:"checked_modified"`
 }
 
 // Service is the playbook service for managing playbooks

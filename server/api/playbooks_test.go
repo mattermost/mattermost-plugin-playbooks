@@ -29,10 +29,10 @@ func TestPlaybooks(t *testing.T) {
 	playbooktest := playbook.Playbook{
 		Title: "My Playbook",
 		Checklists: []playbook.Checklist{
-			playbook.Checklist{
+			{
 				Title: "Do these things",
 				Items: []playbook.ChecklistItem{
-					playbook.ChecklistItem{
+					{
 						Title: "Do this",
 					},
 				},
@@ -93,6 +93,7 @@ func TestPlaybooks(t *testing.T) {
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		result, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
 		assert.Equal(t, playbooktestBytes, result)
 	})
 
@@ -127,7 +128,7 @@ func TestPlaybooks(t *testing.T) {
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		result, err := ioutil.ReadAll(resp.Body)
-
+		assert.NoError(t, err)
 		playbooks := []playbook.Playbook{playbooktest, playbooktest}
 		playbooksBytes, err := json.Marshal(&playbooks)
 		require.NoError(t, err)
