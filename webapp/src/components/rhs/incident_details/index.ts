@@ -11,6 +11,8 @@ import {Channel, ChannelWithTeamData} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
+import {Permissions} from 'mattermost-redux/constants';
 
 import {toggleRHS} from 'src/selectors';
 import {Incident} from 'src/types/incident';
@@ -38,7 +40,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     }
 
     const channelDetails = [] as ChannelWithTeamData[];
-    if (ownProps.incident?.channel_ids) {
+    if (ownProps.incident.channel_ids) {
         for (const channelId of ownProps.incident?.channel_ids) {
             const c = getChannel(state, channelId) as Channel;
             if (c) {
@@ -55,11 +57,12 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     }
 
     // Get the incident main channel. Assuming the first one for now.
-    const incidentChannelId = ownProps.incident?.channel_ids?.[0] || '';
+    const incidentChannelId = ownProps.incident.channel_ids?.[0] || '';
+    const incidentTeamId = ownProps.incident.team_id;
 
-    // Having the incident channel in your details list is a proxy for being
-    // involved in the incident (having permissions to it) for now.
-    const involvedInIncident = channelDetails?.length > 0;
+    // If you can read the channel, you are involved in the incident.
+    const involvedInIncident = haveIChannelPermission(state,
+        {channel: incidentChannelId, team: incidentTeamId, permission: Permissions.READ_CHANNEL});
 
     return {
         commander,
