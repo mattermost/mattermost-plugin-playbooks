@@ -6,7 +6,6 @@ import React from 'react';
 import {BackstageArea} from 'src/types/backstage';
 import PlaybookList from 'src/components/playbook/playbook_list';
 
-import BackIcon from './back_icon';
 import './backstage.scss';
 
 interface Props {
