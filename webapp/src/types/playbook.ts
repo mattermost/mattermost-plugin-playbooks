@@ -15,6 +15,7 @@ export interface Checklist {
 export interface ChecklistItem {
     title: string;
     checked: boolean;
+    checked_modified: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
