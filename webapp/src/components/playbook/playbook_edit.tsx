@@ -87,7 +87,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
         this.updateChecklist(allChecklists);
     }
 
-    public onReoderItem = (checklistItemIndex: number, newIndex: number, checklistIndex: number): void => {
+    public onReorderItem = (checklistItemIndex: number, newIndex: number, checklistIndex: number): void => {
         const allChecklists = Object.assign([], this.state.checklists) as Checklist[];
         const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
 
@@ -173,7 +173,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                                         this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
                                     }}
                                     reorderItems={(checklistItemIndex: number, newPosition: number) => {
-                                        this.onReoderItem(checklistItemIndex, newPosition, checklistIndex);
+                                        this.onReorderItem(checklistItemIndex, newPosition, checklistIndex);
                                     }}
                                 />
                             ))}

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import classNames from 'classnames';
 
 import {BackstageArea} from 'src/types/backstage';
 import PlaybookList from 'src/components/playbook/playbook_list';
@@ -27,13 +28,13 @@ const Backstage = ({onBack, selectedArea}: Props): React.ReactElement => {
                     </div>
                 </div>
                 <div className='menu'>
-                    <div className={'menu-title ' + (selectedArea === BackstageArea.Dashboard ? 'active' : 'inactive')} >
+                    <div className={classNames('menu-title', {active: selectedArea === BackstageArea.Dashboard})}>
                         {'Dashboard'}
                     </div>
-                    <div className={'menu-title ' + (selectedArea === BackstageArea.Incidents ? 'active' : 'inactive')} >
+                    <div className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}>
                         {'Incidents'}
                     </div>
-                    <div className={'menu-title ' + (selectedArea === BackstageArea.Playbooks ? 'active' : 'inactive')} >
+                    <div className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}>
                         {'Playbooks'}
                     </div>
                 </div>

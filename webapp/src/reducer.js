@@ -103,7 +103,7 @@ function backstageModal(state = false, action) {
     switch (action.type) {
     case SET_BACKSTAGE_MODAL_OPEN:
         return {
-            open: action.open || false,
+            open: Boolean(action.open),
             selectedArea: action.selectedArea,
         };
     default:
