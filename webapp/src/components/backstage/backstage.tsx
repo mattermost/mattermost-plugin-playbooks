@@ -23,9 +23,7 @@ const Backstage = ({onBack, selectedArea}: Props): React.ReactElement => {
                         className='cursor--pointer'
                         onClick={onBack}
                     >
-                        <BackIcon
-                            className='back-icon'
-                        />
+                        <i className='icon-arrow-left mr-2 back-icon'/>
                         {'Back to Mattermost'}
                     </div>
                 </div>
