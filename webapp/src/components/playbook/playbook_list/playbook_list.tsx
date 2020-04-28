@@ -3,8 +3,12 @@
 
 import React from 'react';
 
-import PlaybookEdit from '../playbook_edit';
 import {newPlaybook, Playbook} from 'src/types/playbook';
+
+import {deletePlaybook} from 'src/client';
+
+import PlaybookEdit from '../playbook_edit';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import '../playbook.scss';
 
@@ -16,6 +20,7 @@ interface Props {
 interface State {
     editMode: boolean;
     selectedPlaybook?: Playbook | null;
+    showConfirmation: boolean;
 }
 
 export default class PlaybookList extends React.PureComponent<Props, State> {
@@ -25,6 +30,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         this.state = {
             editMode: false,
             selectedPlaybook: null,
+            showConfirmation: false,
         };
     }
 
@@ -41,6 +47,27 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             editMode: true,
             selectedPlaybook: playbook || newPlaybook(),
         });
+    }
+
+    public hideConfirmModal = () => {
+        this.setState({
+            showConfirmation: false,
+            selectedPlaybook: null,
+        });
+    }
+
+    public onConfirmDelete = (playbook: Playbook) => {
+        this.setState({
+            showConfirmation: true,
+            selectedPlaybook: playbook,
+        });
+    }
+
+    public onDelete = async () => {
+        if (this.state.selectedPlaybook) {
+            await deletePlaybook(this.state.selectedPlaybook);
+            this.hideConfirmModal();
+        }
     }
 
     public render(): JSX.Element {
@@ -91,7 +118,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                                     {'Edit'}
                                                 </a>
                                                 {' - '}
-                                                <a>
+                                                <a onClick={() => this.onConfirmDelete(p)} >
                                                     {'Delete'}
                                                 </a>
                                             </div>
@@ -99,6 +126,14 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                     ))
                                 }
                             </div>
+                            <ConfirmModal
+                                show={this.state.showConfirmation}
+                                title={'Confirm Playbook Deletion'}
+                                message={`Are you sure you want to delete the playbook "${this.state.selectedPlaybook?.title}"?`}
+                                confirmButtonText={'Delete Playbook'}
+                                onConfirm={this.onDelete}
+                                onCancel={this.hideConfirmModal}
+                            />
                         </div>
                     )}
                 {

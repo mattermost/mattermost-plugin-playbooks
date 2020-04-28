@@ -65,6 +65,16 @@ export async function savePlaybook(playbook: Playbook) {
     return data;
 }
 
+export async function deletePlaybook(playbook: Playbook) {
+    try {
+        return await doFetchWithResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+            method: 'delete',
+        });
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, 200);
 }
