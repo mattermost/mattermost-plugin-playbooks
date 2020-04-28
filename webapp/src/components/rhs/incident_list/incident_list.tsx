@@ -17,6 +17,7 @@ interface Props {
     actions: {
         startIncident: () => void;
     };
+    theme: Record<string, string>;
 }
 
 export default class IncidentList extends React.PureComponent<Props> {
@@ -25,7 +26,7 @@ export default class IncidentList extends React.PureComponent<Props> {
             return (
                 <div className='no-incidents'>
                     <div className='inner-text'>
-                        <IncidentListIcon/>
+                        <IncidentListIcon theme={this.props.theme}/>
                     </div>
                     <div className='inner-text'>
                         {'There are no active incidents yet.'}

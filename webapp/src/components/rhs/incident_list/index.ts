@@ -4,9 +4,18 @@
 import {connect} from 'react-redux';
 import {bindActionCreators, Dispatch} from 'redux';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+
 import {startIncident} from 'src/actions';
 
 import IncidentList from './incident_list';
+
+function mapStateToProps(state: GlobalState) {
+    return {
+        theme: getTheme(state),
+    };
+}
 
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
@@ -16,5 +25,5 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(null, mapDispatchToProps)(IncidentList);
+export default connect(mapStateToProps, mapDispatchToProps)(IncidentList);
 
