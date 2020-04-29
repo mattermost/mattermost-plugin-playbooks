@@ -21,6 +21,7 @@ interface State {
     editMode: boolean;
     selectedPlaybook?: Playbook | null;
     showConfirmation: boolean;
+    showBanner: boolean;
 }
 
 export default class PlaybookList extends React.PureComponent<Props, State> {
@@ -31,6 +32,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             editMode: false,
             selectedPlaybook: null,
             showConfirmation: false,
+            showBanner: false,
         };
     }
 
@@ -52,7 +54,6 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
     public hideConfirmModal = () => {
         this.setState({
             showConfirmation: false,
-            selectedPlaybook: null,
         });
     }
 
@@ -67,15 +68,30 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         if (this.state.selectedPlaybook) {
             await deletePlaybook(this.state.selectedPlaybook);
             this.hideConfirmModal();
+
+            this.setState({showBanner: true}, () => {
+                window.setTimeout(() => {
+                    this.setState({showBanner: false});
+                }, 5000);
+            });
         }
     }
 
     public render(): JSX.Element {
+        const deleteSuccessfulBanner = this.state.showBanner && (
+            <div className='banner'>
+                <div className='banner__text'>
+                    {`The playbook ${this.state.selectedPlaybook?.title} was successfully deleted.`}
+                </div>
+            </div>
+        );
+
         return (
             <>
                 {
                     !this.state.editMode && (
                         <div className='Playbook'>
+                            { deleteSuccessfulBanner }
                             <div className='header'>
                                 <div className='title'>
                                     {'Playbooks'}
