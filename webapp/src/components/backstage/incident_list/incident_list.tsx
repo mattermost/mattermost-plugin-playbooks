@@ -64,9 +64,11 @@ export default function IncidentList() {
                             }
                             </div>
                             <div
-                                className='col-sm-2'> {moment.unix(incident.created_at).format('DD MMM h:ssA')} </div>
+                                className='col-sm-2'
+                            > {moment.unix(incident.created_at).format('DD MMM h:ssA')} </div>
                             <div
-                                className='col-sm-2'> {incident.is_active ? 'Ongoing' : moment.unix(incident.ended_at).format('DD MMM h:ssA')} </div>
+                                className='col-sm-2'
+                            > {incident.is_active ? 'Ongoing' : moment.unix(incident.ended_at).format('DD MMM h:ssA')} </div>
                             <div className='col-sm-3'>
                                 <Profile userId={incident.commander_user_id}/>
                             </div>
@@ -78,7 +80,7 @@ export default function IncidentList() {
     );
 }
 
-function OngoingBadge(props: {isActive: boolean}) {
+function OngoingBadge(props: { isActive: boolean }) {
     const badgeClass = classNames({
         ongoing: props.isActive,
     });
