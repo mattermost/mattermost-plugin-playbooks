@@ -4,6 +4,7 @@
 export interface Playbook {
     id?: string;
     title: string;
+    team_id: string;
     checklists: Checklist[];
 }
 
@@ -21,6 +22,7 @@ export interface ChecklistItem {
 export function newPlaybook(): Playbook {
     return {
         title: '',
+        team_id: '',
         checklists: [{
             title: 'Checklist',
             items: [],

@@ -75,6 +75,7 @@ export interface SetClientId {
 export interface ReceivedPlaybooks {
     type: typeof RECEIVED_PLAYBOOKS;
     playbooks: Playbook[];
+    teamID: string;
 }
 
 export interface SetBackstageModal {

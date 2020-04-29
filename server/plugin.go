@@ -92,7 +92,7 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV))
-	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService)
+	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient)
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {

@@ -23,6 +23,22 @@ func (s *service) GetPlaybooks() ([]Playbook, error) {
 	return s.store.GetPlaybooks()
 }
 
+func (s *service) GetPlaybooksForTeam(teamID string) ([]Playbook, error) {
+	playbooks, err := s.store.GetPlaybooks()
+	if err != nil {
+		return nil, err
+	}
+
+	teamPlaybooks := make([]Playbook, 0, len(playbooks))
+	for _, playbook := range playbooks {
+		if playbook.TeamID == teamID {
+			teamPlaybooks = append(teamPlaybooks, playbook)
+		}
+	}
+
+	return teamPlaybooks, nil
+}
+
 func (s *service) Update(playbook Playbook) error {
 	return s.store.Update(playbook)
 }

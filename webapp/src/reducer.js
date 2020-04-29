@@ -90,10 +90,13 @@ function clientId(state = '', action) {
     }
 }
 
-function playbooks(state = [], action) {
+function playbooks(state = {}, action) {
     switch (action.type) {
-    case RECEIVED_PLAYBOOKS:
-        return action.playbooks || [];
+    case RECEIVED_PLAYBOOKS: {
+        const newPart = {};
+        newPart[action.teamID] = action.playbooks;
+        return Object.assign({}, state, newPart);
+    }
     default:
         return state;
     }

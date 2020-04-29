@@ -47,8 +47,8 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
-export function clientFetchPlaybooks() {
-    return doGet(`${apiUrl}/playbooks`);
+export function clientFetchPlaybooks(teamID: string) {
+    return doGet(`${apiUrl}/playbooks?teamid=${teamID}`);
 }
 
 export async function savePlaybook(playbook: Playbook) {
