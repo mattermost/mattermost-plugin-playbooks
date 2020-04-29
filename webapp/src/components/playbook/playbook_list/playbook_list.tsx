@@ -53,7 +53,10 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                         <div className='Playbook'>
                             <div className='header'>
                                 <div className='title'>
-                                    {'Playbooks for ' + this.props.currentTeamName + ' Team'}
+                                    {'Playbooks'}
+                                    <div className='light'>
+                                        {'(' + this.props.currentTeamName + ')'}
+                                    </div>
                                 </div>
                                 <div className='header-button-div'>
                                     <button
