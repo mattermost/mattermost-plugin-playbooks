@@ -81,6 +81,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         const deleteSuccessfulBanner = this.state.showBanner && (
             <div className='banner'>
                 <div className='banner__text'>
+                    <i className='icon icon-check mr-1'/>
                     {`The playbook ${this.state.selectedPlaybook?.title} was successfully deleted.`}
                 </div>
             </div>
