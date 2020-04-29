@@ -6,12 +6,11 @@ import {Dispatch, AnyAction} from 'redux';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {rhsState, incidentDetails} from 'src/selectors';
-
+import {rhsState, incidentDetails, clientId} from './selectors';
 import {WebSocketMessage} from './types/websocket_events';
 import {receivedIncidentUpdate, setRHSState} from './actions';
-import {isIncident, RHSState} from './types/incident';
-import {clientId} from './selectors';
+import {isIncident} from './types/incident';
+import {RHSState} from './types/rhs';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;

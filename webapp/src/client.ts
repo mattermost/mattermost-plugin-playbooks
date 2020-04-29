@@ -12,18 +12,24 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
+import {IncidentHeader} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
 const apiUrl = `/plugins/${pluginId}/api/v1`;
 
-export function fetchIncidents(teamId?: string) {
+export async function fetchIncidentHeaders(teamId?: string) {
     const queryParams = qs.stringify({
         team_id: teamId,
     }, {addQueryPrefix: true});
 
-    return doGet(`${apiUrl}/incidents${queryParams}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let data = await doGet(`${apiUrl}/incidents${queryParams}`);
+    if (!data) {
+        data = [];
+    }
+    return data as IncidentHeader[];
 }
 
 export function fetchIncidentDetails(id: string) {

@@ -22,6 +22,7 @@ type Header struct {
 	CommanderUserID string `json:"commander_user_id"`
 	TeamID          string `json:"team_id"`
 	CreatedAt       int64  `json:"created_at"`
+	EndedAt         int64  `json:"ended_at"`
 }
 
 // DialogState holds the start incident interactive dialog's state as it appears in the client

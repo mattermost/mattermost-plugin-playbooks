@@ -5,7 +5,7 @@ import {combineReducers} from 'redux';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
-    RECEIVED_INCIDENTS,
+    RECEIVED_INCIDENT_HEADERS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_RHS_STATE,
     SET_RHS_OPEN,
@@ -15,7 +15,7 @@ import {
     SET_BACKSTAGE_MODAL_OPEN,
     RECEIVED_PLAYBOOKS,
 } from './types/actions';
-import {RHSState} from './types/incident';
+import {RHSState} from './types/rhs';
 
 function toggleRHSFunction(state = null, action) {
     switch (action.type) {
@@ -46,8 +46,8 @@ function rhsOpen(state = false, action) {
 
 function incidents(state = [], action) {
     switch (action.type) {
-    case RECEIVED_INCIDENTS:
-        return action.incidents || [];
+    case RECEIVED_INCIDENT_HEADERS:
+        return action.headers || [];
     case RECEIVED_INCIDENT_UPDATE: {
         const newState = state.filter((incident) => incident.id !== action.incident.id);
         newState.push(action.incident);

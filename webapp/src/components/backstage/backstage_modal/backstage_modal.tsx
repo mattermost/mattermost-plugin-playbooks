@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {CSSTransition} from 'react-transition-group';
 
 import {BackstageArea} from 'src/types/backstage';
@@ -14,10 +14,17 @@ const ANIMATION_DURATION = 100;
 interface Props {
     show: boolean;
     close: () => void;
-    selectedArea: BackstageArea;
+    startingArea: BackstageArea;
 }
 
-const BackstageModal = ({show, close, selectedArea}: Props): React.ReactElement => {
+const BackstageModal = ({show, close, startingArea}: Props) => {
+    const [selectedArea, setSelectedArea] = useState<BackstageArea>(BackstageArea.Playbooks);
+
+    // Only set the selected area once when the component mounts or when the redux state is changed.
+    useEffect(() => {
+        setSelectedArea(startingArea);
+    }, [startingArea]);
+
     return (
         <CSSTransition
             in={show}
@@ -31,6 +38,7 @@ const BackstageModal = ({show, close, selectedArea}: Props): React.ReactElement 
                 <Backstage
                     onBack={close}
                     selectedArea={selectedArea}
+                    setSelectArea={setSelectedArea}
                 />
             </div>
         </CSSTransition>

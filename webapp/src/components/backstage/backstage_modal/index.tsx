@@ -11,7 +11,7 @@ import BackstageModal from './backstage_modal';
 const mapStateToProps = (state: object): object => {
     return {
         show: backstageModal(state).open,
-        selectedArea: backstageModal(state).selectedArea,
+        startingArea: backstageModal(state).selectedArea,
     };
 };
 

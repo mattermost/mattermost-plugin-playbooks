@@ -4,7 +4,8 @@
 import React from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
-import {Incident, RHSState} from 'src/types/incident';
+import {Incident} from 'src/types/incident';
+import {RHSState} from 'src/types/rhs';
 
 import RHSHeader from 'src/components/rhs_header';
 

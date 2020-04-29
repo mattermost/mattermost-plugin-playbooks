@@ -3,8 +3,9 @@
 
 import React from 'react';
 
-import {RHSState, Incident} from 'src/types/incident';
+import {Incident} from 'src/types/incident';
 import {BackstageArea} from 'src/types/backstage';
+import {RHSState} from 'src/types/rhs';
 
 import PlaybookIcon from './playbook_icon';
 

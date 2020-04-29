@@ -22,7 +22,7 @@ import {
     RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_RHS_STATE,
     SET_RHS_OPEN,
-    RECEIVED_INCIDENTS,
+    RECEIVED_INCIDENT_HEADERS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
@@ -30,7 +30,7 @@ import {
     SET_CLIENT_ID,
     ReceivedToggleRHSAction,
     SetRHSOpen,
-    ReceivedIncidents,
+    ReceivedIncidentHeaders,
     ReceivedIncidentDetails,
     ReceivedError,
     ReceivedRHSState,
@@ -44,12 +44,13 @@ import {
     RECEIVED_PLAYBOOKS,
 } from './types/actions';
 
-import {Incident, RHSState} from './types/incident';
+import {Incident, IncidentHeader} from './types/incident';
+import {RHSState} from './types/rhs';
 import {Playbook} from './types/playbook';
 import {BackstageArea} from './types/backstage';
 
 import {
-    fetchIncidents,
+    fetchIncidentHeaders,
     fetchIncidentDetails,
     clientExecuteCommand,
     checkItem,
@@ -94,20 +95,21 @@ export function getIncidentDetails(id: string) {
 
 export function getIncidentsForCurrentTeam() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        dispatch(getIncidents(getCurrentTeamId(getState())));
+        dispatch(getIncidentHeaders(getCurrentTeamId(getState())));
     };
 }
 
 /**
- * Fetches incidents.
+ * Fetches incident headers.
  * @param teamId Gets all incidents if teamId is null.
  */
-export function getIncidents(teamId?: string) {
+export function getIncidentHeaders(teamId?: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            const incidents = await fetchIncidents(teamId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const headers = await fetchIncidentHeaders(teamId);
 
-            dispatch(receivedIncidents(incidents));
+            dispatch(receivedIncidentHeaders(headers));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
@@ -215,10 +217,10 @@ export function setRHSOpen(open: boolean): SetRHSOpen {
     };
 }
 
-function receivedIncidents(incidents: Incident[]): ReceivedIncidents {
+function receivedIncidentHeaders(headers: IncidentHeader[]): ReceivedIncidentHeaders {
     return {
-        type: RECEIVED_INCIDENTS,
-        incidents,
+        type: RECEIVED_INCIDENT_HEADERS,
+        headers,
     };
 }
 
