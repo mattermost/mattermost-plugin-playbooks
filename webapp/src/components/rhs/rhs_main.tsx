@@ -78,30 +78,30 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                             <span>{'Loading...'}</span>
                         </div>
                     }
-                    <Scrollbars
-                        autoHide={true}
-                        autoHideTimeout={500}
-                        autoHideDuration={500}
-                        renderThumbHorizontal={renderThumbHorizontal}
-                        renderThumbVertical={renderThumbVertical}
-                        renderView={renderView}
-                    >
                         <div>
-                            {
-                                this.props.rhsState === RHSState.List && !this.props.isLoading &&
+                        {
+                            this.props.rhsState === RHSState.List && !this.props.isLoading &&
+                            <Scrollbars
+                                autoHide={true}
+                                autoHideTimeout={500}
+                                autoHideDuration={500}
+                                renderThumbHorizontal={renderThumbHorizontal}
+                                renderThumbVertical={renderThumbVertical}
+                                renderView={renderView}
+                            >
                                 <IncidentList
                                     incidents={this.props.incidents}
                                     onClick={this.handleClick}
                                 />
-                            }
-                            {
-                                this.props.rhsState === RHSState.Details && !this.props.isLoading &&
-                                <IncidentDetails
-                                    incident={this.props.incident}
-                                />
-                            }
-                        </div>
-                    </Scrollbars>
+                            </Scrollbars>
+                        }
+                        {
+                            this.props.rhsState === RHSState.Details && !this.props.isLoading &&
+                            <IncidentDetails
+                                incident={this.props.incident}
+                            />
+                        }
+                    </div>
                 </div>
             </div>
         );

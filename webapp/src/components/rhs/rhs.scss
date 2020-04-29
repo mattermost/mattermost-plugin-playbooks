@@ -8,6 +8,11 @@ $font-family: Open Sans;
 
     &__content {
         flex: 1 1 auto;
+        position: relative;
+
+        > div {
+            height: 100%;
+        }
     }
 
     .section-header {
