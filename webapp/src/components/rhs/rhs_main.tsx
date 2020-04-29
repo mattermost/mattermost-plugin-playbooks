@@ -69,38 +69,40 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         return (
-            <div className='RightHandSidebar'>
+            <div className='incident-rhs'>
                 <RHSHeader/>
-                {this.props.isLoading && !this.props.incident.name &&
-                    <div className='loading-container'>
-                        <i className='fa fa-spin fa-spinner mr-2'/>
-                        <span>{'Loading...'}</span>
-                    </div>
-                }
-                <Scrollbars
-                    autoHide={true}
-                    autoHideTimeout={500}
-                    autoHideDuration={500}
-                    renderThumbHorizontal={renderThumbHorizontal}
-                    renderThumbVertical={renderThumbVertical}
-                    renderView={renderView}
-                >
-                    <div>
-                        {
-                            this.props.rhsState === RHSState.List && !this.props.isLoading &&
-                            <IncidentList
-                                incidents={this.props.incidents}
-                                onClick={this.handleClick}
-                            />
-                        }
-                        {
-                            this.props.rhsState === RHSState.Details && !this.props.isLoading &&
-                            <IncidentDetails
-                                incident={this.props.incident}
-                            />
-                        }
-                    </div>
-                </Scrollbars>
+                <div className='incident-rhs__content'>
+                    {this.props.isLoading && !this.props.incident.name &&
+                        <div className='loading-container'>
+                            <i className='fa fa-spin fa-spinner mr-2'/>
+                            <span>{'Loading...'}</span>
+                        </div>
+                    }
+                    <Scrollbars
+                        autoHide={true}
+                        autoHideTimeout={500}
+                        autoHideDuration={500}
+                        renderThumbHorizontal={renderThumbHorizontal}
+                        renderThumbVertical={renderThumbVertical}
+                        renderView={renderView}
+                    >
+                        <div>
+                            {
+                                this.props.rhsState === RHSState.List && !this.props.isLoading &&
+                                <IncidentList
+                                    incidents={this.props.incidents}
+                                    onClick={this.handleClick}
+                                />
+                            }
+                            {
+                                this.props.rhsState === RHSState.Details && !this.props.isLoading &&
+                                <IncidentDetails
+                                    incident={this.props.incident}
+                                />
+                            }
+                        </div>
+                    </Scrollbars>
+                </div>
             </div>
         );
     }

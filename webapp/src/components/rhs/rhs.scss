@@ -1,8 +1,14 @@
 $font-family: Open Sans;
 
-.RightHandSidebar {
+.incident-rhs {
     font-family: $font-family;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    &__content {
+        flex: 1 1 auto;
+    }
 
     .section-header {
         padding: 15px;
@@ -64,7 +70,7 @@ $font-family: Open Sans;
             border: 0;
             background: transparent;
             padding: 0;
-            display: flex;	 
+            display: flex;
             align-items: center;
             justify-content: center;
         }
