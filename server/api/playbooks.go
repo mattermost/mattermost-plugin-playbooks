@@ -119,18 +119,18 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	oldPlaybook, err := h.playbookService.Get(vars["id"])
+	playbookToDelete, err := h.playbookService.Get(vars["id"])
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, oldPlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to delete a playbook on teamID %s", userID, oldPlaybook.TeamID))
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookToDelete.TeamID, model.PERMISSION_VIEW_TEAM) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to delete a playbook on teamID %s", userID, playbookToDelete.TeamID))
 		return
 	}
 
-	if err := h.playbookService.Delete(vars["id"]); err != nil {
+	if err := h.playbookService.Delete(playbookToDelete); err != nil {
 		HandleError(w, err)
 		return
 	}

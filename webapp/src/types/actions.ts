@@ -16,6 +16,8 @@ export const RECEIVED_INCIDENTS = pluginId + '_received_incidents';
 export const RECEIVED_INCIDENT_DETAILS = pluginId + '_received_incident_details';
 export const RECEIVED_INCIDENT_UPDATE = pluginId + '_received_incident_update';
 export const RECEIVED_PLAYBOOKS = pluginId + '_received_playbooks';
+export const RECEIVED_PLAYBOOK = pluginId + '_received_playbook';
+export const REMOVE_PLAYBOOK = pluginId + '_remove_playbook';
 export const RECEIVED_ERROR = pluginId + '_received_error';
 export const SET_LOADING = pluginId + '_set_loading';
 export const SET_CLIENT_ID = pluginId + '_set_client_id';
@@ -76,6 +78,11 @@ export interface ReceivedPlaybooks {
     type: typeof RECEIVED_PLAYBOOKS;
     playbooks: Playbook[];
     teamID: string;
+}
+
+export interface ReceivedPlaybook {
+    type: typeof RECEIVED_PLAYBOOK | typeof REMOVE_PLAYBOOK;
+    playbook: Playbook;
 }
 
 export interface SetBackstageModal {

@@ -14,6 +14,8 @@ import {
     SET_CLIENT_ID,
     SET_BACKSTAGE_MODAL_OPEN,
     RECEIVED_PLAYBOOKS,
+    RECEIVED_PLAYBOOK,
+    REMOVE_PLAYBOOK,
 } from './types/actions';
 import {RHSState} from './types/incident';
 
@@ -95,6 +97,24 @@ function playbooks(state = {}, action) {
     case RECEIVED_PLAYBOOKS: {
         const newPart = {};
         newPart[action.teamID] = action.playbooks;
+        return Object.assign({}, state, newPart);
+    }
+    case RECEIVED_PLAYBOOK: {
+        const teamID = action.playbook.team_id;
+        const newPart = {};
+        newPart[teamID] = [];
+        if (state[teamID]) {
+            newPart[teamID] = state[teamID].filter((v) => v.id !== action.playbook.id);
+        }
+        newPart[teamID].push(action.playbook);
+        return Object.assign({}, state, newPart);
+    }
+    case REMOVE_PLAYBOOK: {
+        const teamID = action.playbook.team_id;
+        const newPart = {};
+        if (state[teamID]) {
+            newPart[teamID] = state[teamID].filter((v) => v.id !== action.playbook.id);
+        }
         return Object.assign({}, state, newPart);
     }
     default:

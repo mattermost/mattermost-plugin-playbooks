@@ -36,7 +36,7 @@ type Service interface {
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
-	Delete(id string) error
+	Delete(playbook Playbook) error
 }
 
 // Store is an interface for storing playbooks

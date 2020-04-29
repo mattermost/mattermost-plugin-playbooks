@@ -35,6 +35,7 @@ export function isPlaybook(arg: any): arg is Playbook {
     return arg &&
         typeof arg.id === 'string' &&
         typeof arg.title === 'string' &&
+        typeof arg.team_id === 'string' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
 }
 

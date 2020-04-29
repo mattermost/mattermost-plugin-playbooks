@@ -42,6 +42,9 @@ import {
     SetBackstageModal,
     SET_BACKSTAGE_MODAL_OPEN,
     RECEIVED_PLAYBOOKS,
+    RECEIVED_PLAYBOOK,
+    REMOVE_PLAYBOOK,
+    ReceivedPlaybook,
 } from './types/actions';
 
 import {Incident, RHSState} from './types/incident';
@@ -293,6 +296,20 @@ function receivedPlaybooks(teamID: string, playbooks: Playbook[]): ReceivedPlayb
         type: RECEIVED_PLAYBOOKS,
         teamID,
         playbooks,
+    };
+}
+
+export function receivedPlaybook(playbook: Playbook): ReceivedPlaybook {
+    return {
+        type: RECEIVED_PLAYBOOK,
+        playbook,
+    };
+}
+
+export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
+    return {
+        type: REMOVE_PLAYBOOK,
+        playbook,
     };
 }
 

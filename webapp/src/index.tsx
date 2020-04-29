@@ -14,8 +14,19 @@ import BackstageModal from './components/backstage/backstage_modal';
 import {Hooks} from './hooks';
 import {setToggleRHSAction} from './actions';
 import reducer from './reducer';
-import {handleWebsocketIncidentUpdate, handleWebsocketIncidentCreated} from './websocket_events';
-import {WEBSOCKET_INCIDENT_UPDATE, WEBSOCKET_INCIDENT_CREATED} from './types/websocket_events';
+import {
+    handleWebsocketIncidentUpdate,
+    handleWebsocketIncidentCreated,
+    handleWebsocketPlaybookCreateModify,
+    handleWebsocketPlaybookDelete,
+} from './websocket_events';
+import {
+    WEBSOCKET_INCIDENT_UPDATE,
+    WEBSOCKET_INCIDENT_CREATED,
+    WEBSOCKET_PLAYBOOK_DELETE,
+    WEBSOCKET_PLAYBOOK_CREATED,
+    WEBSOCKET_PLAYBOOK_UPDATE,
+} from './types/websocket_events';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
@@ -35,6 +46,15 @@ export default class Plugin {
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED,
             handleWebsocketIncidentCreated(store.dispatch, store.getState));
+
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED,
+            handleWebsocketPlaybookCreateModify(store.dispatch));
+
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_UPDATE,
+            handleWebsocketPlaybookCreateModify(store.dispatch));
+
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETE,
+            handleWebsocketPlaybookDelete(store.dispatch));
 
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);

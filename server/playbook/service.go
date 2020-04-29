@@ -1,18 +1,34 @@
 package playbook
 
+import (
+	"errors"
+
+	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+)
+
 type service struct {
-	store Store
+	store  Store
+	poster bot.Poster
 }
 
 // NewService returns a new playbook service
-func NewService(store Store) Service {
+func NewService(store Store, poster bot.Poster) Service {
 	return &service{
-		store: store,
+		store:  store,
+		poster: poster,
 	}
 }
 
 func (s *service) Create(playbook Playbook) (string, error) {
-	return s.store.Create(playbook)
+	newID, err := s.store.Create(playbook)
+	if err != nil {
+		return "", err
+	}
+	playbook.ID = newID
+
+	s.poster.PublishWebsocketEventToTeam("playbook_created", playbook, playbook.TeamID)
+
+	return newID, nil
 }
 
 func (s *service) Get(id string) (Playbook, error) {
@@ -40,9 +56,25 @@ func (s *service) GetPlaybooksForTeam(teamID string) ([]Playbook, error) {
 }
 
 func (s *service) Update(playbook Playbook) error {
-	return s.store.Update(playbook)
+	if err := s.store.Update(playbook); err != nil {
+		return err
+	}
+
+	s.poster.PublishWebsocketEventToTeam("playbook_update", playbook, playbook.TeamID)
+
+	return nil
 }
 
-func (s *service) Delete(id string) error {
-	return s.store.Delete(id)
+func (s *service) Delete(playbook Playbook) error {
+	if playbook.ID == "" {
+		return errors.New("can't delete a playbook without an ID")
+	}
+
+	if err := s.store.Delete(playbook.ID); err != nil {
+		return err
+	}
+
+	s.poster.PublishWebsocketEventToTeam("playbook_delete", playbook, playbook.TeamID)
+
+	return nil
 }
