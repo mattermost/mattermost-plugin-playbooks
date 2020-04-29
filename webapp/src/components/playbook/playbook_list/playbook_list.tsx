@@ -11,6 +11,7 @@ import '../playbook.scss';
 interface Props {
     playbooks: Playbook[];
     currentTeamID: string;
+    currentTeamName: string;
     getPlaybooksForCurrentTeam: () => void;
 }
 
@@ -52,7 +53,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                         <div className='Playbook'>
                             <div className='header'>
                                 <div className='title'>
-                                    {'Playbooks'}
+                                    {'Playbooks for ' + this.props.currentTeamName + ' Team'}
                                 </div>
                                 <div className='header-button-div'>
                                     <button

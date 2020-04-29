@@ -2,7 +2,7 @@ import {bindActionCreators, Dispatch} from 'redux';
 
 import {connect} from 'react-redux';
 
-import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {getPlaybooksForCurrentTeam} from 'src/actions';
 
@@ -11,10 +11,13 @@ import {playbooks} from 'src/selectors';
 import PlaybookList from './playbook_list';
 
 const mapStateToProps = (state: object): object => {
-    const currentTeamID = getCurrentTeamId(state);
+    const currentTeam = getCurrentTeam(state);
+    const currentTeamID = currentTeam.id;
+    const currentTeamName = currentTeam.display_name;
 
     return {
         playbooks: playbooks(state)[currentTeamID] || [],
+        currentTeamName,
         currentTeamID,
     };
 };
