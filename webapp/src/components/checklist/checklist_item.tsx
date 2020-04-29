@@ -23,19 +23,33 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
     return (
         <div
             className={'checkbox-container' + (disabled ? ' light' : '')}
-            onClick={() => {
-                if (!disabled && onChange) {
-                    onChange(!checklistItem.checked);
-                }
-            }}
         >
-            <input
-                className='checkbox'
-                type='checkbox'
-                disabled={disabled}
-                checked={checklistItem.checked}
-            />
-            <label>{checklistItem.title}{' '}<span className={'light small'}>{timestamp}</span></label>
+            <div
+                onClick={() => {
+                    if (!disabled && onChange) {
+                        onChange(!checklistItem.checked);
+                    }
+                }}
+            >
+                <input
+                    className='checkbox'
+                    type='checkbox'
+                    disabled={disabled}
+                    checked={checklistItem.checked}
+                />
+                <label>
+                    {checklistItem.title}
+                </label>
+            </div>
+            <a
+                className={'light small'}
+                onClick={() => {
+                    // @ts-ignore
+                    window.WebappUtils.browserHistory.push(checklistItem.checked_post_permalink);
+                }}
+            >
+                {timestamp}
+            </a>
         </div>
     );
 };

@@ -8,16 +8,16 @@ import (
 )
 
 // PostMessage posts a message to a specified channel.
-func (b *Bot) PostMessage(channelID, format string, args ...interface{}) error {
+func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (string, error) {
 	post := &model.Post{
 		Message:   fmt.Sprintf(format, args...),
 		UserId:    b.botUserID,
 		ChannelId: channelID,
 	}
 	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return post.Id, nil
 }
 
 // DM posts a simple Direct Message to the specified user

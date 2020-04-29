@@ -16,6 +16,7 @@ export interface ChecklistItem {
     title: string;
     checked: boolean;
     checked_modified: string;
+    checked_post_permalink: string;
 }
 
 export function newPlaybook(): Playbook {
@@ -47,5 +48,7 @@ export function isChecklist(arg: any): arg is Checklist {
 export function isChecklistItem(arg: any): arg is ChecklistItem {
     return arg &&
         typeof arg.title === 'string' &&
+        typeof arg.checked_post_permalink === 'string' &&
+        typeof arg.checked_modified === 'string' &&
         typeof arg.checked === 'boolean';
 }
