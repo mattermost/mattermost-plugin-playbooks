@@ -70,12 +70,16 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 // HandleErrorWithCode writes code, errTitle and err as json into the response.
 func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err error) {
 	w.WriteHeader(code)
+	details := ""
+	if err != nil {
+		details = err.Error()
+	}
 	b, _ := json.Marshal(struct {
 		Error   string `json:"error"`
 		Details string `json:"details"`
 	}{
 		Error:   errTitle,
-		Details: err.Error(),
+		Details: details,
 	})
 	logrus.Warn(string(b))
 	_, _ = w.Write(b)
