@@ -164,7 +164,7 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		mockkvapi.EXPECT().Set("playbook_testplaybookid", gomock.Any()).Return(true, nil)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		poster.EXPECT().PublishWebsocketEventToTeam("playbook_update", gomock.Any(), "testteamid")
+		poster.EXPECT().PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "testteamid")
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -201,7 +201,7 @@ func TestPlaybooks(t *testing.T) {
 
 		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		poster.EXPECT().PublishWebsocketEventToTeam("playbook_delete", gomock.Any(), "testteamid")
+		poster.EXPECT().PublishWebsocketEventToTeam("playbook_deleted", gomock.Any(), "testteamid")
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
