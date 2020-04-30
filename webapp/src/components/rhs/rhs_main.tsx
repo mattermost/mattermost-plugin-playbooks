@@ -78,7 +78,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                             <span>{'Loading...'}</span>
                         </div>
                     }
-                        <div>
+                    <div>
                         {
                             this.props.rhsState === RHSState.List && !this.props.isLoading &&
                             <Scrollbars
