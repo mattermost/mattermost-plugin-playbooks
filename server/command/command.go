@@ -89,7 +89,7 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	playbooks, err := r.playbookService.GetPlaybooks()
+	playbooks, err := r.playbookService.GetPlaybooksForTeam(r.args.TeamId)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
@@ -134,7 +134,8 @@ func (r *Runner) actionSelftest() {
 	}
 
 	testPlaybook := playbook.Playbook{
-		Title: "testing playbook",
+		Title:  "testing playbook",
+		TeamID: r.args.TeamId,
 		Checklists: []playbook.Checklist{
 			{
 				Title: "Checklist",
@@ -229,7 +230,8 @@ func (r *Runner) actionSelftest() {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
 	}
-	if err = r.playbookService.Delete(todeleteid); err != nil {
+	testPlaybook.ID = todeleteid
+	if err = r.playbookService.Delete(testPlaybook); err != nil {
 		r.postCommandResponse("There was an error while deleteing playbook. Err: " + err.Error())
 		return
 	}
