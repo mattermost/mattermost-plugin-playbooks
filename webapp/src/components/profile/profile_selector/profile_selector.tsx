@@ -32,51 +32,52 @@ interface Option {
 export default function ProfileSelector(props: Props) {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
+        if (!isOpen) {
+            fetchUsers();
+        }
         setOpen(!isOpen);
     };
 
     const [userOptions, setUserOptions] = useState<Option[]>([]);
 
-    // Fill in the userOptions, but only once on mount. This means we won't update when channel
-    // membership changes.
-    // TODO: Is there any way to get the user list from the store? https://mattermost.atlassian.net/browse/MM-24329
-    useEffect(() => {
-        async function fetchUsers() {
-            if (!props.channelId) {
-                return;
-            }
-
-            const formatName = (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-                const name = '@' + userName;
-                const description = getUserDescription(firstName, lastName, nickName);
-                return (
-                    <>
-                        <span>{name}</span>
-                        {description && <span className={'description'}>{description}</span>}
-                    </>
-                );
-            };
-
-            const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
-                return '@' + userName + getUserDescription(firstName, lastName, nickName);
-            };
-
-            const users = await fetchUsersInChannel(props.channelId);
-            const optionList = users.map((user: UserProfile) => {
-                return ({
-                    value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
-                    label: (
-                        <Profile
-                            userId={user.id}
-                            nameFormatter={formatName}
-                        />
-                    ),
-                    userId: user.id,
-                });
-            });
-            setUserOptions(optionList);
+    async function fetchUsers() {
+        if (!props.channelId) {
+            return;
         }
 
+        const formatName = (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
+            const name = '@' + userName;
+            const description = getUserDescription(firstName, lastName, nickName);
+            return (
+                <>
+                    <span>{name}</span>
+                    {description && <span className={'description'}>{description}</span>}
+                </>
+            );
+        };
+
+        const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
+            return '@' + userName + getUserDescription(firstName, lastName, nickName);
+        };
+
+        const users = await fetchUsersInChannel(props.channelId);
+        const optionList = users.map((user: UserProfile) => {
+            return ({
+                value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
+                label: (
+                    <Profile
+                        userId={user.id}
+                        nameFormatter={formatName}
+                    />
+                ),
+                userId: user.id,
+            });
+        });
+        setUserOptions(optionList);
+    }
+
+    // Fill in the userOptions on mount.
+    useEffect(() => {
         fetchUsers();
     }, []);
 

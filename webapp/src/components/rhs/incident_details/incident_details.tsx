@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import Scrollbars from 'react-custom-scrollbars';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
@@ -39,6 +40,30 @@ interface Props {
     };
 }
 
+export function renderView(props: any): JSX.Element {
+    return (
+        <div
+            {...props}
+            className='scrollbar--view'
+        />);
+}
+
+export function renderThumbHorizontal(props: any): JSX.Element {
+    return (
+        <div
+            {...props}
+            className='scrollbar--horizontal'
+        />);
+}
+
+export function renderThumbVertical(props: any): JSX.Element {
+    return (
+        <div
+            {...props}
+            className='scrollbar--vertical'
+        />);
+}
+
 export default class IncidentDetails extends React.PureComponent<Props> {
     private moveToDM(userName: string) {
         WebappUtils.browserHistory.push(`/${this.props.teamName}/messages/@${userName}`);
@@ -51,56 +76,66 @@ export default class IncidentDetails extends React.PureComponent<Props> {
         const incidentChannel = this.props.channelDetails?.length > 0 ? this.props.channelDetails[0] : null;
 
         return (
-            <div className='IncidentDetails'>
-                <div className='inner-container'>
-                    <div className='title'>{'Commander'}</div>
-                    <ProfileSelector
-                        commanderId={this.props.incident.commander_user_id}
-                        enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
-                        channelId={incidentChannel?.id}
-                        incidentId={this.props.incident.id}
-                    />
-                </div>
+            <React.Fragment>
+                <Scrollbars
+                    autoHide={true}
+                    autoHideTimeout={500}
+                    autoHideDuration={500}
+                    renderThumbHorizontal={renderThumbHorizontal}
+                    renderThumbVertical={renderThumbVertical}
+                    renderView={renderView}
+                >
+                    <div className='IncidentDetails'>
+                        <div className='inner-container'>
+                            <div className='title'>{'Commander'}</div>
+                            <ProfileSelector
+                                commanderId={this.props.incident.commander_user_id}
+                                enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                                channelId={incidentChannel?.id}
+                                incidentId={this.props.incident.id}
+                            />
+                        </div>
 
-                {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
-                    <ChecklistDetails
-                        checklist={checklist}
-                        enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
-                        key={checklist.title + index}
-                        onChange={(itemNum: number, checked: boolean) => {
-                            this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
-                        }}
-                        addItem={(checklistItem: ChecklistItem) => {
-                            this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
-                        }}
-                        removeItem={(itemNum: number) => {
-                            this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
-                        }}
-                        editItem={(itemNum: number, newTitle: string) => {
-                            this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
-                        }}
-                        reorderItems={(itemNum: number, newPosition: number) => {
-                            this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
-                        }}
-                    />
-                ))}
+                        {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
+                            <ChecklistDetails
+                                checklist={checklist}
+                                enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                                key={checklist.title + index}
+                                onChange={(itemNum: number, checked: boolean) => {
+                                    this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
+                                }}
+                                addItem={(checklistItem: ChecklistItem) => {
+                                    this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
+                                }}
+                                removeItem={(itemNum: number) => {
+                                    this.props.actions.removeChecklistItem(this.props.incident.id, index, itemNum);
+                                }}
+                                editItem={(itemNum: number, newTitle: string) => {
+                                    this.props.actions.renameChecklistItem(this.props.incident.id, index, itemNum, newTitle);
+                                }}
+                                reorderItems={(itemNum: number, newPosition: number) => {
+                                    this.props.actions.reorderChecklist(this.props.incident.id, index, itemNum, newPosition);
+                                }}
+                            />
+                        ))}
 
-                {
-                    this.props.involvedInIncident &&
-                    <div className='inner-container'>
-                        <div className='title'>{'Channels'}</div>
                         {
-                            this.props.channelDetails.map((channel: ChannelWithTeamData) => (
-                                <Link
-                                    key={channel.id}
-                                    to={`/${channel.team_name}/channels/${channel.name}`}
-                                    text={channel.display_name}
-                                />
-                            ))
+                            this.props.involvedInIncident &&
+                            <div className='inner-container'>
+                                <div className='title'>{'Channels'}</div>
+                                {
+                                    this.props.channelDetails.map((channel: ChannelWithTeamData) => (
+                                        <Link
+                                            key={channel.id}
+                                            to={`/${channel.team_name}/channels/${channel.name}`}
+                                            text={channel.display_name}
+                                        />
+                                    ))
+                                }
+                            </div>
                         }
                     </div>
-                }
-
+                </Scrollbars>
                 <div className='footer-div'>
                     {
                         this.props.involvedInIncident &&
@@ -139,7 +174,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                         </div>
                     }
                 </div>
-            </div>
+            </React.Fragment>
         );
     }
 }

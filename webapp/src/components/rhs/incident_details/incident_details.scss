@@ -3,7 +3,7 @@ $font-family: Open Sans;
 .IncidentDetails {
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 2rem 2rem 10rem;
 
     > div {
         padding: 0 0 24px 0;
@@ -35,20 +35,21 @@ $font-family: Open Sans;
             text-decoration: underline;
         }
     }
+}
 
-    .footer-div {
-        border-top: 1px solid var(--center-channel-color-16);
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: auto;
-        text-align: right;
-        padding: 2rem;
+.footer-div {
+    background: var(--center-channel-bg);
+    border-top: 1px solid var(--center-channel-color-16);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    text-align: right;
+    padding: 2rem;
 
-        a {
-            opacity: unset;
-        }
+    a {
+        opacity: unset;
     }
 }
 

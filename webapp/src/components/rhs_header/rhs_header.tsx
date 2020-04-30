@@ -3,6 +3,8 @@
 
 import React from 'react';
 
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+
 import {Incident} from 'src/types/incident';
 import {BackstageArea} from 'src/types/backstage';
 import {RHSState} from 'src/types/rhs';
@@ -22,6 +24,8 @@ interface Props {
     };
 }
 
+const OVERLAY_DELAY = 400;
+
 export default function RHSHeader(props: Props) {
     const goBack = () => {
         props.actions.setRHSState(RHSState.List);
@@ -33,20 +37,32 @@ export default function RHSHeader(props: Props) {
 
     const headerButtons = (
         <div className={'header-buttons'}>
-            <button
-                className='navigation-bar__button'
-                onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+            <OverlayTrigger
+                placement='bottom'
+                delay={OVERLAY_DELAY}
+                overlay={<Tooltip id='playbooksTooltip'>{'Playbooks'}</Tooltip>}
             >
-                <PlaybookIcon/>
-            </button>
-            <button
-                className='navigation-bar__button'
-                onClick={() => props.actions.startIncident()}
+                <button
+                    className='navigation-bar__button'
+                    onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+                >
+                    <PlaybookIcon/>
+                </button>
+            </OverlayTrigger>
+            <OverlayTrigger
+                placement='bottom'
+                delay={OVERLAY_DELAY}
+                overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
             >
-                <i
-                    className='icon icon-plus'
-                />
-            </button>
+                <button
+                    className='navigation-bar__button'
+                    onClick={() => props.actions.startIncident()}
+                >
+                    <i
+                        className='icon icon-plus'
+                    />
+                </button>
+            </OverlayTrigger>
             <button
                 className='navigation-bar__button ml-1'
                 onClick={closeRHS}
