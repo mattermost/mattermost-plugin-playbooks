@@ -37,7 +37,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
 	incidentsRouter.HandleFunc("", handler.createIncident).Methods(http.MethodPost)
-	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/headers", handler.getHeaders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 
@@ -166,8 +166,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	var incidentHeaders []incident.Header
+func (h *IncidentHandler) getHeaders(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
 
 	// Check permissions
@@ -182,8 +181,43 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate parameters; NOTE: we are failing early instead of turning bad parameters into the default
+	param := r.URL.Query().Get("page")
+	if param == "" {
+		param = "0"
+	}
+	page, err := strconv.Atoi(param)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: page", err)
+		return
+	}
+	param = r.URL.Query().Get("per_page")
+	if param == "" {
+		param = "0"
+	}
+	perPage, err := strconv.Atoi(param)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: per_page", err)
+		return
+	}
+	sort := r.URL.Query().Get("sort")
+	param = r.URL.Query().Get("order_by")
+	var orderBy incident.OrderByOption
+	if param == "asc" {
+		orderBy = incident.Asc
+	} else if param == "desc" || param == "" {
+		orderBy = incident.Desc
+	} else {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: order_by", errors.New("order_by may be 'asc', 'desc', or omitted"))
+		return
+	}
+
 	filterOptions := incident.HeaderFilterOptions{
-		TeamID: teamID,
+		TeamID:  teamID,
+		Page:    page,
+		PerPage: perPage,
+		Sort:    sort,
+		OrderBy: orderBy,
 	}
 
 	incidentHeaders, err := h.incidentService.GetHeaders(filterOptions)

@@ -19,13 +19,29 @@ import {pluginId} from './manifest';
 
 const apiUrl = `/plugins/${pluginId}/api/v1`;
 
-export async function fetchIncidentHeaders(teamId?: string) {
+enum OrderBy {
+    Desc = 0,
+    Asc = 1,
+}
+
+export async function fetchIncidentHeaders(teamId?: string, page?: number, perPage?: number, sort?: string, orderBy?: OrderBy) {
+    let orderByString;
+    if (orderBy === OrderBy.Desc) {
+        orderByString = 'desc';
+    } else if (orderBy === OrderBy.Asc) {
+        orderByString = 'asc';
+    }
+
     const queryParams = qs.stringify({
         team_id: teamId,
+        page,
+        per_page: perPage,
+        sort,
+        order_by: orderByString,
     }, {addQueryPrefix: true});
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let data = await doGet(`${apiUrl}/incidents${queryParams}`);
+    let data = await doGet(`${apiUrl}/incidents/headers${queryParams}`);
     if (!data) {
         data = [];
     }

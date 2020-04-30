@@ -3,29 +3,30 @@ package pluginkvstore
 import (
 	"errors"
 	"fmt"
+	"sort"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 const (
-	allHeadersKey = "all_headers"
-	incidentKey   = "incident_"
+	allHeadersKey  = "all_headers"
+	incidentKey    = "incident_"
+	perPageDefault = 1000
 )
 
 type idHeaderMap map[string]incident.Header
 
-// Ensure incidentStore implments the playbook.Store interface.
+// Ensure incidentStore implements the playbook.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
-	pluginAPI *pluginapi.Client
+	pluginAPI KVAPI
 }
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
-func NewIncidentStore(pluginAPI *pluginapi.Client) incident.Store {
+func NewIncidentStore(pluginAPI KVAPI) incident.Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
 	}
@@ -39,7 +40,7 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 		return nil, fmt.Errorf("failed to get all headers value: %w", err)
 	}
 
-	headers := toHeader(headersMap)
+	headers := toHeaders(headersMap)
 	var result []incident.Header
 
 	for _, header := range headers {
@@ -47,6 +48,9 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 			result = append(result, header)
 		}
 	}
+
+	sortHeaders(result, options.Sort, options.OrderBy)
+	result = pageHeaders(result, options.Page, options.PerPage)
 
 	return result, nil
 }
@@ -61,7 +65,7 @@ func (s *incidentStore) CreateIncident(incdnt *incident.Incident) (*incident.Inc
 	}
 	incdnt.ID = model.NewId()
 
-	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incdnt.ID), incdnt)
+	saved, err := s.pluginAPI.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to store new incident: %w", err)
 	} else if !saved {
@@ -94,7 +98,7 @@ func (s *incidentStore) UpdateIncident(incdnt *incident.Incident) error {
 		return fmt.Errorf("incident with id (%s) does not exist", incdnt.ID)
 	}
 
-	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incdnt.ID), incdnt)
+	saved, err := s.pluginAPI.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
 		return fmt.Errorf("failed to update incident: %w", err)
 	} else if !saved {
@@ -148,7 +152,7 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 
 // NukeDB removes all incident related data.
 func (s *incidentStore) NukeDB() error {
-	return s.pluginAPI.KV.DeleteAll()
+	return s.pluginAPI.DeleteAll()
 }
 
 // toIncidentKey converts an incident to an internal key used to store in the KV Store.
@@ -156,7 +160,7 @@ func toIncidentKey(incidentID string) string {
 	return incidentKey + incidentID
 }
 
-func toHeader(headers idHeaderMap) []incident.Header {
+func toHeaders(headers idHeaderMap) []incident.Header {
 	var result []incident.Header
 	for _, value := range headers {
 		result = append(result, value)
@@ -167,7 +171,7 @@ func toHeader(headers idHeaderMap) []incident.Header {
 
 func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, error) {
 	var incdnt incident.Incident
-	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &incdnt); err != nil {
+	if err := s.pluginAPI.Get(toIncidentKey(incidentID), &incdnt); err != nil {
 		return nil, fmt.Errorf("failed to get incident: %w", err)
 	}
 	if incdnt.ID == "" {
@@ -178,7 +182,7 @@ func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, erro
 
 func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	headers := idHeaderMap{}
-	if err := s.pluginAPI.KV.Get(allHeadersKey, &headers); err != nil {
+	if err := s.pluginAPI.Get(allHeadersKey, &headers); err != nil {
 		return nil, fmt.Errorf("failed to get all headers value: %w", err)
 	}
 	return headers, nil
@@ -193,7 +197,7 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	headers[incdnt.ID] = incdnt.Header
 
 	// TODO: Should be using CompareAndSet, but deep copy is expensive.
-	if saved, err := s.pluginAPI.KV.Set(allHeadersKey, headers); err != nil {
+	if saved, err := s.pluginAPI.Set(allHeadersKey, headers); err != nil {
 		return fmt.Errorf("failed to set all headers value: %w", err)
 	} else if !saved {
 		return errors.New("failed to set all headers value")
@@ -208,4 +212,46 @@ func headerMatchesFilter(header incident.Header, options incident.HeaderFilterOp
 	}
 
 	return true
+}
+
+// sortHeaders defaults to sorting by "created_at", descending.
+func sortHeaders(headers []incident.Header, field string, orderBy incident.OrderByOption) {
+	var orderFn = func(b bool) bool { return b }
+	if orderBy == incident.Asc {
+		orderFn = func(b bool) bool { return !b }
+	}
+
+	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreatedAt > headers[j].CreatedAt) }
+	switch field {
+	case "id":
+		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
+	case "name":
+		sortFn = func(i, j int) bool { return orderFn(headers[i].Name > headers[j].Name) }
+	case "commander_user_id":
+		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
+	case "team_id":
+		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
+	case "ended_at":
+		sortFn = func(i, j int) bool { return orderFn(headers[i].EndedAt > headers[j].EndedAt) }
+	}
+
+	sort.Slice(headers, sortFn)
+}
+
+func pageHeaders(headers []incident.Header, page int, perPage int) []incident.Header {
+	if perPage == 0 {
+		perPage = perPageDefault
+	}
+
+	// Note: ignoring overflow for now
+	start := min(page*perPage, len(headers))
+	end := min(start+perPage, len(headers))
+	return headers[start:end]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
