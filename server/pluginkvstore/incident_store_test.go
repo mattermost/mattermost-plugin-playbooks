@@ -352,7 +352,6 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 			kvAPI := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
