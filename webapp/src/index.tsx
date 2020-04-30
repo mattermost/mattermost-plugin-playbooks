@@ -21,11 +21,11 @@ import {
     handleWebsocketPlaybookDelete,
 } from './websocket_events';
 import {
-    WEBSOCKET_INCIDENT_UPDATE,
+    WEBSOCKET_INCIDENT_UPDATED,
     WEBSOCKET_INCIDENT_CREATED,
-    WEBSOCKET_PLAYBOOK_DELETE,
+    WEBSOCKET_PLAYBOOK_DELETED,
     WEBSOCKET_PLAYBOOK_CREATED,
-    WEBSOCKET_PLAYBOOK_UPDATE,
+    WEBSOCKET_PLAYBOOK_UPDATED,
 } from './types/websocket_events';
 
 export default class Plugin {
@@ -41,7 +41,7 @@ export default class Plugin {
         registry.registerChannelHeaderButtonAction(IncidentIcon, boundToggleRHSAction, 'Incidents', 'Incidents');
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATE,
+        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED,
             handleWebsocketIncidentUpdate(store.dispatch, store.getState));
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED,
@@ -50,10 +50,10 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED,
             handleWebsocketPlaybookCreateModify(store.dispatch));
 
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_UPDATE,
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_UPDATED,
             handleWebsocketPlaybookCreateModify(store.dispatch));
 
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETE,
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED,
             handleWebsocketPlaybookDelete(store.dispatch));
 
         const hooks = new Hooks(store);

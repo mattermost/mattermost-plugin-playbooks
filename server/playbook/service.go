@@ -60,7 +60,7 @@ func (s *service) Update(playbook Playbook) error {
 		return err
 	}
 
-	s.poster.PublishWebsocketEventToTeam("playbook_update", playbook, playbook.TeamID)
+	s.poster.PublishWebsocketEventToTeam("playbook_updated", playbook, playbook.TeamID)
 
 	return nil
 }
@@ -74,7 +74,7 @@ func (s *service) Delete(playbook Playbook) error {
 		return err
 	}
 
-	s.poster.PublishWebsocketEventToTeam("playbook_delete", playbook, playbook.TeamID)
+	s.poster.PublishWebsocketEventToTeam("playbook_deleted", playbook, playbook.TeamID)
 
 	return nil
 }
