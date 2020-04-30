@@ -15,6 +15,12 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
+const (
+	// IncidentCreatedWSEvent is for incident creation.
+	IncidentCreatedWSEvent = "incident_created"
+	incidentUpdatedWSEvent = "incident_updated"
+)
+
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
 type ServiceImpl struct {
 	pluginAPI     *pluginapi.Client
@@ -84,7 +90,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 		return nil, fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incdnt, incdnt.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
 	s.telemetry.CreateIncident(incdnt)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
@@ -156,7 +162,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 		return fmt.Errorf("failed to end incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incdnt, incdnt.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
 	s.telemetry.EndIncident(incdnt)
 
 	user, err := s.pluginAPI.User.Get(userID)
@@ -251,7 +257,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 		return fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
@@ -283,7 +289,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
@@ -311,7 +317,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 		return fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.AddChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
@@ -337,7 +343,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 		return fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.RemoveChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
@@ -363,7 +369,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 		return fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.RenameChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
@@ -401,7 +407,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 		return fmt.Errorf("failed to update incident: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_updated", incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.MoveChecklistItem(incidentID, userID)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]

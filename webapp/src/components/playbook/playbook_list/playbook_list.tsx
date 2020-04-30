@@ -12,7 +12,9 @@ interface Props {
     playbooks: Playbook[];
     currentTeamID: string;
     currentTeamName: string;
-    getPlaybooksForCurrentTeam: () => void;
+    actions: {
+        getPlaybooksForCurrentTeam: () => void;
+    };
 }
 
 interface State {
@@ -31,7 +33,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.props.getPlaybooksForCurrentTeam();
+        this.props.actions.getPlaybooksForCurrentTeam();
     }
 
     public toggleEditMode = () => {

@@ -21,9 +21,12 @@ const mapStateToProps = (state: object): object => {
         currentTeamID,
     };
 };
-const mapDispatchToProps = (dispatch: Dispatch): object =>
-    bindActionCreators({
-        getPlaybooksForCurrentTeam,
-    }, dispatch);
+const mapDispatchToProps = (dispatch: Dispatch): object => {
+    return {
+        actions: bindActionCreators({
+            getPlaybooksForCurrentTeam,
+        }, dispatch),
+    };
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(PlaybookList);
