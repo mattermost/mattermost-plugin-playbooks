@@ -221,6 +221,33 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) string {
 	return incidentID
 }
 
+// GetCommandersForTeam returns all the commanders of incidents in this team. If active is true,
+// it will only return commanders of active incidents.
+func (s *ServiceImpl) GetCommandersForTeam(teamID string, active bool) ([]CommanderInfo, error) {
+	options := HeaderFilterOptions{TeamID: teamID, Active: active}
+	headers, err := s.store.GetHeaders(options)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set of commander ids
+	commanders := make(map[string]bool)
+	for _, h := range headers {
+		if _, ok := commanders[h.CommanderUserID]; !ok {
+			commanders[h.CommanderUserID] = true
+		}
+	}
+
+	var result []CommanderInfo
+	for id := range commanders {
+		// Note: no accumulated error. If we can't get one of the commander user's info,
+		//   don't return that commander's info.
+		c, _ := s.pluginAPI.User.Get(id)
+		result = append(result, CommanderInfo{UserID: id, Username: c.Username})
+	}
+	return result, nil
+}
+
 // IsCommander returns true if the userID is the commander for incidentID.
 func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 	incdnt, err := s.store.GetIncident(incidentID)

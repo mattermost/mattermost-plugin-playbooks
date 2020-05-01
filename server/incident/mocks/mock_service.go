@@ -91,6 +91,21 @@ func (mr *MockServiceMockRecorder) EndIncident(arg0, arg1 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndIncident", reflect.TypeOf((*MockService)(nil).EndIncident), arg0, arg1)
 }
 
+// GetCommandersForTeam mocks base method
+func (m *MockService) GetCommandersForTeam(arg0 string, arg1 bool) ([]incident.CommanderInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommandersForTeam", arg0, arg1)
+	ret0, _ := ret[0].([]incident.CommanderInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommandersForTeam indicates an expected call of GetCommandersForTeam
+func (mr *MockServiceMockRecorder) GetCommandersForTeam(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommandersForTeam", reflect.TypeOf((*MockService)(nil).GetCommandersForTeam), arg0, arg1)
+}
+
 // GetHeaders mocks base method
 func (m *MockService) GetHeaders(arg0 incident.HeaderFilterOptions) ([]incident.Header, error) {
 	m.ctrl.T.Helper()
