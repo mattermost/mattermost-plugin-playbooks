@@ -33,7 +33,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
         this.state = {
             title: this.props.playbook?.title,
-            checklists: this.props.playbook.checklists,
+            checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
             newPlaybook: !this.props.playbook.id,
             changesMade: false,
             confirmOpen: false,
@@ -173,7 +173,6 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         type='text'
                         placeholder='Playbook Name'
                         value={this.state.title}
-
                         onChange={this.handleTitleChange}
                     />
                     <div className='cheklist-container'>

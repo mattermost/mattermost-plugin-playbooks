@@ -33,6 +33,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
                 className='checkbox'
                 type='checkbox'
                 disabled={disabled}
+                readOnly={!onChange}
                 checked={checklistItem.checked}
             />
             <label>{checklistItem.title}{' '}<span className={'light small'}>{timestamp}</span></label>
