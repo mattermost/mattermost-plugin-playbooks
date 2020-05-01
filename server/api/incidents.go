@@ -213,6 +213,7 @@ func (h *IncidentHandler) getHeaders(w http.ResponseWriter, r *http.Request) {
 	}
 	active, _ := strconv.ParseBool(r.URL.Query().Get("active"))
 	commanderID := r.URL.Query().Get("commander_user_id")
+	search := r.URL.Query().Get("search")
 
 	filterOptions := incident.HeaderFilterOptions{
 		TeamID:      teamID,
@@ -222,6 +223,7 @@ func (h *IncidentHandler) getHeaders(w http.ResponseWriter, r *http.Request) {
 		OrderBy:     orderBy,
 		Active:      active,
 		CommanderID: commanderID,
+		Search:      search,
 	}
 
 	incidentHeaders, err := h.incidentService.GetHeaders(filterOptions)

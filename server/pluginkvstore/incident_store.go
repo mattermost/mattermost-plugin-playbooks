@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
@@ -61,7 +62,12 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 		}
 	}
 
-	sortHeaders(result, options.Sort, options.OrderBy)
+	// We cannot satisfy both Sort/OrderBy and a search term (which returns results ordered by relevance)
+	if options.Search != "" {
+		result = searchHeaders(options.Search, result)
+	} else {
+		sortHeaders(result, options.Sort, options.OrderBy)
+	}
 	result = pageHeaders(result, options.Page, options.PerPage)
 
 	return result, nil
@@ -258,4 +264,20 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func searchHeaders(term string, headers []incident.Header) []incident.Header {
+	var searchableFields []string
+	for _, h := range headers {
+		searchableFields = append(searchableFields, h.Name)
+	}
+
+	ranks := fuzzy.RankFind(term, searchableFields)
+
+	var results []incident.Header
+	for _, r := range ranks {
+		results = append(results, headers[r.OriginalIndex])
+	}
+
+	return results
 }
