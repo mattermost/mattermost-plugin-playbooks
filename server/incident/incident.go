@@ -35,7 +35,7 @@ type DialogState struct {
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// ErrChannelDisplayNameLong is used to indicate a channel name is too long
+// ErrChannelDisplayNameLong is used to indicate a channel name is too long.
 var ErrChannelDisplayNameLong = errors.New("channel name is too long")
 
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
@@ -57,15 +57,15 @@ type HeaderFilterOptions struct {
 	// Gets all the headers with this TeamID.
 	TeamID string
 
-	// Pagination options
+	// Pagination options.
 	Page    int
 	PerPage int
 
 	// Sort sorts by this header field in json format (eg, "created_at", "ended_at", "name", etc.);
-	// defaults to "created_at"
+	// defaults to "created_at".
 	Sort string
 
-	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc
+	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
 	OrderBy OrderByOption
 }
 
