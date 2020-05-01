@@ -8,9 +8,11 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {rhsState, incidentDetails, clientId} from './selectors';
 import {WebSocketMessage} from './types/websocket_events';
-import {receivedIncidentUpdate, setRHSState} from './actions';
-import {isIncident} from './types/incident';
+import {receivedIncidentUpdate, setRHSState, receivedPlaybook, removePlaybook} from './actions';
+import {isIncident from './types/incident';
+import {isPlaybook} from './types/playbook';
 import {RHSState} from './types/rhs';
+import {clientId} from './selectors';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
@@ -62,5 +64,37 @@ export function handleWebsocketIncidentCreated(dispatch: Dispatch<AnyAction>, ge
             const url = `/${currentTeam.name}/channels/${mainChannelId}`;
             WebappUtils.browserHistory.push(url);
         }
+    };
+}
+
+export function handleWebsocketPlaybookCreateModify(dispatch: Dispatch<AnyAction>) {
+    return (msg: WebSocketMessage) => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const playbook = JSON.parse(msg.data.payload);
+
+        if (!isPlaybook(playbook)) {
+            return;
+        }
+
+        dispatch(receivedPlaybook(playbook));
+    };
+}
+
+export function handleWebsocketPlaybookDelete(dispatch: Dispatch<AnyAction>) {
+    return (msg: WebSocketMessage) => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const playbook = JSON.parse(msg.data.payload);
+
+        if (!isPlaybook(playbook)) {
+            return;
+        }
+
+        dispatch(removePlaybook(playbook));
     };
 }

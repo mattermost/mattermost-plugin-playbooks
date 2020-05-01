@@ -15,6 +15,7 @@ import './playbook.scss';
 
 interface Props {
     playbook: Playbook;
+    currentTeamID: string;
     onClose: () => void;
 }
 
@@ -43,6 +44,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
         const newPlaybook: Playbook = {
             id: this.props.playbook.id,
             title: this.state.title,
+            team_id: this.props.currentTeamID,
             checklists: this.state.checklists,
         };
 

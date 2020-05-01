@@ -42,6 +42,9 @@ import {
     SetBackstageModal,
     SET_BACKSTAGE_MODAL_OPEN,
     RECEIVED_PLAYBOOKS,
+    RECEIVED_PLAYBOOK,
+    REMOVE_PLAYBOOK,
+    ReceivedPlaybook,
 } from './types/actions';
 
 import {Incident, IncidentHeader} from './types/incident';
@@ -137,14 +140,20 @@ export function endIncident() {
     };
 }
 
-export function fetchPlaybooks() {
+export function getPlaybooksForTeam(teamID: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            const playbooks = await clientFetchPlaybooks();
-            dispatch(receivedPlaybooks(playbooks));
+            const playbooks = await clientFetchPlaybooks(teamID);
+            dispatch(receivedPlaybooks(teamID, playbooks));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
+    };
+}
+
+export function getPlaybooksForCurrentTeam() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        dispatch(getPlaybooksForTeam(getCurrentTeamId(getState())));
     };
 }
 
@@ -284,10 +293,25 @@ export function setClientId(clientId: string): SetClientId {
     };
 }
 
-function receivedPlaybooks(playbooks: Playbook[]): ReceivedPlaybooks {
+function receivedPlaybooks(teamID: string, playbooks: Playbook[]): ReceivedPlaybooks {
     return {
         type: RECEIVED_PLAYBOOKS,
+        teamID,
         playbooks,
+    };
+}
+
+export function receivedPlaybook(playbook: Playbook): ReceivedPlaybook {
+    return {
+        type: RECEIVED_PLAYBOOK,
+        playbook,
+    };
+}
+
+export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
+    return {
+        type: REMOVE_PLAYBOOK,
+        playbook,
     };
 }
 

@@ -14,7 +14,11 @@ import '../playbook.scss';
 
 interface Props {
     playbooks: Playbook[];
-    fetchPlaybooks: () => void;
+    currentTeamID: string;
+    currentTeamName: string;
+    actions: {
+        getPlaybooksForCurrentTeam: () => void;
+    };
 }
 
 interface State {
@@ -37,7 +41,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.props.fetchPlaybooks();
+        this.props.actions.getPlaybooksForCurrentTeam();
     }
 
     public toggleEditMode = () => {
@@ -96,6 +100,9 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                             <div className='header'>
                                 <div className='title'>
                                     {'Playbooks'}
+                                    <div className='light'>
+                                        {'(' + this.props.currentTeamName + ')'}
+                                    </div>
                                 </div>
                                 <div className='header-button-div'>
                                     <button
@@ -157,6 +164,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                     this.state.editMode && (
                         <PlaybookEdit
                             playbook={this.state.selectedPlaybook}
+                            currentTeamID={this.props.currentTeamID}
                             onClose={this.toggleEditMode}
                         />
                     )

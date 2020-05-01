@@ -156,7 +156,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser("incident_created", map[string]interface{}{"client_id": state.ClientID, "incident": newIncident}, request.UserId)
+	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{"client_id": state.ClientID, "incident": newIncident}, request.UserId)
 
 	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
 		HandleError(w, err)
