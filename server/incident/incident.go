@@ -41,38 +41,6 @@ var ErrChannelDisplayNameLong = errors.New("channel name is too long")
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
 
-// OrderByOption is the type used to specify the ascending or descending order of returned results.
-type OrderByOption int
-
-const (
-	// Desc is descending order.
-	Desc OrderByOption = iota
-
-	// Asc is ascending order.
-	Asc
-)
-
-// HeaderFilterOptions specifies the optional parameters when getting headers.
-type HeaderFilterOptions struct {
-	// Gets all the headers with this TeamID.
-	TeamID string
-
-	// Pagination options.
-	Page    int
-	PerPage int
-
-	// Sort sorts by this header field in json format (eg, "created_at", "ended_at", "name", etc.);
-	// defaults to "created_at".
-	Sort string
-
-	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
-	OrderBy OrderByOption
-
-	// Active filters by active. If true, return only active incidents. If false, return
-	// all incidents; defaults to false
-	Active bool
-}
-
 // Service is the incident/service interface.
 type Service interface {
 	// GetHeaders returns filtered headers.

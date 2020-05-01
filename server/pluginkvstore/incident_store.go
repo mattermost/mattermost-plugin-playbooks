@@ -40,11 +40,23 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 		return nil, fmt.Errorf("failed to get all headers value: %w", err)
 	}
 
+	// Build the filters we need to apply
+	var headerFilters []incident.HeaderFilter
+	if options.TeamID != "" {
+		headerFilters = append(headerFilters, incident.TeamHeaderFilter(options.TeamID))
+	}
+	if options.Active {
+		headerFilters = append(headerFilters, incident.ActiveFilter())
+	}
+	if options.CommanderID != "" {
+		headerFilters = append(headerFilters, incident.CommanderFilter(options.CommanderID))
+	}
+
 	headers := toHeaders(headersMap)
 	var result []incident.Header
 
 	for _, header := range headers {
-		if headerMatchesFilter(header, options) {
+		if incident.HeaderMatchesFilters(header, headerFilters...) {
 			result = append(result, header)
 		}
 	}
@@ -204,14 +216,6 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	}
 
 	return nil
-}
-
-func headerMatchesFilter(header incident.Header, options incident.HeaderFilterOptions) bool {
-	if options.TeamID != "" {
-		return header.TeamID == options.TeamID
-	}
-
-	return true
 }
 
 // sortHeaders defaults to sorting by "created_at", descending.

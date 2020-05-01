@@ -31,7 +31,7 @@ var dbHeaderMap = idHeaderMap{
 	"id3": incident.Header{
 		ID:              "id3",
 		Name:            "incident 3",
-		IsActive:        true,
+		IsActive:        false,
 		CommanderUserID: "commander1",
 		TeamID:          "team1",
 		CreatedAt:       222,
@@ -40,7 +40,7 @@ var dbHeaderMap = idHeaderMap{
 	"id4": incident.Header{
 		ID:              "id4",
 		Name:            "incident 4",
-		IsActive:        true,
+		IsActive:        false,
 		CommanderUserID: "commander3",
 		TeamID:          "team2",
 		CreatedAt:       333,
@@ -71,7 +71,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id4",
 					Name:            "incident 4",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander3",
 					TeamID:          "team2",
 					CreatedAt:       333,
@@ -89,7 +89,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id3",
 					Name:            "incident 3",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander1",
 					TeamID:          "team1",
 					CreatedAt:       222,
@@ -143,7 +143,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id3",
 					Name:            "incident 3",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander1",
 					TeamID:          "team1",
 					CreatedAt:       222,
@@ -160,7 +160,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id3",
 					Name:            "incident 3",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander1",
 					TeamID:          "team1",
 					CreatedAt:       222,
@@ -187,7 +187,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id4",
 					Name:            "incident 4",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander3",
 					TeamID:          "team2",
 					CreatedAt:       333,
@@ -214,7 +214,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id4",
 					Name:            "incident 4",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander3",
 					TeamID:          "team2",
 					CreatedAt:       333,
@@ -232,7 +232,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id4",
 					Name:            "incident 4",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander3",
 					TeamID:          "team2",
 					CreatedAt:       333,
@@ -250,7 +250,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id3",
 					Name:            "incident 3",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander1",
 					TeamID:          "team1",
 					CreatedAt:       222,
@@ -268,7 +268,7 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 				{
 					ID:              "id3",
 					Name:            "incident 3",
-					IsActive:        true,
+					IsActive:        false,
 					CommanderUserID: "commander1",
 					TeamID:          "team1",
 					CreatedAt:       222,
@@ -346,6 +346,72 @@ func Test_incidentStore_GetHeaders(t *testing.T) {
 					TeamID:          "team1",
 					CreatedAt:       145,
 					EndedAt:         555,
+				},
+			},
+		},
+		{
+			name: "only active, page 1 of 2",
+			options: incident.HeaderFilterOptions{
+				Page:    1,
+				PerPage: 2,
+				Active:  true,
+			},
+			want: []incident.Header{
+				{
+					ID:              "id1",
+					Name:            "incident 1",
+					IsActive:        true,
+					CommanderUserID: "commander1",
+					TeamID:          "team1",
+					CreatedAt:       123,
+					EndedAt:         440,
+				},
+			},
+		},
+		{
+			name: "active, commander3, asc",
+			options: incident.HeaderFilterOptions{
+				Active:      true,
+				CommanderID: "commander3",
+				OrderBy:     incident.Asc,
+			},
+			want: []incident.Header{
+				{
+					ID:              "id5",
+					Name:            "incident 5",
+					IsActive:        true,
+					CommanderUserID: "commander3",
+					TeamID:          "team2",
+					CreatedAt:       223,
+					EndedAt:         550,
+				},
+			},
+		},
+		{
+			name: "commander1, asc, by ended_at",
+			options: incident.HeaderFilterOptions{
+				CommanderID: "commander1",
+				OrderBy:     incident.Asc,
+				Sort:        "ended_at",
+			},
+			want: []incident.Header{
+				{
+					ID:              "id1",
+					Name:            "incident 1",
+					IsActive:        true,
+					CommanderUserID: "commander1",
+					TeamID:          "team1",
+					CreatedAt:       123,
+					EndedAt:         440,
+				},
+				{
+					ID:              "id3",
+					Name:            "incident 3",
+					IsActive:        false,
+					CommanderUserID: "commander1",
+					TeamID:          "team1",
+					CreatedAt:       222,
+					EndedAt:         666,
 				},
 			},
 		},
