@@ -25,6 +25,12 @@ type Header struct {
 	EndedAt         int64  `json:"ended_at"`
 }
 
+// CommanderInfo holds the summary information of a commander.
+type CommanderInfo struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+}
+
 // DialogState holds the start incident interactive dialog's state as it appears in the client
 // and is submitted back to the server.
 type DialogState struct {
@@ -65,6 +71,10 @@ type Service interface {
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
 	// if there is no incident associated with this channel.
 	GetIncidentIDForChannel(channelID string) string
+
+	// GetCommandersForTeam returns all the commanders of incidents in this team. If active is true,
+	// it will only return commanders of active incidents.
+	GetCommandersForTeam(teamID string, active bool) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
