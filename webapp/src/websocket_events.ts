@@ -9,10 +9,9 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {rhsState, incidentDetails, clientId} from './selectors';
 import {WebSocketMessage} from './types/websocket_events';
 import {receivedIncidentUpdate, setRHSState, receivedPlaybook, removePlaybook} from './actions';
-import {isIncident from './types/incident';
+import {isIncident} from './types/incident';
 import {isPlaybook} from './types/playbook';
 import {RHSState} from './types/rhs';
-import {clientId} from './selectors';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
