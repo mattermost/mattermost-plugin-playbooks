@@ -67,6 +67,10 @@ type HeaderFilterOptions struct {
 
 	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
 	OrderBy OrderByOption
+
+	// Active filters by active. If true, return only active incidents. If false, return
+	// all incidents; defaults to false
+	Active bool
 }
 
 // Service is the incident/service interface.

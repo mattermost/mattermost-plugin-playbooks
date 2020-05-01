@@ -211,6 +211,8 @@ func (h *IncidentHandler) getHeaders(w http.ResponseWriter, r *http.Request) {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: order_by", errors.New("order_by may be 'asc', 'desc', or omitted"))
 		return
 	}
+	param = r.URL.Query().Get("active")
+	active, _ := strconv.ParseBool(param)
 
 	filterOptions := incident.HeaderFilterOptions{
 		TeamID:  teamID,
@@ -218,6 +220,7 @@ func (h *IncidentHandler) getHeaders(w http.ResponseWriter, r *http.Request) {
 		PerPage: perPage,
 		Sort:    sort,
 		OrderBy: orderBy,
+		Active
 	}
 
 	incidentHeaders, err := h.incidentService.GetHeaders(filterOptions)
