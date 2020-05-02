@@ -43,6 +43,7 @@ export default function RHSHeader(props: Props) {
                 onClick={() => props.actions.startIncident()}
             >
                 <i
+                    id='rhsIconPlus'
                     className='icon icon-plus'
                 />
             </button>

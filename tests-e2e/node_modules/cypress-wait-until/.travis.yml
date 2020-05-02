@@ -1,0 +1,27 @@
+language: node_js
+node_js:
+  - 10
+addons:
+  apt:
+    packages:
+      # Ubuntu 16+ does not install this dependency by default, so we need to install it ourselves
+      - libgconf-2-4
+cache:
+  # Caches $HOME/.npm when npm ci is default script command
+  # Caches node_modules in all other cases
+  npm: true
+  directories:
+    # we also need to cache folder with Cypress binary
+    - ~/.cache
+install:
+  - npm install
+before_script:
+  - "curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sudo bash"
+script:
+  - npm test
+  - fossa init
+  - fossa analyze
+after_success:
+  - npm run semantic-release
+  - cd <SOURCE_DIR> && fossa test
+  - npm run semantic-release

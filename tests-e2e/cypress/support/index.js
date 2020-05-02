@@ -3,10 +3,12 @@
 
 import '@testing-library/cypress/add-commands';
 import 'cypress-file-upload';
+import 'cypress-wait-until';
 
 import './plugin_api_commands';
 import './server_api_commands';
 import './ui_commands';
+import './plugin_ui_commands';
 
 Cypress.Commands.add('requireIncidentResponsePlugin', (version) => {
     cy.apiGetWebappPlugins().then((response) => {

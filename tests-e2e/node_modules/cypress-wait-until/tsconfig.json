@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["es2015", "dom"],
+    "allowJs": true,
+    "types": [
+      "cypress"
+    ]
+  },
+  "include": [
+    "index.d.ts",
+    "cypress/types/*.ts"
+  ]
+}

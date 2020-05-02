@@ -129,3 +129,58 @@ Cypress.Commands.add('apiGetWebappPlugins', () => {
         cy.wrap(response);
     });
 });
+
+/**
+ * Creates a group channel directly via API
+ * This API assume that the user is logged in and has cookie to access
+ * @param {String} userIds - IDs of users as member of the group
+ * All parameters required except purpose and header
+ */
+Cypress.Commands.add('apiCreateGroup', (userIds = []) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/channels/group',
+        method: 'POST',
+        body: userIds,
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        return cy.wrap(response);
+    });
+});
+
+/**
+ * Gets current user's teams
+ */
+
+Cypress.Commands.add('apiGetTeams', () => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: 'api/v4/users/me/teams',
+        method: 'GET',
+    });
+});
+
+/**
+* Gets users
+*/
+Cypress.Commands.add('apiGetUsers', (usernames = []) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/users/usernames',
+        method: 'POST',
+        body: usernames,
+    });
+});
+
+Cypress.Commands.add('apiCreateGroupChannel', (userList = []) => {
+    cy.apiGetUsers(userList).then((res) => {
+        const userIds = res.body.map((user) => user.id);
+        cy.apiCreateGroup(userIds).then((resp) => {
+            cy.apiGetTeams().then((response) => {
+                const team = response.body[0];
+                cy.visit(`/${team.name}/messages/${resp.body.name}`);
+            });
+        });
+    });
+});
+

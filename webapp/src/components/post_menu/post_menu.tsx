@@ -32,6 +32,7 @@ export default class StartIncidentPostMenu extends React.PureComponent<Props> {
                     onClick={this.handleClick}
                 >
                     <button
+                        data-testid='incidentPostMenuIcon'
                         className='style--none'
                         role='presentation'
                         onClick={this.handleClick}
