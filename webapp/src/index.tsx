@@ -14,8 +14,19 @@ import BackstageModal from './components/backstage/backstage_modal';
 import {Hooks} from './hooks';
 import {setToggleRHSAction} from './actions';
 import reducer from './reducer';
-import {handleWebsocketIncidentUpdate, handleWebsocketIncidentCreated} from './websocket_events';
-import {WEBSOCKET_INCIDENT_UPDATE, WEBSOCKET_INCIDENT_CREATED} from './types/websocket_events';
+import {
+    handleWebsocketIncidentUpdate,
+    handleWebsocketIncidentCreated,
+    handleWebsocketPlaybookCreateModify,
+    handleWebsocketPlaybookDelete,
+} from './websocket_events';
+import {
+    WEBSOCKET_INCIDENT_UPDATED,
+    WEBSOCKET_INCIDENT_CREATED,
+    WEBSOCKET_PLAYBOOK_DELETED,
+    WEBSOCKET_PLAYBOOK_CREATED,
+    WEBSOCKET_PLAYBOOK_UPDATED,
+} from './types/websocket_events';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
@@ -30,11 +41,20 @@ export default class Plugin {
         registry.registerChannelHeaderButtonAction(IncidentIcon, boundToggleRHSAction, 'Incidents', 'Incidents');
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATE,
+        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED,
             handleWebsocketIncidentUpdate(store.dispatch, store.getState));
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED,
             handleWebsocketIncidentCreated(store.dispatch, store.getState));
+
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED,
+            handleWebsocketPlaybookCreateModify(store.dispatch));
+
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_UPDATED,
+            handleWebsocketPlaybookCreateModify(store.dispatch));
+
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED,
+            handleWebsocketPlaybookDelete(store.dispatch));
 
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);

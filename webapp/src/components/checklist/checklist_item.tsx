@@ -17,7 +17,11 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
     let timestamp = '';
     if (checklistItem.checked) {
         const checkedModified = moment(checklistItem.checked_modified);
-        timestamp = '(' + checkedModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
+
+        // Avoid times before 2020 since those are errors
+        if (checkedModified.isSameOrAfter('2020')) {
+            timestamp = '(' + checkedModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
+        }
     }
 
     return (
@@ -33,6 +37,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
                 className='checkbox'
                 type='checkbox'
                 disabled={disabled}
+                readOnly={!onChange}
                 checked={checklistItem.checked}
             />
             <label>{checklistItem.title}{' '}<span className={'light small'}>{timestamp}</span></label>

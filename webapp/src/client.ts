@@ -47,8 +47,8 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
-export function clientFetchPlaybooks() {
-    return doGet(`${apiUrl}/playbooks`);
+export function clientFetchPlaybooks(teamID: string) {
+    return doGet(`${apiUrl}/playbooks?teamid=${teamID}`);
 }
 
 export async function savePlaybook(playbook: Playbook) {
@@ -63,6 +63,16 @@ export async function savePlaybook(playbook: Playbook) {
     });
 
     return data;
+}
+
+export async function deletePlaybook(playbook: Playbook) {
+    try {
+        return await doFetchWithResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+            method: 'delete',
+        });
+    } catch (error) {
+        return {error};
+    }
 }
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {

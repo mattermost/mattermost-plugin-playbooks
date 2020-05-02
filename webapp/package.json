@@ -1,6 +1,6 @@
 {
   "name": "mattermost-plugin-incident-response",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
   "main": "src/index.js",
   "scripts": {
@@ -78,6 +78,7 @@
     "moment": "^2.24.0",
     "qs": "^6.9.3",
     "react": "16.13.1",
+    "react-bootstrap": "^1.0.1",
     "react-redux": "5.1.1",
     "react-select": "3.1.0",
     "redux": "4.0.5",

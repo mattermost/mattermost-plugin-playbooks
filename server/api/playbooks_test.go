@@ -10,9 +10,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +31,9 @@ func jsonPlaybookReader(playbook playbook.Playbook) io.Reader {
 
 func TestPlaybooks(t *testing.T) {
 	playbooktest := playbook.Playbook{
-		Title: "My Playbook",
+		ID:     "testplaybookid",
+		Title:  "My Playbook",
+		TeamID: "testteamid",
 		Checklists: []playbook.Checklist{
 			{
 				Title: "Do these things",
@@ -42,14 +48,30 @@ func TestPlaybooks(t *testing.T) {
 	playbooktestBytes, err := json.Marshal(&playbooktest)
 	require.NoError(t, err)
 
+	var mockCtrl *gomock.Controller
+	var mockkvapi *mock_pluginkvstore.MockKVAPI
+	var handler *Handler
+	var store *pluginkvstore.PlaybookStore
+	var poster *mock_poster.MockPoster
+	var playbookService playbook.Service
+	var pluginAPI *plugintest.API
+	var client *pluginapi.Client
+
+	reset := func() {
+		mockCtrl = gomock.NewController(t)
+		mockkvapi = mock_pluginkvstore.NewMockKVAPI(mockCtrl)
+		handler = NewHandler()
+		store = pluginkvstore.NewPlaybookStore(mockkvapi)
+		poster = mock_poster.NewMockPoster(mockCtrl)
+		playbookService = playbook.NewService(store, poster)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client)
+	}
+
 	t.Run("create playbook", func(t *testing.T) {
-		mockCtrl := gomock.NewController(t)
+		reset()
 		defer mockCtrl.Finish()
-		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
-		handler := NewHandler()
-		store := pluginkvstore.NewPlaybookStore(mockkvapi)
-		playbookService := playbook.NewService(store)
-		NewPlaybookHandler(handler.APIRouter, playbookService)
 
 		mockkvapi.EXPECT().Set(gomock.Any(), gomock.Any()).Return(true, nil)
 		playbookIndex := struct {
@@ -62,6 +84,9 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Set("playbookindex", gomock.Any(), gomock.Any()).Return(true, nil)
 
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		poster.EXPECT().PublishWebsocketEventToTeam("playbook_created", gomock.Any(), "testteamid")
+
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
@@ -73,19 +98,15 @@ func TestPlaybooks(t *testing.T) {
 	})
 
 	t.Run("get playbook", func(t *testing.T) {
-		mockCtrl := gomock.NewController(t)
+		reset()
 		defer mockCtrl.Finish()
-		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
-		handler := NewHandler()
-		store := pluginkvstore.NewPlaybookStore(mockkvapi)
-		playbookService := playbook.NewService(store)
-		NewPlaybookHandler(handler.APIRouter, playbookService)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/testplaybookid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -98,16 +119,11 @@ func TestPlaybooks(t *testing.T) {
 	})
 
 	t.Run("get playbooks", func(t *testing.T) {
-		mockCtrl := gomock.NewController(t)
+		reset()
 		defer mockCtrl.Finish()
-		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
-		handler := NewHandler()
-		store := pluginkvstore.NewPlaybookStore(mockkvapi)
-		playbookService := playbook.NewService(store)
-		NewPlaybookHandler(handler.APIRouter, playbookService)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -122,6 +138,7 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Get("playbook_playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		mockkvapi.EXPECT().Get("playbook_playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -136,20 +153,18 @@ func TestPlaybooks(t *testing.T) {
 	})
 
 	t.Run("update playbook", func(t *testing.T) {
-		mockCtrl := gomock.NewController(t)
+		reset()
 		defer mockCtrl.Finish()
-		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
-		handler := NewHandler()
-		store := pluginkvstore.NewPlaybookStore(mockkvapi)
-		playbookService := playbook.NewService(store)
-		NewPlaybookHandler(handler.APIRouter, playbookService)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		mockkvapi.EXPECT().Set("playbook_testplaybookid", gomock.Any()).Return(true, nil)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		poster.EXPECT().PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "testteamid")
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -162,13 +177,8 @@ func TestPlaybooks(t *testing.T) {
 	})
 
 	t.Run("delete playbook", func(t *testing.T) {
-		mockCtrl := gomock.NewController(t)
+		reset()
 		defer mockCtrl.Finish()
-		mockkvapi := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
-		handler := NewHandler()
-		store := pluginkvstore.NewPlaybookStore(mockkvapi)
-		playbookService := playbook.NewService(store)
-		NewPlaybookHandler(handler.APIRouter, playbookService)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/testplaybookid", nil)
@@ -186,7 +196,12 @@ func TestPlaybooks(t *testing.T) {
 		}
 		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Set("playbookindex", gomock.Any()).Return(true, nil)
+
 		mockkvapi.EXPECT().Set("playbook_testplaybookid", nil).Return(true, nil)
+
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		poster.EXPECT().PublishWebsocketEventToTeam("playbook_deleted", gomock.Any(), "testteamid")
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -196,5 +211,93 @@ func TestPlaybooks(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, []byte(`{"status": "OK"}`), result)
+	})
+
+	t.Run("delete playbook no permission", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/testplaybookid", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("create playbook no permission", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(playbooktest))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("get playbook no permission", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/testplaybookid", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("get playbooks no permission", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("update playbooks no permission", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 }

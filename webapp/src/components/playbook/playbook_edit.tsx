@@ -7,6 +7,7 @@ import {Playbook, Checklist, ChecklistItem} from 'src/types/playbook';
 import {savePlaybook} from 'src/client';
 
 import {ChecklistDetails} from 'src/components/checklist/checklist';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import BackIcon from './back_icon';
 
@@ -14,6 +15,7 @@ import './playbook.scss';
 
 interface Props {
     playbook: Playbook;
+    currentTeamID: string;
     onClose: () => void;
 }
 
@@ -22,6 +24,7 @@ interface State{
     checklists: Checklist[];
     newPlaybook: boolean;
     changesMade: boolean;
+    confirmOpen: boolean;
 }
 
 export default class PlaybookEdit extends React.PureComponent<Props, State> {
@@ -30,9 +33,10 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
         this.state = {
             title: this.props.playbook?.title,
-            checklists: this.props.playbook.checklists,
+            checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
             newPlaybook: !this.props.playbook.id,
             changesMade: false,
+            confirmOpen: false,
         };
     }
 
@@ -40,6 +44,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
         const newPlaybook: Playbook = {
             id: this.props.playbook.id,
             title: this.state.title,
+            team_id: this.props.currentTeamID,
             checklists: this.state.checklists,
         };
 
@@ -116,6 +121,22 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
         });
     }
 
+    public confirmOrClose = () => {
+        if (this.state.changesMade) {
+            this.setState({
+                confirmOpen: true,
+            });
+        } else {
+            this.props.onClose();
+        }
+    }
+
+    public confirmCancel = () => {
+        this.setState({
+            confirmOpen: false,
+        });
+    }
+
     public render(): JSX.Element {
         const title = this.state.newPlaybook ? 'New Playbook' : 'Edit Playbook';
 
@@ -125,14 +146,14 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                     <div className='title'>
                         <BackIcon
                             className='back-icon mr-4'
-                            onClick={this.props.onClose}
+                            onClick={this.confirmOrClose}
                         />
                         {title}
                     </div>
                     <div className='header-button-div'>
                         <button
                             className='btn btn-link mr-2'
-                            onClick={this.props.onClose}
+                            onClick={this.confirmOrClose}
                         >
                             {'Cancel'}
                         </button>
@@ -152,7 +173,6 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         type='text'
                         placeholder='Playbook Name'
                         value={this.state.title}
-
                         onChange={this.handleTitleChange}
                     />
                     <div className='cheklist-container'>
@@ -180,6 +200,14 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         </div>
                     </div>
                 </div>
+                <ConfirmModal
+                    show={this.state.confirmOpen}
+                    title={'Confirm discard'}
+                    message={'Are you sure you want to discard your changes?'}
+                    confirmButtonText={'Discard Changes'}
+                    onConfirm={this.props.onClose}
+                    onCancel={this.confirmCancel}
+                />
             </div>
         );
     }

@@ -3,19 +3,29 @@
 
 import React from 'react';
 
-import PlaybookEdit from '../playbook_edit';
 import {newPlaybook, Playbook} from 'src/types/playbook';
+
+import {deletePlaybook} from 'src/client';
+
+import PlaybookEdit from '../playbook_edit';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import '../playbook.scss';
 
 interface Props {
     playbooks: Playbook[];
-    fetchPlaybooks: () => void;
+    currentTeamID: string;
+    currentTeamName: string;
+    actions: {
+        getPlaybooksForCurrentTeam: () => void;
+    };
 }
 
 interface State {
     editMode: boolean;
     selectedPlaybook?: Playbook | null;
+    showConfirmation: boolean;
+    showBanner: boolean;
 }
 
 export default class PlaybookList extends React.PureComponent<Props, State> {
@@ -25,11 +35,13 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         this.state = {
             editMode: false,
             selectedPlaybook: null,
+            showConfirmation: false,
+            showBanner: false,
         };
     }
 
     public componentDidMount(): void {
-        this.props.fetchPlaybooks();
+        this.props.actions.getPlaybooksForCurrentTeam();
     }
 
     public toggleEditMode = () => {
@@ -43,15 +55,54 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         });
     }
 
+    public hideConfirmModal = () => {
+        this.setState({
+            showConfirmation: false,
+        });
+    }
+
+    public onConfirmDelete = (playbook: Playbook) => {
+        this.setState({
+            showConfirmation: true,
+            selectedPlaybook: playbook,
+        });
+    }
+
+    public onDelete = async () => {
+        if (this.state.selectedPlaybook) {
+            await deletePlaybook(this.state.selectedPlaybook);
+            this.hideConfirmModal();
+
+            this.setState({showBanner: true}, () => {
+                window.setTimeout(() => {
+                    this.setState({showBanner: false});
+                }, 5000);
+            });
+        }
+    }
+
     public render(): JSX.Element {
+        const deleteSuccessfulBanner = this.state.showBanner && (
+            <div className='banner'>
+                <div className='banner__text'>
+                    <i className='icon icon-check mr-1'/>
+                    {`The playbook ${this.state.selectedPlaybook?.title} was successfully deleted.`}
+                </div>
+            </div>
+        );
+
         return (
             <>
                 {
                     !this.state.editMode && (
                         <div className='Playbook'>
+                            { deleteSuccessfulBanner }
                             <div className='header'>
                                 <div className='title'>
                                     {'Playbooks'}
+                                    <div className='light'>
+                                        {'(' + this.props.currentTeamName + ')'}
+                                    </div>
                                 </div>
                                 <div className='header-button-div'>
                                     <button
@@ -91,7 +142,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                                     {'Edit'}
                                                 </a>
                                                 {' - '}
-                                                <a>
+                                                <a onClick={() => this.onConfirmDelete(p)} >
                                                     {'Delete'}
                                                 </a>
                                             </div>
@@ -99,12 +150,21 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                     ))
                                 }
                             </div>
+                            <ConfirmModal
+                                show={this.state.showConfirmation}
+                                title={'Confirm Playbook Deletion'}
+                                message={`Are you sure you want to delete the playbook "${this.state.selectedPlaybook?.title}"?`}
+                                confirmButtonText={'Delete Playbook'}
+                                onConfirm={this.onDelete}
+                                onCancel={this.hideConfirmModal}
+                            />
                         </div>
                     )}
                 {
                     this.state.editMode && (
                         <PlaybookEdit
                             playbook={this.state.selectedPlaybook}
+                            currentTeamID={this.props.currentTeamID}
                             onClose={this.toggleEditMode}
                         />
                     )
