@@ -39,18 +39,6 @@ Cypress.Commands.add('clickPostDotMenu', (postId, location = 'CENTER') => {
 /**
 * Start a direct message with user <username>
 */
-Cypress.Commands.add('startDirectMessage', (username) => {
-	cy.get('#addDirectChannel').click();
-	cy.get('#selectItems').type(username + '{enter}');
-	cy.get('#saveItems').click();
-	cy.get('#channel-header').within(() => {
-		cy.findByText(username).should('be.visible');
-	});
-});
-
-/**
-* Start a direct message with user <username>
-*/
 Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') => {
 	cy.get('#addDirectChannel').click();
 	cy.get('#selectItems').type(username + '{enter}{enter}');
