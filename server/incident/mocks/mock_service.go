@@ -91,21 +91,6 @@ func (mr *MockServiceMockRecorder) EndIncident(arg0, arg1 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndIncident", reflect.TypeOf((*MockService)(nil).EndIncident), arg0, arg1)
 }
 
-// GetHeaders mocks base method
-func (m *MockService) GetHeaders(arg0 incident.HeaderFilterOptions) ([]incident.Header, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeaders", arg0)
-	ret0, _ := ret[0].([]incident.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeaders indicates an expected call of GetHeaders
-func (mr *MockServiceMockRecorder) GetHeaders(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaders", reflect.TypeOf((*MockService)(nil).GetHeaders), arg0)
-}
-
 // GetIncident mocks base method
 func (m *MockService) GetIncident(arg0 string) (*incident.Incident, error) {
 	m.ctrl.T.Helper()
@@ -133,6 +118,21 @@ func (m *MockService) GetIncidentIDForChannel(arg0 string) string {
 func (mr *MockServiceMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentIDForChannel", reflect.TypeOf((*MockService)(nil).GetIncidentIDForChannel), arg0)
+}
+
+// GetIncidents mocks base method
+func (m *MockService) GetIncidents(arg0 incident.FilterOptions) ([]incident.Incident, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncidents", arg0)
+	ret0, _ := ret[0].([]incident.Incident)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIncidents indicates an expected call of GetIncidents
+func (mr *MockServiceMockRecorder) GetIncidents(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockService)(nil).GetIncidents), arg0)
 }
 
 // IsCommander mocks base method

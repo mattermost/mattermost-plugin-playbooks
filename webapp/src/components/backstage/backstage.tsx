@@ -19,15 +19,9 @@ interface Props {
 }
 
 const Backstage = ({onBack, selectedArea, setSelectArea}: Props): React.ReactElement => {
-    let activeArea: React.ReactElement;
-    switch (selectedArea) {
-    case BackstageArea.Incidents:
+    let activeArea = <PlaybookList/>;
+    if (selectedArea === BackstageArea.Incidents) {
         activeArea = <IncidentList/>;
-        break;
-    case BackstageArea.Playbooks:
-    default:
-        activeArea = <PlaybookList/>;
-        break;
     }
 
     return (

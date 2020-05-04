@@ -12,7 +12,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
-import {IncidentHeader} from 'src/types/incident';
+import {Incident} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
@@ -24,7 +24,7 @@ enum OrderBy {
     Asc = 1,
 }
 
-export async function fetchIncidentHeaders(teamId?: string, page?: number, perPage?: number, sort?: string, orderBy?: OrderBy) {
+export async function fetchIncidents(teamId?: string, page?: number, perPage?: number, sort?: string, orderBy?: OrderBy) {
     let orderByString;
     if (orderBy === OrderBy.Desc) {
         orderByString = 'desc';
@@ -40,12 +40,11 @@ export async function fetchIncidentHeaders(teamId?: string, page?: number, perPa
         order_by: orderByString,
     }, {addQueryPrefix: true});
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let data = await doGet(`${apiUrl}/incidents/headers${queryParams}`);
+    let data = await doGet(`${apiUrl}/incidents${queryParams}`);
     if (!data) {
         data = [];
     }
-    return data as IncidentHeader[];
+    return data as Incident[];
 }
 
 export function fetchIncidentDetails(id: string) {

@@ -7,22 +7,22 @@ import {Badge} from 'react-bootstrap';
 import classNames from 'classnames';
 import moment from 'moment';
 
-import {fetchIncidentHeaders} from 'src/client';
+import {Incident} from 'src/types/incident';
+import {fetchIncidents} from 'src/client';
 import Profile from 'src/components/profile';
-import {IncidentHeader} from 'src/types/incident';
 
 import './incident_list.scss';
 
 export default function IncidentList() {
-    const [incidents, setIncidents] = useState<IncidentHeader[]>([]);
+    const [incidents, setIncidents] = useState<Incident[]>([]);
 
     useEffect(() => {
-        async function fetchIncidents() {
-            const data = await fetchIncidentHeaders();
+        async function fetchAllIncidents() {
+            const data = await fetchIncidents();
             setIncidents(data);
         }
 
-        fetchIncidents();
+        fetchAllIncidents();
     }, []);
 
     return (
