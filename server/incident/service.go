@@ -240,7 +240,6 @@ func (s *ServiceImpl) GetCommandersForTeam(teamID string, active bool) ([]Comman
 
 	var result []CommanderInfo
 	for id := range commanders {
-		// Odds are this will not fail, so if it does fail early
 		c, err := s.pluginAPI.User.Get(id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve commander id '%s': %w", id, err)
