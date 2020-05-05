@@ -237,11 +237,11 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(jsonBytes); err != nil {
 		HandleError(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 // endIncident handles the /incidents/{id}/end api endpoint.
