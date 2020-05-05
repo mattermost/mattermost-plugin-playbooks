@@ -4,6 +4,7 @@
 export interface Playbook {
     id?: string;
     title: string;
+    team_id: string;
     checklists: Checklist[];
 }
 
@@ -22,6 +23,7 @@ export interface ChecklistItem {
 export function newPlaybook(): Playbook {
     return {
         title: '',
+        team_id: '',
         checklists: [{
             title: 'Checklist',
             items: [],
@@ -34,6 +36,7 @@ export function isPlaybook(arg: any): arg is Playbook {
     return arg &&
         typeof arg.id === 'string' &&
         typeof arg.title === 'string' &&
+        typeof arg.team_id === 'string' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
 }
 

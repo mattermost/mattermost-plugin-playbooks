@@ -6,6 +6,7 @@ import "time"
 type Playbook struct {
 	ID         string      `json:"id"`
 	Title      string      `json:"title"`
+	TeamID     string      `json:"team_id"`
 	Checklists []Checklist `json:"checklists"`
 }
 
@@ -31,10 +32,12 @@ type Service interface {
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
+	// GetPlaybooksForTeam retrieves all playbooks on the specified team
+	GetPlaybooksForTeam(teamID string) ([]Playbook, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
-	Delete(id string) error
+	Delete(playbook Playbook) error
 }
 
 // Store is an interface for storing playbooks
