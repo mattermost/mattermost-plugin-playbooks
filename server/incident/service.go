@@ -320,12 +320,6 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.AddChecklistItem(incidentID, userID)
 
-	mainChannelID := incidentToModify.ChannelIDs[0]
-	modifyMessage := fmt.Sprintf("added item \"%v\" to %v checklist.", checklistItem.Title, incidentToModify.Playbook.Checklists[checklistNumber].Title)
-	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -336,7 +330,6 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 		return err
 	}
 
-	itemRemoved := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
 	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(incidentToModify.Playbook.Checklists[checklistNumber].Items[:itemNumber], incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber+1:]...)
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
@@ -345,12 +338,6 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.RemoveChecklistItem(incidentID, userID)
-
-	mainChannelID := incidentToModify.ChannelIDs[0]
-	modifyMessage := fmt.Sprintf("removed item \"%v\" from checklist.", itemRemoved.Title)
-	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -362,7 +349,6 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 		return err
 	}
 
-	oldTitle := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
@@ -371,12 +357,6 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.RenameChecklistItem(incidentID, userID)
-
-	mainChannelID := incidentToModify.ChannelIDs[0]
-	modifyMessage := fmt.Sprintf("changed checklist item \"%v\" to be \"%v\" in checklist.", oldTitle, newTitle)
-	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -409,12 +389,6 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.MoveChecklistItem(incidentID, userID)
-
-	mainChannelID := incidentToModify.ChannelIDs[0]
-	modifyMessage := fmt.Sprintf("moved checklist item \"%v\" in checklist.", itemMoved.Title)
-	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
-		return err
-	}
 
 	return nil
 }
