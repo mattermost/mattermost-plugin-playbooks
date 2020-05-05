@@ -27,7 +27,7 @@ type Logger interface {
 
 // Poster interface - a small subset of the plugin posting API.
 type Poster interface {
-	// PostMessage posts a simple Direct Message to the specified user.
+	// PostMessage posts a simple Direct Message to the specified user. Returns the post id if posting was successful
 	PostMessage(channelID, format string, args ...interface{}) (string, error)
 
 	// DM posts a simple Direct Message to the specified user.
