@@ -282,15 +282,13 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 // getCommanders handles the /incidents/commanders api endpoint.
 func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
-
-	// Check permissions -- either is an admin, or has permissions to the team they are asking about
-	userID := r.Header.Get("Mattermost-User-ID")
-	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
-	if teamID == "" && !isAdmin {
-		HandleErrorWithCode(w, http.StatusBadRequest, "missing parameter: team_id", fmt.Errorf("userID %s is not an admin, must specify a team_id", userID))
-		return
+	if teamID == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
 	}
-	if !isAdmin && !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
+
+	// Check permissions (if is an admin, they will have permissions to view all teams)
+	userID := r.Header.Get("Mattermost-User-ID")
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
 		return
 	}
@@ -309,11 +307,11 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(jsonBytes); err != nil {
 		HandleError(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 // changeCommander handles the /incidents/{id}/change-commander api endpoint.
