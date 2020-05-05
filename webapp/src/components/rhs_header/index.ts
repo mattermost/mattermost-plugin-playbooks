@@ -10,7 +10,6 @@ import {
     startIncident,
     setRHSState,
     setRHSOpen,
-    toggleRHS,
     openBackstageModal,
 } from 'src/actions';
 
@@ -32,7 +31,6 @@ function mapDispatchToProps(dispatch: Dispatch) {
             startIncident,
             setRHSState,
             setRHSOpen,
-            toggleRHS,
             openBackstageModal,
         }, dispatch),
     };
