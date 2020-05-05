@@ -485,7 +485,7 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.FilterOptions, error) {
 	}
 
 	param = u.Query().Get("sort")
-	var sort incident.SortType
+	var sort incident.SortField
 	switch param {
 	case "id":
 		sort = incident.ID
@@ -504,7 +504,7 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.FilterOptions, error) {
 	}
 
 	param = u.Query().Get("order_by")
-	var orderBy incident.OrderByType
+	var orderBy incident.SortDirection
 	if param == "asc" {
 		orderBy = incident.Asc
 	} else if param == "desc" || param == "" {

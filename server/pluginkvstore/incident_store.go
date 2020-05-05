@@ -225,7 +225,7 @@ func headerMatchesFilter(header incident.Header, options incident.FilterOptions)
 }
 
 // sortHeaders defaults to sorting by "created_at", descending.
-func sortHeaders(headers []incident.Header, sortField incident.SortType, orderBy incident.OrderByType) {
+func sortHeaders(headers []incident.Header, sortField incident.SortField, orderBy incident.SortDirection) {
 	var orderFn = func(b bool) bool { return b }
 	if orderBy == incident.Asc {
 		orderFn = func(b bool) bool { return !b }

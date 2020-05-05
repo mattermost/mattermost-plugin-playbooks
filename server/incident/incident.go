@@ -41,23 +41,23 @@ var ErrChannelDisplayNameLong = errors.New("channel name is too long")
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
 
-// OrderByType is the type used to specify the ascending or descending order of returned results.
-type OrderByType int
+// SortDirection is the type used to specify the ascending or descending order of returned results.
+type SortDirection int
 
 const (
 	// Desc is descending order.
-	Desc OrderByType = iota
+	Desc SortDirection = iota
 
 	// Asc is ascending order.
 	Asc
 )
 
-// SortType enumerates the available fields we can sort on.
-type SortType int
+// SortField enumerates the available fields we can sort on.
+type SortField int
 
 const (
 	// CreatedAt sorts by the "created_at" field. It is the default.
-	CreatedAt SortType = iota
+	CreatedAt SortField = iota
 
 	// ID sorts by the "id" field.
 	ID
@@ -86,10 +86,10 @@ type FilterOptions struct {
 
 	// Sort sorts by this header field in json format (eg, "created_at", "ended_at", "name", etc.);
 	// defaults to "created_at".
-	Sort SortType
+	Sort SortField
 
 	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
-	OrderBy OrderByType
+	OrderBy SortDirection
 }
 
 // Service is the incident/service interface.
