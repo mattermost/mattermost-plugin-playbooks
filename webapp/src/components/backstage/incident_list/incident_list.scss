@@ -23,6 +23,10 @@ $font-family: Open Sans;
             display: flex;
             align-items: center;
             width: 100%;
+
+            .light {
+                padding-left: 1rem;
+            }
         }
     }
 

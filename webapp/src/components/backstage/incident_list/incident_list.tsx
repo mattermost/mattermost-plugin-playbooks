@@ -13,7 +13,11 @@ import Profile from 'src/components/profile';
 
 import './incident_list.scss';
 
-export default function IncidentList() {
+interface Props {
+    currentTeamName: string;
+}
+
+export default function IncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
 
     useEffect(() => {
@@ -30,6 +34,9 @@ export default function IncidentList() {
             <div className='header'>
                 <div className='title'>
                     {'Incidents'}
+                    <div className='light'>
+                        {'(' + props.currentTeamName + ')'}
+                    </div>
                 </div>
             </div>
             <div className='list'>

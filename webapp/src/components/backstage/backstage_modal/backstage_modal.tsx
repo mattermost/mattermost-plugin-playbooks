@@ -14,11 +14,12 @@ const ANIMATION_DURATION = 100;
 interface Props {
     show: boolean;
     selectedArea: BackstageArea;
+    currentTeamName: string;
     close: () => void;
     setSelectedArea: (selectedArea: BackstageArea) => void;
 }
 
-const BackstageModal = ({show, close, selectedArea, setSelectedArea}: Props) => {
+const BackstageModal = ({show, selectedArea, currentTeamName, close, setSelectedArea}: Props) => {
     return (
         <CSSTransition
             in={show}
@@ -32,6 +33,7 @@ const BackstageModal = ({show, close, selectedArea, setSelectedArea}: Props) => 
                 <Backstage
                     onBack={close}
                     selectedArea={selectedArea}
+                    currentTeamName={currentTeamName}
                     setSelectedArea={setSelectedArea}
                 />
             </div>
