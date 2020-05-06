@@ -33,7 +33,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
         this.state = {
             title: this.props.playbook?.title,
-            checklists: this.props.playbook.checklists,
+            checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
             newPlaybook: !this.props.playbook.id,
             changesMade: false,
             confirmOpen: false,
@@ -139,6 +139,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const title = this.state.newPlaybook ? 'New Playbook' : 'Edit Playbook';
+        const saveDisabled = this.state.title.trim() === '' || !this.state.changesMade;
 
         return (
             <div className='Playbook'>
@@ -159,7 +160,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         </button>
                         <button
                             className='btn btn-primary'
-                            disabled={!this.state.changesMade}
+                            disabled={saveDisabled}
                             onClick={this.onSave}
                         >
                             {'Save Playbook'}
@@ -173,7 +174,6 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         type='text'
                         placeholder='Playbook Name'
                         value={this.state.title}
-
                         onChange={this.handleTitleChange}
                     />
                     <div className='cheklist-container'>
