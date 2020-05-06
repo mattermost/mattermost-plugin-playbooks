@@ -18,7 +18,6 @@ interface Props {
         startIncident: () => void;
         setRHSState: (state: RHSState) => void;
         setRHSOpen: (open: boolean) => void;
-        toggleRHS: () => void;
         openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
@@ -28,10 +27,6 @@ const OVERLAY_DELAY = 400;
 export default function RHSHeader(props: Props) {
     const goBack = () => {
         props.actions.setRHSState(RHSState.List);
-    };
-
-    const closeRHS = () => {
-        props.actions.toggleRHS();
     };
 
     const headerButtons = (
@@ -62,14 +57,6 @@ export default function RHSHeader(props: Props) {
                     />
                 </button>
             </OverlayTrigger>
-            <button
-                className='navigation-bar__button ml-1'
-                onClick={closeRHS}
-            >
-                <i
-                    className='icon icon-close'
-                />
-            </button>
         </div>
     );
 
