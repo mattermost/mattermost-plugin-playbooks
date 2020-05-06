@@ -30,7 +30,7 @@ Cypress.Commands.add('startIncidentFromRHS', (incidentID) => {
 	});
 	cy.get('#rhsContainer').should('be.visible').within(() => {
 		cy.findByText('Incident List').should('be.visible');
-		cy.get('#rhsIconPlus').click();
+		cy.get('#incidentRHSIconPlus').click();
 	});
 	cy.startIncident(incidentID);
 });
@@ -44,34 +44,3 @@ Cypress.Commands.add('startIncidentFromPostMenu', (incidentID) => {
 	cy.findByTestId('incidentPostMenuIcon').click();
 	cy.startIncident(incidentID);
 });
-
-// Verify incident is created
-Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
-	//Login as sysadmin to check that incident got created
-	cy.apiLogout();
-	cy.apiLogin('sysadmin');
-	cy.apiGetAllIncidents().then((response) => {
-		const allIncidents = JSON.parse(response.body);
-		allIncidents.forEach((incident) => {
-			if (incident.name == incidentID) {
-				assert.equal(incident.is_active, true);
-			}
-		});
-	});
-});
-
-// Verify incident is not created
-Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
-	//Login as sysadmin to check that incident got created
-	cy.apiLogout();
-	cy.apiLogin('sysadmin');
-	cy.apiGetAllIncidents().then((response) => {
-		const allIncidents = JSON.parse(response.body);
-		allIncidents.forEach((incident) => {
-			if (incident.name == incidentID) {
-				assert.equal(incident.is_active, false);
-			}
-		});
-	});
-});
-

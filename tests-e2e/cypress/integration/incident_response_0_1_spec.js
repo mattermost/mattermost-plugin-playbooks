@@ -46,14 +46,14 @@ describe('Incident Response Plugin, v0.1', () => {
 	it('#17 - Incident creation is canceled when Esc is pressed on Incident Response modal', () => {
 		const incidentStartCommand = '/incident start';
 		cy.visit('/');
-		cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}{enter}{enter}');
+		cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}');
 		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
 			cy.get('#interactiveDialogCancel').click();
 		});
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 
 		// Fill the interactive dialog and press esc. Verify it's cancelled. No incident is created
-		cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}{enter}{enter}');
+		cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}');
 		const newIncident = "New Incident" + Date.now();
 		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
 			cy.findByTestId('incidentNameinput').type(newIncident);
@@ -67,7 +67,7 @@ describe('Incident Response Plugin, v0.1', () => {
 		cy.apiGetAllIncidents().then((response) => {
 			const allIncidents = JSON.parse(response.body);
 			allIncidents.forEach((incident) => {
-				incident.name != newIncident;
+				assert.notEqual(incident.name, newIncident);
 			});
 		});
 	});

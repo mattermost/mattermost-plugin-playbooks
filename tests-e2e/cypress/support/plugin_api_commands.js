@@ -51,3 +51,34 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
     });
  });
 
+ // Verify incident is created
+Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
+    //Login as sysadmin to check that incident got created
+    cy.apiLogout();
+    cy.apiLogin('sysadmin');
+    cy.apiGetAllIncidents().then((response) => {
+        const allIncidents = JSON.parse(response.body);
+        allIncidents.forEach((incident) => {
+            if (incident.name == incidentID) {
+                assert.equal(incident.is_active, true);
+            }
+        });
+    });
+});
+
+// Verify incident is not created
+Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
+    //Login as sysadmin to check that incident got created
+    cy.apiLogout();
+    cy.apiLogin('sysadmin');
+    cy.apiGetAllIncidents().then((response) => {
+        const allIncidents = JSON.parse(response.body);
+        allIncidents.forEach((incident) => {
+            if (incident.name == incidentID) {
+                assert.equal(incident.is_active, false);
+            }
+        });
+    });
+});
+
+
