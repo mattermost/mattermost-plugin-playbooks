@@ -1,66 +1,68 @@
 $font-family: Open Sans;
 
-.IncidentList {
-    padding-top: 2rem;
+.Backstage {
+    .IncidentList {
+        padding-top: 2rem;
 
-    font-family: $font-family;
-    color: var(--center-channel-color-90);
+        font-family: $font-family;
+        color: var(--center-channel-color-90);
 
-    .header {
-        display: flex;
-        font-size: 2.8rem;
-        line-height: 32px;
-        font-style: normal;
-        font-weight: normal;
-        border-bottom: 1px solid var(--center-channel-color-16);
-        bottom: 0;
-        left: 0;
-        height: auto;
-        padding: 4rem 0 3.2rem;
-        margin: 0 6rem;
-
-        .title {
+        .header {
             display: flex;
-            align-items: center;
-            width: 100%;
-
-            .light {
-                padding-left: 1rem;
-            }
-        }
-    }
-
-    .list {
-        padding: 2rem 6rem;
-
-        .list-header {
-            font-weight: 600;
-            padding: 0 1.6rem;
-            font-size: 14px;
-            line-height: 4rem;
-            color: var(--center-channel-color);
-            border: 1px solid var(--center-channel-color-16);
-            border-radius: 4px;
-
-        }
-
-        .incident-item {
-            margin: 0;
-            line-height: 4.8rem;
+            font-size: 2.8rem;
+            line-height: 32px;
+            font-style: normal;
+            font-weight: normal;
             border-bottom: 1px solid var(--center-channel-color-16);
+            bottom: 0;
+            left: 0;
+            height: auto;
+            padding: 4rem 0 3.2rem;
+            margin: 0 6rem;
 
-            &:hover {
-                background: var(--center-channel-color-04);
+            .title {
+                display: flex;
+                align-items: center;
+                width: 100%;
+
+                .light {
+                    padding-left: 1rem;
+                }
+            }
+        }
+
+        .list {
+            padding: 2rem 6rem;
+
+            .list-header {
+                font-weight: 600;
+                padding: 0 1.6rem;
+                font-size: 14px;
+                line-height: 4rem;
+                color: var(--center-channel-color);
+                border: 1px solid var(--center-channel-color-16);
+                border-radius: 4px;
+
             }
 
-            .badge {
-                display: inline-flex;
-                border-radius: 4px;
-                padding: 12px 8px 12px 8px;
-                background-color: rgba(61, 60, 64, 0.56);
+            .incident-item {
+                margin: 0;
+                line-height: 4.8rem;
+                border-bottom: 1px solid var(--center-channel-color-16);
 
-                &.ongoing {
-                    background-color: #145DBF;
+                &:hover {
+                    background: var(--center-channel-color-04);
+                }
+
+                .badge {
+                    display: inline-flex;
+                    border-radius: 4px;
+                    padding: 12px 8px 12px 8px;
+                    background-color: rgba(61, 60, 64, 0.56);
+
+                    &.ongoing {
+                        background-color: #145DBF;
+                    }
                 }
             }
         }
