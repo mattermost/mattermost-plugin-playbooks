@@ -19,17 +19,17 @@ import {pluginId} from './manifest';
 
 const apiUrl = `/plugins/${pluginId}/api/v1`;
 
-enum OrderBy {
+enum Order {
     Desc = 0,
     Asc = 1,
 }
 
-export async function fetchIncidents(teamId?: string, page?: number, perPage?: number, sort?: string, orderBy?: OrderBy) {
-    let orderByString;
-    if (orderBy === OrderBy.Desc) {
-        orderByString = 'desc';
-    } else if (orderBy === OrderBy.Asc) {
-        orderByString = 'asc';
+export async function fetchIncidents(teamId?: string, page?: number, perPage?: number, sort?: string, order?: Order) {
+    let orderString;
+    if (order === Order.Desc) {
+        orderString = 'desc';
+    } else if (order === Order.Asc) {
+        orderString = 'asc';
     }
 
     const queryParams = qs.stringify({
@@ -37,7 +37,7 @@ export async function fetchIncidents(teamId?: string, page?: number, perPage?: n
         page,
         per_page: perPage,
         sort,
-        order_by: orderByString,
+        order: orderString,
     }, {addQueryPrefix: true});
 
     let data = await doGet(`${apiUrl}/incidents${queryParams}`);

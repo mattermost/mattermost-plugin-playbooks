@@ -88,8 +88,8 @@ type FilterOptions struct {
 	// defaults to "created_at".
 	Sort SortField
 
-	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
-	OrderBy SortDirection
+	// Order orders by Asc (ascending), or Desc (descending); defaults to desc.
+	Order SortDirection
 }
 
 // Service is the incident/service interface.

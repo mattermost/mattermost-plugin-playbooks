@@ -133,8 +133,8 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "team1 only, ascending",
 			options: incident.FilterOptions{
-				TeamID:  "team1",
-				OrderBy: incident.Asc,
+				TeamID: "team1",
+				Order:  incident.Asc,
 			},
 			want: []incident.Incident{id1, id2, id3},
 		},
@@ -189,7 +189,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			name: "sorted by ended, ascending, page 1 of 2",
 			options: incident.FilterOptions{
 				Sort:    incident.EndedAt,
-				OrderBy: incident.Asc,
+				Order:   incident.Asc,
 				Page:    1,
 				PerPage: 2,
 			},

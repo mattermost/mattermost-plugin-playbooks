@@ -49,7 +49,7 @@ func (s *incidentStore) GetIncidents(options incident.FilterOptions) ([]incident
 		}
 	}
 
-	sortHeaders(filtered, options.Sort, options.OrderBy)
+	sortHeaders(filtered, options.Sort, options.Order)
 	filtered = pageHeaders(filtered, options.Page, options.PerPage)
 
 	var result []incident.Incident
@@ -224,10 +224,10 @@ func headerMatchesFilter(header incident.Header, options incident.FilterOptions)
 	return true
 }
 
-func sortHeaders(headers []incident.Header, sortField incident.SortField, orderBy incident.SortDirection) {
+func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {
 	// order by descending, unless we're told otherwise
 	var orderFn = func(b bool) bool { return b }
-	if orderBy == incident.Asc {
+	if order == incident.Asc {
 		orderFn = func(b bool) bool { return !b }
 	}
 

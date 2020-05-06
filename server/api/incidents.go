@@ -182,13 +182,12 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filterOptions, err := parseIncidentsFilterOption(r.URL)
+	filterOptions, err := parseIncidentsFilterOption(r.URL, teamID)
 	if err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
 	}
 
-	filterOptions.TeamID = teamID
 	incidents, err := h.incidentService.GetIncidents(*filterOptions)
 	if err != nil {
 		HandleError(w, err)
@@ -464,7 +463,7 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident
 	return nil
 }
 
-func parseIncidentsFilterOption(u *url.URL) (*incident.FilterOptions, error) {
+func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.FilterOptions, error) {
 	// NOTE: we are failing early instead of turning bad parameters into the default
 	param := u.Query().Get("page")
 	if param == "" {
@@ -503,20 +502,21 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.FilterOptions, error) {
 		return nil, errors.New("bad parameter 'sort'")
 	}
 
-	param = u.Query().Get("order_by")
-	var orderBy incident.SortDirection
+	param = u.Query().Get("order")
+	var order incident.SortDirection
 	if param == "asc" {
-		orderBy = incident.Asc
+		order = incident.Asc
 	} else if param == "desc" || param == "" {
-		orderBy = incident.Desc
+		order = incident.Desc
 	} else {
 		return nil, fmt.Errorf("bad parameter 'order_by': %w", err)
 	}
 
 	return &incident.FilterOptions{
+		TeamID:  teamID,
 		Page:    page,
 		PerPage: perPage,
 		Sort:    sort,
-		OrderBy: orderBy,
+		Order:   order,
 	}, nil
 }
