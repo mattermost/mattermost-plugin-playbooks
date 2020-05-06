@@ -11,10 +11,11 @@ import {
     setRHSState,
     setRHSOpen,
     toggleRHS,
-    openBackstageModal,
+    setBackstageModal,
 } from 'src/actions';
 
 import {incidentDetails, rhsState, isLoading} from 'src/selectors';
+import {BackstageArea} from 'src/types/backstage';
 
 import RHSHeader from './rhs_header';
 
@@ -33,7 +34,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
             setRHSState,
             setRHSOpen,
             toggleRHS,
-            openBackstageModal,
+            openBackstageModal: (selectedArea: BackstageArea) => setBackstageModal(true, selectedArea),
         }, dispatch),
     };
 }

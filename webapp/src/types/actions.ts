@@ -22,7 +22,7 @@ export const REMOVE_PLAYBOOK = pluginId + '_remove_playbook';
 export const RECEIVED_ERROR = pluginId + '_received_error';
 export const SET_LOADING = pluginId + '_set_loading';
 export const SET_CLIENT_ID = pluginId + '_set_client_id';
-export const SET_BACKSTAGE_MODAL_OPEN = pluginId + '_set_backstage_modal_open';
+export const SET_BACKSTAGE_MODAL_SETTINGS = pluginId + '_set_backstage_modal_settings';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -86,8 +86,8 @@ export interface ReceivedPlaybook {
     playbook: Playbook;
 }
 
-export interface SetBackstageModal {
-    type: typeof SET_BACKSTAGE_MODAL_OPEN;
+export interface SetBackstageModalSettings {
+    type: typeof SET_BACKSTAGE_MODAL_SETTINGS;
     open: boolean;
     selectedArea?: BackstageArea;
 }

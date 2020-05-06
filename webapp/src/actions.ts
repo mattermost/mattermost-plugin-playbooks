@@ -39,8 +39,8 @@ import {
     SetLoading,
     SetClientId,
     ReceivedPlaybooks,
-    SetBackstageModal,
-    SET_BACKSTAGE_MODAL_OPEN,
+    SetBackstageModalSettings,
+    SET_BACKSTAGE_MODAL_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
@@ -314,18 +314,11 @@ export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
     };
 }
 
-export function openBackstageModal(selectedArea: BackstageArea): SetBackstageModal {
+export function setBackstageModal(open: boolean, selectedArea?: BackstageArea): SetBackstageModalSettings {
     return {
-        type: SET_BACKSTAGE_MODAL_OPEN,
-        open: true,
+        type: SET_BACKSTAGE_MODAL_SETTINGS,
+        open,
         selectedArea,
-    };
-}
-
-export function closeBackstageModal(): SetBackstageModal {
-    return {
-        type: SET_BACKSTAGE_MODAL_OPEN,
-        open: false,
     };
 }
 

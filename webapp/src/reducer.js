@@ -12,7 +12,7 @@ import {
     RECEIVED_INCIDENT_UPDATE,
     SET_LOADING,
     SET_CLIENT_ID,
-    SET_BACKSTAGE_MODAL_OPEN,
+    SET_BACKSTAGE_MODAL_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
@@ -122,9 +122,9 @@ function playbooks(state = {}, action) {
     }
 }
 
-function backstageModal(state = false, action) {
+function backstageModal(state = {open: false, selectedArea: 0}, action) {
     switch (action.type) {
-    case SET_BACKSTAGE_MODAL_OPEN:
+    case SET_BACKSTAGE_MODAL_SETTINGS:
         return {
             open: Boolean(action.open),
             selectedArea: action.selectedArea,

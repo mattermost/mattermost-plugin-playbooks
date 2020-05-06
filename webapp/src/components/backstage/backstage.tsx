@@ -15,10 +15,10 @@ import './backstage.scss';
 interface Props {
     onBack: () => void;
     selectedArea: BackstageArea;
-    setSelectArea: (area: BackstageArea) => void;
+    setSelectedArea: (area: BackstageArea) => void;
 }
 
-const Backstage = ({onBack, selectedArea, setSelectArea}: Props): React.ReactElement => {
+const Backstage = ({onBack, selectedArea, setSelectedArea}: Props): React.ReactElement => {
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
         activeArea = <IncidentList/>;
@@ -42,13 +42,13 @@ const Backstage = ({onBack, selectedArea, setSelectArea}: Props): React.ReactEle
                     </div>*/}
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
-                        onClick={() => setSelectArea(BackstageArea.Incidents)}
+                        onClick={() => setSelectedArea(BackstageArea.Incidents)}
                     >
                         {'Incidents'}
                     </div>
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
-                        onClick={() => setSelectArea(BackstageArea.Playbooks)}
+                        onClick={() => setSelectedArea(BackstageArea.Playbooks)}
                     >
                         {'Playbooks'}
                     </div>
