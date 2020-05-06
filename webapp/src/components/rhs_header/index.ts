@@ -10,7 +10,6 @@ import {
     startIncident,
     setRHSState,
     setRHSOpen,
-    toggleRHS,
     setBackstageModal,
 } from 'src/actions';
 
@@ -33,7 +32,6 @@ function mapDispatchToProps(dispatch: Dispatch) {
             startIncident,
             setRHSState,
             setRHSOpen,
-            toggleRHS,
             openBackstageModal: (selectedArea: BackstageArea) => setBackstageModal(true, selectedArea),
         }, dispatch),
     };

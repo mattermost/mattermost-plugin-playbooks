@@ -14,7 +14,6 @@ import {getTeam, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 import {Permissions} from 'mattermost-redux/constants';
 
-import {toggleRHS} from 'src/selectors';
 import {Incident} from 'src/types/incident';
 import {
     endIncident,
@@ -23,6 +22,7 @@ import {
     removeChecklistItem,
     renameChecklistItem,
     reorderChecklist,
+    toggleRHS,
 } from 'src/actions';
 
 import IncidentDetails from './incident_details';
