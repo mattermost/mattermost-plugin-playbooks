@@ -139,7 +139,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const title = this.state.newPlaybook ? 'New Playbook' : 'Edit Playbook';
-        const saveDisabled = this.state.title === '' || !this.state.changesMade;
+        const saveDisabled = this.state.title.trim() === '' || !this.state.changesMade;
 
         return (
             <div className='Playbook'>
