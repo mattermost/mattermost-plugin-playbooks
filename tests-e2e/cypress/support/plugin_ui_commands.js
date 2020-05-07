@@ -15,7 +15,7 @@ Cypress.Commands.add('startIncident', (incidentID) => {
 // Starts incident with the `/incident start` slash command
 // function startIncidentWithSlashCommand(incidentID) {
 Cypress.Commands.add('startIncidentWithSlashCommand', (incidentID) => {
-	cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}{enter}{enter}');
+	cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}');
 	cy.startIncident(incidentID);
 });
 
@@ -39,7 +39,7 @@ Cypress.Commands.add('startIncidentFromRHS', (incidentID) => {
 // function startIncidentFromPostMenu(incidentID) {
 Cypress.Commands.add('startIncidentFromPostMenu', (incidentID) => {
 	//post a message as user to avoid system message
-	cy.findByTestId('post_textbox').clear().type("new message here" + '{enter}{enter}{enter}');
+	cy.findByTestId('post_textbox').clear().type("new message here" + '{enter}');
 	cy.clickPostDotMenu();
 	cy.findByTestId('incidentPostMenuIcon').click();
 	cy.startIncident(incidentID);
