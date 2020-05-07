@@ -51,7 +51,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 }
 
 // GetIncidents returns filtered headers.
-func (s *ServiceImpl) GetIncidents(options FilterOptions) ([]Incident, error) {
+func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) ([]Incident, error) {
 	return s.store.GetIncidents(options)
 }
 
