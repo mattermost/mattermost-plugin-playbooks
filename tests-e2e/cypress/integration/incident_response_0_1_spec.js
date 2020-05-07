@@ -17,14 +17,6 @@ describe('Incident Response Plugin, v0.1', () => {
         //afteEach: delete all incidents here
 	});
 
-	// // Incident Response icon is present in channel header
-	// it('#11 - Incident Response plugin icon is present in channel header', () => {
-	// 	cy.visit('/');
-	// 	cy.get('#channel-header').within(() => {
-	// 		cy.get('#incidentIcon').should('be.visible');
-	// 	});
-	// });
-
 	// Test Plan v0.1 #44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close
 	it('#44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close', () => {
 		cy.visit('/');
