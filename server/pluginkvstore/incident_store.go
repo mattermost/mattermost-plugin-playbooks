@@ -43,7 +43,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 	// Build the filters we need to apply
 	var headerFilters []incident.HeaderFilter
 	if options.TeamID != "" {
-		headerFilters = append(headerFilters, incident.TeamHeaderFilter(options.TeamID))
+		headerFilters = append(headerFilters, incident.TeamFilter(options.TeamID))
 	}
 	if options.Active {
 		headerFilters = append(headerFilters, incident.ActiveFilter())
@@ -226,14 +226,6 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	}
 
 	return nil
-}
-
-func headerMatchesFilter(header incident.Header, options incident.FilterOptions) bool {
-	if options.TeamID != "" {
-		return header.TeamID == options.TeamID
-	}
-
-	return true
 }
 
 func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {
