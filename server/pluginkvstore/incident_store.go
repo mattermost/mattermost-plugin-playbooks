@@ -56,7 +56,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 	var filtered []incident.Header
 
 	for _, header := range headers {
-		if incident.HeaderMatchesFilters(header, headerFilters...) {
+		if headerMatchesFilters(header, headerFilters...) {
 			filtered = append(filtered, header)
 		}
 	}
@@ -251,6 +251,16 @@ func sortHeaders(headers []incident.Header, sortField incident.SortField, order 
 	}
 
 	sort.Slice(headers, sortFn)
+}
+
+// headerMatchesFilters returns true if the header matches the HeaderFilters.
+func headerMatchesFilters(header incident.Header, filters ...incident.HeaderFilter) bool {
+	for _, filter := range filters {
+		if !filter(header) {
+			return false
+		}
+	}
+	return true
 }
 
 func pageHeaders(headers []incident.Header, page, perPage int) []incident.Header {

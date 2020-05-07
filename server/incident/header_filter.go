@@ -81,13 +81,3 @@ func CommanderFilter(commanderID string) HeaderFilter {
 		return h.CommanderUserID == commanderID
 	}
 }
-
-// HeaderMatchesFilters returns true if the header matches the HeaderFilters.
-func HeaderMatchesFilters(header Header, filters ...HeaderFilter) bool {
-	for _, filter := range filters {
-		if !filter(header) {
-			return false
-		}
-	}
-	return true
-}
