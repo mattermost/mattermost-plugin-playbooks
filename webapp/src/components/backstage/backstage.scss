@@ -28,8 +28,13 @@
                 padding-left: 32px;
                 line-height: 48px;
                 opacity: 0.56;
+
+                &:hover {
+                    background: black;
+                    cursor: pointer;
+                }
             }
-            
+
             .active {
                 color: white;
                 opacity: 1;

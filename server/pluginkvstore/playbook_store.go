@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
@@ -13,12 +12,6 @@ const (
 	playbookKey = "playbook_"
 	indexKey    = "playbookindex"
 )
-
-// KVAPI is the key value store interface for the playbooks store. Implemented by mattermost-plugin-api/Client.KV.
-type KVAPI interface {
-	Set(key string, value interface{}, options ...pluginapi.KVSetOption) (bool, error)
-	Get(key string, out interface{}) error
-}
 
 // PlaybookStore is a kvs store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
 type PlaybookStore struct {

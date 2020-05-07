@@ -5,7 +5,7 @@ import {Dispatch, AnyAction} from 'redux';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
-import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {generateId} from 'mattermost-redux/utils/helpers';
@@ -39,15 +39,16 @@ import {
     SetLoading,
     SetClientId,
     ReceivedPlaybooks,
-    SetBackstageModal,
-    SET_BACKSTAGE_MODAL_OPEN,
+    SetBackstageModalSettings,
+    SET_BACKSTAGE_MODAL_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
     ReceivedPlaybook,
 } from './types/actions';
 
-import {Incident, RHSState} from './types/incident';
+import {Incident} from './types/incident';
+import {RHSState} from './types/rhs';
 import {Playbook} from './types/playbook';
 import {BackstageArea} from './types/backstage';
 
@@ -102,7 +103,7 @@ export function getIncidentsForCurrentTeam() {
 }
 
 /**
- * Fetches incidents.
+ * Fetches incident headers.
  * @param teamId Gets all incidents if teamId is null.
  */
 export function getIncidents(teamId?: string) {
@@ -313,18 +314,11 @@ export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
     };
 }
 
-export function openBackstageModal(selectedArea: BackstageArea): SetBackstageModal {
+export function setBackstageModal(open: boolean, selectedArea?: BackstageArea): SetBackstageModalSettings {
     return {
-        type: SET_BACKSTAGE_MODAL_OPEN,
-        open: true,
+        type: SET_BACKSTAGE_MODAL_SETTINGS,
+        open,
         selectedArea,
-    };
-}
-
-export function closeBackstageModal(): SetBackstageModal {
-    return {
-        type: SET_BACKSTAGE_MODAL_OPEN,
-        open: false,
     };
 }
 
