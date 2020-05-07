@@ -50,7 +50,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
                 className={'light small'}
                 onClick={() => {
                     // @ts-ignore
-                    window.WebappUtils.browserHistory.push(checklistItem.checked_post_permalink);
+                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
                 }}
             >
                 {timestamp}

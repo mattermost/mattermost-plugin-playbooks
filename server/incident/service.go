@@ -282,11 +282,6 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return nil
 	}
 
-	team, err := s.pluginAPI.Team.Get(incidentToModify.TeamID)
-	if err != nil {
-		return err
-	}
-
 	// Send modification message before the actual modification becuase we need the postID
 	// from the notification message.
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
@@ -304,7 +299,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 
 	itemToCheck.Checked = newState
 	itemToCheck.CheckedModified = time.Now()
-	itemToCheck.CheckedPostPermalink = "/" + team.Name + "/pl/" + postID
+	itemToCheck.CheckedPostID = postID
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
