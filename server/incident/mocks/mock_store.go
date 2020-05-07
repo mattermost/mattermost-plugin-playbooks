@@ -79,7 +79,7 @@ func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomo
 }
 
 // GetIncidents mocks base method
-func (m *MockStore) GetIncidents(arg0 incident.HeaderFilterOptions) ([]incident.Incident, error) {
+func (m *MockStore) GetIncidents(arg0 incident.FilterOptions) ([]incident.Incident, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0)
 	ret0, _ := ret[0].([]incident.Incident)

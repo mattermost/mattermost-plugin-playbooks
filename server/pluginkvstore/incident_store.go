@@ -33,7 +33,7 @@ func NewIncidentStore(pluginAPI KVAPI) incident.Store {
 	return newStore
 }
 
-// GetAllHeaders gets all the header information.
+// GetIncidents gets all the incidents, abiding by the filter options.
 func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]incident.Incident, error) {
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
@@ -228,7 +228,7 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	return nil
 }
 
-func headerMatchesFilter(header incident.Header, options incident.HeaderFilterOptions) bool {
+func headerMatchesFilter(header incident.Header, options incident.FilterOptions) bool {
 	if options.TeamID != "" {
 		return header.TeamID == options.TeamID
 	}
