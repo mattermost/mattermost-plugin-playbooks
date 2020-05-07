@@ -13,18 +13,13 @@ const ANIMATION_DURATION = 100;
 
 interface Props {
     show: boolean;
+    selectedArea: BackstageArea;
+    currentTeamName: string;
     close: () => void;
-    startingArea: BackstageArea;
+    setSelectedArea: (selectedArea: BackstageArea) => void;
 }
 
-const BackstageModal = ({show, close, startingArea}: Props) => {
-    const [selectedArea, setSelectedArea] = useState<BackstageArea>(BackstageArea.Playbooks);
-
-    // Only set the selected area once when the component mounts or when the redux state is changed.
-    useEffect(() => {
-        setSelectedArea(startingArea);
-    }, [startingArea]);
-
+const BackstageModal = ({show, selectedArea, currentTeamName, close, setSelectedArea}: Props) => {
     return (
         <CSSTransition
             in={show}
@@ -38,7 +33,8 @@ const BackstageModal = ({show, close, startingArea}: Props) => {
                 <Backstage
                     onBack={close}
                     selectedArea={selectedArea}
-                    setSelectArea={setSelectedArea}
+                    currentTeamName={currentTeamName}
+                    setSelectedArea={setSelectedArea}
                 />
             </div>
         </CSSTransition>

@@ -96,7 +96,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             />
                         </div>
 
-                        {this.props.incident.playbook.checklists.map((checklist: Checklist, index: number) => (
+                        {this.props.incident.playbook.checklists?.map((checklist: Checklist, index: number) => (
                             <ChecklistDetails
                                 checklist={checklist}
                                 enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}

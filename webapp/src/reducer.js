@@ -5,14 +5,14 @@ import {combineReducers} from 'redux';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
-    RECEIVED_INCIDENT_HEADERS,
+    RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_RHS_STATE,
     SET_RHS_OPEN,
     RECEIVED_INCIDENT_UPDATE,
     SET_LOADING,
     SET_CLIENT_ID,
-    SET_BACKSTAGE_MODAL_OPEN,
+    SET_BACKSTAGE_MODAL_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
@@ -48,8 +48,8 @@ function rhsOpen(state = false, action) {
 
 function incidents(state = [], action) {
     switch (action.type) {
-    case RECEIVED_INCIDENT_HEADERS:
-        return action.headers || [];
+    case RECEIVED_INCIDENTS:
+        return action.incidents || [];
     case RECEIVED_INCIDENT_UPDATE: {
         const newState = state.filter((incident) => incident.id !== action.incident.id);
         newState.push(action.incident);
@@ -122,9 +122,9 @@ function playbooks(state = {}, action) {
     }
 }
 
-function backstageModal(state = false, action) {
+function backstageModal(state = {open: false, selectedArea: 0}, action) {
     switch (action.type) {
-    case SET_BACKSTAGE_MODAL_OPEN:
+    case SET_BACKSTAGE_MODAL_SETTINGS:
         return {
             open: Boolean(action.open),
             selectedArea: action.selectedArea,

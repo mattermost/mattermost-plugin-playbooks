@@ -17,7 +17,7 @@ const (
 
 type idHeaderMap map[string]incident.Header
 
-// Ensure incidentStore implements the playbook.Store interface.
+// Ensure incidentStore implements the incident.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -34,7 +34,7 @@ func NewIncidentStore(pluginAPI KVAPI) incident.Store {
 }
 
 // GetAllHeaders gets all the header information.
-func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]incident.Header, error) {
+func (s *incidentStore) GetIncidents(options incident.FilterOptions) ([]incident.Incident, error) {
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all headers value: %w", err)
@@ -53,7 +53,7 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 	}
 
 	headers := toHeaders(headersMap)
-	var result []incident.Header
+	var filtered []incident.Header
 
 	for _, header := range headers {
 		if incident.HeaderMatchesFilters(header, headerFilters...) {
@@ -61,8 +61,18 @@ func (s *incidentStore) GetHeaders(options incident.HeaderFilterOptions) ([]inci
 		}
 	}
 
-	sortHeaders(result, options.Sort, options.OrderBy)
-	result = pageHeaders(result, options.Page, options.PerPage)
+	sortHeaders(filtered, options.Sort, options.Order)
+	filtered = pageHeaders(filtered, options.Page, options.PerPage)
+
+	var result []incident.Incident
+	for _, header := range filtered {
+		i, err := s.getIncident(header.ID)
+		if err != nil {
+			// odds are this should not happen, so default to failing fast
+			return nil, fmt.Errorf("failed to get incident id '%s': %w", header.ID, err)
+		}
+		result = append(result, *i)
+	}
 
 	return result, nil
 }
@@ -218,31 +228,40 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	return nil
 }
 
-// sortHeaders defaults to sorting by "created_at", descending.
-func sortHeaders(headers []incident.Header, field string, orderBy incident.OrderByOption) {
+func headerMatchesFilter(header incident.Header, options incident.FilterOptions) bool {
+	if options.TeamID != "" {
+		return header.TeamID == options.TeamID
+	}
+
+	return true
+}
+
+func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {
+	// order by descending, unless we're told otherwise
 	var orderFn = func(b bool) bool { return b }
-	if orderBy == incident.Asc {
+	if order == incident.Asc {
 		orderFn = func(b bool) bool { return !b }
 	}
 
+	// sort by CreatedAt, unless we're told otherwise
 	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreatedAt > headers[j].CreatedAt) }
-	switch field {
-	case "id":
+	switch sortField {
+	case incident.ID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
-	case "name":
+	case incident.Name:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].Name > headers[j].Name) }
-	case "commander_user_id":
+	case incident.CommanderUserID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
-	case "team_id":
+	case incident.TeamID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
-	case "ended_at":
+	case incident.EndedAt:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].EndedAt > headers[j].EndedAt) }
 	}
 
 	sort.Slice(headers, sortFn)
 }
 
-func pageHeaders(headers []incident.Header, page int, perPage int) []incident.Header {
+func pageHeaders(headers []incident.Header, page, perPage int) []incident.Header {
 	if perPage == 0 {
 		perPage = perPageDefault
 	}

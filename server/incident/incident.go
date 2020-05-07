@@ -41,10 +41,61 @@ var ErrChannelDisplayNameLong = errors.New("channel name is too long")
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
 
+// SortDirection is the type used to specify the ascending or descending order of returned results.
+type SortDirection int
+
+const (
+	// Desc is descending order.
+	Desc SortDirection = iota
+
+	// Asc is ascending order.
+	Asc
+)
+
+// SortField enumerates the available fields we can sort on.
+type SortField int
+
+const (
+	// CreatedAt sorts by the "created_at" field. It is the default.
+	CreatedAt SortField = iota
+
+	// ID sorts by the "id" field.
+	ID
+
+	// Name sorts by the "name" field.
+	Name
+
+	// CommanderUserID sorts by the "commander_user_id" field.
+	CommanderUserID
+
+	// TeamID sorts by the "team_id" field.
+	TeamID
+
+	// EndedAt sorts by the "ended_at" field.
+	EndedAt
+)
+
+// FilterOptions specifies the optional parameters when getting incidents.
+type FilterOptions struct {
+	// Gets all the headers with this TeamID.
+	TeamID string
+
+	// Pagination options.
+	Page    int
+	PerPage int
+
+	// Sort sorts by this header field in json format (eg, "created_at", "ended_at", "name", etc.);
+	// defaults to "created_at".
+	Sort SortField
+
+	// Order orders by Asc (ascending), or Desc (descending); defaults to desc.
+	Order SortDirection
+}
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetHeaders returns filtered headers.
-	GetHeaders(options HeaderFilterOptions) ([]Header, error)
+	GetIncidents(options FilterOptions) ([]Incident, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
@@ -95,8 +146,8 @@ type Service interface {
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
-	// GetHeaders returns filtered headers.
-	GetHeaders(options HeaderFilterOptions) ([]Header, error)
+	// GetHeaders returns filtered incidents.
+	GetIncidents(options FilterOptions) ([]Incident, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)

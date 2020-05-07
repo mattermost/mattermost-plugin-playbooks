@@ -15,19 +15,14 @@ import './backstage.scss';
 interface Props {
     onBack: () => void;
     selectedArea: BackstageArea;
-    setSelectArea: (area: BackstageArea) => void;
+    currentTeamName: string;
+    setSelectedArea: (area: BackstageArea) => void;
 }
 
-const Backstage = ({onBack, selectedArea, setSelectArea}: Props): React.ReactElement => {
-    let activeArea: React.ReactElement;
-    switch (selectedArea) {
-    case BackstageArea.Incidents:
-        activeArea = <IncidentList/>;
-        break;
-    case BackstageArea.Playbooks:
-    default:
-        activeArea = <PlaybookList/>;
-        break;
+const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamName}: Props): React.ReactElement => {
+    let activeArea = <PlaybookList/>;
+    if (selectedArea === BackstageArea.Incidents) {
+        activeArea = <IncidentList currentTeamName={currentTeamName}/>;
     }
 
     return (
@@ -48,13 +43,13 @@ const Backstage = ({onBack, selectedArea, setSelectArea}: Props): React.ReactEle
                     </div>*/}
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
-                        onClick={() => setSelectArea(BackstageArea.Incidents)}
+                        onClick={() => setSelectedArea(BackstageArea.Incidents)}
                     >
                         {'Incidents'}
                     </div>
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
-                        onClick={() => setSelectArea(BackstageArea.Playbooks)}
+                        onClick={() => setSelectedArea(BackstageArea.Playbooks)}
                     >
                         {'Playbooks'}
                     </div>

@@ -5,7 +5,7 @@ import {RECEIVED_DIALOG_TRIGGER_ID} from 'mattermost-redux/action_types/integrat
 
 import {pluginId} from 'src/manifest';
 
-import {Incident, IncidentHeader} from './incident';
+import {Incident} from './incident';
 import {RHSState} from './rhs';
 import {Playbook} from './playbook';
 import {BackstageArea} from './backstage';
@@ -13,7 +13,7 @@ import {BackstageArea} from './backstage';
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
 export const RECEIVED_RHS_STATE = pluginId + '_rhs_state';
-export const RECEIVED_INCIDENT_HEADERS = pluginId + '_received_incident_headers';
+export const RECEIVED_INCIDENTS = pluginId + '_received_incidents';
 export const RECEIVED_INCIDENT_DETAILS = pluginId + '_received_incident_details';
 export const RECEIVED_INCIDENT_UPDATE = pluginId + '_received_incident_update';
 export const RECEIVED_PLAYBOOKS = pluginId + '_received_playbooks';
@@ -22,7 +22,7 @@ export const REMOVE_PLAYBOOK = pluginId + '_remove_playbook';
 export const RECEIVED_ERROR = pluginId + '_received_error';
 export const SET_LOADING = pluginId + '_set_loading';
 export const SET_CLIENT_ID = pluginId + '_set_client_id';
-export const SET_BACKSTAGE_MODAL_OPEN = pluginId + '_set_backstage_modal_open';
+export const SET_BACKSTAGE_MODAL_SETTINGS = pluginId + '_set_backstage_modal_settings';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -39,9 +39,9 @@ export interface ReceivedRHSState {
     state: RHSState;
 }
 
-export interface ReceivedIncidentHeaders {
-    type: typeof RECEIVED_INCIDENT_HEADERS;
-    headers: IncidentHeader[];
+export interface ReceivedIncidents {
+    type: typeof RECEIVED_INCIDENTS;
+    incidents: Incident[];
 }
 
 export interface ReceivedIncidentDetails {
@@ -86,8 +86,8 @@ export interface ReceivedPlaybook {
     playbook: Playbook;
 }
 
-export interface SetBackstageModal {
-    type: typeof SET_BACKSTAGE_MODAL_OPEN;
+export interface SetBackstageModalSettings {
+    type: typeof SET_BACKSTAGE_MODAL_SETTINGS;
     open: boolean;
     selectedArea?: BackstageArea;
 }

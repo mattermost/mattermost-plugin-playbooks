@@ -1,7 +1,9 @@
 $font-family: Open Sans;
 
-.IncidentList {
-    > div:last-child {
-        border-bottom: 0px;
+.incident-rhs {
+    .IncidentList {
+        > div:last-child {
+            border-bottom: 0px;
+        }
     }
 }

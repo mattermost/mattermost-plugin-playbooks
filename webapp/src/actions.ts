@@ -5,7 +5,7 @@ import {Dispatch, AnyAction} from 'redux';
 import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
-import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {generateId} from 'mattermost-redux/utils/helpers';
@@ -22,7 +22,7 @@ import {
     RECEIVED_TOGGLE_RHS_ACTION,
     RECEIVED_RHS_STATE,
     SET_RHS_OPEN,
-    RECEIVED_INCIDENT_HEADERS,
+    RECEIVED_INCIDENTS,
     RECEIVED_INCIDENT_DETAILS,
     RECEIVED_INCIDENT_UPDATE,
     RECEIVED_ERROR,
@@ -30,7 +30,7 @@ import {
     SET_CLIENT_ID,
     ReceivedToggleRHSAction,
     SetRHSOpen,
-    ReceivedIncidentHeaders,
+    ReceivedIncidents,
     ReceivedIncidentDetails,
     ReceivedError,
     ReceivedRHSState,
@@ -39,21 +39,21 @@ import {
     SetLoading,
     SetClientId,
     ReceivedPlaybooks,
-    SetBackstageModal,
-    SET_BACKSTAGE_MODAL_OPEN,
+    SetBackstageModalSettings,
+    SET_BACKSTAGE_MODAL_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
     ReceivedPlaybook,
 } from './types/actions';
 
-import {Incident, IncidentHeader} from './types/incident';
+import {Incident} from './types/incident';
 import {RHSState} from './types/rhs';
 import {Playbook} from './types/playbook';
 import {BackstageArea} from './types/backstage';
 
 import {
-    fetchIncidentHeaders,
+    fetchIncidents,
     fetchIncidentDetails,
     clientExecuteCommand,
     checkItem,
@@ -98,7 +98,7 @@ export function getIncidentDetails(id: string) {
 
 export function getIncidentsForCurrentTeam() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        dispatch(getIncidentHeaders(getCurrentTeamId(getState())));
+        dispatch(getIncidents(getCurrentTeamId(getState())));
     };
 }
 
@@ -106,13 +106,12 @@ export function getIncidentsForCurrentTeam() {
  * Fetches incident headers.
  * @param teamId Gets all incidents if teamId is null.
  */
-export function getIncidentHeaders(teamId?: string) {
+export function getIncidents(teamId?: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const headers = await fetchIncidentHeaders(teamId);
+            const incidents = await fetchIncidents(teamId);
 
-            dispatch(receivedIncidentHeaders(headers));
+            dispatch(receivedIncidents(incidents));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
@@ -226,10 +225,10 @@ export function setRHSOpen(open: boolean): SetRHSOpen {
     };
 }
 
-function receivedIncidentHeaders(headers: IncidentHeader[]): ReceivedIncidentHeaders {
+function receivedIncidents(incidents: Incident[]): ReceivedIncidents {
     return {
-        type: RECEIVED_INCIDENT_HEADERS,
-        headers,
+        type: RECEIVED_INCIDENTS,
+        incidents,
     };
 }
 
@@ -315,18 +314,11 @@ export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
     };
 }
 
-export function openBackstageModal(selectedArea: BackstageArea): SetBackstageModal {
+export function setBackstageModal(open: boolean, selectedArea?: BackstageArea): SetBackstageModalSettings {
     return {
-        type: SET_BACKSTAGE_MODAL_OPEN,
-        open: true,
+        type: SET_BACKSTAGE_MODAL_SETTINGS,
+        open,
         selectedArea,
-    };
-}
-
-export function closeBackstageModal(): SetBackstageModal {
-    return {
-        type: SET_BACKSTAGE_MODAL_OPEN,
-        open: false,
     };
 }
 
