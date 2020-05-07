@@ -27,7 +27,7 @@ interface Props {
 }
 
 export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
-    const [newvalue, setNewValue] = useState('');
+    const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
 
@@ -168,9 +168,14 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, remo
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
+                        if (newValue === '') {
+                            setInputExpanded(false);
+                            return;
+                        }
                         addItem({
-                            title: newvalue,
+                            title: newValue,
                             checked: false,
+                            checked_modified: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);
@@ -179,7 +184,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, remo
                     <input
                         autoFocus={true}
                         type='text'
-                        value={newvalue}
+                        value={newValue}
                         className='form-control mt-2'
                         placeholder={'Enter a new item'}
                         onKeyDown={(e) => onEscapeKey(e)}
