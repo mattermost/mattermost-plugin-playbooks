@@ -41,7 +41,7 @@ Cypress.Commands.add('clickPostDotMenu', (postId, location = 'CENTER') => {
 */
 Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') => {
 	cy.get('#addDirectChannel').click();
-	cy.get('#selectItems').type(username + '{enter}');
+	cy.get('#selectItems').type(username + '{enter}{enter}');
 	if (self === true && user === 'user-1'){
 		cy.get('#channelHeaderInfo').within(() => {
 			cy.findByText('user-1 (you)').should('be.visible');

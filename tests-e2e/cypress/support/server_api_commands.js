@@ -157,6 +157,9 @@ Cypress.Commands.add('apiGetTeams', () => {
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: 'api/v4/users/me/teams',
         method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap(response);
     });
 });
 
@@ -169,6 +172,9 @@ Cypress.Commands.add('apiGetUsers', (usernames = []) => {
         url: '/api/v4/users/usernames',
         method: 'POST',
         body: usernames,
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap(response);
     });
 });
 
