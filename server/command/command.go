@@ -127,7 +127,19 @@ func (r *Runner) actionEnd() {
 	}
 }
 
-func (r *Runner) actionSelftest() {
+func (r *Runner) actionSelftest(args []string) {
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper == nil ||
+		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper {
+		r.postCommandResponse(helpText)
+		return
+	}
+
+	if len(args) != 2 || args[0] != "CONFIRM" || args[1] != "SELF-TEST" {
+		r.postCommandResponse("Are you sure you want to self-test (which will nuke the database and delete all data -- instances, configuration)? " +
+			"All incident data will be lost. To self-test, type `/incident st CONFIRM SELF-TEST`")
+		return
+	}
+
 	if err := r.incidentService.NukeDB(); err != nil {
 		r.postCommandResponse("There was an error while nuking db. Err: " + err.Error())
 		return
@@ -298,6 +310,12 @@ func (r *Runner) actionSelftest() {
 }
 
 func (r *Runner) actionNukeDB(args []string) {
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper == nil ||
+		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper {
+		r.postCommandResponse(helpText)
+		return
+	}
+
 	if len(args) != 2 || args[0] != "CONFIRM" || args[1] != "NUKE" {
 		r.postCommandResponse("Are you sure you want to nuke the database (delete all data -- instances, configuration)?" +
 			"All incident data will be lost. To nuke database, type `/incident nuke-db CONFIRM NUKE`")
@@ -338,9 +356,8 @@ func (r *Runner) Execute() error {
 		r.actionEnd()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
-	//TODO: Disable in production
 	case "st":
-		r.actionSelftest()
+		r.actionSelftest(parameters)
 	default:
 		r.postCommandResponse(helpText)
 	}
