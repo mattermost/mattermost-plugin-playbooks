@@ -88,6 +88,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                                 renderThumbHorizontal={renderThumbHorizontal}
                                 renderThumbVertical={renderThumbVertical}
                                 renderView={renderView}
+                                style={{position: 'absolute'}}
                             >
                                 <IncidentList
                                     incidents={this.props.incidents}
