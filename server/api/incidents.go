@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -353,6 +354,13 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	var checklistItem playbook.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	checklistItem.Title = strings.TrimSpace(checklistItem.Title)
+	if checklistItem.Title == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist item title",
+			errors.New("checklist item title must not be blank"))
 		return
 	}
 

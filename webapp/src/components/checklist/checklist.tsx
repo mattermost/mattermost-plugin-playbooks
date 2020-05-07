@@ -168,14 +168,13 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, remo
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
-                        if (newValue === '') {
+                        if (newValue.trim() === '') {
                             setInputExpanded(false);
                             return;
                         }
                         addItem({
                             title: newValue,
                             checked: false,
-                            checked_modified: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);
