@@ -10,58 +10,10 @@ import (
 	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
 )
 
-var dbHeaderMap = idHeaderMap{
-	"id1": incident.Header{
-		ID:              "id1",
-		Name:            "incident 1",
-		IsActive:        true,
-		CommanderUserID: "commander1",
-		TeamID:          "team1",
-		CreatedAt:       123,
-		EndedAt:         440,
-	},
-	"id2": incident.Header{
-		ID:              "id2",
-		Name:            "incident 2",
-		IsActive:        true,
-		CommanderUserID: "commander2",
-		TeamID:          "team1",
-		CreatedAt:       145,
-		EndedAt:         555,
-	},
-	"id3": incident.Header{
-		ID:              "id3",
-		Name:            "incident 3",
-		IsActive:        false,
-		CommanderUserID: "commander1",
-		TeamID:          "team1",
-		CreatedAt:       222,
-		EndedAt:         666,
-	},
-	"id4": incident.Header{
-		ID:              "id4",
-		Name:            "incident 4",
-		IsActive:        false,
-		CommanderUserID: "commander3",
-		TeamID:          "team2",
-		CreatedAt:       333,
-		EndedAt:         444,
-	},
-	"id5": incident.Header{
-		ID:              "id5",
-		Name:            "incident 5",
-		IsActive:        true,
-		CommanderUserID: "commander3",
-		TeamID:          "team2",
-		CreatedAt:       223,
-		EndedAt:         550,
-	},
-}
-
 var id1 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id1",
-		Name:            "incident 1",
+		Name:            "incident 1 - wheel cat aliens wheelbarrow",
 		IsActive:        true,
 		CommanderUserID: "commander1",
 		TeamID:          "team1",
@@ -73,7 +25,7 @@ var id1 = incident.Incident{
 var id2 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id2",
-		Name:            "incident 2",
+		Name:            "incdnt 2 - horse staple battery shotgun mouse shotputmouse",
 		IsActive:        true,
 		CommanderUserID: "commander2",
 		TeamID:          "team1",
@@ -85,8 +37,8 @@ var id2 = incident.Incident{
 var id3 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id3",
-		Name:            "incident 3",
-		IsActive:        true,
+		Name:            "incident 3 - horse stapler battery shotgun mouse shotputmouse",
+		IsActive:        false,
 		CommanderUserID: "commander1",
 		TeamID:          "team1",
 		CreatedAt:       222,
@@ -97,8 +49,8 @@ var id3 = incident.Incident{
 var id4 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id4",
-		Name:            "incident 4",
-		IsActive:        true,
+		Name:            "incident 4 - titanic terminator aliens",
+		IsActive:        false,
 		CommanderUserID: "commander3",
 		TeamID:          "team2",
 		CreatedAt:       333,
@@ -109,13 +61,21 @@ var id4 = incident.Incident{
 var id5 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id5",
-		Name:            "incident 5",
+		Name:            "incident 5 - ubik high castle electric sheep",
 		IsActive:        true,
 		CommanderUserID: "commander3",
 		TeamID:          "team2",
 		CreatedAt:       223,
 		EndedAt:         550,
 	},
+}
+
+var dbHeaderMap = idHeaderMap{
+	"id1": id1.Header,
+	"id2": id2.Header,
+	"id3": id3.Header,
+	"id4": id4.Header,
+	"id5": id5.Header,
 }
 
 func Test_incidentStore_GetIncidents(t *testing.T) {
@@ -221,6 +181,36 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Sort:        incident.EndedAt,
 			},
 			want: []incident.Incident{id1, id3},
+		},
+		{
+			name: "search for horse",
+			options: incident.HeaderFilterOptions{
+				SearchTerm: "horse",
+			},
+			want: []incident.Incident{id2, id3},
+		},
+		{
+			name: "search for aliens & commander3",
+			options: incident.HeaderFilterOptions{
+				CommanderID: "commander3",
+				SearchTerm:  "aliens",
+			},
+			want: []incident.Incident{id4},
+		},
+		{
+			name: "fuzzy search using starting characters",
+			options: incident.HeaderFilterOptions{
+				SearchTerm: "sbsm",
+			},
+			want: []incident.Incident{id2, id3},
+		},
+		{
+			name: "fuzzy search using starting characters, active",
+			options: incident.HeaderFilterOptions{
+				SearchTerm: "sbsm",
+				Active:     true,
+			},
+			want: []incident.Incident{id2},
 		},
 	}
 	for _, tt := range tests {
