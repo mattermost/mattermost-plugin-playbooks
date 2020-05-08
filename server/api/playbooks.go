@@ -46,6 +46,11 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if playbook.ID != "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
+		return
+	}
+
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PERMISSION_VIEW_TEAM) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to create playbook on teamID %s", userID, playbook.TeamID))
 		return
