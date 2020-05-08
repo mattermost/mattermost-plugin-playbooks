@@ -471,7 +471,7 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident
 	return nil
 }
 
-func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.FilterOptions, error) {
+func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilterOptions, error) {
 	// NOTE: we are failing early instead of turning bad parameters into the default
 	param := u.Query().Get("page")
 	if param == "" {
@@ -520,11 +520,16 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.FilterOpti
 		return nil, fmt.Errorf("bad parameter 'order_by': %w", err)
 	}
 
-	return &incident.FilterOptions{
-		TeamID:  teamID,
-		Page:    page,
-		PerPage: perPage,
-		Sort:    sort,
-		Order:   order,
+	active, _ := strconv.ParseBool(u.Query().Get("active"))
+	commanderID := u.Query().Get("commander_user_id")
+
+	return &incident.HeaderFilterOptions{
+		TeamID:      teamID,
+		Page:        page,
+		PerPage:     perPage,
+		Sort:        sort,
+		Order:       order,
+		Active:      active,
+		CommanderID: commanderID,
 	}, nil
 }

@@ -33,8 +33,8 @@ func NewIncidentStore(pluginAPI KVAPI) incident.Store {
 	return newStore
 }
 
-// GetAllHeaders gets all the header information.
-func (s *incidentStore) GetIncidents(options incident.FilterOptions) ([]incident.Incident, error) {
+// GetIncidents gets all the incidents, abiding by the filter options.
+func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]incident.Incident, error) {
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all headers value: %w", err)
@@ -44,7 +44,7 @@ func (s *incidentStore) GetIncidents(options incident.FilterOptions) ([]incident
 	var filtered []incident.Header
 
 	for _, header := range headers {
-		if headerMatchesFilter(header, options) {
+		if headerMatchesFilters(header, options) {
 			filtered = append(filtered, header)
 		}
 	}
@@ -216,14 +216,6 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	return nil
 }
 
-func headerMatchesFilter(header incident.Header, options incident.FilterOptions) bool {
-	if options.TeamID != "" {
-		return header.TeamID == options.TeamID
-	}
-
-	return true
-}
-
 func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {
 	// order by descending, unless we're told otherwise
 	var orderFn = func(b bool) bool { return b }
@@ -265,4 +257,18 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func headerMatchesFilters(header incident.Header, options incident.HeaderFilterOptions) bool {
+	if options.TeamID != "" && header.TeamID != options.TeamID {
+		return false
+	}
+	if options.Active && !header.IsActive {
+		return false
+	}
+	if options.CommanderID != "" && header.CommanderUserID != options.CommanderID {
+		return false
+	}
+
+	return true
 }

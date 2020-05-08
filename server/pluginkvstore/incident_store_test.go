@@ -32,7 +32,7 @@ var dbHeaderMap = idHeaderMap{
 	"id3": incident.Header{
 		ID:              "id3",
 		Name:            "incident 3",
-		IsActive:        true,
+		IsActive:        false,
 		CommanderUserID: "commander1",
 		TeamID:          "team1",
 		CreatedAt:       222,
@@ -41,7 +41,7 @@ var dbHeaderMap = idHeaderMap{
 	"id4": incident.Header{
 		ID:              "id4",
 		Name:            "incident 4",
-		IsActive:        true,
+		IsActive:        false,
 		CommanderUserID: "commander3",
 		TeamID:          "team2",
 		CreatedAt:       333,
@@ -121,18 +121,18 @@ var id5 = incident.Incident{
 func Test_incidentStore_GetIncidents(t *testing.T) {
 	tests := []struct {
 		name    string
-		options incident.FilterOptions
+		options incident.HeaderFilterOptions
 		want    []incident.Incident
 		wantErr bool
 	}{
 		{
 			name:    "simple getHeaders, no options",
-			options: incident.FilterOptions{},
+			options: incident.HeaderFilterOptions{},
 			want:    []incident.Incident{id4, id5, id3, id2, id1},
 		},
 		{
 			name: "team1 only, ascending",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				TeamID: "team1",
 				Order:  incident.Asc,
 			},
@@ -140,14 +140,14 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "sort by ended_at",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				Sort: incident.EndedAt,
 			},
 			want: []incident.Incident{id3, id2, id5, id4, id1},
 		},
 		{
 			name: "no options, paged by 1",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    0,
 				PerPage: 1,
 			},
@@ -155,7 +155,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, paged by 3",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    0,
 				PerPage: 3,
 			},
@@ -163,7 +163,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 1 by 2",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 2,
 			},
@@ -171,7 +171,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 1 by 3",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 3,
 			},
@@ -179,7 +179,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 1 by 5",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 5,
 			},
@@ -187,13 +187,40 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "sorted by ended, ascending, page 1 of 2",
-			options: incident.FilterOptions{
+			options: incident.HeaderFilterOptions{
 				Sort:    incident.EndedAt,
 				Order:   incident.Asc,
 				Page:    1,
 				PerPage: 2,
 			},
 			want: []incident.Incident{id5, id2},
+		},
+		{
+			name: "only active, page 1 of 2",
+			options: incident.HeaderFilterOptions{
+				Page:    1,
+				PerPage: 2,
+				Active:  true,
+			},
+			want: []incident.Incident{id1},
+		},
+		{
+			name: "active, commander3, asc",
+			options: incident.HeaderFilterOptions{
+				Active:      true,
+				CommanderID: "commander3",
+				Order:       incident.Asc,
+			},
+			want: []incident.Incident{id5},
+		},
+		{
+			name: "commander1, asc, by ended_at",
+			options: incident.HeaderFilterOptions{
+				CommanderID: "commander1",
+				Order:       incident.Asc,
+				Sort:        incident.EndedAt,
+			},
+			want: []incident.Incident{id1, id3},
 		},
 	}
 	for _, tt := range tests {
