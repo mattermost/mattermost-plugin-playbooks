@@ -248,6 +248,7 @@ func (s *ServiceImpl) GetCommandersForTeam(teamID string, active bool) ([]Comman
 		result = append(result, CommanderInfo{UserID: id, Username: c.Username})
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].Username < result[j].Username })
+
 	return result, nil
 }
 
