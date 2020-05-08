@@ -1,6 +1,5 @@
 .Backstage {
     &__sidebar {
-        background: var(--center-channel-color);
         position: absolute;
         left: 0%;
         right: 0%;
@@ -12,7 +11,8 @@
         font-weight: normal;
         font-size: 16px;
         line-height: 24px;
-        color: var(--center-channel-bg);
+        background: var(--sidebar-bg);
+        color: var(--sidebar-text);
 
         &__header {
             padding: 32px 0px 0px 32px;
@@ -27,18 +27,22 @@
                 height: 48px;
                 padding-left: 32px;
                 line-height: 48px;
-                opacity: 0.56;
+                opacity: 0.6;
 
                 &:hover {
-                    background: black;
+                    opacity: 1;
                     cursor: pointer;
                 }
             }
 
             .active {
-                color: white;
+                background: var(--center-channel-bg);
+                color: var(--center-channel-color);
                 opacity: 1;
-                background: #232323;
+
+                &:hover {
+                    cursor: default;
+                }
             }
         }
 
