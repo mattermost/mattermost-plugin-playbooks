@@ -225,14 +225,14 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) string {
 // it will only return commanders of active incidents.
 func (s *ServiceImpl) GetCommandersForTeam(teamID string, active bool) ([]CommanderInfo, error) {
 	options := HeaderFilterOptions{TeamID: teamID, Active: active}
-	headers, err := s.store.GetHeaders(options)
+	incidents, err := s.store.GetIncidents(options)
 	if err != nil {
 		return nil, err
 	}
 
 	// Set of commander ids
 	commanders := make(map[string]bool)
-	for _, h := range headers {
+	for _, h := range incidents {
 		if _, ok := commanders[h.CommanderUserID]; !ok {
 			commanders[h.CommanderUserID] = true
 		}
