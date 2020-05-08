@@ -55,8 +55,13 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
     const [title, setTitle] = useState(checklistItem.title);
 
     const submit = () => {
-        if (title !== checklistItem.title) {
-            onEdit(title);
+        const trimmedTitle = title.trim();
+        if (trimmedTitle === '') {
+            setTitle(checklistItem.title);
+            return;
+        }
+        if (trimmedTitle !== checklistItem.title) {
+            onEdit(trimmedTitle);
         }
     };
 
@@ -70,7 +75,7 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
             <input
                 className='form-control'
                 type='text'
-                defaultValue={title}
+                value={title}
                 onBlur={submit}
                 onKeyPress={(e) => {
                     if (e.key === 'Enter') {
