@@ -522,6 +522,7 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 
 	active, _ := strconv.ParseBool(u.Query().Get("active"))
 	commanderID := u.Query().Get("commander_user_id")
+	searchTerm := u.Query().Get("search_term")
 
 	return &incident.HeaderFilterOptions{
 		TeamID:      teamID,
@@ -531,5 +532,6 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 		Order:       order,
 		Active:      active,
 		CommanderID: commanderID,
+		SearchTerm:  searchTerm,
 	}, nil
 }

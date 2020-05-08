@@ -8,6 +8,7 @@ require (
 	github.com/golang/protobuf v1.4.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/lithammer/fuzzysearch v1.1.0
 	github.com/mattermost/ldap v3.0.4+incompatible // indirect
 	github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200423151631-d6f334d539a1
 	github.com/mattermost/mattermost-server/v5 v5.21.0

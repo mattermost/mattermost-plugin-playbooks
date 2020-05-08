@@ -56,4 +56,9 @@ type HeaderFilterOptions struct {
 
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
 	CommanderID string
+
+	// SearchTerm returns results of the search term, ordered by relevance, and respecting the other
+	// header filter options (except Sort & Order which are mutually exclusive of relevance
+	// ordering).
+	SearchTerm string
 }
