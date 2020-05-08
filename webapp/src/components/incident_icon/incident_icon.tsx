@@ -34,6 +34,7 @@ export default class IncidentIcon extends React.PureComponent<Props> {
 
         return (
             <i
+                id='incidentIcon'
                 ref={this.myRef}
                 className={iconClass}
             />
