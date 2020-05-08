@@ -38,7 +38,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
-	incidentsRouter.HandleFunc("", handler.createIncident).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
@@ -84,16 +83,6 @@ func (h *IncidentHandler) permissionsToIncidentChannelRequired(next http.Handler
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request) {
-	_, err := h.incidentService.CreateIncident(nil)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
