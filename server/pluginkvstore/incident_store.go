@@ -40,23 +40,11 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 		return nil, fmt.Errorf("failed to get all headers value: %w", err)
 	}
 
-	// Build the filters we need to apply
-	var headerFilters []HeaderFilter
-	if options.TeamID != "" {
-		headerFilters = append(headerFilters, teamFilter(options.TeamID))
-	}
-	if options.Active {
-		headerFilters = append(headerFilters, activeFilter())
-	}
-	if options.CommanderID != "" {
-		headerFilters = append(headerFilters, commanderFilter(options.CommanderID))
-	}
-
 	headers := toHeaders(headersMap)
 	var filtered []incident.Header
 
 	for _, header := range headers {
-		if headerMatchesFilters(header, headerFilters...) {
+		if headerMatchesFilters(header, options) {
 			filtered = append(filtered, header)
 		}
 	}
@@ -269,4 +257,18 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func headerMatchesFilters(header incident.Header, options incident.HeaderFilterOptions) bool {
+	if options.TeamID != "" && header.TeamID != options.TeamID {
+		return false
+	}
+	if options.Active && !header.IsActive {
+		return false
+	}
+	if options.CommanderID != "" && header.CommanderUserID != options.CommanderID {
+		return false
+	}
+
+	return true
 }
