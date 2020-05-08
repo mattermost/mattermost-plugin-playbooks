@@ -57,27 +57,3 @@ type HeaderFilterOptions struct {
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
 	CommanderID string
 }
-
-// HeaderFilter header filter type.
-type HeaderFilter func(Header) bool
-
-// TeamFilter filters headers by teamID.
-func TeamFilter(teamID string) HeaderFilter {
-	return func(h Header) bool {
-		return h.TeamID == teamID
-	}
-}
-
-// ActiveFilter returns headers that are active.
-func ActiveFilter() HeaderFilter {
-	return func(h Header) bool {
-		return h.IsActive
-	}
-}
-
-// CommanderFilter filters headers by commanderID.
-func CommanderFilter(commanderID string) HeaderFilter {
-	return func(h Header) bool {
-		return h.CommanderUserID == commanderID
-	}
-}

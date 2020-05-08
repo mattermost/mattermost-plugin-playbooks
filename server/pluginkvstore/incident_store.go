@@ -41,15 +41,15 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 	}
 
 	// Build the filters we need to apply
-	var headerFilters []incident.HeaderFilter
+	var headerFilters []HeaderFilter
 	if options.TeamID != "" {
-		headerFilters = append(headerFilters, incident.TeamFilter(options.TeamID))
+		headerFilters = append(headerFilters, teamFilter(options.TeamID))
 	}
 	if options.Active {
-		headerFilters = append(headerFilters, incident.ActiveFilter())
+		headerFilters = append(headerFilters, activeFilter())
 	}
 	if options.CommanderID != "" {
-		headerFilters = append(headerFilters, incident.CommanderFilter(options.CommanderID))
+		headerFilters = append(headerFilters, commanderFilter(options.CommanderID))
 	}
 
 	headers := toHeaders(headersMap)
@@ -251,16 +251,6 @@ func sortHeaders(headers []incident.Header, sortField incident.SortField, order 
 	}
 
 	sort.Slice(headers, sortFn)
-}
-
-// headerMatchesFilters returns true if the header matches the HeaderFilters.
-func headerMatchesFilters(header incident.Header, filters ...incident.HeaderFilter) bool {
-	for _, filter := range filters {
-		if !filter(header) {
-			return false
-		}
-	}
-	return true
 }
 
 func pageHeaders(headers []incident.Header, page, perPage int) []incident.Header {
