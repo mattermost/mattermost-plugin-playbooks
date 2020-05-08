@@ -84,6 +84,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                     renderThumbHorizontal={renderThumbHorizontal}
                     renderThumbVertical={renderThumbVertical}
                     renderView={renderView}
+                    style={{position: 'absolute'}}
                 >
                     <div className='IncidentDetails'>
                         <div className='inner-container'>
