@@ -15,14 +15,20 @@ import './backstage.scss';
 interface Props {
     onBack: () => void;
     selectedArea: BackstageArea;
+    currentTeamId: string;
     currentTeamName: string;
     setSelectedArea: (area: BackstageArea) => void;
 }
 
-const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamName}: Props): React.ReactElement => {
+const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, currentTeamName}: Props): React.ReactElement => {
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
-        activeArea = <IncidentList currentTeamName={currentTeamName}/>;
+        activeArea = (
+            <IncidentList
+                currentTeamId={currentTeamId}
+                currentTeamName={currentTeamName}
+            />
+        );
     }
 
     return (

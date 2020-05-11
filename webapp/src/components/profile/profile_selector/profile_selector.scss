@@ -1,18 +1,29 @@
 .app__body {
     .profile-dropdown--active {
-        .ProfileButton {
+        .IncidentProfileButton {
             .Profile {
                 background-color: var(--button-bg-08);
             }
         }
     }
 
-    .react-select__menu-list {
+    .profile-dropdown {
+        .incident-user-select__container {
+            z-index: 2;
+            position: relative;
+        }
+    }
+
+    .incident-user-select__menu-list {
         padding: 0 0 12px;
         border: none;
     }
 
-    .react-select {
+    .incident-user-select__input {
+        color: var(--center-channel-color);
+    }
+
+    .incident-user-select {
         border-radius: 4px;
         -webkit-overflow-scrolling: touch;
         background-color: var(--center-channel-bg);
@@ -22,15 +33,16 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
 
-    .react-select__option--is-selected,
-    .react-select__option--is-focused {
+    .incident-user-select__option--is-selected,
+    .incident-user-select__option--is-focused {
         background-color: var(--center-channel-color-08);
         color: inherit;
     }
 
-    .react-select__control {
+    .incident-user-select__control {
         margin: 12px;
         border: none;
+        background: transparent;
         box-shadow: inset 0 0 0 1px var(--center-channel-color-20);
 
         &:hover {
@@ -43,13 +55,13 @@
         }
     }
 
-    .react-select__option {
+    .incident-user-select__option {
         &:active {
             background-color: var(--center-channel-color-08);
         }
     }
 
-    .react-select__value-container {
+    .incident-user-select__value-container {
         overflow: visible;
         padding-left: 2.8rem;
 
@@ -85,7 +97,7 @@
     }
 }
 
-.react-select__container {
+.incident-user-select__container {
     position: relative;
     z-index: 2;
 }

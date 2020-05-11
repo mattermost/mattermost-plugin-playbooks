@@ -41,6 +41,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -265,6 +266,41 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// getCommanders handles the /incidents/commanders api endpoint.
+func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) {
+	teamID := r.URL.Query().Get("team_id")
+	if teamID == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+	}
+
+	// Check permissions (if is an admin, they will have permissions to view all teams)
+	userID := r.Header.Get("Mattermost-User-ID")
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		return
+	}
+
+	active, _ := strconv.ParseBool(r.URL.Query().Get("active"))
+
+	commanders, err := h.incidentService.GetCommandersForTeam(teamID, active)
+	if err != nil {
+		HandleError(w, fmt.Errorf("failed to get commanders: %w", err))
+		return
+	}
+
+	jsonBytes, err := json.Marshal(commanders)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 // changeCommander handles the /incidents/{id}/change-commander api endpoint.
