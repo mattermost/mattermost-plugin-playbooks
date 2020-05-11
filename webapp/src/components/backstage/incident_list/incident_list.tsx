@@ -15,8 +15,8 @@ import './incident_list.scss';
 import IncidentDetails from '../incidents/incident_details';
 
 interface Props {
-    currentTeamName: string;
     currentTeamId: string;
+    currentTeamName: string;
 }
 
 export default function IncidentList(props: Props) {
@@ -32,7 +32,7 @@ export default function IncidentList(props: Props) {
         fetchAllIncidents();
     }, []);
 
-    const openIncidentDashboard = (incident: Incident) => {
+    const openIncidentDetails = (incident: Incident) => {
         setSelectedIncident(incident);
     };
 
@@ -79,7 +79,7 @@ export default function IncidentList(props: Props) {
                                     key={incident.id}
                                 >
                                     <div className='col-sm-3'>
-                                        <a onClick={() => openIncidentDashboard(incident)} >
+                                        <a onClick={() => openIncidentDetails(incident)} >
                                             {incident.name}
                                         </a>
                                     </div>
