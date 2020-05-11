@@ -16,6 +16,7 @@ const mapStateToProps = (state: object): object => {
     return {
         show: backstageModal(state).open,
         selectedArea: backstageModal(state).selectedArea,
+        currentTeamId: currentTeam.id,
         currentTeamName: currentTeam.display_name,
     };
 };
