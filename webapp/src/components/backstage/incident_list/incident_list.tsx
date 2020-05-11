@@ -7,12 +7,12 @@ import moment from 'moment';
 
 import {Incident} from 'src/types/incident';
 import {fetchIncidents} from 'src/client';
-import Profile from 'src/components/profile';
 
+import Profile from 'src/components/profile';
+import IncidentDetails from '../incidents/incident_details';
 import StatusBadge from '../incidents/status_badge';
 
 import './incident_list.scss';
-import IncidentDetails from '../incidents/incident_details';
 
 interface Props {
     currentTeamId: string;
