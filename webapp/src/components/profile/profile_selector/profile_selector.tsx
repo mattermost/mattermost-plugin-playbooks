@@ -134,8 +134,8 @@ export default function ProfileSelector(props: Props) {
                 tabSelectsValue={false}
                 value={selected}
                 onChange={(option) => onSelectedChange(option as Option)}
-                classNamePrefix='react-select-auto react-select'
-                className='react-select'
+                classNamePrefix='incident-user-select'
+                className='incident-user-select'
             />
         </Dropdown>
     );
@@ -170,7 +170,7 @@ const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
         css={{position: 'relative'}}
     >
         {target}
-        {isOpen ? <Menu className='react-select__container'>{children}</Menu> : null}
+        {isOpen ? <Menu className='incident-user-select__container'>{children}</Menu> : null}
         {isOpen ? <Blanket onClick={onClose}/> : null}
     </div>
 );
