@@ -14,6 +14,7 @@ import Profile from 'src/components/profile';
 import './incident_list.scss';
 
 interface Props {
+    currentTeamId: string;
     currentTeamName: string;
 }
 
@@ -22,7 +23,7 @@ export default function IncidentList(props: Props) {
 
     useEffect(() => {
         async function fetchAllIncidents() {
-            const data = await fetchIncidents();
+            const data = await fetchIncidents(props.currentTeamId);
             setIncidents(data);
         }
 
