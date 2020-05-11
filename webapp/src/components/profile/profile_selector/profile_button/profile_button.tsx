@@ -26,7 +26,7 @@ export default function ProfileButton(props: Props) {
     return (
         <button
             onClick={props.onClick}
-            className={'ProfileButton'}
+            className={'IncidentProfileButton'}
         >
             <Profile
                 userId={props.userId}
