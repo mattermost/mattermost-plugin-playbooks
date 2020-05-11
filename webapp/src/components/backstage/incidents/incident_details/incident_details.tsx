@@ -67,7 +67,7 @@ export default class IncidentDetails extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         return (
-            <div className='IncidentDetails'>
+            <div className='BackstageIncidentDetails'>
                 <div className='details-header'>
                     <div className='title'>
                         <BackIcon
