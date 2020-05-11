@@ -142,7 +142,7 @@ export default class IncidentDashboard extends React.PureComponent<Props> {
                                 onClick={this.goToChannel}
                             >
                                 {'Jump to Channel'}
-                                <i className='icon icon-emoticon-outline'/>
+                                <i className='icon icon-arrow-right'/>
                             </a>
                         </div>
                     </div>
