@@ -14,7 +14,7 @@ import Profile from 'src/components/profile';
 import BackIcon from 'src/components/playbook/back_icon';
 import StatusBadge from '../status_badge';
 
-import './incident_dashboard.scss';
+import './incident_details.scss';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
@@ -32,7 +32,7 @@ interface Props {
     };
 }
 
-export default class IncidentDashboard extends React.PureComponent<Props> {
+export default class IncidentDetails extends React.PureComponent<Props> {
     public timeFrameText = () => {
         const startedText = moment.unix(this.props.incident.created_at).format('DD MMM h:mmA');
         const endedText = this.props.incident.is_active ? 'Ongoing' : moment.unix(this.props.incident.ended_at).format('DD MMM h:mmA');
@@ -67,8 +67,8 @@ export default class IncidentDashboard extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         return (
-            <div className='IncidentDashboard'>
-                <div className='dashboard-header'>
+            <div className='IncidentDetails'>
+                <div className='details-header'>
                     <div className='title'>
                         <BackIcon
                             className='back-icon mr-4'

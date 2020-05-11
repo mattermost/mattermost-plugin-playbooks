@@ -9,13 +9,14 @@ import {Incident} from 'src/types/incident';
 import {fetchIncidents} from 'src/client';
 import Profile from 'src/components/profile';
 
-import StatusBadge from '../status_badge';
+import StatusBadge from '../incidents/status_badge';
 
 import './incident_list.scss';
-import IncidentDashboard from '../incident_dashboard';
+import IncidentDetails from '../incidents/incident_details';
 
 interface Props {
     currentTeamName: string;
+    currentTeamId: string;
 }
 
 export default function IncidentList(props: Props) {
@@ -24,7 +25,7 @@ export default function IncidentList(props: Props) {
 
     useEffect(() => {
         async function fetchAllIncidents() {
-            const data = await fetchIncidents();
+            const data = await fetchIncidents(props.currentTeamId);
             setIncidents(data);
         }
 
@@ -35,7 +36,7 @@ export default function IncidentList(props: Props) {
         setSelectedIncident(incident);
     };
 
-    const closeIncidentDashboard = () => {
+    const closeIncidentDetails = () => {
         setSelectedIncident(null);
     };
 
@@ -103,9 +104,9 @@ export default function IncidentList(props: Props) {
             )}
             {
                 selectedIncident &&
-                <IncidentDashboard
+                <IncidentDetails
                     incident={selectedIncident}
-                    onClose={closeIncidentDashboard}
+                    onClose={closeIncidentDetails}
                 />
             }
         </>

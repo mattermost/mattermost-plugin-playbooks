@@ -13,7 +13,7 @@ import {Incident} from 'src/types/incident';
 
 import {setBackstageModal} from 'src/actions';
 
-import IncidentDashboard from './incident_dashboard';
+import IncidentDetails from './incident_details';
 
 type Props = {
     incident: Incident;
@@ -55,5 +55,5 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(IncidentDashboard);
+export default connect(mapStateToProps, mapDispatchToProps)(IncidentDetails);
 

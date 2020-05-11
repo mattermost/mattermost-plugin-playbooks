@@ -1,13 +1,13 @@
 $font-family: Open Sans;
 
-.IncidentDashboard {
+.IncidentDetails {
     padding-top: 2rem;
     font-family: $font-family;
     color: var(--center-channel-color-90);
     padding: 4rem 0 3.2rem;
     margin: 0 6rem;
 
-    .dashboard-header {
+    .details-header {
         display: flex;
         font-size: 2.8rem;
         line-height: 32px;
