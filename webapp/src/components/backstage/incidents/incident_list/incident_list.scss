@@ -58,10 +58,11 @@ $font-family: Open Sans;
                     display: inline-flex;
                     border-radius: 4px;
                     padding: 12px 8px 12px 8px;
-                    background-color: rgba(61, 60, 64, 0.56);
+                    color: var(--sidebar-text);
+                    background: var(--center-channel-color-56);
 
                     &.ongoing {
-                        background-color: #145DBF;
+                        background-color: var(--button-bg);
                     }
                 }
             }

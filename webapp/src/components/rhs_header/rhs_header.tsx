@@ -39,7 +39,7 @@ export default function RHSHeader(props: Props) {
             >
                 <button
                     className='navigation-bar__button'
-                    onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+                    onClick={() => props.actions.openBackstageModal(BackstageArea.Incidents)}
                 >
                     <PlaybookIcon/>
                 </button>
