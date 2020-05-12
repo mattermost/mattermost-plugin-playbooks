@@ -35,6 +35,18 @@ export default function IncidentList(props: Props) {
         fetchIncidentsFromServer();
     }, []);
 
+    const endedAt = (isActive: boolean, time: number) => {
+        if (isActive) {
+            return 'Ongoing';
+        }
+
+        const mom = moment.unix(time);
+        if (mom.isSameOrAfter('2020')) {
+            return mom.format('DD MMM h:mmA');
+        }
+        return '-';
+    };
+
     return (
         <div className='IncidentList'>
             <div className='header'>
@@ -77,16 +89,23 @@ export default function IncidentList(props: Props) {
                             key={incident.id}
                         >
                             <div className='col-sm-3'> {incident.name} </div>
-                            <div className='col-sm-2'> {
-                                <OngoingBadge isActive={incident.is_active}/>
-                            }
+                            <div className='col-sm-2'>
+                                {
+                                    <OngoingBadge isActive={incident.is_active}/>
+                                }
                             </div>
                             <div
                                 className='col-sm-2'
-                            > {moment.unix(incident.created_at).format('DD MMM h:mmA')} </div>
-                            <div
-                                className='col-sm-2'
-                            > {incident.is_active ? 'Ongoing' : moment.unix(incident.ended_at).format('DD MMM h:mmA')} </div>
+                            >
+                                {
+                                    moment.unix(incident.created_at).format('DD MMM h:mmA')
+                                }
+                            </div>
+                            <div className='col-sm-2'>
+                                {
+                                    endedAt(incident.is_active, incident.ended_at)
+                                }
+                            </div>
                             <div className='col-sm-3'>
                                 <Profile userId={incident.commander_user_id}/>
                             </div>
