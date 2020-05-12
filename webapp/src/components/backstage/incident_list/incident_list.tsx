@@ -7,6 +7,7 @@ import {Badge} from 'react-bootstrap';
 import classNames from 'classnames';
 import moment from 'moment';
 import {debounce} from 'debounce';
+import {StatusFilter} from 'src/components/backstage/incident_list/status_filter';
 
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {fetchIncidents} from 'src/client';
@@ -38,6 +39,10 @@ export default function IncidentList(props: Props) {
         fetchIncidentsFromServer();
     }, []);
 
+    function onStatusFilterChange(newStatus: string) {
+        console.log('<><> onStatusFilterChange, new status: ' + newStatus);
+    }
+
     return (
         <div className='IncidentList'>
             <div className='header'>
@@ -55,6 +60,9 @@ export default function IncidentList(props: Props) {
                             <SearchInput
                                 onSearch={debounce(fetchIncidentsFromServer, debounceDelay)}
                             />
+                        </div>
+                        <div className='col-sm-2'>
+                            <StatusFilter onChange={onStatusFilterChange}/>
                         </div>
                     </div>
                 </div>
