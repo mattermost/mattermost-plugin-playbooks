@@ -33,7 +33,7 @@ interface Props {
     };
 }
 
-export default class IncidentDetails extends React.PureComponent<Props> {
+export default class BackstageIncidentDetails extends React.PureComponent<Props> {
     public timeFrameText = () => {
         const startedText = moment.unix(this.props.incident.created_at).format('DD MMM h:mmA');
         const endedText = this.props.incident.is_active ? 'Ongoing' : moment.unix(this.props.incident.ended_at).format('DD MMM h:mmA');

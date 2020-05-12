@@ -16,7 +16,7 @@ import {Incident} from 'src/types/incident';
 
 import {setBackstageModal} from 'src/actions';
 
-import IncidentDetails from './incident_details';
+import BackstageIncidentDetails from './incident_details';
 
 type Props = {
     incident: Incident;
@@ -61,5 +61,5 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(IncidentDetails);
+export default connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentDetails);
 

@@ -9,7 +9,7 @@ import {Incident} from 'src/types/incident';
 import {fetchIncidents} from 'src/client';
 
 import Profile from 'src/components/profile';
-import IncidentDetails from '../incidents/incident_details';
+import BackstageIncidentDetails from '../incidents/incident_details';
 import StatusBadge from '../incidents/status_badge';
 
 import './incident_list.scss';
@@ -104,7 +104,7 @@ export default function IncidentList(props: Props) {
             )}
             {
                 selectedIncident &&
-                <IncidentDetails
+                <BackstageIncidentDetails
                     incident={selectedIncident}
                     onClose={closeIncidentDetails}
                 />
