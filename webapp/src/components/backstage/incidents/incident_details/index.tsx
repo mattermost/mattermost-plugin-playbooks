@@ -24,13 +24,13 @@ type Props = {
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
     let totalMessages = 0;
-    const mainChanelId = ownProps.incident.channel_ids?.[0] || '';
+    const mainChannelId = ownProps.incident.channel_ids?.[0] || '';
     const involvedInIncident = haveIChannelPermission(state,
-        {channel: mainChanelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
+        {channel: mainChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
 
     let mainChannelDetails: ChannelWithTeamData;
     if (ownProps.incident.channel_ids.length > 0) {
-        const c = getChannel(state, mainChanelId) as Channel;
+        const c = getChannel(state, mainChannelId) as Channel;
         if (c) {
             const t = getTeam(state, c.team_id) as Team;
             mainChannelDetails = {
@@ -43,7 +43,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         }
     }
 
-    const channelStats = getAllChannelStats(state)[mainChanelId];
+    const channelStats = getAllChannelStats(state)[mainChannelId];
 
     return {
         involvedInIncident,

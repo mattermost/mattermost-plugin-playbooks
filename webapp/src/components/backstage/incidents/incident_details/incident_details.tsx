@@ -136,15 +136,21 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                             <span>{this.timeFrameText()}</span>
                         </div>
                     </div>
-                    <div className='col-sm-3 statistic-block'>
-                        <div className='title'>
-                            {'Members Involved'}
+                    <OverlayTrigger
+                        placement='bottom'
+                        delay={OVERLAY_DELAY}
+                        overlay={<Tooltip id='goToChannel'>{'Number of users currently in the incident channel'}</Tooltip>}
+                    >
+                        <div className='col-sm-3 statistic-block'>
+                            <div className='title'>
+                                {'Members Involved'}
+                            </div>
+                            <div className='content'>
+                                <i className='icon icon-account-multiple-outline box-icon'/>
+                                {this.props.membersCount}
+                            </div>
                         </div>
-                        <div className='content'>
-                            <i className='icon icon-account-multiple-outline box-icon'/>
-                            {this.props.membersCount}
-                        </div>
-                    </div>
+                    </OverlayTrigger>
                     <div className='col-sm-3 statistic-block'>
                         <div className='title'>
                             {'Messages'}
