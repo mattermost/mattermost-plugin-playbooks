@@ -92,6 +92,9 @@ $font-family: Open Sans;
             font-size: 16px;
             padding-right:8px;
         }
+        .disabled {
+            color: var(--center-channel-color-56);
+        }
     }
 
     .statistic-block{

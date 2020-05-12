@@ -5,6 +5,7 @@ import React from 'react';
 
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import classNames from 'classnames';
 
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
@@ -27,6 +28,7 @@ interface Props {
     totalMessages: number;
     membersCount: number;
     mainChannelDetails: ChannelWithTeamData;
+    exportAvailable: boolean;
     onClose: () => void;
     actions: {
         closeModal: () => void;
@@ -118,7 +120,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                     <div className='summary-tab'>
                         {'Summary'}
                     </div>
-                    <div className='export-link'>
+                    <div className={classNames('export-link', {disabled: !this.props.exportAvailable})}>
                         <i className='icon icon-download-outline export-icon'/>
                         {'Export Incident Channel'}
                     </div>

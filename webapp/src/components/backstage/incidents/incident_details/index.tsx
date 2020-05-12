@@ -13,6 +13,7 @@ import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles'
 import {Permissions} from 'mattermost-redux/constants';
 
 import {Incident} from 'src/types/incident';
+import {exportPluginInstalled} from 'src/selectors';
 
 import {setBackstageModal} from 'src/actions';
 
@@ -50,6 +51,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         totalMessages,
         membersCount: channelStats?.member_count || 1,
         mainChannelDetails,
+        exportAvailable: exportPluginInstalled(state),
     };
 }
 
