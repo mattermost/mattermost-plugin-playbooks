@@ -12,33 +12,15 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
-import {Incident} from 'src/types/incident';
+import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
 const apiUrl = `/plugins/${pluginId}/api/v1`;
 
-enum Order {
-    Desc = 0,
-    Asc = 1,
-}
-
-export async function fetchIncidents(teamId?: string, page?: number, perPage?: number, sort?: string, order?: Order) {
-    let orderString;
-    if (order === Order.Desc) {
-        orderString = 'desc';
-    } else if (order === Order.Asc) {
-        orderString = 'asc';
-    }
-
-    const queryParams = qs.stringify({
-        team_id: teamId,
-        page,
-        per_page: perPage,
-        sort,
-        order: orderString,
-    }, {addQueryPrefix: true});
+export async function fetchIncidents(params: FetchIncidentsParams) {
+    const queryParams = qs.stringify(params, {addQueryPrefix: true});
 
     let data = await doGet(`${apiUrl}/incidents${queryParams}`);
     if (!data) {

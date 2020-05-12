@@ -32,3 +32,14 @@ export function isIncident(arg: any): arg is Incident {
         optional &&
         arg.playbook && isPlaybook(arg.playbook);
 }
+
+export interface FetchIncidentsParams {
+    team_id?: string;
+    page?: number;
+    per_page?: number;
+    sort?: string;
+    order?: string;
+    active?: boolean;
+    commander_user_id?: string;
+    search_term?: string;
+}

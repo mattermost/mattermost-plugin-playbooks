@@ -7,9 +7,10 @@ import {Badge} from 'react-bootstrap';
 import classNames from 'classnames';
 import moment from 'moment';
 
-import {Incident} from 'src/types/incident';
+import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {fetchIncidents} from 'src/client';
 import Profile from 'src/components/profile';
+import SearchInput from 'src/components/backstage/incident_list/search_input';
 
 import './incident_list.scss';
 
@@ -21,13 +22,17 @@ interface Props {
 export default function IncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
 
-    useEffect(() => {
-        async function fetchAllIncidents() {
-            const data = await fetchIncidents(props.currentTeamId);
-            setIncidents(data);
+    async function fetchIncidentsFromServer(term?: string) {
+        const params: FetchIncidentsParams = {team_id: props.currentTeamId};
+        if (term) {
+            params.search_term = term;
         }
+        const data = await fetchIncidents(params);
+        setIncidents(data);
+    }
 
-        fetchAllIncidents();
+    useEffect(() => {
+        fetchIncidentsFromServer();
     }, []);
 
     return (
@@ -40,23 +45,23 @@ export default function IncidentList(props: Props) {
                     </div>
                 </div>
             </div>
-            <div className='filtering'>
-                <div className='row'>
-
-                </div>
-            </div>
             <div className='list'>
-                {
-                    <div className='list-header'>
-                        <div className='row'>
-                            <div className='col-sm-3'> {'Name'} </div>
-                            <div className='col-sm-2'> {'Status'} </div>
-                            <div className='col-sm-2'> {'Start Date'} </div>
-                            <div className='col-sm-2'> {'End Date'} </div>
-                            <div className='col-sm-3'> {'Commander'} </div>
+                <div className='filtering'>
+                    <div className='row'>
+                        <div className='col-sm-6'>
+                            <SearchInput/>
                         </div>
                     </div>
-                }
+                </div>
+                <div className='list-header'>
+                    <div className='row'>
+                        <div className='col-sm-3'> {'Name'} </div>
+                        <div className='col-sm-2'> {'Status'} </div>
+                        <div className='col-sm-2'> {'Start Date'} </div>
+                        <div className='col-sm-2'> {'End Date'} </div>
+                        <div className='col-sm-3'> {'Commander'} </div>
+                    </div>
+                </div>
 
                 {
                     !incidents.length &&
