@@ -40,6 +40,11 @@ export default function IncidentList(props: Props) {
                     </div>
                 </div>
             </div>
+            <div className='filtering'>
+                <div className='row'>
+
+                </div>
+            </div>
             <div className='list'>
                 {
                     <div className='list-header'>
