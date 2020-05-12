@@ -23,6 +23,7 @@ const OVERLAY_DELAY = 400;
 
 interface Props {
     incident: Incident;
+    involvedInIncident: boolean;
     totalMessages: number;
     membersCount: number;
     mainChannelDetails: ChannelWithTeamData;
@@ -66,36 +67,52 @@ export default class IncidentDetails extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        return (
-            <div className='BackstageIncidentDetails'>
-                <div className='details-header'>
-                    <div className='title'>
-                        <BackIcon
-                            className='back-icon mr-4'
-                            onClick={this.props.onClose}
-                        />
-                        {`Incident ${this.props.incident.name}`}
-                        <OverlayTrigger
-                            placement='bottom'
-                            delay={OVERLAY_DELAY}
-                            overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
-                        >
-                            <i
-                                className='icon icon-link-variant link-icon'
-                                onClick={this.goToChannel}
-                            />
-                        </OverlayTrigger>
-                        <StatusBadge isActive={this.props.incident.is_active}/>
+        const detailsHeader = (
+            <div className='details-header'>
+                <div className='title'>
+                    <BackIcon
+                        className='back-icon mr-4'
+                        onClick={this.props.onClose}
+                    />
+                    <span className='mr-1'>{`Incident ${this.props.incident.name}`}</span>
 
-                    </div>
-                    <div className='commander-div'>
-                        <span className='label'>{'Commander:'}</span>
-                        <Profile
-                            userId={this.props.incident.commander_user_id}
-                            classNames={{ProfileButton: true, profile: true}}
+                    { this.props.involvedInIncident &&
+                    <OverlayTrigger
+                        placement='bottom'
+                        delay={OVERLAY_DELAY}
+                        overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
+                    >
+                        <i
+                            className='icon icon-link-variant link-icon'
+                            onClick={this.goToChannel}
                         />
+                    </OverlayTrigger>
+                    }
+                    <StatusBadge isActive={this.props.incident.is_active}/>
+                </div>
+                <div className='commander-div'>
+                    <span className='label'>{'Commander:'}</span>
+                    <Profile
+                        userId={this.props.incident.commander_user_id}
+                        classNames={{ProfileButton: true, profile: true}}
+                    />
+                </div>
+            </div>);
+
+        if (!this.props.involvedInIncident) {
+            return (
+                <div className='BackstageIncidentDetails'>
+                    {detailsHeader}
+                    <div className='no-permission-div'>
+                        {'You are not a participant in this incident. Contact the commander to request access.'}
                     </div>
                 </div>
+            );
+        }
+
+        return (
+            <div className='BackstageIncidentDetails'>
+                {detailsHeader}
                 <div className='subheader'>
                     { /*Summary will be a tab once Post Mortem is included */}
                     <div className='summary-tab'>

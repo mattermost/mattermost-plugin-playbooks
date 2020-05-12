@@ -9,6 +9,9 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getChannel, getAllChannelStats} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
+import {Permissions} from 'mattermost-redux/constants';
+
 import {Incident} from 'src/types/incident';
 
 import {setBackstageModal} from 'src/actions';
@@ -22,6 +25,8 @@ type Props = {
 function mapStateToProps(state: GlobalState, ownProps: Props) {
     let totalMessages = 0;
     const mainChanelId = ownProps.incident.channel_ids?.[0] || '';
+    const involvedInIncident = haveIChannelPermission(state,
+        {channel: mainChanelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
 
     let mainChannelDetails: ChannelWithTeamData;
     if (ownProps.incident.channel_ids.length > 0) {
@@ -41,6 +46,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     const channelStats = getAllChannelStats(state)[mainChanelId];
 
     return {
+        involvedInIncident,
         totalMessages,
         membersCount: channelStats?.member_count || 1,
         mainChannelDetails,
