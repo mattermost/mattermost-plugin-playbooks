@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 
 import ReactSelect from 'react-select';
 
-import './filter_button.scss';
+import './status_filter.scss';
 
 interface Props {
     onChange: (newStatus: string) => void;
