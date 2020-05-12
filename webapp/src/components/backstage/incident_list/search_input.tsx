@@ -5,11 +5,16 @@ import React, {useState} from 'react';
 
 import './seach_input.scss';
 
-export default function SearchInput() {
+interface Props {
+    onSearch: (term: string) => void;
+}
+
+export default function SearchInput(props: Props) {
     const [term, setTerm] = useState('');
 
     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTerm(event.target.value);
+        props.onSearch(event.target.value);
     };
 
     return (

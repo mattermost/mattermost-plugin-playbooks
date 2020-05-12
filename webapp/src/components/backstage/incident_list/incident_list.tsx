@@ -6,6 +6,7 @@ import React, {useEffect, useState} from 'react';
 import {Badge} from 'react-bootstrap';
 import classNames from 'classnames';
 import moment from 'moment';
+import {debounce} from 'debounce';
 
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {fetchIncidents} from 'src/client';
@@ -18,6 +19,8 @@ interface Props {
     currentTeamId: string;
     currentTeamName: string;
 }
+
+const debounceDelay = 300; // in milliseconds
 
 export default function IncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -35,18 +38,6 @@ export default function IncidentList(props: Props) {
         fetchIncidentsFromServer();
     }, []);
 
-    const endedAt = (isActive: boolean, time: number) => {
-        if (isActive) {
-            return 'Ongoing';
-        }
-
-        const mom = moment.unix(time);
-        if (mom.isSameOrAfter('2020')) {
-            return mom.format('DD MMM h:mmA');
-        }
-        return '-';
-    };
-
     return (
         <div className='IncidentList'>
             <div className='header'>
@@ -61,7 +52,9 @@ export default function IncidentList(props: Props) {
                 <div className='filtering'>
                     <div className='row'>
                         <div className='col-sm-6'>
-                            <SearchInput/>
+                            <SearchInput
+                                onSearch={debounce(fetchIncidentsFromServer, debounceDelay)}
+                            />
                         </div>
                     </div>
                 </div>
@@ -129,3 +122,15 @@ function OngoingBadge(props: { isActive: boolean }) {
         </Badge>
     );
 }
+
+const endedAt = (isActive: boolean, time: number) => {
+    if (isActive) {
+        return 'Ongoing';
+    }
+
+    const mom = moment.unix(time);
+    if (mom.isSameOrAfter('2020')) {
+        return mom.format('DD MMM h:mmA');
+    }
+    return '-';
+};
