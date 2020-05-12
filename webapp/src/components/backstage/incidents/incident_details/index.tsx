@@ -14,7 +14,7 @@ import {Permissions} from 'mattermost-redux/constants';
 
 import {Incident} from 'src/types/incident';
 
-import {setBackstageModal} from 'src/actions';
+import {navigateToUrl} from 'src/actions';
 
 import BackstageIncidentDetails from './incident_details';
 
@@ -56,7 +56,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
-            closeModal: () => setBackstageModal(false),
+            navigateToUrl,
         }, dispatch),
     };
 }

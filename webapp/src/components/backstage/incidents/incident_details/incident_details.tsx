@@ -16,9 +16,6 @@ import StatusBadge from '../status_badge';
 
 import './incident_details.scss';
 
-// @ts-ignore
-const WebappUtils = window.WebappUtils;
-
 const OVERLAY_DELAY = 400;
 
 interface Props {
@@ -29,7 +26,7 @@ interface Props {
     mainChannelDetails: ChannelWithTeamData;
     onClose: () => void;
     actions: {
-        closeModal: () => void;
+        navigateToUrl: (urlPath: string) => void;
     };
 }
 
@@ -62,8 +59,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
     }
 
     public goToChannel = () => {
-        WebappUtils.browserHistory.push(`/${this.props.mainChannelDetails.team_name}/channels/${this.props.mainChannelDetails.name}`);
-        this.props.actions.closeModal();
+        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails.team_name}/channels/${this.props.mainChannelDetails.name}`);
     }
 
     public render(): JSX.Element {
