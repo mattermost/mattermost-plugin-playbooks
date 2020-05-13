@@ -39,7 +39,7 @@ export interface FetchIncidentsParams {
     per_page?: number;
     sort?: string;
     order?: string;
-    active?: boolean;
+    status?: string;
     commander_user_id?: string;
     search_term?: string;
 }

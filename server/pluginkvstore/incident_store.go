@@ -269,8 +269,13 @@ func headerMatchesFilters(header incident.Header, options incident.HeaderFilterO
 	if options.TeamID != "" && header.TeamID != options.TeamID {
 		return false
 	}
-	if options.Active && !header.IsActive {
-		return false
+	if options.Status != incident.All {
+		if options.Status == incident.Active && !header.IsActive {
+			return false
+		}
+		if options.Status == incident.Ended && header.IsActive {
+			return false
+		}
 	}
 	if options.CommanderID != "" && header.CommanderUserID != options.CommanderID {
 		return false

@@ -11,13 +11,16 @@ interface Props {
     onChange: (newStatus: string) => void;
 }
 
-const options = [
-    {value: 'Ongoing', label: 'Ongoing'},
-    {value: 'Ended', label: 'Ended'},
-    {value: 'All', label: 'All'},
-];
+interface Option {
+    value: string;
+    label: string;
+}
 
-const downChevron = <i className='icon-chevron-down ml-1 mr-2'/>;
+const fixedOptions: Option[] = [
+    {value: 'active', label: 'Ongoing'},
+    {value: 'ended', label: 'Ended'},
+    {value: 'all', label: 'All'},
+];
 
 export function StatusFilter(props: Props) {
     const [isOpen, setOpen] = useState(false);
@@ -25,14 +28,13 @@ export function StatusFilter(props: Props) {
         setOpen(!isOpen);
     };
 
-    const [selected, setSelected] = useState('');
+    const [selected, setSelected] = useState<Option>(fixedOptions[2]);
 
-    const onSelectedChange = async (value: string) => {
+    const onSelectedChange = async (val: Option) => {
         toggleOpen();
-        if (value !== selected) {
-            const newValue = value === 'All' ? '' : value;
-            props.onChange(newValue);
-            setSelected(newValue);
+        if (val !== selected) {
+            props.onChange(val.value);
+            setSelected(val);
         }
     };
 
@@ -45,8 +47,8 @@ export function StatusFilter(props: Props) {
                     onClick={toggleOpen}
                     className='status-filter-button'
                 >
-                    {selected === '' ? 'Status' : selected}
-                    {downChevron}
+                    {selected.value === 'all' ? 'Status' : selected.label}
+                    {<i className='icon-chevron-down ml-1 mr-1'/>}
                 </button>
             }
         >
@@ -57,13 +59,12 @@ export function StatusFilter(props: Props) {
                 controlShouldRenderValue={false}
                 hideSelectedOptions={false}
                 isClearable={false}
+                isSearchable={false}
                 menuIsOpen={true}
-                options={options}
-                placeholder={'Search'}
+                options={fixedOptions}
                 styles={selectStyles}
                 tabSelectsValue={false}
-                //value={selected}
-                onChange={(option) => onSelectedChange(option.value)}
+                onChange={(option) => onSelectedChange(option as Option)}
                 classNamePrefix='status-filter-select'
                 className='status-filter-select'
             />
@@ -73,7 +74,7 @@ export function StatusFilter(props: Props) {
 
 // styles for the select component
 const selectStyles = {
-    control: (provided) => ({...provided, minWidth: 240, margin: 8}),
+    control: (provided) => ({...provided, height: 0, minHeight: 0}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
         const hoverColor = 'rgba(20, 93, 191, 0.08)';

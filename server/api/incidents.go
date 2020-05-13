@@ -282,9 +282,7 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	active, _ := strconv.ParseBool(r.URL.Query().Get("active"))
-
-	commanders, err := h.incidentService.GetCommandersForTeam(teamID, active)
+	commanders, err := h.incidentService.GetCommandersForTeam(teamID)
 	if err != nil {
 		HandleError(w, fmt.Errorf("failed to get commanders: %w", err))
 		return
@@ -545,7 +543,14 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 		return nil, fmt.Errorf("bad parameter 'order_by': %w", err)
 	}
 
-	active, _ := strconv.ParseBool(u.Query().Get("active"))
+	param = u.Query().Get("status")
+	status := incident.All
+	if param == "active" {
+		status = incident.Active
+	} else if param == "ended" {
+		status = incident.Ended
+	}
+
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
@@ -555,7 +560,7 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 		PerPage:     perPage,
 		Sort:        sort,
 		Order:       order,
-		Active:      active,
+		Status:      status,
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,
 	}, nil

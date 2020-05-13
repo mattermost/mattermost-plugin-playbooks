@@ -198,7 +198,6 @@ var id6 = incident.Incident{
 func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
 	type args struct {
 		teamID string
-		active bool
 	}
 	tests := []struct {
 		name      string
@@ -233,14 +232,15 @@ func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
 			},
 		},
 		{
-			name: "get commanders on team1, active",
-			args: args{teamID: "team1", active: true},
+			name: "get commanders on team1",
+			args: args{teamID: "team1"},
 			prepStore: func(store *mock_incident.MockStore) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
-					Return([]incident.Incident{id2, id3}, nil)
+					Return([]incident.Incident{id1, id2, id3, id4}, nil)
 			},
 			want: []incident.CommanderInfo{
+				{UserID: "c1", Username: "comm one"},
 				{UserID: "c2", Username: "comm two"},
 			},
 		},
@@ -265,7 +265,7 @@ func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
 			pluginAPI.On("GetUser", "c1").Return(&model.User{Username: "comm one"}, nil)
 			pluginAPI.On("GetUser", "c2").Return(&model.User{Username: "comm two"}, nil)
 
-			got, err := s.GetCommandersForTeam(tt.args.teamID, tt.args.active)
+			got, err := s.GetCommandersForTeam(tt.args.teamID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCommandersForTeam() error = %v, wantErr %v", err, tt.wantErr)
 				return

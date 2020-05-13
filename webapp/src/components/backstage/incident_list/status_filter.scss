@@ -5,7 +5,7 @@
         }
     }
 
-    .profile-dropdown {
+    .status-filter-dropdown {
         .status-filter-select__container {
             z-index: 2;
             position: absolute;
@@ -13,7 +13,7 @@
     }
 
     .status-filter-select__menu-list {
-        padding: 0 0 12px;
+        padding: 0 0 2px;
         border: none;
     }
 
@@ -38,19 +38,7 @@
     }
 
     .status-filter-select__control {
-        margin: 12px;
-        border: none;
-        background: transparent;
-        box-shadow: inset 0 0 0 1px var(--center-channel-color-20);
-
-        &:hover {
-            box-shadow: inset 0 0 0 1px var(--center-channel-color-40);
-        }
-
-        &--is-focused,
-        &--is-focused:hover {
-            box-shadow: inset 0 0 0 2px var(--button-bg);
-        }
+        visibility: hidden;
     }
 
     .status-filter-select__option {
@@ -95,7 +83,39 @@
     }
 }
 
-.status-filter-select__container {
-    position: absolute;
-    z-index: 2;
+.status-filter-button {
+    border: none;
+    padding: 8px;
+    margin: unset;
+    border-radius: 100px;
+
+    background-color: unset;
+    color: var(--center-channel-color-56);
+
+    cursor: pointer;
+
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 12px;
+
+    -webkit-transition: all 0.15s ease;
+    -webkit-transition-delay: 0s;
+    -moz-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
+    transition: all 0.15s ease false;
+
+    &:hover {
+        background: var(--center-channel-color-08);
+        cursor: pointer;
+    }
+
+    &.active {
+        cursor: pointer;
+    }
+
+    .icon-chevron-down {
+        color: gray;
+    }
 }

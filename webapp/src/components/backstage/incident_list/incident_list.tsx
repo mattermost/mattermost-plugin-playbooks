@@ -7,8 +7,8 @@ import {Badge} from 'react-bootstrap';
 import classNames from 'classnames';
 import moment from 'moment';
 import {debounce} from 'debounce';
-import {StatusFilter} from 'src/components/backstage/incident_list/status_filter';
 
+import {StatusFilter} from 'src/components/backstage/incident_list/status_filter';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {fetchIncidents} from 'src/client';
 import Profile from 'src/components/profile';
@@ -16,31 +16,39 @@ import SearchInput from 'src/components/backstage/incident_list/search_input';
 
 import './incident_list.scss';
 
+const debounceDelay = 300; // in milliseconds
+
 interface Props {
     currentTeamId: string;
     currentTeamName: string;
 }
 
-const debounceDelay = 300; // in milliseconds
-
 export default function IncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
 
-    async function fetchIncidentsFromServer(term?: string) {
-        const params: FetchIncidentsParams = {team_id: props.currentTeamId};
-        if (term) {
-            params.search_term = term;
-        }
-        const data = await fetchIncidents(params);
-        setIncidents(data);
-    }
+    const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
+        {team_id: props.currentTeamId},
+    );
 
     useEffect(() => {
-        fetchIncidentsFromServer();
-    }, []);
+        setFetchParams({...fetchParams, team_id: props.currentTeamId});
+    }, [props.currentTeamId]);
 
-    function onStatusFilterChange(newStatus: string) {
-        console.log('<><> onStatusFilterChange, new status: ' + newStatus);
+    useEffect(() => {
+        const fetchIncidentsAsync = async () => {
+            const data = await fetchIncidents(fetchParams);
+            setIncidents(data);
+        };
+
+        fetchIncidentsAsync();
+    }, [fetchParams]);
+
+    function setSearchTerm(term: string) {
+        setFetchParams({...fetchParams, search_term: term});
+    }
+
+    function setStatus(status: string) {
+        setFetchParams({...fetchParams, status});
     }
 
     return (
@@ -58,11 +66,11 @@ export default function IncidentList(props: Props) {
                     <div className='row'>
                         <div className='col-sm-6'>
                             <SearchInput
-                                onSearch={debounce(fetchIncidentsFromServer, debounceDelay)}
+                                onSearch={debounce(setSearchTerm, debounceDelay)}
                             />
                         </div>
                         <div className='col-sm-2'>
-                            <StatusFilter onChange={onStatusFilterChange}/>
+                            <StatusFilter onChange={setStatus}/>
                         </div>
                     </div>
                 </div>
@@ -137,7 +145,7 @@ const endedAt = (isActive: boolean, time: number) => {
     }
 
     const mom = moment.unix(time);
-    if (mom.isSameOrAfter('2020')) {
+    if (mom.isSameOrAfter('2020-01-01')) {
         return mom.format('DD MMM h:mmA');
     }
     return '-';
