@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {CSSTransition} from 'react-transition-group';
 
 import {BackstageArea} from 'src/types/backstage';
@@ -13,11 +13,14 @@ const ANIMATION_DURATION = 100;
 
 interface Props {
     show: boolean;
-    close: () => void;
     selectedArea: BackstageArea;
+    currentTeamId: string;
+    currentTeamName: string;
+    close: () => void;
+    setSelectedArea: (selectedArea: BackstageArea) => void;
 }
 
-const BackstageModal = ({show, close, selectedArea}: Props): React.ReactElement => {
+const BackstageModal = ({show, selectedArea, currentTeamId, currentTeamName, close, setSelectedArea}: Props) => {
     return (
         <CSSTransition
             in={show}
@@ -31,6 +34,9 @@ const BackstageModal = ({show, close, selectedArea}: Props): React.ReactElement 
                 <Backstage
                     onBack={close}
                     selectedArea={selectedArea}
+                    currentTeamId={currentTeamId}
+                    currentTeamName={currentTeamName}
+                    setSelectedArea={setSelectedArea}
                 />
             </div>
         </CSSTransition>

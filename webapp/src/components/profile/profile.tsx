@@ -24,7 +24,7 @@ export default function Profile(props: Props) {
     }
 
     return (
-        <div className={classNames('Profile', props.classNames)}>
+        <div className={classNames('IncidentProfile', props.classNames)}>
             <img
                 className='image'
                 src={props.profileUri}

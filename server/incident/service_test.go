@@ -134,3 +134,143 @@ func TestCreateIncident(t *testing.T) {
 		require.EqualError(t, err, "failed to create incident channel: : , ")
 	})
 }
+
+var id1 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id1",
+		Name:            "incident one",
+		IsActive:        false,
+		CommanderUserID: "c1",
+		TeamID:          "team1",
+	},
+}
+
+var id2 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id2",
+		Name:            "incident two",
+		IsActive:        true,
+		CommanderUserID: "c2",
+		TeamID:          "team1",
+	},
+}
+
+var id3 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id3",
+		Name:            "incident three",
+		IsActive:        true,
+		CommanderUserID: "c2",
+		TeamID:          "team1",
+	},
+}
+
+var id4 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id4",
+		Name:            "incident four",
+		IsActive:        false,
+		CommanderUserID: "c2",
+		TeamID:          "team1",
+	},
+}
+
+var id5 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id5",
+		Name:            "incident five",
+		IsActive:        true,
+		CommanderUserID: "c1",
+		TeamID:          "team2",
+	},
+}
+
+var id6 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id6",
+		Name:            "incident six",
+		IsActive:        false,
+		CommanderUserID: "c1",
+		TeamID:          "team2",
+	},
+}
+
+func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
+	type args struct {
+		teamID string
+		active bool
+	}
+	tests := []struct {
+		name      string
+		args      args
+		prepStore func(store *mock_incident.MockStore)
+		want      []incident.CommanderInfo
+		wantErr   bool
+	}{
+		{
+			name: "get all commanders (eg, user is admin)",
+			args: args{},
+			prepStore: func(store *mock_incident.MockStore) {
+				store.EXPECT().
+					GetIncidents(gomock.Any()).
+					Return([]incident.Incident{id1, id2, id3, id4, id5, id6}, nil)
+			},
+			want: []incident.CommanderInfo{
+				{UserID: "c1", Username: "comm one"},
+				{UserID: "c2", Username: "comm two"},
+			},
+		},
+		{
+			name: "get commanders on team2",
+			args: args{teamID: "team2"},
+			prepStore: func(store *mock_incident.MockStore) {
+				store.EXPECT().
+					GetIncidents(gomock.Any()).
+					Return([]incident.Incident{id5, id6}, nil)
+			},
+			want: []incident.CommanderInfo{
+				{UserID: "c1", Username: "comm one"},
+			},
+		},
+		{
+			name: "get commanders on team1, active",
+			args: args{teamID: "team1", active: true},
+			prepStore: func(store *mock_incident.MockStore) {
+				store.EXPECT().
+					GetIncidents(gomock.Any()).
+					Return([]incident.Incident{id2, id3}, nil)
+			},
+			want: []incident.CommanderInfo{
+				{UserID: "c2", Username: "comm two"},
+			},
+		},
+	}
+	for _, tt := range tests {
+
+		t.Run(tt.name, func(t *testing.T) {
+			controller := gomock.NewController(t)
+			defer controller.Finish()
+
+			pluginAPI := &plugintest.API{}
+			client := pluginapi.NewClient(pluginAPI)
+			store := mock_incident.NewMockStore(controller)
+			poster := mock_poster.NewMockPoster(controller)
+			configService := mock_config.NewMockService(controller)
+			telemetry := &telemetry.NoopTelemetry{}
+
+			s := incident.NewService(client, store, poster, configService, telemetry)
+
+			// Mocked calls:
+			tt.prepStore(store)
+			pluginAPI.On("GetUser", "c1").Return(&model.User{Username: "comm one"}, nil)
+			pluginAPI.On("GetUser", "c2").Return(&model.User{Username: "comm two"}, nil)
+
+			got, err := s.GetCommandersForTeam(tt.args.teamID, tt.args.active)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetCommandersForTeam() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			require.ElementsMatch(t, got, tt.want)
+		})
+	}
+}

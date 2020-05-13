@@ -48,21 +48,6 @@ func (mr *MockStoreMockRecorder) CreateIncident(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockStore)(nil).CreateIncident), arg0)
 }
 
-// GetHeaders mocks base method
-func (m *MockStore) GetHeaders(arg0 incident.HeaderFilterOptions) ([]incident.Header, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeaders", arg0)
-	ret0, _ := ret[0].([]incident.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeaders indicates an expected call of GetHeaders
-func (mr *MockStoreMockRecorder) GetHeaders(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaders", reflect.TypeOf((*MockStore)(nil).GetHeaders), arg0)
-}
-
 // GetIncident mocks base method
 func (m *MockStore) GetIncident(arg0 string) (*incident.Incident, error) {
 	m.ctrl.T.Helper()
@@ -91,6 +76,21 @@ func (m *MockStore) GetIncidentIDForChannel(arg0 string) (string, error) {
 func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentIDForChannel", reflect.TypeOf((*MockStore)(nil).GetIncidentIDForChannel), arg0)
+}
+
+// GetIncidents mocks base method
+func (m *MockStore) GetIncidents(arg0 incident.HeaderFilterOptions) ([]incident.Incident, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncidents", arg0)
+	ret0, _ := ret[0].([]incident.Incident)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIncidents indicates an expected call of GetIncidents
+func (mr *MockStoreMockRecorder) GetIncidents(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockStore)(nil).GetIncidents), arg0)
 }
 
 // NukeDB mocks base method

@@ -33,6 +33,20 @@ func (m *MockKVAPI) EXPECT() *MockKVAPIMockRecorder {
 	return m.recorder
 }
 
+// DeleteAll mocks base method
+func (m *MockKVAPI) DeleteAll() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAll")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAll indicates an expected call of DeleteAll
+func (mr *MockKVAPIMockRecorder) DeleteAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAll", reflect.TypeOf((*MockKVAPI)(nil).DeleteAll))
+}
+
 // Get mocks base method
 func (m *MockKVAPI) Get(arg0 string, arg1 interface{}) error {
 	m.ctrl.T.Helper()

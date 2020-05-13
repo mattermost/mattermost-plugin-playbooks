@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -36,10 +38,10 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
-	incidentsRouter.HandleFunc("", handler.createIncident).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -82,16 +84,6 @@ func (h *IncidentHandler) permissionsToIncidentChannelRequired(next http.Handler
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func (h *IncidentHandler) createIncident(w http.ResponseWriter, r *http.Request) {
-	_, err := h.incidentService.CreateIncident(nil)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
@@ -167,7 +159,6 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 }
 
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	var incidentHeaders []incident.Header
 	teamID := r.URL.Query().Get("team_id")
 
 	// Check permissions
@@ -182,27 +173,29 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filterOptions := incident.HeaderFilterOptions{
-		TeamID: teamID,
+	filterOptions, err := parseIncidentsFilterOption(r.URL, teamID)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
+		return
 	}
 
-	incidentHeaders, err := h.incidentService.GetHeaders(filterOptions)
+	incidents, err := h.incidentService.GetIncidents(*filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	jsonBytes, err := json.Marshal(incidentHeaders)
+	jsonBytes, err := json.Marshal(incidents)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(jsonBytes); err != nil {
 		HandleError(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 // getIncident handles the /incidents/{id} endpoint.
@@ -234,11 +227,11 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(jsonBytes); err != nil {
 		HandleError(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 // endIncident handles the /incidents/{id}/end api endpoint.
@@ -273,6 +266,41 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// getCommanders handles the /incidents/commanders api endpoint.
+func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) {
+	teamID := r.URL.Query().Get("team_id")
+	if teamID == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+	}
+
+	// Check permissions (if is an admin, they will have permissions to view all teams)
+	userID := r.Header.Get("Mattermost-User-ID")
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		return
+	}
+
+	active, _ := strconv.ParseBool(r.URL.Query().Get("active"))
+
+	commanders, err := h.incidentService.GetCommandersForTeam(teamID, active)
+	if err != nil {
+		HandleError(w, fmt.Errorf("failed to get commanders: %w", err))
+		return
+	}
+
+	jsonBytes, err := json.Marshal(commanders)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 // changeCommander handles the /incidents/{id}/change-commander api endpoint.
@@ -353,6 +381,13 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	var checklistItem playbook.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	checklistItem.Title = strings.TrimSpace(checklistItem.Title)
+	if checklistItem.Title == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist item title",
+			errors.New("checklist item title must not be blank"))
 		return
 	}
 
@@ -459,4 +494,69 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident
 	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
 
 	return nil
+}
+
+func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilterOptions, error) {
+	// NOTE: we are failing early instead of turning bad parameters into the default
+	param := u.Query().Get("page")
+	if param == "" {
+		param = "0"
+	}
+	page, err := strconv.Atoi(param)
+	if err != nil {
+		return nil, fmt.Errorf("bad parameter 'page': %w", err)
+	}
+
+	param = u.Query().Get("per_page")
+	if param == "" {
+		param = "0"
+	}
+	perPage, err := strconv.Atoi(param)
+	if err != nil {
+		return nil, fmt.Errorf("bad parameter 'per_page': %w", err)
+	}
+
+	param = u.Query().Get("sort")
+	var sort incident.SortField
+	switch param {
+	case "id":
+		sort = incident.ID
+	case "name":
+		sort = incident.Name
+	case "commander_user_id":
+		sort = incident.CommanderUserID
+	case "team_id":
+		sort = incident.TeamID
+	case "created_at", "": // default
+		sort = incident.CreatedAt
+	case "ended_at":
+		sort = incident.EndedAt
+	default:
+		return nil, errors.New("bad parameter 'sort'")
+	}
+
+	param = u.Query().Get("order")
+	var order incident.SortDirection
+	if param == "asc" {
+		order = incident.Asc
+	} else if param == "desc" || param == "" {
+		order = incident.Desc
+	} else {
+		return nil, fmt.Errorf("bad parameter 'order_by': %w", err)
+	}
+
+	active, _ := strconv.ParseBool(u.Query().Get("active"))
+	commanderID := u.Query().Get("commander_user_id")
+	searchTerm := u.Query().Get("search_term")
+
+	return &incident.HeaderFilterOptions{
+		TeamID:      teamID,
+		Page:        page,
+		PerPage:     perPage,
+		Sort:        sort,
+		Order:       order,
+		Active:      active,
+		CommanderID: commanderID,
+		SearchTerm:  searchTerm,
+	}, nil
 }

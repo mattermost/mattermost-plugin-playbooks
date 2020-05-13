@@ -31,7 +31,6 @@ func jsonPlaybookReader(playbook playbook.Playbook) io.Reader {
 
 func TestPlaybooks(t *testing.T) {
 	playbooktest := playbook.Playbook{
-		ID:     "testplaybookid",
 		Title:  "My Playbook",
 		TeamID: "testteamid",
 		Checklists: []playbook.Checklist{
@@ -44,6 +43,11 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
+	}
+	withid := playbook.Playbook{
+		ID:     "testplaybookid",
+		Title:  "My Playbook",
+		TeamID: "testteamid",
 	}
 	playbooktestBytes, err := json.Marshal(&playbooktest)
 	require.NoError(t, err)
@@ -199,7 +203,7 @@ func TestPlaybooks(t *testing.T) {
 
 		mockkvapi.EXPECT().Set("playbook_testplaybookid", nil).Return(true, nil)
 
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToTeam("playbook_deleted", gomock.Any(), "testteamid")
 
@@ -222,7 +226,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -299,5 +303,19 @@ func TestPlaybooks(t *testing.T) {
 
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("create playbook playbook with ID", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(withid))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 }

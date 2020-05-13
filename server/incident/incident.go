@@ -22,6 +22,13 @@ type Header struct {
 	CommanderUserID string `json:"commander_user_id"`
 	TeamID          string `json:"team_id"`
 	CreatedAt       int64  `json:"created_at"`
+	EndedAt         int64  `json:"ended_at"`
+}
+
+// CommanderInfo holds the summary information of a commander.
+type CommanderInfo struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
 }
 
 // DialogState holds the start incident interactive dialog's state as it appears in the client
@@ -34,22 +41,16 @@ type DialogState struct {
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// ErrChannelDisplayNameLong is used to indicate a channel name is too long
+// ErrChannelDisplayNameLong is used to indicate a channel name is too long.
 var ErrChannelDisplayNameLong = errors.New("channel name is too long")
 
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
 
-// HeaderFilterOptions specifies the optional parameters when getting headers.
-type HeaderFilterOptions struct {
-	// Gets all the headers with this TeamID.
-	TeamID string
-}
-
 // Service is the incident/service interface.
 type Service interface {
 	// GetHeaders returns filtered headers.
-	GetHeaders(options HeaderFilterOptions) ([]Header, error)
+	GetIncidents(options HeaderFilterOptions) ([]Incident, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
@@ -70,6 +71,10 @@ type Service interface {
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
 	// if there is no incident associated with this channel.
 	GetIncidentIDForChannel(channelID string) string
+
+	// GetCommandersForTeam returns all the commanders of incidents in this team. If active is true,
+	// it will only return commanders of active incidents.
+	GetCommandersForTeam(teamID string, active bool) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
@@ -100,8 +105,8 @@ type Service interface {
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
-	// GetHeaders returns filtered headers.
-	GetHeaders(options HeaderFilterOptions) ([]Header, error)
+	// GetHeaders returns filtered incidents.
+	GetIncidents(options HeaderFilterOptions) ([]Incident, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
