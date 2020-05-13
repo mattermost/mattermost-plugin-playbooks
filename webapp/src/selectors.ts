@@ -1,14 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {GlobalState} from 'mattermost-redux/types/store';
 import {createSelector} from 'reselect';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getLicense} from 'mattermost-redux/selectors/entities/general';
 
 import {pluginId} from './manifest';
 import {Incident} from './types/incident';
 import {Playbook} from './types/playbook';
-
-const exportPluginId = 'com.mattermost.plugin-channel-export';
 
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 const allIncidents = (state: GlobalState) => pluginState(state).incidents;
@@ -46,7 +46,7 @@ export const playbooks = (state: GlobalState): Playbook[] => pluginState(state).
 
 export const backstageModal = (state: GlobalState) => pluginState(state).backstageModal;
 
-export const exportPluginInstalled = (state: GlobalState) => {
-    //return state.entities.admin.pluginStatuses[exportPluginId] && state.entities.admin.pluginStatuses[exportPluginId].active;
-    return false;
+export const isExportLicensed = (state: GlobalState) => {
+    const license = getLicense(state);
+    return license?.IsLicensed === 'true';
 };

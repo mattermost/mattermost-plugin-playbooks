@@ -169,6 +169,17 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     return data;
 }
 
+export function exportChannelUrl(channelId: string) {
+    const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
+
+    const queryParams = qs.stringify({
+        channel_id: channelId,
+        format: 'csv',
+    }, {addQueryPrefix: true});
+
+    return `${exportPluginUrl}/export${queryParams}`;
+}
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 
