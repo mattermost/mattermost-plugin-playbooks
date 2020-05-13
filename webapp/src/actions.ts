@@ -109,7 +109,7 @@ export function getIncidentsForCurrentTeam() {
 export function getIncidents(teamId?: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            const incidents = await fetchIncidents(teamId);
+            const incidents = await fetchIncidents({team_id: teamId});
 
             dispatch(receivedIncidents(incidents));
         } catch (error) {
