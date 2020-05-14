@@ -15,11 +15,13 @@ export default function SearchInput(props: Props) {
     };
 
     return (
-        <input
-            className='incident-list-search-input'
-            type='text'
-            placeholder='Search by Incident name'
-            onChange={onChange}
-        />
+        <div className='incident-list-search-container'>
+            <input
+                className='incident-list-search-container__input'
+                type='text'
+                placeholder='Search by Incident name'
+                onChange={onChange}
+            />
+        </div>
     );
 }
