@@ -39,10 +39,10 @@ export function IncidentList(props: Props) {
     }, [props.currentTeamId]);
 
     useEffect(() => {
-        const fetchIncidentsAsync = async () => {
+        async function fetchIncidentsAsync() {
             const data = await fetchIncidents(fetchParams);
             setIncidents(data);
-        };
+        }
 
         fetchIncidentsAsync();
     }, [fetchParams]);
@@ -55,10 +55,10 @@ export function IncidentList(props: Props) {
         setFetchParams({...fetchParams, status});
     }
 
-    const fetchCommanders = async () => {
+    async function fetchCommanders() {
         const commanders = await fetchCommandersInTeam(props.currentTeamId);
         return commanders.map((c) => props.getUser(c.user_id));
-    };
+    }
 
     function setCommanderId(userId: string) {
         setFetchParams({...fetchParams, commander_user_id: userId});
