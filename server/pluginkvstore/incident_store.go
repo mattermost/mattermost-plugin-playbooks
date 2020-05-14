@@ -270,7 +270,7 @@ func headerMatchesFilters(header incident.Header, options incident.HeaderFilterO
 		return false
 	}
 	if options.Status != incident.All {
-		if options.Status == incident.Active && !header.IsActive {
+		if options.Status == incident.Ongoing && !header.IsActive {
 			return false
 		}
 		if options.Status == incident.Ended && header.IsActive {

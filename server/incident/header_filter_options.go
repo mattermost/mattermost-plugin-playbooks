@@ -18,8 +18,8 @@ const (
 	// All are all incidents (active and ended).
 	All Status = iota
 
-	// Active are incidents that are currently under way.
-	Active
+	// Ongoing are incidents that are currently under way.
+	Ongoing
 
 	// Ended are incidents that are finished.
 	Ended
@@ -64,7 +64,7 @@ type HeaderFilterOptions struct {
 	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
 	Order SortDirection
 
-	// Status filters by All, Active, or Ended; defaults to All.
+	// Status filters by All, Ongoing, or Ended; defaults to All.
 	Status Status
 
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).

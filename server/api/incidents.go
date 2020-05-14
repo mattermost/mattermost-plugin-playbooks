@@ -546,7 +546,7 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 	param = u.Query().Get("status")
 	status := incident.All
 	if param == "active" {
-		status = incident.Active
+		status = incident.Ongoing
 	} else if param == "ended" {
 		status = incident.Ended
 	}
