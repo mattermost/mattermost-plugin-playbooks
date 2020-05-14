@@ -29,7 +29,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         {channel: mainChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
 
     let mainChannelDetails: ChannelWithTeamData;
-    if (ownProps.incident.channel_ids.length > 0) {
+    if (ownProps.incident.channel_ids?.length > 0) {
         const c = getChannel(state, mainChannelId) as Channel;
         if (c) {
             const t = getTeam(state, c.team_id) as Team;
