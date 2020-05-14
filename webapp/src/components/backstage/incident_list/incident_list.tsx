@@ -163,12 +163,12 @@ function OngoingBadge(props: { isActive: boolean }) {
 
 const endedAt = (isActive: boolean, time: number) => {
     if (isActive) {
-        return 'Ongoing';
+        return '--';
     }
 
     const mom = moment.unix(time);
     if (mom.isSameOrAfter('2020-01-01')) {
         return mom.format('DD MMM h:mmA');
     }
-    return '-';
+    return '--';
 };
