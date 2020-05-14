@@ -9,7 +9,7 @@ import {savePlaybook} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-import BackIcon from './back_icon';
+import BackIcon from '../assets/icons/back_icon';
 
 import './playbook.scss';
 
@@ -143,10 +143,10 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
         return (
             <div className='Playbook'>
-                <div className='header'>
+                <div className='Backstage__header'>
                     <div className='title'>
                         <BackIcon
-                            className='back-icon mr-4'
+                            className='Backstage__header__back'
                             onClick={this.confirmOrClose}
                         />
                         {title}

@@ -97,7 +97,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                     !this.state.editMode && (
                         <div className='Playbook'>
                             { deleteSuccessfulBanner }
-                            <div className='header'>
+                            <div className='Backstage__header'>
                                 <div className='title'>
                                     {'Playbooks'}
                                     <div className='light'>
@@ -109,14 +109,14 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                         className='btn btn-primary'
                                         onClick={() => this.editPlaybook()}
                                     >
-                                        <i className='icon icon-plus mr-1'/>
+                                        <i className='icon icon-plus mr-2'/>
                                         {'New Playbook'}
                                     </button>
                                 </div>
                             </div>
                             <div className='playbook-list'>
                                 {
-                                    <div className='list-header'>
+                                    <div className='Backstage-list-header'>
                                         <div className='row'>
                                             <div className='col-sm-10'> {'Name'} </div>
                                             <div className='col-sm-2'> {'Actions'}</div>
