@@ -46,5 +46,6 @@ export const backstageModal = (state: GlobalState) => pluginState(state).backsta
 
 export const isExportLicensed = (state: GlobalState) => {
     const license = getLicense(state);
-    return license?.IsLicensed === 'true';
+
+    return license?.IsLicensed === 'true' && license?.MessageExport === 'true';
 };
