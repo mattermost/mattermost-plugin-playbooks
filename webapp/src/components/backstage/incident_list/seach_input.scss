@@ -7,7 +7,12 @@
         border-radius: 4px;
         border: 1px solid var(--center-channel-color-16);
         margin-bottom: 12px;
-        padding: 2px 8px 2px 2.8rem;
+        padding: 10px 8px 10px 2.8rem;
+
+        font-size: 14px;
+        font-style: normal;
+        font-weight: normal;
+        line-height: 20px;
 
         &:before {
             position: absolute;

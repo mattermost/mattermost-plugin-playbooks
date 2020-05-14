@@ -7,7 +7,7 @@ import './profile_button.scss';
 import Profile from 'src/components/profile';
 
 interface Props {
-    userId: string;
+    userId?: string;
     enableEdit: boolean;
     onClick: () => void;
 }

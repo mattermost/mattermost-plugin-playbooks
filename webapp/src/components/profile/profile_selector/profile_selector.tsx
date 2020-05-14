@@ -5,11 +5,7 @@ import React, {useEffect, useState} from 'react';
 
 import ReactSelect from 'react-select';
 
-import {css} from '@emotion/core';
-
 import {UserProfile} from 'mattermost-redux/types/users';
-
-import {fetchUsersInChannel, setCommander} from 'src/client';
 
 import './profile_selector.scss';
 import Profile from 'src/components/profile';
@@ -17,10 +13,11 @@ import ProfileButton from 'src/components/profile/profile_selector/profile_butto
 import {getUserDescription} from 'src/utils/utils';
 
 interface Props {
-    commanderId: string;
-    channelId?: string;
-    incidentId: string;
+    commanderId?: string;
     enableEdit: boolean;
+    isClearable?: boolean;
+    getUsers: () => Promise<UserProfile[]>;
+    onSelectedChange: (userId: string) => void;
 }
 
 interface Option {
@@ -41,10 +38,6 @@ export default function ProfileSelector(props: Props) {
     const [userOptions, setUserOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
-        if (!props.channelId) {
-            return;
-        }
-
         const formatName = (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
             const name = '@' + userName;
             const description = getUserDescription(firstName, lastName, nickName);
@@ -60,7 +53,7 @@ export default function ProfileSelector(props: Props) {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
         };
 
-        const users = await fetchUsersInChannel(props.channelId);
+        const users = await props.getUsers();
         const optionList = users.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
@@ -93,32 +86,45 @@ export default function ProfileSelector(props: Props) {
         const commander = userOptions.find((option: Option) => option.userId === props.commanderId);
         if (commander) {
             setSelected(commander);
+        } else {
+            setSelected(null);
         }
     }, [userOptions, props.commanderId]);
 
     const onSelectedChange = async (value: Option) => {
         toggleOpen();
-        if (value.userId === selected?.userId) {
+        if (value?.userId === selected?.userId) {
             return;
         }
-        const response = await setCommander(props.incidentId, value.userId);
-        if (response.error) {
-            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
-            console.log(response.error); // eslint-disable-line no-console
-        }
+        props.onSelectedChange(value?.userId);
     };
+
+    let target;
+    if (props.commanderId) {
+        target = (
+            <ProfileButton
+                enableEdit={props.enableEdit}
+                userId={props.commanderId}
+                onClick={props.enableEdit ? toggleOpen : () => null}
+            />
+        );
+    } else {
+        target = (
+            <button
+                onClick={toggleOpen}
+                className={'profile-filter-button'}
+            >
+                {'Commander'}
+                {<i className='icon-chevron-down ml-1 mr-1'/>}
+            </button>
+        );
+    }
 
     return (
         <Dropdown
             isOpen={isOpen}
             onClose={toggleOpen}
-            target={
-                <ProfileButton
-                    enableEdit={props.enableEdit}
-                    userId={props.commanderId}
-                    onClick={props.enableEdit ? toggleOpen : () => null}
-                />
-            }
+            target={target}
         >
             <ReactSelect
                 autoFocus={true}
@@ -126,7 +132,7 @@ export default function ProfileSelector(props: Props) {
                 components={{DropdownIndicator: null, IndicatorSeparator: null}}
                 controlShouldRenderValue={false}
                 hideSelectedOptions={false}
-                isClearable={false}
+                isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={userOptions}
                 placeholder={'Search'}

@@ -8,9 +8,12 @@ import classNames from 'classnames';
 import moment from 'moment';
 import {debounce} from 'debounce';
 
+import {UserProfile} from 'mattermost-redux/types/users';
+
 import {StatusFilter} from 'src/components/backstage/incident_list/status_filter';
+import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
-import {fetchIncidents} from 'src/client';
+import {fetchCommandersInTeam, fetchIncidents} from 'src/client';
 import Profile from 'src/components/profile';
 import SearchInput from 'src/components/backstage/incident_list/search_input';
 
@@ -21,9 +24,10 @@ const debounceDelay = 300; // in milliseconds
 interface Props {
     currentTeamId: string;
     currentTeamName: string;
+    getUser: (userId: string) => UserProfile;
 }
 
-export default function IncidentList(props: Props) {
+export function IncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
@@ -51,6 +55,15 @@ export default function IncidentList(props: Props) {
         setFetchParams({...fetchParams, status});
     }
 
+    const fetchCommanders = async () => {
+        const commanders = await fetchCommandersInTeam(props.currentTeamId);
+        return commanders.map((c) => props.getUser(c.user_id));
+    };
+
+    function setCommanderId(userId: string) {
+        setFetchParams({...fetchParams, commander_user_id: userId});
+    }
+
     return (
         <div className='IncidentList'>
             <div className='header'>
@@ -67,6 +80,15 @@ export default function IncidentList(props: Props) {
                         <div className='col-sm-6'>
                             <SearchInput
                                 onSearch={debounce(setSearchTerm, debounceDelay)}
+                            />
+                        </div>
+                        <div className='col-sm-3'>
+                            <ProfileSelector
+                                commanderId={fetchParams.commander_user_id}
+                                enableEdit={true}
+                                isClearable={true}
+                                getUsers={fetchCommanders}
+                                onSelectedChange={setCommanderId}
                             />
                         </div>
                         <div className='col-sm-2'>

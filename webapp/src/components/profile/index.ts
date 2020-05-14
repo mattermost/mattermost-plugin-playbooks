@@ -14,7 +14,7 @@ import {bindActionCreators, Dispatch} from 'redux';
 import Profile from 'src/components/profile/profile';
 
 type Props = {
-    userId: string;
+    userId?: string;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
 }
 

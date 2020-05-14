@@ -12,6 +12,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
+import {CommanderInfo} from 'src/types/backstage';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
@@ -80,6 +81,16 @@ export async function deletePlaybook(playbook: Playbook) {
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, 200);
+}
+
+export async function fetchCommandersInTeam(teamId: string): Promise<CommanderInfo[]> {
+    const queryParams = qs.stringify({team_id: teamId}, {addQueryPrefix: true});
+
+    let data = await doGet(`${apiUrl}/incidents/commanders${queryParams}`);
+    if (!data) {
+        data = [];
+    }
+    return data as CommanderInfo[];
 }
 
 export async function setCommander(incidentId: string, commanderId: string) {

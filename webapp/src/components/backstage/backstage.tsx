@@ -5,7 +5,7 @@ import React from 'react';
 
 import classNames from 'classnames';
 
-import IncidentList from 'src/components/backstage/incident_list/incident_list';
+import IncidentList from 'src/components/backstage/incident_list';
 import PlaybookList from 'src/components/playbook/playbook_list';
 
 import {BackstageArea} from 'src/types/backstage';
