@@ -67,7 +67,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
             <div className='details-header'>
                 <div className='title'>
                     <BackIcon
-                        className='back-icon mr-4'
+                        className='Backstage__header__back'
                         onClick={this.props.onClose}
                     />
                     <span className='mr-1'>{`Incident ${this.props.incident.name}`}</span>
@@ -78,16 +78,18 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                         delay={OVERLAY_DELAY}
                         overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
                     >
-                        <i
-                            className='icon icon-link-variant link-icon'
-                            onClick={this.goToChannel}
-                        />
+                        <button className='link-icon mr-2'>
+                            <i
+                                className='icon icon-link-variant'
+                                onClick={this.goToChannel}
+                            />
+                        </button>
                     </OverlayTrigger>
                     }
                     <StatusBadge isActive={this.props.incident.is_active}/>
                 </div>
                 <div className='commander-div'>
-                    <span className='label'>{'Commander:'}</span>
+                    <span className='label p-0 mr-2'>{'Commander:'}</span>
                     <Profile
                         userId={this.props.incident.commander_user_id}
                         classNames={{ProfileButton: true, profile: true}}
@@ -119,8 +121,8 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                         {'Export Incident Channel'}
                     </div>
                 </div>
-                <div className='row'>
-                    <div className='col-sm-3 statistic-block'>
+                <div className='statistics-row'>
+                    <div className='statistics-row__block'>
                         <div className='title'>
                             {'Duration'}
                         </div>
@@ -128,7 +130,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                             <i className='icon icon-clock-outline box-icon'/>
                             {this.duration()}
                         </div>
-                        <div className='block-footer center'>
+                        <div className='block-footer text-right'>
                             <span>{this.timeFrameText()}</span>
                         </div>
                     </div>
@@ -137,7 +139,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                         delay={OVERLAY_DELAY}
                         overlay={<Tooltip id='goToChannel'>{'Number of users currently in the incident channel'}</Tooltip>}
                     >
-                        <div className='col-sm-3 statistic-block'>
+                        <div className='statistics-row__block'>
                             <div className='title'>
                                 {'Members Involved'}
                             </div>
@@ -147,7 +149,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                             </div>
                         </div>
                     </OverlayTrigger>
-                    <div className='col-sm-3 statistic-block'>
+                    <div className='statistics-row__block'>
                         <div className='title'>
                             {'Messages'}
                         </div>
@@ -155,7 +157,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                             <i className='icon icon-send box-icon'/>
                             {this.props.totalMessages}
                         </div>
-                        <div className='block-footer right'>
+                        <div className='block-footer text-right'>
                             <a
                                 className='link'
                                 onClick={this.goToChannel}

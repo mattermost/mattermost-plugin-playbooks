@@ -143,10 +143,10 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
         return (
             <div className='Playbook'>
-                <div className='header'>
+                <div className='Backstage__header'>
                     <div className='title'>
                         <BackIcon
-                            className='back-icon mr-4'
+                            className='Backstage__header__back'
                             onClick={this.confirmOrClose}
                         />
                         {title}

@@ -11,6 +11,7 @@ import PlaybookList from 'src/components/playbook/playbook_list';
 import {BackstageArea} from 'src/types/backstage';
 
 import './backstage.scss';
+import Waves from '../assets/waves';
 
 interface Props {
     onBack: () => void;
@@ -18,9 +19,10 @@ interface Props {
     currentTeamId: string;
     currentTeamName: string;
     setSelectedArea: (area: BackstageArea) => void;
+    theme: Record<string, string>;
 }
 
-const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, currentTeamName}: Props): React.ReactElement => {
+const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, currentTeamName}: Props): React.ReactElement<Props> => {
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
         activeArea = (
@@ -64,6 +66,7 @@ const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, curren
             <div className='content-container'>
                 {activeArea}
             </div>
+            <Waves/>
         </div>
     );
 };
