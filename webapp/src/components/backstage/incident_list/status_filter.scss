@@ -1,10 +1,4 @@
 .app__body {
-    .status-filter--active {
-        .status-filter-button {
-            background-color: var(--button-bg-08);
-        }
-    }
-
     .status-filter-dropdown {
         .status-filter-select__container {
             z-index: 2;
@@ -15,10 +9,6 @@
     .status-filter-select__menu-list {
         padding: 0 0 2px;
         border: none;
-    }
-
-    .status-filter-select__input {
-        color: var(--center-channel-color);
     }
 
     .status-filter-select {
@@ -44,41 +34,6 @@
     .status-filter-select__option {
         &:active {
             background-color: var(--center-channel-color-08);
-        }
-    }
-
-    .status-filter-select__value-container {
-        overflow: visible;
-        padding-left: 2.8rem;
-
-        &:before {
-            position: absolute;
-            left: 0.8rem;
-            color: var(--center-channel-color-56);
-            content: '\f349';
-            font-family: "mattermosticons";
-            font-style: normal;
-            font-weight: normal;
-            speak: none;
-            display: inline-block;
-            text-decoration: inherit;
-            width: 1em;
-            margin-right: .2em;
-            text-align: center;
-            /* opacity: .8; */
-            font-variant: normal;
-            text-transform: none;
-            line-height: 1em;
-            margin-left: .2em;
-            /* font-size: 120%; */
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        .icon {
-            position: absolute;
-            left: -2.2rem;
-            top: 3px;
         }
     }
 
