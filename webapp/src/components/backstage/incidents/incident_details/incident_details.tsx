@@ -11,7 +11,7 @@ import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 import {Incident} from 'src/types/incident';
 
 import Profile from 'src/components/profile';
-import BackIcon from 'src/components/playbook/back_icon';
+import BackIcon from 'src/components/assets/icons/back_icon';
 import StatusBadge from '../status_badge';
 
 import './incident_details.scss';
@@ -32,13 +32,25 @@ interface Props {
 
 export default class BackstageIncidentDetails extends React.PureComponent<Props> {
     public timeFrameText = () => {
+        const mom = moment.unix(this.props.incident.ended_at);
+
+        let endedText = 'Ongoing';
+
+        if (!this.props.incident.is_active) {
+            endedText = mom.isSameOrAfter('2020-01-01') ? mom.format('DD MMM h:mmA') : '--';
+        }
+
         const startedText = moment.unix(this.props.incident.created_at).format('DD MMM h:mmA');
-        const endedText = this.props.incident.is_active ? 'Ongoing' : moment.unix(this.props.incident.ended_at).format('DD MMM h:mmA');
 
         return (`${startedText} - ${endedText}`);
     }
 
     public duration = () => {
+        if (!this.props.incident.is_active && moment.unix(this.props.incident.ended_at).isSameOrBefore('2020-01-01')) {
+            // No end datetime available to calculate duration
+            return '--';
+        }
+
         const endTime = this.props.incident.is_active ? moment() : moment.unix(this.props.incident.ended_at);
 
         const duration = moment.duration(endTime.diff(moment.unix(this.props.incident.created_at)));

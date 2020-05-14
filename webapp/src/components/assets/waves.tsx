@@ -1,5 +1,3 @@
-
-
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
@@ -21,9 +19,10 @@ export default class Waves extends React.PureComponent {
             >
                 <g>
                     <path
-                        fill-rule='evenodd'
-                        clip-rule='evenodd'
-                        d='M-328.894 1545L2000 806.085L1772.96 160.622C1772.96 160.622 1728.64 208.825 1602.89 208.825C1499.41 208.825 1340.82 176.206 1106.34 57.2482C1028.41 17.7131 956.621 0.889771 890.133 0.889771C513.438 0.889771 306.902 540.865 118.514 549.788C-103.126 560.287 -398.809 1316.59 -398.809 1316.59L-328.894 1545Z' fill='url(#Backstage__waves__gradient)'
+                        fillRule='evenodd'
+                        clipRule='evenodd'
+                        d='M-328.894 1545L2000 806.085L1772.96 160.622C1772.96 160.622 1728.64 208.825 1602.89 208.825C1499.41 208.825 1340.82 176.206 1106.34 57.2482C1028.41 17.7131 956.621 0.889771 890.133 0.889771C513.438 0.889771 306.902 540.865 118.514 549.788C-103.126 560.287 -398.809 1316.59 -398.809 1316.59L-328.894 1545Z'
+                        fill='url(#Backstage__waves__gradient)'
                     />
                 </g>
                 <defs>
@@ -36,7 +35,7 @@ export default class Waves extends React.PureComponent {
                         id='Backstage__waves__gradient'
                     >
                         <stop
-                            stop-opacity='0'
+                            stopOpacity='0'
                         />
                         <stop
                             offset='1'
