@@ -16,7 +16,7 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {ChecklistItem} from 'src/types/playbook';
-import {selectToggleRHS} from 'src/selectors';
+import {selectToggleRHS, backstageModal} from 'src/selectors';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -64,6 +64,9 @@ import {
     clientReorderChecklist,
     clientFetchPlaybooks,
 } from './client';
+
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
 
 export function getIncidentDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -325,5 +328,15 @@ export function setBackstageModal(open: boolean, selectedArea?: BackstageArea): 
 export function toggleRHS() {
     return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         selectToggleRHS(getState())();
+    };
+}
+
+export function navigateToUrl(urlPath: string) {
+    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        WebappUtils.browserHistory.push(urlPath);
+
+        if (backstageModal(getState()).open) {
+            dispatch(setBackstageModal(false));
+        }
     };
 }

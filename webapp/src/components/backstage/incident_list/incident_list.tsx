@@ -3,19 +3,19 @@
 
 import React, {useEffect, useState} from 'react';
 
-import {Badge} from 'react-bootstrap';
-import classNames from 'classnames';
 import moment from 'moment';
 import {debounce} from 'debounce';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import {StatusFilter} from 'src/components/backstage/incident_list/status_filter';
+import SearchInput from 'src/components/backstage/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {fetchCommandersInTeam, fetchIncidents} from 'src/client';
 import Profile from 'src/components/profile';
-import SearchInput from 'src/components/backstage/incident_list/search_input';
+import BackstageIncidentDetails from '../incidents/incident_details';
+import StatusBadge from '../incidents/status_badge';
 
 import './incident_list.scss';
 
@@ -29,6 +29,7 @@ interface Props {
 
 export function IncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
+    const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {team_id: props.currentTeamId},
@@ -64,100 +65,112 @@ export function IncidentList(props: Props) {
         setFetchParams({...fetchParams, commander_user_id: userId});
     }
 
-    return (
-        <div className='IncidentList'>
-            <div className='header'>
-                <div className='title'>
-                    {'Incidents'}
-                    <div className='light'>
-                        {'(' + props.currentTeamName + ')'}
-                    </div>
-                </div>
-            </div>
-            <div className='list'>
-                <div className='filtering'>
-                    <div className='row'>
-                        <div className='col-sm-6'>
-                            <SearchInput
-                                onSearch={debounce(setSearchTerm, debounceDelay)}
-                            />
-                        </div>
-                        <div className='col-sm-3'>
-                            <ProfileSelector
-                                commanderId={fetchParams.commander_user_id}
-                                enableEdit={true}
-                                isClearable={true}
-                                getUsers={fetchCommanders}
-                                onSelectedChange={setCommanderId}
-                            />
-                        </div>
-                        <div className='col-sm-2'>
-                            <StatusFilter onChange={setStatus}/>
-                        </div>
-                    </div>
-                </div>
-                <div className='list-header'>
-                    <div className='row'>
-                        <div className='col-sm-3'> {'Name'} </div>
-                        <div className='col-sm-2'> {'Status'} </div>
-                        <div className='col-sm-2'> {'Start Date'} </div>
-                        <div className='col-sm-2'> {'End Date'} </div>
-                        <div className='col-sm-3'> {'Commander'} </div>
-                    </div>
-                </div>
+    const openIncidentDetails = (incident: Incident) => {
+        setSelectedIncident(incident);
+    };
 
-                {
-                    !incidents.length &&
-                    <div className='text-center pt-8'>
-                        {'There are no incidents for team.'}
-                    </div>
-                }
-
-                {
-                    incidents.map((incident) => (
-                        <div
-                            className='row incident-item'
-                            key={incident.id}
-                        >
-                            <div className='col-sm-3'> {incident.name} </div>
-                            <div className='col-sm-2'>
-                                {
-                                    <OngoingBadge isActive={incident.is_active}/>
-                                }
-                            </div>
-                            <div
-                                className='col-sm-2'
-                            >
-                                {
-                                    moment.unix(incident.created_at).format('MMM DD LT')
-                                }
-                            </div>
-                            <div className='col-sm-2'>
-                                {
-                                    endedAt(incident.is_active, incident.ended_at)
-                                }
-                            </div>
-                            <div className='col-sm-3'>
-                                <Profile userId={incident.commander_user_id}/>
-                            </div>
-                        </div>
-                    ))
-                }
-            </div>
-        </div>
-    );
-}
-
-function OngoingBadge(props: { isActive: boolean }) {
-    const badgeClass = classNames({
-        ongoing: props.isActive,
-    });
-    const badgeText = props.isActive ? 'Ongoing' : 'Ended';
+    const closeIncidentDetails = () => {
+        setSelectedIncident(null);
+    };
 
     return (
-        <Badge className={badgeClass}>
-            {badgeText}
-        </Badge>
+        <>
+            {!selectedIncident && (
+                <div className='IncidentList'>
+                    <div className='Backstage__header'>
+                        <div className='title'>
+                            {'Incidents'}
+                            <div className='light'>
+                                {'(' + props.currentTeamName + ')'}
+                            </div>
+                        </div>
+                    </div>
+                    <div className='list'>
+                        <div className='filtering'>
+                            <div className='row'>
+                                <div className='col-sm-6'>
+                                    <SearchInput
+                                        onSearch={debounce(setSearchTerm, debounceDelay)}
+                                    />
+                                </div>
+                                <div className='col-sm-3'>
+                                    <ProfileSelector
+                                        commanderId={fetchParams.commander_user_id}
+                                        enableEdit={true}
+                                        isClearable={true}
+                                        getUsers={fetchCommanders}
+                                        onSelectedChange={setCommanderId}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>
+                                    <StatusFilter onChange={setStatus}/>
+                                </div>
+                            </div>
+                        </div>
+                        <div className='Backstage-list-header'>
+                            <div className='row'>
+                                <div className='col-sm-3'> {'Name'} </div>
+                                <div className='col-sm-2'> {'Status'} </div>
+                                <div className='col-sm-2'> {'Start Date'} </div>
+                                <div className='col-sm-2'> {'End Date'} </div>
+                                <div className='col-sm-3'> {'Commander'} </div>
+                            </div>
+                        </div>
+
+                        {
+                            !incidents.length &&
+                            <div className='text-center pt-8'>
+                                {'There are no incidents for team.'}
+                            </div>
+                        }
+
+                        {
+                            incidents.map((incident) => (
+                                <div
+                                    className='row incident-item'
+                                    key={incident.id}
+                                >
+                                    <div className='col-sm-3'>
+                                        <a
+                                            className='incident-item__title'
+                                            onClick={() => openIncidentDetails(incident)}
+                                        >
+                                            {incident.name}
+                                        </a>
+                                    </div>
+                                    <div className='col-sm-2'> {
+                                        <StatusBadge isActive={incident.is_active}/>
+                                    }
+                                    </div>
+                                    <div
+                                        className='col-sm-2'
+                                    >
+                                        {
+                                            moment.unix(incident.created_at).format('MMM DD LT')
+                                        }
+                                    </div>
+                                    <div className='col-sm-2'>
+                                        {
+                                            endedAt(incident.is_active, incident.ended_at)
+                                        }
+                                    </div>
+                                    <div className='col-sm-3'>
+                                        <Profile userId={incident.commander_user_id}/>
+                                    </div>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </div>
+            )}
+            {
+                selectedIncident &&
+                <BackstageIncidentDetails
+                    incident={selectedIncident}
+                    onClose={closeIncidentDetails}
+                />
+            }
+        </>
     );
 }
 

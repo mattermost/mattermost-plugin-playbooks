@@ -27,11 +27,11 @@ func TestCreateIncident(t *testing.T) {
 		configService := mock_config.NewMockService(controller)
 		telemetry := &telemetry.NoopTelemetry{}
 
-		teamId := model.NewId()
+		teamID := model.NewId()
 		incdnt := &incident.Incident{
 			Header: incident.Header{
 				Name:   "###",
-				TeamID: teamId,
+				TeamID: teamID,
 			},
 		}
 
@@ -53,11 +53,11 @@ func TestCreateIncident(t *testing.T) {
 		configService := mock_config.NewMockService(controller)
 		telemetry := &telemetry.NoopTelemetry{}
 
-		teamId := model.NewId()
+		teamID := model.NewId()
 		incdnt := &incident.Incident{
 			Header: incident.Header{
 				Name:   "###",
-				TeamID: teamId,
+				TeamID: teamID,
 			},
 		}
 
@@ -79,17 +79,17 @@ func TestCreateIncident(t *testing.T) {
 		configService := mock_config.NewMockService(controller)
 		telemetry := &telemetry.NoopTelemetry{}
 
-		teamId := model.NewId()
+		teamID := model.NewId()
 		incdnt := &incident.Incident{
 			Header: incident.Header{
 				Name:            "###",
-				TeamID:          teamId,
+				TeamID:          teamID,
 				CommanderUserID: "user_id",
 			},
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
-		pluginAPI.On("CreateChannel", &model.Channel{TeamId: teamId, Type: model.CHANNEL_PRIVATE, DisplayName: "###", Name: "", Header: "The channel was created by the Incident Response plugin."}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
+		pluginAPI.On("CreateChannel", &model.Channel{TeamId: teamID, Type: model.CHANNEL_PRIVATE, DisplayName: "###", Name: "", Header: "The channel was created by the Incident Response plugin."}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
@@ -97,7 +97,7 @@ func TestCreateIncident(t *testing.T) {
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
-		poster.EXPECT().PublishWebsocketEventToTeam("incident_updated", gomock.Any(), teamId)
+		poster.EXPECT().PublishWebsocketEventToTeam("incident_updated", gomock.Any(), teamID)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username")
 
@@ -116,11 +116,11 @@ func TestCreateIncident(t *testing.T) {
 		configService := mock_config.NewMockService(controller)
 		telemetry := &telemetry.NoopTelemetry{}
 
-		teamId := model.NewId()
+		teamID := model.NewId()
 		incdnt := &incident.Incident{
 			Header: incident.Header{
 				Name:            "###",
-				TeamID:          teamId,
+				TeamID:          teamID,
 				CommanderUserID: "user_id",
 			},
 		}

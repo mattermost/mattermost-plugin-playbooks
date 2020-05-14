@@ -99,7 +99,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 		return nil, fmt.Errorf("failed to to resolve user %s: %w", incdnt.CommanderUserID, err)
 	}
 
-	if err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
+	if _, err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
 		return nil, fmt.Errorf("failed to post to incident channel: %w", err)
 	}
 
@@ -116,7 +116,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
-	if err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
+	if _, err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
 		return nil, fmt.Errorf("failed to post to incident channel: %w", err)
 	}
 
@@ -175,7 +175,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	// Post in the  main incident channel that @user has ended the incident.
 	// Main channel is the only channel in the incident for now.
 	mainChannelID := incdnt.ChannelIDs[0]
-	if err := s.poster.PostMessage(mainChannelID, "This incident has been closed by @%v", user.Username); err != nil {
+	if _, err := s.poster.PostMessage(mainChannelID, "This incident has been closed by @%v", user.Username); err != nil {
 		return fmt.Errorf("failed to post end incident messsage: %w", err)
 	}
 
@@ -294,7 +294,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 	mainChannelID := incidentToModify.ChannelIDs[0]
 	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
 		oldCommander.Username, newCommander.Username)
-	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
 		return err
 	}
 
@@ -313,14 +313,9 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	if newState == itemToCheck.Checked {
 		return nil
 	}
-	itemToCheck.Checked = newState
-	itemToCheck.CheckedModified = time.Now()
-	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
-	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return fmt.Errorf("failed to update incident: %w", err)
-	}
-
+	// Send modification message before the actual modification becuase we need the postID
+	// from the notification message.
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
@@ -329,9 +324,22 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	if !newState {
 		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
 	}
-	if err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
+	if err != nil {
 		return err
 	}
+
+	itemToCheck.Checked = newState
+	itemToCheck.CheckedModified = time.Now()
+	itemToCheck.CheckedPostID = postID
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return fmt.Errorf("failed to update incident, is now in inconsistant state: %w", err)
+	}
+
+	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
+	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	return nil
 }
@@ -442,17 +450,18 @@ func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklist
 	return incidentToModify, nil
 }
 
-func (s *ServiceImpl) modificationMessage(userID, channelID, message string) error {
+func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (string, error) {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+		return "", fmt.Errorf("failed to to resolve user %s: %w", userID, err)
 	}
 
-	if err := s.poster.PostMessage(channelID, user.Username+" "+message); err != nil {
-		return fmt.Errorf("failed to post end incident messsage: %w", err)
+	postID, err := s.poster.PostMessage(channelID, user.Username+" "+message)
+	if err != nil {
+		return "", fmt.Errorf("failed to post end incident messsage: %w", err)
 	}
 
-	return nil
+	return postID, nil
 }
 
 func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, checklistNumber int, itemNumber int) (*Incident, error) {

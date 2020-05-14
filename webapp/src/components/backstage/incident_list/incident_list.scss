@@ -2,55 +2,11 @@ $font-family: Open Sans;
 
 .Backstage {
     .IncidentList {
-        padding-top: 2rem;
-
         font-family: $font-family;
         color: var(--center-channel-color-90);
 
-        .filtering {
-            .row {
-                display: flex;
-                align-items: center;
-            }
-        }
-
-        .header {
-            display: flex;
-            font-size: 2.8rem;
-            line-height: 32px;
-            font-style: normal;
-            font-weight: normal;
-            bottom: 0;
-            left: 0;
-            height: auto;
-            padding: 4rem 0 3.2rem;
-            margin: 0 6rem;
-
-            .title {
-                display: flex;
-                align-items: center;
-                width: 100%;
-
-                .light {
-                    padding-left: 1rem;
-                }
-            }
-        }
-
         .list {
-            padding: 0 6rem;
-
-            .list-header {
-                font-weight: 600;
-                padding: 0 1.6rem;
-                font-size: 14px;
-                line-height: 4rem;
-                background: var(--center-channel-color-04);
-                color: var(--center-channel-color);
-                border: 1px solid var(--center-channel-color-16);
-                border-radius: 4px;
-
-            }
+            padding: 2rem 6rem;
 
             .incident-item {
                 margin: 0;
@@ -65,13 +21,49 @@ $font-family: Open Sans;
                     display: inline-flex;
                     border-radius: 4px;
                     padding: 12px 8px 12px 8px;
-                    background-color: rgba(61, 60, 64, 0.56);
+                    color: var(--sidebar-text);
+                    background: var(--center-channel-color-56);
 
                     &.ongoing {
-                        background-color: #145DBF;
+                        background-color: var(--button-bg);
                     }
                 }
             }
+
+            .incident-item__title {
+                font-weight: 600;
+            }
+        }
+    }
+}
+
+.Backstage__header {
+    display: flex;
+    font-size: 2.8rem;
+    line-height: 3.6rem;
+    padding: 4rem 6rem 3.2rem;
+    flex-direction: row;
+    width: 100%;
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+
+        .icon {
+            width: 1.6rem;
+            height: 1.6rem;
+            font-size: 1.8rem;
+        }
+    }
+
+    .title {
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        height: 4rem;
+
+        .light {
+            padding-left: 1rem;
         }
     }
 }
