@@ -129,7 +129,7 @@ export function IncidentList(props: Props) {
                                 className='col-sm-2'
                             >
                                 {
-                                    moment.unix(incident.created_at).format('DD MMM h:mmA')
+                                    moment.unix(incident.created_at).format('MMM DD LT')
                                 }
                             </div>
                             <div className='col-sm-2'>
@@ -168,7 +168,7 @@ const endedAt = (isActive: boolean, time: number) => {
 
     const mom = moment.unix(time);
     if (mom.isSameOrAfter('2020-01-01')) {
-        return mom.format('DD MMM h:mmA');
+        return mom.format('MMM DD LT');
     }
     return '--';
 };
