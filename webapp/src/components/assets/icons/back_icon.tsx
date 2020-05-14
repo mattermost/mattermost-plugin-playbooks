@@ -11,6 +11,7 @@ const BackIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['button']>)
             <svg
                 width='12px'
                 height='20px'
+                className='icon'
                 viewBox='0 0 12 20'
                 fill='inherit'
                 aria-label={'back'}
@@ -20,7 +21,6 @@ const BackIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['button']>)
                     d='M11.4 18.6L2.8 10L11.4 1.4L10 -4.76837e-07L5.96046e-08 10L10 20L11.4 18.6Z'
                     fill='inherit'
                 />
-
             </svg>
         </button>
     );

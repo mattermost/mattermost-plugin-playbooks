@@ -44,7 +44,7 @@ export default function IncidentList(props: Props) {
         <>
             {!selectedIncident && (
                 <div className='IncidentList'>
-                    <div className='header'>
+                    <div className='Backstage__header'>
                         <div className='title'>
                             {'Incidents'}
                             <div className='light'>
@@ -54,7 +54,7 @@ export default function IncidentList(props: Props) {
                     </div>
                     <div className='list'>
                         {
-                            <div className='list-header'>
+                            <div className='Backstage-list-header'>
                                 <div className='row'>
                                     <div className='col-sm-3'> {'Name'} </div>
                                     <div className='col-sm-2'> {'Status'} </div>
@@ -79,7 +79,10 @@ export default function IncidentList(props: Props) {
                                     key={incident.id}
                                 >
                                     <div className='col-sm-3'>
-                                        <a onClick={() => openIncidentDetails(incident)} >
+                                        <a
+                                            className='incident-item__title'
+                                            onClick={() => openIncidentDetails(incident)}
+                                        >
                                             {incident.name}
                                         </a>
                                     </div>

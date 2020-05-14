@@ -21,6 +21,7 @@ type ChecklistItem struct {
 	Title           string    `json:"title"`
 	Checked         bool      `json:"checked"`
 	CheckedModified time.Time `json:"checked_modified"`
+	CheckedPostID   string    `json:"checked_post_id"`
 }
 
 // Service is the playbook service for managing playbooks

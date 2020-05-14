@@ -16,26 +16,32 @@ $font-family: Open Sans;
         left: 0;
         height: auto;
         margin: 0 6rem;
-        
-        .back-icon {
-            background-color: transparent;
-            border-width: 0px;
-        }
 
-        .link-icon{
+        .link-icon {
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: var(--center-channel-color-56);
             font-size: 20px;
-            padding: 10px;
+            width: 4rem;
+            height: 4rem;
 
             &:hover {
                 background: var(--center-channel-color-08);
+                color: var(--center-channel-color-72);
+            }
+
+            &:active {
+                background: var(--button-bg-08);
+                color: var(--button-bg);
             }
         }
 
         .title {
             display: flex;
             align-items: center;
-            width: 100%;
+            flex: 1 1 auto;
 
             .light {
                 padding-left: 1rem;
@@ -46,8 +52,9 @@ $font-family: Open Sans;
             display: flex;
             align-items: center;
             widows: 100%;
-                                
+
             .label {
+                margin-top: 1px;
                 font-size: 12px;
                 color: var(--center-channel-color-56);
             }
@@ -71,73 +78,81 @@ $font-family: Open Sans;
     }
 
     .subheader {
-        padding: 32px 0px;
+        padding: 1.2rem 0px 2.4rem;
         display: flex;
         justify-content: space-between;
         font-weight: 600;
         margin: 0 6rem;
 
-        .summary-tab{
+        .summary-tab {
             color: var(--button-bg);
-            width: 98px; 
+            width: 98px;
             text-align: center;
             padding: 8px;
             box-shadow: inset 0px -2px 0px var(--button-bg);
         }
-        .export-link {
-            display: flex;
-            align-items: center;
-            color:var(--button-bg);
-        }
-        .export-icon {
-            font-size: 16px;
-            padding-right:8px;
-        }
+
         .disabled {
             color: var(--center-channel-color-56);
         }
+
+        .export-link {
+            display: flex;
+            align-items: center;
+            color: var(--button-bg);
+        }
+
+        .export-icon {
+            font-size: 16px;
+            padding-right: 8px;
+        }
     }
 
-    .statistic-block{
-        border: 1px solid var(--center-channel-color-08);
-        box-sizing: border-box;
+    .statistics-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: -1.6rem;
+    }
 
+    .statistics-row__block {
+        padding: 2rem;
+        border: 1px solid var(--center-channel-color-08);
+        background: var(--center-channel-bg);
         box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
         border-radius: 8px;
         margin: 0 6rem;
-        margin-right: 17px;
-        margin-left: 15px;
+        margin: 1.6rem;
         height: 168px;
+        flex: 0 0 26rem;
 
-        .title{
+        .title {
             color: var(--center-channel-color-56);
             font-size: 14px;
             font-weight: 600;
-            padding: 20px 0px 16px 5px;
+            padding: 0 0 16px;
         }
 
-        .content{
+        .content {
             font-size: 24px;
-            padding-top:17px;
-            padding-bottom:22px;
-            text-align:center;
+            padding-top: 17px;
+            padding-bottom: 22px;
+            text-align: center;
         }
 
-        .block-footer{
+        .block-footer {
             color: var(--center-channel-color-56);
             font-size: 12px;
             padding-bottom: 20px;
+
+            .icon {
+                width: 1.2rem;
+                height: 1.2rem;
+                margin-left: .8rem;
+                font-size: 14px;
+            }
         }
 
-        .center{
-            text-align:center;
-        }
-
-        .right{
-            text-align:right;
-        }
-
-        .box-icon{
+        .box-icon {
             padding-right: 19px;
         }
     }

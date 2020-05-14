@@ -16,7 +16,7 @@ import {isExportPluginLoaded} from 'src/utils/utils';
 
 import {Incident} from 'src/types/incident';
 
-import {setBackstageModal} from 'src/actions';
+import {navigateToUrl} from 'src/actions';
 
 import {isExportLicensed} from 'src/selectors';
 
@@ -28,13 +28,13 @@ type Props = {
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
     let totalMessages = 0;
-    const mainChanelId = ownProps.incident.channel_ids?.[0] || '';
+    const mainChannelId = ownProps.incident.channel_ids?.[0] || '';
     const involvedInIncident = haveIChannelPermission(state,
-        {channel: mainChanelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
+        {channel: mainChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
 
     let mainChannelDetails: ChannelWithTeamData;
-    if (ownProps.incident.channel_ids.length > 0) {
-        const c = getChannel(state, mainChanelId) as Channel;
+    if (ownProps.incident.channel_ids?.length > 0) {
+        const c = getChannel(state, mainChannelId) as Channel;
         if (c) {
             const t = getTeam(state, c.team_id) as Team;
             mainChannelDetails = {
@@ -47,7 +47,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         }
     }
 
-    const channelStats = getAllChannelStats(state)[mainChanelId];
+    const channelStats = getAllChannelStats(state)[mainChannelId];
 
     return {
         involvedInIncident,
@@ -62,7 +62,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
-            closeModal: () => setBackstageModal(false),
+            navigateToUrl,
         }, dispatch),
     };
 }

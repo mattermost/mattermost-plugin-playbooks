@@ -89,15 +89,16 @@ func (mr *MockPosterMockRecorder) Ephemeral(arg0, arg1, arg2 interface{}, arg3 .
 }
 
 // PostMessage mocks base method
-func (m *MockPoster) PostMessage(arg0, arg1 string, arg2 ...interface{}) error {
+func (m *MockPoster) PostMessage(arg0, arg1 string, arg2 ...interface{}) (string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "PostMessage", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // PostMessage indicates an expected call of PostMessage

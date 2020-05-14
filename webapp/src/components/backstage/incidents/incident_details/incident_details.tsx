@@ -13,13 +13,10 @@ import {exportChannelUrl} from 'src/client';
 import {Incident} from 'src/types/incident';
 
 import Profile from 'src/components/profile';
-import BackIcon from 'src/components/playbook/back_icon';
+import BackIcon from 'src/components/assets/icons/back_icon';
 import StatusBadge from '../status_badge';
 
 import './incident_details.scss';
-
-// @ts-ignore
-const WebappUtils = window.WebappUtils;
 
 const OVERLAY_DELAY = 400;
 
@@ -33,7 +30,7 @@ interface Props {
     exportLicensed: boolean;
     onClose: () => void;
     actions: {
-        closeModal: () => void;
+        navigateToUrl: (urlPath: string) => void;
     };
 }
 
@@ -50,13 +47,25 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
         };
     }
     public timeFrameText = () => {
+        const mom = moment.unix(this.props.incident.ended_at);
+
+        let endedText = 'Ongoing';
+
+        if (!this.props.incident.is_active) {
+            endedText = mom.isSameOrAfter('2020-01-01') ? mom.format('DD MMM h:mmA') : '--';
+        }
+
         const startedText = moment.unix(this.props.incident.created_at).format('DD MMM h:mmA');
-        const endedText = this.props.incident.is_active ? 'Ongoing' : moment.unix(this.props.incident.ended_at).format('DD MMM h:mmA');
 
         return (`${startedText} - ${endedText}`);
     }
 
     public duration = () => {
+        if (!this.props.incident.is_active && moment.unix(this.props.incident.ended_at).isSameOrBefore('2020-01-01')) {
+            // No end datetime available to calculate duration
+            return '--';
+        }
+
         const endTime = this.props.incident.is_active ? moment() : moment.unix(this.props.incident.ended_at);
 
         const duration = moment.duration(endTime.diff(moment.unix(this.props.incident.created_at)));
@@ -77,8 +86,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public goToChannel = () => {
-        WebappUtils.browserHistory.push(`/${this.props.mainChannelDetails.team_name}/channels/${this.props.mainChannelDetails.name}`);
-        this.props.actions.closeModal();
+        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails.team_name}/channels/${this.props.mainChannelDetails.name}`);
     }
 
     public onExportClick =() => {
@@ -134,7 +142,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             <div className='details-header'>
                 <div className='title'>
                     <BackIcon
-                        className='back-icon mr-4'
+                        className='Backstage__header__back'
                         onClick={this.props.onClose}
                     />
                     <span className='mr-1'>{`Incident ${this.props.incident.name}`}</span>
@@ -145,16 +153,18 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         delay={OVERLAY_DELAY}
                         overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
                     >
-                        <i
-                            className='icon icon-link-variant link-icon'
-                            onClick={this.goToChannel}
-                        />
+                        <button className='link-icon style--none mr-2'>
+                            <i
+                                className='icon icon-link-variant'
+                                onClick={this.goToChannel}
+                            />
+                        </button>
                     </OverlayTrigger>
                     }
                     <StatusBadge isActive={this.props.incident.is_active}/>
                 </div>
                 <div className='commander-div'>
-                    <span className='label'>{'Commander:'}</span>
+                    <span className='label p-0 mr-2'>{'Commander:'}</span>
                     <Profile
                         userId={this.props.incident.commander_user_id}
                         classNames={{ProfileButton: true, profile: true}}
@@ -193,8 +203,8 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                     </div>
                     {this.exportLink()}
                 </div>
-                <div className='row ml-10'>
-                    <div className='col-sm-3 statistic-block'>
+                <div className='statistics-row'>
+                    <div className='statistics-row__block'>
                         <div className='title'>
                             {'Duration'}
                         </div>
@@ -202,20 +212,26 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                             <i className='icon icon-clock-outline box-icon'/>
                             {this.duration()}
                         </div>
-                        <div className='block-footer center'>
+                        <div className='block-footer text-right'>
                             <span>{this.timeFrameText()}</span>
                         </div>
                     </div>
-                    <div className='col-sm-3 statistic-block'>
-                        <div className='title'>
-                            {'Members Involved'}
+                    <OverlayTrigger
+                        placement='bottom'
+                        delay={OVERLAY_DELAY}
+                        overlay={<Tooltip id='goToChannel'>{'Number of users currently in the incident channel'}</Tooltip>}
+                    >
+                        <div className='statistics-row__block'>
+                            <div className='title'>
+                                {'Members Involved'}
+                            </div>
+                            <div className='content'>
+                                <i className='icon icon-account-multiple-outline box-icon'/>
+                                {this.props.membersCount}
+                            </div>
                         </div>
-                        <div className='content'>
-                            <i className='icon icon-account-multiple-outline box-icon'/>
-                            {this.props.membersCount}
-                        </div>
-                    </div>
-                    <div className='col-sm-3 statistic-block'>
+                    </OverlayTrigger>
+                    <div className='statistics-row__block'>
                         <div className='title'>
                             {'Messages'}
                         </div>
@@ -223,7 +239,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                             <i className='icon icon-send box-icon'/>
                             {this.props.totalMessages}
                         </div>
-                        <div className='block-footer right'>
+                        <div className='block-footer text-right'>
                             <a
                                 className='link'
                                 onClick={this.goToChannel}

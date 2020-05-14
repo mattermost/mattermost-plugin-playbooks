@@ -40,8 +40,6 @@ export const isLoading = (state: GlobalState) => pluginState(state).isLoading;
 
 export const clientId = (state: GlobalState) => pluginState(state).clientId;
 
-export const playbookModalOpen = (state: GlobalState) => pluginState(state).playbooksModalOpen;
-
 export const playbooks = (state: GlobalState): Playbook[] => pluginState(state).playbooks;
 
 export const backstageModal = (state: GlobalState) => pluginState(state).backstageModal;
