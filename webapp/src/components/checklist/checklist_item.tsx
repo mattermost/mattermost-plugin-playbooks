@@ -48,7 +48,10 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
             </div>
             <a
                 className={'light small'}
-                onClick={() => {
+                href={`/_redirect/pl/${checklistItem.checked_post_id}`}
+                onClick={(e) => {
+                    e.preventDefault();
+
                     // @ts-ignore
                     window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
                 }}
