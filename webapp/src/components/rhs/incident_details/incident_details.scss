@@ -97,14 +97,13 @@ $font-family: Open Sans;
         }
     }
 
-    > span {
-        padding: 0px 0px 0px 8px;
+    > a {
+        padding: 2px 0px 0px 0px;
         font-family: $font-family;
         font-style: normal;
         font-weight: normal;
-        font-size: 14px;
         line-height: 20px;
-        color: #3d3c40;
+        color: #3d3c40 !important;
     }
 
     input[type="checkbox"] + label {
@@ -161,7 +160,7 @@ $font-family: Open Sans;
     }
 
     label {
-        padding: 0 0 0 32px;
+        padding: 0 8px 0 32px;
         font-weight: normal;
     }
 }
