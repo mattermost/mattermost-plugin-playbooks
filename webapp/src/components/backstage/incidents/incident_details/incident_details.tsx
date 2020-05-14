@@ -78,7 +78,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                         delay={OVERLAY_DELAY}
                         overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
                     >
-                        <button className='link-icon mr-2'>
+                        <button className='link-icon style--none mr-2'>
                             <i
                                 className='icon icon-link-variant'
                                 onClick={this.goToChannel}
