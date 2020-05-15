@@ -8,11 +8,6 @@ $font-family: Open Sans;
         .list {
             padding: 2rem 6rem;
 
-            .filtering .row {
-                display: flex;
-                align-items: center;
-            }
-
             .IncidentProfileButton {
                 margin-top: 5px;
             }
@@ -42,6 +37,16 @@ $font-family: Open Sans;
             .incident-item__title {
                 font-weight: 600;
             }
+        }
+    }
+
+    .IncidentList__filters {
+        display: flex;
+        align-items: center;
+        margin: 0 -4px 20px;
+
+        > div {
+            padding: 0 4px;
         }
     }
 }

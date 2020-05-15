@@ -15,9 +15,8 @@ export default function SearchInput(props: Props) {
     };
 
     return (
-        <div className='incident-list-search-container'>
+        <div className='IncidentList-search'>
             <input
-                className='incident-list-search-container__input'
                 type='text'
                 placeholder='Search by Incident name'
                 onChange={onChange}

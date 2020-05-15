@@ -86,26 +86,18 @@ export function IncidentList(props: Props) {
                         </div>
                     </div>
                     <div className='list'>
-                        <div className='filtering'>
-                            <div className='row'>
-                                <div className='col-sm-6'>
-                                    <SearchInput
-                                        onSearch={debounce(setSearchTerm, debounceDelay)}
-                                    />
-                                </div>
-                                <div className='col-sm-3'>
-                                    <ProfileSelector
-                                        commanderId={fetchParams.commander_user_id}
-                                        enableEdit={true}
-                                        isClearable={true}
-                                        getUsers={fetchCommanders}
-                                        onSelectedChange={setCommanderId}
-                                    />
-                                </div>
-                                <div className='col-sm-2'>
-                                    <StatusFilter onChange={setStatus}/>
-                                </div>
-                            </div>
+                        <div className='IncidentList__filters'>
+                            <SearchInput
+                                onSearch={debounce(setSearchTerm, debounceDelay)}
+                            />
+                            <ProfileSelector
+                                commanderId={fetchParams.commander_user_id}
+                                enableEdit={true}
+                                isClearable={true}
+                                getUsers={fetchCommanders}
+                                onSelectedChange={setCommanderId}
+                            />
+                            <StatusFilter onChange={setStatus}/>
                         </div>
                         <div className='Backstage-list-header'>
                             <div className='row'>

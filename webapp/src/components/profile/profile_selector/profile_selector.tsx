@@ -112,10 +112,10 @@ export default function ProfileSelector(props: Props) {
         target = (
             <button
                 onClick={toggleOpen}
-                className={'profile-filter-button'}
+                className={'IncidentFilter-button'}
             >
                 {'Commander'}
-                {<i className='icon-chevron-down ml-1 mr-1'/>}
+                {<i className='icon-chevron-down icon--small ml-2'/>}
             </button>
         );
     }
@@ -172,11 +172,11 @@ interface DropdownProps {
 
 const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
     <div
-        className={`profile-dropdown${isOpen ? ' profile-dropdown--active' : ''}`}
+        className={`IncidentFilter profile-dropdown${isOpen ? ' IncidentFilter--active profile-dropdown--active' : ''}`}
         css={{position: 'relative'}}
     >
         {target}
-        {isOpen ? <Menu className='incident-user-select__container'>{children}</Menu> : null}
+        {isOpen ? <Menu className='IncidentFilter-select incident-user-select__container'>{children}</Menu> : null}
         {isOpen ? <Blanket onClick={onClose}/> : null}
     </div>
 );
