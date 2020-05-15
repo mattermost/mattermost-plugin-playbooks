@@ -86,7 +86,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public goToChannel = () => {
-        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails.team_name}/channels/${this.props.mainChannelDetails.name}`);
+        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails?.team_name}/channels/${this.props.mainChannelDetails?.name}`);
     }
 
     public onExportClick =() => {
@@ -129,7 +129,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
         return (
             <a
                 className={'export-link'}
-                href={exportChannelUrl(this.props.mainChannelDetails.id)}
+                href={exportChannelUrl(this.props.mainChannelDetails?.id)}
                 onClick={this.onExportClick}
             >
                 {linkText}
