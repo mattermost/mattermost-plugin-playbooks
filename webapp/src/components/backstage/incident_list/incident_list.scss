@@ -8,6 +8,11 @@ $font-family: Open Sans;
         .list {
             padding: 2rem 6rem;
 
+            .filtering .row {
+                display: flex;
+                align-items: center;
+            }
+
             .incident-item {
                 margin: 0;
                 line-height: 4.8rem;
