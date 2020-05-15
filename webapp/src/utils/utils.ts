@@ -27,3 +27,10 @@ export const getUserDescription = (firstName: string, lastName: string, nickName
 export const isMobile = () => {
     return window.innerWidth <= MOBILE_SCREEN_WIDTH;
 };
+
+export const isExportPluginLoaded = () => {
+    const exportPluginId = 'com.mattermost.plugin-channel-export';
+
+    // @ts-ignore
+    return Boolean(window.plugins[exportPluginId]);
+};

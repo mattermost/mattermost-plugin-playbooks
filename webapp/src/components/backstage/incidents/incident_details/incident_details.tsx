@@ -8,6 +8,8 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
+import {exportChannelUrl} from 'src/client';
+
 import {Incident} from 'src/types/incident';
 
 import Profile from 'src/components/profile';
@@ -24,13 +26,26 @@ interface Props {
     totalMessages: number;
     membersCount: number;
     mainChannelDetails: ChannelWithTeamData;
+    exportAvailable: boolean;
+    exportLicensed: boolean;
     onClose: () => void;
     actions: {
         navigateToUrl: (urlPath: string) => void;
     };
 }
 
-export default class BackstageIncidentDetails extends React.PureComponent<Props> {
+interface State {
+    showBanner: boolean;
+}
+
+export default class BackstageIncidentDetails extends React.PureComponent<Props, State> {
+    constructor(props: Props) {
+        super(props);
+
+        this.state = {
+            showBanner: false,
+        };
+    }
     public timeFrameText = () => {
         const mom = moment.unix(this.props.incident.ended_at);
 
@@ -71,7 +86,56 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
     }
 
     public goToChannel = () => {
-        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails.team_name}/channels/${this.props.mainChannelDetails.name}`);
+        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails?.team_name}/channels/${this.props.mainChannelDetails?.name}`);
+    }
+
+    public onExportClick =() => {
+        this.setState({showBanner: true}, () => {
+            window.setTimeout(() => {
+                this.setState({showBanner: false});
+            }, 2500);
+        });
+    }
+
+    public exportLink = () => {
+        const linkText = (
+            <>
+                <i className='icon icon-download-outline export-icon'/>
+                {'Export Incident Channel'}
+            </>
+        );
+
+        let tooltipText = '';
+        if (!this.props.exportAvailable) {
+            tooltipText = 'Install and enable the Channel Export plugin to support exporting this incident';
+        } else if (!this.props.exportLicensed) {
+            tooltipText = 'Exporting an incident channel requires a Mattermost Enterprise E20 license';
+        }
+
+        if (!this.props.exportAvailable || !this.props.exportLicensed) {
+            return (
+                <OverlayTrigger
+                    placement='bottom'
+                    delay={OVERLAY_DELAY}
+                    overlay={<Tooltip id='exportUnavailable'>{tooltipText}</Tooltip>}
+                >
+                    <div className={'disabled'}>
+                        {linkText}
+                    </div>
+                </OverlayTrigger>
+            );
+        }
+
+        return (
+            <a
+                className={'export-link'}
+                href={exportChannelUrl(this.props.mainChannelDetails?.id)}
+                target={'_new'}
+                onClick={this.onExportClick}
+            >
+                {linkText}
+            </a>
+        );
     }
 
     public render(): JSX.Element {
@@ -109,6 +173,15 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
                 </div>
             </div>);
 
+        const downloadStartedBanner = this.state.showBanner && (
+            <div className='banner'>
+                <div className='banner__text'>
+                    <i className='icon icon-download-outline mr-1'/>
+                    {'Downloading incident channel export'}
+                </div>
+            </div>
+        );
+
         if (!this.props.involvedInIncident) {
             return (
                 <div className='BackstageIncidentDetails'>
@@ -122,16 +195,14 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props>
 
         return (
             <div className='BackstageIncidentDetails'>
+                {downloadStartedBanner}
                 {detailsHeader}
                 <div className='subheader'>
                     { /*Summary will be a tab once Post Mortem is included */}
                     <div className='summary-tab'>
                         {'Summary'}
                     </div>
-                    <div className='export-link'>
-                        <i className='icon icon-download-outline export-icon'/>
-                        {'Export Incident Channel'}
-                    </div>
+                    {this.exportLink()}
                 </div>
                 <div className='statistics-row'>
                     <div className='statistics-row__block'>

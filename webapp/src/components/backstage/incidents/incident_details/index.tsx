@@ -12,9 +12,13 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 import {Permissions} from 'mattermost-redux/constants';
 
+import {isExportPluginLoaded} from 'src/utils/utils';
+
 import {Incident} from 'src/types/incident';
 
 import {navigateToUrl} from 'src/actions';
+
+import {isExportLicensed} from 'src/selectors';
 
 import BackstageIncidentDetails from './incident_details';
 
@@ -50,6 +54,8 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         totalMessages,
         membersCount: channelStats?.member_count || 1,
         mainChannelDetails,
+        exportAvailable: isExportPluginLoaded(),
+        exportLicensed: isExportLicensed(state),
     };
 }
 

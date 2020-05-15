@@ -5,7 +5,6 @@ $font-family: Open Sans;
     font-family: $font-family;
     color: var(--center-channel-color-90);
     padding: 4rem 0 3.2rem;
-    margin: 0 6rem;
 
     .details-header {
         display: flex;
@@ -16,6 +15,7 @@ $font-family: Open Sans;
         bottom: 0;
         left: 0;
         height: auto;
+        margin: 0 6rem;
 
         .link-icon {
             border-radius: 4px;
@@ -82,6 +82,7 @@ $font-family: Open Sans;
         display: flex;
         justify-content: space-between;
         font-weight: 600;
+        margin: 0 6rem;
 
         .summary-tab {
             color: var(--button-bg);
@@ -89,6 +90,10 @@ $font-family: Open Sans;
             text-align: center;
             padding: 8px;
             box-shadow: inset 0px -2px 0px var(--button-bg);
+        }
+
+        .disabled {
+            color: var(--center-channel-color-56);
         }
 
         .export-link {
@@ -106,7 +111,7 @@ $font-family: Open Sans;
     .statistics-row {
         display: flex;
         flex-wrap: wrap;
-        margin: -1.6rem;
+        margin: 0 44px;
     }
 
     .statistics-row__block {
@@ -157,5 +162,18 @@ $font-family: Open Sans;
         border: 1px solid var(--center-channel-color-16);
         text-align: center;
         width: 100%;
+    }
+
+    .banner {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        position: fixed;
+        top: 0;
+        width: calc(100% - 32rem);
+        z-index: 8;
+        overflow: hidden;
+        padding: 0.5rem 2.4rem;
+        text-align: center;
     }
 }
