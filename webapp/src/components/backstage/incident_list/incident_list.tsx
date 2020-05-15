@@ -146,14 +146,10 @@ export function IncidentList(props: Props) {
                                 <div
                                     className='row incident-item'
                                     key={incident.id}
+                                    onClick={() => openIncidentDetails(incident)}
                                 >
-                                    <div className='col-sm-3'>
-                                        <a
-                                            className='incident-item__title'
-                                            onClick={() => openIncidentDetails(incident)}
-                                        >
-                                            {incident.name}
-                                        </a>
+                                    <div className='col-sm-3 incident-item__title'>
+                                        {incident.name}
                                     </div>
                                     <div className='col-sm-2'> {
                                         <StatusBadge isActive={incident.is_active}/>
