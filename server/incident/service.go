@@ -222,8 +222,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) string {
 	return incidentID
 }
 
-// GetCommandersForTeam returns all the commanders of incidents in this team. If active is true,
-// it will only return commanders of active incidents.
+// GetCommandersForTeam returns all the commanders of incidents in this team.
 func (s *ServiceImpl) GetCommandersForTeam(teamID string) ([]CommanderInfo, error) {
 	options := HeaderFilterOptions{TeamID: teamID}
 	incidents, err := s.store.GetIncidents(options)

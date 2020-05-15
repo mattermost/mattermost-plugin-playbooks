@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 
-import ReactSelect from 'react-select';
+import ReactSelect, {ActionTypes, ControlProps} from 'react-select';
 import {css} from '@emotion/core';
 
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -17,6 +17,8 @@ interface Props {
     commanderId?: string;
     enableEdit: boolean;
     isClearable?: boolean;
+    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    controlledOpenToggle?: boolean;
     getUsers: () => Promise<UserProfile[]>;
     onSelectedChange: (userId?: string) => void;
 }
@@ -27,6 +29,10 @@ interface Option {
     userId: string;
 }
 
+interface ActionObj {
+    action: ActionTypes;
+}
+
 export default function ProfileSelector(props: Props) {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -35,6 +41,16 @@ export default function ProfileSelector(props: Props) {
         }
         setOpen(!isOpen);
     };
+
+    // Allow the parent component to control the open state.
+    const [oldOpenToggle, setOldOpenToggle] = useState(false);
+    useEffect(() => {
+        // eslint-disable-next-line no-undefined
+        if (props.controlledOpenToggle !== undefined && props.controlledOpenToggle !== oldOpenToggle) {
+            setOpen(!isOpen);
+            setOldOpenToggle(props.controlledOpenToggle);
+        }
+    }, [props.controlledOpenToggle]);
 
     const [userOptions, setUserOptions] = useState<Option[]>([]);
 
@@ -92,7 +108,10 @@ export default function ProfileSelector(props: Props) {
         }
     }, [userOptions, props.commanderId]);
 
-    const onSelectedChange = async (value?: Option) => {
+    const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
+        if (action.action === 'clear') {
+            return;
+        }
         toggleOpen();
         if (value?.userId === selected?.userId) {
             return;
@@ -121,6 +140,10 @@ export default function ProfileSelector(props: Props) {
         );
     }
 
+    // The following is awkward, but makes TS happy.
+    const baseComponents = {DropdownIndicator: null, IndicatorSeparator: null};
+    const components = props.customControl ? {...baseComponents, Control: props.customControl} : baseComponents;
+
     return (
         <Dropdown
             isOpen={isOpen}
@@ -130,7 +153,7 @@ export default function ProfileSelector(props: Props) {
             <ReactSelect
                 autoFocus={true}
                 backspaceRemovesValue={false}
-                components={{DropdownIndicator: null, IndicatorSeparator: null}}
+                components={components}
                 controlShouldRenderValue={false}
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
@@ -140,7 +163,7 @@ export default function ProfileSelector(props: Props) {
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
-                onChange={(option) => onSelectedChange(option as Option)}
+                onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
                 classNamePrefix='incident-user-select'
                 className='incident-user-select'
             />
@@ -177,7 +200,9 @@ const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
         css={{position: 'relative'}}
     >
         {target}
-        {isOpen ? <Menu className='IncidentFilter-select incident-user-select__container'>{children}</Menu> : null}
+        {isOpen ? <Menu className='IncidentFilter-select incident-user-select__container'>
+            {children}
+        </Menu> : null}
         {isOpen ? <Blanket onClick={onClose}/> : null}
     </div>
 );

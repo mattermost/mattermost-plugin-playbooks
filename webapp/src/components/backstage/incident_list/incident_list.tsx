@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 
 import moment from 'moment';
 import {debounce} from 'debounce';
+import {components, ControlProps} from 'react-select';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
@@ -73,6 +74,28 @@ export function IncidentList(props: Props) {
         setSelectedIncident(null);
     };
 
+    const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
+    const ControlComponent = (ownProps: ControlProps<any>) => {
+        const resetLink = fetchParams.commander_user_id && (
+            <a
+                className='IncidentFilter-reset'
+                onClick={() => {
+                    setCommanderId();
+                    setProfileSelectorToggle(!profileSelectorToggle);
+                }}
+            >
+                {'Reset to all commanders'}
+            </a>
+        );
+
+        return (
+            <div>
+                <components.Control {...ownProps}/>
+                {resetLink}
+            </div>
+        );
+    };
+
     return (
         <>
             {!selectedIncident && (
@@ -94,6 +117,8 @@ export function IncidentList(props: Props) {
                                 commanderId={fetchParams.commander_user_id}
                                 enableEdit={true}
                                 isClearable={true}
+                                customControl={ControlComponent}
+                                controlledOpenToggle={profileSelectorToggle}
                                 getUsers={fetchCommanders}
                                 onSelectedChange={setCommanderId}
                             />
