@@ -61,7 +61,7 @@ export function IncidentList(props: Props) {
         return commanders.map((c) => props.getUser(c.user_id));
     }
 
-    function setCommanderId(userId: string) {
+    function setCommanderId(userId?: string) {
         setFetchParams({...fetchParams, commander_user_id: userId});
     }
 
@@ -112,7 +112,7 @@ export function IncidentList(props: Props) {
                         {
                             !incidents.length &&
                             <div className='text-center pt-8'>
-                                {'There are no incidents for team.'}
+                                {`There are no incidents for ${props.currentTeamName} matching those filters.`}
                             </div>
                         }
 

@@ -4,6 +4,7 @@
 import React, {useEffect, useState} from 'react';
 
 import ReactSelect from 'react-select';
+import {css} from '@emotion/core';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
@@ -17,7 +18,7 @@ interface Props {
     enableEdit: boolean;
     isClearable?: boolean;
     getUsers: () => Promise<UserProfile[]>;
-    onSelectedChange: (userId: string) => void;
+    onSelectedChange: (userId?: string) => void;
 }
 
 interface Option {
@@ -91,7 +92,7 @@ export default function ProfileSelector(props: Props) {
         }
     }, [userOptions, props.commanderId]);
 
-    const onSelectedChange = async (value: Option) => {
+    const onSelectedChange = async (value?: Option) => {
         toggleOpen();
         if (value?.userId === selected?.userId) {
             return;

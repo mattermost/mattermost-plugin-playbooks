@@ -79,7 +79,10 @@ export default class IncidentDetails extends React.PureComponent<Props> {
             return incidentChannel ? fetchUsersInChannel(this.props.channelDetails[0].id) : [];
         };
 
-        const onSelectedChange = async (userId: string) => {
+        const onSelectedChange = async (userId?: string) => {
+            if (!userId) {
+                return;
+            }
             const response = await setCommander(this.props.incident.id, userId);
             if (response.error) {
                 // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
