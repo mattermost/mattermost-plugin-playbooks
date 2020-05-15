@@ -2,17 +2,25 @@
 // See LICENSE.txt for license information.
 
 import {Action, Store} from 'redux';
+import React from 'react';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
 import {pluginId} from './manifest';
-
 import IncidentIcon from './components/incident_icon';
+import PlusIcon from './components/icons/plus_icon';
+import PlaybookIcon from './components/icons/playbook_icon';
 import RightHandSidebar from './components/rhs';
+import RHSHeader from './components/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import BackstageModal from './components/backstage/backstage_modal';
+import {BackstageArea} from './types/backstage';
 
 import {Hooks} from './hooks';
-import {setToggleRHSAction} from './actions';
+import {
+    setToggleRHSAction,
+    startIncident,
+    setBackstageModal,
+} from './actions';
 import reducer from './reducer';
 import {
     handleWebsocketIncidentUpdate,
@@ -32,7 +40,19 @@ export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
         registry.registerReducer(reducer);
 
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, null);
+        const icons = [
+            {
+                icon: <PlaybookIcon/>,
+                tooltip: 'Playbooks',
+                action: () => setBackstageModal(true, BackstageArea.Playbooks),
+            },
+            {
+                icon: <PlusIcon/>,
+                tooltip: 'Start New Incident',
+                action: startIncident,
+            },
+        ];
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSHeader/>, icons);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later

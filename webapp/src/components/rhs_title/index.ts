@@ -16,7 +16,7 @@ import {
 import {incidentDetails, rhsState, isLoading} from 'src/selectors';
 import {BackstageArea} from 'src/types/backstage';
 
-import RHSHeader from './rhs_header';
+import RHSHeader from './rhs_title';
 
 function mapStateToProps(state: GlobalState) {
     return {
