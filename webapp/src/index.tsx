@@ -42,12 +42,12 @@ export default class Plugin {
 
         const icons = [
             {
-                icon: <PlaybookIcon/>,
+                icon: PlaybookIcon,
                 tooltip: 'Playbooks',
                 action: () => setBackstageModal(true, BackstageArea.Playbooks),
             },
             {
-                icon: <PlusIcon/>,
+                icon: PlusIcon,
                 tooltip: 'Start New Incident',
                 action: startIncident,
             },
