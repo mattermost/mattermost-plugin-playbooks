@@ -7,11 +7,11 @@ import Scrollbars from 'react-custom-scrollbars';
 import {Incident} from 'src/types/incident';
 import {RHSState} from 'src/types/rhs';
 
-import RHSHeader from 'src/components/rhs_header';
+import RHSHeader from 'src/components/rhs/rhs_header';
 
 import IncidentList from './incident_list';
 
-import IncidentDetails from './incident_details';
+import RHSIncidentDetails from './incident_details';
 
 import './rhs.scss';
 
@@ -99,7 +99,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
                         }
                         {
                             this.props.rhsState === RHSState.Details && !this.props.isLoading &&
-                            <IncidentDetails
+                            <RHSIncidentDetails
                                 incident={this.props.incident}
                             />
                         }

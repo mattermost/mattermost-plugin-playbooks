@@ -9,14 +9,14 @@ import {components, ControlProps} from 'react-select';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import {StatusFilter} from 'src/components/backstage/incident_list/status_filter';
-import SearchInput from 'src/components/backstage/incident_list/search_input';
+import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
+import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {fetchCommandersInTeam, fetchIncidents} from 'src/client';
 import Profile from 'src/components/profile';
-import BackstageIncidentDetails from '../incidents/incident_details';
-import StatusBadge from '../incidents/status_badge';
+import BackstageIncidentDetails from '../incident_details';
+import StatusBadge from '../status_badge';
 
 import './incident_list.scss';
 
@@ -28,7 +28,7 @@ interface Props {
     getUser: (userId: string) => UserProfile;
 }
 
-export function IncidentList(props: Props) {
+export function BackstageIncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
