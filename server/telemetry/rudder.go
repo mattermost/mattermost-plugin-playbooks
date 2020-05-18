@@ -66,7 +66,7 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"ID":                  incident.ID,
+		"IncidentID":          incident.ID,
 		"IsActive":            incident.IsActive,
 		"CommanderUserID":     incident.CommanderUserID,
 		"TeamID":              incident.TeamID,

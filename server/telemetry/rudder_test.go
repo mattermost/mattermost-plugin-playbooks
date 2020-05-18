@@ -102,7 +102,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 		require.Contains(t, properties, "ChannelIDs")
 		require.Contains(t, properties, "PostID")
 
-		require.Contains(t, properties, "ID")
+		require.Contains(t, properties, "IncidentID")
 		require.Contains(t, properties, "IsActive")
 		require.Contains(t, properties, "CommanderUserID")
 		require.Contains(t, properties, "TeamID")
@@ -118,7 +118,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 
 		return &incident.Incident{
 			Header: incident.Header{
-				ID:              properties["ID"].(string),
+				ID:              properties["IncidentID"].(string),
 				Name:            dummyIncident.Name, // not included in the tracked event
 				IsActive:        properties["IsActive"].(bool),
 				CommanderUserID: properties["CommanderUserID"].(string),
