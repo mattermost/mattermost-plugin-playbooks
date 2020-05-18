@@ -1,3 +1,7 @@
+import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
+
+import cssVars from 'css-vars-ponyfill';
+
 const MOBILE_SCREEN_WIDTH = 768;
 
 export const getFullName = (firstName: string, lastName: string): string => {
@@ -33,4 +37,12 @@ export const isExportPluginLoaded = () => {
 
     // @ts-ignore
     return Boolean(window.plugins[exportPluginId]);
+};
+
+export const registerCssVars = (theme: any) => {
+    cssVars({
+        variables: {
+            'center-channel-color-16': changeOpacity(theme.centerChannelColor, 0.16),
+        },
+    });
 };

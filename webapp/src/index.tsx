@@ -3,10 +3,13 @@
 
 import {Action, Store} from 'redux';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+
+import {registerCssVars} from 'src/utils/utils';
 
 import {pluginId} from './manifest';
 
-import IncidentIcon from './components/incident_icon';
+import IncidentIcon from './components/assets/icons/incident_icon';
 import RightHandSidebar from './components/rhs';
 import StartIncidentPostMenu from './components/post_menu';
 import BackstageModal from './components/backstage/backstage_modal';
@@ -31,6 +34,9 @@ import {
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
         registry.registerReducer(reducer);
+
+        const theme = getTheme(store.getState());
+        registerCssVars(theme);
 
         const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, null);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);

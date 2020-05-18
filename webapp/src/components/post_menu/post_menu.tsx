@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import IncidentPostMenuIcon from './icon';
+import IncidentPostMenuIcon from '../assets/icons/post_menu_icon';
 
 interface Props {
     postId: string;

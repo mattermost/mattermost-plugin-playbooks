@@ -9,7 +9,7 @@ import {Incident} from 'src/types/incident';
 import {BackstageArea} from 'src/types/backstage';
 import {RHSState} from 'src/types/rhs';
 
-import PlaybookIcon from './playbook_icon';
+import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 interface Props {
     rhsState: RHSState;

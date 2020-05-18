@@ -71,6 +71,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+
+            svg {
+                fill: var(--center-channel-color);
+            }
         }
 
         &__button {
