@@ -44,12 +44,12 @@ export default class Plugin {
             {
                 icon: PlaybookIcon,
                 tooltip: 'Playbooks',
-                action: () => setBackstageModal(true, BackstageArea.Playbooks),
+                action: () => store.dispatch(setBackstageModal(true, BackstageArea.Playbooks)),
             },
             {
                 icon: PlusIcon,
                 tooltip: 'Start New Incident',
-                action: startIncident,
+                action: () => store.dispatch(startIncident()),
             },
         ];
         const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSHeader/>, icons);
