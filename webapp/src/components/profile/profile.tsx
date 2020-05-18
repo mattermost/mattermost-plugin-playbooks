@@ -9,7 +9,7 @@ import 'src/components/profile/profile.scss';
 
 interface Props {
     profileUri?: string;
-    userId: string;
+    userId?: string;
     name?: JSX.Element | string;
     classNames?: Record<string, boolean>;
     extra?: JSX.Element;
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function Profile(props: Props) {
-    if (!props.name) {
+    if (props.userId && !props.name) {
         props.actions.fetchUser(props.userId);
     }
 

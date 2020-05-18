@@ -11,6 +11,20 @@ const (
 	Asc
 )
 
+// Status is the type used to specify the activity status of the incident.
+type Status int
+
+const (
+	// All are all incidents (active and ended).
+	All Status = iota
+
+	// Ongoing are incidents that are currently under way.
+	Ongoing
+
+	// Ended are incidents that are finished.
+	Ended
+)
+
 // SortField enumerates the available fields we can sort on.
 type SortField int
 
@@ -50,9 +64,8 @@ type HeaderFilterOptions struct {
 	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
 	Order SortDirection
 
-	// Active filters by active. If true, return only active incidents. If false, return
-	// all incidents. Defaults to false.
-	Active bool
+	// Status filters by All, Ongoing, or Ended; defaults to All.
+	Status Status
 
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
 	CommanderID string

@@ -3,13 +3,10 @@
 
 import React, {useEffect, useState} from 'react';
 
-import ReactSelect from 'react-select';
-
+import ReactSelect, {ActionTypes, ControlProps} from 'react-select';
 import {css} from '@emotion/core';
 
 import {UserProfile} from 'mattermost-redux/types/users';
-
-import {fetchUsersInChannel, setCommander} from 'src/client';
 
 import './profile_selector.scss';
 import Profile from 'src/components/profile';
@@ -17,16 +14,23 @@ import ProfileButton from 'src/components/profile/profile_selector/profile_butto
 import {getUserDescription} from 'src/utils/utils';
 
 interface Props {
-    commanderId: string;
-    channelId?: string;
-    incidentId: string;
+    commanderId?: string;
     enableEdit: boolean;
+    isClearable?: boolean;
+    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    controlledOpenToggle?: boolean;
+    getUsers: () => Promise<UserProfile[]>;
+    onSelectedChange: (userId?: string) => void;
 }
 
 interface Option {
     value: string;
     label: JSX.Element;
     userId: string;
+}
+
+interface ActionObj {
+    action: ActionTypes;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -38,13 +42,19 @@ export default function ProfileSelector(props: Props) {
         setOpen(!isOpen);
     };
 
+    // Allow the parent component to control the open state.
+    const [oldOpenToggle, setOldOpenToggle] = useState(false);
+    useEffect(() => {
+        // eslint-disable-next-line no-undefined
+        if (props.controlledOpenToggle !== undefined && props.controlledOpenToggle !== oldOpenToggle) {
+            setOpen(!isOpen);
+            setOldOpenToggle(props.controlledOpenToggle);
+        }
+    }, [props.controlledOpenToggle]);
+
     const [userOptions, setUserOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
-        if (!props.channelId) {
-            return;
-        }
-
         const formatName = (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
             const name = '@' + userName;
             const description = getUserDescription(firstName, lastName, nickName);
@@ -60,7 +70,7 @@ export default function ProfileSelector(props: Props) {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
         };
 
-        const users = await fetchUsersInChannel(props.channelId);
+        const users = await props.getUsers();
         const optionList = users.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
@@ -93,47 +103,67 @@ export default function ProfileSelector(props: Props) {
         const commander = userOptions.find((option: Option) => option.userId === props.commanderId);
         if (commander) {
             setSelected(commander);
+        } else {
+            setSelected(null);
         }
     }, [userOptions, props.commanderId]);
 
-    const onSelectedChange = async (value: Option) => {
-        toggleOpen();
-        if (value.userId === selected?.userId) {
+    const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
+        if (action.action === 'clear') {
             return;
         }
-        const response = await setCommander(props.incidentId, value.userId);
-        if (response.error) {
-            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
-            console.log(response.error); // eslint-disable-line no-console
+        toggleOpen();
+        if (value?.userId === selected?.userId) {
+            return;
         }
+        props.onSelectedChange(value?.userId);
     };
+
+    let target;
+    if (props.commanderId) {
+        target = (
+            <ProfileButton
+                enableEdit={props.enableEdit}
+                userId={props.commanderId}
+                onClick={props.enableEdit ? toggleOpen : () => null}
+            />
+        );
+    } else {
+        target = (
+            <button
+                onClick={toggleOpen}
+                className={'IncidentFilter-button'}
+            >
+                {'Commander'}
+                {<i className='icon-chevron-down icon--small ml-2'/>}
+            </button>
+        );
+    }
+
+    // The following is awkward, but makes TS happy.
+    const baseComponents = {DropdownIndicator: null, IndicatorSeparator: null};
+    const components = props.customControl ? {...baseComponents, Control: props.customControl} : baseComponents;
 
     return (
         <Dropdown
             isOpen={isOpen}
             onClose={toggleOpen}
-            target={
-                <ProfileButton
-                    enableEdit={props.enableEdit}
-                    userId={props.commanderId}
-                    onClick={props.enableEdit ? toggleOpen : () => null}
-                />
-            }
+            target={target}
         >
             <ReactSelect
                 autoFocus={true}
                 backspaceRemovesValue={false}
-                components={{DropdownIndicator: null, IndicatorSeparator: null}}
+                components={components}
                 controlShouldRenderValue={false}
                 hideSelectedOptions={false}
-                isClearable={false}
+                isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={userOptions}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
-                onChange={(option) => onSelectedChange(option as Option)}
+                onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
                 classNamePrefix='incident-user-select'
                 className='incident-user-select'
             />
@@ -166,11 +196,13 @@ interface DropdownProps {
 
 const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
     <div
-        className={`profile-dropdown${isOpen ? ' profile-dropdown--active' : ''}`}
+        className={`IncidentFilter profile-dropdown${isOpen ? ' IncidentFilter--active profile-dropdown--active' : ''}`}
         css={{position: 'relative'}}
     >
         {target}
-        {isOpen ? <Menu className='incident-user-select__container'>{children}</Menu> : null}
+        {isOpen ? <Menu className='IncidentFilter-select incident-user-select__container'>
+            {children}
+        </Menu> : null}
         {isOpen ? <Blanket onClick={onClose}/> : null}
     </div>
 );

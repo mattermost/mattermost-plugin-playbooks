@@ -1,27 +1,34 @@
 .IncidentProfileButton {
+    color: var(--center-channel-color-56);
+    -webkit-transition: all 0.15s ease;
+    -webkit-transition-delay: 0s;
+    -moz-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
+    transition: all 0.15s ease false;
+    border-radius: 100px;
     border: none;
     background-color: unset;
     padding: unset;
     cursor: unset;
 
-    .IncidentProfile {
-        -webkit-transition: all 0.15s ease;
-        -webkit-transition-delay: 0s;
-        -moz-transition: all 0.15s ease;
-        -o-transition: all 0.15s ease;
-        transition: all 0.15s ease false;
-        border-radius: 100px;
+    &:hover {
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
+    }
 
-        &.active {
-            cursor: pointer;
+    &:active {
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    }
 
-            &:hover {
-                background: var(--center-channel-color-08);
-            }
-        }
+    &.active {
+        cursor: pointer;
+    }
+}
 
-        .icon-chevron-down {
-            color: gray;
-        }
+.IncidentFilter--active {
+    .IncidentProfileButton {
+        background: var(--button-bg-08);
+        color: var(--button-bg);
     }
 }

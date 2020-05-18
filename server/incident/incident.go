@@ -72,9 +72,8 @@ type Service interface {
 	// if there is no incident associated with this channel.
 	GetIncidentIDForChannel(channelID string) string
 
-	// GetCommandersForTeam returns all the commanders of incidents in this team. If active is true,
-	// it will only return commanders of active incidents.
-	GetCommandersForTeam(teamID string, active bool) ([]CommanderInfo, error)
+	// GetCommandersForTeam returns all the commanders of incidents in this team.
+	GetCommandersForTeam(teamID string) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
