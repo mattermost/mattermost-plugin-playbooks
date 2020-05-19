@@ -1,22 +1,22 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Action, Store} from 'redux';
 import React from 'react';
+import {Action, Store} from 'redux';
 import {debounce} from 'debounce';
 
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
-import {registerCssVars} from 'src/utils/utils';
+import {registerCssVars, isMobile} from 'src/utils/utils';
 
 import {pluginId} from './manifest';
 import IncidentIcon from './components/assets/icons/incident_icon';
 import PlusIcon from './components/assets/icons/plus_icon';
 import PlaybookIcon from './components/assets/icons/playbook_icon';
 import RightHandSidebar from './components/rhs';
-import RHSHeader from './components/rhs/rhs_title';
+import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import BackstageModal from './components/backstage/backstage_modal';
 
@@ -41,7 +41,6 @@ import {
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_UPDATED,
 } from './types/websocket_events';
-import {isMobile} from './utils/utils';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
@@ -80,7 +79,7 @@ export default class Plugin {
                 action: () => store.dispatch(startIncident()),
             },
         ];
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSHeader/>, icons);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>, icons);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later

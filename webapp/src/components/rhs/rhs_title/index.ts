@@ -16,7 +16,7 @@ import {
 import {incidentDetails, rhsState, isLoading} from 'src/selectors';
 import {BackstageArea} from 'src/types/backstage';
 
-import RHSHeader from './rhs_title';
+import RHSTitle from './rhs_title';
 
 function mapStateToProps(state: GlobalState) {
     return {
@@ -37,4 +37,4 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(RHSHeader);
+export default connect(mapStateToProps, mapDispatchToProps)(RHSTitle);
