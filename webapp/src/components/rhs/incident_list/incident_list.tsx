@@ -6,7 +6,7 @@ import React from 'react';
 import IncidentItem from 'src/components/rhs/incident_item';
 import {Incident} from 'src/types/incident';
 
-import IncidentListIcon from './list_icon';
+import IncidentListIcon from '../../assets/icons/list_icon';
 
 // @ts-ignore
 const {formatText, messageHtmlToComponent} = window.PostUtils;
