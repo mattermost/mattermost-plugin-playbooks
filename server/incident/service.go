@@ -315,7 +315,6 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 
 	// Send modification message before the actual modification becuase we need the postID
 	// from the notification message.
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
@@ -337,8 +336,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return fmt.Errorf("failed to update incident, is now in inconsistant state: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
-	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 
 	return nil
 }
