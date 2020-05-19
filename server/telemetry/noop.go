@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.
@@ -33,4 +34,16 @@ func (t *NoopTelemetry) ModifyCheckedState(incidentID, userID string, newState b
 
 // MoveChecklistItem does nothing.
 func (t *NoopTelemetry) MoveChecklistItem(incidentID, userID string) {
+}
+
+// CreatePlaybook does nothing.
+func (t *NoopTelemetry) CreatePlaybook(playbook playbook.Playbook) {
+}
+
+// UpdatePlaybook does nothing.
+func (t *NoopTelemetry) UpdatePlaybook(playbook playbook.Playbook) {
+}
+
+// DeletePlaybook does nothing.
+func (t *NoopTelemetry) DeletePlaybook(playbook playbook.Playbook) {
 }

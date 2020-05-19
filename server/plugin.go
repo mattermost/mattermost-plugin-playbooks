@@ -68,7 +68,11 @@ func (p *Plugin) OnActivate() error {
 		return fmt.Errorf("failed save bot to config: %w", err)
 	}
 
-	var telemetryClient incident.Telemetry
+	var telemetryClient interface {
+		incident.Telemetry
+		playbook.Telemetry
+	}
+
 	if rudderDataplaneURL == "" || rudderWriteKey == "" {
 		pluginAPIClient.Log.Warn("Rudder credentials are not set. Disabling analytics.")
 		telemetryClient = &telemetry.NoopTelemetry{}
@@ -91,7 +95,7 @@ func (p *Plugin) OnActivate() error {
 		telemetryClient,
 	)
 
-	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot)
+	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient)
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot)
 

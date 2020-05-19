@@ -53,3 +53,16 @@ type Store interface {
 	// Delete deletes a playbook
 	Delete(id string) error
 }
+
+// Telemetry defines the methods that the Playbook service needs from the
+// RudderTelemetry.
+type Telemetry interface {
+	// CreatePlaybook tracks the creation of a playbook.
+	CreatePlaybook(playbook Playbook)
+
+	// DeletePlaybook tracks the removal of a playbook.
+	DeletePlaybook(playbook Playbook)
+
+	// UpdatePlaybook tracks the update of a playbook.
+	UpdatePlaybook(playbook Playbook)
+}
