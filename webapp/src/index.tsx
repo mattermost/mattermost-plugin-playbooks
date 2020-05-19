@@ -11,7 +11,7 @@ import IncidentIcon from './components/incident_icon';
 import PlusIcon from './components/icons/plus_icon';
 import PlaybookIcon from './components/icons/playbook_icon';
 import RightHandSidebar from './components/rhs';
-import RHSHeader from './components/rhs_title';
+import RHSHeader from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import BackstageModal from './components/backstage/backstage_modal';
 
@@ -42,7 +42,7 @@ export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
         registry.registerReducer(reducer);
 
-        let mainMenuActionId;
+        let mainMenuActionId: string | null;
         const updateMainMenuAction = () => {
             if (mainMenuActionId && isMobile()) {
                 registry.unregisterComponent(mainMenuActionId);
@@ -50,7 +50,7 @@ export default class Plugin {
             } else if (!mainMenuActionId && !isMobile()) {
                 mainMenuActionId = registry.registerMainMenuAction(
                     'Incidents & Playbooks',
-                    (): void => store.dispatch(setBackstageModal(true, BackstageArea.Incidents)),
+                    () => store.dispatch(setBackstageModal(true, BackstageArea.Incidents)),
                 );
             }
         };
