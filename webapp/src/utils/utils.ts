@@ -44,6 +44,8 @@ export const registerCssVars = (theme: any) => {
         variables: {
             'center-channel-color-16': changeOpacity(theme.centerChannelColor, 0.16),
             'center-channel-color-04': changeOpacity(theme.centerChannelColor, 0.04),
+            'center-channel-color-72': changeOpacity(theme.centerChannelColor, 0.72),
+            'center-channel-color-56': changeOpacity(theme.centerChannelColor, 0.56),
         },
     });
 };
