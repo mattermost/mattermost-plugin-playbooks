@@ -181,3 +181,24 @@ func TestRudderTelemetry(t *testing.T) {
 		})
 	}
 }
+
+func TestIncidentProperties(t *testing.T) {
+	properties := incidentProperties(dummyIncident)
+
+	// ID field is reserved by Rudder to uniquely identify every event
+	require.NotContains(t, properties, "ID")
+
+	expectedProperties := map[string]interface{}{
+		"IncidentID":          dummyIncident.ID,
+		"IsActive":            dummyIncident.IsActive,
+		"CommanderUserID":     dummyIncident.CommanderUserID,
+		"TeamID":              dummyIncident.TeamID,
+		"CreatedAt":           dummyIncident.CreatedAt,
+		"ChannelIDs":          dummyIncident.ChannelIDs,
+		"PostID":              dummyIncident.PostID,
+		"NumChecklists":       1,
+		"TotalChecklistItems": 1,
+	}
+
+	require.Equal(t, expectedProperties, properties)
+}
