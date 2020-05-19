@@ -19,7 +19,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
         const checkedModified = moment(checklistItem.checked_modified);
 
         // Avoid times before 2020 since those are errors
-        if (checkedModified.isSameOrAfter('2020')) {
+        if (checkedModified.isSameOrAfter('2020-01-01')) {
             timestamp = '(' + checkedModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
         }
     }

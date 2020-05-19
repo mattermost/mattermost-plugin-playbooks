@@ -5,8 +5,8 @@ import React from 'react';
 
 import classNames from 'classnames';
 
-import IncidentList from 'src/components/backstage/incident_list/incident_list';
-import PlaybookList from 'src/components/playbook/playbook_list';
+import BackstageIncidentList from 'src/components/backstage/incidents/incident_list';
+import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 
 import {BackstageArea} from 'src/types/backstage';
 
@@ -26,7 +26,7 @@ const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, curren
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
         activeArea = (
-            <IncidentList
+            <BackstageIncidentList
                 currentTeamId={currentTeamId}
                 currentTeamName={currentTeamName}
             />

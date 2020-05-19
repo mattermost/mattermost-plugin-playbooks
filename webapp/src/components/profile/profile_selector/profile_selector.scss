@@ -10,7 +10,7 @@
     .profile-dropdown {
         .incident-user-select__container {
             z-index: 2;
-            position: relative;
+            position: absolute;
         }
     }
 
@@ -95,9 +95,4 @@
             top: 3px;
         }
     }
-}
-
-.incident-user-select__container {
-    position: relative;
-    z-index: 2;
 }

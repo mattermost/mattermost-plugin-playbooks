@@ -25,7 +25,7 @@ import {
     toggleRHS,
 } from 'src/actions';
 
-import IncidentDetails from './incident_details';
+import RHSIncidentDetails from './incident_details';
 
 type Props = {
     incident: Incident;
@@ -88,5 +88,5 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(IncidentDetails);
+export default connect(mapStateToProps, mapDispatchToProps)(RHSIncidentDetails);
 

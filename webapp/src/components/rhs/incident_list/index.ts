@@ -9,7 +9,7 @@ import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {startIncident} from 'src/actions';
 
-import IncidentList from './incident_list';
+import RHSIncidentList from './incident_list';
 
 function mapStateToProps(state: GlobalState) {
     return {
@@ -25,5 +25,5 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(IncidentList);
+export default connect(mapStateToProps, mapDispatchToProps)(RHSIncidentList);
 

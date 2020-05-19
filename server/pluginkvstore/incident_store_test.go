@@ -160,14 +160,14 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 2,
-				Active:  true,
+				Status:  incident.Ongoing,
 			},
 			want: []incident.Incident{id1},
 		},
 		{
 			name: "active, commander3, asc",
 			options: incident.HeaderFilterOptions{
-				Active:      true,
+				Status:      incident.Ongoing,
 				CommanderID: "commander3",
 				Order:       incident.Asc,
 			},
@@ -208,7 +208,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			name: "fuzzy search using starting characters, active",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "sbsm",
-				Active:     true,
+				Status:     incident.Ongoing,
 			},
 			want: []incident.Incident{id2},
 		},

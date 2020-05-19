@@ -7,8 +7,8 @@ import Scrollbars from 'react-custom-scrollbars';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
 
+import {fetchUsersInChannel, setCommander} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist/checklist';
-
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
@@ -64,7 +64,7 @@ export function renderThumbVertical(props: any): JSX.Element {
         />);
 }
 
-export default class IncidentDetails extends React.PureComponent<Props> {
+export default class RHSIncidentDetails extends React.PureComponent<Props> {
     private moveToDM(userName: string) {
         WebappUtils.browserHistory.push(`/${this.props.teamName}/messages/@${userName}`);
         if (isMobile()) {
@@ -74,6 +74,21 @@ export default class IncidentDetails extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const incidentChannel = this.props.channelDetails?.length > 0 ? this.props.channelDetails[0] : null;
+
+        const fetchUsers = async () => {
+            return incidentChannel ? fetchUsersInChannel(this.props.channelDetails[0].id) : [];
+        };
+
+        const onSelectedChange = async (userId?: string) => {
+            if (!userId) {
+                return;
+            }
+            const response = await setCommander(this.props.incident.id, userId);
+            if (response.error) {
+                // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+                console.log(response.error); // eslint-disable-line no-console
+            }
+        };
 
         return (
             <React.Fragment>
@@ -92,8 +107,8 @@ export default class IncidentDetails extends React.PureComponent<Props> {
                             <ProfileSelector
                                 commanderId={this.props.incident.commander_user_id}
                                 enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
-                                channelId={incidentChannel?.id}
-                                incidentId={this.props.incident.id}
+                                getUsers={fetchUsers}
+                                onSelectedChange={onSelectedChange}
                             />
                         </div>
 
