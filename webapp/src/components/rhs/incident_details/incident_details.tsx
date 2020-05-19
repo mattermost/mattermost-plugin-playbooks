@@ -64,7 +64,7 @@ export function renderThumbVertical(props: any): JSX.Element {
         />);
 }
 
-export default class IncidentDetails extends React.PureComponent<Props> {
+export default class RHSIncidentDetails extends React.PureComponent<Props> {
     private moveToDM(userName: string) {
         WebappUtils.browserHistory.push(`/${this.props.teamName}/messages/@${userName}`);
         if (isMobile()) {

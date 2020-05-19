@@ -6,7 +6,7 @@ import {connect} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {IncidentList} from './incident_list';
+import {BackstageIncidentList} from './incident_list';
 
 interface Props {
     currentTeamId: string;
@@ -19,4 +19,4 @@ function mapStateToProps(state: GlobalState, props: Props) {
     };
 }
 
-export default connect(mapStateToProps, null)(IncidentList);
+export default connect(mapStateToProps, null)(BackstageIncidentList);

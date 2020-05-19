@@ -20,7 +20,7 @@ interface Props {
     theme: Record<string, string>;
 }
 
-export default class IncidentList extends React.PureComponent<Props> {
+export default class RHSIncidentList extends React.PureComponent<Props> {
     public render(): JSX.Element {
         if (this.props.incidents.length === 0) {
             return (
