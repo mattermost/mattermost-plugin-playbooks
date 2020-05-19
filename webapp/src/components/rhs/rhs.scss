@@ -71,10 +71,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-
-            svg {
-                fill: var(--center-channel-color);
-            }
         }
 
         &__button {
@@ -101,6 +97,10 @@
                 background: var(--button-bg-08);
                 color: var(--button-bg);
                 fill: var(--button-bg);
+            }
+
+            svg {
+                fill: inherit;
             }
         }
 
