@@ -9,12 +9,8 @@ export default class PlaybookIcon extends React.PureComponent {
             <svg
                 viewBox='0 -1 16 18'
                 width='16'
-<<<<<<< HEAD:webapp/src/components/icons/playbook_icon.tsx
                 height='16'
                 fill='inherit'
-=======
-                height='18'
->>>>>>> origin/master:webapp/src/components/assets/icons/playbook_icon.tsx
                 xmlns='http://www.w3.org/2000/svg'
             >
                 <path

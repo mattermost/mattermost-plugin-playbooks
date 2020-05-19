@@ -13,8 +13,8 @@ import {registerCssVars} from 'src/utils/utils';
 
 import {pluginId} from './manifest';
 import IncidentIcon from './components/assets/icons/incident_icon';
-import PlusIcon from './components/icons/plus_icon';
-import PlaybookIcon from './components/icons/playbook_icon';
+import PlusIcon from './components/assets/icons/plus_icon';
+import PlaybookIcon from './components/assets/icons/playbook_icon';
 import RightHandSidebar from './components/rhs';
 import RHSHeader from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
