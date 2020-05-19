@@ -57,7 +57,7 @@ export const registerCssVars = (theme: any) => {
             'center-channel-color-16': changeOpacity(theme.centerChannelColor, 0.16),
             'center-channel-bg-08': changeOpacity(theme.centerChannelBg, 0.08),
 
-            'button-bg-30': changeOpacity(theme.buttonBg, 0.32),
+            'button-bg-32': changeOpacity(theme.buttonBg, 0.32),
             'button-color-32': changeOpacity(theme.buttonColor, 0.32),
             'button-bg-24': changeOpacity(theme.buttonBg, 0.24),
             'button-color-24': changeOpacity(theme.buttonColor, 0.24),
