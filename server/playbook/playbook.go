@@ -60,9 +60,9 @@ type Telemetry interface {
 	// CreatePlaybook tracks the creation of a playbook.
 	CreatePlaybook(playbook Playbook)
 
-	// DeletePlaybook tracks the removal of a playbook.
-	DeletePlaybook(playbook Playbook)
-
 	// UpdatePlaybook tracks the update of a playbook.
 	UpdatePlaybook(playbook Playbook)
+
+	// DeletePlaybook tracks the deletion of a playbook.
+	DeletePlaybook(playbook Playbook)
 }

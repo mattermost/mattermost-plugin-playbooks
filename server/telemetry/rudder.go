@@ -27,8 +27,8 @@ const (
 	eventUncheckChecklistItem = "UncheckChecklistItem"
 	eventMoveChecklistItem    = "MoveChecklistItem"
 	eventCreatePlaybook       = "CreatePlaybook"
-	eventDeletePlaybook       = "DeletePlaybook"
 	eventUpdatePlaybook       = "UpdatePlaybook"
+	eventDeletePlaybook       = "DeletePlaybook"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -152,12 +152,12 @@ func (t *RudderTelemetry) CreatePlaybook(playbook playbook.Playbook) {
 	t.track(eventCreatePlaybook, playbookProperties(playbook))
 }
 
-// DeletePlaybook tracks the removal of a playbook.
-func (t *RudderTelemetry) DeletePlaybook(playbook playbook.Playbook) {
-	t.track(eventDeletePlaybook, playbookProperties(playbook))
-}
-
 // UpdatePlaybook tracks the update of a playbook.
 func (t *RudderTelemetry) UpdatePlaybook(playbook playbook.Playbook) {
 	t.track(eventUpdatePlaybook, playbookProperties(playbook))
+}
+
+// DeletePlaybook tracks the deletion of a playbook.
+func (t *RudderTelemetry) DeletePlaybook(playbook playbook.Playbook) {
+	t.track(eventDeletePlaybook, playbookProperties(playbook))
 }
