@@ -5,6 +5,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	rudder "github.com/rudderlabs/analytics-go"
 )
 
@@ -25,6 +26,9 @@ const (
 	eventCheckChecklistItem   = "CheckChecklistItem"
 	eventUncheckChecklistItem = "UncheckChecklistItem"
 	eventMoveChecklistItem    = "MoveChecklistItem"
+	eventCreatePlaybook       = "CreatePlaybook"
+	eventUpdatePlaybook       = "UpdatePlaybook"
+	eventDeletePlaybook       = "DeletePlaybook"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -127,4 +131,33 @@ func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, newState
 // identified by userID in the incident identified by incidentID.
 func (t *RudderTelemetry) MoveChecklistItem(incidentID, userID string) {
 	t.track(eventMoveChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+func playbookProperties(playbook playbook.Playbook) map[string]interface{} {
+	totalChecklistItems := 0
+	for _, checklist := range playbook.Checklists {
+		totalChecklistItems += len(checklist.Items)
+	}
+
+	return map[string]interface{}{
+		"PlaybookID":          playbook.ID,
+		"TeamID":              playbook.TeamID,
+		"NumChecklists":       len(playbook.Checklists),
+		"TotalChecklistItems": totalChecklistItems,
+	}
+}
+
+// CreatePlaybook tracks the creation of a playbook.
+func (t *RudderTelemetry) CreatePlaybook(playbook playbook.Playbook) {
+	t.track(eventCreatePlaybook, playbookProperties(playbook))
+}
+
+// UpdatePlaybook tracks the update of a playbook.
+func (t *RudderTelemetry) UpdatePlaybook(playbook playbook.Playbook) {
+	t.track(eventUpdatePlaybook, playbookProperties(playbook))
+}
+
+// DeletePlaybook tracks the deletion of a playbook.
+func (t *RudderTelemetry) DeletePlaybook(playbook playbook.Playbook) {
+	t.track(eventDeletePlaybook, playbookProperties(playbook))
 }
