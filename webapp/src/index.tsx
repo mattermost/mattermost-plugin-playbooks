@@ -2,18 +2,24 @@
 // See LICENSE.txt for license information.
 
 import {Action, Store} from 'redux';
+import {debounce} from 'debounce';
+
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+
+import {registerCssVars} from 'src/utils/utils';
 
 import {pluginId} from './manifest';
 
-import IncidentIcon from './components/incident_icon';
+import IncidentIcon from './components/assets/icons/incident_icon';
 import RightHandSidebar from './components/rhs';
 import StartIncidentPostMenu from './components/post_menu';
 import BackstageModal from './components/backstage/backstage_modal';
 
 import {Hooks} from './hooks';
-import {setToggleRHSAction} from './actions';
+import {setToggleRHSAction, setBackstageModal} from './actions';
 import reducer from './reducer';
+import {BackstageArea} from './types/backstage';
 import {
     handleWebsocketIncidentUpdate,
     handleWebsocketIncidentCreated,
@@ -27,10 +33,32 @@ import {
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_UPDATED,
 } from './types/websocket_events';
+import {isMobile} from './utils/utils';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
         registry.registerReducer(reducer);
+
+        const theme = getTheme(store.getState());
+        registerCssVars(theme);
+
+        let mainMenuActionId;
+        const updateMainMenuAction = () => {
+            if (mainMenuActionId && isMobile()) {
+                registry.unregisterComponent(mainMenuActionId);
+                mainMenuActionId = null;
+            } else if (!mainMenuActionId && !isMobile()) {
+                mainMenuActionId = registry.registerMainMenuAction(
+                    'Incidents & Playbooks',
+                    (): void => store.dispatch(setBackstageModal(true, BackstageArea.Incidents)),
+                );
+            }
+        };
+
+        updateMainMenuAction();
+
+        // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
+        window.addEventListener('resize', debounce(updateMainMenuAction, 300));
 
         const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, null);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);

@@ -98,6 +98,10 @@
                 color: var(--button-bg);
                 fill: var(--button-bg);
             }
+
+            svg {
+                fill: inherit;
+            }
         }
 
         .title {

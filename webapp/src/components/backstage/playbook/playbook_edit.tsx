@@ -9,7 +9,7 @@ import {savePlaybook} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-import BackIcon from '../assets/icons/back_icon';
+import BackIcon from '../../assets/icons/back_icon';
 
 import './playbook.scss';
 

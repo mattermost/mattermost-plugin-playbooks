@@ -109,7 +109,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                         className='btn btn-primary'
                                         onClick={() => this.editPlaybook()}
                                     >
-                                        <i className='icon icon-plus mr-2'/>
+                                        <i className='icon-plus mr-2'/>
                                         {'New Playbook'}
                                     </button>
                                 </div>

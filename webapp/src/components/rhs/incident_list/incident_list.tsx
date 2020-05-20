@@ -6,7 +6,7 @@ import React from 'react';
 import IncidentItem from 'src/components/rhs/incident_item';
 import {Incident} from 'src/types/incident';
 
-import IncidentListIcon from './list_icon';
+import IncidentListIcon from '../../assets/icons/list_icon';
 
 // @ts-ignore
 const {formatText, messageHtmlToComponent} = window.PostUtils;
@@ -20,7 +20,7 @@ interface Props {
     theme: Record<string, string>;
 }
 
-export default class IncidentList extends React.PureComponent<Props> {
+export default class RHSIncidentList extends React.PureComponent<Props> {
     public render(): JSX.Element {
         if (this.props.incidents.length === 0) {
             return (
