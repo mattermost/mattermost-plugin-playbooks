@@ -1,49 +1,105 @@
 {
-    "$schema": "http://json-schema.org/schema#",
-    "$id": "https://github.com/mattermost/mattermost-plugin-incident-response/blob/master/server/incident/schema.json",
-    "type": "object",
-    "properties": {
-        "id": {"type": "string"},
-        "name": {"type": "string"},
-        "is_active": {"type": "boolean"},
-        "commander_user_id": {"type": "string"},
-        "team_id": {"type": "string"},
-        "created_at": {"type": "integer"},
-        "ended_at": {"type": "integer"},
-        "channel_ids": {"type": "array", "items": {"type": "string"}},
-        "post_id": {"type": "string"},
-        "playbook": {
+  "$schema": "http://json-schema.org/schema#",
+  "$id": "https://github.com/mattermost/mattermost-plugin-incident-response/blob/master/server/incident/schema.json",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean"
+    },
+    "commander_user_id": {
+      "type": "string"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "integer"
+    },
+    "ended_at": {
+      "type": "integer"
+    },
+    "channel_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "post_id": {
+      "type": "string"
+    },
+    "playbook": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "team_id": {
+          "type": "string"
+        },
+        "checklists": {
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
-                "id": {"type": "string"},
-                "title": {"type": "string"},
-                "team_id": {"type": "string"},
-                "checklists": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "title": {"type": "string"},
-                            "items": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "title": {"type": "string"},
-                                        "checked": {"type": "boolean"},
-                                        "checked_modified": {"type": "string"},
-                                        "checked_post_id": {"type": "string"}
-                                    },
-                                    "required": ["title", "checked"]
-                                }
-                            }
-                        },
-                        "required": ["title", "items"]
+              "title": {
+                "type": "string"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "checked": {
+                      "type": "boolean"
+                    },
+                    "checked_modified": {
+                      "type": "string"
+                    },
+                    "checked_post_id": {
+                      "type": "string"
                     }
+                  },
+                  "required": [
+                    "title",
+                    "checked"
+                  ]
                 }
+              }
             },
-            "required": ["id", "title", "team_id", "checklists"]
+            "required": [
+              "title",
+              "items"
+            ]
+          }
         }
-    },
-    "required": ["id", "name", "is_active", "commander_user_id", "team_id", "created_at", "channel_ids"]
+      },
+      "required": [
+        "id",
+        "title",
+        "team_id",
+        "checklists"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "is_active",
+    "commander_user_id",
+    "team_id",
+    "created_at",
+    "channel_ids"
+  ]
 }
