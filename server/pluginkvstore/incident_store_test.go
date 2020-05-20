@@ -70,12 +70,38 @@ var id5 = incident.Incident{
 	},
 }
 
+var id6 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id6",
+		Name:            "incident 6 - ziggurat!",
+		IsActive:        true,
+		CommanderUserID: "commander5",
+		TeamID:          "team3",
+		CreatedAt:       555,
+		EndedAt:         777,
+	},
+}
+
+var id7 = incident.Incident{
+	Header: incident.Header{
+		ID:              "id7",
+		Name:            "incident 7 - Ziggürat!",
+		IsActive:        true,
+		CommanderUserID: "commander5",
+		TeamID:          "team3",
+		CreatedAt:       556,
+		EndedAt:         778,
+	},
+}
+
 var dbHeaderMap = idHeaderMap{
 	"id1": id1.Header,
 	"id2": id2.Header,
 	"id3": id3.Header,
 	"id4": id4.Header,
 	"id5": id5.Header,
+	"id6": id6.Header,
+	"id7": id7.Header,
 }
 
 func Test_incidentStore_GetIncidents(t *testing.T) {
@@ -88,7 +114,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name:    "simple getHeaders, no options",
 			options: incident.HeaderFilterOptions{},
-			want:    []incident.Incident{id4, id5, id3, id2, id1},
+			want:    []incident.Incident{id7, id6, id4, id5, id3, id2, id1},
 		},
 		{
 			name: "team1 only, ascending",
@@ -103,7 +129,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			options: incident.HeaderFilterOptions{
 				Sort: incident.EndedAt,
 			},
-			want: []incident.Incident{id3, id2, id5, id4, id1},
+			want: []incident.Incident{id7, id6, id3, id2, id5, id4, id1},
 		},
 		{
 			name: "no options, paged by 1",
@@ -111,7 +137,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    0,
 				PerPage: 1,
 			},
-			want: []incident.Incident{id4},
+			want: []incident.Incident{id7},
 		},
 		{
 			name: "no options, paged by 3",
@@ -119,7 +145,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    0,
 				PerPage: 3,
 			},
-			want: []incident.Incident{id4, id5, id3},
+			want: []incident.Incident{id7, id6, id4},
 		},
 		{
 			name: "no options, page 1 by 2",
@@ -127,7 +153,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    1,
 				PerPage: 2,
 			},
-			want: []incident.Incident{id3, id2},
+			want: []incident.Incident{id4, id5},
 		},
 		{
 			name: "no options, page 1 by 3",
@@ -135,7 +161,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    1,
 				PerPage: 3,
 			},
-			want: []incident.Incident{id2, id1},
+			want: []incident.Incident{id5, id3, id2},
 		},
 		{
 			name: "no options, page 1 by 5",
@@ -143,10 +169,10 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    1,
 				PerPage: 5,
 			},
-			want: nil,
+			want: []incident.Incident{id2, id1},
 		},
 		{
-			name: "sorted by ended, ascending, page 1 of 2",
+			name: "sorted by ended, ascending, page 1 by 2",
 			options: incident.HeaderFilterOptions{
 				Sort:    incident.EndedAt,
 				Order:   incident.Asc,
@@ -156,13 +182,13 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			want: []incident.Incident{id5, id2},
 		},
 		{
-			name: "only active, page 1 of 2",
+			name: "only active, page 1 by 2",
 			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 2,
 				Status:  incident.Ongoing,
 			},
-			want: []incident.Incident{id1},
+			want: []incident.Incident{id5, id2},
 		},
 		{
 			name: "active, commander3, asc",
@@ -212,6 +238,13 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			},
 			want: []incident.Incident{id2},
 		},
+		{
+			name: "case-insensitive and unicode-normalized",
+			options: incident.HeaderFilterOptions{
+				SearchTerm: "ziggurat",
+			},
+			want: []incident.Incident{id6, id7},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -223,7 +256,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				SetArg(1, dbHeaderMap).
 				Times(1)
 
-			for _, i := range []incident.Incident{id1, id2, id3, id4, id5} {
+			for _, i := range []incident.Incident{id1, id2, id3, id4, id5, id6, id7} {
 				kvAPI.EXPECT().
 					Get(fmt.Sprintf("incident_%s", i.ID), gomock.Any()).
 					SetArg(1, i).
