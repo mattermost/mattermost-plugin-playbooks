@@ -11,6 +11,8 @@ import {RHSState} from 'src/types/rhs';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
+import './rhs_header.scss'
+
 interface Props {
     rhsState: RHSState;
     incident: Incident;

@@ -5,29 +5,24 @@ import {connect} from 'react-redux';
 import {bindActionCreators, Dispatch} from 'redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getServerVersion} from 'mattermost-redux/selectors/entities/general';
-import {isMinimumServerVersion} from 'mattermost-redux/utils/helpers';
 
 import {
-    withLoading,
     startIncident,
-    getIncidentsForCurrentTeam,
-    getIncidentDetails,
     setRHSState,
     setRHSOpen,
+    setBackstageModal,
 } from 'src/actions';
 
-import {activeIncidents, incidentDetails, rhsState, isLoading} from 'src/selectors';
+import {incidentDetails, rhsState, isLoading} from 'src/selectors';
+import {BackstageArea} from 'src/types/backstage';
 
-import RightHandSidebar from './rhs_main';
+import RHSHeader from './rhs_header';
 
 function mapStateToProps(state: GlobalState) {
     return {
-        incidents: activeIncidents(state) || [],
         incident: incidentDetails(state),
         rhsState: rhsState(state),
         isLoading: isLoading(state),
-        addLegacyHeader: !isMinimumServerVersion(getServerVersion(state), 5, 24),
     };
 }
 
@@ -35,12 +30,11 @@ function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
             startIncident,
-            getIncidentsForCurrentTeam: () => withLoading(getIncidentsForCurrentTeam()),
-            getIncidentDetails: (id: string) => withLoading(getIncidentDetails(id)),
             setRHSState,
             setRHSOpen,
+            openBackstageModal: (selectedArea: BackstageArea) => setBackstageModal(true, selectedArea),
         }, dispatch),
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(RightHandSidebar);
+export default connect(mapStateToProps, mapDispatchToProps)(RHSHeader);
