@@ -37,7 +37,7 @@ var id2 = incident.Incident{
 var id3 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id3",
-		Name:            "incident 3 - horse stapler battery shotgun mouse shotputmouse",
+		Name:            "incident 3 - Horse stapler battery shotgun mouse shotputmouse",
 		IsActive:        false,
 		CommanderUserID: "commander1",
 		TeamID:          "team1",
