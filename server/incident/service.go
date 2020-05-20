@@ -39,6 +39,9 @@ const DialogFieldNameKey = "incidentName"
 // DialogFieldPlaybookIDKey is the key for the playbook ID field used in OpenCreateIncidentDialog.
 const DialogFieldPlaybookIDKey = "playbookID"
 
+// DialogFieldIsPublicKey is the key for the public or private field used in OpenCreateIncidentDialog.
+const DialogFieldIsPublicKey = "public"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 	configService config.Service, telemetry Telemetry) *ServiceImpl {
@@ -57,21 +60,21 @@ func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) ([]Incident, err
 }
 
 // CreateIncident creates a new incident.
-func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
+func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, error) {
 	// Create incident
 	incdnt, err := s.store.CreateIncident(incdnt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create incident: %w", err)
 	}
 
-	channel, err := s.createIncidentChannel(incdnt)
+	channel, err := s.createIncidentChannel(incdnt, public)
 	if err != nil {
 		return nil, err
 	}
 
 	// New incidents are always active
 	incdnt.IsActive = true
-	incdnt.ChannelIDs = []string{channel.Id}
+	incdnt.PrimaryChannelID = channel.Id
 	incdnt.CreatedAt = time.Now().Unix()
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
@@ -174,8 +177,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 
 	// Post in the  main incident channel that @user has ended the incident.
 	// Main channel is the only channel in the incident for now.
-	mainChannelID := incdnt.ChannelIDs[0]
-	if _, err := s.poster.PostMessage(mainChannelID, "This incident has been closed by @%v", user.Username); err != nil {
+	if _, err := s.poster.PostMessage(incdnt.PrimaryChannelID, "This incident has been closed by @%v", user.Username); err != nil {
 		return fmt.Errorf("failed to post end incident messsage: %w", err)
 	}
 
@@ -290,7 +292,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 
-	mainChannelID := incidentToModify.ChannelIDs[0]
+	mainChannelID := incidentToModify.PrimaryChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
 		oldCommander.Username, newCommander.Username)
 	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
@@ -317,7 +319,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	// from the notification message.
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
-	mainChannelID := incidentToModify.ChannelIDs[0]
+	mainChannelID := incidentToModify.PrimaryChannelID
 	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
 	if !newState {
 		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
@@ -481,11 +483,10 @@ func (s *ServiceImpl) NukeDB() error {
 
 func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {
 	// Incident main channel membership is required to modify incident
-	incidentMainChannelID := incident.ChannelIDs[0]
-	return s.pluginAPI.User.HasPermissionToChannel(userID, incidentMainChannelID, model.PERMISSION_READ_CHANNEL)
+	return s.pluginAPI.User.HasPermissionToChannel(userID, incident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL)
 }
 
-func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, error) {
+func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
 	channelHeader := "The channel was created by the Incident Response plugin."
 
 	if incdnt.PostID != "" {
@@ -494,9 +495,14 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 		channelHeader = fmt.Sprintf("[Original Post](%s) | %s", postURL, channelHeader)
 	}
 
+	channelType := model.CHANNEL_PRIVATE
+	if public {
+		channelType = model.CHANNEL_OPEN
+	}
+
 	channel := &model.Channel{
 		TeamId:      incdnt.TeamID,
-		Type:        model.CHANNEL_PRIVATE,
+		Type:        channelType,
 		DisplayName: incdnt.Name,
 		Name:        cleanChannelName(incdnt.Name),
 		Header:      channelHeader,
@@ -567,6 +573,22 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
+			},
+			{
+				DisplayName: "Incident Type",
+				Name:        DialogFieldIsPublicKey,
+				Type:        "radio",
+				Default:     "private",
+				Options: []*model.PostActionOptions{
+					{
+						Text:  "Private",
+						Value: "private",
+					},
+					{
+						Text:  "Public",
+						Value: "public",
+					},
+				},
 			},
 			{
 				DisplayName: "Playbook",

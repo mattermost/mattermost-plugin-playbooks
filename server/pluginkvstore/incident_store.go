@@ -157,11 +157,10 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 			return "", fmt.Errorf("failed to get incident for id (%s): %w", header.ID, err)
 		}
 
-		for _, incidentChannelID := range incdnt.ChannelIDs {
-			if incidentChannelID == channelID {
-				return incdnt.ID, nil
-			}
+		if incdnt.PrimaryChannelID == channelID {
+			return incdnt.ID, nil
 		}
+
 	}
 	return "", fmt.Errorf("channel with id (%s) does not have an incident: %w", channelID, incident.ErrNotFound)
 }

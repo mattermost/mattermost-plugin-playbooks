@@ -9,20 +9,20 @@ import (
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	ChannelIDs []string           `json:"channel_ids"`
-	PostID     string             `json:"post_id"`
-	Playbook   *playbook.Playbook `json:"playbook"`
+	PostID   string             `json:"post_id"`
+	Playbook *playbook.Playbook `json:"playbook"`
 }
 
 // Header holds the summary information of an incident.
 type Header struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	IsActive        bool   `json:"is_active"`
-	CommanderUserID string `json:"commander_user_id"`
-	TeamID          string `json:"team_id"`
-	CreatedAt       int64  `json:"created_at"`
-	EndedAt         int64  `json:"ended_at"`
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	IsActive         bool   `json:"is_active"`
+	CommanderUserID  string `json:"commander_user_id"`
+	TeamID           string `json:"team_id"`
+	PrimaryChannelID string `json:"primary_channel_id"`
+	CreatedAt        int64  `json:"created_at"`
+	EndedAt          int64  `json:"ended_at"`
 }
 
 // CommanderInfo holds the summary information of a commander.
@@ -53,7 +53,7 @@ type Service interface {
 	GetIncidents(options HeaderFilterOptions) ([]Incident, error)
 
 	// CreateIncident creates a new incident.
-	CreateIncident(incdnt *Incident) (*Incident, error)
+	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error

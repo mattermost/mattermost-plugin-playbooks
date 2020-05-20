@@ -40,7 +40,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameLong)
 	})
 
@@ -66,7 +66,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameLong)
 	})
 
@@ -103,7 +103,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.NoError(t, err)
 	})
 
@@ -130,7 +130,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.EqualError(t, err, "failed to create incident channel: : , ")
 	})
 }

@@ -103,6 +103,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
+	incidentType := request.Submission[incident.DialogFieldIsPublicKey].(string)
+	isPlublic := incidentType == "public"
 
 	var playbookTemplate *playbook.Playbook
 	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
@@ -125,7 +127,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		},
 		PostID:   state.PostID,
 		Playbook: playbookTemplate,
-	})
+	}, isPlublic)
 
 	if err != nil {
 		var msg string
@@ -483,7 +485,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	channel, err := h.pluginAPI.Channel.Get(incident.PrimaryChannelID)
 	if err != nil {
 		return err
 	}

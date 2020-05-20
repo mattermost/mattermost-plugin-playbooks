@@ -28,26 +28,24 @@ type Props = {
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
     let totalMessages = 0;
-    const mainChannelId = ownProps.incident.channel_ids?.[0] || '';
+    const primaryChannelId = ownProps.incident.primary_channel_id;
     const involvedInIncident = haveIChannelPermission(state,
-        {channel: mainChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
+        {channel: primaryChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
 
     let mainChannelDetails: ChannelWithTeamData;
-    if (ownProps.incident.channel_ids?.length > 0) {
-        const c = getChannel(state, mainChannelId) as Channel;
-        if (c) {
-            const t = getTeam(state, c.team_id) as Team;
-            mainChannelDetails = {
-                ...c,
-                team_display_name: t.display_name,
-                team_name: t.name,
-            };
+    const c = getChannel(state, primaryChannelId) as Channel;
+    if (c) {
+        const t = getTeam(state, c.team_id) as Team;
+        mainChannelDetails = {
+            ...c,
+            team_display_name: t.display_name,
+            team_name: t.name,
+        };
 
-            totalMessages = c.total_msg_count;
-        }
+        totalMessages = c.total_msg_count;
     }
 
-    const channelStats = getAllChannelStats(state)[mainChannelId];
+    const channelStats = getAllChannelStats(state)[primaryChannelId];
 
     return {
         involvedInIncident,

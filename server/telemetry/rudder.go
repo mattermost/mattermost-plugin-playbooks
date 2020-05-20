@@ -75,7 +75,6 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 		"CommanderUserID":     incident.CommanderUserID,
 		"TeamID":              incident.TeamID,
 		"CreatedAt":           incident.CreatedAt,
-		"ChannelIDs":          incident.ChannelIDs,
 		"PostID":              incident.PostID,
 		"NumChecklists":       len(incident.Playbook.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
