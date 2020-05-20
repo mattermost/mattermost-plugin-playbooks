@@ -290,7 +290,7 @@ func searchHeaders(headers []incident.Header, term string) []incident.Header {
 		searchableFields = append(searchableFields, h.Name)
 	}
 
-	ranks := fuzzy.RankFind(term, searchableFields)
+	ranks := fuzzy.RankFindNormalizedFold(term, searchableFields)
 	sort.Sort(ranks)
 
 	var results []incident.Header
