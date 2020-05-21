@@ -51,7 +51,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
-	checklistsRouter := incidentRouter.PathPrefix("/checklists").Subrouter()
+	checklistsRouter := incidentRouterAuthorized.PathPrefix("/checklists").Subrouter()
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)

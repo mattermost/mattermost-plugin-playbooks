@@ -195,7 +195,7 @@ var id6 = incident.Incident{
 	},
 }
 
-func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
+func TestServiceImpl_GetCommanders(t *testing.T) {
 	type args struct {
 		teamID string
 	}
@@ -265,7 +265,10 @@ func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
 			pluginAPI.On("GetUser", "c1").Return(&model.User{Username: "comm one"}, nil)
 			pluginAPI.On("GetUser", "c2").Return(&model.User{Username: "comm two"}, nil)
 
-			got, err := s.GetCommandersForTeam(tt.args.teamID)
+			options := incident.HeaderFilterOptions{
+				TeamID: tt.args.teamID,
+			}
+			got, err := s.GetCommanders(options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCommandersForTeam() error = %v, wantErr %v", err, tt.wantErr)
 				return

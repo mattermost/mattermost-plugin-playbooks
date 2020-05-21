@@ -99,7 +99,6 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	t.Helper()
 
 	incidentFromProperties := func(properties map[string]interface{}) *incident.Incident {
-		require.Contains(t, properties, "ChannelIDs")
 		require.Contains(t, properties, "PostID")
 
 		require.Contains(t, properties, "IncidentID")
