@@ -112,7 +112,26 @@ $font-family: Open Sans;
         display: flex;
         flex-wrap: wrap;
         margin: 0 44px;
+    }  
+    
+    .chart-block {
+        padding: 2rem;
+        border: 1px solid var(--center-channel-color-08);
+        background: var(--center-channel-bg);
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        margin: 1.6rem;
+        height: 168px;
+        flex: 0 0 26rem;
+
+        .title {
+            color: var(--center-channel-color-56);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 0 0 16px;
+        }
     }
+
 
     .statistics-row__block {
         padding: 2rem;

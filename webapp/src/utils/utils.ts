@@ -76,6 +76,8 @@ export const registerCssVars = (theme: any) => {
             'button-bg-88': changeOpacity(theme.buttonBg, 0.88),
             'button-color-88': changeOpacity(theme.buttonColor, 0.88),
 
+            'sidebar-bg-color-16': changeOpacity(theme.buttonColor, 0.16),
+
             'link-color-08': changeOpacity(theme.linkColor, 0.08),
 
         },

@@ -14,7 +14,6 @@ import {ChecklistItem} from 'src/types/playbook';
 
 interface Props {
     theme: Record<string, string>;
-    title: React.ReactNode;
     width: number;
     height: number;
     data?: any;
@@ -30,7 +29,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         },
         scales: {
             xAxes: [{
-                type: 'category',
+                type: 'linear',
                 display: true,
                 scaleLabel: {
                     display: true,
@@ -38,6 +37,25 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                 },
                 gridLines: {
                     borderDash: [8, 4],
+                },
+                ticks: {
+                    callback: (value) => {
+                        const duration = moment.duration(value);
+
+                        if (duration.days()) {
+                            return `${duration.days()} days ${duration.hours()} h`;
+                        }
+
+                        if (duration.hours()) {
+                            return `${duration.hours()} h ${duration.minutes()} m`;
+                        }
+
+                        if (duration.minutes()) {
+                            return `${duration.minutes()} m`;
+                        }
+
+                        return `${duration.seconds()} s`;
+                    },
                 },
             }],
             yAxes: [{
@@ -106,23 +124,8 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         }
     }
 
-    public compare(incidentA: {item: ChecklistItem; duration: moment.Duration}, incidentB: {item: ChecklistItem; duration: moment.Duration}) {
-        const msA = incidentA.duration?.asMilliseconds() | 0;
-        const msB = incidentB.duration?.asMilliseconds() | 0;
-
-        if (msA > msB) {
-            return 1;
-        }
-        if (msB > msA) {
-            return -1;
-        }
-
-        return 0;
-    }
-
     public initData() {
         const chartData = {
-            xLabels: [] as any,
             yLabels: [] as any,
             checklistItems: [] as ChecklistItem[],
 
@@ -130,7 +133,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                 borderColor: 'rgba(151,187,205,1)',
                 pointBackgroundColor: this.props.theme.buttonBg,
                 pointBorderColor: '#fff',
-                pointHoverBackgroundColor: 'var(--sidebar-bg-16)',
+                pointHoverBackgroundColor: 'var(--sidebar-bg-color-16)',
                 pointHoverBorderColor: 'rgba(151,187,205,1)',
                 pointRadius: 5,
                 pointHoverRadius: 15,
@@ -140,7 +143,6 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
 
         const checklistItems = this.props.incident.playbook.checklists[0].items;
 
-        const durations = [];
         for (const index in checklistItems) {
             if (!checklistItems[index]) {
                 continue;
@@ -148,40 +150,23 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
 
             const item = checklistItems[index];
 
-            let duration = null;
             if (item.checked) {
+                // Add point to the graph
                 const checkedTime = moment(item.checked_modified);
-                duration = moment.duration(checkedTime.diff(moment.unix(this.props.incident.created_at)));
+                const duration = moment.duration(checkedTime.diff(moment.unix(this.props.incident.created_at)));
+
+                chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
+                chartData.checklistItems.push(item);
             }
 
             chartData.yLabels.push(item.title);
-            durations.push({item, duration});
-        }
-
-        durations.sort(this.compare);
-
-        for (const d in durations) {
-            if (!durations[d]) {
-                continue;
-            }
-            const item = durations[d];
-
-            if (item.duration) {
-                chartData.datasets[0].data.push({x: item.duration.humanize(), y: item.item.title});
-                chartData.checklistItems.push(item.item);
-
-                if (!chartData.xLabels.includes(item.duration?.humanize())) {
-                    chartData.xLabels.push(item.duration?.humanize());
-                }
-            }
         }
 
         chartData.yLabels = chartData.yLabels.reverse();
-        chartData.yLabels.unshift('');
 
-        // Add an initial/last tick to scale
-        chartData.xLabels.unshift('');
-        chartData.xLabels.push('');
+        // Add an initial/last tick to scales
+        chartData.yLabels.unshift('');
+        chartData.yLabels.push('');
 
         return chartData;
     }
@@ -211,7 +196,8 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         let content;
         if (chartData == null) {
             content = 'Loading...';
-        } else if (chartData.yLabels.length === 0) {
+        } else if (chartData.yLabels.length === 2) {
+            // If it only has the trailing empty labels
             content = (
                 'Not enough data for a meaningful representation.'
             );

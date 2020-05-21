@@ -262,9 +262,8 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         </div>
                     </div>
                 </div>
-                <div>
+                <div className='chart-block'>
                     <ChecklistTimeline
-                        title={''}
                         data={data}
                         width={740}
                         height={225}
