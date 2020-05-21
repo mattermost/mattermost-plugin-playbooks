@@ -74,6 +74,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const incidentChannel = this.props.channelDetails?.length > 0 ? this.props.channelDetails[0] : null;
+        const mainChannelLink = incidentChannel ? `/${incidentChannel.team_name}/channels/${incidentChannel.name}` : '';
 
         const fetchUsers = async () => {
             return incidentChannel ? fetchUsersInChannel(this.props.channelDetails[0].id) : [];
@@ -168,7 +169,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                                 <div className='help-text'>
                                     {'Go to '}
                                     <Link
-                                        to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
+                                        to={mainChannelLink}
                                         text={'the incident channel'}
                                     />
                                     {' to make changes.'}
