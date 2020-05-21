@@ -104,7 +104,7 @@ func (r *Runner) actionStart(args []string) {
 func (r *Runner) actionEnd() {
 	incidentID := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if incidentID == "" {
-		r.postCommandResponse("An incident can only be ended from within the incident's channel.")
+		r.postCommandResponse("You can only end an incident from within the incident's channel.")
 		return
 	}
 
