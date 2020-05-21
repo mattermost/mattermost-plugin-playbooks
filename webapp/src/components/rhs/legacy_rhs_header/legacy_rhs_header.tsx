@@ -12,7 +12,7 @@ import {RHSState} from 'src/types/rhs';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
 
-import './rhs_header.scss'
+import './legacy_rhs_header.scss'
 
 interface Props {
     rhsState: RHSState;
@@ -28,17 +28,17 @@ interface Props {
 
 const OVERLAY_DELAY = 400;
 
-export default function RHSHeader(props: Props) {
+export default function LegacyRHSHeader(props: Props) {
     return (
-        <div className='navigation-bar'>
-            <div className={'header-buttons'}>
+        <div className='legacy-rhs-header'>
+            <div className='legacy-rhs-header__header-buttons'>
                 <OverlayTrigger
                     placement='bottom'
                     delay={OVERLAY_DELAY}
                     overlay={<Tooltip id='playbooksTooltip'>{'Playbooks'}</Tooltip>}
                 >
                     <button
-                        className='navigation-bar__button'
+                        className='legacy-rhs-header__button'
                         onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
                     >
                     <i>
@@ -52,7 +52,7 @@ export default function RHSHeader(props: Props) {
                     overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
                 >
                     <button
-                        className='navigation-bar__button'
+                        className='legacy-rhs-header__button'
                         onClick={() => props.actions.startIncident()}
                     >
                         <PlusIcon/>

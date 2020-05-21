@@ -7,7 +7,7 @@ import Scrollbars from 'react-custom-scrollbars';
 import Spinner from 'src/components/spinner';
 import {Incident} from 'src/types/incident';
 import {RHSState} from 'src/types/rhs';
-import RHSHeader from 'src/components/rhs/rhs_header';
+import LegacyRHSHeader from 'src/components/rhs/legacy_rhs_header';
 
 import IncidentList from './incident_list';
 import RHSIncidentDetails from './incident_details';
@@ -71,7 +71,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
     public render(): JSX.Element {
         return (
             <div className='incident-rhs'>
-                { this.props.addLegacyHeader && <RHSHeader/> }
+                { this.props.addLegacyHeader && <LegacyRHSHeader/> }
                 <div className='incident-rhs__content'>
                     {
                         this.props.isLoading &&

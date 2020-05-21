@@ -1,9 +1,8 @@
-
 @import 'compass/utilities';
 @import 'compass/css3';
 
 .incident-rhs { 
-    .navigation-bar {
+    .legacy-rhs-header {
         // Mimic the original RHS header shape
         height: 44px;
         line-height: 44px;
@@ -22,7 +21,7 @@
         width: calc(100% - 60px - 34.15px);
         margin-left: 34.15px;
 
-        .header-buttons {
+        &__header-buttons {
             display: flex;
             justify-content: flex-end;
         }
