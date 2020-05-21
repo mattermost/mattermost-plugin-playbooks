@@ -148,9 +148,9 @@ export function BackstageIncidentList(props: Props) {
                                     key={incident.id}
                                     onClick={() => openIncidentDetails(incident)}
                                 >
-                                    <div className='col-sm-3 incident-item__title'>
+                                    <a className='col-sm-3 incident-item__title'>
                                         {incident.name}
-                                    </div>
+                                    </a>
                                     <div className='col-sm-2'> {
                                         <StatusBadge isActive={incident.is_active}/>
                                     }
