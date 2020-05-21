@@ -41,7 +41,9 @@ export default function RHSHeader(props: Props) {
                         className='navigation-bar__button'
                         onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
                     >
+                    <i>
                         <PlaybookIcon/>
+                    </i>
                     </button>
                 </OverlayTrigger>
                 <OverlayTrigger

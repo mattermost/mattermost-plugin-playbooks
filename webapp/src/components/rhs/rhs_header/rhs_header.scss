@@ -1,65 +1,46 @@
-// Browser Prefixes
-@mixin transform($transforms) {
-    -webkit-transform: $transforms;
-    -moz-transform: $transforms;
-    -ms-transform: $transforms;
-    transform: $transforms;
-}
 
-// Translate
-@mixin translateY ($y) {
-    @include transform(translate(0, $y));
-}
+@import 'compass/utilities';
+@import 'compass/css3';
 
 .incident-rhs { 
     .navigation-bar {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-end;
-        justify-content: flex-end;
-        padding: 0.8rem 0.5rem 0.8rem 2rem;
-        background: var(--center-channel-color-04);
-        border-bottom: 1px solid var(--center-channel-color-16);
-        // @include translateY(-43px);
+        // Mimic the original RHS header shape
+        height: 44px;
+        line-height: 44px;
+        padding: 0 5px 0 0;
+
+        // Move this bar on the top of the original RHS header, so both bars
+        // integrate seemlessly
+        margin-top: -44px;
+
+        // Leave space for the buttons in the original RHS header: 
+        // - Expand and close button, on the right side, which are 60 px wide.
+        // - The back button, on the left side, which is 34.15px wide.
+        //   - A left padding of 15px
+        //   - A width of 7.15px
+        //   - A right padding of 12px
+        width: calc(100% - 60px - 34.15px);
+        margin-left: 34.15px;
 
         .header-buttons {
-            font-size: 16px;
-            border: 0;
-            background: transparent;
-            padding: 0;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            justify-content: flex-end;
         }
 
         &__button {
-            display: flex;
-            font-size: 16px;
-            border: 0;
-            background: transparent;
-            width: 3.2rem;
-            height: 3.2rem;
-            padding: 0;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            fill: var(--center-channel-color-56);
-            color: var(--center-channel-color-56);
+            font-size: 18px;
+            border: none;
+            background: none;
+            opacity: 0.5;
 
             &:hover {
-                background: var(--center-channel-color-08);
-                color: var(--center-channel-color-72);
-                fill: var(--center-channel-color-72);
-            }
-
-            &:active  {
-                background: var(--button-bg-08);
-                color: var(--button-bg);
-                fill: var(--button-bg);
+                opacity: 0.8;
             }
 
             svg {
-                fill: inherit;
+                @include scale(1.1, 1.1);
+                stroke: currentColor;
+                fill: currentColor;
             }
         }
     }
