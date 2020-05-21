@@ -71,7 +71,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
     public render(): JSX.Element {
         return (
             <div className='incident-rhs'>
-                <RHSHeader/>
+                { this.props.addLegacyHeader && <RHSHeader/> }
                 <div className='incident-rhs__content'>
                     {
                         this.props.isLoading &&

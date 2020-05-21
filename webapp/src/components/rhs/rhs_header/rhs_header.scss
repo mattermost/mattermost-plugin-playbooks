@@ -1,24 +1,26 @@
-.incident-rhs { 
-    .loading-container {
-        text-align: center;
-        padding: 20px;
-    }
+// Browser Prefixes
+@mixin transform($transforms) {
+    -webkit-transform: $transforms;
+    -moz-transform: $transforms;
+    -ms-transform: $transforms;
+    transform: $transforms;
+}
 
+// Translate
+@mixin translateY ($y) {
+    @include transform(translate(0, $y));
+}
+
+.incident-rhs { 
     .navigation-bar {
         display: flex;
         flex-direction: row;
         align-items: flex-end;
-        justify-content: space-between;
-        padding: 0.8rem 1.6rem 0.8rem 2rem;
+        justify-content: flex-end;
+        padding: 0.8rem 0.5rem 0.8rem 2rem;
         background: var(--center-channel-color-04);
         border-bottom: 1px solid var(--center-channel-color-16);
-
-        .fa {
-            cursor: pointer;
-            color: var(--center-channel-color-60);
-            font-size: 2rem;
-            padding-right: 1.2rem;
-        }
+        // @include translateY(-43px);
 
         .header-buttons {
             font-size: 16px;
@@ -59,16 +61,6 @@
             svg {
                 fill: inherit;
             }
-        }
-
-        .title {
-            font-size: 16px;
-            line-height: 34px;
-        }
-
-        .incident-details {
-            display: flex;
-            align-items: baseline;
         }
     }
 }
