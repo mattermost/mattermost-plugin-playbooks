@@ -160,25 +160,24 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *IncidentHandler) hasPermissionsToOrPublic(channelID string, userID string) bool {
+	channel, err := h.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		return false
+	}
+	return channel.Type == model.CHANNEL_OPEN || h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL)
+}
+
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	teamID := r.URL.Query().Get("team_id")
-
-	// Check permissions
-	userID := r.Header.Get("Mattermost-User-ID")
-	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
-	if teamID == "" && !isAdmin {
-		HandleError(w, fmt.Errorf("userID %s is not an admin", userID))
-		return
-	}
-	if !isAdmin && !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleError(w, fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
-		return
-	}
-
-	filterOptions, err := parseIncidentsFilterOption(r.URL, teamID)
+	filterOptions, err := parseIncidentsFilterOption(r.URL)
 	if err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+	filterOptions.HasPermissionsTo = func(channelID string) bool {
+		return h.hasPermissionsToOrPublic(channelID, userID)
 	}
 
 	incidents, err := h.incidentService.GetIncidents(*filterOptions)
@@ -206,20 +205,14 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	// User must have permission to the team that this incident belongs to. They do not have to have
-	// permissions to the incident channel.
-	if err := permissions.CheckHasPermissionsToIncidentTeam(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-			return
-		}
+	incidentToGet, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncident(incidentID)
-	if err != nil {
-		HandleError(w, err)
+	if !h.hasPermissionsToOrPublic(incidentToGet.PrimaryChannelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
 
@@ -284,7 +277,13 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	commanders, err := h.incidentService.GetCommandersForTeam(teamID)
+	options := incident.HeaderFilterOptions{
+		TeamID: teamID,
+		HasPermissionsTo: func(channelID string) bool {
+			return h.hasPermissionsToOrPublic(channelID, userID)
+		},
+	}
+	commanders, err := h.incidentService.GetCommanders(options)
 	if err != nil {
 		HandleError(w, fmt.Errorf("failed to get commanders: %w", err))
 		return
@@ -496,8 +495,10 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident
 	return nil
 }
 
-func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilterOptions, error) {
+func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	// NOTE: we are failing early instead of turning bad parameters into the default
+	teamID := u.Query().Get("team_id")
+
 	param := u.Query().Get("page")
 	if param == "" {
 		param = "0"

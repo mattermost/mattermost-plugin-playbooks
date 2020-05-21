@@ -174,13 +174,13 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                     {
                         !this.props.involvedInIncident &&
                         <div className='help-text'>
-                            {'You are not a participant in the incident. Contact '}
-                            <a
-                                onClick={() => this.moveToDM(this.props.commander.username)}
-                            >
-                                {'@' + this.props.commander.username}
-                            </a>
-                            {' to request access.'}
+                            {'You are not a participant in the incident. '}
+                            <br/>
+                            <Link
+                                to={`/${this.props.primaryChannelDetails.team_name}/channels/${this.props.primaryChannelDetails.name}`}
+                                text={'Join the incident channel'}
+                            />
+                            {' to make changes.'}
                         </div>
                     }
                 </div>

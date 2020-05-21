@@ -280,6 +280,10 @@ func headerMatchesFilters(header incident.Header, options incident.HeaderFilterO
 		return false
 	}
 
+	if !options.HasPermissionsTo(header.PrimaryChannelID) {
+		return false
+	}
+
 	return true
 }
 
