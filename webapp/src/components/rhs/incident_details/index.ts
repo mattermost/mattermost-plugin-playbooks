@@ -36,34 +36,40 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     const primaryChannelId = ownProps.incident.primary_channel_id;
     const incidentTeamId = ownProps.incident.team_id;
 
+    const hasPermissionToChannel = haveIChannelPermission(
+        state,
+        {
+            channel: primaryChannelId,
+            team: incidentTeamId,
+            permission: Permissions.READ_CHANNEL,
+        },
+    );
+
     const commander = getUser(state, ownProps.incident.commander_user_id);
     if (commander) {
         lastPictureUpdate = commander.last_picture_update;
     }
 
-    let primaryChannelDetails = null;
-    const c = getChannel(state, primaryChannelId) as Channel;
-    if (c) {
-        const t = getTeam(state, c.team_id) as Team;
-        const newChannelWithTeamData = {
-            ...c,
-            team_display_name: t.display_name,
-            team_name: t.name,
+    let primaryChannelWithTeamData = null;
+    let primaryChannelPublic = false;
+    const primaryChannel = getChannel(state, primaryChannelId) as Channel;
+    if (primaryChannel) {
+        const primaryTeam = getTeam(state, primaryChannel.team_id) as Team;
+        primaryChannelWithTeamData = {
+            ...primaryChannel,
+            team_display_name: primaryTeam.display_name,
+            team_name: primaryTeam.name,
         };
-
-        primaryChannelDetails = newChannelWithTeamData;
+        primaryChannelPublic = primaryChannel && primaryChannel.type === 'O';
     }
-
-    // If you can read the channel, you are involved in the incident.
-    const involvedInIncident = haveIChannelPermission(state,
-        {channel: primaryChannelId, team: incidentTeamId, permission: Permissions.READ_CHANNEL});
 
     return {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
-        primaryChannelDetails,
+        primaryChannelDetails: primaryChannelWithTeamData,
         viewingIncidentChannel: primaryChannelId === getCurrentChannel(state)?.id,
-        involvedInIncident,
+        hasPermissionToChannel,
+        primaryChannelPublic,
         teamName: getCurrentTeam(state).name,
     };
 }

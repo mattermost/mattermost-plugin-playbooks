@@ -27,7 +27,8 @@ interface Props {
     profileUri: string;
     primaryChannelDetails: ChannelWithTeamData;
     viewingIncidentChannel: boolean;
-    involvedInIncident: boolean;
+    hasPermissionToChannel: boolean;
+    primaryChannelPublic: boolean;
     teamName: string;
     actions: {
         endIncident: () => void;
@@ -88,6 +89,18 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
             }
         };
 
+        if (!this.props.hasPermissionToChannel && !this.props.primaryChannelPublic) {
+            return (
+                <>
+                    <div className='IncidentDetails'>
+                        <div className='inner-container'>
+                            {'You don\'t have access to this incident.'}
+                        </div>
+                    </div>
+                </>
+            );
+        }
+
         return (
             <React.Fragment>
                 <Scrollbars
@@ -104,7 +117,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                             <div className='title'>{'Commander'}</div>
                             <ProfileSelector
                                 commanderId={this.props.incident.commander_user_id}
-                                enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                                enableEdit={this.props.hasPermissionToChannel && this.props.viewingIncidentChannel}
                                 getUsers={fetchUsers}
                                 onSelectedChange={onSelectedChange}
                             />
@@ -113,7 +126,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                         {this.props.incident.playbook.checklists?.map((checklist: Checklist, index: number) => (
                             <ChecklistDetails
                                 checklist={checklist}
-                                enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                                enableEdit={this.props.hasPermissionToChannel && this.props.viewingIncidentChannel}
                                 key={checklist.title + index}
                                 onChange={(itemNum: number, checked: boolean) => {
                                     this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
@@ -134,7 +147,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                         ))}
 
                         {
-                            this.props.involvedInIncident &&
+                            this.props.hasPermissionToChannel &&
                             <div className='inner-container'>
                                 <div className='title'>{'Channel'}</div>
                                 <Link
@@ -148,7 +161,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                 </Scrollbars>
                 <div className='footer-div'>
                     {
-                        this.props.involvedInIncident &&
+                        this.props.hasPermissionToChannel &&
                         <>
                             <button
                                 className='btn btn-primary'
@@ -172,7 +185,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                     }
 
                     {
-                        !this.props.involvedInIncident &&
+                        !this.props.hasPermissionToChannel &&
                         <div className='help-text'>
                             {'You are not a participant in the incident. '}
                             <br/>
