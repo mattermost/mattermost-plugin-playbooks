@@ -5,7 +5,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import moment from 'moment';
 
-import Chart, {ChartOptions, ChartTooltipItem, ChartTooltipModel} from 'chart.js';
+import Chart, {ChartOptions, ChartTooltipItem, ChartTooltipModel, Point} from 'chart.js';
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
@@ -15,7 +15,6 @@ import {Incident} from 'src/types/incident';
 import EmptyChecklitImage from 'src/components/assets/empty_checklist';
 
 import './incident_details.scss';
-import { ThemeContext } from '@emotion/core';
 
 interface Props {
     theme: Record<string, string>;
@@ -53,16 +52,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
     }
 
     public initChartOptions() {
-        Chart.Tooltip.positioners.custom = function (elements, position) {
-            if (!elements.length) {
-                return false;
-            }
-
-            return {
-                x: position.x,
-                y: position.y - 12
-            }
-        };
+        Chart.Tooltip.positioners.custom = this.tooltipPosition;
 
         const chartOptions: ChartOptions = {
             showLines: false,
@@ -104,20 +94,37 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             tooltips: {
                 custom: this.tooltipColorBox,
                 bodyAlign: 'center',
+                position: 'custom',
 
                 // @ts-ignore
-                position: 'custom',
                 yAlign: 'bottom',
                 xAlign: 'center',
                 bodyFontFamily: 'Open Sans',
                 yPadding: 6,
                 callbacks: {
-                    title: () => {this.tooltipLabel}, // Empty tooltip title
+                    title: () => '', // Empty tooltip title
+                    label: this.tooltipLabel,
+                },
+            },
+            layout: {
+                padding: {
+                    top: 25,
                 },
             },
         };
 
         return chartOptions;
+    }
+
+    public tooltipPosition(elements: any[], position: Point): Point {
+        if (!elements.length) {
+            return {x: 0, y: 0};
+        }
+
+        return {
+            x: position.x,
+            y: position.y - 12,
+        };
     }
 
     public tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
