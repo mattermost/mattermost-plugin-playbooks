@@ -41,6 +41,10 @@ func (s *incidentStore) MigrateChannelIds() {
 	var migrated bool
 	s.pluginAPI.Get(migrationKey, &migrated)
 
+	if migrated {
+		return
+	}
+
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
 		fmt.Println("Failed to migrate")
