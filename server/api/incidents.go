@@ -130,8 +130,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	if err != nil {
 		var msg string
 
-		if errors.Is(err, incident.ErrChannelDisplayNameLong) {
-			msg = "The channel name is too long. Please use a name with fewer than 64 characters."
+		if errors.Is(err, incident.ErrChannelDisplayNameInvalid) {
+			msg = "The channel name is invalid or too long. Please use a valid name with fewer than 64 characters."
 		}
 
 		if msg != "" {
