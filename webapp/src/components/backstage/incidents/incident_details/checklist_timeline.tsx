@@ -15,6 +15,7 @@ import {Incident} from 'src/types/incident';
 import EmptyChecklitImage from 'src/components/assets/empty_checklist';
 
 import './incident_details.scss';
+import { ThemeContext } from '@emotion/core';
 
 interface Props {
     theme: Record<string, string>;
@@ -52,6 +53,17 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
     }
 
     public initChartOptions() {
+        Chart.Tooltip.positioners.custom = function (elements, position) {
+            if (!elements.length) {
+                return false;
+            }
+
+            return {
+                x: position.x,
+                y: position.y - 12
+            }
+        };
+
         const chartOptions: ChartOptions = {
             showLines: false,
             legend: {
@@ -94,10 +106,13 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                 bodyAlign: 'center',
 
                 // @ts-ignore
+                position: 'custom',
                 yAlign: 'bottom',
+                xAlign: 'center',
+                bodyFontFamily: 'Open Sans',
+                yPadding: 6,
                 callbacks: {
-                    title: () => '', // Empty tooltip title
-                    label: this.tooltipLabel,
+                    title: () => {this.tooltipLabel}, // Empty tooltip title
                 },
             },
         };
@@ -142,17 +157,17 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
     }
 
     public initData() {
+        const pointhoverBg = changeOpacity(this.props.theme.buttonBg, 0.16);
         const chartData = {
             yLabels: [] as string[],
             checklistItems: [] as ChecklistItem[],
 
             datasets: [{
                 pointBackgroundColor: this.props.theme.buttonBg,
-                pointBorderColor: this.props.theme.buttonBg,
-                pointHoverBackgroundColor: this.props.theme.buttonBg,
-                pointHoverBorderColor: this.props.theme.buttonBg,
+                pointHoverBorderColor: pointhoverBg,
                 pointRadius: 3,
-                pointHoverRadius: 10,
+                pointHoverRadius: 3,
+                pointHoverBorderWidth: 12,
                 data: [] as any,
             }],
         };
@@ -235,12 +250,14 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         let content;
         if (this.chartData.yLabels.length === 2) {
             // No data if it only has the two trailing empty labels
-            content = (<div className='content'>
+            content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
                 <div>
-                    <EmptyChecklitImage theme={this.props.theme}/>
-                </div>
-                <div className='chart-label'>
-                    {'The incident has no checklist items yet'}
+                    <div>
+                        <EmptyChecklitImage theme={this.props.theme}/>
+                    </div>
+                    <div className='chart-label mt-7'>
+                        {'The incident has no checklist items yet'}
+                    </div>
                 </div>
             </div>
             );

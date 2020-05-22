@@ -112,8 +112,8 @@ $font-family: Open Sans;
         display: flex;
         flex-wrap: wrap;
         margin: 0 44px;
-    }  
-    
+    }
+
     .chart-block {
         padding: 2rem;
         border: 1px solid var(--center-channel-color-08);
@@ -131,14 +131,9 @@ $font-family: Open Sans;
             font-weight: 600;
             padding: 0 0 16px;
         }
-        .content {
-            text-align: center;
-            font-size: 14px;
-            color: var(--center-channel-text-72);
-            margin:60px;
-        }
+
         .chart-label{
-            padding: 20px;
+            opacity: .72;
         }
     }
 
