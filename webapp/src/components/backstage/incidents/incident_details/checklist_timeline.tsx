@@ -225,7 +225,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         });
 
         const dataCopy = JSON.parse(JSON.stringify(this.chartData));
-        this.chart = new Chart(ctx, {type: 'customLine', data: dataCopy, options: this.chartOptions || {}});
+        this.chart = new Chart(ctx, {type: 'customLine', data: dataCopy, options: this.chartOptions});
     };
 
     public render(): JSX.Element {

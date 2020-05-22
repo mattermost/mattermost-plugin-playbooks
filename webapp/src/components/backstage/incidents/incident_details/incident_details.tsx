@@ -143,13 +143,6 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public render(): JSX.Element {
-        const data = {
-            datasets: [
-                {data: [1, 2, 3]},
-            ],
-            labels: ['test1', 'test2', 'test3'],
-        };
-
         const detailsHeader = (
             <div className='details-header'>
                 <div className='title'>
@@ -264,7 +257,6 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                 </div>
                 <div className='chart-block'>
                     <ChecklistTimeline
-                        data={data}
                         width={740}
                         height={225}
                         incident={this.props.incident}
