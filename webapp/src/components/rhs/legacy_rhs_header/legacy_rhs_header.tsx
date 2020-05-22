@@ -8,7 +8,6 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {Incident} from 'src/types/incident';
 import {BackstageArea} from 'src/types/backstage';
 import {RHSState} from 'src/types/rhs';
-import {isMobile} from 'src/utils/utils';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
@@ -19,6 +18,7 @@ interface Props {
     rhsState: RHSState;
     incident: Incident;
     isLoading: boolean;
+    isMobile: boolean;
     actions: {
         startIncident: () => void;
         setRHSState: (state: RHSState) => void;
@@ -69,7 +69,7 @@ export default function LegacyRHSHeader(props: Props) {
     );
 
     let headerTitle;
-    if (isMobile()) {
+    if (props.isMobile) {
         if (props.rhsState === RHSState.List) {
             headerTitle = (
                 <div>
@@ -80,7 +80,7 @@ export default function LegacyRHSHeader(props: Props) {
             headerTitle = (
                 <div className='incident-details'>
                     <i
-                        className='fa fa-angle-left'
+                        className={'fa fa-angle-left ' + commonClassName + '__button'}
                         onClick={goBack}
                     />
                     <div className='title'>{props.incident.name}</div>
@@ -90,7 +90,7 @@ export default function LegacyRHSHeader(props: Props) {
     }
 
     let widthAwareClassName;
-    if (isMobile()) {
+    if (props.isMobile) {
         widthAwareClassName = commonClassName + '-mobile';
     } else {
         widthAwareClassName = commonClassName + '-desktop';
@@ -100,7 +100,7 @@ export default function LegacyRHSHeader(props: Props) {
         <div className={commonClassName + ' ' + widthAwareClassName}>
             {headerTitle}
             <div className={widthAwareClassName + '__header-buttons'}>
-                { !isMobile() && playbooksIcon }
+                { !props.isMobile && playbooksIcon }
                 {newPlaybookIcon}
             </div>
         </div>

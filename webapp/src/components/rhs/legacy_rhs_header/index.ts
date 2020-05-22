@@ -15,6 +15,7 @@ import {
 
 import {incidentDetails, rhsState, isLoading} from 'src/selectors';
 import {BackstageArea} from 'src/types/backstage';
+import {isMobile} from 'src/utils/utils';
 
 import LegacyRHSHeader from './legacy_rhs_header';
 
@@ -23,6 +24,7 @@ function mapStateToProps(state: GlobalState) {
         incident: incidentDetails(state),
         rhsState: rhsState(state),
         isLoading: isLoading(state),
+        isMobile: isMobile(),
     };
 }
 
