@@ -61,12 +61,7 @@ func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) ([]Incident, err
 
 // CreateIncident creates a new incident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, error) {
-	// Create incident
-	incdnt, err := s.store.CreateIncident(incdnt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create incident: %w", err)
-	}
-
+	// Try to create the channel first
 	channel, err := s.createIncidentChannel(incdnt, public)
 	if err != nil {
 		return nil, err
@@ -90,8 +85,9 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 		}
 	}
 
-	if err = s.store.UpdateIncident(incdnt); err != nil {
-		return nil, fmt.Errorf("failed to update incident: %w", err)
+	incdnt, err = s.store.CreateIncident(incdnt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create incident: %w", err)
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
@@ -515,7 +511,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 			// Let the user correct display name errors:
 			if appErr.Id == "model.channel.is_valid.display_name.app_error" ||
 				appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
-				return nil, ErrChannelDisplayNameLong
+				return nil, ErrChannelDisplayNameInvalid
 			}
 
 			// We can fix channel Name errors:

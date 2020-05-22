@@ -41,7 +41,7 @@ func TestCreateIncident(t *testing.T) {
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
 		_, err := s.CreateIncident(incdnt, true)
-		require.Equal(t, err, incident.ErrChannelDisplayNameLong)
+		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
 	t.Run("invalid channel name has only invalid characters", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestCreateIncident(t *testing.T) {
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
 		_, err := s.CreateIncident(incdnt, true)
-		require.Equal(t, err, incident.ErrChannelDisplayNameLong)
+		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
 	t.Run("channel name already exists, fixed on second try", func(t *testing.T) {
