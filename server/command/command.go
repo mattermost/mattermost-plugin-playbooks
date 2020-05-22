@@ -102,13 +102,13 @@ func (r *Runner) actionStart(args []string) {
 }
 
 func (r *Runner) actionEnd() {
-	incidentID := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if incidentID == "" {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
 		r.postCommandResponse("You can only end an incident from within the incident's channel.")
 		return
 	}
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+	if err = permissions.CheckHasPermissionsToIncidentChannel(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -117,7 +117,7 @@ func (r *Runner) actionEnd() {
 		return
 	}
 
-	err := r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
+	err = r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
 
 	if errors.Is(err, incident.ErrNotFound) {
 		r.postCommandResponse("This channel is not associated with an incident.")

@@ -68,9 +68,9 @@ type Service interface {
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
 	GetIncident(incidentID string) (*Incident, error)
 
-	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
+	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
-	GetIncidentIDForChannel(channelID string) string
+	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetCommandersForTeam returns all the commanders of incidents in this team.
 	GetCommandersForTeam(teamID string) ([]CommanderInfo, error)
