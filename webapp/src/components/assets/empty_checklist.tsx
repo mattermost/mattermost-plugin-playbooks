@@ -7,7 +7,7 @@ interface Props {
     theme: Record<string, string>;
 }
 
-export default class EmptyChecklitImage extends React.PureComponent<Props> {
+export default class EmptyChecklistImage extends React.PureComponent<Props> {
     public render(): JSX.Element {
         return (
             <svg

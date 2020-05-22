@@ -12,7 +12,7 @@ import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 import {ChecklistItem} from 'src/types/playbook';
 import {Incident} from 'src/types/incident';
 
-import EmptyChecklitImage from 'src/components/assets/empty_checklist';
+import EmptyChecklistImage from 'src/components/assets/empty_checklist';
 
 import './incident_details.scss';
 
@@ -30,9 +30,9 @@ interface ChartData{
 }
 
 export default class ChecklistTimeline extends React.PureComponent<Props> {
-    public chart: Chart | null = null;
-    public chartOptions: ChartOptions;
-    public chartData: ChartData;
+    chart: Chart | null = null;
+    chartOptions: ChartOptions;
+    chartData: ChartData;
 
     constructor(props: Props) {
         super(props);
@@ -69,6 +69,8 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                         fontColor: changeOpacity(this.props.theme.centerChannelColor, 0.56),
                     },
                     gridLines: {
+
+                        //Length and spacing of dashes on grid lines.
                         borderDash: [8, 4],
                         color: changeOpacity(this.props.theme.centerChannelColor, 0.16),
                         zeroLineColor: changeOpacity(this.props.theme.centerChannelColor, 0.16),
@@ -260,7 +262,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
                 <div>
                     <div>
-                        <EmptyChecklitImage theme={this.props.theme}/>
+                        <EmptyChecklistImage theme={this.props.theme}/>
                     </div>
                     <div className='chart-label mt-7'>
                         {'The incident has no checklist items yet'}
@@ -271,7 +273,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         } else {
             content = (<>
                 <div className='chart-title'>
-                    {'Time occurance of each Checklist item'}
+                    {'Time occurrence of each Checklist item'}
                 </div>
                 <canvas
                     ref='canvas'
