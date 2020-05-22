@@ -12,8 +12,6 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 import {Permissions} from 'mattermost-redux/constants';
 
-import {isExportPluginLoaded} from 'src/utils/utils';
-
 import {Incident} from 'src/types/incident';
 
 import {navigateToUrl} from 'src/actions';
@@ -49,12 +47,14 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
 
     const channelStats = getAllChannelStats(state)[mainChannelId];
 
+    const isExportPluginLoaded = Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']);
+
     return {
         involvedInIncident,
         totalMessages,
         membersCount: channelStats?.member_count || 1,
         mainChannelDetails,
-        exportAvailable: isExportPluginLoaded(),
+        exportAvailable: isExportPluginLoaded,
         exportLicensed: isExportLicensed(state),
     };
 }
