@@ -70,7 +70,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                     },
                     gridLines: {
 
-                        //Length and spacing of dashes on grid lines.
+                        // Length and spacing of dashes on grid lines.
                         borderDash: [8, 4],
                         color: changeOpacity(this.props.theme.centerChannelColor, 0.16),
                         zeroLineColor: changeOpacity(this.props.theme.centerChannelColor, 0.16),
@@ -183,26 +183,17 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
 
         const checklistItems = this.props.incident.playbook.checklists[0].items;
 
-        for (const index in checklistItems) {
-            if (!checklistItems[index]) {
-                continue;
-            }
+        // Add points to the graph for checked items
+        chartData.checklistItems = checklistItems.filter((item) => item.checked).map((item: ChecklistItem) => {
+            const checkedTime = moment(item.checked_modified);
+            const duration = moment.duration(checkedTime.diff(moment.unix(this.props.incident.created_at)));
 
-            const item = checklistItems[index];
+            chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
+            return item;
+        },
+        );
 
-            if (item.checked) {
-                // Add point to the graph
-                const checkedTime = moment(item.checked_modified);
-                const duration = moment.duration(checkedTime.diff(moment.unix(this.props.incident.created_at)));
-
-                chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
-                chartData.checklistItems.push(item);
-            }
-
-            chartData.yLabels.push(item.title);
-        }
-
-        chartData.yLabels = chartData.yLabels.reverse();
+        chartData.yLabels = checklistItems.map((item) => item.title).reverse();
 
         // Add an initial/last tick to scale
         chartData.yLabels.unshift('');
