@@ -202,8 +202,11 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             draw(ease: any) {
                 Chart.controllers.line.prototype.draw.call(this, ease);
 
-                // Only draw the custom line when showing the tooltip
+                // eslint-disable-next-line no-underscore-dangle
                 if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
+                    // Only draw the custom line when showing the tooltip
+
+                    // eslint-disable-next-line no-underscore-dangle
                     const activePoint = this.chart.tooltip._active[0];
 
                     const y = activePoint.tooltipPosition().y;
