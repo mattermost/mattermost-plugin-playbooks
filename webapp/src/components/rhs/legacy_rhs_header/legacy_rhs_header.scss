@@ -3,28 +3,17 @@
 
 .incident-rhs { 
     .legacy-rhs-header {
-        // Mimic the original RHS header shape
-        height: 44px;
-        line-height: 44px;
-        padding: 0 5px 0 0;
+        overflow: hidden;
 
         // Move this bar on the top of the original RHS header, so both bars
         // integrate seemlessly
         margin-top: -44px;
 
-        // Leave space for the buttons in the original RHS header: 
-        // - Expand and close button, on the right side, which are 60 px wide.
-        // - The back button, on the left side, which is 34.15px wide.
-        //   - A left padding of 15px
-        //   - A width of 7.15px
-        //   - A right padding of 12px
-        width: calc(100% - 60px - 34.15px);
-        margin-left: 34.15px;
+        // Mimic the original RHS header shape
+        height: 44px;
+        line-height: 44px;
+        padding: 0 5px 0 0;
 
-        &__header-buttons {
-            display: flex;
-            justify-content: flex-end;
-        }
 
         &__button {
             font-size: 18px;
@@ -41,6 +30,47 @@
                 stroke: currentColor;
                 fill: currentColor;
             }
+        }
+
+        .title {
+            text-transform: uppercase;
+        }
+    }
+
+    .legacy-rhs-header-desktop {
+        // Leave space for the buttons in the original RHS header: 
+        // - Expand and close buttons, on the right side, which are 60px wide.
+        // - The back button, on the left side, which is 34.15px wide.
+        //   - A left padding of 15px
+        //   - A width of 7.15px
+        //   - A right padding of 12px
+        width: calc(100% - 60px - 34.15px);
+        margin-left: 34.15px;
+
+        &__header-buttons {
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+
+    .legacy-rhs-header-mobile {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding-left: 5px;
+
+        .title {
+            padding-left: 10px;
+        }
+
+        .fa {
+            font-size: 20px;
+            margin-left: 5px;
+        }
+
+        .incident-details {
+            display: flex;
+            align-items: baseline;
         }
     }
 }

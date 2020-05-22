@@ -8,11 +8,12 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {Incident} from 'src/types/incident';
 import {BackstageArea} from 'src/types/backstage';
 import {RHSState} from 'src/types/rhs';
+import {isMobile} from 'src/utils/utils';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
 
-import './legacy_rhs_header.scss'
+import './legacy_rhs_header.scss';
 
 interface Props {
     rhsState: RHSState;
@@ -29,35 +30,78 @@ interface Props {
 const OVERLAY_DELAY = 400;
 
 export default function LegacyRHSHeader(props: Props) {
+    const goBack = () => {
+        props.actions.setRHSState(RHSState.List);
+    };
+
+    const commonClassName = 'legacy-rhs-header';
+
+    const playbooksIcon = (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            overlay={<Tooltip id='playbooksTooltip'>{'Playbooks'}</Tooltip>}
+        >
+            <button
+                className={commonClassName + '__button'}
+                onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+            >
+                <i>
+                    <PlaybookIcon/>
+                </i>
+            </button>
+        </OverlayTrigger>
+    );
+
+    const newPlaybookIcon = (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
+        >
+            <button
+                className={commonClassName + '__button'}
+                onClick={() => props.actions.startIncident()}
+            >
+                <PlusIcon/>
+            </button>
+        </OverlayTrigger>
+    );
+
+    let headerTitle;
+    if (isMobile()) {
+        if (props.rhsState === RHSState.List) {
+            headerTitle = (
+                <div>
+                    <div className='title'>{'Incident List'}</div>
+                </div>
+            );
+        } else {
+            headerTitle = (
+                <div className='incident-details'>
+                    <i
+                        className='fa fa-angle-left'
+                        onClick={goBack}
+                    />
+                    <div className='title'>{props.incident.name}</div>
+                </div>
+            );
+        }
+    }
+
+    let widthAwareClassName;
+    if (isMobile()) {
+        widthAwareClassName = commonClassName + '-mobile';
+    } else {
+        widthAwareClassName = commonClassName + '-desktop';
+    }
+
     return (
-        <div className='legacy-rhs-header'>
-            <div className='legacy-rhs-header__header-buttons'>
-                <OverlayTrigger
-                    placement='bottom'
-                    delay={OVERLAY_DELAY}
-                    overlay={<Tooltip id='playbooksTooltip'>{'Playbooks'}</Tooltip>}
-                >
-                    <button
-                        className='legacy-rhs-header__button'
-                        onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
-                    >
-                    <i>
-                        <PlaybookIcon/>
-                    </i>
-                    </button>
-                </OverlayTrigger>
-                <OverlayTrigger
-                    placement='bottom'
-                    delay={OVERLAY_DELAY}
-                    overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
-                >
-                    <button
-                        className='legacy-rhs-header__button'
-                        onClick={() => props.actions.startIncident()}
-                    >
-                        <PlusIcon/>
-                    </button>
-                </OverlayTrigger>
+        <div className={commonClassName + ' ' + widthAwareClassName}>
+            {headerTitle}
+            <div className={widthAwareClassName + '__header-buttons'}>
+                { !isMobile() && playbooksIcon }
+                {newPlaybookIcon}
             </div>
         </div>
     );
