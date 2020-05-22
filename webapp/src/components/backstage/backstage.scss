@@ -1,10 +1,9 @@
 .Backstage {
+    overflow: hidden;
+
     &__sidebar {
-        position: absolute;
-        left: 0%;
-        right: 0%;
-        top: 0%;
-        bottom: 0%;
+        margin-bottom: -5200px;
+        padding-bottom: 5000px;
         width: 32rem;
         font-family: Open Sans;
         font-style: normal;
