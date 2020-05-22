@@ -64,12 +64,9 @@ func (s *incidentStore) MigrateChannelIds() {
 			continue
 		}
 
-		if len(oldPartToMigrate.ChannelIds) <= 0 {
-			fmt.Println("Unable to migrate because old part doesn't have ChannelIds")
-			continue
+		if len(oldPartToMigrate.ChannelIds) > 0 {
+			incidentToMigrate.PrimaryChannelID = oldPartToMigrate.ChannelIds[0]
 		}
-
-		incidentToMigrate.PrimaryChannelID = oldPartToMigrate.ChannelIds[0]
 
 		if err := s.UpdateIncident(incidentToMigrate); err != nil {
 			fmt.Println("Faild to update incident in migration.")
