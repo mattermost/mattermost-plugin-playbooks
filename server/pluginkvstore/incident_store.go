@@ -31,7 +31,50 @@ func NewIncidentStore(pluginAPI KVAPI) incident.Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
 	}
+	newStore.MigrateChannelIds()
 	return newStore
+}
+
+func (s *incidentStore) MigrateChannelIds() {
+	const migrationKey = "migrate_channel_ids"
+
+	var migrated bool
+	s.pluginAPI.Get(migrationKey, &migrated)
+
+	headersMap, err := s.getIDHeaders()
+	if err != nil {
+		fmt.Println("Failed to migrate")
+		return
+	}
+	for id := range headersMap {
+		incidentToMigrate, err := s.getIncident(id)
+		if err != nil {
+			fmt.Println("Failed to get incident to migrate")
+			continue
+		}
+
+		var oldPartToMigrate struct {
+			ChannelIds []string `json:"channel_ids"`
+		}
+		if err := s.pluginAPI.Get(toIncidentKey(incidentToMigrate.ID), &oldPartToMigrate); err != nil {
+			continue
+		}
+
+		if len(oldPartToMigrate.ChannelIds) <= 0 {
+			fmt.Println("Unable to migrate because old part doesn't have ChannelIds")
+			continue
+		}
+
+		incidentToMigrate.PrimaryChannelID = oldPartToMigrate.ChannelIds[0]
+
+		if err := s.UpdateIncident(incidentToMigrate); err != nil {
+			fmt.Println("Faild to update incident in migration.")
+			continue
+		}
+	}
+
+	migrated = true
+	s.pluginAPI.Set(migrationKey, &migrated)
 }
 
 // GetIncidents gets all the incidents, abiding by the filter options.
