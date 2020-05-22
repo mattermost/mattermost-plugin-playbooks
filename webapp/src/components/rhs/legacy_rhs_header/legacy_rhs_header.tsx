@@ -63,7 +63,10 @@ export default function LegacyRHSHeader(props: Props) {
                 className={commonClassName + '__button'}
                 onClick={() => props.actions.startIncident()}
             >
-                <PlusIcon/>
+                <i
+                    id='incidentRHSIconPlus'
+                    className='fa fa-plus'
+                />
             </button>
         </OverlayTrigger>
     );
