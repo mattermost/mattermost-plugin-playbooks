@@ -217,7 +217,7 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) {
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 	if err != nil {
-		return "", ErrNotFound
+		return "", err
 	}
 	return incidentID, nil
 }

@@ -104,7 +104,11 @@ func (r *Runner) actionStart(args []string) {
 func (r *Runner) actionEnd() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		r.postCommandResponse("You can only end an incident from within the incident's channel.")
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only end an incident from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
 		return
 	}
 
