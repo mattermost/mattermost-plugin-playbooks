@@ -1,13 +1,9 @@
 .Backstage {
     overflow: hidden;
+    height: 100vh;
 
     &__sidebar {
-        margin-bottom: -5200px;
-        padding-bottom: 5000px;
         width: 32rem;
-        font-family: Open Sans;
-        font-style: normal;
-        font-weight: normal;
         font-size: 16px;
         line-height: 24px;
         background: var(--sidebar-bg);
@@ -52,6 +48,8 @@
         z-index: 1;
         margin-left: 32rem;
         width: calc(100% - 32rem);
+        overflow: auto;
+        height: 100vh;
     }
 }
 
