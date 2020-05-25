@@ -184,7 +184,10 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         const checklistItems = this.props.incident.playbook.checklists[0].items;
 
         // Add points to the graph for checked items
-        chartData.checklistItems = checklistItems.filter((item) => item.checked).map((item: ChecklistItem) => {
+        chartData.checklistItems = checklistItems.filter((item) =>
+            // Avoid times before 2020 since those are errors
+            item.checked && moment(item.checked_modified).isSameOrAfter('2020-01-01')
+        ).map((item: ChecklistItem) => {
             const checkedTime = moment(item.checked_modified);
             const duration = moment.duration(checkedTime.diff(moment.unix(this.props.incident.created_at)));
 
