@@ -26,15 +26,17 @@ type IncidentHandler struct {
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
+	log             bot.Logger
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster, log bot.Logger) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		playbookService: playbookService,
 		pluginAPI:       api,
 		poster:          poster,
+		log:             log,
 	}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
@@ -163,6 +165,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 func (h *IncidentHandler) hasPermissionsToOrPublic(channelID string, userID string) bool {
 	channel, err := h.pluginAPI.Channel.Get(channelID)
 	if err != nil {
+		h.log.Warnf("Unable to get channel to determine permissions: %v", err)
 		return false
 	}
 	return channel.Type == model.CHANNEL_OPEN || h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL)
