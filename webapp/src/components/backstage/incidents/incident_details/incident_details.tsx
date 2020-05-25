@@ -126,10 +126,12 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             );
         }
 
+        const mainChannelId = this.props.incident.channel_ids[0];
+
         return (
             <a
                 className={'export-link'}
-                href={exportChannelUrl(this.props.mainChannelDetails?.id)}
+                href={exportChannelUrl(mainChannelId)}
                 target={'_new'}
                 onClick={this.onExportClick}
             >
