@@ -91,7 +91,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
-	s.telemetry.CreateIncident(incdnt)
+	s.telemetry.CreateIncident(incdnt, public)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {

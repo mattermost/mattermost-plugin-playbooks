@@ -134,6 +134,10 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	require.Contains(t, properties, "PluginVersion")
 	require.Equal(t, properties["PluginVersion"], config.Manifest.Version)
 
+	if expectedEvent == eventCreateIncident {
+		require.Contains(t, properties, "Public")
+	}
+
 	if expectedEvent == eventCreateIncident || expectedEvent == eventEndIncident {
 		require.Equal(t, dummyIncident, incidentFromProperties(properties))
 	} else {
@@ -153,7 +157,7 @@ func TestRudderTelemetry(t *testing.T) {
 		Event      string
 		FuncToTest func()
 	}{
-		"create incident":                       {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident) }},
+		"create incident":                       {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident, true) }},
 		"end incident":                          {eventEndIncident, func() { rudderClient.EndIncident(dummyIncident) }},
 		"add checklist item":                    {eventAddChecklistItem, func() { rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID) }},
 		"remove checklist item":                 {eventRemoveChecklistItem, func() { rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID) }},
