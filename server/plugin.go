@@ -89,7 +89,7 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		pluginkvstore.NewIncidentStore(&pluginAPIClient.KV),
+		pluginkvstore.NewIncidentStore(&pluginAPIClient.KV, p.bot),
 		p.bot,
 		p.config,
 		telemetryClient,

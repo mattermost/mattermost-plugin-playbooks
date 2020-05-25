@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
@@ -24,12 +25,14 @@ var _ incident.Store = (*incidentStore)(nil)
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
 	pluginAPI KVAPI
+	log       bot.Logger
 }
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
-func NewIncidentStore(pluginAPI KVAPI) incident.Store {
+func NewIncidentStore(pluginAPI KVAPI, log bot.Logger) incident.Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
+		log:       log,
 	}
 	newStore.MigrateChannelIds()
 	return newStore
@@ -47,13 +50,13 @@ func (s *incidentStore) MigrateChannelIds() {
 
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
-		fmt.Println("Failed to migrate")
+		s.log.Errorf("Failed to get headers for migration. %v", err)
 		return
 	}
 	for id := range headersMap {
 		incidentToMigrate, err := s.getIncident(id)
 		if err != nil {
-			fmt.Println("Failed to get incident to migrate")
+			s.log.Errorf("Failed to get incident (%v) for migration. %v", id, err)
 			continue
 		}
 
@@ -61,6 +64,7 @@ func (s *incidentStore) MigrateChannelIds() {
 			ChannelIds []string `json:"channel_ids"`
 		}
 		if err := s.pluginAPI.Get(toIncidentKey(incidentToMigrate.ID), &oldPartToMigrate); err != nil {
+			s.log.Errorf("Failed to get incident (%v) for old part of migration. %v", id, err)
 			continue
 		}
 
@@ -69,7 +73,7 @@ func (s *incidentStore) MigrateChannelIds() {
 		}
 
 		if err := s.UpdateIncident(incidentToMigrate); err != nil {
-			fmt.Println("Faild to update incident in migration.")
+			s.log.Errorf("Failed to update incident for migration. %v", err)
 			continue
 		}
 	}
