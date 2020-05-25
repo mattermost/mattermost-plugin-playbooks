@@ -498,6 +498,9 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident
 func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	// NOTE: we are failing early instead of turning bad parameters into the default
 	teamID := u.Query().Get("team_id")
+	if len(teamID) != 0 && !model.IsValidId(teamID) {
+		return nil, fmt.Errorf("bad parameter 'team_id': must be 26 characters or blank")
+	}
 
 	param := u.Query().Get("page")
 	if param == "" {
