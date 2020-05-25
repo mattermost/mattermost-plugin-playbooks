@@ -1,8 +1,9 @@
 .Backstage {
     overflow: hidden;
-    height: 100vh;
 
     &__sidebar {
+        position: absolute;
+        height: 100vh;
         width: 32rem;
         font-size: 16px;
         line-height: 24px;
