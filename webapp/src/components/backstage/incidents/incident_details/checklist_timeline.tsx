@@ -181,7 +181,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             }],
         };
 
-        const checklistItems = this.props.incident.playbook.checklists[0].items;
+        const checklistItems = this.props.incident.playbook.checklists[0]?.items || [];
 
         // Add points to the graph for checked items
         chartData.checklistItems = checklistItems.filter((item) => (
