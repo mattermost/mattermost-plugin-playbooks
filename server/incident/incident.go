@@ -41,8 +41,8 @@ type DialogState struct {
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-// ErrChannelDisplayNameLong is used to indicate a channel name is too long.
-var ErrChannelDisplayNameLong = errors.New("channel name is too long")
+// ErrChannelDisplayNameInvalid is used to indicate a channel name is too long.
+var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too long")
 
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
@@ -68,9 +68,9 @@ type Service interface {
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
 	GetIncident(incidentID string) (*Incident, error)
 
-	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
+	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
-	GetIncidentIDForChannel(channelID string) string
+	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetCommandersForTeam returns all the commanders of incidents in this team.
 	GetCommandersForTeam(teamID string) ([]CommanderInfo, error)

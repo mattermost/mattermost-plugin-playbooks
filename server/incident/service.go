@@ -58,12 +58,7 @@ func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) ([]Incident, err
 
 // CreateIncident creates a new incident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
-	// Create incident
-	incdnt, err := s.store.CreateIncident(incdnt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create incident: %w", err)
-	}
-
+	// Try to create the channel first
 	channel, err := s.createIncidentChannel(incdnt)
 	if err != nil {
 		return nil, err
@@ -87,8 +82,9 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 		}
 	}
 
-	if err = s.store.UpdateIncident(incdnt); err != nil {
-		return nil, fmt.Errorf("failed to update incident: %w", err)
+	incdnt, err = s.store.CreateIncident(incdnt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create incident: %w", err)
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
@@ -212,14 +208,14 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 	return s.store.GetIncident(incidentID)
 }
 
-// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
+// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 // if there is no incident associated with this channel.
-func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) string {
+func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) {
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return incidentID
+	return incidentID, nil
 }
 
 // GetCommandersForTeam returns all the commanders of incidents in this team.
@@ -315,7 +311,6 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 
 	// Send modification message before the actual modification becuase we need the postID
 	// from the notification message.
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.ChannelIDs[0]
@@ -337,8 +332,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return fmt.Errorf("failed to update incident, is now in inconsistant state: %w", err)
 	}
 
-	s.poster.PublishWebsocketEventToTeam("incident_update", incidentToModify, incidentToModify.TeamID)
-	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
+	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
 
 	return nil
 }
@@ -512,7 +506,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 			// Let the user correct display name errors:
 			if appErr.Id == "model.channel.is_valid.display_name.app_error" ||
 				appErr.Id == "model.channel.is_valid.2_or_more.app_error" {
-				return nil, ErrChannelDisplayNameLong
+				return nil, ErrChannelDisplayNameInvalid
 			}
 
 			// We can fix channel Name errors:

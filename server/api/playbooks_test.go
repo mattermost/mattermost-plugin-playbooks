@@ -15,6 +15,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,8 @@ func TestPlaybooks(t *testing.T) {
 		handler = NewHandler()
 		store = pluginkvstore.NewPlaybookStore(mockkvapi)
 		poster = mock_poster.NewMockPoster(mockCtrl)
-		playbookService = playbook.NewService(store, poster)
+		telemetry := &telemetry.NoopTelemetry{}
+		playbookService = playbook.NewService(store, poster, telemetry)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client)

@@ -51,6 +51,9 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
                 href={`/_redirect/pl/${checklistItem.checked_post_id}`}
                 onClick={(e) => {
                     e.preventDefault();
+                    if (!checklistItem.checked_post_id) {
+                        return;
+                    }
 
                     // @ts-ignore
                     window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);

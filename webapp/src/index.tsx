@@ -5,8 +5,8 @@ import React from 'react';
 import {Action, Store} from 'redux';
 import {debounce} from 'debounce';
 
+import {GlobalState} from 'mattermost-redux/types/store';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
-
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {registerCssVars, isMobile} from 'src/utils/utils';
@@ -46,8 +46,7 @@ export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
         registry.registerReducer(reducer);
 
-        const theme = getTheme(store.getState());
-        registerCssVars(theme);
+        this.updateTheme(store.getState());
 
         let mainMenuActionId: string | null;
         const updateMainMenuAction = () => {
@@ -103,10 +102,19 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED,
             handleWebsocketPlaybookDelete(store.dispatch));
 
+        // Listen to when the theme is loaded
+        registry.registerWebSocketEventHandler('preferences_changed',
+            () => this.updateTheme(store.getState()));
+
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
 
         registry.registerRootComponent(BackstageModal);
+    }
+
+    public updateTheme(state: GlobalState) {
+        const theme = getTheme(state);
+        registerCssVars(theme);
     }
 }
 

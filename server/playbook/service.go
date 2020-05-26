@@ -7,8 +7,9 @@ import (
 )
 
 type service struct {
-	store  Store
-	poster bot.Poster
+	store     Store
+	poster    bot.Poster
+	telemetry Telemetry
 }
 
 const (
@@ -18,10 +19,11 @@ const (
 )
 
 // NewService returns a new playbook service
-func NewService(store Store, poster bot.Poster) Service {
+func NewService(store Store, poster bot.Poster, telemetry Telemetry) Service {
 	return &service{
-		store:  store,
-		poster: poster,
+		store:     store,
+		poster:    poster,
+		telemetry: telemetry,
 	}
 }
 
@@ -33,6 +35,7 @@ func (s *service) Create(playbook Playbook) (string, error) {
 	playbook.ID = newID
 
 	s.poster.PublishWebsocketEventToTeam(playbookCreated, playbook, playbook.TeamID)
+	s.telemetry.CreatePlaybook(playbook)
 
 	return newID, nil
 }
@@ -67,6 +70,7 @@ func (s *service) Update(playbook Playbook) error {
 	}
 
 	s.poster.PublishWebsocketEventToTeam(playbookUpdated, playbook, playbook.TeamID)
+	s.telemetry.UpdatePlaybook(playbook)
 
 	return nil
 }
@@ -81,6 +85,7 @@ func (s *service) Delete(playbook Playbook) error {
 	}
 
 	s.poster.PublishWebsocketEventToTeam(playbookDeleted, playbook, playbook.TeamID)
+	s.telemetry.DeletePlaybook(playbook)
 
 	return nil
 }
