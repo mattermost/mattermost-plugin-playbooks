@@ -136,9 +136,14 @@ func (r *Runner) actionEnd() {
 }
 
 func (r *Runner) actionSelftest(args []string) {
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper == nil ||
-		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper {
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
+		return
+	}
+
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+		r.postCommandResponse(fmt.Sprintf("Running the self-test is restricted to system administrators."))
 		return
 	}
 
@@ -318,9 +323,14 @@ func (r *Runner) actionSelftest(args []string) {
 }
 
 func (r *Runner) actionNukeDB(args []string) {
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper == nil ||
-		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper {
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
+		return
+	}
+
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+		r.postCommandResponse(fmt.Sprintf("Nuking the database is restricted to system administrators."))
 		return
 	}
 
