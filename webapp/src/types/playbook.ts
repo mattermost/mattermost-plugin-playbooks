@@ -5,6 +5,7 @@ export interface Playbook {
     id?: string;
     title: string;
     team_id: string;
+    create_public_incident: boolean;
     checklists: Checklist[];
 }
 
@@ -37,6 +38,7 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.id === 'string' &&
         typeof arg.title === 'string' &&
         typeof arg.team_id === 'string' &&
+        typeof arg.create_public_incident === 'boolean' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
 }
 

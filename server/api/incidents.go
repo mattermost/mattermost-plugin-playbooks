@@ -106,8 +106,6 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
-	incidentType := request.Submission[incident.DialogFieldIsPublicKey].(string)
-	isPublic := incidentType == "public"
 
 	var playbookTemplate *playbook.Playbook
 	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
@@ -122,6 +120,11 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		}
 	}
 
+	public := true
+	if playbookTemplate != nil {
+		public = playbookTemplate.CreatePublicIncident
+	}
+
 	newIncident, err := h.incidentService.CreateIncident(&incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
@@ -130,7 +133,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		},
 		PostID:   state.PostID,
 		Playbook: playbookTemplate,
-	}, isPublic)
+	}, public)
 
 	if err != nil {
 		var msg string
