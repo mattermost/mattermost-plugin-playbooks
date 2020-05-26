@@ -114,6 +114,29 @@ $font-family: Open Sans;
         margin: 0 44px;
     }
 
+    .chart-block {
+        padding: 2rem;
+        border: 1px solid var(--center-channel-color-08);
+        background: var(--center-channel-bg);
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        margin: 16px 60px;
+        height: 1%;
+        overflow: hidden;
+        flex: 0 0 26rem;
+
+        .chart-title {
+            color: var(--center-channel-color-56);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 0 0 16px;
+        }
+
+        .chart-label{
+            opacity: .72;
+        }
+    }
+
     .statistics-row__block {
         padding: 2rem;
         border: 1px solid var(--center-channel-color-08);

@@ -8,6 +8,7 @@ import {Channel, ChannelWithTeamData} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannel, getAllChannelStats} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 import {Permissions} from 'mattermost-redux/constants';
@@ -56,6 +57,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         mainChannelDetails,
         exportAvailable: isExportPluginLoaded(),
         exportLicensed: isExportLicensed(state),
+        theme: getTheme(state),
     };
 }
 

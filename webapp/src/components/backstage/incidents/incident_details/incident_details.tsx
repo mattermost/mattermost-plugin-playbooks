@@ -14,7 +14,10 @@ import {Incident} from 'src/types/incident';
 
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
+
 import StatusBadge from '../status_badge';
+
+import ChecklistTimeline from './checklist_timeline';
 
 import './incident_details.scss';
 
@@ -28,6 +31,7 @@ interface Props {
     mainChannelDetails: ChannelWithTeamData;
     exportAvailable: boolean;
     exportLicensed: boolean;
+    theme: Record<string, string>;
     onClose: () => void;
     actions: {
         navigateToUrl: (urlPath: string) => void;
@@ -252,6 +256,14 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                             </a>
                         </div>
                     </div>
+                </div>
+                <div className='chart-block'>
+                    <ChecklistTimeline
+                        width={740}
+                        height={225}
+                        incident={this.props.incident}
+                        theme={this.props.theme}
+                    />
                 </div>
             </div>
         );
