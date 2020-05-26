@@ -220,7 +220,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) string {
 	return incidentID
 }
 
-// GetCommanders returns all the commanders of incidents selected
+// GetCommanders returns all the commanders of the incidents selected by options
 func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error) {
 	incidents, err := s.store.GetIncidents(options)
 	if err != nil {

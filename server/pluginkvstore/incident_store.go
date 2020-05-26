@@ -39,7 +39,7 @@ func NewIncidentStore(pluginAPI KVAPI, log bot.Logger) incident.Store {
 }
 
 func (s *incidentStore) MigrateChannelIds() {
-	const migrationKey = "migrate_channel_ids"
+	const migrationKey = "migrate_channel_ids_1"
 
 	var migrated bool
 	s.pluginAPI.Get(migrationKey, &migrated)
@@ -200,13 +200,8 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 
 	// Search for which incident has the given channel associated
 	for _, header := range headers {
-		incdnt, err := s.getIncident(header.ID)
-		if err != nil {
-			return "", fmt.Errorf("failed to get incident for id (%s): %w", header.ID, err)
-		}
-
-		if incdnt.PrimaryChannelID == channelID {
-			return incdnt.ID, nil
+		if header.PrimaryChannelID == channelID {
+			return header.ID, nil
 		}
 
 	}
