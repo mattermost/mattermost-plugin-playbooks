@@ -76,7 +76,7 @@ type Service interface {
 	OpenEndIncidentDialog(incidentID string, triggerID string) error
 
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
-	GetIncident(incidentID string) (*Incident, error)
+	GetIncident(incidentID string, userID string) (*Incident, error)
 
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
