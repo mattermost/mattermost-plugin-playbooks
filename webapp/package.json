@@ -1,6 +1,6 @@
 {
   "name": "mattermost-plugin-incident-response",
-  "version": "0.4.0-alpha.3",
+  "version": "0.4.0-alpha.4",
   "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
   "main": "src/index.js",
   "scripts": {
@@ -71,12 +71,14 @@
   "dependencies": {
     "@emotion/babel-preset-css-prop": "^10.0.27",
     "@emotion/core": "^10.0.28",
+    "@types/chart.js": "^2.9.20",
     "@types/classnames": "^2.2.10",
     "@types/debounce": "^1.2.0",
     "@types/qs": "^6.9.1",
     "@types/react-custom-scrollbars": "^4.0.6",
     "@types/react-redux": "6.0.0",
     "@types/react-select": "^3.0.11",
+    "chart.js": "^2.9.3",
     "core-js": "3.6.5",
     "debounce": "^1.2.0",
     "moment": "^2.24.0",

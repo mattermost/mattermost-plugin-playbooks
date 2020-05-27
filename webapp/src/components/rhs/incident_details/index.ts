@@ -13,6 +13,7 @@ import {getChannel, getCurrentChannel} from 'mattermost-redux/selectors/entities
 import {getTeam, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 import {Permissions} from 'mattermost-redux/constants';
+import {getServerVersion} from 'mattermost-redux/selectors/entities/general';
 
 import {Incident} from 'src/types/incident';
 import {
@@ -71,6 +72,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         hasPermissionToChannel,
         primaryChannelPublic,
         teamName: getCurrentTeam(state).name,
+        serverVersion: getServerVersion(state),
     };
 }
 

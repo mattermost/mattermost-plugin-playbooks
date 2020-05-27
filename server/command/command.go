@@ -102,9 +102,17 @@ func (r *Runner) actionStart(args []string) {
 }
 
 func (r *Runner) actionEnd() {
-	incidentID := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only end an incident from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+	if err = permissions.CheckHasPermissionsToIncidentChannel(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -113,7 +121,7 @@ func (r *Runner) actionEnd() {
 		return
 	}
 
-	err := r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
+	err = r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
 
 	if errors.Is(err, incident.ErrNotFound) {
 		r.postCommandResponse("This channel is not associated with an incident.")
@@ -128,9 +136,14 @@ func (r *Runner) actionEnd() {
 }
 
 func (r *Runner) actionSelftest(args []string) {
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper == nil ||
-		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper {
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
+		return
+	}
+
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+		r.postCommandResponse(fmt.Sprintf("Running the self-test is restricted to system administrators."))
 		return
 	}
 
@@ -310,9 +323,14 @@ func (r *Runner) actionSelftest(args []string) {
 }
 
 func (r *Runner) actionNukeDB(args []string) {
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper == nil ||
-		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableDeveloper {
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
+		return
+	}
+
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+		r.postCommandResponse(fmt.Sprintf("Nuking the database is restricted to system administrators."))
 		return
 	}
 

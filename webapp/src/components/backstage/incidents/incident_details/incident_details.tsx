@@ -14,7 +14,10 @@ import {Incident} from 'src/types/incident';
 
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
+
 import StatusBadge from '../status_badge';
+
+import ChecklistTimeline from './checklist_timeline';
 
 import './incident_details.scss';
 
@@ -28,6 +31,7 @@ interface Props {
     mainChannelDetails: ChannelWithTeamData;
     exportAvailable: boolean;
     exportLicensed: boolean;
+    theme: Record<string, string>;
     onClose: () => void;
     actions: {
         navigateToUrl: (urlPath: string) => void;
@@ -126,10 +130,12 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             );
         }
 
+        const mainChannelId = this.props.incident.channel_ids[0];
+
         return (
             <a
                 className={'export-link'}
-                href={exportChannelUrl(this.props.mainChannelDetails?.id)}
+                href={exportChannelUrl(mainChannelId)}
                 target={'_new'}
                 onClick={this.onExportClick}
             >
@@ -146,7 +152,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         className='Backstage__header__back'
                         onClick={this.props.onClose}
                     />
-                    <span className='mr-1'>{`Incident ${this.props.incident.name}`}</span>
+                    <span className='title-text mr-1'>{`Incident ${this.props.incident.name}`}</span>
 
                     { this.props.involvedInIncident &&
                     <OverlayTrigger
@@ -250,6 +256,14 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                             </a>
                         </div>
                     </div>
+                </div>
+                <div className='chart-block'>
+                    <ChecklistTimeline
+                        width={740}
+                        height={225}
+                        incident={this.props.incident}
+                        theme={this.props.theme}
+                    />
                 </div>
             </div>
         );

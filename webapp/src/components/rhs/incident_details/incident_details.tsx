@@ -30,6 +30,7 @@ interface Props {
     hasPermissionToChannel: boolean;
     primaryChannelPublic: boolean;
     teamName: string;
+    serverVersion: string;
     actions: {
         endIncident: () => void;
         modifyChecklistItemState: (incidentID: string, checklistNum: number, itemNum: number, checked: boolean) => void;
@@ -125,6 +126,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
 
                         {this.props.incident.playbook.checklists?.map((checklist: Checklist, index: number) => (
                             <ChecklistDetails
+                                serverVersion={this.props.serverVersion}
                                 checklist={checklist}
                                 enableEdit={this.props.hasPermissionToChannel && this.props.viewingIncidentChannel}
                                 key={checklist.title + index}

@@ -176,29 +176,27 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         value={this.state.title}
                         onChange={this.handleTitleChange}
                     />
-                    <div className='cheklist-container'>
-                        <div className='checkbox-container'>
-                            {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
-                                <ChecklistDetails
-                                    checklist={checklist}
-                                    enableEdit={true}
-                                    key={checklist.title + checklistIndex}
+                    <div className='checklist-container'>
+                        {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
+                            <ChecklistDetails
+                                checklist={checklist}
+                                enableEdit={true}
+                                key={checklist.title + checklistIndex}
 
-                                    addItem={(checklistItem: ChecklistItem) => {
-                                        this.onAddItem(checklistItem, checklistIndex);
-                                    }}
-                                    removeItem={(chceklistItemIndex: number) => {
-                                        this.onDeleteItem(chceklistItemIndex, checklistIndex);
-                                    }}
-                                    editItem={(checklistItemIndex: number, newTitle: string) => {
-                                        this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
-                                    }}
-                                    reorderItems={(checklistItemIndex: number, newPosition: number) => {
-                                        this.onReorderItem(checklistItemIndex, newPosition, checklistIndex);
-                                    }}
-                                />
-                            ))}
-                        </div>
+                                addItem={(checklistItem: ChecklistItem) => {
+                                    this.onAddItem(checklistItem, checklistIndex);
+                                }}
+                                removeItem={(chceklistItemIndex: number) => {
+                                    this.onDeleteItem(chceklistItemIndex, checklistIndex);
+                                }}
+                                editItem={(checklistItemIndex: number, newTitle: string) => {
+                                    this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
+                                }}
+                                reorderItems={(checklistItemIndex: number, newPosition: number) => {
+                                    this.onReorderItem(checklistItemIndex, newPosition, checklistIndex);
+                                }}
+                            />
+                        ))}
                     </div>
                 </div>
                 <ConfirmModal

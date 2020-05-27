@@ -32,13 +32,6 @@ export const isMobile = () => {
     return window.innerWidth <= MOBILE_SCREEN_WIDTH;
 };
 
-export const isExportPluginLoaded = () => {
-    const exportPluginId = 'com.mattermost.plugin-channel-export';
-
-    // @ts-ignore
-    return Boolean(window.plugins[exportPluginId]);
-};
-
 export const registerCssVars = (theme: any) => {
     cssVars({
         variables: {

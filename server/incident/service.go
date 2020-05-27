@@ -210,14 +210,14 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 	return s.store.GetIncident(incidentID)
 }
 
-// GetIncidentIDForChannel get the incidentID associated with this channel. Returns an empty string
+// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 // if there is no incident associated with this channel.
-func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) string {
+func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) {
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return incidentID
+	return incidentID, nil
 }
 
 // GetCommanders returns all the commanders of the incidents selected by options
