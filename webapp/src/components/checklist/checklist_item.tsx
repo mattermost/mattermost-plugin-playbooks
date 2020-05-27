@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-
 import moment from 'moment';
 
 import {ChecklistItem} from 'src/types/playbook';
@@ -11,9 +10,10 @@ interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
     disabled: boolean;
     onChange?: (item: boolean) => void;
+    onRedirect?: () => void;
 }
 
-export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
+export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedirect}: ChecklistItemDetailsProps): React.ReactElement => {
     let timestamp = '';
     if (checklistItem.checked) {
         const checkedModified = moment(checklistItem.checked_modified);
@@ -57,6 +57,9 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
 
                     // @ts-ignore
                     window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
+                    if (onRedirect) {
+                        onRedirect();
+                    }
                 }}
             >
                 {timestamp}
