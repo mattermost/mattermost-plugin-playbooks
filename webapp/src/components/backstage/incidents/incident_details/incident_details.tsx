@@ -152,7 +152,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         className='Backstage__header__back'
                         onClick={this.props.onClose}
                     />
-                    <span className='mr-1'>{`Incident ${this.props.incident.name}`}</span>
+                    <span className='title-text mr-1'>{`Incident ${this.props.incident.name}`}</span>
 
                     { this.props.involvedInIncident &&
                     <OverlayTrigger

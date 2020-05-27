@@ -43,6 +43,13 @@ $font-family: Open Sans;
             align-items: center;
             flex: 1 1 auto;
 
+            .title-text {
+                max-width: 17em;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
             .light {
                 padding-left: 1rem;
             }
