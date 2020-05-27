@@ -6,8 +6,6 @@ import React from 'react';
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
-import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
-
 import {exportChannelUrl} from 'src/client';
 
 import {Incident} from 'src/types/incident';
@@ -26,9 +24,6 @@ const OVERLAY_DELAY = 400;
 interface Props {
     incident: Incident;
     involvedInIncident: boolean;
-    totalMessages: number;
-    membersCount: number;
-    mainChannelDetails: ChannelWithTeamData;
     exportAvailable: boolean;
     exportLicensed: boolean;
     theme: Record<string, string>;
@@ -90,7 +85,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public goToChannel = () => {
-        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails?.team_name}/channels/${this.props.mainChannelDetails?.name}`);
+        this.props.actions.navigateToUrl(`/${this.props.incident.main_channel_info?.team_name}/channels/${this.props.incident.main_channel_info?.channel_name}`);
     }
 
     public onExportClick =() => {
@@ -234,7 +229,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                             </div>
                             <div className='content'>
                                 <i className='icon icon-account-multiple-outline box-icon'/>
-                                {this.props.membersCount}
+                                {this.props.incident.main_channel_info?.num_participants}
                             </div>
                         </div>
                     </OverlayTrigger>
@@ -244,7 +239,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         </div>
                         <div className='content'>
                             <i className='icon icon-send box-icon'/>
-                            {this.props.totalMessages}
+                            {this.props.incident.main_channel_info?.total_posts}
                         </div>
                         <div className='block-footer text-right'>
                             <a

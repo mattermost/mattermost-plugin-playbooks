@@ -2,16 +2,16 @@ package incident
 
 import (
 	"errors"
-
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	ChannelIDs []string           `json:"channel_ids"`
-	PostID     string             `json:"post_id"`
-	Playbook   *playbook.Playbook `json:"playbook"`
+	ChannelIDs      []string           `json:"channel_ids"`
+	PostID          string             `json:"post_id"`
+	Playbook        *playbook.Playbook `json:"playbook"`
+	MainChannelInfo *ChannelInfo       `json:"main_channel_info"`
 }
 
 // Header holds the summary information of an incident.
@@ -23,6 +23,14 @@ type Header struct {
 	TeamID          string `json:"team_id"`
 	CreatedAt       int64  `json:"created_at"`
 	EndedAt         int64  `json:"ended_at"`
+}
+
+type ChannelInfo struct {
+	ChannelName        string `json:"channel_name"`
+	ChannelDisplayName string `json:"channel_display_name"`
+	TeamName           string `json:"team_name"`
+	NumMembers         int64  `json:"num_participants"`
+	TotalPosts         int64  `json:"total_posts"`
 }
 
 // CommanderInfo holds the summary information of a commander.
