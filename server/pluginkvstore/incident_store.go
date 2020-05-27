@@ -294,14 +294,13 @@ func headerMatchesFilters(header incident.Header, options incident.HeaderFilterO
 // case-insensitive and unicode normalized.
 func searchHeaders(headers []incident.Header, term string) []incident.Header {
 	term = normalize(term)
-	n := 0
+	var results []incident.Header
 	for _, h := range headers {
 		if strings.Contains(normalize(h.Name), term) {
-			headers[n] = h
-			n++
+			results = append(results, h)
 		}
 	}
-	return headers[:n]
+	return results
 }
 
 // normalize removes unicode marks and lowercases text
