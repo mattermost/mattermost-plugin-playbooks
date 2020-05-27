@@ -8,6 +8,7 @@ import ReactSelect from 'react-select';
 import './status_filter.scss';
 
 interface Props {
+    default: string | undefined;
     onChange: (newStatus: string) => void;
 }
 
@@ -28,7 +29,15 @@ export function StatusFilter(props: Props) {
         setOpen(!isOpen);
     };
 
-    const [selected, setSelected] = useState<Option>(fixedOptions[2]);
+    const getDefault = () => {
+        const defaultOption = fixedOptions.find((val) => val.value === props.default);
+        if (defaultOption) {
+            return defaultOption;
+        }
+        return fixedOptions[2];
+    };
+
+    const [selected, setSelected] = useState(getDefault());
 
     const onSelectedChange = async (val: Option) => {
         toggleOpen();
@@ -101,8 +110,15 @@ const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
         css={{position: 'relative'}}
     >
         {target}
-        {isOpen ? <Menu className='IncidentFilter-select status-filter-select__container'>{children}</Menu> : null}
-        {isOpen ? <Blanket onClick={onClose}/> : null}
+        {
+            isOpen &&
+            <>
+                <Menu className='IncidentFilter-select status-filter-select__container'>
+                    {children}
+                </Menu>
+                <Blanket onClick={onClose}/>
+            </>
+        }
     </div>
 );
 
