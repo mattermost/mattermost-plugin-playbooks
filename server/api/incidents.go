@@ -215,7 +215,7 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncident(incidentID)
+	incidentToGet, err := h.incidentService.GetIncident(incidentID, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
