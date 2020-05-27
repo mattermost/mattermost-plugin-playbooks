@@ -9,10 +9,9 @@ import (
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	ChannelIDs      []string           `json:"channel_ids"`
-	PostID          string             `json:"post_id"`
-	Playbook        *playbook.Playbook `json:"playbook"`
-	MainChannelInfo *ChannelInfo       `json:"main_channel_info"`
+	ChannelIDs []string           `json:"channel_ids"`
+	PostID     string             `json:"post_id"`
+	Playbook   *playbook.Playbook `json:"playbook"`
 }
 
 // Header holds the summary information of an incident.
@@ -26,12 +25,13 @@ type Header struct {
 	EndedAt         int64  `json:"ended_at"`
 }
 
-// ChannelInfo holds the incident's channel and team metadata.
-type ChannelInfo struct {
+// IncidentWithDetails holds the incident's channel and team metadata.
+type IncidentWithDetails struct {
+	Incident
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
-	NumMembers         int64  `json:"num_participants"`
+	NumMembers         int64  `json:"num_members"`
 	TotalPosts         int64  `json:"total_posts"`
 }
 
@@ -76,7 +76,10 @@ type Service interface {
 	OpenEndIncidentDialog(incidentID string, triggerID string) error
 
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
-	GetIncident(incidentID string, userID string) (*Incident, error)
+	GetIncident(incidentID string) (*Incident, error)
+
+	// GetIncidentWithDetails gets an incident with the detailed metadata.
+	GetIncidentWithDetails(incidentID string) (*IncidentWithDetails, error)
 
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
