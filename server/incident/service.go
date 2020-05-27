@@ -143,7 +143,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, c
 // EndIncident completes the incident. It returns an ErrIncidentNotActive if the caller tries to
 // end an incident which is not active.
 func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
-	incdnt, err := s.GetIncident(incidentID, userID)
+	incdnt, err := s.GetIncident(incidentID)
 	if err != nil {
 		return fmt.Errorf("failed to end incident: %w", err)
 	}
@@ -204,37 +204,43 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID string, triggerID string)
 }
 
 // GetIncident gets an incident by ID. Returns error if it could not be found.
-func (s *ServiceImpl) GetIncident(incidentID string, userID string) (*Incident, error) {
-	incident, err := s.store.GetIncident(incidentID)
+func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
+	return s.store.GetIncident(incidentID)
+}
+
+func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*IncidentWithDetails, error) {
+	incident, err := s.GetIncident(incidentID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve incident '%s': %w", incidentID, err)
 	}
 
-	if s.hasPermissionToModifyIncident(incident, userID) {
-		// Get main channel details
-		channel, err := s.pluginAPI.Channel.Get(incident.ChannelIDs[0])
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve channel id '%s': %w", incident.ChannelIDs[0], err)
-		}
-		team, err := s.pluginAPI.Team.Get(channel.TeamId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve team id '%s': %w", channel.TeamId, err)
-		}
-		channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.ChannelIDs[0])
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve channel id '%s' stats: %w", incident.ChannelIDs[0], err)
-		}
+	return s.appendDetailsToIncident(*incident)
+}
 
-		incident.MainChannelInfo = &ChannelInfo{
-			ChannelName:        channel.Name,
-			ChannelDisplayName: channel.DisplayName,
-			TeamName:           team.Name,
-			TotalPosts:         channel.TotalMsgCount,
-			NumMembers:         channelStats.MemberCount,
-		}
+func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*IncidentWithDetails, error) {
+	// Get main channel details
+	channel, err := s.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve channel id '%s': %w", incident.ChannelIDs[0], err)
+	}
+	team, err := s.pluginAPI.Team.Get(channel.TeamId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve team id '%s': %w", channel.TeamId, err)
+	}
+	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.ChannelIDs[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve channel id '%s' stats: %w", incident.ChannelIDs[0], err)
 	}
 
-	return incident, nil
+	incidentWithDetails := &IncidentWithDetails{
+		Incident:           incident,
+		ChannelName:        channel.Name,
+		ChannelDisplayName: channel.DisplayName,
+		TeamName:           team.Name,
+		TotalPosts:         channel.TotalMsgCount,
+		NumMembers:         channelStats.MemberCount,
+	}
+	return incidentWithDetails, nil
 }
 
 // GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
@@ -288,7 +294,7 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 // ChangeCommander processes a request from userID to change the commander for incidentID
 // to commanderID. Changing to the same commanderID is a no-op.
 func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commanderID string) error {
-	incidentToModify, err := s.GetIncident(incidentID, userID)
+	incidentToModify, err := s.GetIncident(incidentID)
 	if err != nil {
 		return err
 	}
@@ -456,7 +462,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 }
 
 func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {
-	incidentToModify, err := s.GetIncident(incidentID, userID)
+	incidentToModify, err := s.GetIncident(incidentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve incident: %w", err)
 	}

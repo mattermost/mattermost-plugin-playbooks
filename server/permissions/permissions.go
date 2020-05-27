@@ -18,7 +18,7 @@ func CheckHasPermissionsToIncidentChannel(userID, incidentID string, pluginAPI *
 		return nil
 	}
 
-	incidentToCheck, err := incidentService.GetIncident(incidentID, userID)
+	incidentToCheck, err := incidentService.GetIncident(incidentID)
 	if err != nil {
 		return fmt.Errorf("could not get incident id `%s`: %w", incidentID, err)
 	}
@@ -38,7 +38,7 @@ func CheckHasPermissionsToIncidentTeam(userID, incidentID string, pluginAPI *plu
 		return nil
 	}
 
-	incidentToCheck, err := incidentService.GetIncident(incidentID, userID)
+	incidentToCheck, err := incidentService.GetIncident(incidentID)
 	if err != nil {
 		return fmt.Errorf("could not get incident id `%s`: %w", incidentID, err)
 	}

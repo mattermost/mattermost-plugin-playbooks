@@ -40,6 +40,23 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
         lastPictureUpdate = commander.last_picture_update;
     }
 
+    const channelDetails = [] as ChannelWithTeamData[];
+    if (ownProps.incident.channel_ids) {
+        for (const channelId of ownProps.incident?.channel_ids) {
+            const c = getChannel(state, channelId) as Channel;
+            if (c) {
+                const t = getTeam(state, c.team_id) as Team;
+                const newChannelWithTeamData = {
+                    ...c,
+                    team_display_name: t.display_name,
+                    team_name: t.name,
+                };
+
+                channelDetails.push(newChannelWithTeamData);
+            }
+        }
+    }
+
     // Get the incident main channel. Assuming the first one for now.
     const incidentChannelId = ownProps.incident.channel_ids?.[0] || '';
     const incidentTeamId = ownProps.incident.team_id;
@@ -51,6 +68,7 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     return {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
+        channelDetails,
         viewingIncidentChannel: incidentChannelId === getCurrentChannel(state)?.id,
         involvedInIncident,
         teamName: getCurrentTeam(state).name,

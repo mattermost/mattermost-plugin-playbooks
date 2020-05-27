@@ -85,7 +85,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public goToChannel = () => {
-        this.props.actions.navigateToUrl(`/${this.props.incident.main_channel_info?.team_name}/channels/${this.props.incident.main_channel_info?.channel_name}`);
+        this.props.actions.navigateToUrl(`/${this.props.incident.team_name}/channels/${this.props.incident.channel_name}`);
     }
 
     public onExportClick =() => {
@@ -229,7 +229,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                             </div>
                             <div className='content'>
                                 <i className='icon icon-account-multiple-outline box-icon'/>
-                                {this.props.incident.main_channel_info?.num_participants}
+                                {this.props.incident.num_members}
                             </div>
                         </div>
                     </OverlayTrigger>
@@ -239,7 +239,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         </div>
                         <div className='content'>
                             <i className='icon icon-send box-icon'/>
-                            {this.props.incident.main_channel_info?.total_posts}
+                            {this.props.incident.total_posts}
                         </div>
                         <div className='block-footer text-right'>
                             <a
