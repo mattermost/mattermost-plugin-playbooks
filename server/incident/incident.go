@@ -25,6 +25,7 @@ type Header struct {
 	EndedAt         int64  `json:"ended_at"`
 }
 
+// ChannelInfo holds the incident's channel and team metadata.
 type ChannelInfo struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
