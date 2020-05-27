@@ -143,7 +143,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, c
 // EndIncident completes the incident. It returns an ErrIncidentNotActive if the caller tries to
 // end an incident which is not active.
 func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
-	incdnt, err := s.GetIncident(incidentID)
+	incdnt, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return fmt.Errorf("failed to end incident: %w", err)
 	}
@@ -294,7 +294,7 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 // ChangeCommander processes a request from userID to change the commander for incidentID
 // to commanderID. Changing to the same commanderID is a no-op.
 func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commanderID string) error {
-	incidentToModify, err := s.GetIncident(incidentID)
+	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return err
 	}
@@ -462,7 +462,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 }
 
 func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {
-	incidentToModify, err := s.GetIncident(incidentID)
+	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve incident: %w", err)
 	}
