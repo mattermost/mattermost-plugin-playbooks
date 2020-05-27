@@ -4,10 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
+	"unicode"
 
-	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 const (
@@ -50,12 +54,13 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 		}
 	}
 
-	// We cannot satisfy both Sort/Order and a search term (which returns results ordered by relevance)
+	// First satisfy Sort/Order, then filter by search term if available. This works because the
+	// search does not rank based on relevance; it is essentially a search filter.
+	sortHeaders(filtered, options.Sort, options.Order)
 	if options.SearchTerm != "" {
 		filtered = searchHeaders(filtered, options.SearchTerm)
-	} else {
-		sortHeaders(filtered, options.Sort, options.Order)
 	}
+
 	filtered = pageHeaders(filtered, options.Page, options.PerPage)
 
 	var result []incident.Incident
@@ -284,19 +289,25 @@ func headerMatchesFilters(header incident.Header, options incident.HeaderFilterO
 	return true
 }
 
+// searchHeaders filters headers (maintaining order) based on the search term. For now, we are
+// defining a search "hit" as: the incident name includes the term in its entirety,
+// case-insensitive and unicode normalized.
 func searchHeaders(headers []incident.Header, term string) []incident.Header {
-	var searchableFields []string
+	term = normalize(term)
+	n := 0
 	for _, h := range headers {
-		searchableFields = append(searchableFields, h.Name)
+		if strings.Contains(normalize(h.Name), term) {
+			headers[n] = h
+			n++
+		}
 	}
+	return headers[:n]
+}
 
-	ranks := fuzzy.RankFindNormalizedFold(term, searchableFields)
-	sort.Sort(ranks)
-
-	var results []incident.Header
-	for _, r := range ranks {
-		results = append(results, headers[r.OriginalIndex])
-	}
-
-	return results
+// normalize removes unicode marks and lowercases text
+func normalize(s string) string {
+	// create a transformer, from NFC to NFD, removes non-spacing unicode marks, then back to NFC
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	normed, _, _ := transform.String(t, strings.ToLower(s))
+	return normed
 }
