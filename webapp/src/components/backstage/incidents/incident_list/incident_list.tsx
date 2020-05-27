@@ -68,8 +68,6 @@ export function BackstageIncidentList(props: Props) {
 
     async function openIncidentDetails(incident: Incident) {
         const incidentDetails = await fetchIncidentWithDetails(incident.id) as Incident;
-        console.log('INCIDENT SELECTED');
-        console.log(incidentDetails);
         setSelectedIncident(incidentDetails);
     }
 
