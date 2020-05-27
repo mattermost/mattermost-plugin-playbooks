@@ -208,6 +208,7 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 	return s.store.GetIncident(incidentID)
 }
 
+// GetIncidentWithDetails gets an incident with the detailed metadata.
 func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*IncidentWithDetails, error) {
 	incident, err := s.GetIncident(incidentID)
 	if err != nil {
