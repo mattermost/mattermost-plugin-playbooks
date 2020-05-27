@@ -1,0 +1,112 @@
+$font-family: Open Sans;
+
+// Checkbox component
+.checkbox-container {
+    align-items: center;
+    display: flex;
+    padding: 0.6rem 0;
+
+    &:first-child {
+        padding-top: 0.2rem;
+    }
+
+    // Checkbox
+    input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        display: hidden;
+    }
+
+    &:hover {
+        .checkbox-container__close {
+            opacity: 1;
+        }
+    }
+
+    .icon-bars {
+        padding: 0 0.8rem 0 0;
+    }
+
+    .checkbox-container__close {
+        cursor: pointer;
+        opacity: 0;
+        width: 3.2rem;
+        height: 3.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: var(--error-text);
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    > a {
+        padding: 2px 0px 0px 0px;
+        font-family: $font-family;
+        font-style: normal;
+        font-weight: normal;
+        line-height: 20px;
+        color: #3d3c40 !important;
+    }
+
+    input[type="checkbox"] + label {
+        margin: 0;
+        position: relative;
+        cursor: pointer;
+    }
+
+    input[type="checkbox"]:disabled + label {
+        cursor: default;
+    }
+
+    input[type="checkbox"] + label:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 20px;
+
+        background: #ffffff;
+        border: 1px solid #dddddd;
+        box-sizing: border-box;
+        border-radius: 4px;
+    }
+
+    input[type="checkbox"]:checked + label:before {
+        background: #2f80ed;
+        border: 1px solid #2f80ed;
+        box-sizing: border-box;
+    }
+
+    input[type="checkbox"] + label:after {
+        /* Font Awesome */
+        font-family: mattermosticons;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        content: "\f12c"; /* icon-check */
+
+        font-size: 11px;
+        position: absolute;
+        top: 3px;
+        left: 4px;
+        font-weight: bold;
+        color: #ffffff;
+
+        transition: transform 0.15s;
+        transform: scale(0) rotate(90deg);
+    }
+
+    input[type="checkbox"]:checked + label:after {
+        transform: scale(1) rotate(0deg);
+    }
+
+    label {
+        padding: 0 8px 0 32px;
+        font-weight: normal;
+    }
+}

@@ -5,15 +5,18 @@ import React, {useState} from 'react';
 
 import moment from 'moment';
 
+import {isMinimumServerVersion} from 'mattermost-redux/utils/helpers';
+
 import {ChecklistItem} from 'src/types/playbook';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
     disabled: boolean;
     onChange?: (item: boolean) => void;
+    serverVersion: string;
 }
 
-export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: ChecklistItemDetailsProps): React.ReactElement => {
+export const ChecklistItemDetails = ({checklistItem, disabled, onChange, serverVersion}: ChecklistItemDetailsProps): React.ReactElement => {
     let timestamp = '';
     if (checklistItem.checked) {
         const checkedModified = moment(checklistItem.checked_modified);
@@ -46,21 +49,23 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange}: Checkl
                     {checklistItem.title}
                 </label>
             </div>
-            <a
-                className={'light small'}
-                href={`/_redirect/pl/${checklistItem.checked_post_id}`}
-                onClick={(e) => {
-                    e.preventDefault();
-                    if (!checklistItem.checked_post_id) {
-                        return;
-                    }
+            {isMinimumServerVersion(serverVersion, 5, 24) &&
+                <a
+                    className={'light small'}
+                    href={`/_redirect/pl/${checklistItem.checked_post_id}`}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        if (!checklistItem.checked_post_id) {
+                            return;
+                        }
 
-                    // @ts-ignore
-                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
-                }}
-            >
-                {timestamp}
-            </a>
+                        // @ts-ignore
+                        window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
+                    }}
+                >
+                    {timestamp}
+                </a>
+            }
         </div>
     );
 };
