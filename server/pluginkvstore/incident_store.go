@@ -5,10 +5,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/pkg/errors"
-
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/pkg/errors"
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"

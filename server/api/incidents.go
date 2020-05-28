@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
@@ -319,7 +318,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	if err := permissions.CheckHasPermissionsToIncidentChannel(params.CommanderID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				errors.Wrapf(err, "userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
+				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
 			return
 		}
 		HandleError(w, err)
