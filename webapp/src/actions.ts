@@ -54,7 +54,7 @@ import {BackstageArea} from './types/backstage';
 
 import {
     fetchIncidents,
-    fetchIncidentDetails,
+    fetchIncident,
     clientExecuteCommand,
     checkItem,
     uncheckItem,
@@ -68,11 +68,11 @@ import {
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
-export function getIncidentDetails(id: string) {
+export function getIncident(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         try {
             // Fetch incident
-            const incident = await fetchIncidentDetails(id) as Incident;
+            const incident = await fetchIncident(id) as Incident;
 
             // Fetch commander
             if (!getUser(getState(), incident.commander_user_id)) {
