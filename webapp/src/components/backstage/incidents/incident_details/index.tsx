@@ -9,8 +9,6 @@ import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 import {Permissions} from 'mattermost-redux/constants';
 
-import {isExportPluginLoaded} from 'src/utils/utils';
-
 import {Incident} from 'src/types/incident';
 
 import {navigateToUrl} from 'src/actions';
@@ -28,9 +26,11 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
     const involvedInIncident = haveIChannelPermission(state,
         {channel: mainChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
 
+    const isExportPluginLoaded = Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']);
+
     return {
         involvedInIncident,
-        exportAvailable: isExportPluginLoaded(),
+        exportAvailable: isExportPluginLoaded,
         exportLicensed: isExportLicensed(state),
         theme: getTheme(state),
     };

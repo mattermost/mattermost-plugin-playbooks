@@ -15,6 +15,7 @@ import {
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
+import './checklist.scss';
 
 interface Props {
     checklist: Checklist;
@@ -24,9 +25,10 @@ interface Props {
     removeItem: (itemNum: number) => void;
     editItem: (itemNum: number, newTitle: string) => void;
     reorderItems: (itemNum: number, newPosition: number) => void;
+    serverVersion: string;
 }
 
-export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, removeItem, editItem, reorderItems, serverVersion}: Props): React.ReactElement => {
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -148,6 +150,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, remo
 
                                 return (
                                     <ChecklistItemDetails
+                                        serverVersion={serverVersion}
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
                                         disabled={!enableEdit}
