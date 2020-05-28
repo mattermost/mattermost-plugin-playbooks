@@ -10,7 +10,7 @@ import {
     withLoading,
     startIncident,
     getIncidentsForCurrentTeam,
-    getIncidentDetails,
+    getIncident,
     setRHSState,
     setRHSOpen,
 } from 'src/actions';
@@ -33,7 +33,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
         actions: bindActionCreators({
             startIncident,
             getIncidentsForCurrentTeam: () => withLoading(getIncidentsForCurrentTeam()),
-            getIncidentDetails: (id: string) => withLoading(getIncidentDetails(id)),
+            getIncident: (id: string) => withLoading(getIncident(id)),
             setRHSState,
             setRHSOpen,
         }, dispatch),
