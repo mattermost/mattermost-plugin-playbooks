@@ -7,14 +7,10 @@ import {bindActionCreators, Dispatch} from 'redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {
-    startIncident,
     setRHSState,
-    setRHSOpen,
-    setBackstageModal,
 } from 'src/actions';
 
 import {incidentDetails, rhsState, isLoading} from 'src/selectors';
-import {BackstageArea} from 'src/types/backstage';
 
 import RHSTitle from './rhs_title';
 
@@ -29,10 +25,7 @@ function mapStateToProps(state: GlobalState) {
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
-            startIncident,
             setRHSState,
-            setRHSOpen,
-            openBackstageModal: (selectedArea: BackstageArea) => setBackstageModal(true, selectedArea),
         }, dispatch),
     };
 }

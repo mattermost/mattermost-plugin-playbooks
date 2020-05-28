@@ -16,10 +16,7 @@ interface Props {
     incident: Incident;
     isLoading: boolean;
     actions: {
-        startIncident: () => void;
         setRHSState: (state: RHSState) => void;
-        setRHSOpen: (open: boolean) => void;
-        openBackstageModal: (selectedArea: BackstageArea) => SetBackstageModalSettings;
     };
 }
 
