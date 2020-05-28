@@ -128,8 +128,8 @@ export function BackstageIncidentList(props: Props) {
                             <div className='row'>
                                 <div className='col-sm-3'> {'Name'} </div>
                                 <div className='col-sm-2'> {'Status'} </div>
-                                <div className='col-sm-2'> {'Start Date'} </div>
-                                <div className='col-sm-2'> {'End Date'} </div>
+                                <div className='col-sm-2'> {'Start Time'} </div>
+                                <div className='col-sm-2'> {'End Time'} </div>
                                 <div className='col-sm-3'> {'Commander'} </div>
                             </div>
                         </div>
