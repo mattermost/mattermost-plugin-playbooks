@@ -214,7 +214,7 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*Details, error) {
 	incident, err := s.GetIncident(incidentID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve incident '%s': %w", incidentID, err)
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve incident '%s'", incidentID)
 	}
 
 	return s.appendDetailsToIncident(*incident)
