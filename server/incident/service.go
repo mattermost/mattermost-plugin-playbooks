@@ -220,32 +220,6 @@ func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*Details, error
 	return s.appendDetailsToIncident(*incident)
 }
 
-func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
-	// Get main channel details
-	channel, err := s.pluginAPI.Channel.Get(incident.ChannelIDs[0])
-	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s'", incident.ChannelIDs[0])
-	}
-	team, err := s.pluginAPI.Team.Get(channel.TeamId)
-	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
-	}
-	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.ChannelIDs[0])
-	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.ChannelIDs[0])
-	}
-
-	incidentWithDetails := &Details{
-		Incident:           incident,
-		ChannelName:        channel.Name,
-		ChannelDisplayName: channel.DisplayName,
-		TeamName:           team.Name,
-		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         channelStats.MemberCount,
-	}
-	return incidentWithDetails, nil
-}
-
 // GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 // if there is no incident associated with this channel.
 func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) {
@@ -462,6 +436,32 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	s.telemetry.MoveChecklistItem(incidentID, userID)
 
 	return nil
+}
+
+func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
+	// Get main channel details
+	channel, err := s.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s'", incident.ChannelIDs[0])
+	}
+	team, err := s.pluginAPI.Team.Get(channel.TeamId)
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
+	}
+	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.ChannelIDs[0])
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.ChannelIDs[0])
+	}
+
+	incidentWithDetails := &Details{
+		Incident:           incident,
+		ChannelName:        channel.Name,
+		ChannelDisplayName: channel.DisplayName,
+		TeamName:           team.Name,
+		TotalPosts:         channel.TotalMsgCount,
+		NumMembers:         channelStats.MemberCount,
+	}
+	return incidentWithDetails, nil
 }
 
 func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {
