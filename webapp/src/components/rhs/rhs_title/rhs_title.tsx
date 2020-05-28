@@ -3,10 +3,8 @@
 
 import React from 'react';
 
-import Spinner from 'src/components/spinner';
+import Spinner from 'src/components/assets/icons/spinner';
 import {Incident} from 'src/types/incident';
-import {BackstageArea} from 'src/types/backstage';
-import {SetBackstageModalSettings} from 'src/types/actions';
 import {RHSState} from 'src/types/rhs';
 
 import './rhs_title.scss';

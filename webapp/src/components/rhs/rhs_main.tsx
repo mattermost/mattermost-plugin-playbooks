@@ -4,7 +4,7 @@
 import React from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
-import Spinner from 'src/components/spinner';
+import Spinner from 'src/components/assets/icons/spinner';
 import {Incident} from 'src/types/incident';
 import {RHSState} from 'src/types/rhs';
 import RHSHeader from 'src/components/rhs/rhs_header';

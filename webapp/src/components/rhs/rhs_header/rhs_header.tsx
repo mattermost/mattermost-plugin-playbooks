@@ -23,6 +23,8 @@ interface Props {
 const OVERLAY_DELAY = 400;
 
 export default function RHSHeader(props: Props) {
+    // Listen to window.width changes to adjust icons when
+    // switched to mobile-view (isMobile())
     const [width, setWidth] = React.useState(0);
 
     useEffect(() => {
