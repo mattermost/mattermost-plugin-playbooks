@@ -213,7 +213,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "horse",
 			},
-			want: []incident.Incident{id2, id3},
+			want: []incident.Incident{id3, id2},
 		},
 		{
 			name: "search for aliens & commander3",
@@ -224,26 +224,33 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			want: []incident.Incident{id4},
 		},
 		{
-			name: "fuzzy search using starting characters",
+			name: "fuzzy search using starting characters -- not implemented",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "sbsm",
 			},
-			want: []incident.Incident{id2, id3},
+			want: nil,
 		},
 		{
-			name: "fuzzy search using starting characters, active",
+			name: "fuzzy search using starting characters, active -- not implemented",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "sbsm",
 				Status:     incident.Ongoing,
 			},
-			want: []incident.Incident{id2},
+			want: nil,
 		},
 		{
 			name: "case-insensitive and unicode-normalized",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "ziggurat",
 			},
-			want: []incident.Incident{id6, id7},
+			want: []incident.Incident{id7, id6},
+		},
+		{
+			name: "case-insensitive and unicode-normalized with unicode search term",
+			options: incident.HeaderFilterOptions{
+				SearchTerm: "ziggūràt",
+			},
+			want: []incident.Incident{id7, id6},
 		},
 	}
 	for _, tt := range tests {
