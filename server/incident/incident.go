@@ -25,8 +25,8 @@ type Header struct {
 	EndedAt         int64  `json:"ended_at"`
 }
 
-// IncidentWithDetails holds the incident's channel and team metadata.
-type IncidentWithDetails struct {
+// Details holds the incident's channel and team metadata.
+type Details struct {
 	Incident
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
@@ -79,7 +79,7 @@ type Service interface {
 	GetIncident(incidentID string) (*Incident, error)
 
 	// GetIncidentWithDetails gets an incident with the detailed metadata.
-	GetIncidentWithDetails(incidentID string) (*IncidentWithDetails, error)
+	GetIncidentWithDetails(incidentID string) (*Details, error)
 
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
