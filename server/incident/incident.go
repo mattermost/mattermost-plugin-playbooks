@@ -1,7 +1,7 @@
 package incident
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )

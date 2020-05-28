@@ -3,11 +3,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mholt/archiver/v3"
@@ -76,7 +77,7 @@ func getClient() (*model.Client4, error) {
 			log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
 			_, resp := client.Login(adminUsername, adminPassword)
 			if resp.Error != nil {
-				return nil, fmt.Errorf("failed to login as %s: %w", adminUsername, resp.Error)
+				return nil, errors.Wrapf(resp.Error, "failed to login as %s", adminUsername)
 			}
 			return client, nil
 		}
@@ -97,20 +98,20 @@ func deploy(client *model.Client4, pluginID, bundlePath string) error {
 func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
 	pluginBundle, err := os.Open(bundlePath)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %w", bundlePath, err)
+		return errors.Wrapf(err, "failed to open %s", bundlePath)
 	}
 	defer pluginBundle.Close()
 
 	log.Print("Uploading plugin via API.")
 	_, resp := client.UploadPluginForced(pluginBundle)
 	if resp.Error != nil {
-		return fmt.Errorf("Failed to upload plugin bundle: %s", resp.Error.Error())
+		return errors.Wrapf(err, "Failed to upload plugin bundle: %s", resp.Error.Error())
 	}
 
 	log.Print("Enabling plugin.")
 	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
-		return fmt.Errorf("Failed to enable plugin: %s", resp.Error.Error())
+		return errors.Wrapf(err, "Failed to enable plugin: %s", resp.Error.Error())
 	}
 
 	return nil
@@ -124,7 +125,7 @@ func copyPlugin(pluginID, bundlePath string) error {
 	if os.IsNotExist(err) {
 		return errors.New("no supported deployment method available, please install plugin manually")
 	} else if err != nil {
-		return fmt.Errorf("failed to stat %s: %w", targetPath, err)
+		return errors.Wrapf(err, "failed to stat %s", targetPath)
 	}
 
 	log.Printf("Installing plugin to mattermost-server found in %s.", targetPath)
@@ -134,18 +135,18 @@ func copyPlugin(pluginID, bundlePath string) error {
 
 	err = os.MkdirAll(targetPath, 0777)
 	if err != nil {
-		return fmt.Errorf("failed to create %s: %w", targetPath, err)
+		return errors.Wrapf(err, "failed to create %s", targetPath)
 	}
 
 	existingPluginPath := filepath.Join(targetPath, pluginID)
 	err = os.RemoveAll(existingPluginPath)
 	if err != nil {
-		return fmt.Errorf("failed to remove existing existing plugin directory %s: %w", existingPluginPath, err)
+		return errors.Wrapf(err, "failed to remove existing existing plugin directory %s", existingPluginPath)
 	}
 
 	err = archiver.Unarchive(bundlePath, targetPath)
 	if err != nil {
-		return fmt.Errorf("failed to unarchive %s into %s: %w", bundlePath, targetPath, err)
+		return errors.Wrapf(err, "failed to unarchive %s into %s", bundlePath, targetPath)
 	}
 
 	return nil
@@ -156,13 +157,13 @@ func resetPlugin(client *model.Client4, pluginID string) error {
 	log.Print("Disabling plugin.")
 	_, resp := client.DisablePlugin(pluginID)
 	if resp.Error != nil {
-		return fmt.Errorf("failed to disable plugin: %s", resp.Error.Error())
+		return errors.Errorf("failed to disable plugin: %s", resp.Error.Error())
 	}
 
 	log.Print("Enabling plugin.")
 	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
-		return fmt.Errorf("failed to enable plugin: %s", resp.Error.Error())
+		return errors.Errorf("failed to enable plugin: %s", resp.Error.Error())
 	}
 
 	return nil

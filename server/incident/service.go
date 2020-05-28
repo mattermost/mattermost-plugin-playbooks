@@ -2,12 +2,13 @@ package incident
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -84,7 +85,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 
 	incdnt, err = s.store.CreateIncident(incdnt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create incident: %w", err)
+		return nil, errors.Wrapf(err, "failed to create incident")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
@@ -92,11 +93,11 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to to resolve user %s: %w", incdnt.CommanderUserID, err)
+		return nil, errors.Wrapf(err, "failed to to resolve user %s", incdnt.CommanderUserID)
 	}
 
 	if _, err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
-		return nil, fmt.Errorf("failed to post to incident channel: %w", err)
+		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
 	if incdnt.PostID == "" {
@@ -106,14 +107,14 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 	// Post the content and link of the original post
 	post, err := s.pluginAPI.Post.GetPost(incdnt.PostID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get incident original post: %w", err)
+		return nil, errors.Wrapf(err, "failed to get incident original post")
 	}
 
 	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	if _, err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
-		return nil, fmt.Errorf("failed to post to incident channel: %w", err)
+		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
 	return incdnt, nil
@@ -123,7 +124,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident) (*Incident, error) {
 func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error {
 	dialog, err := s.newIncidentDialog(commanderID, postID, clientID, playbooks)
 	if err != nil {
-		return fmt.Errorf("failed to create new incident dialog: %w", err)
+		return errors.Wrapf(err, "failed to create new incident dialog")
 	}
 
 	dialogRequest := model.OpenDialogRequest{
@@ -134,7 +135,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, c
 	}
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
-		return fmt.Errorf("failed to open new incident dialog: %w", err)
+		return errors.Wrapf(err, "failed to open new incident dialog")
 	}
 
 	return nil
@@ -145,7 +146,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, c
 func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	incdnt, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return fmt.Errorf("failed to end incident: %w", err)
+		return errors.Wrapf(err, "failed to end incident")
 	}
 
 	if !incdnt.IsActive {
@@ -157,7 +158,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	incdnt.EndedAt = time.Now().Unix()
 
 	if err = s.store.UpdateIncident(incdnt); err != nil {
-		return fmt.Errorf("failed to end incident: %w", err)
+		return errors.Wrapf(err, "failed to end incident")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
@@ -165,14 +166,14 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	// Post in the  main incident channel that @user has ended the incident.
 	// Main channel is the only channel in the incident for now.
 	mainChannelID := incdnt.ChannelIDs[0]
 	if _, err := s.poster.PostMessage(mainChannelID, "This incident has been closed by @%v", user.Username); err != nil {
-		return fmt.Errorf("failed to post end incident messsage: %w", err)
+		return errors.Wrapf(err, "failed to post end incident messsage")
 	}
 
 	return nil
@@ -197,7 +198,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID string, triggerID string)
 	}
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
-		return fmt.Errorf("failed to open new incident dialog: %w", err)
+		return errors.Wrapf(err, "failed to open new incident dialog")
 	}
 
 	return nil
@@ -238,7 +239,7 @@ func (s *ServiceImpl) GetCommandersForTeam(teamID string) ([]CommanderInfo, erro
 	for id := range commanders {
 		c, err := s.pluginAPI.User.Get(id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve commander id '%s': %w", id, err)
+			return nil, errors.Wrapf(err, "failed to retrieve commander id '%s'", id)
 		}
 		result = append(result, CommanderInfo{UserID: id, Username: c.Username})
 	}
@@ -272,16 +273,16 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 
 	oldCommander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
 	if err != nil {
-		return fmt.Errorf("failed to to resolve user %s: %w", incidentToModify.CommanderUserID, err)
+		return errors.Wrapf(err, "failed to to resolve user %s", incidentToModify.CommanderUserID)
 	}
 	newCommander, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
-		return fmt.Errorf("failed to to resolve user %s: %w", commanderID, err)
+		return errors.Wrapf(err, "failed to to resolve user %s", commanderID)
 	}
 
 	incidentToModify.CommanderUserID = commanderID
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return fmt.Errorf("failed to update incident: %w", err)
+		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
@@ -329,7 +330,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return fmt.Errorf("failed to update incident, is now in inconsistant state: %w", err)
+		return errors.Wrapf(err, "failed to update incident, is now in inconsistant state")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
@@ -347,7 +348,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(incidentToModify.Playbook.Checklists[checklistNumber].Items, checklistItem)
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return fmt.Errorf("failed to update incident: %w", err)
+		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
@@ -366,7 +367,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(incidentToModify.Playbook.Checklists[checklistNumber].Items[:itemNumber], incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber+1:]...)
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return fmt.Errorf("failed to update incident: %w", err)
+		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
@@ -385,7 +386,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return fmt.Errorf("failed to update incident: %w", err)
+		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
@@ -417,7 +418,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	incidentToModify.Playbook.Checklists[checklistNumber].Items = checklist
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return fmt.Errorf("failed to update incident: %w", err)
+		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
@@ -429,7 +430,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve incident: %w", err)
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
 	}
 
 	if !s.hasPermissionToModifyIncident(incidentToModify, userID) {
@@ -446,12 +447,12 @@ func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklist
 func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (string, error) {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return "", fmt.Errorf("failed to to resolve user %s: %w", userID, err)
+		return "", errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
 	postID, err := s.poster.PostMessage(channelID, user.Username+" "+message)
 	if err != nil {
-		return "", fmt.Errorf("failed to post end incident messsage: %w", err)
+		return "", errors.Wrapf(err, "failed to post end incident messsage")
 	}
 
 	return postID, nil
@@ -517,12 +518,12 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to create incident channel: %w", err)
+			return nil, errors.Wrapf(err, "failed to create incident channel")
 		}
 	}
 
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, fmt.Errorf("failed to add user to channel: %w", err)
+		return nil, errors.Wrapf(err, "failed to add user to channel")
 	}
 
 	return channel, nil
@@ -531,7 +532,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident) (*model.Channel, e
 func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, playbooks []playbook.Playbook) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch commander user: %w", err)
+		return nil, errors.Wrapf(err, "failed to fetch commander user")
 	}
 
 	state, err := json.Marshal(DialogState{
@@ -539,7 +540,7 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 		ClientID: clientID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal DialogState: %w", err)
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
 	}
 
 	options := []*model.PostActionOptions{{

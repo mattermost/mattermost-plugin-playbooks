@@ -1,11 +1,10 @@
 package telemetry
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/pkg/errors"
 	rudder "github.com/rudderlabs/analytics-go"
 )
 
@@ -37,11 +36,11 @@ const (
 // If either diagnosticID or serverVersion are empty, an error is returned.
 func NewRudder(dataPlaneURL, writeKey, diagnosticID string, serverVersion string) (*RudderTelemetry, error) {
 	if diagnosticID == "" {
-		return nil, fmt.Errorf("diagnosticID should not be empty")
+		return nil, errors.New("diagnosticID should not be empty")
 	}
 
 	if serverVersion == "" {
-		return nil, fmt.Errorf("serverVersion should not be empty")
+		return nil, errors.New("serverVersion should not be empty")
 	}
 
 	client, err := rudder.NewWithConfig(writeKey, dataPlaneURL, rudder.Config{})

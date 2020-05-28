@@ -2,12 +2,13 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -98,7 +99,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	var state incident.DialogState
 	err := json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
-		HandleError(w, fmt.Errorf("failed to unmarshal dialog state: %w", err))
+		HandleError(w, errors.Wrapf(err, "failed to unmarshal dialog state"))
 		return
 	}
 
@@ -110,7 +111,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			var pb playbook.Playbook
 			pb, err = h.playbookService.Get(playbookID)
 			if err != nil {
-				HandleError(w, fmt.Errorf("failed to get playbook: %w", err))
+				HandleError(w, errors.Wrapf(err, "failed to get playbook"))
 				return
 			}
 			playbookTemplate = &pb
@@ -165,11 +166,11 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
 	if teamID == "" && !isAdmin {
-		HandleError(w, fmt.Errorf("userID %s is not an admin", userID))
+		HandleError(w, errors.Errorf("userID %s is not an admin", userID))
 		return
 	}
 	if !isAdmin && !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleError(w, fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		HandleError(w, errors.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
 		return
 	}
 
@@ -260,7 +261,7 @@ func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.R
 
 	err := h.incidentService.EndIncident(request.State, request.UserId)
 	if err != nil {
-		HandleError(w, fmt.Errorf("failed to end incident: %w", err))
+		HandleError(w, errors.Wrapf(err, "failed to end incident"))
 		return
 	}
 
@@ -278,13 +279,13 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 	// Check permissions (if is an admin, they will have permissions to view all teams)
 	userID := r.Header.Get("Mattermost-User-ID")
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", fmt.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
 		return
 	}
 
 	commanders, err := h.incidentService.GetCommandersForTeam(teamID)
 	if err != nil {
-		HandleError(w, fmt.Errorf("failed to get commanders: %w", err))
+		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
 	}
 
@@ -310,7 +311,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		CommanderID string `json:"commander_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, fmt.Errorf("could not decode request body: %w", err))
+		HandleError(w, errors.Wrapf(err, "could not decode request body"))
 		return
 	}
 
@@ -318,7 +319,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	if err := permissions.CheckHasPermissionsToIncidentChannel(params.CommanderID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				fmt.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
+				errors.Wrapf(err, "userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
 			return
 		}
 		HandleError(w, err)
@@ -441,7 +442,7 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 		Title string `json:"title"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, fmt.Errorf("failed to unmarshal edit params state: %w", err))
+		HandleError(w, errors.Wrapf(err, "failed to unmarshal edit params state"))
 		return
 	}
 
@@ -502,7 +503,7 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 	}
 	page, err := strconv.Atoi(param)
 	if err != nil {
-		return nil, fmt.Errorf("bad parameter 'page': %w", err)
+		return nil, errors.Wrapf(err, "bad parameter 'page'")
 	}
 
 	param = u.Query().Get("per_page")
@@ -511,7 +512,7 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 	}
 	perPage, err := strconv.Atoi(param)
 	if err != nil {
-		return nil, fmt.Errorf("bad parameter 'per_page': %w", err)
+		return nil, errors.Wrapf(err, "bad parameter 'per_page'")
 	}
 
 	param = u.Query().Get("sort")
@@ -540,7 +541,7 @@ func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilt
 	} else if param == "desc" || param == "" {
 		order = incident.Desc
 	} else {
-		return nil, fmt.Errorf("bad parameter 'order_by': %w", err)
+		return nil, errors.Wrapf(err, "bad parameter 'order_by'")
 	}
 
 	param = u.Query().Get("status")

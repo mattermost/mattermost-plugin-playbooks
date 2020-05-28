@@ -1,11 +1,11 @@
 package pluginkvstore
 
 import (
-	"errors"
-	"fmt"
 	"sort"
 	"strings"
 	"unicode"
+
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -42,7 +42,7 @@ func NewIncidentStore(pluginAPI KVAPI) incident.Store {
 func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]incident.Incident, error) {
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all headers value: %w", err)
+		return nil, errors.Wrapf(err, "failed to get all headers value")
 	}
 
 	headers := toHeaders(headersMap)
@@ -68,7 +68,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 		i, err := s.getIncident(header.ID)
 		if err != nil {
 			// odds are this should not happen, so default to failing fast
-			return nil, fmt.Errorf("failed to get incident id '%s': %w", header.ID, err)
+			return nil, errors.Wrapf(err, "failed to get incident id '%s'", header.ID)
 		}
 		result = append(result, *i)
 	}
@@ -88,14 +88,14 @@ func (s *incidentStore) CreateIncident(incdnt *incident.Incident) (*incident.Inc
 
 	saved, err := s.pluginAPI.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to store new incident: %w", err)
+		return nil, errors.Wrapf(err, "failed to store new incident")
 	} else if !saved {
 		return nil, errors.New("failed to store new incident")
 	}
 
 	// Update Headers
 	if err := s.updateHeader(incdnt); err != nil {
-		return nil, fmt.Errorf("failed to update headers: %w", err)
+		return nil, errors.Wrapf(err, "failed to update headers")
 	}
 
 	return incdnt, nil
@@ -112,23 +112,23 @@ func (s *incidentStore) UpdateIncident(incdnt *incident.Incident) error {
 
 	headers, err := s.getIDHeaders()
 	if err != nil {
-		return fmt.Errorf("failed to get all headers value: %w", err)
+		return errors.Wrapf(err, "failed to get all headers value")
 	}
 
 	if _, exists := headers[incdnt.ID]; !exists {
-		return fmt.Errorf("incident with id (%s) does not exist", incdnt.ID)
+		return errors.Wrapf(err, "incident with id (%s) does not exist", incdnt.ID)
 	}
 
 	saved, err := s.pluginAPI.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
-		return fmt.Errorf("failed to update incident: %w", err)
+		return errors.Wrapf(err, "failed to update incident")
 	} else if !saved {
 		return errors.New("failed to update incident")
 	}
 
 	// Update Headers
 	if err := s.updateHeader(incdnt); err != nil {
-		return fmt.Errorf("failed to update headers: %w", err)
+		return errors.Wrapf(err, "failed to update headers")
 	}
 
 	return nil
@@ -138,11 +138,11 @@ func (s *incidentStore) UpdateIncident(incdnt *incident.Incident) error {
 func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all headers value: %w", err)
+		return nil, errors.Wrapf(err, "failed to get all headers value")
 	}
 
 	if _, exists := headers[incidentID]; !exists {
-		return nil, fmt.Errorf("incident with id (%s) does not exist: %w", incidentID, incident.ErrNotFound)
+		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id (%s) does not exist", incidentID)
 	}
 
 	return s.getIncident(incidentID)
@@ -152,14 +152,14 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error) {
 	headers, err := s.getIDHeaders()
 	if err != nil {
-		return "", fmt.Errorf("failed to get all headers value: %w", err)
+		return "", errors.Wrapf(err, "failed to get all headers value")
 	}
 
 	// Search for which incident has the given channel associated
 	for _, header := range headers {
 		incdnt, err := s.getIncident(header.ID)
 		if err != nil {
-			return "", fmt.Errorf("failed to get incident for id (%s): %w", header.ID, err)
+			return "", errors.Wrapf(err, "failed to get incident for id (%s)", header.ID)
 		}
 
 		for _, incidentChannelID := range incdnt.ChannelIDs {
@@ -168,7 +168,7 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 			}
 		}
 	}
-	return "", fmt.Errorf("channel with id (%s) does not have an incident: %w", channelID, incident.ErrNotFound)
+	return "", errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have an incident", channelID)
 }
 
 // NukeDB removes all incident related data.
@@ -193,7 +193,7 @@ func toHeaders(headers idHeaderMap) []incident.Header {
 func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, error) {
 	var incdnt incident.Incident
 	if err := s.pluginAPI.Get(toIncidentKey(incidentID), &incdnt); err != nil {
-		return nil, fmt.Errorf("failed to get incident: %w", err)
+		return nil, errors.Wrapf(err, "failed to get incident")
 	}
 	if incdnt.ID == "" {
 		return nil, incident.ErrNotFound
@@ -204,7 +204,7 @@ func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, erro
 func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	headers := idHeaderMap{}
 	if err := s.pluginAPI.Get(allHeadersKey, &headers); err != nil {
-		return nil, fmt.Errorf("failed to get all headers value: %w", err)
+		return nil, errors.Wrapf(err, "failed to get all headers value")
 	}
 	return headers, nil
 }
@@ -212,14 +212,14 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	headers, err := s.getIDHeaders()
 	if err != nil {
-		return fmt.Errorf("failed to get all headers: %w", err)
+		return errors.Wrapf(err, "failed to get all headers")
 	}
 
 	headers[incdnt.ID] = incdnt.Header
 
 	// TODO: Should be using CompareAndSet, but deep copy is expensive.
 	if saved, err := s.pluginAPI.Set(allHeadersKey, headers); err != nil {
-		return fmt.Errorf("failed to set all headers value: %w", err)
+		return errors.Wrapf(err, "failed to set all headers value")
 	} else if !saved {
 		return errors.New("failed to set all headers value")
 	}
