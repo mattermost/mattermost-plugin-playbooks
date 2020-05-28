@@ -4,22 +4,37 @@
 import {connect} from 'react-redux';
 import {bindActionCreators, Dispatch} from 'redux';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+
 import {
     startIncident,
+    setRHSState,
+    setRHSOpen,
     setBackstageModal,
 } from 'src/actions';
 
+import {incidentDetails, rhsState, isLoading} from 'src/selectors';
 import {BackstageArea} from 'src/types/backstage';
 
-import RHSHeader from './rhs_header';
+import RHSTitle from './rhs_title';
+
+function mapStateToProps(state: GlobalState) {
+    return {
+        incident: incidentDetails(state),
+        rhsState: rhsState(state),
+        isLoading: isLoading(state),
+    };
+}
 
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
             startIncident,
+            setRHSState,
+            setRHSOpen,
             openBackstageModal: (selectedArea: BackstageArea) => setBackstageModal(true, selectedArea),
         }, dispatch),
     };
 }
 
-export default connect(null, mapDispatchToProps)(RHSHeader);
+export default connect(mapStateToProps, mapDispatchToProps)(RHSTitle);

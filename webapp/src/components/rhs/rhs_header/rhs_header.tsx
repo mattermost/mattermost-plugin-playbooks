@@ -1,24 +1,21 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-
+import React, {useEffect} from 'react';
+import {debounce} from 'debounce';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
-import {Incident} from 'src/types/incident';
+import {isMobile} from 'src/utils/utils';
 import {BackstageArea} from 'src/types/backstage';
-import {RHSState} from 'src/types/rhs';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
+import PlusIcon from 'src/components/assets/icons/plus_icon';
+
+import './rhs_header.scss';
 
 interface Props {
-    rhsState: RHSState;
-    incident: Incident;
-    isLoading: boolean;
     actions: {
         startIncident: () => void;
-        setRHSState: (state: RHSState) => void;
-        setRHSOpen: (open: boolean) => void;
         openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
@@ -26,66 +23,62 @@ interface Props {
 const OVERLAY_DELAY = 400;
 
 export default function RHSHeader(props: Props) {
-    const goBack = () => {
-        props.actions.setRHSState(RHSState.List);
-    };
+    const [width, setWidth] = React.useState(0);
 
-    const headerButtons = (
-        <div className={'header-buttons'}>
-            <OverlayTrigger
-                placement='bottom'
-                delay={OVERLAY_DELAY}
-                overlay={<Tooltip id='playbooksTooltip'>{'Playbooks'}</Tooltip>}
-            >
-                <button
-                    className='navigation-bar__button'
-                    onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
-                >
-                    <PlaybookIcon/>
-                </button>
-            </OverlayTrigger>
-            <OverlayTrigger
-                placement='bottom'
-                delay={OVERLAY_DELAY}
-                overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
-            >
-                <button
-                    className='navigation-bar__button'
-                    onClick={() => props.actions.startIncident()}
-                >
-                    <i
-                        id='incidentRHSIconPlus'
-                        className='icon icon-plus'
-                    />
-                </button>
-            </OverlayTrigger>
-        </div>
-    );
+    useEffect(() => {
+        let resizeListener = () => {
+            if (width !== window.innerWidth) {
+                setWidth(window.innerWidth);
+            }
+        };
+        resizeListener = debounce(resizeListener, 300);
+        resizeListener();
+
+        window.addEventListener('resize', resizeListener);
+
+        // clean up function
+        return () => {
+            window.removeEventListener('resize', resizeListener);
+        };
+    });
 
     return (
-        <div className='navigation-bar'>
-            {
-                props.rhsState === RHSState.List &&
-                    <React.Fragment>
-                        <div>
-                            <div className='title'>{'Incident List'}</div>
-                        </div>
-                        {headerButtons}
-                    </React.Fragment>
-            }
-            {
-                props.rhsState !== RHSState.List &&
-                    <React.Fragment>
-                        <div className='incident-details'>
-                            <i
-                                className='fa fa-angle-left'
-                                onClick={goBack}
-                            />
-                            <div className='title'>{props.incident.name}</div>
-                        </div>
-                        {headerButtons}
-                    </React.Fragment>
-            }
+        <div className='rhs-header-bar'>
+            <React.Fragment>
+                <div>
+                    {/* filter dropdown placeholder */}
+                </div>
+
+                <div className={'header-buttons'}>
+                    {
+                        !isMobile() &&
+                        <OverlayTrigger
+                            placement='bottom'
+                            delayShow={OVERLAY_DELAY}
+                            overlay={<Tooltip id='playbooksTooltip'>{'Playbooks'}</Tooltip>}
+                        >
+                            <button
+                                className='rhs-header-bar__button'
+                                onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+                            >
+                                <PlaybookIcon/>
+                            </button>
+                        </OverlayTrigger>
+                    }
+                    <OverlayTrigger
+                        placement='bottom'
+                        delayShow={OVERLAY_DELAY}
+                        overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
+                    >
+                        <button
+                            className='rhs-header-bar__button'
+                            onClick={() => props.actions.startIncident()}
+                        >
+                            <PlusIcon/>
+                        </button>
+                    </OverlayTrigger>
+                </div>
+            </React.Fragment>
         </div>
     );
 }
