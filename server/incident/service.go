@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	pkgerrors "github.com/pkg/errors"
+
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
@@ -209,7 +211,7 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 }
 
 // GetIncidentWithDetails gets an incident with the detailed metadata.
-func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*IncidentWithDetails, error) {
+func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*Details, error) {
 	incident, err := s.GetIncident(incidentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve incident '%s': %w", incidentID, err)
@@ -218,22 +220,22 @@ func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*IncidentWithDe
 	return s.appendDetailsToIncident(*incident)
 }
 
-func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*IncidentWithDetails, error) {
+func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
 	// Get main channel details
 	channel, err := s.pluginAPI.Channel.Get(incident.ChannelIDs[0])
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve channel id '%s': %w", incident.ChannelIDs[0], err)
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s'", incident.ChannelIDs[0])
 	}
 	team, err := s.pluginAPI.Team.Get(channel.TeamId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve team id '%s': %w", channel.TeamId, err)
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
 	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.ChannelIDs[0])
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve channel id '%s' stats: %w", incident.ChannelIDs[0], err)
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.ChannelIDs[0])
 	}
 
-	incidentWithDetails := &IncidentWithDetails{
+	incidentWithDetails := &Details{
 		Incident:           incident,
 		ChannelName:        channel.Name,
 		ChannelDisplayName: channel.DisplayName,
