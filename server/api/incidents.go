@@ -106,7 +106,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
 	incidentType := request.Submission[incident.DialogFieldIsPublicKey].(string)
-	isPlublic := incidentType == "public"
+	isPublic := incidentType == "public"
 
 	var playbookTemplate *playbook.Playbook
 	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
@@ -129,7 +129,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		},
 		PostID:   state.PostID,
 		Playbook: playbookTemplate,
-	}, isPlublic)
+	}, isPublic)
 
 	if err != nil {
 		var msg string
@@ -168,7 +168,8 @@ func (h *IncidentHandler) hasPermissionsToOrPublic(channelID string, userID stri
 		h.log.Warnf("Unable to get channel to determine permissions: %v", err)
 		return false
 	}
-	return channel.Type == model.CHANNEL_OPEN || h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL)
+
+	return h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) || (channel.Type == model.CHANNEL_OPEN && h.pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS))
 }
 
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
