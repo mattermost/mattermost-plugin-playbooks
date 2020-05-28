@@ -111,6 +111,7 @@ export function BackstageIncidentList(props: Props) {
                     <div className='list'>
                         <div className='IncidentList__filters'>
                             <SearchInput
+                                default={fetchParams.search_term}
                                 onSearch={debounce(setSearchTerm, debounceDelay)}
                             />
                             <ProfileSelector
@@ -122,7 +123,10 @@ export function BackstageIncidentList(props: Props) {
                                 getUsers={fetchCommanders}
                                 onSelectedChange={setCommanderId}
                             />
-                            <StatusFilter onChange={setStatus}/>
+                            <StatusFilter
+                                default={fetchParams.status}
+                                onChange={setStatus}
+                            />
                         </div>
                         <div className='Backstage-list-header'>
                             <div className='row'>
