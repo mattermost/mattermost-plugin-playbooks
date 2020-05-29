@@ -263,7 +263,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             );
         } else {
             // Calculate height based on amount of items using ratio of 40px per item.
-            const chartHeight = this.chartData.yLabels.length > 10 ? this.chartData.yLabels.length * 40 : 400;
+            const chartHeight = Math.max(400, this.chartData.yLabels.length * 40);
             content = (<>
                 <div className='chart-title'>
                     {'Time occurrence of each checklist item'}
