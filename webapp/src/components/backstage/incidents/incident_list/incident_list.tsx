@@ -97,6 +97,12 @@ export function BackstageIncidentList(props: Props) {
         );
     };
 
+    const isFiltering = (
+        fetchParams.search_term ||
+        fetchParams.commander_user_id ||
+        (fetchParams.status && fetchParams.status !== 'all')
+    );
+
     return (
         <>
             {!selectedIncident && (
@@ -140,9 +146,19 @@ export function BackstageIncidentList(props: Props) {
                         </div>
 
                         {
-                            !incidents.length &&
+                            !incidents.length && !isFiltering &&
                             <div className='text-center pt-8'>
-                                {`There are no incidents for ${props.currentTeamName} matching those filters.`}
+                                {'There are no incidents for '}
+                                <i>{props.currentTeamName}</i>
+                                {'.'}
+                            </div>
+                        }
+                        {
+                            !incidents.length && isFiltering &&
+                            <div className='text-center pt-8'>
+                                {'There are no incidents for '}
+                                <i>{props.currentTeamName}</i>
+                                {' matching those filters.'}
                             </div>
                         }
 

@@ -104,30 +104,8 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             </>
         );
 
-        let tooltipText = '';
-        if (!this.props.exportAvailable) {
-            tooltipText = 'Install and enable the Channel Export plugin to support exporting this incident';
-        } else if (!this.props.exportLicensed) {
-            tooltipText = 'Exporting an incident channel requires a Mattermost Enterprise E20 license';
-        }
-
-        if (!this.props.exportAvailable || !this.props.exportLicensed) {
-            return (
-                <OverlayTrigger
-                    placement='bottom'
-                    delay={OVERLAY_DELAY}
-                    overlay={<Tooltip id='exportUnavailable'>{tooltipText}</Tooltip>}
-                >
-                    <div className={'disabled'}>
-                        {linkText}
-                    </div>
-                </OverlayTrigger>
-            );
-        }
-
         const mainChannelId = this.props.incident.channel_ids[0];
-
-        return (
+        let link = (
             <a
                 className={'export-link'}
                 href={exportChannelUrl(mainChannelId)}
@@ -136,6 +114,43 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             >
                 {linkText}
             </a>
+        );
+        if (!this.props.exportAvailable || !this.props.exportLicensed) {
+            link = (
+                <div className={'disabled'}>
+                    {linkText}
+                </div>
+            );
+        }
+
+        let tooltip = (
+            <Tooltip id='export'>
+                {'Download a CSV containing all messages from the incident channel'}
+            </Tooltip>
+        );
+
+        if (!this.props.exportAvailable) {
+            tooltip = (
+                <Tooltip id='exportUnavailable'>
+                    {'Install and enable the Channel Export plugin to support exporting this incident'}
+                </Tooltip>
+            );
+        } else if (!this.props.exportLicensed) {
+            tooltip = (
+                <Tooltip id='exportUnlicensed'>
+                    {'Exporting an incident channel requires a Mattermost Enterprise E20 license'}
+                </Tooltip>
+            );
+        }
+
+        return (
+            <OverlayTrigger
+                placement='bottom'
+                delay={OVERLAY_DELAY}
+                overlay={tooltip}
+            >
+                {link}
+            </OverlayTrigger>
         );
     }
 
