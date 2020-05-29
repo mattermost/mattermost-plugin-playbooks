@@ -1,24 +1,28 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import React from 'react';
 import {Action, Store} from 'redux';
 import {debounce} from 'debounce';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
-import {registerCssVars} from 'src/utils/utils';
+import {registerCssVars, isMobile} from 'src/utils/utils';
 
 import {pluginId} from './manifest';
-
 import IncidentIcon from './components/assets/icons/incident_icon';
 import RightHandSidebar from './components/rhs';
+import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import BackstageModal from './components/backstage/backstage_modal';
 
 import {Hooks} from './hooks';
-import {setToggleRHSAction, setBackstageModal} from './actions';
+import {
+    setToggleRHSAction,
+    setBackstageModal,
+} from './actions';
 import reducer from './reducer';
 import {BackstageArea} from './types/backstage';
 import {
@@ -34,7 +38,6 @@ import {
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_UPDATED,
 } from './types/websocket_events';
-import {isMobile} from './utils/utils';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<object, Action<any>>): void {
@@ -42,7 +45,7 @@ export default class Plugin {
 
         this.updateTheme(store.getState());
 
-        let mainMenuActionId;
+        let mainMenuActionId: string | null;
         const updateMainMenuAction = () => {
             if (mainMenuActionId && isMobile()) {
                 registry.unregisterComponent(mainMenuActionId);
@@ -50,7 +53,7 @@ export default class Plugin {
             } else if (!mainMenuActionId && !isMobile()) {
                 mainMenuActionId = registry.registerMainMenuAction(
                     'Incidents & Playbooks',
-                    (): void => store.dispatch(setBackstageModal(true, BackstageArea.Incidents)),
+                    () => store.dispatch(setBackstageModal(true, BackstageArea.Incidents)),
                 );
             }
         };
@@ -60,7 +63,7 @@ export default class Plugin {
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
 
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, null);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
