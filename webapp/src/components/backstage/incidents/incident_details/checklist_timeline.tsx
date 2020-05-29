@@ -18,8 +18,6 @@ import './incident_details.scss';
 
 interface Props {
     theme: Record<string, string>;
-    width: number;
-    height: number;
     incident: Incident;
 }
 
@@ -55,6 +53,8 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         Chart.Tooltip.positioners.custom = this.tooltipPosition;
 
         const chartOptions: ChartOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
             showLines: false,
             legend: {
                 display: false,
@@ -110,7 +110,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             },
             layout: {
                 padding: {
-                    top: 25,
+                    top: 50,
                 },
             },
         };
@@ -198,7 +198,6 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
 
         // Add an initial/last tick to scale
         chartData.yLabels.unshift('');
-        chartData.yLabels.push('');
 
         return chartData;
     }
@@ -249,6 +248,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         let content;
+
         if (this.chartData.yLabels.length === 2) {
             // No data if it only has the two trailing empty labels
             content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
@@ -263,15 +263,17 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             </div>
             );
         } else {
+            // Calculate height based on amount of items using ratio of 40px per item.
+            const chartHeight = this.chartData.yLabels.length > 10 ? this.chartData.yLabels.length * 40 : 400;
             content = (<>
                 <div className='chart-title'>
                     {'Time occurrence of each Checklist item'}
                 </div>
-                <canvas
-                    ref='canvas'
-                    width={this.props.width}
-                    height={this.props.height}
-                />
+                <div style={{height: `${chartHeight}px`}}>
+                    <canvas
+                        ref='canvas'
+                    />
+                </div>
             </>
             );
         }
