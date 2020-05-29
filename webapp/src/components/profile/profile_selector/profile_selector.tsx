@@ -42,8 +42,8 @@ export default function ProfileSelector(props: Props) {
         setOpen(!isOpen);
     };
 
-    // Allow the parent component to control the open state.
-    const [oldOpenToggle, setOldOpenToggle] = useState(false);
+    // Allow the parent component to control the open state -- only after mounting.
+    const [oldOpenToggle, setOldOpenToggle] = useState(props.controlledOpenToggle);
     useEffect(() => {
         // eslint-disable-next-line no-undefined
         if (props.controlledOpenToggle !== undefined && props.controlledOpenToggle !== oldOpenToggle) {
