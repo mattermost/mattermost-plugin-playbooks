@@ -441,17 +441,17 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 
 func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
 	// Get main channel details
-	channel, err := s.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	channel, err := s.pluginAPI.Channel.Get(incident.PrimaryChannelID)
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s'", incident.ChannelIDs[0])
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s'", incident.PrimaryChannelID)
 	}
 	team, err := s.pluginAPI.Team.Get(channel.TeamId)
 	if err != nil {
 		return nil, pkgerrors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
-	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.ChannelIDs[0])
+	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.PrimaryChannelID)
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.ChannelIDs[0])
+		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.PrimaryChannelID)
 	}
 
 	incidentWithDetails := &Details{
