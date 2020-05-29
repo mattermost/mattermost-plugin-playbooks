@@ -4,13 +4,12 @@
 import React from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
+import Spinner from 'src/components/assets/icons/spinner';
 import {Incident} from 'src/types/incident';
 import {RHSState} from 'src/types/rhs';
-
 import RHSHeader from 'src/components/rhs/rhs_header';
 
 import IncidentList from './incident_list';
-
 import RHSIncidentDetails from './incident_details';
 
 import './rhs.scss';
@@ -47,7 +46,7 @@ interface Props {
     actions: {
         startIncident: () => void;
         getIncidentsForCurrentTeam: () => void;
-        getIncidentDetails: (id: string) => void;
+        getIncident: (id: string) => void;
         setRHSState: (state: RHSState) => void;
         setRHSOpen: (open: boolean) => void;
     };
@@ -64,7 +63,7 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
     }
 
     public handleClick = (id: string) => {
-        this.props.actions.getIncidentDetails(id);
+        this.props.actions.getIncident(id);
         this.props.actions.setRHSState(RHSState.Details);
     }
 
@@ -73,9 +72,10 @@ export default class RightHandSidebar extends React.PureComponent<Props> {
             <div className='incident-rhs'>
                 <RHSHeader/>
                 <div className='incident-rhs__content'>
-                    {this.props.isLoading && !this.props.incident.name &&
-                        <div className='loading-container'>
-                            <i className='fa fa-spin fa-spinner mr-2'/>
+                    {
+                        this.props.isLoading &&
+                        <div className='spinner-container'>
+                            <Spinner/>
                             <span>{'Loading...'}</span>
                         </div>
                     }

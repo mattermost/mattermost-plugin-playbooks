@@ -133,6 +133,11 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                                 onChange={(itemNum: number, checked: boolean) => {
                                     this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
                                 }}
+                                onRedirect={() => {
+                                    if (isMobile()) {
+                                        this.props.actions.toggleRHS();
+                                    }
+                                }}
                                 addItem={(checklistItem: ChecklistItem) => {
                                     this.props.actions.addChecklistItem(this.props.incident.id, index, checklistItem);
                                 }}

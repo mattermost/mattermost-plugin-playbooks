@@ -21,6 +21,7 @@ interface Props {
     checklist: Checklist;
     enableEdit: boolean;
     onChange?: (itemNum: number, checked: boolean) => void;
+    onRedirect?: (itemNum: number) => void;
     addItem: (checklistItem: ChecklistItem) => void;
     removeItem: (itemNum: number) => void;
     editItem: (itemNum: number, newTitle: string) => void;
@@ -28,7 +29,7 @@ interface Props {
     serverVersion: string;
 }
 
-export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, removeItem, editItem, reorderItems, serverVersion}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, addItem, removeItem, editItem, reorderItems, serverVersion}: Props): React.ReactElement => {
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -157,6 +158,11 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, addItem, remo
                                         onChange={(checked: boolean) => {
                                             if (onChange) {
                                                 onChange(index, checked);
+                                            }
+                                        }}
+                                        onRedirect={() => {
+                                            if (onRedirect) {
+                                                onRedirect(index);
                                             }
                                         }}
                                     />

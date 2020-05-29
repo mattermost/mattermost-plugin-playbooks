@@ -30,8 +30,12 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
     return data as Incident[];
 }
 
-export function fetchIncidentDetails(id: string) {
+export function fetchIncident(id: string) {
     return doGet(`${apiUrl}/incidents/${id}`);
+}
+
+export function fetchIncidentWithDetails(id: string) {
+    return doGet(`${apiUrl}/incidents/${id}/details`);
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {

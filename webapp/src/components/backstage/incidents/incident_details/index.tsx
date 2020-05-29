@@ -4,10 +4,6 @@ import {bindActionCreators, Dispatch} from 'redux';
 import {connect} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {Channel, ChannelWithTeamData} from 'mattermost-redux/types/channels';
-import {Team} from 'mattermost-redux/types/teams';
-import {getChannel, getAllChannelStats} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
@@ -26,33 +22,14 @@ type Props = {
 }
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
-    let totalMessages = 0;
     const primaryChannelId = ownProps.incident.primary_channel_id;
     const involvedInIncident = haveIChannelPermission(state,
         {channel: primaryChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
-
-    let mainChannelDetails: ChannelWithTeamData;
-    const c = getChannel(state, primaryChannelId) as Channel;
-    if (c) {
-        const t = getTeam(state, c.team_id) as Team;
-        mainChannelDetails = {
-            ...c,
-            team_display_name: t.display_name,
-            team_name: t.name,
-        };
-
-        totalMessages = c.total_msg_count;
-    }
-
-    const channelStats = getAllChannelStats(state)[primaryChannelId];
 
     const isExportPluginLoaded = Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']);
 
     return {
         involvedInIncident,
-        totalMessages,
-        membersCount: channelStats?.member_count || 1,
-        mainChannelDetails,
         exportAvailable: isExportPluginLoaded,
         exportLicensed: isExportLicensed(state),
         theme: getTheme(state),

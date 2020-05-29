@@ -47,6 +47,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
+	incidentRouter.HandleFunc("/details", handler.getIncidentWithDetails).Methods(http.MethodGet)
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
@@ -217,6 +218,41 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 
 	if !h.hasPermissionsToOrPublic(incidentToGet.PrimaryChannelID, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(incidentToGet)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
+// getIncidentWithDetails handles the /incidents/{id}/details endpoint.
+func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				fmt.Errorf("userid: %s does not have permissions to view the incident details", userID))
+			return
+		}
+		HandleError(w, err)
+		return
+	}
+
+	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	if err != nil {
+		HandleError(w, err)
 		return
 	}
 
