@@ -14,6 +14,11 @@ export interface Incident {
     ended_at: number;
     post_id?: string;
     playbook: Playbook;
+    channel_name: string;
+    channel_display_name: string;
+    team_name: string;
+    num_members: number;
+    total_posts: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

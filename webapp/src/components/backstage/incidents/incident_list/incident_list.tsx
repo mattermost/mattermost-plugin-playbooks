@@ -12,8 +12,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
-import {FetchIncidentsParams, Incident} from 'src/types/incident';
-import {fetchCommandersInTeam, fetchIncidents} from 'src/client';
+import {FetchIncidentsParams, Incident, IncidentWithDetails} from 'src/types/incident';
+import {fetchCommandersInTeam, fetchIncidents, fetchIncidentWithDetails} from 'src/client';
 import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
@@ -30,7 +30,7 @@ interface Props {
 
 export function BackstageIncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
-    const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+    const [selectedIncident, setSelectedIncident] = useState<IncidentWithDetails | null>(null);
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {team_id: props.currentTeamId},
@@ -66,9 +66,10 @@ export function BackstageIncidentList(props: Props) {
         setFetchParams({...fetchParams, commander_user_id: userId});
     }
 
-    const openIncidentDetails = (incident: Incident) => {
-        setSelectedIncident(incident);
-    };
+    async function openIncidentDetails(incident: Incident) {
+        const incidentDetails = await fetchIncidentWithDetails(incident.id) as Incident;
+        setSelectedIncident(incidentDetails);
+    }
 
     const closeIncidentDetails = () => {
         setSelectedIncident(null);
