@@ -4,6 +4,7 @@
 import {connect} from 'react-redux';
 import {bindActionCreators, Dispatch} from 'redux';
 
+import {isMobile} from 'src/utils/utils';
 import {
     startIncident,
     setBackstageModal,
@@ -12,6 +13,12 @@ import {
 import {BackstageArea} from 'src/types/backstage';
 
 import RHSHeader from './rhs_header';
+
+function mapStateToProps() {
+    return {
+        isMobile: isMobile(),
+    };
+}
 
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
@@ -22,4 +29,4 @@ function mapDispatchToProps(dispatch: Dispatch) {
     };
 }
 
-export default connect(null, mapDispatchToProps)(RHSHeader);
+export default connect(mapStateToProps, mapDispatchToProps)(RHSHeader);

@@ -1,11 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
-import {debounce} from 'debounce';
+import React from 'react';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
-import {isMobile} from 'src/utils/utils';
 import {BackstageArea} from 'src/types/backstage';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -14,6 +12,7 @@ import PlusIcon from 'src/components/assets/icons/plus_icon';
 import './rhs_header.scss';
 
 interface Props {
+    isMobile: boolean;
     actions: {
         startIncident: () => void;
         openBackstageModal: (selectedArea: BackstageArea) => void;
@@ -23,27 +22,6 @@ interface Props {
 const OVERLAY_DELAY = 400;
 
 export default function RHSHeader(props: Props) {
-    // Listen to window.width changes to adjust icons when
-    // switched to mobile-view (isMobile())
-    const [width, setWidth] = React.useState(0);
-
-    useEffect(() => {
-        let resizeListener = () => {
-            if (width !== window.innerWidth) {
-                setWidth(window.innerWidth);
-            }
-        };
-        resizeListener = debounce(resizeListener, 300);
-        resizeListener();
-
-        window.addEventListener('resize', resizeListener);
-
-        // clean up function
-        return () => {
-            window.removeEventListener('resize', resizeListener);
-        };
-    });
-
     return (
         <div className='rhs-header-bar'>
             <React.Fragment>
@@ -53,7 +31,7 @@ export default function RHSHeader(props: Props) {
 
                 <div className={'header-buttons'}>
                     {
-                        !isMobile() &&
+                        !props.isMobile &&
                         <OverlayTrigger
                             placement='bottom'
                             delayShow={OVERLAY_DELAY}
