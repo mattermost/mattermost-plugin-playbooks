@@ -13,7 +13,7 @@ import {StatusFilter} from 'src/components/backstage/incidents/incident_list/sta
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
 import {FetchIncidentsParams, Incident, IncidentWithDetails} from 'src/types/incident';
-import {fetchCommandersInTeam, fetchIncidents, fetchIncidentWithDetails} from 'src/client';
+import {fetchCommandersInTeam, fetchIncidents, fetchIncident, fetchIncidentWithDetails} from 'src/client';
 import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
@@ -67,8 +67,13 @@ export function BackstageIncidentList(props: Props) {
     }
 
     async function openIncidentDetails(incident: Incident) {
-        const incidentDetails = await fetchIncidentWithDetails(incident.id) as Incident;
-        setSelectedIncident(incidentDetails);
+        try {
+            const incidentDetails = await fetchIncidentWithDetails(incident.id) as Incident;
+            setSelectedIncident(incidentDetails);
+        } catch (e) {
+            const incidentWithoutDetails = await fetchIncident(incident.id) as Incident;
+            setSelectedIncident(incidentWithoutDetails);
+        }
     }
 
     const closeIncidentDetails = () => {

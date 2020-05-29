@@ -23,10 +23,10 @@ type Props = {
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
     const mainChannelId = ownProps.incident.channel_ids?.[0] || '';
-    const involvedInIncident = haveIChannelPermission(state,
-        {channel: mainChannelId, team: ownProps.incident.team_id, permission: Permissions.READ_CHANNEL});
-
     const isExportPluginLoaded = Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']);
+
+    // Determine if involved in incident by checking if full details fetched.
+    const involvedInIncident = Boolean(ownProps.incident.channel_name);
 
     return {
         involvedInIncident,
