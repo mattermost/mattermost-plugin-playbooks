@@ -248,8 +248,9 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         let content;
-        if (this.chartData.yLabels.length === 2) {
-            // No data if it only has the two trailing empty labels
+
+        const checklistItems = this.props.incident.playbook.checklists[0]?.items || [];
+        if (checklistItems.length === 0) {
             content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
                 <div>
                     <div>
