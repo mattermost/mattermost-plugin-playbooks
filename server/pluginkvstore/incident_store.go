@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	allHeadersKey  = "all_headers"
-	incidentKey    = "incident_"
+	allHeadersKey  = keyVersionPrefix + "all_headers"
+	incidentKey    = keyVersionPrefix + "incident_"
 	perPageDefault = 1000
 )
 
@@ -38,52 +38,7 @@ func NewIncidentStore(pluginAPI KVAPI, log bot.Logger) incident.Store {
 		pluginAPI: pluginAPI,
 		log:       log,
 	}
-	newStore.MigrateChannelIds()
 	return newStore
-}
-
-func (s *incidentStore) MigrateChannelIds() {
-	const migrationKey = "migrate_channel_ids_1"
-
-	var migrated bool
-	s.pluginAPI.Get(migrationKey, &migrated)
-
-	if migrated {
-		return
-	}
-
-	headersMap, err := s.getIDHeaders()
-	if err != nil {
-		s.log.Errorf("Failed to get headers for migration. %v", err)
-		return
-	}
-	for id := range headersMap {
-		incidentToMigrate, err := s.getIncident(id)
-		if err != nil {
-			s.log.Errorf("Failed to get incident (%v) for migration. %v", id, err)
-			continue
-		}
-
-		var oldPartToMigrate struct {
-			ChannelIds []string `json:"channel_ids"`
-		}
-		if err := s.pluginAPI.Get(toIncidentKey(incidentToMigrate.ID), &oldPartToMigrate); err != nil {
-			s.log.Errorf("Failed to get incident (%v) for old part of migration. %v", id, err)
-			continue
-		}
-
-		if len(oldPartToMigrate.ChannelIds) > 0 {
-			incidentToMigrate.PrimaryChannelID = oldPartToMigrate.ChannelIds[0]
-		}
-
-		if err := s.UpdateIncident(incidentToMigrate); err != nil {
-			s.log.Errorf("Failed to update incident for migration. %v", err)
-			continue
-		}
-	}
-
-	migrated = true
-	s.pluginAPI.Set(migrationKey, &migrated)
 }
 
 // GetIncidents gets all the incidents, abiding by the filter options.

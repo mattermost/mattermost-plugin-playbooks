@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	playbookKey = "playbook_"
-	indexKey    = "playbookindex"
+	playbookKey = keyVersionPrefix + "playbook_"
+	indexKey    = keyVersionPrefix + "playbookindex"
 )
 
 // PlaybookStore is a kvs store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
