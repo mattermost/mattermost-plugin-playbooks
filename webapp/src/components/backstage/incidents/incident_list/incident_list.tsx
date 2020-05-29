@@ -12,8 +12,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
-import {FetchIncidentsParams, Incident} from 'src/types/incident';
-import {fetchCommandersInTeam, fetchIncidents} from 'src/client';
+import {FetchIncidentsParams, Incident, IncidentWithDetails} from 'src/types/incident';
+import {fetchCommandersInTeam, fetchIncidents, fetchIncident, fetchIncidentWithDetails} from 'src/client';
 import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
@@ -30,7 +30,7 @@ interface Props {
 
 export function BackstageIncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
-    const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+    const [selectedIncident, setSelectedIncident] = useState<IncidentWithDetails | null>(null);
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {team_id: props.currentTeamId},
@@ -66,9 +66,15 @@ export function BackstageIncidentList(props: Props) {
         setFetchParams({...fetchParams, commander_user_id: userId});
     }
 
-    const openIncidentDetails = (incident: Incident) => {
-        setSelectedIncident(incident);
-    };
+    async function openIncidentDetails(incident: Incident) {
+        try {
+            const incidentDetails = await fetchIncidentWithDetails(incident.id) as Incident;
+            setSelectedIncident(incidentDetails);
+        } catch (e) {
+            const incidentWithoutDetails = await fetchIncident(incident.id) as Incident;
+            setSelectedIncident(incidentWithoutDetails);
+        }
+    }
 
     const closeIncidentDetails = () => {
         setSelectedIncident(null);
@@ -96,6 +102,12 @@ export function BackstageIncidentList(props: Props) {
         );
     };
 
+    const isFiltering = (
+        fetchParams.search_term ||
+        fetchParams.commander_user_id ||
+        (fetchParams.status && fetchParams.status !== 'all')
+    );
+
     return (
         <>
             {!selectedIncident && (
@@ -111,6 +123,7 @@ export function BackstageIncidentList(props: Props) {
                     <div className='list'>
                         <div className='IncidentList__filters'>
                             <SearchInput
+                                default={fetchParams.search_term}
                                 onSearch={debounce(setSearchTerm, debounceDelay)}
                             />
                             <ProfileSelector
@@ -122,22 +135,35 @@ export function BackstageIncidentList(props: Props) {
                                 getUsers={fetchCommanders}
                                 onSelectedChange={setCommanderId}
                             />
-                            <StatusFilter onChange={setStatus}/>
+                            <StatusFilter
+                                default={fetchParams.status}
+                                onChange={setStatus}
+                            />
                         </div>
                         <div className='Backstage-list-header'>
                             <div className='row'>
                                 <div className='col-sm-3'> {'Name'} </div>
                                 <div className='col-sm-2'> {'Status'} </div>
-                                <div className='col-sm-2'> {'Start Date'} </div>
-                                <div className='col-sm-2'> {'End Date'} </div>
+                                <div className='col-sm-2'> {'Start Time'} </div>
+                                <div className='col-sm-2'> {'End Time'} </div>
                                 <div className='col-sm-3'> {'Commander'} </div>
                             </div>
                         </div>
 
                         {
-                            !incidents.length &&
+                            !incidents.length && !isFiltering &&
                             <div className='text-center pt-8'>
-                                {`There are no incidents for ${props.currentTeamName} matching those filters.`}
+                                {'There are no incidents for '}
+                                <i>{props.currentTeamName}</i>
+                                {'.'}
+                            </div>
+                        }
+                        {
+                            !incidents.length && isFiltering &&
+                            <div className='text-center pt-8'>
+                                {'There are no incidents for '}
+                                <i>{props.currentTeamName}</i>
+                                {' matching those filters.'}
                             </div>
                         }
 

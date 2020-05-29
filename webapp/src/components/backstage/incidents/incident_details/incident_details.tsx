@@ -6,8 +6,6 @@ import React from 'react';
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
-import {ChannelWithTeamData} from 'mattermost-redux/types/channels';
-
 import {exportChannelUrl} from 'src/client';
 
 import {Incident} from 'src/types/incident';
@@ -26,9 +24,6 @@ const OVERLAY_DELAY = 400;
 interface Props {
     incident: Incident;
     involvedInIncident: boolean;
-    totalMessages: number;
-    membersCount: number;
-    mainChannelDetails: ChannelWithTeamData;
     exportAvailable: boolean;
     exportLicensed: boolean;
     theme: Record<string, string>;
@@ -90,7 +85,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public goToChannel = () => {
-        this.props.actions.navigateToUrl(`/${this.props.mainChannelDetails?.team_name}/channels/${this.props.mainChannelDetails?.name}`);
+        this.props.actions.navigateToUrl(`/${this.props.incident.team_name}/channels/${this.props.incident.channel_name}`);
     }
 
     public onExportClick =() => {
@@ -109,30 +104,8 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             </>
         );
 
-        let tooltipText = '';
-        if (!this.props.exportAvailable) {
-            tooltipText = 'Install and enable the Channel Export plugin to support exporting this incident';
-        } else if (!this.props.exportLicensed) {
-            tooltipText = 'Exporting an incident channel requires a Mattermost Enterprise E20 license';
-        }
-
-        if (!this.props.exportAvailable || !this.props.exportLicensed) {
-            return (
-                <OverlayTrigger
-                    placement='bottom'
-                    delay={OVERLAY_DELAY}
-                    overlay={<Tooltip id='exportUnavailable'>{tooltipText}</Tooltip>}
-                >
-                    <div className={'disabled'}>
-                        {linkText}
-                    </div>
-                </OverlayTrigger>
-            );
-        }
-
         const mainChannelId = this.props.incident.channel_ids[0];
-
-        return (
+        let link = (
             <a
                 className={'export-link'}
                 href={exportChannelUrl(mainChannelId)}
@@ -141,6 +114,43 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             >
                 {linkText}
             </a>
+        );
+        if (!this.props.exportAvailable || !this.props.exportLicensed) {
+            link = (
+                <div className={'disabled'}>
+                    {linkText}
+                </div>
+            );
+        }
+
+        let tooltip = (
+            <Tooltip id='export'>
+                {'Download a CSV containing all messages from the incident channel'}
+            </Tooltip>
+        );
+
+        if (!this.props.exportAvailable) {
+            tooltip = (
+                <Tooltip id='exportUnavailable'>
+                    {'Install and enable the Channel Export plugin to support exporting this incident'}
+                </Tooltip>
+            );
+        } else if (!this.props.exportLicensed) {
+            tooltip = (
+                <Tooltip id='exportUnlicensed'>
+                    {'Exporting an incident channel requires a Mattermost Enterprise E20 license'}
+                </Tooltip>
+            );
+        }
+
+        return (
+            <OverlayTrigger
+                placement='bottom'
+                delay={OVERLAY_DELAY}
+                overlay={tooltip}
+            >
+                {link}
+            </OverlayTrigger>
         );
     }
 
@@ -234,7 +244,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                             </div>
                             <div className='content'>
                                 <i className='icon icon-account-multiple-outline box-icon'/>
-                                {this.props.membersCount}
+                                {this.props.incident.num_members}
                             </div>
                         </div>
                     </OverlayTrigger>
@@ -244,7 +254,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         </div>
                         <div className='content'>
                             <i className='icon icon-send box-icon'/>
-                            {this.props.totalMessages}
+                            {this.props.incident.total_posts}
                         </div>
                         <div className='block-footer text-right'>
                             <a
@@ -259,8 +269,6 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                 </div>
                 <div className='chart-block'>
                     <ChecklistTimeline
-                        width={740}
-                        height={225}
                         incident={this.props.incident}
                         theme={this.props.theme}
                     />
