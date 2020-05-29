@@ -42,6 +42,7 @@ export interface ReceivedRHSState {
 export interface ReceivedIncidents {
     type: typeof RECEIVED_INCIDENTS;
     incidents: Incident[];
+    teamId?: string;
 }
 
 export interface ReceivedIncidentDetails {

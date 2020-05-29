@@ -22,6 +22,7 @@ import {Hooks} from './hooks';
 import {
     setToggleRHSAction,
     setBackstageModal,
+    getIncidents,
 } from './actions';
 import reducer from './reducer';
 import {BackstageArea} from './types/backstage';
