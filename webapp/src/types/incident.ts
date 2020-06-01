@@ -9,7 +9,7 @@ export interface Incident {
     is_active: boolean;
     commander_user_id: string;
     team_id: string;
-    channel_ids: string[];
+    primary_channel_id: string;
     created_at: number;
     ended_at: number;
     post_id?: string;
@@ -30,8 +30,7 @@ export function isIncident(arg: any): arg is Incident {
         typeof arg.is_active === 'boolean' &&
         arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        arg.channel_ids && Array.isArray(arg.channel_ids) && arg.channel_ids.every((item: any) => typeof item === 'string') &&
+        typeof arg.primary_channel_id === 'string' &&
         typeof arg.ended_at === 'number' &&
         typeof arg.created_at === 'number' &&
         optional &&

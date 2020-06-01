@@ -89,7 +89,7 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		pluginkvstore.NewIncidentStore(&pluginAPIClient.KV),
+		pluginkvstore.NewIncidentStore(&pluginAPIClient.KV, p.bot),
 		p.bot,
 		p.config,
 		telemetryClient,
@@ -97,7 +97,7 @@ func (p *Plugin) OnActivate() error {
 
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient)
-	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot)
+	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrapf(err, "failed register commands")

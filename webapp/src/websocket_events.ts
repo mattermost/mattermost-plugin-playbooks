@@ -57,10 +57,8 @@ export function handleWebsocketIncidentCreated(dispatch: Dispatch<AnyAction>, ge
 
         if (payload.client_id === clientId(getState())) {
             // Navigate to the newly created channel
-            const mainChannelId = incident.channel_ids?.[0];
             const currentTeam = getCurrentTeam(getState());
-
-            const url = `/${currentTeam.name}/channels/${mainChannelId}`;
+            const url = `/${currentTeam.name}/channels/${incident.primary_channel_id}`;
             WebappUtils.browserHistory.push(url);
         }
     };

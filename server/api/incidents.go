@@ -26,15 +26,17 @@ type IncidentHandler struct {
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
+	log             bot.Logger
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster, log bot.Logger) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		playbookService: playbookService,
 		pluginAPI:       api,
 		poster:          poster,
+		log:             log,
 	}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
@@ -52,7 +54,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
-	checklistsRouter := incidentRouter.PathPrefix("/checklists").Subrouter()
+	checklistsRouter := incidentRouterAuthorized.PathPrefix("/checklists").Subrouter()
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
@@ -104,6 +106,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
+	incidentType := request.Submission[incident.DialogFieldIsPublicKey].(string)
+	isPublic := incidentType == "public"
 
 	var playbookTemplate *playbook.Playbook
 	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
@@ -126,7 +130,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		},
 		PostID:   state.PostID,
 		Playbook: playbookTemplate,
-	})
+	}, isPublic)
 
 	if err != nil {
 		var msg string
@@ -159,25 +163,26 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *IncidentHandler) hasPermissionsToOrPublic(channelID string, userID string) bool {
+	channel, err := h.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		h.log.Warnf("Unable to get channel to determine permissions: %v", err)
+		return false
+	}
+
+	return h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) || (channel.Type == model.CHANNEL_OPEN && h.pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS))
+}
+
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	teamID := r.URL.Query().Get("team_id")
-
-	// Check permissions
-	userID := r.Header.Get("Mattermost-User-ID")
-	isAdmin := h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
-	if teamID == "" && !isAdmin {
-		HandleError(w, errors.Errorf("userID %s is not an admin", userID))
-		return
-	}
-	if !isAdmin && !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleError(w, errors.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
-		return
-	}
-
-	filterOptions, err := parseIncidentsFilterOption(r.URL, teamID)
+	filterOptions, err := parseIncidentsFilterOption(r.URL)
 	if err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
+	}
+
+	userID := r.Header.Get("Mattermost-User-ID")
+	filterOptions.HasPermissionsTo = func(channelID string) bool {
+		return h.hasPermissionsToOrPublic(channelID, userID)
 	}
 
 	incidents, err := h.incidentService.GetIncidents(*filterOptions)
@@ -205,20 +210,14 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	// User must have permission to the team that this incident belongs to. They do not have to have
-	// permissions to the incident channel.
-	if err := permissions.CheckHasPermissionsToIncidentTeam(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-			return
-		}
+	incidentToGet, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncident(incidentID)
-	if err != nil {
-		HandleError(w, err)
+	if !h.hasPermissionsToOrPublic(incidentToGet.PrimaryChannelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
 
@@ -318,7 +317,13 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	commanders, err := h.incidentService.GetCommandersForTeam(teamID)
+	options := incident.HeaderFilterOptions{
+		TeamID: teamID,
+		HasPermissionsTo: func(channelID string) bool {
+			return h.hasPermissionsToOrPublic(channelID, userID)
+		},
+	}
+	commanders, err := h.incidentService.GetCommanders(options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -519,7 +524,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(incident.ChannelIDs[0])
+	channel, err := h.pluginAPI.Channel.Get(incident.PrimaryChannelID)
 	if err != nil {
 		return err
 	}
@@ -530,8 +535,13 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident
 	return nil
 }
 
-func parseIncidentsFilterOption(u *url.URL, teamID string) (*incident.HeaderFilterOptions, error) {
+func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	// NOTE: we are failing early instead of turning bad parameters into the default
+	teamID := u.Query().Get("team_id")
+	if len(teamID) != 0 && !model.IsValidId(teamID) {
+		return nil, fmt.Errorf("bad parameter 'team_id': must be 26 characters or blank")
+	}
+
 	param := u.Query().Get("page")
 	if param == "" {
 		param = "0"

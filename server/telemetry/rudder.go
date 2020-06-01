@@ -74,7 +74,6 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 		"CommanderUserID":     incident.CommanderUserID,
 		"TeamID":              incident.TeamID,
 		"CreatedAt":           incident.CreatedAt,
-		"ChannelIDs":          incident.ChannelIDs,
 		"PostID":              incident.PostID,
 		"NumChecklists":       len(incident.Playbook.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
@@ -82,8 +81,10 @@ func incidentProperties(incident *incident.Incident) map[string]interface{} {
 }
 
 // CreateIncident tracks the creation of the incident passed.
-func (t *RudderTelemetry) CreateIncident(incident *incident.Incident) {
-	t.track(eventCreateIncident, incidentProperties(incident))
+func (t *RudderTelemetry) CreateIncident(incident *incident.Incident, public bool) {
+	properties := incidentProperties(incident)
+	properties["Public"] = public
+	t.track(eventCreateIncident, properties)
 }
 
 // EndIncident tracks the end of the incident passed.

@@ -34,43 +34,43 @@ type Props = {
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
     let lastPictureUpdate = null;
+    const primaryChannelId = ownProps.incident.primary_channel_id;
+    const incidentTeamId = ownProps.incident.team_id;
+
+    const hasPermissionToChannel = haveIChannelPermission(
+        state,
+        {
+            channel: primaryChannelId,
+            team: incidentTeamId,
+            permission: Permissions.READ_CHANNEL,
+        },
+    );
 
     const commander = getUser(state, ownProps.incident.commander_user_id);
     if (commander) {
         lastPictureUpdate = commander.last_picture_update;
     }
 
-    const channelDetails = [] as ChannelWithTeamData[];
-    if (ownProps.incident.channel_ids) {
-        for (const channelId of ownProps.incident?.channel_ids) {
-            const c = getChannel(state, channelId) as Channel;
-            if (c) {
-                const t = getTeam(state, c.team_id) as Team;
-                const newChannelWithTeamData = {
-                    ...c,
-                    team_display_name: t.display_name,
-                    team_name: t.name,
-                };
-
-                channelDetails.push(newChannelWithTeamData);
-            }
-        }
+    let primaryChannelWithTeamData = null;
+    let primaryChannelPublic = false;
+    const primaryChannel = getChannel(state, primaryChannelId) as Channel;
+    if (primaryChannel) {
+        const primaryTeam = getTeam(state, primaryChannel.team_id) as Team;
+        primaryChannelWithTeamData = {
+            ...primaryChannel,
+            team_display_name: primaryTeam.display_name,
+            team_name: primaryTeam.name,
+        };
+        primaryChannelPublic = primaryChannel && primaryChannel.type === 'O';
     }
-
-    // Get the incident main channel. Assuming the first one for now.
-    const incidentChannelId = ownProps.incident.channel_ids?.[0] || '';
-    const incidentTeamId = ownProps.incident.team_id;
-
-    // If you can read the channel, you are involved in the incident.
-    const involvedInIncident = haveIChannelPermission(state,
-        {channel: incidentChannelId, team: incidentTeamId, permission: Permissions.READ_CHANNEL});
 
     return {
         commander,
         profileUri: Client4.getProfilePictureUrl(ownProps.incident.commander_user_id, lastPictureUpdate),
-        channelDetails,
-        viewingIncidentChannel: incidentChannelId === getCurrentChannel(state)?.id,
-        involvedInIncident,
+        primaryChannelDetails: primaryChannelWithTeamData,
+        viewingIncidentChannel: primaryChannelId === getCurrentChannel(state)?.id,
+        hasPermissionToChannel,
+        primaryChannelPublic,
         teamName: getCurrentTeam(state).name,
         serverVersion: getServerVersion(state),
     };

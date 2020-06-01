@@ -74,4 +74,7 @@ type HeaderFilterOptions struct {
 	// header filter options (except Sort & Order which are mutually exclusive of relevance
 	// ordering).
 	SearchTerm string
+
+	// Permissions Check
+	HasPermissionsTo func(channelID string) bool
 }

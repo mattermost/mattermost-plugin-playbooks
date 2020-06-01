@@ -73,15 +73,15 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 
 var dummyIncident = &incident.Incident{
 	Header: incident.Header{
-		ID:              "id",
-		Name:            "name",
-		IsActive:        true,
-		CommanderUserID: "commander_user_id",
-		TeamID:          "team_id",
-		CreatedAt:       1234,
+		ID:               "id",
+		Name:             "name",
+		IsActive:         true,
+		CommanderUserID:  "commander_user_id",
+		TeamID:           "team_id",
+		CreatedAt:        1234,
+		PrimaryChannelID: "channel_id_1",
 	},
-	ChannelIDs: []string{"channel_id_1"},
-	PostID:     "post_id",
+	PostID: "post_id",
 	Playbook: &playbook.Playbook{
 		Title: "test",
 		Checklists: []playbook.Checklist{
@@ -99,7 +99,6 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	t.Helper()
 
 	incidentFromProperties := func(properties map[string]interface{}) *incident.Incident {
-		require.Contains(t, properties, "ChannelIDs")
 		require.Contains(t, properties, "PostID")
 
 		require.Contains(t, properties, "IncidentID")
@@ -110,24 +109,18 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 		require.Contains(t, properties, "NumChecklists")
 		require.Contains(t, properties, "TotalChecklistItems")
 
-		ids := properties["ChannelIDs"].([]interface{})
-		channelIDs := make([]string, len(ids))
-		for i, id := range ids {
-			channelIDs[i] = id.(string)
-		}
-
 		return &incident.Incident{
 			Header: incident.Header{
-				ID:              properties["IncidentID"].(string),
-				Name:            dummyIncident.Name, // not included in the tracked event
-				IsActive:        properties["IsActive"].(bool),
-				CommanderUserID: properties["CommanderUserID"].(string),
-				TeamID:          properties["TeamID"].(string),
-				CreatedAt:       int64(properties["CreatedAt"].(float64)),
+				ID:               properties["IncidentID"].(string),
+				Name:             dummyIncident.Name, // not included in the tracked event
+				IsActive:         properties["IsActive"].(bool),
+				CommanderUserID:  properties["CommanderUserID"].(string),
+				TeamID:           properties["TeamID"].(string),
+				CreatedAt:        int64(properties["CreatedAt"].(float64)),
+				PrimaryChannelID: "channel_id_1",
 			},
-			ChannelIDs: channelIDs,
-			PostID:     properties["PostID"].(string),
-			Playbook:   dummyIncident.Playbook, // not included as self in tracked event
+			PostID:   properties["PostID"].(string),
+			Playbook: dummyIncident.Playbook, // not included as self in tracked event
 		}
 	}
 
@@ -140,6 +133,10 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	require.Equal(t, properties["ServerVersion"], serverVersion)
 	require.Contains(t, properties, "PluginVersion")
 	require.Equal(t, properties["PluginVersion"], config.Manifest.Version)
+
+	if expectedEvent == eventCreateIncident {
+		require.Contains(t, properties, "Public")
+	}
 
 	if expectedEvent == eventCreateIncident || expectedEvent == eventEndIncident {
 		require.Equal(t, dummyIncident, incidentFromProperties(properties))
@@ -160,7 +157,7 @@ func TestRudderTelemetry(t *testing.T) {
 		Event      string
 		FuncToTest func()
 	}{
-		"create incident":                       {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident) }},
+		"create incident":                       {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident, true) }},
 		"end incident":                          {eventEndIncident, func() { rudderClient.EndIncident(dummyIncident) }},
 		"add checklist item":                    {eventAddChecklistItem, func() { rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID) }},
 		"remove checklist item":                 {eventRemoveChecklistItem, func() { rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID) }},
@@ -194,7 +191,6 @@ func TestIncidentProperties(t *testing.T) {
 		"CommanderUserID":     dummyIncident.CommanderUserID,
 		"TeamID":              dummyIncident.TeamID,
 		"CreatedAt":           dummyIncident.CreatedAt,
-		"ChannelIDs":          dummyIncident.ChannelIDs,
 		"PostID":              dummyIncident.PostID,
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
