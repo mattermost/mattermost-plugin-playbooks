@@ -181,7 +181,6 @@ export function BackstageIncidentList(props: Props) {
                                         overlay={<Tooltip id={`${idx}_name`}>{incident.name}</Tooltip>}
                                     >
                                         <a className='col-sm-3 incident-item__title'>
-
                                             {incident.name}
                                         </a>
                                     </OverlayTrigger>
