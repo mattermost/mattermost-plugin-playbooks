@@ -3,6 +3,8 @@
 
 import React from 'react';
 
+import Toggle from 'src/components/widgets/toggle';
+
 import {Playbook, Checklist, ChecklistItem} from 'src/types/playbook';
 import {savePlaybook} from 'src/client';
 
@@ -189,12 +191,10 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                     <div className='public-item'>
                         <div
                             className='checkbox-container'
-                            onClick={this.handlePublicChange}
                         >
-                            <input
-                                className='checkbox'
-                                type='checkbox'
-                                checked={this.state.public}
+                            <Toggle
+                                toggled={this.state.public}
+                                onToggle={this.handlePublicChange}
                             />
                             <label>
                                 {'Create Public Incident'}
