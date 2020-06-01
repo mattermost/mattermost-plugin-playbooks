@@ -123,12 +123,7 @@ func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
 		return playbook.Playbook{}, playbook.ErrNotFound
 	}
 
-	var out playbook.Playbook
-	err = p.kvAPI.Get(PlaybookKey+id, &out)
-	if err != nil {
-		return out, err
-	}
-	return out, nil
+	return p.kvGet(id)
 }
 
 // GetPlaybooks retrieves all playbooks.
@@ -144,7 +139,7 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	for _, playbookID := range index.PlaybookIDs {
 		// Ignoring error here for now. If a playbook is deleted after this function retrieves the index,
 		// and error could be generated here that can be ignored. Other errors are unhelpful to the user.
-		gotPlaybook, _ := p.Get(playbookID)
+		gotPlaybook, _ := p.kvGet(playbookID)
 		playbooks = append(playbooks, gotPlaybook)
 	}
 
@@ -178,6 +173,15 @@ func (p *PlaybookStore) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func (p *PlaybookStore) kvGet(id string) (playbook.Playbook, error) {
+	var out playbook.Playbook
+	err := p.kvAPI.Get(PlaybookKey+id, &out)
+	if err != nil {
+		return out, err
+	}
+	return out, nil
 }
 
 func (p *PlaybookStore) indexContains(id string) (bool, error) {

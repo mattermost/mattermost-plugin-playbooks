@@ -25,7 +25,6 @@ import (
 )
 
 func TestIncidents(t *testing.T) {
-	keyVersionPrefix := "v2_"
 	var mockCtrl *gomock.Controller
 	var mockkvapi *mock_pluginkvstore.MockKVAPI
 	var handler *Handler
@@ -79,8 +78,8 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(keyVersionPrefix+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Get(keyVersionPrefix+"playbook_playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
 		o := incident.Incident{
 			Header: incident.Header{
 				CommanderUserID: dialogRequest.UserId,
@@ -124,7 +123,7 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(keyVersionPrefix+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/incidents/create-dialog", bytes.NewBuffer(dialogRequest.ToJson()))
