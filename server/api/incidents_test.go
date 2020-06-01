@@ -25,11 +25,13 @@ import (
 )
 
 func TestIncidents(t *testing.T) {
+	keyVersionPrefix := "v2_"
 	var mockCtrl *gomock.Controller
 	var mockkvapi *mock_pluginkvstore.MockKVAPI
 	var handler *Handler
 	var store *pluginkvstore.PlaybookStore
 	var poster *mock_poster.MockPoster
+	var logger *mock_poster.MockLogger
 	var playbookService playbook.Service
 	var incidentService *mock_incident.MockService
 	var pluginAPI *plugintest.API
@@ -41,12 +43,13 @@ func TestIncidents(t *testing.T) {
 		handler = NewHandler()
 		store = pluginkvstore.NewPlaybookStore(mockkvapi)
 		poster = mock_poster.NewMockPoster(mockCtrl)
+		logger = mock_poster.NewMockLogger(mockCtrl)
 		telemetry := &telemetry.NoopTelemetry{}
 		playbookService = playbook.NewService(store, poster, telemetry)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster)
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger)
 	}
 
 	t.Run("create valid incident", func(t *testing.T) {
@@ -66,14 +69,18 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId:     "testTeamID",
-			UserId:     "testUserID",
-			State:      "{}",
-			Submission: map[string]interface{}{incident.DialogFieldNameKey: "incidentName", incident.DialogFieldPlaybookIDKey: "playbookid1"},
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldNameKey:       "incidentName",
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldIsPublicKey:   "public",
+			},
 		}
 
-		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Get("playbook_playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		mockkvapi.EXPECT().Get(keyVersionPrefix+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(keyVersionPrefix+"playbook_playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
 		o := incident.Incident{
 			Header: incident.Header{
 				CommanderUserID: dialogRequest.UserId,
@@ -83,11 +90,11 @@ func TestIncidents(t *testing.T) {
 			Playbook: &withid,
 		}
 		retO := o
-		retO.ChannelIDs = []string{"channelID"}
+		retO.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&o).Return(&retO, nil)
+		incidentService.EXPECT().CreateIncident(&o, true).Return(&retO, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/incidents/create-dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -107,13 +114,17 @@ func TestIncidents(t *testing.T) {
 			PlaybookIDs []string `json:"playbook_ids"`
 		}{}
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId:     "testTeamID",
-			UserId:     "testUserID",
-			State:      "{}",
-			Submission: map[string]interface{}{incident.DialogFieldNameKey: "incidentName", incident.DialogFieldPlaybookIDKey: "playbookid1"},
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldNameKey:       "incidentName",
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldIsPublicKey:   "public",
+			},
 		}
 
-		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(keyVersionPrefix+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/incidents/create-dialog", bytes.NewBuffer(dialogRequest.ToJson()))
