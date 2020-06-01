@@ -273,7 +273,7 @@ func (r *Runner) actionSelftest(args []string) {
 			CommanderUserID: r.args.UserId,
 		},
 		Playbook: &gotplaybook,
-	})
+	}, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
 		return

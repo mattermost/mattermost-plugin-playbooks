@@ -87,8 +87,8 @@ func TestPlaybooks(t *testing.T) {
 				"playbookid1",
 			},
 		}
-		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Set("playbookindex", gomock.Any(), gomock.Any()).Return(true, nil)
+		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Set(pluginkvstore.IndexKey, gomock.Any(), gomock.Any()).Return(true, nil)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToTeam("playbook_created", gomock.Any(), "testteamid")
@@ -113,7 +113,7 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -141,9 +141,9 @@ func TestPlaybooks(t *testing.T) {
 				"playbookid2",
 			},
 		}
-		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Get("playbook_playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
-		mockkvapi.EXPECT().Get("playbook_playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -167,8 +167,8 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
-		mockkvapi.EXPECT().Set("playbook_testplaybookid", gomock.Any()).Return(true, nil)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(true, nil)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "testteamid")
 
@@ -200,12 +200,12 @@ func TestPlaybooks(t *testing.T) {
 				"playbookid2",
 			},
 		}
-		mockkvapi.EXPECT().Get("playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Set("playbookindex", gomock.Any()).Return(true, nil)
+		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Set(pluginkvstore.IndexKey, gomock.Any()).Return(true, nil)
 
-		mockkvapi.EXPECT().Set("playbook_testplaybookid", nil).Return(true, nil)
+		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"testplaybookid", nil).Return(true, nil)
 
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToTeam("playbook_deleted", gomock.Any(), "testteamid")
 
@@ -228,7 +228,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -263,7 +263,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -298,7 +298,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get("playbook_testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
