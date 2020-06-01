@@ -2,7 +2,7 @@ package pluginkvstore
 
 import pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-const keyVersionPrefix = "v1_"
+const keyVersionPrefix = "v2_"
 
 // KVAPI is the key value store interface for the pluginkv stores.
 // It is implemented by mattermost-plugin-api/Client.KV, or by the mock KVAPI.
