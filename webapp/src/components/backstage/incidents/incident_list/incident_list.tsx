@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
@@ -19,6 +19,7 @@ import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
 
 import './incident_list.scss';
+import {OVERLAY_DELAY} from 'src/utils/constants';
 
 const debounceDelay = 300; // in milliseconds
 
@@ -168,18 +169,24 @@ export function BackstageIncidentList(props: Props) {
                         }
 
                         {
-                            incidents.map((incident) => (
+                            incidents.map((incident, idx) => (
                                 <div
                                     className='row incident-item'
                                     key={incident.id}
                                     onClick={() => openIncidentDetails(incident)}
                                 >
-                                    <a className='col-sm-3 incident-item__title'>
-                                        {incident.name}
-                                    </a>
-                                    <div className='col-sm-2'> {
+                                    <OverlayTrigger
+                                        placement='top'
+                                        delayShow={OVERLAY_DELAY}
+                                        overlay={<Tooltip id={`${idx}_name`}>{incident.name}</Tooltip>}
+                                    >
+                                        <a className='col-sm-3 incident-item__title'>
+
+                                            {incident.name}
+                                        </a>
+                                    </OverlayTrigger>
+                                    <div className='col-sm-2'>
                                         <StatusBadge isActive={incident.is_active}/>
-                                    }
                                     </div>
                                     <div
                                         className='col-sm-2'

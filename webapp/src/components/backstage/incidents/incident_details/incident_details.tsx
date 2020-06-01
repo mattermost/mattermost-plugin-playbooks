@@ -2,24 +2,20 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {exportChannelUrl} from 'src/client';
-
 import {Incident} from 'src/types/incident';
-
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
+import {OVERLAY_DELAY} from 'src/utils/constants';
 
 import StatusBadge from '../status_badge';
 
 import ChecklistTimeline from './checklist_timeline';
 
 import './incident_details.scss';
-
-const OVERLAY_DELAY = 400;
 
 interface Props {
     incident: Incident;
@@ -146,7 +142,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
         return (
             <OverlayTrigger
                 placement='bottom'
-                delay={OVERLAY_DELAY}
+                delayShow={OVERLAY_DELAY}
                 overlay={tooltip}
             >
                 {link}
@@ -167,7 +163,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                     { this.props.involvedInIncident &&
                     <OverlayTrigger
                         placement='bottom'
-                        delay={OVERLAY_DELAY}
+                        delayShow={OVERLAY_DELAY}
                         overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
                     >
                         <button className='link-icon style--none mr-2'>
@@ -235,7 +231,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                     </div>
                     <OverlayTrigger
                         placement='bottom'
-                        delay={OVERLAY_DELAY}
+                        delayShow={OVERLAY_DELAY}
                         overlay={<Tooltip id='goToChannel'>{'Number of users currently in the incident channel'}</Tooltip>}
                     >
                         <div className='statistics-row__block'>
