@@ -33,7 +33,7 @@ type ChecklistItem struct {
 
 // Service is the playbook service for managing playbooks
 type Service interface {
-	// Get retrieves a playbook
+	// Get retrieves a playbook. Returns ErrNotFound if not found.
 	Get(id string) (Playbook, error)
 	// Create creates a new playbook
 	Create(playbook Playbook) (string, error)

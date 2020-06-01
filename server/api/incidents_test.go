@@ -80,7 +80,7 @@ func TestIncidents(t *testing.T) {
 
 		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
-		o := incident.Incident{
+		i := incident.Incident{
 			Header: incident.Header{
 				CommanderUserID: dialogRequest.UserId,
 				TeamID:          dialogRequest.TeamId,
@@ -88,12 +88,12 @@ func TestIncidents(t *testing.T) {
 			},
 			Playbook: &withid,
 		}
-		retO := o
-		retO.PrimaryChannelID = "channelID"
+		retI := i
+		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&o, true).Return(&retO, nil)
+		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/incidents/create-dialog", bytes.NewBuffer(dialogRequest.ToJson()))
