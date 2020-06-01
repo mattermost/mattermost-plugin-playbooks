@@ -175,7 +175,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 	// Post in the  main incident channel that @user has ended the incident.
 	// Main channel is the only channel in the incident for now.
 	if _, err := s.poster.PostMessage(incdnt.PrimaryChannelID, "This incident has been closed by @%v", user.Username); err != nil {
-		return fmt.Errorf("failed to post end incident messsage: %w", err)
+		return errors.Wrap(err, "failed to post end incident messsage")
 	}
 
 	return nil
@@ -442,7 +442,7 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 	// Get main channel details
 	channel, err := s.pluginAPI.Channel.Get(incident.PrimaryChannelID)
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s'", incident.PrimaryChannelID)
+		return nil, errors.Wrapf(err, "failed to retrieve channel id '%s'", incident.PrimaryChannelID)
 	}
 	team, err := s.pluginAPI.Team.Get(channel.TeamId)
 	if err != nil {
@@ -450,7 +450,7 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 	}
 	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.PrimaryChannelID)
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.PrimaryChannelID)
+		return nil, errors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.PrimaryChannelID)
 	}
 
 	incidentWithDetails := &Details{

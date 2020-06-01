@@ -243,7 +243,7 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				fmt.Errorf("userid: %s does not have permissions to view the incident details", userID))
+				errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 			return
 		}
 		HandleError(w, err)
@@ -539,7 +539,7 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, erro
 	// NOTE: we are failing early instead of turning bad parameters into the default
 	teamID := u.Query().Get("team_id")
 	if len(teamID) != 0 && !model.IsValidId(teamID) {
-		return nil, fmt.Errorf("bad parameter 'team_id': must be 26 characters or blank")
+		return nil, errors.New("bad parameter 'team_id': must be 26 characters or blank")
 	}
 
 	param := u.Query().Get("page")

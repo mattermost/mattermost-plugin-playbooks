@@ -1,8 +1,6 @@
 package pluginkvstore
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
@@ -44,7 +42,7 @@ func (i *playbookIndex) clone() playbookIndex {
 func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 	var index playbookIndex
 	if err := p.kvAPI.Get(IndexKey, &index); err != nil {
-		return index, fmt.Errorf("unable to get playbook index: %w", err)
+		return index, errors.Wrap(err, "unable to get playbook index")
 	}
 
 	return index, nil
