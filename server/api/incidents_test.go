@@ -78,7 +78,7 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
 		o := incident.Incident{
 			Header: incident.Header{
@@ -123,7 +123,7 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey+"playbookindex", gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/incidents/create-dialog", bytes.NewBuffer(dialogRequest.ToJson()))
