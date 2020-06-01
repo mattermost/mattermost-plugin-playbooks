@@ -14,16 +14,12 @@ var ErrNoPermissions = errors.New("does not have permissions")
 
 // CheckHasPermissionsToIncidentChannel returns an error if the user does not have permissions to the incident channel.
 func CheckHasPermissionsToIncidentChannel(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return nil
-	}
-
 	incidentToCheck, err := incidentService.GetIncident(incidentID)
 	if err != nil {
 		return fmt.Errorf("could not get incident id `%s`: %w", incidentID, err)
 	}
 
-	isChannelMember := pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.ChannelIDs[0], model.PERMISSION_READ_CHANNEL)
+	isChannelMember := pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.PrimaryChannelID, model.PERMISSION_READ_CHANNEL)
 	if !isChannelMember {
 		return fmt.Errorf("userID `%s`: %w", userID, ErrNoPermissions)
 	}
@@ -34,16 +30,12 @@ func CheckHasPermissionsToIncidentChannel(userID, incidentID string, pluginAPI *
 // CheckHasPermissionsToIncidentTeam returns an error if the user does not have permissions to
 // the team that the incident belongs to.
 func CheckHasPermissionsToIncidentTeam(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return nil
-	}
-
 	incidentToCheck, err := incidentService.GetIncident(incidentID)
 	if err != nil {
 		return fmt.Errorf("could not get incident id `%s`: %w", incidentID, err)
 	}
 
-	channel, err := pluginAPI.Channel.Get(incidentToCheck.ChannelIDs[0])
+	channel, err := pluginAPI.Channel.Get(incidentToCheck.PrimaryChannelID)
 	if err != nil {
 		return err
 	}

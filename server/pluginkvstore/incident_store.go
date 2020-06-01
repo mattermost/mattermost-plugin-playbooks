@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"golang.org/x/text/runes"
@@ -15,8 +16,8 @@ import (
 )
 
 const (
-	allHeadersKey  = "all_headers"
-	incidentKey    = "incident_"
+	allHeadersKey  = keyVersionPrefix + "all_headers"
+	incidentKey    = keyVersionPrefix + "incident_"
 	perPageDefault = 1000
 )
 
@@ -28,12 +29,14 @@ var _ incident.Store = (*incidentStore)(nil)
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
 	pluginAPI KVAPI
+	log       bot.Logger
 }
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
-func NewIncidentStore(pluginAPI KVAPI) incident.Store {
+func NewIncidentStore(pluginAPI KVAPI, log bot.Logger) incident.Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
+		log:       log,
 	}
 	return newStore
 }
@@ -157,16 +160,10 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 
 	// Search for which incident has the given channel associated
 	for _, header := range headers {
-		incdnt, err := s.getIncident(header.ID)
-		if err != nil {
-			return "", fmt.Errorf("failed to get incident for id (%s): %w", header.ID, err)
+		if header.PrimaryChannelID == channelID {
+			return header.ID, nil
 		}
 
-		for _, incidentChannelID := range incdnt.ChannelIDs {
-			if incidentChannelID == channelID {
-				return incdnt.ID, nil
-			}
-		}
 	}
 	return "", fmt.Errorf("channel with id (%s) does not have an incident: %w", channelID, incident.ErrNotFound)
 }
@@ -283,6 +280,10 @@ func headerMatchesFilters(header incident.Header, options incident.HeaderFilterO
 		}
 	}
 	if options.CommanderID != "" && header.CommanderUserID != options.CommanderID {
+		return false
+	}
+
+	if options.HasPermissionsTo != nil && !options.HasPermissionsTo(header.PrimaryChannelID) {
 		return false
 	}
 

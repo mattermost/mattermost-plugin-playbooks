@@ -265,7 +265,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 
 			for _, i := range []incident.Incident{id1, id2, id3, id4, id5, id6, id7} {
 				kvAPI.EXPECT().
-					Get(fmt.Sprintf("incident_%s", i.ID), gomock.Any()).
+					Get(fmt.Sprintf(incidentKey+"%s", i.ID), gomock.Any()).
 					SetArg(1, i).
 					AnyTimes()
 			}

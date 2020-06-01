@@ -25,9 +25,10 @@ interface Props {
     incident: Incident;
     commander: UserProfile;
     profileUri: string;
-    channelDetails: ChannelWithTeamData[];
+    primaryChannelDetails: ChannelWithTeamData;
     viewingIncidentChannel: boolean;
-    involvedInIncident: boolean;
+    hasPermissionToChannel: boolean;
+    primaryChannelPublic: boolean;
     teamName: string;
     serverVersion: string;
     actions: {
@@ -74,10 +75,8 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const incidentChannel = this.props.channelDetails?.length > 0 ? this.props.channelDetails[0] : null;
-
         const fetchUsers = async () => {
-            return incidentChannel ? fetchUsersInChannel(this.props.channelDetails[0].id) : [];
+            return fetchUsersInChannel(this.props.primaryChannelDetails.id);
         };
 
         const onSelectedChange = async (userId?: string) => {
@@ -90,6 +89,18 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                 console.log(response.error); // eslint-disable-line no-console
             }
         };
+
+        if (!this.props.hasPermissionToChannel && !this.props.primaryChannelPublic) {
+            return (
+                <>
+                    <div className='IncidentDetails'>
+                        <div className='inner-container'>
+                            {'You don\'t have access to this incident.'}
+                        </div>
+                    </div>
+                </>
+            );
+        }
 
         return (
             <React.Fragment>
@@ -107,7 +118,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                             <div className='title'>{'Commander'}</div>
                             <ProfileSelector
                                 commanderId={this.props.incident.commander_user_id}
-                                enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                                enableEdit={this.props.hasPermissionToChannel && this.props.viewingIncidentChannel}
                                 getUsers={fetchUsers}
                                 onSelectedChange={onSelectedChange}
                             />
@@ -117,7 +128,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                             <ChecklistDetails
                                 serverVersion={this.props.serverVersion}
                                 checklist={checklist}
-                                enableEdit={this.props.involvedInIncident && this.props.viewingIncidentChannel}
+                                enableEdit={this.props.hasPermissionToChannel && this.props.viewingIncidentChannel}
                                 key={checklist.title + index}
                                 onChange={(itemNum: number, checked: boolean) => {
                                     this.props.actions.modifyChecklistItemState(this.props.incident.id, index, itemNum, checked);
@@ -143,25 +154,21 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                         ))}
 
                         {
-                            this.props.involvedInIncident &&
+                            this.props.hasPermissionToChannel &&
                             <div className='inner-container'>
-                                <div className='title'>{'Channels'}</div>
-                                {
-                                    this.props.channelDetails.map((channel: ChannelWithTeamData) => (
-                                        <Link
-                                            key={channel.id}
-                                            to={`/${channel.team_name}/channels/${channel.name}`}
-                                            text={channel.display_name}
-                                        />
-                                    ))
-                                }
+                                <div className='title'>{'Channel'}</div>
+                                <Link
+                                    key={this.props.primaryChannelDetails.id}
+                                    to={`/${this.props.primaryChannelDetails.team_name}/channels/${this.props.primaryChannelDetails.name}`}
+                                    text={this.props.primaryChannelDetails.display_name}
+                                />
                             </div>
                         }
                     </div>
                 </Scrollbars>
                 <div className='footer-div'>
                     {
-                        this.props.involvedInIncident &&
+                        this.props.hasPermissionToChannel &&
                         <>
                             <button
                                 className='btn btn-primary'
@@ -175,7 +182,7 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                                 <div className='help-text'>
                                     {'Go to '}
                                     <Link
-                                        to={`/${this.props.channelDetails[0].team_name}/channels/${this.props.channelDetails[0].name}`}
+                                        to={`/${this.props.primaryChannelDetails.team_name}/channels/${this.props.primaryChannelDetails.name}`}
                                         text={'the incident channel'}
                                     />
                                     {' to make changes.'}
@@ -185,15 +192,15 @@ export default class RHSIncidentDetails extends React.PureComponent<Props> {
                     }
 
                     {
-                        !this.props.involvedInIncident &&
+                        !this.props.hasPermissionToChannel &&
                         <div className='help-text'>
-                            {'You are not a participant in the incident. Contact '}
-                            <a
-                                onClick={() => this.moveToDM(this.props.commander.username)}
-                            >
-                                {'@' + this.props.commander.username}
-                            </a>
-                            {' to request access.'}
+                            {'You are not a participant in the incident. '}
+                            <br/>
+                            <Link
+                                to={`/${this.props.primaryChannelDetails.team_name}/channels/${this.props.primaryChannelDetails.name}`}
+                                text={'Join the incident channel'}
+                            />
+                            {' to make changes.'}
                         </div>
                     }
                 </div>
