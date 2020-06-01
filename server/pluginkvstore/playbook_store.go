@@ -113,8 +113,16 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 
 // Get retrieves a playbook
 func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
+	exists, err := p.indexContains(id)
+	if err != nil {
+		return playbook.Playbook{}, nil
+	}
+	if !exists {
+		return playbook.Playbook{}, playbook.ErrNotFound
+	}
+
 	var out playbook.Playbook
-	err := p.kvAPI.Get(playbookKey+id, &out)
+	err = p.kvAPI.Get(playbookKey+id, &out)
 	if err != nil {
 		return out, err
 	}
@@ -168,4 +176,19 @@ func (p *PlaybookStore) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func (p *PlaybookStore) indexContains(id string) (bool, error) {
+	index, err := p.getIndex()
+	if err != nil {
+		return false, err
+	}
+
+	for _, playbookID := range index.PlaybookIDs {
+		if playbookID == id {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

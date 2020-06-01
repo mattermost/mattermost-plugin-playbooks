@@ -1,6 +1,13 @@
 package playbook
 
-import "time"
+import (
+	"time"
+
+	"github.com/pkg/errors"
+)
+
+// ErrNotFound used to indicate entity not found.
+var ErrNotFound = errors.New("not found")
 
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {

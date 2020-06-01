@@ -136,6 +136,21 @@ func (mr *MockServiceMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentIDForChannel", reflect.TypeOf((*MockService)(nil).GetIncidentIDForChannel), arg0)
 }
 
+// GetIncidentWithDetails mocks base method
+func (m *MockService) GetIncidentWithDetails(arg0 string) (*incident.Details, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncidentWithDetails", arg0)
+	ret0, _ := ret[0].(*incident.Details)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIncidentWithDetails indicates an expected call of GetIncidentWithDetails
+func (mr *MockServiceMockRecorder) GetIncidentWithDetails(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentWithDetails", reflect.TypeOf((*MockService)(nil).GetIncidentWithDetails), arg0)
+}
+
 // GetIncidents mocks base method
 func (m *MockService) GetIncidents(arg0 incident.HeaderFilterOptions) ([]incident.Incident, error) {
 	m.ctrl.T.Helper()
