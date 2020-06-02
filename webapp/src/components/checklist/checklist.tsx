@@ -26,10 +26,9 @@ interface Props {
     removeItem: (itemNum: number) => void;
     editItem: (itemNum: number, newTitle: string) => void;
     reorderItems: (itemNum: number, newPosition: number) => void;
-    serverVersion: string;
 }
 
-export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, addItem, removeItem, editItem, reorderItems, serverVersion}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -151,7 +150,6 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
 
                                 return (
                                     <ChecklistItemDetails
-                                        serverVersion={serverVersion}
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
                                         disabled={!enableEdit}
