@@ -1,8 +1,9 @@
 package pluginkvstore
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -117,7 +118,7 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
 	exists, err := p.indexContains(id)
 	if err != nil {
-		return playbook.Playbook{}, err
+		return playbook.Playbook{}, errors.Wrap(err, "failed to check if id exists in index")
 	}
 	if !exists {
 		return playbook.Playbook{}, playbook.ErrNotFound
