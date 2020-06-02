@@ -114,15 +114,22 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 
 // Get retrieves a playbook
 func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
-	exists, err := p.indexContains(id)
-	if err != nil {
-		return playbook.Playbook{}, errors.Wrap(err, "failed to check if id exists in index")
-	}
-	if !exists {
-		return playbook.Playbook{}, playbook.ErrNotFound
+	var out playbook.Playbook
+
+	if id == "" {
+		return out, errors.New("ID cannot be empty")
 	}
 
-	return p.kvGet(id)
+	err := p.kvAPI.Get(PlaybookKey+id, &out)
+	if err != nil {
+		return out, err
+	}
+
+	if out.ID != id {
+		return out, playbook.ErrNotFound
+	}
+
+	return out, nil
 }
 
 // GetPlaybooks retrieves all playbooks.
@@ -138,7 +145,7 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	for _, playbookID := range index.PlaybookIDs {
 		// Ignoring error here for now. If a playbook is deleted after this function retrieves the index,
 		// and error could be generated here that can be ignored. Other errors are unhelpful to the user.
-		gotPlaybook, _ := p.kvGet(playbookID)
+		gotPlaybook, _ := p.Get(playbookID)
 		playbooks = append(playbooks, gotPlaybook)
 	}
 
@@ -172,28 +179,4 @@ func (p *PlaybookStore) Delete(id string) error {
 	}
 
 	return nil
-}
-
-func (p *PlaybookStore) kvGet(id string) (playbook.Playbook, error) {
-	var out playbook.Playbook
-	err := p.kvAPI.Get(PlaybookKey+id, &out)
-	if err != nil {
-		return out, err
-	}
-	return out, nil
-}
-
-func (p *PlaybookStore) indexContains(id string) (bool, error) {
-	index, err := p.getIndex()
-	if err != nil {
-		return false, err
-	}
-
-	for _, playbookID := range index.PlaybookIDs {
-		if playbookID == id {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }

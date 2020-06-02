@@ -60,13 +60,7 @@ func TestIncidents(t *testing.T) {
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 		}
-		playbookIndex := struct {
-			PlaybookIDs []string `json:"playbook_ids"`
-		}{
-			PlaybookIDs: []string{
-				"playbookid1",
-			},
-		}
+
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: "testTeamID",
 			UserId: "testUserID",
@@ -78,7 +72,6 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
 		i := incident.Incident{
 			Header: incident.Header{
@@ -109,9 +102,6 @@ func TestIncidents(t *testing.T) {
 		reset()
 		defer mockCtrl.Finish()
 
-		playbookIndex := struct {
-			PlaybookIDs []string `json:"playbook_ids"`
-		}{}
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: "testTeamID",
 			UserId: "testUserID",
@@ -123,7 +113,7 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbook.Playbook{})
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/incidents/create-dialog", bytes.NewBuffer(dialogRequest.ToJson()))
