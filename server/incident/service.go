@@ -55,8 +55,8 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 	}
 }
 
-// GetIncidents returns filtered incidents.
-func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) ([]Incident, error) {
+// GetIncidents returns filtered incidents and the total count before paging.
+func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) (incidents []Incident, totalCount int, err error) {
 	return s.store.GetIncidents(options)
 }
 
@@ -233,7 +233,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 
 // GetCommanders returns all the commanders of the incidents selected by options
 func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error) {
-	incidents, err := s.store.GetIncidents(options)
+	incidents, _, err := s.store.GetIncidents(options)
 	if err != nil {
 		return nil, err
 	}

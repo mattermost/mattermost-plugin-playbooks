@@ -40,11 +40,11 @@ func NewIncidentStore(pluginAPI KVAPI, log bot.Logger) incident.Store {
 	return newStore
 }
 
-// GetIncidents gets all the incidents, abiding by the filter options.
-func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]incident.Incident, error) {
+// GetIncidents gets all the incidents, abiding by the filter options, and the total count before paging.
+func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (incidents []incident.Incident, totalCount int, err error) {
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get all headers value")
+		return nil, 0, errors.Wrapf(err, "failed to get all headers value")
 	}
 
 	headers := toHeaders(headersMap)
@@ -63,6 +63,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 		filtered = searchHeaders(filtered, options.SearchTerm)
 	}
 
+	totalCount = len(filtered)
 	filtered = pageHeaders(filtered, options.Page, options.PerPage)
 
 	var result []incident.Incident
@@ -70,12 +71,12 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) ([]in
 		i, err := s.getIncident(header.ID)
 		if err != nil {
 			// odds are this should not happen, so default to failing fast
-			return nil, errors.Wrapf(err, "failed to get incident id '%s'", header.ID)
+			return nil, 0, errors.Wrapf(err, "failed to get incident id '%s'", header.ID)
 		}
 		result = append(result, *i)
 	}
 
-	return result, nil
+	return result, totalCount, nil
 }
 
 // CreateIncident creates a new incident.

@@ -212,7 +212,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 			prepStore: func(store *mock_incident.MockStore) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
-					Return([]incident.Incident{id1, id2, id3, id4, id5, id6}, nil)
+					Return([]incident.Incident{id1, id2, id3, id4, id5, id6}, 6, nil)
 			},
 			want: []incident.CommanderInfo{
 				{UserID: "c1", Username: "comm one"},
@@ -225,7 +225,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 			prepStore: func(store *mock_incident.MockStore) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
-					Return([]incident.Incident{id5, id6}, nil)
+					Return([]incident.Incident{id5, id6}, 2, nil)
 			},
 			want: []incident.CommanderInfo{
 				{UserID: "c1", Username: "comm one"},
@@ -237,7 +237,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 			prepStore: func(store *mock_incident.MockStore) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
-					Return([]incident.Incident{id1, id2, id3, id4}, nil)
+					Return([]incident.Incident{id1, id2, id3, id4}, 4, nil)
 			},
 			want: []incident.CommanderInfo{
 				{UserID: "c1", Username: "comm one"},

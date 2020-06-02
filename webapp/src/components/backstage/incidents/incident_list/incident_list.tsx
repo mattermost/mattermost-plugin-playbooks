@@ -12,8 +12,14 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
+import {PaginationRow} from 'src/components/backstage/incidents/incident_list/pagination_row';
 import {FetchIncidentsParams, Incident, IncidentWithDetails} from 'src/types/incident';
-import {fetchCommandersInTeam, fetchIncidents, fetchIncident, fetchIncidentWithDetails} from 'src/client';
+import {
+    fetchCommandersInTeam,
+    fetchIncidents,
+    fetchIncident,
+    fetchIncidentWithDetails,
+} from 'src/client';
 import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
@@ -21,6 +27,7 @@ import StatusBadge from '../status_badge';
 import './incident_list.scss';
 
 const debounceDelay = 300; // in milliseconds
+const PER_PAGE = 15;
 
 interface Props {
     currentTeamId: string;
@@ -30,10 +37,15 @@ interface Props {
 
 export function BackstageIncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
     const [selectedIncident, setSelectedIncident] = useState<IncidentWithDetails | null>(null);
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
-        {team_id: props.currentTeamId},
+        {
+            team_id: props.currentTeamId,
+            page: 0,
+            per_page: PER_PAGE,
+        },
     );
 
     useEffect(() => {
@@ -42,8 +54,11 @@ export function BackstageIncidentList(props: Props) {
 
     useEffect(() => {
         async function fetchIncidentsAsync() {
-            const data = await fetchIncidents(fetchParams);
-            setIncidents(data);
+            const incidentsReturn = await fetchIncidents(fetchParams);
+            console.log('<><> incidentsReturn:');
+            console.log(incidentsReturn);
+            setIncidents(incidentsReturn.incidents);
+            setTotalCount(incidentsReturn.total_count);
         }
 
         fetchIncidentsAsync();
@@ -55,6 +70,10 @@ export function BackstageIncidentList(props: Props) {
 
     function setStatus(status: string) {
         setFetchParams({...fetchParams, status});
+    }
+
+    function setPage(page: number) {
+        setFetchParams({...fetchParams, page});
     }
 
     async function fetchCommanders() {
@@ -199,6 +218,12 @@ export function BackstageIncidentList(props: Props) {
                                 </div>
                             ))
                         }
+                        <PaginationRow
+                            page={fetchParams.page ? fetchParams.page : 0}
+                            perPage={fetchParams.per_page ? fetchParams.per_page : 0}
+                            totalCount={totalCount}
+                            setPage={setPage}
+                        />
                     </div>
                 </div>
             )}

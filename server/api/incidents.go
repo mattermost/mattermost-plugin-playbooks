@@ -173,6 +173,7 @@ func (h *IncidentHandler) hasPermissionsToOrPublic(channelID string, userID stri
 	return h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) || (channel.Type == model.CHANNEL_OPEN && h.pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS))
 }
 
+// getIncidents handles the GET /incidents endpoint.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOption(r.URL)
 	if err != nil {
@@ -185,13 +186,21 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return h.hasPermissionsToOrPublic(channelID, userID)
 	}
 
-	incidents, err := h.incidentService.GetIncidents(*filterOptions)
+	incidents, totalCount, err := h.incidentService.GetIncidents(*filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	jsonBytes, err := json.Marshal(incidents)
+	result := struct {
+		Incidents  []incident.Incident `json:"incidents"`
+		TotalCount int                 `json:"total_count"`
+	}{
+		Incidents:  incidents,
+		TotalCount: totalCount,
+	}
+
+	jsonBytes, err := json.Marshal(result)
 	if err != nil {
 		HandleError(w, err)
 		return

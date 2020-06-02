@@ -59,8 +59,8 @@ var ErrIncidentNotActive = errors.New("incident not active")
 
 // Service is the incident/service interface.
 type Service interface {
-	// GetHeaders returns filtered headers.
-	GetIncidents(options HeaderFilterOptions) ([]Incident, error)
+	// GetHeaders returns filtered incidents and the total count before paging.
+	GetIncidents(options HeaderFilterOptions) (incidents []Incident, totalCount int, err error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
@@ -117,8 +117,8 @@ type Service interface {
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
-	// GetHeaders returns filtered incidents.
-	GetIncidents(options HeaderFilterOptions) ([]Incident, error)
+	// GetHeaders returns filtered incidents and the total count before paging.
+	GetIncidents(options HeaderFilterOptions) (incidents []Incident, totalCount int, err error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
