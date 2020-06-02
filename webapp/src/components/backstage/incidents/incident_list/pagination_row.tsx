@@ -22,7 +22,9 @@ export function PaginationRow(props: Props) {
     function countInfo() {
         const startCount = props.page * props.perPage;
         const endCount = Math.min(startCount + props.perPage, props.totalCount);
-        return (startCount + 1) + ' - ' + endCount + ' of ' + props.totalCount + ' total';
+        const firstNumber = props.totalCount === 0 ? 0 : startCount + 1;
+
+        return firstNumber + ' - ' + endCount + ' of ' + props.totalCount + ' total';
     }
 
     const showNextPage = ((props.page + 1) * props.perPage) < props.totalCount;
