@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
@@ -169,21 +169,17 @@ export function BackstageIncidentList(props: Props) {
                         }
 
                         {
-                            incidents.map((incident, idx) => (
+                            incidents.map((incident) => (
                                 <div
                                     className='row incident-item'
                                     key={incident.id}
                                     onClick={() => openIncidentDetails(incident)}
                                 >
-                                    <OverlayTrigger
-                                        placement='top'
-                                        delayShow={OVERLAY_DELAY}
-                                        overlay={<Tooltip id={`${idx}_name`}>{incident.name}</Tooltip>}
-                                    >
-                                        <a className='col-sm-3 incident-item__title'>
-                                            {incident.name}
-                                        </a>
-                                    </OverlayTrigger>
+                                    <TextWithTooltip
+                                        id={incident.id}
+                                        text={incident.name}
+                                        className='col-sm-3 incident-item__title'
+                                    />
                                     <div className='col-sm-2'>
                                         <StatusBadge isActive={incident.is_active}/>
                                     </div>
@@ -229,4 +225,37 @@ const endedAt = (isActive: boolean, time: number) => {
         return mom.format('MMM DD LT');
     }
     return '--';
+};
+
+const TextWithTooltip = (props: {id: string; text: string; className: string}) => {
+    const [ref, setRefState] = useState <HTMLAnchorElement|null>(null);
+    const setRef = useCallback((node) => {
+        setRefState(node);
+    }, []);
+
+    if (ref && ref?.offsetWidth < ref?.scrollWidth) {
+        return (
+            <OverlayTrigger
+                placement='top'
+                delayShow={OVERLAY_DELAY}
+                overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
+            >
+                <a
+                    ref={setRef}
+                    className={props.className}
+                >
+                    {props.text}
+                </a>
+            </OverlayTrigger>
+        );
+    }
+
+    return (
+        <a
+            ref={setRef}
+            className={props.className}
+        >
+            {props.text}
+        </a>
+    );
 };
