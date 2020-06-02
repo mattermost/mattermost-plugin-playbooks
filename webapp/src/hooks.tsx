@@ -75,10 +75,10 @@ export class Hooks {
         // we won't try again to open the RHS
         this.currentChannelId = currentChannel.id;
 
+        const currentIncident = incidentDetails(state);
         for (let i = 0; i < incidents.length; i++) {
             if (incidents[i].primary_channel_id === currentChannel.id) {
                 // Only load if it's not the current incident.
-                const currentIncident = incidentDetails(state);
                 if (!currentIncident || currentIncident.id !== incidents[i].id) {
                     this.store.dispatch(withLoading(getIncident(incidents[i].id)));
                 }
