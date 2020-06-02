@@ -96,7 +96,7 @@ function playbooks(state = {}, action) {
     switch (action.type) {
     case RECEIVED_PLAYBOOKS: {
         const newPart = {};
-        newPart[action.teamID] = sortPlaybooksByTitle(action.playbooks);
+        newPart[action.teamID] = action.playbooks;
         return Object.assign({}, state, newPart);
     }
     case RECEIVED_PLAYBOOK: {
@@ -107,7 +107,6 @@ function playbooks(state = {}, action) {
             newPart[teamID] = state[teamID].filter((v) => v.id !== action.playbook.id);
         }
         newPart[teamID].push(action.playbook);
-        sortPlaybooksByTitle(newPart[teamID]);
         return Object.assign({}, state, newPart);
     }
     case REMOVE_PLAYBOOK: {
@@ -116,18 +115,11 @@ function playbooks(state = {}, action) {
         if (state[teamID]) {
             newPart[teamID] = state[teamID].filter((v) => v.id !== action.playbook.id);
         }
-        sortPlaybooksByTitle(newPart[teamID]); // probably don't need to, but just in case.
         return Object.assign({}, state, newPart);
     }
     default:
         return state;
     }
-}
-
-// sortPlaybooksByTitle modifies in place (like JS's sort), but also returns the sorted Playbook[] for versatility.
-function sortPlaybooksByTitle(pbooks) {
-    pbooks.sort((a, b) => a.title.localeCompare(b.title));
-    return pbooks;
 }
 
 function backstageModal(state = {open: false, selectedArea: 0}, action) {
