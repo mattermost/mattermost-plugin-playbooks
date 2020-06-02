@@ -117,7 +117,7 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
 	exists, err := p.indexContains(id)
 	if err != nil {
-		return playbook.Playbook{}, nil
+		return playbook.Playbook{}, err
 	}
 	if !exists {
 		return playbook.Playbook{}, playbook.ErrNotFound
