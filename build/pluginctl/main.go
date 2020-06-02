@@ -105,13 +105,13 @@ func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
 	log.Print("Uploading plugin via API.")
 	_, resp := client.UploadPluginForced(pluginBundle)
 	if resp.Error != nil {
-		return errors.Errorf("Failed to upload plugin bundle: %s", resp.Error.Error())
+		return errors.Wrap(resp.Error, "Failed to upload plugin bundle"
 	}
 
 	log.Print("Enabling plugin.")
 	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
-		return errors.Errorf("Failed to enable plugin: %s", resp.Error.Error())
+		return errors.Wrap(resp.Error, "Failed to enable plugin"
 	}
 
 	return nil
@@ -157,13 +157,13 @@ func resetPlugin(client *model.Client4, pluginID string) error {
 	log.Print("Disabling plugin.")
 	_, resp := client.DisablePlugin(pluginID)
 	if resp.Error != nil {
-		return errors.Errorf("failed to disable plugin: %s", resp.Error.Error())
+		return errors.Wrap(resp.Error, "failed to disable plugin")
 	}
 
 	log.Print("Enabling plugin.")
 	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
-		return errors.Errorf("failed to enable plugin: %s", resp.Error.Error())
+		return errors.Wrap(resp.Error, "failed to enable plugin"
 	}
 
 	return nil
