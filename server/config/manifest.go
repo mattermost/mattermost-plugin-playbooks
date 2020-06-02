@@ -17,7 +17,7 @@ const manifestStr = `
   "name": "Incident Response",
   "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
   "version": "0.4.0",
-  "min_server_version": "5.12.0",
+  "min_server_version": "5.19.0",
   "server": {
     "executables": {
       "linux-amd64": "server/dist/plugin-linux-amd64",
