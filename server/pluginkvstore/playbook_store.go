@@ -115,10 +115,20 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 // Get retrieves a playbook
 func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
 	var out playbook.Playbook
+
+	if id == "" {
+		return out, errors.New("ID cannot be empty")
+	}
+
 	err := p.kvAPI.Get(PlaybookKey+id, &out)
 	if err != nil {
 		return out, err
 	}
+
+	if out.ID != id {
+		return out, playbook.ErrNotFound
+	}
+
 	return out, nil
 }
 

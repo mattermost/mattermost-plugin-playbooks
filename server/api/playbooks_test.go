@@ -49,8 +49,18 @@ func TestPlaybooks(t *testing.T) {
 		ID:     "testplaybookid",
 		Title:  "My Playbook",
 		TeamID: "testteamid",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Do these things",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this",
+					},
+				},
+			},
+		},
 	}
-	playbooktestBytes, err := json.Marshal(&playbooktest)
+	withidBytes, err := json.Marshal(&withid)
 	require.NoError(t, err)
 
 	var mockCtrl *gomock.Controller
@@ -113,7 +123,7 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -121,7 +131,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		result, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, playbooktestBytes, result)
+		assert.Equal(t, withidBytes, result)
 	})
 
 	t.Run("get playbooks", func(t *testing.T) {
@@ -167,7 +177,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(true, nil)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "testteamid")
@@ -263,7 +273,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -294,11 +304,11 @@ func TestPlaybooks(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
+		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(withid))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, playbooktest)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
