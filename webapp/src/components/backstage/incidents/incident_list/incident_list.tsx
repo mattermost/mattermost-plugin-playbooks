@@ -218,7 +218,7 @@ export function BackstageIncidentList(props: Props) {
                         }
                         <PaginationRow
                             page={fetchParams.page ? fetchParams.page : 0}
-                            perPage={fetchParams.per_page ? fetchParams.per_page : 0}
+                            perPage={fetchParams.per_page ? fetchParams.per_page : PER_PAGE}
                             totalCount={totalCount}
                             setPage={setPage}
                         />
