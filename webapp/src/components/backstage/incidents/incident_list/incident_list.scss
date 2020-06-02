@@ -41,6 +41,20 @@ $font-family: Open Sans;
             .incident-item__title {
                 font-weight: 600;
             }
+
+            .pagination-row {
+                margin-top: 10px;
+                font-size: 14px;
+
+                button {
+                    font-weight: bold;
+                }
+
+                .count {
+                    padding-top: 8px;
+                    color: var(--center-channel-color-56)
+                }
+            }
         }
     }
 
@@ -49,7 +63,7 @@ $font-family: Open Sans;
         align-items: center;
         margin: 0 -4px 20px;
 
-        >div {
+        > div {
             padding: 0 4px;
         }
     }

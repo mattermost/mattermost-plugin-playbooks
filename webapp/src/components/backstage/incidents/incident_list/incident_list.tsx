@@ -55,8 +55,6 @@ export function BackstageIncidentList(props: Props) {
     useEffect(() => {
         async function fetchIncidentsAsync() {
             const incidentsReturn = await fetchIncidents(fetchParams);
-            console.log('<><> incidentsReturn:');
-            console.log(incidentsReturn);
             setIncidents(incidentsReturn.incidents);
             setTotalCount(incidentsReturn.total_count);
         }

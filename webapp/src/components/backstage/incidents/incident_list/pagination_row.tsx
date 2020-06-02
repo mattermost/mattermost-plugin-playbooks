@@ -20,28 +20,37 @@ export function PaginationRow(props: Props) {
     }
 
     function countInfo() {
-        return 'Page: ' + (props.page + 1) + ' perPage: ' + props.perPage + ' total: ' + props.totalCount;
+        const startCount = props.page * props.perPage;
+        const endCount = Math.min(startCount + props.perPage, props.totalCount);
+        return (startCount + 1) + ' - ' + endCount + ' of ' + props.totalCount + ' total';
     }
+
+    const showNextPage = ((props.page + 1) * props.perPage) < props.totalCount;
 
     return (
         <div className='pagination-row'>
             <div className='row'>
-                <div className='col-sm-2'>
-                    <button
-                        className='btn btn-link'
-                        onClick={onPrevPage}
-                    >
-                        {'Previous'}
-                    </button>
+                <div className='text-center col-sm-2'>
+                    {
+                        (props.page > 0) &&
+                        <button
+                            className='btn btn-link'
+                            onClick={onPrevPage}
+                        >
+                            {'Previous'}
+                        </button>
+                    }
                 </div>
-                <div className='col-sm-8 count'>{countInfo()}</div>
-                <div className='col-sm-2'>
-                    <button
-                        className='btn btn-link'
-                        onClick={onNextPage}
-                    >
-                        {'Next'}
-                    </button>
+                <div className='text-center col-sm-8 count'>{countInfo()}</div>
+                <div className='text-center col-sm-2'>
+                    {
+                        showNextPage &&
+                        <button
+                            className='btn btn-link'
+                            onClick={onNextPage}
+                        >
+                            {'Next'}
+                        </button>}
                 </div>
             </div>
         </div>
