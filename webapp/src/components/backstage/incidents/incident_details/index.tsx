@@ -6,9 +6,6 @@ import {connect} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
-import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
-import {Permissions} from 'mattermost-redux/constants';
-
 import {Incident} from 'src/types/incident';
 
 import {navigateToUrl} from 'src/actions';
@@ -22,7 +19,6 @@ type Props = {
 }
 
 function mapStateToProps(state: GlobalState, ownProps: Props) {
-    const mainChannelId = ownProps.incident.channel_ids?.[0] || '';
     const isExportPluginLoaded = Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']);
 
     // Determine if involved in incident by checking if full details fetched.

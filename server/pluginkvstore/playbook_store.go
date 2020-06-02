@@ -1,16 +1,17 @@
 package pluginkvstore
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 const (
-	playbookKey = "playbook_"
-	indexKey    = "playbookindex"
+	// PlaybookKey is the key for individual playbooks. Only exported for testing.
+	PlaybookKey = keyVersionPrefix + "playbook_"
+	// IndexKey is the key for the playbook index. Only exported for testing.
+	IndexKey = keyVersionPrefix + "playbookindex"
 )
 
 // PlaybookStore is a kvs store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
@@ -40,8 +41,8 @@ func (i *playbookIndex) clone() playbookIndex {
 
 func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 	var index playbookIndex
-	if err := p.kvAPI.Get(indexKey, &index); err != nil {
-		return index, fmt.Errorf("unable to get playbook index: %w", err)
+	if err := p.kvAPI.Get(IndexKey, &index); err != nil {
+		return index, errors.Wrap(err, "unable to get playbook index")
 	}
 
 	return index, nil
@@ -57,9 +58,9 @@ func (p *PlaybookStore) addToIndex(playbookID string) error {
 	newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookID)
 
 	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
+	saved, err := p.kvAPI.Set(IndexKey, &newIndex) //, pluginapi.SetAtomic(&index))
 	if err != nil {
-		return fmt.Errorf("unable to add playbook to index: %w", err)
+		return errors.Wrapf(err, "unable to add playbook to index")
 	} else if !saved {
 		return errors.New("unable add playbook to index KV Set didn't save")
 	}
@@ -82,9 +83,9 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 	}
 
 	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(indexKey, &newIndex) //, pluginapi.SetAtomic(&index))
+	saved, err := p.kvAPI.Set(IndexKey, &newIndex) //, pluginapi.SetAtomic(&index))
 	if err != nil {
-		return fmt.Errorf("unable to add playbook to index: %w", err)
+		return errors.Wrapf(err, "unable to add playbook to index")
 	} else if !saved {
 		return errors.New("unable add playbook to index KV Set didn't save")
 	}
@@ -96,9 +97,9 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 	playbook.ID = model.NewId()
 
-	saved, err := p.kvAPI.Set(playbookKey+playbook.ID, &playbook)
+	saved, err := p.kvAPI.Set(PlaybookKey+playbook.ID, &playbook)
 	if err != nil {
-		return "", fmt.Errorf("unable to save playbook to KV store: %w", err)
+		return "", errors.Wrapf(err, "unable to save playbook to KV store")
 	} else if !saved {
 		return "", errors.New("unable to save playbook to KV store, KV Set didn't save")
 	}
@@ -114,7 +115,7 @@ func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
 // Get retrieves a playbook
 func (p *PlaybookStore) Get(id string) (playbook.Playbook, error) {
 	var out playbook.Playbook
-	err := p.kvAPI.Get(playbookKey+id, &out)
+	err := p.kvAPI.Get(PlaybookKey+id, &out)
 	if err != nil {
 		return out, err
 	}
@@ -144,12 +145,12 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 // Update updates a playbook
 func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 	if updated.ID == "" {
-		return fmt.Errorf("updating playbook without ID")
+		return errors.New("updating playbook without ID")
 	}
 
-	saved, err := p.kvAPI.Set(playbookKey+updated.ID, &updated)
+	saved, err := p.kvAPI.Set(PlaybookKey+updated.ID, &updated)
 	if err != nil {
-		return fmt.Errorf("unable to update playbook in KV store: %w", err)
+		return errors.Wrapf(err, "unable to update playbook in KV store")
 	} else if !saved {
 		return errors.New("unable to update playbook in KV store, KV Set didn't save")
 	}
@@ -163,7 +164,7 @@ func (p *PlaybookStore) Delete(id string) error {
 		return err
 	}
 
-	if _, err := p.kvAPI.Set(playbookKey+id, nil); err != nil {
+	if _, err := p.kvAPI.Set(PlaybookKey+id, nil); err != nil {
 		return err
 	}
 

@@ -40,7 +40,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -66,7 +66,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -103,7 +103,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.NoError(t, err)
 	})
 
@@ -130,7 +130,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetry)
 
-		_, err := s.CreateIncident(incdnt)
+		_, err := s.CreateIncident(incdnt, true)
 		require.EqualError(t, err, "failed to create incident channel: : , ")
 	})
 }
@@ -195,7 +195,7 @@ var id6 = incident.Incident{
 	},
 }
 
-func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
+func TestServiceImpl_GetCommanders(t *testing.T) {
 	type args struct {
 		teamID string
 	}
@@ -265,7 +265,10 @@ func TestServiceImpl_GetCommandersForTeam(t *testing.T) {
 			pluginAPI.On("GetUser", "c1").Return(&model.User{Username: "comm one"}, nil)
 			pluginAPI.On("GetUser", "c2").Return(&model.User{Username: "comm two"}, nil)
 
-			got, err := s.GetCommandersForTeam(tt.args.teamID)
+			options := incident.HeaderFilterOptions{
+				TeamID: tt.args.teamID,
+			}
+			got, err := s.GetCommanders(options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCommandersForTeam() error = %v, wantErr %v", err, tt.wantErr)
 				return

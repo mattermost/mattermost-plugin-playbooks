@@ -1,9 +1,10 @@
 package command
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
@@ -273,7 +274,7 @@ func (r *Runner) actionSelftest(args []string) {
 			CommanderUserID: r.args.UserId,
 		},
 		Playbook: &gotplaybook,
-	})
+	}, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
 		return

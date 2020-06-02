@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -15,6 +14,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -58,14 +58,14 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to ensure workflow bot: %w", err)
+		return errors.Wrapf(err, "failed to ensure workflow bot")
 	}
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
 	})
 	if err != nil {
-		return fmt.Errorf("failed save bot to config: %w", err)
+		return errors.Wrapf(err, "failed save bot to config")
 	}
 
 	var telemetryClient interface {
@@ -81,7 +81,7 @@ func (p *Plugin) OnActivate() error {
 		serverVersion := pluginAPIClient.System.GetServerVersion()
 		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, serverVersion)
 		if err != nil {
-			return fmt.Errorf("failed init telemetry client: %w", err)
+			return errors.Wrapf(err, "failed init telemetry client")
 		}
 	}
 
@@ -89,7 +89,7 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		pluginkvstore.NewIncidentStore(&pluginAPIClient.KV),
+		pluginkvstore.NewIncidentStore(&pluginAPIClient.KV, p.bot),
 		p.bot,
 		p.config,
 		telemetryClient,
@@ -97,10 +97,10 @@ func (p *Plugin) OnActivate() error {
 
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient)
-	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot)
+	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
-		return fmt.Errorf("failed register commands: %w", err)
+		return errors.Wrapf(err, "failed register commands")
 	}
 
 	p.API.LogDebug("Incident response plugin Activated")

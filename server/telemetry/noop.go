@@ -9,7 +9,7 @@ import (
 type NoopTelemetry struct{}
 
 // CreateIncident does nothing
-func (t *NoopTelemetry) CreateIncident(incident *incident.Incident) {
+func (t *NoopTelemetry) CreateIncident(incident *incident.Incident, public bool) {
 }
 
 // EndIncident does nothing

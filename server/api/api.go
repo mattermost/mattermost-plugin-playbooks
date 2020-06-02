@@ -3,10 +3,10 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -59,7 +59,7 @@ func HandleError(w http.ResponseWriter, err error) {
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 	jsonBytes, err := json.Marshal(pointerToObject)
 	if err != nil {
-		HandleError(w, fmt.Errorf("unable to marshal json: %w", err))
+		HandleError(w, errors.Wrapf(err, "unable to marshal json"))
 		return
 	}
 

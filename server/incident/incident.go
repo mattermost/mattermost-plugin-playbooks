@@ -1,7 +1,7 @@
 package incident
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
@@ -9,20 +9,20 @@ import (
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	ChannelIDs []string           `json:"channel_ids"`
-	PostID     string             `json:"post_id"`
-	Playbook   *playbook.Playbook `json:"playbook"`
+	PostID   string             `json:"post_id"`
+	Playbook *playbook.Playbook `json:"playbook"`
 }
 
 // Header holds the summary information of an incident.
 type Header struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	IsActive        bool   `json:"is_active"`
-	CommanderUserID string `json:"commander_user_id"`
-	TeamID          string `json:"team_id"`
-	CreatedAt       int64  `json:"created_at"`
-	EndedAt         int64  `json:"ended_at"`
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	IsActive         bool   `json:"is_active"`
+	CommanderUserID  string `json:"commander_user_id"`
+	TeamID           string `json:"team_id"`
+	PrimaryChannelID string `json:"primary_channel_id"`
+	CreatedAt        int64  `json:"created_at"`
+	EndedAt          int64  `json:"ended_at"`
 }
 
 // Details holds the incident's channel and team metadata.
@@ -63,7 +63,7 @@ type Service interface {
 	GetIncidents(options HeaderFilterOptions) ([]Incident, error)
 
 	// CreateIncident creates a new incident.
-	CreateIncident(incdnt *Incident) (*Incident, error)
+	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error
@@ -85,8 +85,8 @@ type Service interface {
 	// if there is no incident associated with this channel.
 	GetIncidentIDForChannel(channelID string) (string, error)
 
-	// GetCommandersForTeam returns all the commanders of incidents in this team.
-	GetCommandersForTeam(teamID string) ([]CommanderInfo, error)
+	// GetCommanders returns all the commanders of incidents selected
+	GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
@@ -139,7 +139,7 @@ type Store interface {
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
 type Telemetry interface {
 	// CreateIncidenttracks the creation of a new incident.
-	CreateIncident(incident *Incident)
+	CreateIncident(incident *Incident, public bool)
 
 	// EndIncident tracks the end of an incident.
 	EndIncident(incident *Incident)
