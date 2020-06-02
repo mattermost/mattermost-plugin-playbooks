@@ -228,7 +228,7 @@ const endedAt = (isActive: boolean, time: number) => {
 };
 
 const TextWithTooltip = (props: {id: string; text: string; className: string}) => {
-    const [ref, setRefState] = useState <HTMLAnchorElement|null>(null);
+    const [ref, setRefState] = useState<HTMLAnchorElement|null>(null);
     const setRef = useCallback((node) => {
         setRefState(node);
     }, []);
