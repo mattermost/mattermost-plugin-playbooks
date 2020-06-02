@@ -49,7 +49,8 @@ export const playbooksForTeam = createSelector(
     [playbooks, getCurrentTeamId],
     (pbooks, teamId: string) => {
         return sortPlaybooksByTitle(pbooks[teamId]);
-    });
+    },
+);
 
 const sortPlaybooksByTitle = (pbooks: Playbook[]) => {
     if (!Array.isArray(pbooks)) {
