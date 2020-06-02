@@ -1,8 +1,7 @@
 package permissions
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
@@ -16,12 +15,12 @@ var ErrNoPermissions = errors.New("does not have permissions")
 func CheckHasPermissionsToIncidentChannel(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
 	incidentToCheck, err := incidentService.GetIncident(incidentID)
 	if err != nil {
-		return fmt.Errorf("could not get incident id `%s`: %w", incidentID, err)
+		return errors.Wrapf(err, "could not get incident id `%s`", incidentID)
 	}
 
 	isChannelMember := pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.PrimaryChannelID, model.PERMISSION_READ_CHANNEL)
 	if !isChannelMember {
-		return fmt.Errorf("userID `%s`: %w", userID, ErrNoPermissions)
+		return errors.Wrapf(ErrNoPermissions, "userID `%s`", userID)
 	}
 
 	return nil
@@ -32,7 +31,7 @@ func CheckHasPermissionsToIncidentChannel(userID, incidentID string, pluginAPI *
 func CheckHasPermissionsToIncidentTeam(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
 	incidentToCheck, err := incidentService.GetIncident(incidentID)
 	if err != nil {
-		return fmt.Errorf("could not get incident id `%s`: %w", incidentID, err)
+		return errors.Wrapf(err, "could not get incident id `%s`", incidentID)
 	}
 
 	channel, err := pluginAPI.Channel.Get(incidentToCheck.PrimaryChannelID)
@@ -42,7 +41,7 @@ func CheckHasPermissionsToIncidentTeam(userID, incidentID string, pluginAPI *plu
 
 	isTeamMember := pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_VIEW_TEAM)
 	if !isTeamMember {
-		return fmt.Errorf("userID `%s`: %w", userID, ErrNoPermissions)
+		return errors.Wrapf(ErrNoPermissions, "userID `%s`", userID)
 	}
 
 	return nil
