@@ -54,7 +54,7 @@ export const playbooksForTeam = createSelector(
 
 const sortPlaybooksByTitle = (pbooks: Playbook[]) => {
     if (!Array.isArray(pbooks)) {
-        return pbooks;
+        return [];
     }
     const newPlaybooks = [...pbooks];
     newPlaybooks.sort((a, b) => a.title.localeCompare(b.title));
