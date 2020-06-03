@@ -80,13 +80,18 @@ export function BackstageIncidentList(props: Props) {
 
     function colHeaderClicked(colName: string) {
         if (fetchParams.sort === colName) {
-            // if we're already sorting on this column, reverse the order
+            // we're already sorting on this column; reverse the order
             const newOrder = fetchParams.order === 'asc' ? 'desc' : 'asc';
             setFetchParams({...fetchParams, order: newOrder});
-        } else {
-            // change to this column, default to descending order
-            setFetchParams({...fetchParams, sort: colName, order: 'desc'});
+            return;
         }
+
+        // change to a new column; default to descending for time-based columns, ascending otherwise
+        let newOrder = 'desc';
+        if (['name', 'status'].indexOf(colName) !== -1) {
+            newOrder = 'asc';
+        }
+        setFetchParams({...fetchParams, sort: colName, order: newOrder});
     }
 
     async function fetchCommanders() {
