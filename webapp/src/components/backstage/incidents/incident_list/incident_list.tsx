@@ -233,24 +233,7 @@ const TextWithTooltip = (props: {id: string; text: string; className: string}) =
         setRefState(node);
     }, []);
 
-    if (ref && ref?.offsetWidth < ref?.scrollWidth) {
-        return (
-            <OverlayTrigger
-                placement='top'
-                delayShow={OVERLAY_DELAY}
-                overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
-            >
-                <a
-                    ref={setRef}
-                    className={props.className}
-                >
-                    {props.text}
-                </a>
-            </OverlayTrigger>
-        );
-    }
-
-    return (
+    const text = (
         <a
             ref={setRef}
             className={props.className}
@@ -258,4 +241,18 @@ const TextWithTooltip = (props: {id: string; text: string; className: string}) =
             {props.text}
         </a>
     );
+
+    if (ref && ref?.offsetWidth < ref?.scrollWidth) {
+        return (
+            <OverlayTrigger
+                placement='top'
+                delayShow={OVERLAY_DELAY}
+                overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
+            >
+                {text}
+            </OverlayTrigger>
+        );
+    }
+
+    return text;
 };
