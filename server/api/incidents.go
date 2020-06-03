@@ -125,6 +125,20 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		public = playbookTemplate.CreatePublicIncident
 	}
 
+	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
+	permissionMessage := "You don't have permissions to create a private channel."
+	if public {
+		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
+		permissionMessage = "You don't have permission to create a public channel."
+	}
+	if !h.pluginAPI.User.HasPermissionToTeam(request.UserId, request.TeamId, permission) {
+		resp := &model.SubmitDialogResponse{
+			Error: permissionMessage,
+		}
+		w.Write(resp.ToJson())
+		return
+	}
+
 	newIncident, err := h.incidentService.CreateIncident(&incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
