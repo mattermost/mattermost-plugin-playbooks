@@ -21,6 +21,11 @@ export interface Incident {
     total_posts: number;
 }
 
+export interface FetchIncidentsReturn {
+    incidents: Incident[];
+    total_count: number;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isIncident(arg: any): arg is Incident {
     const optional = arg.post_id ? typeof arg.post_id === 'string' : true as boolean;
