@@ -247,6 +247,8 @@ func sortHeaders(headers []incident.Header, sortField incident.SortField, order 
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
 	case incident.EndedAt:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].EndedAt > headers[j].EndedAt) }
+	case incident.ByStatus:
+		sortFn = func(i, j int) bool { return orderFn(headers[i].IsActive && !headers[j].IsActive) }
 	}
 
 	sort.Slice(headers, sortFn)

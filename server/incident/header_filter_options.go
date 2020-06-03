@@ -46,6 +46,9 @@ const (
 
 	// EndedAt sorts by the "ended_at" field.
 	EndedAt
+
+	// ByStatus sorts by the "status" field.
+	ByStatus
 )
 
 // HeaderFilterOptions specifies the optional parameters when getting headers.
