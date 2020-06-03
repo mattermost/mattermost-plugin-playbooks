@@ -80,9 +80,11 @@ export function BackstageIncidentList(props: Props) {
 
     function colHeaderClicked(colName: string) {
         if (fetchParams.sort === colName) {
+            // if we're already sorting on this column, reverse the order
             const newOrder = fetchParams.order === 'asc' ? 'desc' : 'asc';
             setFetchParams({...fetchParams, order: newOrder});
         } else {
+            // change to this column, default to descending order
             setFetchParams({...fetchParams, sort: colName, order: 'desc'});
         }
     }
@@ -290,8 +292,8 @@ const endedAt = (isActive: boolean, time: number) => {
     return '--';
 };
 
-const TextWithTooltip = (props: {id: string; text: string; className: string}) => {
-    const [ref, setRefState] = useState<HTMLAnchorElement|null>(null);
+const TextWithTooltip = (props: { id: string; text: string; className: string }) => {
+    const [ref, setRefState] = useState<HTMLAnchorElement | null>(null);
     const setRef = useCallback((node) => {
         setRefState(node);
     }, []);
