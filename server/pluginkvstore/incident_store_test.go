@@ -273,12 +273,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			s := &incidentStore{
 				pluginAPI: kvAPI,
 			}
-			got, _, err := s.GetIncidents(tt.options)
+			got, err := s.GetIncidents(tt.options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetIncidents() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got.Incidents, tt.want) {
 				t.Errorf("GetIncidents() got = %v, want %v", got, tt.want)
 			}
 		})

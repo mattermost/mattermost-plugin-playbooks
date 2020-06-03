@@ -186,21 +186,13 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return h.hasPermissionsToOrPublic(channelID, userID)
 	}
 
-	incidents, totalCount, err := h.incidentService.GetIncidents(*filterOptions)
+	results, err := h.incidentService.GetIncidents(*filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	result := struct {
-		Incidents  []incident.Incident `json:"incidents"`
-		TotalCount int                 `json:"total_count"`
-	}{
-		Incidents:  incidents,
-		TotalCount: totalCount,
-	}
-
-	jsonBytes, err := json.Marshal(result)
+	jsonBytes, err := json.Marshal(results)
 	if err != nil {
 		HandleError(w, err)
 		return

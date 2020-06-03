@@ -152,13 +152,12 @@ func (mr *MockServiceMockRecorder) GetIncidentWithDetails(arg0 interface{}) *gom
 }
 
 // GetIncidents mocks base method
-func (m *MockService) GetIncidents(arg0 incident.HeaderFilterOptions) ([]incident.Incident, int, error) {
+func (m *MockService) GetIncidents(arg0 incident.HeaderFilterOptions) (incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0)
-	ret0, _ := ret[0].([]incident.Incident)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(incident.GetIncidentsResults)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetIncidents indicates an expected call of GetIncidents
