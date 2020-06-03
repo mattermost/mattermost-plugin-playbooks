@@ -8,6 +8,7 @@ import {BackstageArea} from 'src/types/backstage';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
+import {OVERLAY_DELAY} from 'src/utils/constants';
 
 import './rhs_header.scss';
 
@@ -18,8 +19,6 @@ interface Props {
         openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
-
-const OVERLAY_DELAY = 400;
 
 export default function RHSHeader(props: Props) {
     return (

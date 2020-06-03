@@ -1,11 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
-
+import React, {useEffect, useState, useCallback} from 'react';
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
@@ -19,6 +19,7 @@ import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
 
 import './incident_list.scss';
+import {OVERLAY_DELAY} from 'src/utils/constants';
 
 const debounceDelay = 300; // in milliseconds
 
@@ -174,12 +175,13 @@ export function BackstageIncidentList(props: Props) {
                                     key={incident.id}
                                     onClick={() => openIncidentDetails(incident)}
                                 >
-                                    <a className='col-sm-3 incident-item__title'>
-                                        {incident.name}
-                                    </a>
-                                    <div className='col-sm-2'> {
+                                    <TextWithTooltip
+                                        id={incident.id}
+                                        text={incident.name}
+                                        className='col-sm-3 incident-item__title'
+                                    />
+                                    <div className='col-sm-2'>
                                         <StatusBadge isActive={incident.is_active}/>
-                                    }
                                     </div>
                                     <div
                                         className='col-sm-2'
@@ -223,4 +225,34 @@ const endedAt = (isActive: boolean, time: number) => {
         return mom.format('MMM DD LT');
     }
     return '--';
+};
+
+const TextWithTooltip = (props: {id: string; text: string; className: string}) => {
+    const [ref, setRefState] = useState<HTMLAnchorElement|null>(null);
+    const setRef = useCallback((node) => {
+        setRefState(node);
+    }, []);
+
+    const text = (
+        <a
+            ref={setRef}
+            className={props.className}
+        >
+            {props.text}
+        </a>
+    );
+
+    if (ref && ref.offsetWidth < ref.scrollWidth) {
+        return (
+            <OverlayTrigger
+                placement='top'
+                delayShow={OVERLAY_DELAY}
+                overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
+            >
+                {text}
+            </OverlayTrigger>
+        );
+    }
+
+    return text;
 };
