@@ -278,7 +278,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				t.Errorf("GetIncidents() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got.Incidents, tt.want) {
 				t.Errorf("GetIncidents() got = %v, want %v", got, tt.want)
 			}
 		})
