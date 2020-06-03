@@ -40,9 +40,6 @@ const DialogFieldNameKey = "incidentName"
 // DialogFieldPlaybookIDKey is the key for the playbook ID field used in OpenCreateIncidentDialog.
 const DialogFieldPlaybookIDKey = "playbookID"
 
-// DialogFieldIsPublicKey is the key for the public or private field used in OpenCreateIncidentDialog.
-const DialogFieldIsPublicKey = "public"
-
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 	configService config.Service, telemetry Telemetry) *ServiceImpl {
@@ -605,22 +602,6 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
-			},
-			{
-				DisplayName: "Incident Type",
-				Name:        DialogFieldIsPublicKey,
-				Type:        "radio",
-				Default:     "private",
-				Options: []*model.PostActionOptions{
-					{
-						Text:  "Private",
-						Value: "private",
-					},
-					{
-						Text:  "Public",
-						Value: "public",
-					},
-				},
 			},
 			{
 				DisplayName: "Playbook",
