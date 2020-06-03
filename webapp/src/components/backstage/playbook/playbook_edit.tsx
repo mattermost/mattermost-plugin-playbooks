@@ -3,6 +3,8 @@
 
 import React from 'react';
 
+import Toggle from 'src/components/widgets/toggle';
+
 import {Playbook, Checklist, ChecklistItem} from 'src/types/playbook';
 import {savePlaybook} from 'src/client';
 
@@ -25,6 +27,7 @@ interface State{
     newPlaybook: boolean;
     changesMade: boolean;
     confirmOpen: boolean;
+    public: boolean;
 }
 
 export default class PlaybookEdit extends React.PureComponent<Props, State> {
@@ -37,6 +40,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
             newPlaybook: !this.props.playbook.id,
             changesMade: false,
             confirmOpen: false,
+            public: this.props.playbook?.create_public_incident,
         };
     }
 
@@ -45,6 +49,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
             id: this.props.playbook.id,
             title: this.state.title,
             team_id: this.props.currentTeamID,
+            create_public_incident: this.state.public,
             checklists: this.state.checklists,
         };
 
@@ -137,6 +142,13 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
         });
     }
 
+    public handlePublicChange = () => {
+        this.setState({
+            public: !this.state.public,
+            changesMade: true,
+        });
+    }
+
     public render(): JSX.Element {
         const title = this.state.newPlaybook ? 'New Playbook' : 'Edit Playbook';
         const saveDisabled = this.state.title.trim() === '' || !this.state.changesMade;
@@ -176,6 +188,19 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         value={this.state.title}
                         onChange={this.handleTitleChange}
                     />
+                    <div className='public-item'>
+                        <div
+                            className='checkbox-container'
+                        >
+                            <Toggle
+                                toggled={this.state.public}
+                                onToggle={this.handlePublicChange}
+                            />
+                            <label>
+                                {'Create Public Incident'}
+                            </label>
+                        </div>
+                    </div>
                     <div className='checklist-container'>
                         {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
                             <ChecklistDetails

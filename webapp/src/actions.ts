@@ -110,9 +110,9 @@ export function getIncidentsForCurrentTeam() {
 export function getIncidents(teamId?: string) {
     return async (dispatch: Dispatch<AnyAction>) => {
         try {
-            const incidents = await fetchIncidents({team_id: teamId});
+            const incidentsReturn = await fetchIncidents({team_id: teamId});
 
-            dispatch(receivedIncidents(incidents, teamId));
+            dispatch(receivedIncidents(incidentsReturn.incidents, teamId));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }

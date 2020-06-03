@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -42,7 +41,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 	var playbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
-		HandleError(w, fmt.Errorf("unable to decode playbook: %w", err))
+		HandleError(w, errors.Wrapf(err, "unable to decode playbook"))
 		return
 	}
 
@@ -52,7 +51,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to create playbook on teamID %s", userID, playbook.TeamID))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf("userID %s does not have permission to create playbook on teamID %s", userID, playbook.TeamID))
 		return
 	}
 
@@ -81,7 +80,7 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to get playbook on teamID %s", userID, playbook.TeamID))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf("userID %s does not have permission to get playbook on teamID %s", userID, playbook.TeamID))
 		return
 	}
 
@@ -107,7 +106,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, oldPlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to update playbook on teamID %s", userID, oldPlaybook.TeamID))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf("userID %s does not have permission to update playbook on teamID %s", userID, oldPlaybook.TeamID))
 		return
 	}
 
@@ -131,7 +130,7 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookToDelete.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to delete a playbook on teamID %s", userID, playbookToDelete.TeamID))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf("userID %s does not have permission to delete a playbook on teamID %s", userID, playbookToDelete.TeamID))
 		return
 	}
 
@@ -155,7 +154,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("userID %s does not have permission to get playbooks on teamID %s", userID, teamID))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf("userID %s does not have permission to get playbooks on teamID %s", userID, teamID))
 		return
 	}
 

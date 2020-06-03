@@ -1,13 +1,21 @@
 package playbook
 
-import "time"
+import (
+	"time"
+
+	"github.com/pkg/errors"
+)
+
+// ErrNotFound used to indicate entity not found.
+var ErrNotFound = errors.New("not found")
 
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
-	ID         string      `json:"id"`
-	Title      string      `json:"title"`
-	TeamID     string      `json:"team_id"`
-	Checklists []Checklist `json:"checklists"`
+	ID                   string      `json:"id"`
+	Title                string      `json:"title"`
+	TeamID               string      `json:"team_id"`
+	CreatePublicIncident bool        `json:"create_public_incident"`
+	Checklists           []Checklist `json:"checklists"`
 }
 
 // Checklist represents a checklist in a playbook
@@ -26,7 +34,7 @@ type ChecklistItem struct {
 
 // Service is the playbook service for managing playbooks
 type Service interface {
-	// Get retrieves a playbook
+	// Get retrieves a playbook. Returns ErrNotFound if not found.
 	Get(id string) (Playbook, error)
 	// Create creates a new playbook
 	Create(playbook Playbook) (string, error)

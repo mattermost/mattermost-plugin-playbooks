@@ -8,18 +8,18 @@ import {BackstageArea} from 'src/types/backstage';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
+import {OVERLAY_DELAY} from 'src/utils/constants';
 
 import './rhs_header.scss';
 
 interface Props {
     isMobile: boolean;
+    hasPermissionToCreateChannels: boolean;
     actions: {
         startIncident: () => void;
         openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
-
-const OVERLAY_DELAY = 400;
 
 export default function RHSHeader(props: Props) {
     return (
@@ -45,18 +45,21 @@ export default function RHSHeader(props: Props) {
                             </button>
                         </OverlayTrigger>
                     }
-                    <OverlayTrigger
-                        placement='bottom'
-                        delayShow={OVERLAY_DELAY}
-                        overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
-                    >
-                        <button
-                            className='rhs-header-bar__button'
-                            onClick={() => props.actions.startIncident()}
+                    {
+                        props.hasPermissionToCreateChannels &&
+                        <OverlayTrigger
+                            placement='bottom'
+                            delayShow={OVERLAY_DELAY}
+                            overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
                         >
-                            <PlusIcon/>
-                        </button>
-                    </OverlayTrigger>
+                            <button
+                                className='rhs-header-bar__button'
+                                onClick={() => props.actions.startIncident()}
+                            >
+                                <PlusIcon/>
+                            </button>
+                        </OverlayTrigger>
+                    }
                 </div>
             </React.Fragment>
         </div>

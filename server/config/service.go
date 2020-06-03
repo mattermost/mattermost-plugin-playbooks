@@ -1,10 +1,10 @@
 package config
 
 import (
-	"errors"
-	"fmt"
 	"reflect"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -114,7 +114,7 @@ func (c *ServiceImpl) OnConfigurationChange() error {
 
 	// Load the public configuration fields from the Mattermost server configuration.
 	if err := c.api.Configuration.LoadPluginConfiguration(configuration); err != nil {
-		return fmt.Errorf("failed to load plugin configuration: %w", err)
+		return errors.Wrapf(err, "failed to load plugin configuration")
 	}
 
 	configuration.BotUserID = c.configuration.BotUserID

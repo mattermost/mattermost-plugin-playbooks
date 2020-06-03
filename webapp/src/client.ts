@@ -13,7 +13,7 @@ import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
-import {FetchIncidentsParams, Incident} from 'src/types/incident';
+import {FetchIncidentsParams, FetchIncidentsReturn, Incident} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
@@ -25,9 +25,12 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
 
     let data = await doGet(`${apiUrl}/incidents${queryParams}`);
     if (!data) {
-        data = [];
+        data = {incidents: [], total_count: 0};
     }
-    return data as Incident[];
+    if (!data.incidents) {
+        data.incidents = [];
+    }
+    return data as FetchIncidentsReturn;
 }
 
 export function fetchIncident(id: string) {
