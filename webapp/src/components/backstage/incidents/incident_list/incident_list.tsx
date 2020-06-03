@@ -242,7 +242,7 @@ const TextWithTooltip = (props: {id: string; text: string; className: string}) =
         </a>
     );
 
-    if (ref && ref?.offsetWidth < ref?.scrollWidth) {
+    if (ref && ref.offsetWidth < ref.scrollWidth) {
         return (
             <OverlayTrigger
                 placement='top'
