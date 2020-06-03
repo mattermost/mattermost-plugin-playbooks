@@ -56,7 +56,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) (GetIncidentsResults, error) {
+func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(options)
 }
 
