@@ -1,14 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState} from 'react';
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
+import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
@@ -25,7 +25,6 @@ import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
 
 import './incident_list.scss';
-import {OVERLAY_DELAY} from 'src/utils/constants';
 
 const debounceDelay = 300; // in milliseconds
 const PER_PAGE = 15;
@@ -250,32 +249,3 @@ const endedAt = (isActive: boolean, time: number) => {
     return '--';
 };
 
-const TextWithTooltip = (props: {id: string; text: string; className: string}) => {
-    const [ref, setRefState] = useState<HTMLAnchorElement|null>(null);
-    const setRef = useCallback((node) => {
-        setRefState(node);
-    }, []);
-
-    const text = (
-        <a
-            ref={setRef}
-            className={props.className}
-        >
-            {props.text}
-        </a>
-    );
-
-    if (ref && ref.offsetWidth < ref.scrollWidth) {
-        return (
-            <OverlayTrigger
-                placement='top'
-                delayShow={OVERLAY_DELAY}
-                overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
-            >
-                {text}
-            </OverlayTrigger>
-        );
-    }
-
-    return text;
-};

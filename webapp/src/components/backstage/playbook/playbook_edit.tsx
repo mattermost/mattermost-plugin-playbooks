@@ -5,9 +5,9 @@ import React from 'react';
 
 import {Playbook, Checklist, ChecklistItem} from 'src/types/playbook';
 import {savePlaybook} from 'src/client';
-
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {MAX_NAME_LENGTH} from 'src/utils/constants';
 
 import BackIcon from '../../assets/icons/back_icon';
 
@@ -174,6 +174,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         type='text'
                         placeholder='Playbook Name'
                         value={this.state.title}
+                        maxLength={MAX_NAME_LENGTH}
                         onChange={this.handleTitleChange}
                     />
                     <div className='checklist-container'>
