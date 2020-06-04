@@ -240,13 +240,17 @@ func sortHeaders(headers []incident.Header, sortField incident.SortField, order 
 	case incident.ID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
 	case incident.Name:
-		sortFn = func(i, j int) bool { return orderFn(headers[i].Name > headers[j].Name) }
+		sortFn = func(i, j int) bool {
+			return orderFn(strings.ToLower(headers[i].Name) > strings.ToLower(headers[j].Name))
+		}
 	case incident.CommanderUserID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
 	case incident.TeamID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
 	case incident.EndedAt:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].EndedAt > headers[j].EndedAt) }
+	case incident.ByStatus:
+		sortFn = func(i, j int) bool { return orderFn(headers[i].IsActive && !headers[j].IsActive) }
 	}
 
 	sort.Slice(headers, sortFn)

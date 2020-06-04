@@ -593,6 +593,8 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, erro
 		sort = incident.CreatedAt
 	case "ended_at":
 		sort = incident.EndedAt
+	case "status":
+		sort = incident.ByStatus
 	default:
 		return nil, errors.New("bad parameter 'sort'")
 	}

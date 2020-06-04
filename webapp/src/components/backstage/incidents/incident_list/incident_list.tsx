@@ -9,6 +9,7 @@ import {components, ControlProps} from 'react-select';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
+import {SortableColHeader} from 'src/components/backstage/incidents/incident_list/sortable_col_header';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
@@ -45,6 +46,8 @@ export function BackstageIncidentList(props: Props) {
             team_id: props.currentTeamId,
             page: 0,
             per_page: PER_PAGE,
+            sort: 'created_at',
+            order: 'desc',
         },
     );
 
@@ -72,6 +75,22 @@ export function BackstageIncidentList(props: Props) {
 
     function setPage(page: number) {
         setFetchParams({...fetchParams, page});
+    }
+
+    function colHeaderClicked(colName: string) {
+        if (fetchParams.sort === colName) {
+            // we're already sorting on this column; reverse the order
+            const newOrder = fetchParams.order === 'asc' ? 'desc' : 'asc';
+            setFetchParams({...fetchParams, order: newOrder});
+            return;
+        }
+
+        // change to a new column; default to descending for time-based columns, ascending otherwise
+        let newOrder = 'desc';
+        if (['name', 'status'].indexOf(colName) !== -1) {
+            newOrder = 'asc';
+        }
+        setFetchParams({...fetchParams, sort: colName, order: newOrder});
     }
 
     async function fetchCommanders() {
@@ -159,10 +178,38 @@ export function BackstageIncidentList(props: Props) {
                         </div>
                         <div className='Backstage-list-header'>
                             <div className='row'>
-                                <div className='col-sm-3'> {'Name'} </div>
-                                <div className='col-sm-2'> {'Status'} </div>
-                                <div className='col-sm-2'> {'Start Time'} </div>
-                                <div className='col-sm-2'> {'End Time'} </div>
+                                <div className='col-sm-3'>
+                                    <SortableColHeader
+                                        name={'Name'}
+                                        order={fetchParams.order ? fetchParams.order : 'desc'}
+                                        active={fetchParams.sort ? fetchParams.sort === 'name' : false}
+                                        onClick={() => colHeaderClicked('name')}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>
+                                    <SortableColHeader
+                                        name={'Status'}
+                                        order={fetchParams.order ? fetchParams.order : 'desc'}
+                                        active={fetchParams.sort ? fetchParams.sort === 'status' : false}
+                                        onClick={() => colHeaderClicked('status')}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>
+                                    <SortableColHeader
+                                        name={'Start Time'}
+                                        order={fetchParams.order ? fetchParams.order : 'desc'}
+                                        active={fetchParams.sort ? fetchParams.sort === 'created_at' : false}
+                                        onClick={() => colHeaderClicked('created_at')}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>
+                                    <SortableColHeader
+                                        name={'End Time'}
+                                        order={fetchParams.order ? fetchParams.order : 'desc'}
+                                        active={fetchParams.sort ? fetchParams.sort === 'ended_at' : false}
+                                        onClick={() => colHeaderClicked('ended_at')}
+                                    />
+                                </div>
                                 <div className='col-sm-3'> {'Commander'} </div>
                             </div>
                         </div>
