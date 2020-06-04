@@ -14,6 +14,7 @@ import './rhs_header.scss';
 
 interface Props {
     isMobile: boolean;
+    hasPermissionToCreateChannels: boolean;
     actions: {
         startIncident: () => void;
         openBackstageModal: (selectedArea: BackstageArea) => void;
@@ -44,18 +45,21 @@ export default function RHSHeader(props: Props) {
                             </button>
                         </OverlayTrigger>
                     }
-                    <OverlayTrigger
-                        placement='bottom'
-                        delayShow={OVERLAY_DELAY}
-                        overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
-                    >
-                        <button
-                            className='rhs-header-bar__button'
-                            onClick={() => props.actions.startIncident()}
+                    {
+                        props.hasPermissionToCreateChannels &&
+                        <OverlayTrigger
+                            placement='bottom'
+                            delayShow={OVERLAY_DELAY}
+                            overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
                         >
-                            <PlusIcon/>
-                        </button>
-                    </OverlayTrigger>
+                            <button
+                                className='rhs-header-bar__button'
+                                onClick={() => props.actions.startIncident()}
+                            >
+                                <PlusIcon/>
+                            </button>
+                        </OverlayTrigger>
+                    }
                 </div>
             </React.Fragment>
         </div>

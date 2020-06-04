@@ -56,9 +56,10 @@ func TestIncidents(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		withid := playbook.Playbook{
-			ID:     "playbookid1",
-			Title:  "My Playbook",
-			TeamID: "testteamid",
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testteamid",
+			CreatePublicIncident: true,
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -68,7 +69,6 @@ func TestIncidents(t *testing.T) {
 			Submission: map[string]interface{}{
 				incident.DialogFieldNameKey:       "incidentName",
 				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldIsPublicKey:   "public",
 			},
 		}
 
@@ -84,6 +84,7 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
@@ -109,7 +110,6 @@ func TestIncidents(t *testing.T) {
 			Submission: map[string]interface{}{
 				incident.DialogFieldNameKey:       "incidentName",
 				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldIsPublicKey:   "public",
 			},
 		}
 

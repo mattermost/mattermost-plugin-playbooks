@@ -31,16 +31,30 @@ $announcement-bar-height: 32px;
         }
     }
 
+    .public-item {
+        margin-top: 15px;
+    }
+
     .playbook-list {
         padding: 2rem 6rem;
 
         .playbook-item {
+            display: flex;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            align-items: center;
             margin: 0;
-            line-height: 4.8rem;
             border-bottom: 1px solid var(--center-channel-color-16);
 
             &:hover {
                 background: var(--center-channel-color-04);
+            }
+
+            .title {
+                font-weight: 600;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                overflow: hidden;
             }
         }
     }

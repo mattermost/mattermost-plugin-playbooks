@@ -8,6 +8,7 @@ import {newPlaybook, Playbook} from 'src/types/playbook';
 import {deletePlaybook} from 'src/client';
 
 import PlaybookEdit from '../playbook_edit';
+import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import '../playbook.scss';
@@ -136,7 +137,11 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                             className='row playbook-item'
                                             key={p.id}
                                         >
-                                            <div className='col-sm-10'> {p.title} </div>
+                                            <TextWithTooltip
+                                                id={p.title}
+                                                text={p.title}
+                                                className={'col-sm-10 title'}
+                                            />
                                             <div className='col-sm-2'>
                                                 <a onClick={() => this.editPlaybook(p)} >
                                                     {'Edit'}
