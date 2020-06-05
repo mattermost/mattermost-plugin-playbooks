@@ -6,7 +6,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {getPlaybooksForCurrentTeam} from 'src/actions';
 
-import {playbooks} from 'src/selectors';
+import {playbooksForTeam} from 'src/selectors';
 
 import PlaybookList from './playbook_list';
 
@@ -16,7 +16,7 @@ const mapStateToProps = (state: object): object => {
     const currentTeamName = currentTeam.display_name;
 
     return {
-        playbooks: playbooks(state)[currentTeamID] || [],
+        playbooks: playbooksForTeam(state) || [],
         currentTeamName,
         currentTeamID,
     };

@@ -5,6 +5,7 @@ import {createSelector} from 'reselect';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {pluginId} from './manifest';
 import {Incident} from './types/incident';
@@ -40,7 +41,25 @@ export const isLoading = (state: GlobalState) => pluginState(state).isLoading;
 
 export const clientId = (state: GlobalState) => pluginState(state).clientId;
 
-export const playbooks = (state: GlobalState): Playbook[] => pluginState(state).playbooks;
+const playbooks = (state: GlobalState): Record<string, Playbook[]> => {
+    return pluginState(state).playbooks;
+};
+
+export const playbooksForTeam = createSelector(
+    [playbooks, getCurrentTeamId],
+    (pbooks, teamId: string) => {
+        return sortPlaybooksByTitle(pbooks[teamId]);
+    },
+);
+
+const sortPlaybooksByTitle = (pbooks: Playbook[]) => {
+    if (!Array.isArray(pbooks)) {
+        return [];
+    }
+    const newPlaybooks = [...pbooks];
+    newPlaybooks.sort((a, b) => a.title.localeCompare(b.title));
+    return newPlaybooks;
+};
 
 export const backstageModal = (state: GlobalState) => pluginState(state).backstageModal;
 
