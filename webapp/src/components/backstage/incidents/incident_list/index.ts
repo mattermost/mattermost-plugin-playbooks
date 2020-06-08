@@ -29,8 +29,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
             getIncidentWithDetails,
             navigateToTeamPluginUrl,
         }, dispatch),
-    }
+    };
 }
-
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentList));

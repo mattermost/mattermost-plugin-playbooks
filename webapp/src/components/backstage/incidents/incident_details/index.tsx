@@ -2,13 +2,14 @@
 // See LICENSE.txt for license information.
 import {bindActionCreators, Dispatch} from 'redux';
 import {connect} from 'react-redux';
+import {withRouter} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {Incident} from 'src/types/incident';
 
-import {navigateToUrl} from 'src/actions';
+import {navigateToUrl, getIncidentWithDetails} from 'src/actions';
 
 import {incidentDetails, isExportLicensed} from 'src/selectors';
 
@@ -35,9 +36,10 @@ function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
             navigateToUrl,
+            getIncidentWithDetails,
         }, dispatch),
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentDetails);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentDetails));
 

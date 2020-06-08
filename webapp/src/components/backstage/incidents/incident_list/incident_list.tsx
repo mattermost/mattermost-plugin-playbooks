@@ -24,7 +24,6 @@ import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
 
-
 import './incident_list.scss';
 
 const debounceDelay = 300; // in milliseconds
@@ -106,12 +105,11 @@ export function BackstageIncidentList(props: Props) {
     }
 
     async function openIncidentDetails(incident: Incident) {
-        props.actions.getIncidentWithDetails(incident.id);
         props.actions.navigateToTeamPluginUrl(`/incidents/${incident.id}`);
     }
 
     const closeIncidentDetails = () => {
-        props.actions.navigateToTeamPluginUrl(`/incidents`);
+        props.actions.navigateToTeamPluginUrl('/incidents');
     };
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
@@ -246,11 +244,14 @@ export function BackstageIncidentList(props: Props) {
                 />
             </div>
         </div>
-    )
+    );
 
     return (
         <Switch>
-            <Route exact path={props.match.path}>
+            <Route
+                exact={true}
+                path={props.match.path}
+            >
                 {listComponent}
             </Route>
             <Route path={`${props.match.path}/:incidentId`}>

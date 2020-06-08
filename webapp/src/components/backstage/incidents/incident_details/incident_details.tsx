@@ -4,6 +4,7 @@
 import React from 'react';
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {RouteComponentProps} from 'react-router-dom';
 
 import {exportChannelUrl} from 'src/client';
 import {Incident} from 'src/types/incident';
@@ -17,7 +18,7 @@ import ChecklistTimeline from './checklist_timeline';
 
 import './incident_details.scss';
 
-interface Props {
+interface Props extends RouteComponentProps {
     incident: Incident;
     involvedInIncident: boolean;
     exportAvailable: boolean;
@@ -25,6 +26,7 @@ interface Props {
     theme: Record<string, string>;
     onClose: () => void;
     actions: {
+        getIncidentWithDetails: (id: String) => void;
         navigateToUrl: (urlPath: string) => void;
     };
 }
@@ -41,6 +43,11 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             showBanner: false,
         };
     }
+
+    componentDidMount() {
+        this.props.actions.getIncidentWithDetails(this.props.match.params.incidentId);
+    }
+
     public timeFrameText = () => {
         const mom = moment.unix(this.props.incident.ended_at);
 

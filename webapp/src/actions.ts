@@ -104,16 +104,8 @@ export function getIncidentWithDetails(id: String) {
         try {
             const incident = await fetchIncidentWithDetails(id) as Incident;
             dispatch(receivedIncidentDetails(incident));
-            return
-        }
-        catch {
-        }
-
-        try {
-            const incident = await fetchIncident(id) as Incident;
-        }
-        catch (error) {
-            dispatch(receivedError(error));
+        } catch {
+            dispatch(getIncident(id));
         }
     };
 }
