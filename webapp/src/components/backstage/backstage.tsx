@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import {CSSTransition} from 'react-transition-group';
 
 import classNames from 'classnames';
@@ -24,6 +24,16 @@ interface Props {
 }
 
 const Backstage = ({onBack, selectedArea, navigateToTeamPluginUrl, currentTeamId, currentTeamName}: Props): React.ReactElement<Props> => {
+    useEffect(() => {
+        // This class, critical for all the styling to work, is added by ChannelController,
+        // which is not loaded when rendering this root component.
+        document.body.classList.add('app__body');
+
+        return function cleanUp() {
+            document.body.classList.remove('app__body');
+        };
+    }, []);
+
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
         activeArea = (
