@@ -181,6 +181,7 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                 </div>
                 <div className='playbook-fields'>
                     <input
+                        autoFocus={true}
                         id={'playbook-name'}
                         className='form-control input-name'
                         type='text'
