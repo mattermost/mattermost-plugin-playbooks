@@ -46,6 +46,15 @@ function rhsOpen(state = false, action) {
     }
 }
 
+function incidentsTeamId(state = '', action) {
+    switch (action.type) {
+    case RECEIVED_INCIDENTS:
+        return action.teamId;
+    default:
+        return state;
+    }
+}
+
 function incidents(state = [], action) {
     switch (action.type) {
     case RECEIVED_INCIDENTS:
@@ -144,4 +153,5 @@ export default combineReducers({
     clientId,
     playbooks,
     backstageModal,
+    incidentsTeamId,
 });

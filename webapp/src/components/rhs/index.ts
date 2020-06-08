@@ -16,15 +16,18 @@ import {
 } from 'src/actions';
 
 import {activeIncidents, incidentDetails, rhsState, isLoading} from 'src/selectors';
+import {RHSState} from 'types/rhs';
 
 import RightHandSidebar from './rhs_main';
 
 function mapStateToProps(state: GlobalState) {
+    const incident = incidentDetails(state);
+    const currentRHSState = rhsState(state);
     return {
         incidents: activeIncidents(state) || [],
-        incident: incidentDetails(state),
-        rhsState: rhsState(state),
-        isLoading: isLoading(state),
+        incident,
+        rhsState: currentRHSState,
+        isLoading: isLoading(state) || ((!incident || !incident.id) && currentRHSState === RHSState.Details),
     };
 }
 
