@@ -1,4 +1,3 @@
-
 import {Action, Store} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
@@ -6,11 +5,16 @@ import {generateId} from 'mattermost-redux/utils/helpers';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {toggleRHS, setRHSState, getIncident, withLoading, getIncidentsForCurrentTeam, setClientId} from 'src/actions';
+import {
+    toggleRHS,
+    setRHSState,
+    getIncident,
+    withLoading,
+    getIncidentsForCurrentTeam,
+    setClientId,
+} from 'src/actions';
 import {rhsOpen, activeIncidents, incidentDetails, incidentsTeamId} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
-
-import {setClientId, setRHSState} from './actions';
 
 export interface Hooks {
     store: Store<object, Action<any>>;
@@ -25,6 +29,7 @@ export class Hooks {
         this.store.subscribe(this.openCurrentIncidentRHS);
         this.currentChannelId = '';
         this.currentTeamId = '';
+
         this.store.subscribe(this.newTeamHook);
         this.currentTeamIdForNewTeamHook = '';
     }
