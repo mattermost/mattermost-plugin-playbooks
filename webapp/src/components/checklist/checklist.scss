@@ -43,12 +43,7 @@ $font-family: Open Sans;
         }
     }
 
-    > a {
-        padding: 2px 0px 0px 0px;
-        font-family: $font-family;
-        font-style: normal;
-        font-weight: normal;
-        line-height: 20px;
+    a {
         color: #3d3c40 !important;
     }
 
@@ -108,5 +103,6 @@ $font-family: Open Sans;
     label {
         padding: 0 8px 0 32px;
         font-weight: normal;
+        word-break: break-word;
     }
 }

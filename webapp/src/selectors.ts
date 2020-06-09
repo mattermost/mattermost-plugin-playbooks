@@ -13,6 +13,7 @@ import {Playbook} from './types/playbook';
 
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 const allIncidents = (state: GlobalState) => pluginState(state).incidents;
+export const incidentsTeamId = (state: GlobalState) => pluginState(state).incidentsTeamId;
 
 export const activeIncidents = createSelector(allIncidents,
     (incidents) => {

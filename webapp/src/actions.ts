@@ -112,7 +112,7 @@ export function getIncidents(teamId?: string) {
         try {
             const incidentsReturn = await fetchIncidents({team_id: teamId});
 
-            dispatch(receivedIncidents(incidentsReturn.incidents));
+            dispatch(receivedIncidents(incidentsReturn.incidents, teamId));
         } catch (error) {
             console.error(error); //eslint-disable-line no-console
         }
@@ -226,10 +226,11 @@ export function setRHSOpen(open: boolean): SetRHSOpen {
     };
 }
 
-function receivedIncidents(incidents: Incident[]): ReceivedIncidents {
+function receivedIncidents(incidents: Incident[], teamId?: string): ReceivedIncidents {
     return {
         type: RECEIVED_INCIDENTS,
         incidents,
+        teamId,
     };
 }
 
