@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -21,6 +22,14 @@ const (
 )
 
 type idHeaderMap map[string]incident.Header
+
+func (i *idHeaderMap) clone() idHeaderMap {
+	newMap := make(idHeaderMap, len(*i))
+	for k, v := range *i {
+		newMap[k] = v
+	}
+	return newMap
+}
 
 // Ensure incidentStore implements the incident.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
@@ -210,21 +219,22 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 }
 
 func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
-	headers, err := s.getIDHeaders()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get all headers")
+	for i := 0; i < setRetries; i++ {
+		headers, err := s.getIDHeaders()
+		if err != nil {
+			return errors.Wrapf(err, "failed to get all headers")
+		}
+
+		newHeaders := headers.clone()
+		newHeaders[incdnt.ID] = incdnt.Header
+
+		if saved, err := s.pluginAPI.Set(allHeadersKey, newHeaders, pluginapi.SetAtomic(&headers)); err != nil {
+			return errors.Wrapf(err, "failed to set all headers value")
+		} else if saved {
+			return nil
+		}
 	}
-
-	headers[incdnt.ID] = incdnt.Header
-
-	// TODO: Should be using CompareAndSet, but deep copy is expensive.
-	if saved, err := s.pluginAPI.Set(allHeadersKey, headers); err != nil {
-		return errors.Wrapf(err, "failed to set all headers value")
-	} else if !saved {
-		return errors.New("failed to set all headers value")
-	}
-
-	return nil
+	return errors.New("failed to set all headers value, pluginAPI.Set return false too many times")
 }
 
 func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {
