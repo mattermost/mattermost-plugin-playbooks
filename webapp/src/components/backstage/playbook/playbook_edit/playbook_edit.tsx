@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {RouteComponentProps} from 'react-router-dom';
 
 import Toggle from 'src/components/widgets/toggle';
 
@@ -11,20 +12,23 @@ import {ChecklistDetails} from 'src/components/checklist/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {MAX_NAME_LENGTH} from 'src/utils/constants';
 
-import BackIcon from '../../assets/icons/back_icon';
+import BackIcon from 'src/components/assets/icons/back_icon';
 
-import './playbook.scss';
+import '../playbook.scss';
 
-interface Props {
+interface Props extends RouteComponentProps {
     playbook: Playbook;
+    newPlaybook: boolean;
     currentTeamID: string;
     onClose: () => void;
+    actions: {
+        getPlaybook: (playbookId: String) => void;
+    };
 }
 
 interface State{
     title: string;
     checklists: Checklist[];
-    newPlaybook: boolean;
     changesMade: boolean;
     confirmOpen: boolean;
     public: boolean;
@@ -37,11 +41,26 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
         this.state = {
             title: this.props.playbook?.title,
             checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
-            newPlaybook: !this.props.playbook.id,
             changesMade: false,
             confirmOpen: false,
             public: this.props.playbook?.create_public_incident,
         };
+    }
+
+    componentDidMount() {
+        if (!this.props.newPlaybook && !this.props.playbook.id) {
+            this.props.actions.getPlaybook(this.props.match.params.playbookId);
+        }
+    }
+
+    componentDidUpdate(prevProps) {
+        if (this.props.playbook.id !== prevProps.playbook.id) {
+            this.setState({
+                title: this.props.playbook.title,
+                checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
+                public: this.props.playbook?.create_public_incident,
+            });
+        }
     }
 
     public onSave = async () => {
@@ -150,7 +169,13 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const title = this.state.newPlaybook ? 'New Playbook' : 'Edit Playbook';
+        let title = 'Playbook undefined';
+        if (this.props.newPlaybook) {
+            title = 'New Playbook';
+        } else if (this.props.playbook.id) {
+            title = 'Edit Playbook';
+        }
+
         const saveDisabled = this.state.title.trim() === '' || !this.state.changesMade;
 
         return (
@@ -163,69 +188,75 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                         />
                         {title}
                     </div>
-                    <div className='header-button-div'>
-                        <button
-                            className='btn btn-link mr-2'
-                            onClick={this.confirmOrClose}
-                        >
-                            {'Cancel'}
-                        </button>
-                        <button
-                            className='btn btn-primary'
-                            disabled={saveDisabled}
-                            onClick={this.onSave}
-                        >
-                            {'Save Playbook'}
-                        </button>
-                    </div>
+                    {
+                        (this.props.newPlaybook || (!this.props.newPlaybook && this.props.playbook.id)) &&
+                        <div className='header-button-div'>
+                            <button
+                                className='btn btn-link mr-2'
+                                onClick={this.confirmOrClose}
+                            >
+                                {'Cancel'}
+                            </button>
+                            <button
+                                className='btn btn-primary'
+                                disabled={saveDisabled}
+                                onClick={this.onSave}
+                            >
+                                {'Save Playbook'}
+                            </button>
+                        </div>
+                    }
                 </div>
-                <div className='playbook-fields'>
-                    <input
-                        autoFocus={true}
-                        id={'playbook-name'}
-                        className='form-control input-name'
-                        type='text'
-                        placeholder='Playbook Name'
-                        value={this.state.title}
-                        maxLength={MAX_NAME_LENGTH}
-                        onChange={this.handleTitleChange}
-                    />
-                    <div className='public-item'>
-                        <div
-                            className='checkbox-container'
-                        >
-                            <Toggle
-                                toggled={this.state.public}
-                                onToggle={this.handlePublicChange}
-                            />
-                            <label>
-                                {'Create Public Incident'}
-                            </label>
+                {
+                    (this.props.newPlaybook || (!this.props.newPlaybook && this.props.playbook.id)) &&
+                    <div className='playbook-fields'>
+                        <input
+                            autoFocus={true}
+                            id={'playbook-name'}
+                            className='form-control input-name'
+                            type='text'
+                            placeholder='Playbook Name'
+                            value={this.state.title}
+                            maxLength={MAX_NAME_LENGTH}
+                            onChange={this.handleTitleChange}
+                        />
+                        <div className='public-item'>
+                            <div
+                                className='checkbox-container'
+                            >
+                                <Toggle
+                                    toggled={this.state.public}
+                                    onToggle={this.handlePublicChange}
+                                />
+                                <label>
+                                    {'Create Public Incident'}
+                                </label>
+                            </div>
+                        </div>
+                        <div className='checklist-container'>
+                            {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
+                                <ChecklistDetails
+                                    checklist={checklist}
+                                    enableEdit={true}
+                                    key={checklist.title + checklistIndex}
+
+                                    addItem={(checklistItem: ChecklistItem) => {
+                                        this.onAddItem(checklistItem, checklistIndex);
+                                    }}
+                                    removeItem={(chceklistItemIndex: number) => {
+                                        this.onDeleteItem(chceklistItemIndex, checklistIndex);
+                                    }}
+                                    editItem={(checklistItemIndex: number, newTitle: string) => {
+                                        this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
+                                    }}
+                                    reorderItems={(checklistItemIndex: number, newPosition: number) => {
+                                        this.onReorderItem(checklistItemIndex, newPosition, checklistIndex);
+                                    }}
+                                />
+                            ))}
                         </div>
                     </div>
-                    <div className='checklist-container'>
-                        {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
-                            <ChecklistDetails
-                                checklist={checklist}
-                                enableEdit={true}
-                                key={checklist.title + checklistIndex}
-
-                                addItem={(checklistItem: ChecklistItem) => {
-                                    this.onAddItem(checklistItem, checklistIndex);
-                                }}
-                                removeItem={(chceklistItemIndex: number) => {
-                                    this.onDeleteItem(chceklistItemIndex, checklistIndex);
-                                }}
-                                editItem={(checklistItemIndex: number, newTitle: string) => {
-                                    this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
-                                }}
-                                reorderItems={(checklistItemIndex: number, newPosition: number) => {
-                                    this.onReorderItem(checklistItemIndex, newPosition, checklistIndex);
-                                }}
-                            />
-                        ))}
-                    </div>
-                </div>
+                }
                 <ConfirmModal
                     show={this.state.confirmOpen}
                     title={'Confirm discard'}

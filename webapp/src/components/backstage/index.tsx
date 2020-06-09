@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {setBackstage, historyBack, navigateToTeamPluginUrl} from 'src/actions';
+import {setBackstage, navigateToUrl, navigateToTeamPluginUrl} from 'src/actions';
 import {backstage} from 'src/selectors';
 import {BackstageArea} from 'src/types/backstage';
 
@@ -16,13 +16,14 @@ const mapStateToProps = (state: object, ownProps): object => {
     return {
         selectedArea: ownProps.selectedArea || backstage(state).selectedArea,
         currentTeamId: currentTeam.id,
-        currentTeamName: currentTeam.display_name,
+        currentTeamName: currentTeam.name,
+        currentTeamDisplayName: currentTeam.display_name,
     };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch): object =>
     bindActionCreators({
-        onBack: () => historyBack(),
+        navigateToUrl,
         navigateToTeamPluginUrl,
     }, dispatch);
 

@@ -15,15 +15,15 @@ import './backstage.scss';
 import Waves from '../assets/waves';
 
 interface Props {
-    onBack: () => void;
     selectedArea: BackstageArea;
     currentTeamId: string;
-    currentTeamName: string;
+    currentTeamDisplayName: string;
+    navigateToUrl: (urlPath: String) => void;
     navigateToTeamPluginUrl: (urlPath: String) => void;
     theme: Record<string, string>;
 }
 
-const Backstage = ({onBack, selectedArea, navigateToTeamPluginUrl, currentTeamId, currentTeamName}: Props): React.ReactElement<Props> => {
+const Backstage = ({selectedArea, navigateToUrl, navigateToTeamPluginUrl, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -34,12 +34,16 @@ const Backstage = ({onBack, selectedArea, navigateToTeamPluginUrl, currentTeamId
         };
     }, []);
 
+    const onBack = () => {
+        navigateToUrl(`/${currentTeamName}`);
+    };
+
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
         activeArea = (
             <BackstageIncidentList
                 currentTeamId={currentTeamId}
-                currentTeamName={currentTeamName}
+                currentTeamDisplayName={currentTeamDisplayName}
             />
         );
     }

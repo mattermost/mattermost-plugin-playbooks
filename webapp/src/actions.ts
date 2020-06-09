@@ -63,6 +63,7 @@ import {
     clientRemoveChecklistItem,
     clientRenameChecklistItem,
     clientReorderChecklist,
+    clientFetchPlaybook,
     clientFetchPlaybooks,
     fetchIncidentWithDetails,
 } from './client';
@@ -167,6 +168,17 @@ export function getPlaybooksForTeam(teamID: string) {
 export function getPlaybooksForCurrentTeam() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         dispatch(getPlaybooksForTeam(getCurrentTeamId(getState())));
+    };
+}
+
+export function getPlaybook(playbookID: string) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        try {
+            const playbook = await clientFetchPlaybook(playbookID);
+            dispatch(receivedPlaybook(playbook));
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
     };
 }
 
@@ -356,11 +368,5 @@ export function navigateToTeamPluginUrl(urlPath: string) {
         }
         const team = getCurrentTeam(getState());
         WebappUtils.browserHistory.push(`/${team.name}/${pluginId}/` + cleanPath);
-    };
-}
-
-export function historyBack() {
-    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        WebappUtils.browserHistory.goBack();
     };
 }

@@ -1,10 +1,11 @@
 import {bindActionCreators, Dispatch} from 'redux';
 
 import {connect} from 'react-redux';
+import {withRouter} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {getPlaybooksForCurrentTeam} from 'src/actions';
+import {getPlaybooksForCurrentTeam, navigateToTeamPluginUrl} from 'src/actions';
 
 import {playbooksForTeam} from 'src/selectors';
 
@@ -25,8 +26,9 @@ const mapDispatchToProps = (dispatch: Dispatch): object => {
     return {
         actions: bindActionCreators({
             getPlaybooksForCurrentTeam,
+            navigateToTeamPluginUrl,
         }, dispatch),
     };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(PlaybookList);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PlaybookList));
