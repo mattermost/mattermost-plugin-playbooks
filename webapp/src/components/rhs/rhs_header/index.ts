@@ -13,7 +13,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {isMobile} from 'src/utils/utils';
 import {
     startIncident,
-    setBackstageModal,
+    navigateToTeamPluginUrl,
 } from 'src/actions';
 
 import {BackstageArea} from 'src/types/backstage';
@@ -45,7 +45,7 @@ function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
             startIncident,
-            openBackstageModal: (selectedArea: BackstageArea) => setBackstageModal(true, selectedArea),
+            navigateToTeamPluginUrl,
         }, dispatch),
     };
 }

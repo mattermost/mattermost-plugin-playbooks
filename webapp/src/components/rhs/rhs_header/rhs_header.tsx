@@ -17,7 +17,7 @@ interface Props {
     hasPermissionToCreateChannels: boolean;
     actions: {
         startIncident: () => void;
-        openBackstageModal: (selectedArea: BackstageArea) => void;
+        navigateToTeamPluginUrl: () => void;
     };
 }
 
@@ -39,7 +39,7 @@ export default function RHSHeader(props: Props) {
                         >
                             <button
                                 className='rhs-header-bar__button'
-                                onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+                                onClick={() => props.actions.navigateToTeamPluginUrl('/playbooks')}
                             >
                                 <PlaybookIcon/>
                             </button>

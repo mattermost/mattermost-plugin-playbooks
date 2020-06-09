@@ -6,7 +6,7 @@ import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {generateId} from 'mattermost-redux/utils/helpers';
 
@@ -16,7 +16,8 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {ChecklistItem} from 'src/types/playbook';
-import {selectToggleRHS, backstageModal} from 'src/selectors';
+import {selectToggleRHS, backstage} from 'src/selectors';
+import {pluginId} from 'src/manifest';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -39,8 +40,8 @@ import {
     SetLoading,
     SetClientId,
     ReceivedPlaybooks,
-    SetBackstageModalSettings,
-    SET_BACKSTAGE_MODAL_SETTINGS,
+    SetBackstageSettings,
+    SET_BACKSTAGE_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
@@ -316,10 +317,9 @@ export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
     };
 }
 
-export function setBackstageModal(open: boolean, selectedArea?: BackstageArea): SetBackstageModalSettings {
+export function setBackstage(selectedArea?: BackstageArea): SetBackstageSettings {
     return {
-        type: SET_BACKSTAGE_MODAL_SETTINGS,
-        open,
+        type: SET_BACKSTAGE_SETTINGS,
         selectedArea,
     };
 }
@@ -333,9 +333,22 @@ export function toggleRHS() {
 export function navigateToUrl(urlPath: string) {
     return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         WebappUtils.browserHistory.push(urlPath);
+    };
+}
 
-        if (backstageModal(getState()).open) {
-            dispatch(setBackstageModal(false));
+export function navigateToTeamPluginUrl(urlPath: string) {
+    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        let cleanPath = urlPath;
+        while (cleanPath.startsWith('/')) {
+            cleanPath = cleanPath.substr(1);
         }
+        const team = getCurrentTeam(getState());
+        WebappUtils.browserHistory.push(`/${team.name}/${pluginId}/` + cleanPath);
+    };
+}
+
+export function historyBack() {
+    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        WebappUtils.browserHistory.goBack();
     };
 }

@@ -16,12 +16,12 @@ import IncidentIcon from './components/assets/icons/incident_icon';
 import RightHandSidebar from './components/rhs';
 import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
-import BackstageModal from './components/backstage/backstage_modal';
+import Backstage from './components/backstage';
 
 import {Hooks} from './hooks';
 import {
     setToggleRHSAction,
-    setBackstageModal,
+    navigateToTeamPluginUrl,
 } from './actions';
 import reducer from './reducer';
 import {BackstageArea} from './types/backstage';
@@ -53,7 +53,7 @@ export default class Plugin {
             } else if (!mainMenuActionId && !isMobile()) {
                 mainMenuActionId = registry.registerMainMenuAction(
                     'Incidents & Playbooks',
-                    () => store.dispatch(setBackstageModal(true, BackstageArea.Incidents)),
+                    () => store.dispatch(navigateToTeamPluginUrl('/incidents')),
                 );
             }
         };
