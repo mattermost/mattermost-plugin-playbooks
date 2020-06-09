@@ -1,6 +1,7 @@
 package pluginkvstore
 
 import (
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
@@ -12,6 +13,8 @@ const (
 	PlaybookKey = keyVersionPrefix + "playbook_"
 	// IndexKey is the key for the playbook index. Only exported for testing.
 	IndexKey = keyVersionPrefix + "playbookindex"
+
+	setRetries = 5
 )
 
 // PlaybookStore is a kvs store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
@@ -49,48 +52,48 @@ func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 }
 
 func (p *PlaybookStore) addToIndex(playbookID string) error {
-	index, err := p.getIndex()
-	if err != nil {
-		return err
+	for i := 0; i < setRetries; i++ {
+		index, err := p.getIndex()
+		if err != nil {
+			return err
+		}
+
+		newIndex := index.clone()
+		newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookID)
+
+		saved, err := p.kvAPI.Set(IndexKey, &newIndex, pluginapi.SetAtomic(&index))
+		if err != nil {
+			return errors.Wrapf(err, "unable to add playbook to index")
+		} else if saved {
+			return nil
+		}
 	}
-
-	newIndex := index.clone()
-	newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookID)
-
-	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(IndexKey, &newIndex) //, pluginapi.SetAtomic(&index))
-	if err != nil {
-		return errors.Wrapf(err, "unable to add playbook to index")
-	} else if !saved {
-		return errors.New("unable add playbook to index KV Set didn't save")
-	}
-
-	return nil
+	return errors.New("unable add playbook to index, kvAPI.Set returned false too many times")
 }
 
 func (p *PlaybookStore) removeFromIndex(playbookid string) error {
-	index, err := p.getIndex()
-	if err != nil {
-		return err
-	}
+	for i := 0; i < setRetries; i++ {
+		index, err := p.getIndex()
+		if err != nil {
+			return err
+		}
 
-	newIndex := index.clone()
-	for i := range newIndex.PlaybookIDs {
-		if newIndex.PlaybookIDs[i] == playbookid {
-			newIndex.PlaybookIDs = append(newIndex.PlaybookIDs[:i], newIndex.PlaybookIDs[i+1:]...)
-			break
+		newIndex := index.clone()
+		for i := range newIndex.PlaybookIDs {
+			if newIndex.PlaybookIDs[i] == playbookid {
+				newIndex.PlaybookIDs = append(newIndex.PlaybookIDs[:i], newIndex.PlaybookIDs[i+1:]...)
+				break
+			}
+		}
+
+		saved, err := p.kvAPI.Set(IndexKey, &newIndex, pluginapi.SetAtomic(&index))
+		if err != nil {
+			return errors.Wrapf(err, "unable to remove playbook from index")
+		} else if saved {
+			return nil
 		}
 	}
-
-	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(IndexKey, &newIndex) //, pluginapi.SetAtomic(&index))
-	if err != nil {
-		return errors.Wrapf(err, "unable to add playbook to index")
-	} else if !saved {
-		return errors.New("unable add playbook to index KV Set didn't save")
-	}
-
-	return nil
+	return errors.New("unable remove playbook from index, kvAPI.Set returned false too many times")
 }
 
 // Create creates a new playbook
@@ -158,17 +161,27 @@ func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 		return errors.New("updating playbook without ID")
 	}
 
-	saved, err := p.kvAPI.Set(PlaybookKey+updated.ID, &updated)
-	if err != nil {
-		return errors.Wrapf(err, "unable to update playbook in KV store")
-	} else if !saved {
-		return errors.New("unable to update playbook in KV store, KV Set didn't save")
-	}
+	for i := 0; i < setRetries; i++ {
+		old, err := p.Get(updated.ID)
+		if err != nil {
+			return errors.Wrap(err, "could not get previous playbook when updating")
+		}
 
-	return nil
+		saved, err := p.kvAPI.Set(PlaybookKey+updated.ID, &updated, pluginapi.SetAtomic(&old))
+		if err != nil {
+			return errors.Wrapf(err, "unable to update playbook in KV store")
+		} else if saved {
+			return nil
+		}
+	}
+	return errors.New("unable to update playbook in KV store, kvAPI.Set returned false too many times")
 }
 
-// Delete deletes a playbook
+// Delete deletes a playbook. We do not mind if there is contention: if the playbook
+// is successfully removed from the index (which p.removeFromIndex guarantees), it's okay if:
+// 1. the playbook is deleted twice, or
+// 2. the playbook is updated in between removeFromIndex and the delete: if first updated,
+//    the playbook will still be deleted; if first deleted then the update will fail.
 func (p *PlaybookStore) Delete(id string) error {
 	if err := p.removeFromIndex(id); err != nil {
 		return err
