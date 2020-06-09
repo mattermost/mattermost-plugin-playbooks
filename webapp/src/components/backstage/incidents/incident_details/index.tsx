@@ -10,21 +10,20 @@ import {Incident} from 'src/types/incident';
 
 import {navigateToUrl} from 'src/actions';
 
-import {isExportLicensed} from 'src/selectors';
+import {incidentDetails, isExportLicensed} from 'src/selectors';
 
 import BackstageIncidentDetails from './incident_details';
 
-type Props = {
-    incident: Incident;
-}
-
-function mapStateToProps(state: GlobalState, ownProps: Props) {
+function mapStateToProps(state: GlobalState) {
     const isExportPluginLoaded = Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']);
 
+    const incident = incidentDetails(state);
+
     // Determine if involved in incident by checking if full details fetched.
-    const involvedInIncident = Boolean(ownProps.incident.channel_name);
+    const involvedInIncident = Boolean(incident.channel_name);
 
     return {
+        incident,
         involvedInIncident,
         exportAvailable: isExportPluginLoaded,
         exportLicensed: isExportLicensed(state),

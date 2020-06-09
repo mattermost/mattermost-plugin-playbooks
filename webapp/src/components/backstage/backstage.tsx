@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {CSSTransition} from 'react-transition-group';
 
 import classNames from 'classnames';
 
@@ -18,11 +19,11 @@ interface Props {
     selectedArea: BackstageArea;
     currentTeamId: string;
     currentTeamName: string;
-    setSelectedArea: (area: BackstageArea) => void;
+    navigateToTeamPluginUrl: (urlPath: String) => void;
     theme: Record<string, string>;
 }
 
-const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, currentTeamName}: Props): React.ReactElement<Props> => {
+const Backstage = ({onBack, selectedArea, navigateToTeamPluginUrl, currentTeamId, currentTeamName}: Props): React.ReactElement<Props> => {
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
         activeArea = (
@@ -51,13 +52,13 @@ const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, curren
                     </div>*/}
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
-                        onClick={() => setSelectedArea(BackstageArea.Incidents)}
+                        onClick={() => navigateToTeamPluginUrl('/incidents')}
                     >
                         {'Incidents'}
                     </div>
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
-                        onClick={() => setSelectedArea(BackstageArea.Playbooks)}
+                        onClick={() => navigateToTeamPluginUrl('/playbooks')}
                     >
                         {'Playbooks'}
                     </div>

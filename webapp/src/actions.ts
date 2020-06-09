@@ -64,6 +64,7 @@ import {
     clientRenameChecklistItem,
     clientReorderChecklist,
     clientFetchPlaybooks,
+    fetchIncidentWithDetails,
 } from './client';
 
 // @ts-ignore
@@ -93,6 +94,25 @@ export function getIncident(id: string) {
 
             dispatch(receivedIncidentDetails(incident));
         } catch (error) {
+            dispatch(receivedError(error));
+        }
+    };
+}
+
+export function getIncidentWithDetails(id: String) {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        try {
+            const incident = await fetchIncidentWithDetails(id) as Incident;
+            dispatch(receivedIncidentDetails(incident));
+            return
+        }
+        catch {
+        }
+
+        try {
+            const incident = await fetchIncident(id) as Incident;
+        }
+        catch (error) {
             dispatch(receivedError(error));
         }
     };

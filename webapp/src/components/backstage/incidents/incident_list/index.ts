@@ -2,9 +2,13 @@
 // See LICENSE.txt for license information.
 
 import {connect} from 'react-redux';
+import {bindActionCreators, Dispatch} from 'redux';
+import {withRouter} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
+
+import {getIncidentWithDetails, navigateToTeamPluginUrl} from 'src/actions';
 
 import {BackstageIncidentList} from './incident_list';
 
@@ -19,4 +23,14 @@ function mapStateToProps(state: GlobalState, props: Props) {
     };
 }
 
-export default connect(mapStateToProps, null)(BackstageIncidentList);
+function mapDispatchToProps(dispatch: Dispatch) {
+    return {
+        actions: bindActionCreators({
+            getIncidentWithDetails,
+            navigateToTeamPluginUrl,
+        }, dispatch),
+    }
+}
+
+
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentList));
