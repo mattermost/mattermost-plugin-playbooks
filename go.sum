@@ -296,8 +296,6 @@ github.com/mattermost/gosaml2 v0.3.2/go.mod h1:Z429EIOiEi9kbq6yHoApfzlcXpa6dzRDc
 github.com/mattermost/ldap v0.0.0-20191128190019-9f62ba4b8d4d/go.mod h1:HLbgMEI5K131jpxGazJ97AxfPDt31osq36YS1oxFQPQ=
 github.com/mattermost/ldap v3.0.4+incompatible h1:SOeNnz+JNR+foQ3yHkYqijb9MLPhXN2BZP/PdX23VDU=
 github.com/mattermost/ldap v3.0.4+incompatible/go.mod h1:b4reDCcGpBxJ4WX0f224KFY+OR0npin7or7EFpeIko4=
-github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200423151631-d6f334d539a1 h1:nhEPnvuk3ZKshW4tuGKXM0/pJQhtNvlMNXh4aseKr5w=
-github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200423151631-d6f334d539a1/go.mod h1:hAJhL1GSGZO8EEIUo2t14m+cS/PSRCFEK3d8NUUTaGg=
 github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200602123139-fc81b1d7ce2e h1:VW0ZiXHq9VR1zjTV2mORsi2Rb29YCyNkRMeYxFXlcaw=
 github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200602123139-fc81b1d7ce2e/go.mod h1:AbEAVCDV5/KUUkiEHmKJgAO9nOxbk1J42nKkHiTCPPk=
 github.com/mattermost/mattermost-server/v5 v5.21.0 h1:cu5XP+AQF7D+hmo00Tm2l/eH658mLpMv3SgX/pwyigE=
@@ -423,6 +421,7 @@ github.com/prometheus/procfs v0.0.2/go.mod h1:TjEm7ze935MbeOT/UhFTIMYKhuLP4wbCsT
 github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/procfs v0.0.8/go.mod h1:7Qr8sr6344vo1JqZ6HhLceV9o3AJ1Ff+GxbHq6oeK9A=
+github.com/proullon/ramsql v0.0.0-20181213202341-817cee58a244 h1:fdX2U+a2Rmc4BjRYcOKzjYXtYTE4ga1B2lb8i7BlefU=
 github.com/proullon/ramsql v0.0.0-20181213202341-817cee58a244/go.mod h1:jG8oAQG0ZPHPyxg5QlMERS31airDC+ZuqiAe8DUvFVo=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
