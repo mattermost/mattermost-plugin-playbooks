@@ -149,14 +149,23 @@ export function BackstageIncidentList(props: Props) {
             {!selectedIncident && (
                 <div className='IncidentList'>
                     <div className='Backstage__header'>
-                        <div className='title'>
+                        <div
+                            className='title'
+                            data-testid='titleIncident'
+                        >
                             {'Incidents'}
-                            <div className='light'>
+                            <div
+                                className='light'
+                                data-testid='titleTeamName'
+                            >
                                 {'(' + props.currentTeamName + ')'}
                             </div>
                         </div>
                     </div>
-                    <div className='list'>
+                    <div
+                        id='incidentList'
+                        className='list'
+                    >
                         <div className='IncidentList__filters'>
                             <SearchInput
                                 default={fetchParams.search_term}

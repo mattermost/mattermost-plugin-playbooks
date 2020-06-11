@@ -50,12 +50,14 @@ const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, curren
                         {'Dashboard'}
                     </div>*/}
                     <div
+                        data-testid='incidentsLHSButton'
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
                         onClick={() => setSelectedArea(BackstageArea.Incidents)}
                     >
                         {'Incidents'}
                     </div>
                     <div
+                        data-testid='playbooksLHSButton'
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
                         onClick={() => setSelectedArea(BackstageArea.Playbooks)}
                     >

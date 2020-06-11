@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import * as TIMEOUTS from '../fixtures/timeouts';
+
 const incidentStartCommand = "/incident start";
 
 // function startIncident(incidentID) {
@@ -43,4 +45,18 @@ Cypress.Commands.add('startIncidentFromPostMenu', (incidentID) => {
 	cy.clickPostDotMenu();
 	cy.findByTestId('incidentPostMenuIcon').click();
 	cy.startIncident(incidentID);
+});
+
+// Open Incidents backstage
+Cypress.Commands.add('openIncidentBackstage', () => {
+	cy.wait(TIMEOUTS.TINY).get('#lhsHeader').should('be.visible').within(() => {
+        // # Click hamburger main menu
+        cy.get('#sidebarHeaderDropdownButton').click();
+
+        // * Dropdown menu should be visible
+        cy.get('.dropdown-menu').should('be.visible').within(() => {
+            // 'Incidents & Playbooks' button should be visible, then click
+            cy.findByText('Incidents & Playbooks').should('be.visible').click();
+        });
+	});
 });

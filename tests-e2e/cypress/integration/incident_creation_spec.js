@@ -9,59 +9,12 @@
 import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
-describe('Incident Response Plugin, v0.1', () => {
+describe('Test incident creation using all three methods', () => {
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 
         //afteEach: delete all incidents here
-	});
-
-	// Test Plan v0.1 #44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close
-	it('#44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close', () => {
-		cy.visit('/');
-		cy.get('#channel-header').within(() => {
-			cy.get('#incidentIcon').should('be.visible').click();
-		});
-		cy.get('#rhsContainer').should('be.visible').within(() => {
-			cy.findByText('Incident List').should('be.visible');
-		});
-		/**
-		* TODO:
-		* add test for: clicking on the incident icon again closes the RHS
-		* right now, the full channel header can't be seen during Cypress test when RHS is open.
-		* need to find a work around for that.
-		*/
-	});
-
-	// Test Plan for v0.1 #17 - Incident creation is canceled when Esc is pressed on Incident Response modal
-	it('#17 - Incident creation is canceled when Esc is pressed on Incident Response modal', () => {
-		const incidentStartCommand = '/incident start';
-		cy.visit('/');
-		cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}');
-		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.get('#interactiveDialogCancel').click();
-		});
-		cy.get('#interactiveDialogModal').should('not.be.visible');
-
-		// Fill the interactive dialog and press esc. Verify it's cancelled. No incident is created
-		cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}');
-		const newIncident = "New Incident" + Date.now();
-		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.findByTestId('incidentNameinput').type(newIncident);
-			cy.get('#interactiveDialogCancel').click();
-		});
-		cy.get('#interactiveDialogModal').should('not.be.visible');
-
-		// Login as sysadmin to check that incident did not get created:
-		cy.apiLogout();
-		cy.apiLogin('sysadmin');
-		cy.apiGetAllIncidents().then((response) => {
-			const allIncidents = JSON.parse(response.body);
-			allIncidents.incidents.forEach((incident) => {
-				assert.notEqual(incident.name, newIncident);
-			});
-		});
 	});
 
 	// Test Plan for v0.1 #18, 23, 28 Incident can be started while viewing a public channel
