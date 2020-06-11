@@ -16,7 +16,7 @@ import BackIcon from 'src/components/assets/icons/back_icon';
 
 import '../playbook.scss';
 
-interface Props extends RouteComponentProps {
+export interface Props extends RouteComponentProps {
     playbook: Playbook;
     newPlaybook: boolean;
     currentTeamID: string;
@@ -34,16 +34,16 @@ interface State{
     public: boolean;
 }
 
-export default class PlaybookEdit extends React.PureComponent<Props, State> {
+export class PlaybookEdit extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
 
         this.state = {
-            title: this.props.playbook?.title,
+            title: this.props.playbook.title,
             checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
             changesMade: false,
             confirmOpen: false,
-            public: this.props.playbook?.create_public_incident,
+            public: this.props.playbook.create_public_incident,
         };
     }
 
@@ -55,10 +55,11 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
 
     componentDidUpdate(prevProps) {
         if (this.props.playbook.id !== prevProps.playbook.id) {
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
                 title: this.props.playbook.title,
                 checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
-                public: this.props.playbook?.create_public_incident,
+                public: this.props.playbook.create_public_incident,
             });
         }
     }
@@ -169,16 +170,9 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        let title = 'Playbook undefined';
-        if (this.props.newPlaybook) {
-            title = 'New Playbook';
-        } else if (this.props.playbook.id) {
-            title = 'Edit Playbook';
-        }
-
         const saveDisabled = this.state.title.trim() === '' || !this.state.changesMade;
 
-        return (
+        const notFoundComponent = (
             <div className='Playbook'>
                 <div className='Backstage__header'>
                     <div className='title'>
@@ -186,77 +180,85 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                             className='Backstage__header__back'
                             onClick={this.confirmOrClose}
                         />
-                        {title}
+                        {'Playbook undefined'}
                     </div>
-                    {
-                        (this.props.newPlaybook || (!this.props.newPlaybook && this.props.playbook.id)) &&
-                        <div className='header-button-div'>
-                            <button
-                                className='btn btn-link mr-2'
-                                onClick={this.confirmOrClose}
-                            >
-                                {'Cancel'}
-                            </button>
-                            <button
-                                className='btn btn-primary'
-                                disabled={saveDisabled}
-                                onClick={this.onSave}
-                            >
-                                {'Save Playbook'}
-                            </button>
-                        </div>
-                    }
                 </div>
-                {
-                    (this.props.newPlaybook || (!this.props.newPlaybook && this.props.playbook.id)) &&
-                    <div className='playbook-fields'>
-                        <input
-                            autoFocus={true}
-                            id={'playbook-name'}
-                            className='form-control input-name'
-                            type='text'
-                            placeholder='Playbook Name'
-                            value={this.state.title}
-                            maxLength={MAX_NAME_LENGTH}
-                            onChange={this.handleTitleChange}
-                        />
-                        <div className='public-item'>
-                            <div
-                                className='checkbox-container'
-                            >
-                                <Toggle
-                                    toggled={this.state.public}
-                                    onToggle={this.handlePublicChange}
-                                />
-                                <label>
-                                    {'Create Public Incident'}
-                                </label>
-                            </div>
-                        </div>
-                        <div className='checklist-container'>
-                            {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
-                                <ChecklistDetails
-                                    checklist={checklist}
-                                    enableEdit={true}
-                                    key={checklist.title + checklistIndex}
+            </div>
+        );
 
-                                    addItem={(checklistItem: ChecklistItem) => {
-                                        this.onAddItem(checklistItem, checklistIndex);
-                                    }}
-                                    removeItem={(chceklistItemIndex: number) => {
-                                        this.onDeleteItem(chceklistItemIndex, checklistIndex);
-                                    }}
-                                    editItem={(checklistItemIndex: number, newTitle: string) => {
-                                        this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
-                                    }}
-                                    reorderItems={(checklistItemIndex: number, newPosition: number) => {
-                                        this.onReorderItem(checklistItemIndex, newPosition, checklistIndex);
-                                    }}
-                                />
-                            ))}
+        const editComponent = (
+            <div className='Playbook'>
+                <div className='Backstage__header'>
+                    <div className='title'>
+                        <BackIcon
+                            className='Backstage__header__back'
+                            onClick={this.confirmOrClose}
+                        />
+                        {this.props.newPlaybook ? 'New Playbook' : 'Edit Playbook'}
+                    </div>
+                    <div className='header-button-div'>
+                        <button
+                            className='btn btn-link mr-2'
+                            onClick={this.confirmOrClose}
+                        >
+                            {'Cancel'}
+                        </button>
+                        <button
+                            className='btn btn-primary'
+                            disabled={saveDisabled}
+                            onClick={this.onSave}
+                        >
+                            {'Save Playbook'}
+                        </button>
+                    </div>
+                </div>
+                <div className='playbook-fields'>
+                    <input
+                        autoFocus={true}
+                        id={'playbook-name'}
+                        className='form-control input-name'
+                        type='text'
+                        placeholder='Playbook Name'
+                        value={this.state.title}
+                        maxLength={MAX_NAME_LENGTH}
+                        onChange={this.handleTitleChange}
+                    />
+                    <div className='public-item'>
+                        <div
+                            className='checkbox-container'
+                        >
+                            <Toggle
+                                toggled={this.state.public}
+                                onToggle={this.handlePublicChange}
+                            />
+                            <label>
+                                {'Create Public Incident'}
+                            </label>
                         </div>
                     </div>
-                }
+                    <div className='checklist-container'>
+                        {this.state.checklists?.map((checklist: Checklist, checklistIndex: number) => (
+                            <ChecklistDetails
+                                checklist={checklist}
+                                enableEdit={true}
+                                key={checklist.title + checklistIndex}
+
+                                addItem={(checklistItem: ChecklistItem) => {
+                                    this.onAddItem(checklistItem, checklistIndex);
+                                }}
+                                removeItem={(chceklistItemIndex: number) => {
+                                    this.onDeleteItem(chceklistItemIndex, checklistIndex);
+                                }}
+                                editItem={(checklistItemIndex: number, newTitle: string) => {
+                                    this.onEditItem(checklistItemIndex, newTitle, checklistIndex);
+                                }}
+                                reorderItems={(checklistItemIndex: number, newPosition: number) => {
+                                    this.onReorderItem(checklistItemIndex, newPosition, checklistIndex);
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
                 <ConfirmModal
                     show={this.state.confirmOpen}
                     title={'Confirm discard'}
@@ -267,5 +269,9 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                 />
             </div>
         );
+
+        const isPlaybookDefined = this.props.newPlaybook || this.props.playbook.id;
+
+        return isPlaybookDefined ? editComponent : notFoundComponent;
     }
 }

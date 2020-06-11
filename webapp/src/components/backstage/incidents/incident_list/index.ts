@@ -8,7 +8,7 @@ import {withRouter} from 'react-router-dom';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {getIncidentWithDetails, navigateToTeamPluginUrl} from 'src/actions';
+import {navigateToTeamPluginUrl} from 'src/actions';
 
 import {BackstageIncidentList} from './incident_list';
 
@@ -26,7 +26,6 @@ function mapStateToProps(state: GlobalState, props: Props) {
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
-            getIncidentWithDetails,
             navigateToTeamPluginUrl,
         }, dispatch),
     };

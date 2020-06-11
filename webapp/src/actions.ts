@@ -341,13 +341,6 @@ export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
     };
 }
 
-export function setBackstage(selectedArea?: BackstageArea): SetBackstageSettings {
-    return {
-        type: SET_BACKSTAGE_SETTINGS,
-        selectedArea,
-    };
-}
-
 export function toggleRHS() {
     return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         selectToggleRHS(getState())();

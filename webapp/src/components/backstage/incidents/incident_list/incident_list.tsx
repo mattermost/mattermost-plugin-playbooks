@@ -34,7 +34,6 @@ interface Props extends RouteComponentProps {
     currentTeamName: string;
     getUser: (userId: string) => UserProfile;
     actions: {
-        getIncidentWithDetails: (id: String) => void;
         navigateToTeamPluginUrl: (path: String) => void;
     }
 }
@@ -104,7 +103,7 @@ export function BackstageIncidentList(props: Props) {
         setFetchParams({...fetchParams, commander_user_id: userId});
     }
 
-    async function openIncidentDetails(incident: Incident) {
+    function openIncidentDetails(incident: Incident) {
         props.actions.navigateToTeamPluginUrl(`/incidents/${incident.id}`);
     }
 

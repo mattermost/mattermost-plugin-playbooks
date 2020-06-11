@@ -6,13 +6,15 @@ import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 import {bindActionCreators, Dispatch} from 'redux';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+
 import {playbooksForTeam} from 'src/selectors';
 import {newPlaybook} from 'src/types/playbook';
 import {getPlaybook} from 'src/actions';
 
-import PlaybookEdit from './playbook_edit';
+import {PlaybookEdit, Props} from './playbook_edit';
 
-const mapStateToProps = (state: object, ownProps: Props): object => {
+const mapStateToProps = (state: GlobalState, ownProps: Props): object => {
     const playbook = playbooksForTeam(state).find((p) => p.id === ownProps.match.params.playbookId);
 
     return {

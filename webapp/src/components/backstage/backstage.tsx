@@ -14,7 +14,7 @@ import {BackstageArea} from 'src/types/backstage';
 import './backstage.scss';
 import Waves from '../assets/waves';
 
-interface Props {
+export interface Props {
     selectedArea: BackstageArea;
     currentTeamId: string;
     currentTeamDisplayName: string;
@@ -23,7 +23,7 @@ interface Props {
     theme: Record<string, string>;
 }
 
-const Backstage = ({selectedArea, navigateToUrl, navigateToTeamPluginUrl, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
+export const Backstage = ({selectedArea, navigateToUrl, navigateToTeamPluginUrl, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -85,5 +85,3 @@ const Backstage = ({selectedArea, navigateToUrl, navigateToTeamPluginUrl, curren
         </div>
     );
 };
-
-export default Backstage;

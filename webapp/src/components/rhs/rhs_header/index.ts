@@ -16,8 +16,6 @@ import {
     navigateToTeamPluginUrl,
 } from 'src/actions';
 
-import {BackstageArea} from 'src/types/backstage';
-
 import RHSHeader from './rhs_header';
 
 function mapStateToProps(state: GlobalState) {
