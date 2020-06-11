@@ -177,10 +177,38 @@ export function BackstageIncidentList(props: Props) {
                 </div>
                 <div className='Backstage-list-header'>
                     <div className='row'>
-                        <div className='col-sm-3'> {'Name'} </div>
-                        <div className='col-sm-2'> {'Status'} </div>
-                        <div className='col-sm-2'> {'Start Time'} </div>
-                        <div className='col-sm-2'> {'End Time'} </div>
+                        <div className='col-sm-3'>
+                            <SortableColHeader
+                                name={'Name'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'name' : false}
+                                onClick={() => colHeaderClicked('name')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'Status'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'status' : false}
+                                onClick={() => colHeaderClicked('status')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'Start Time'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'created_at' : false}
+                                onClick={() => colHeaderClicked('created_at')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'End Time'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'ended_at' : false}
+                                onClick={() => colHeaderClicked('ended_at')}
+                            />
+                        </div>
                         <div className='col-sm-3'> {'Commander'} </div>
                     </div>
                 </div>
