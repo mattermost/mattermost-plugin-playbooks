@@ -62,8 +62,6 @@ const sortPlaybooksByTitle = (pbooks: Playbook[]) => {
     return newPlaybooks;
 };
 
-export const backstage = (state: GlobalState) => pluginState(state).backstage;
-
 export const isExportLicensed = (state: GlobalState) => {
     const license = getLicense(state);
 

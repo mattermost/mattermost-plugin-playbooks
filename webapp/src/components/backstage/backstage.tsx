@@ -14,7 +14,7 @@ import {BackstageArea} from 'src/types/backstage';
 import './backstage.scss';
 import Waves from '../assets/waves';
 
-export interface Props {
+interface Props {
     selectedArea: BackstageArea;
     currentTeamId: string;
     currentTeamDisplayName: string;

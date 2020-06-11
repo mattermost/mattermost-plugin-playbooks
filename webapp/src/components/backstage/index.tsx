@@ -6,15 +6,13 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {navigateToUrl, navigateToTeamPluginUrl} from 'src/actions';
-import {backstage} from 'src/selectors';
 
-import {Backstage, Props} from './backstage';
+import {Backstage} from './backstage';
 
-const mapStateToProps = (state: GlobalState, ownProps: Props): object => {
+const mapStateToProps = (state: GlobalState): object => {
     const currentTeam = getCurrentTeam(state);
 
     return {
-        selectedArea: ownProps.selectedArea || backstage(state).selectedArea,
         currentTeamId: currentTeam.id,
         currentTeamName: currentTeam.name,
         currentTeamDisplayName: currentTeam.display_name,

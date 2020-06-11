@@ -12,7 +12,6 @@ import {
     RECEIVED_INCIDENT_UPDATE,
     SET_LOADING,
     SET_CLIENT_ID,
-    SET_BACKSTAGE_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
@@ -131,17 +130,6 @@ function playbooks(state = {}, action) {
     }
 }
 
-function backstage(state = {selectedArea: 0}, action) {
-    switch (action.type) {
-    case SET_BACKSTAGE_SETTINGS:
-        return {
-            selectedArea: action.selectedArea,
-        };
-    default:
-        return state;
-    }
-}
-
 export default combineReducers({
     toggleRHSFunction,
     rhsState,
@@ -151,6 +139,5 @@ export default combineReducers({
     rhsOpen,
     clientId,
     playbooks,
-    backstage,
     incidentsTeamId,
 });

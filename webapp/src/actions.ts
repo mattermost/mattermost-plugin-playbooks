@@ -16,7 +16,7 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {ChecklistItem} from 'src/types/playbook';
-import {selectToggleRHS, backstage} from 'src/selectors';
+import {selectToggleRHS} from 'src/selectors';
 import {pluginId} from 'src/manifest';
 
 import {
@@ -41,7 +41,6 @@ import {
     SetClientId,
     ReceivedPlaybooks,
     SetBackstageSettings,
-    SET_BACKSTAGE_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
