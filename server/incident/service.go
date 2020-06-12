@@ -446,15 +446,9 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
 
-	db, err := s.pluginAPI.Store.GetMasterDB()
+	numMembers, err := s.store.GetAllIncidentMembersCount(incident.PrimaryChannelID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get a database connection")
-	}
-
-	var numMembers int64
-	err = db.QueryRow("SELECT COUNT(DISTINCT UserId) FROM ChannelMemberHistory WHERE ChannelId = ?", incident.PrimaryChannelID).Scan(&numMembers)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query database")
+		return nil, errors.Wrapf(err, "failed to get the count of incident members for channel id '%s'", incident.PrimaryChannelID)
 	}
 
 	incidentWithDetails := &Details{
@@ -463,7 +457,7 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 		ChannelDisplayName: channel.DisplayName,
 		TeamName:           team.Name,
 		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         numMembers,
+		NumMembers:         int64(numMembers),
 	}
 	return incidentWithDetails, nil
 }

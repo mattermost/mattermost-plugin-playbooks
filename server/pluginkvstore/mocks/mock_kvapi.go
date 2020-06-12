@@ -6,7 +6,7 @@ package mock_pluginkvstore
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	mattermost_plugin_api "github.com/mattermost/mattermost-plugin-api"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	reflect "reflect"
 )
 
@@ -62,7 +62,7 @@ func (mr *MockKVAPIMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // Set mocks base method
-func (m *MockKVAPI) Set(arg0 string, arg1 interface{}, arg2 ...mattermost_plugin_api.KVSetOption) (bool, error) {
+func (m *MockKVAPI) Set(arg0 string, arg1 interface{}, arg2 ...pluginapi.KVSetOption) (bool, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
