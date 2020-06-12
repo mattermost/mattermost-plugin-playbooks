@@ -11,6 +11,7 @@ import {Incident} from 'src/types/incident';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
 import {OVERLAY_DELAY} from 'src/utils/constants';
+import {navigateToUrl} from 'src/utils/utils';
 
 import StatusBadge from '../status_badge';
 
@@ -27,7 +28,6 @@ interface Props extends RouteComponentProps {
     onClose: () => void;
     actions: {
         getIncidentWithDetails: (id: String) => void;
-        navigateToUrl: (urlPath: string) => void;
     };
 }
 
@@ -88,7 +88,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public goToChannel = () => {
-        this.props.actions.navigateToUrl(`/${this.props.incident.team_name}/channels/${this.props.incident.channel_name}`);
+        navigateToUrl(`/${this.props.incident.team_name}/channels/${this.props.incident.channel_name}`);
     }
 
     public onExportClick =() => {

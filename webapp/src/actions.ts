@@ -40,7 +40,6 @@ import {
     SetLoading,
     SetClientId,
     ReceivedPlaybooks,
-    SetBackstageSettings,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
@@ -343,12 +342,6 @@ export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
 export function toggleRHS() {
     return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         selectToggleRHS(getState())();
-    };
-}
-
-export function navigateToUrl(urlPath: string) {
-    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        WebappUtils.browserHistory.push(urlPath);
     };
 }
 

@@ -9,7 +9,7 @@ import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {Incident} from 'src/types/incident';
 
-import {navigateToUrl, getIncidentWithDetails} from 'src/actions';
+import {getIncidentWithDetails} from 'src/actions';
 
 import {incidentDetails, isExportLicensed} from 'src/selectors';
 
@@ -35,7 +35,6 @@ function mapStateToProps(state: GlobalState) {
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
-            navigateToUrl,
             getIncidentWithDetails,
         }, dispatch),
     };

@@ -48,6 +48,9 @@ export class PlaybookEdit extends React.PureComponent<Props, State> {
     }
 
     componentDidMount() {
+        // If the user directly navigates to /playbooks/:playbookId, the store may not
+        // contain the playbook requested. This happens only when we are not creating
+        // a new playbook but the playbook in the props is still empty (it has no ID).
         if (!this.props.newPlaybook && !this.props.playbook.id) {
             this.props.actions.getPlaybook(this.props.match.params.playbookId);
         }
@@ -180,7 +183,7 @@ export class PlaybookEdit extends React.PureComponent<Props, State> {
                             className='Backstage__header__back'
                             onClick={this.confirmOrClose}
                         />
-                        {'Playbook undefined'}
+                        {'Playbook Not Found'}
                     </div>
                 </div>
             </div>

@@ -10,6 +10,7 @@ import BackstageIncidentList from 'src/components/backstage/incidents/incident_l
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 
 import {BackstageArea} from 'src/types/backstage';
+import {navigateToUrl} from 'src/utils/utils';
 
 import './backstage.scss';
 import Waves from '../assets/waves';
@@ -17,13 +18,13 @@ import Waves from '../assets/waves';
 interface Props {
     selectedArea: BackstageArea;
     currentTeamId: string;
+    currentTeamName: string;
     currentTeamDisplayName: string;
-    navigateToUrl: (urlPath: String) => void;
     navigateToTeamPluginUrl: (urlPath: String) => void;
     theme: Record<string, string>;
 }
 
-export const Backstage = ({selectedArea, navigateToUrl, navigateToTeamPluginUrl, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
+export const Backstage = ({selectedArea, navigateToTeamPluginUrl, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -61,9 +62,6 @@ export const Backstage = ({selectedArea, navigateToUrl, navigateToTeamPluginUrl,
                     </div>
                 </div>
                 <div className='menu'>
-                    {/*<div className={classNames('menu-title', {active: selectedArea === BackstageArea.Dashboard})}>
-                        {'Dashboard'}
-                    </div>*/}
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
                         onClick={() => navigateToTeamPluginUrl('/incidents')}

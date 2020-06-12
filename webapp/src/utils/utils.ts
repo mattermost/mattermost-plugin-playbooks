@@ -75,3 +75,6 @@ export const registerCssVars = (theme: any) => {
     });
 };
 
+export const navigateToUrl = (urlPath: string) => {
+    WebappUtils.browserHistory.push(urlPath);
+};
