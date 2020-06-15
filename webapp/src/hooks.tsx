@@ -1,4 +1,3 @@
-
 import {Action, Store} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
@@ -6,7 +5,14 @@ import {generateId} from 'mattermost-redux/utils/helpers';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {toggleRHS, setRHSState, getIncident, withLoading, getIncidentsForCurrentTeam, setClientId} from 'src/actions';
+import {
+    toggleRHS,
+    setRHSState,
+    getIncident,
+    withLoading,
+    getIncidentsForCurrentTeam,
+    setClientId,
+} from 'src/actions';
 import {rhsOpen, activeIncidents, incidentDetails, incidentsTeamId} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 
@@ -14,6 +20,7 @@ export interface Hooks {
     store: Store<object, Action<any>>;
     currentChannelId: string;
     currentTeamId: string;
+    currentTeamIdForNewTeamHook: string;
 }
 
 export class Hooks {
@@ -22,6 +29,9 @@ export class Hooks {
         this.store.subscribe(this.openCurrentIncidentRHS);
         this.currentChannelId = '';
         this.currentTeamId = '';
+
+        this.store.subscribe(this.newTeamHook);
+        this.currentTeamIdForNewTeamHook = '';
     }
 
     public slashCommandWillBePostedHook = (message: string, args = {}) => {
@@ -91,6 +101,15 @@ export class Hooks {
                 }
                 break;
             }
+        }
+    }
+
+    public newTeamHook = () => {
+        const state = this.store.getState();
+        const currentTeam = getCurrentTeam(state);
+        if (currentTeam && currentTeam.id !== this.currentTeamIdForNewTeamHook) {
+            this.currentTeamIdForNewTeamHook = currentTeam.id;
+            this.store.dispatch(setRHSState(RHSState.List));
         }
     }
 }
