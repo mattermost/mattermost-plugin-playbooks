@@ -10,7 +10,7 @@ import BackstageIncidentList from 'src/components/backstage/incidents/incident_l
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 
 import {BackstageArea} from 'src/types/backstage';
-import {navigateToUrl} from 'src/utils/utils';
+import {navigateToUrl, navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import './backstage.scss';
 import Waves from '../assets/waves';
@@ -20,11 +20,10 @@ interface Props {
     currentTeamId: string;
     currentTeamName: string;
     currentTeamDisplayName: string;
-    navigateToTeamPluginUrl: (urlPath: String) => void;
     theme: Record<string, string>;
 }
 
-export const Backstage = ({selectedArea, navigateToTeamPluginUrl, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
+export const Backstage = ({selectedArea, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -44,6 +43,7 @@ export const Backstage = ({selectedArea, navigateToTeamPluginUrl, currentTeamId,
         activeArea = (
             <BackstageIncidentList
                 currentTeamId={currentTeamId}
+                currentTeamName={currentTeamName}
                 currentTeamDisplayName={currentTeamDisplayName}
             />
         );
@@ -64,13 +64,13 @@ export const Backstage = ({selectedArea, navigateToTeamPluginUrl, currentTeamId,
                 <div className='menu'>
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
-                        onClick={() => navigateToTeamPluginUrl('/incidents')}
+                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/incidents')}
                     >
                         {'Incidents'}
                     </div>
                     <div
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
-                        onClick={() => navigateToTeamPluginUrl('/playbooks')}
+                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/playbooks')}
                     >
                         {'Playbooks'}
                     </div>

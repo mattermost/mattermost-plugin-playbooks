@@ -17,7 +17,6 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {ChecklistItem} from 'src/types/playbook';
 import {selectToggleRHS} from 'src/selectors';
-import {pluginId} from 'src/manifest';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -345,13 +344,3 @@ export function toggleRHS() {
     };
 }
 
-export function navigateToTeamPluginUrl(urlPath: string) {
-    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        let cleanPath = urlPath;
-        while (cleanPath.startsWith('/')) {
-            cleanPath = cleanPath.substr(1);
-        }
-        const team = getCurrentTeam(getState());
-        WebappUtils.browserHistory.push(`/${team.name}/${pluginId}/` + cleanPath);
-    };
-}

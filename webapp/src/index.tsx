@@ -8,8 +8,9 @@ import {debounce} from 'debounce';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {registerCssVars, isMobile} from 'src/utils/utils';
+import {registerCssVars, isMobile, navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import {pluginId} from './manifest';
 import IncidentIcon from './components/assets/icons/incident_icon';
@@ -21,7 +22,6 @@ import Backstage from './components/backstage';
 import {Hooks} from './hooks';
 import {
     setToggleRHSAction,
-    navigateToTeamPluginUrl,
 } from './actions';
 import reducer from './reducer';
 import {BackstageArea} from './types/backstage';
@@ -53,7 +53,10 @@ export default class Plugin {
             } else if (!mainMenuActionId && !isMobile()) {
                 mainMenuActionId = registry.registerMainMenuAction(
                     'Incidents & Playbooks',
-                    () => store.dispatch(navigateToTeamPluginUrl('/incidents')),
+                    () => {
+                        const team = getCurrentTeam(store.getState());
+                        navigateToTeamPluginUrl(team.name, '/incidents');
+                    },
                 );
             }
         };

@@ -23,6 +23,7 @@ import {
 import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
+import {navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import './incident_list.scss';
 
@@ -32,10 +33,8 @@ const PER_PAGE = 15;
 interface Props extends RouteComponentProps {
     currentTeamId: string;
     currentTeamName: string;
+    currentTeamDisplayName: string;
     getUser: (userId: string) => UserProfile;
-    actions: {
-        navigateToTeamPluginUrl: (path: String) => void;
-    }
 }
 
 export function BackstageIncidentList(props: Props) {
@@ -104,11 +103,11 @@ export function BackstageIncidentList(props: Props) {
     }
 
     function openIncidentDetails(incident: Incident) {
-        props.actions.navigateToTeamPluginUrl(`/incidents/${incident.id}`);
+        navigateToTeamPluginUrl(props.currentTeamName, `/incidents/${incident.id}`);
     }
 
     const closeIncidentDetails = () => {
-        props.actions.navigateToTeamPluginUrl('/incidents');
+        navigateToTeamPluginUrl(props.currentTeamName, '/incidents');
     };
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
@@ -151,7 +150,7 @@ export function BackstageIncidentList(props: Props) {
                 <div className='title'>
                     {'Incidents'}
                     <div className='light'>
-                        {'(' + props.currentTeamName + ')'}
+                        {'(' + props.currentTeamDisplayName + ')'}
                     </div>
                 </div>
             </div>
@@ -217,7 +216,7 @@ export function BackstageIncidentList(props: Props) {
                     !incidents.length && !isFiltering &&
                     <div className='text-center pt-8'>
                         {'There are no incidents for '}
-                        <i>{props.currentTeamName}</i>
+                        <i>{props.currentTeamDisplayName}</i>
                         {'.'}
                     </div>
                 }
@@ -225,7 +224,7 @@ export function BackstageIncidentList(props: Props) {
                     !incidents.length && isFiltering &&
                     <div className='text-center pt-8'>
                         {'There are no incidents for '}
-                        <i>{props.currentTeamName}</i>
+                        <i>{props.currentTeamDisplayName}</i>
                         {' matching those filters.'}
                     </div>
                 }

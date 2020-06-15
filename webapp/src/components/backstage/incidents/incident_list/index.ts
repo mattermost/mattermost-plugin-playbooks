@@ -8,13 +8,12 @@ import {withRouter} from 'react-router-dom';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
-import {navigateToTeamPluginUrl} from 'src/actions';
-
 import {BackstageIncidentList} from './incident_list';
 
 interface Props {
     currentTeamId: string;
     currentTeamName: string;
+    currentTeamDisplayName: string;
 }
 
 function mapStateToProps(state: GlobalState, props: Props) {
@@ -23,12 +22,4 @@ function mapStateToProps(state: GlobalState, props: Props) {
     };
 }
 
-function mapDispatchToProps(dispatch: Dispatch) {
-    return {
-        actions: bindActionCreators({
-            navigateToTeamPluginUrl,
-        }, dispatch),
-    };
-}
-
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentList));
+export default withRouter(connect(mapStateToProps, null)(BackstageIncidentList));

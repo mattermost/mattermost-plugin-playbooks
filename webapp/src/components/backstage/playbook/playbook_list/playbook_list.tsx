@@ -4,7 +4,10 @@
 import React from 'react';
 import {Switch, Route, RouteComponentProps} from 'react-router-dom';
 
+import {Team} from 'mattermost-redux/types/teams';
+
 import {newPlaybook, Playbook} from 'src/types/playbook';
+import {navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import {deletePlaybook} from 'src/client';
 
@@ -13,15 +16,12 @@ import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import '../playbook.scss';
-import {navigateToTeamPluginUrl} from 'src/actions';
 
 interface Props extends RouteComponentProps {
     playbooks: Playbook[];
-    currentTeamID: string;
-    currentTeamName: string;
+    currentTeam: Team;
     actions: {
         getPlaybooksForCurrentTeam: () => void;
-        navigateToTeamPluginUrl: (urlPath: String) => void;
     };
 }
 
@@ -52,7 +52,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         this.setState({
             newMode: false,
         });
-        this.props.actions.navigateToTeamPluginUrl('/playbooks');
+        navigateToTeamPluginUrl(this.props.currentTeam.name, '/playbooks');
     }
 
     public editPlaybook = (playbook: Playbook) => {
@@ -60,7 +60,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             newMode: false,
             selectedPlaybook: playbook,
         });
-        this.props.actions.navigateToTeamPluginUrl(`/playbooks/${playbook.id}`);
+        navigateToTeamPluginUrl(this.props.currentTeam.name, `/playbooks/${playbook.id}`);
     }
 
     public newPlaybook = () => {
@@ -109,7 +109,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             return (
                 <PlaybookEdit
                     newPlaybook={isNewPlaybook}
-                    currentTeamID={this.props.currentTeamID}
+                    currentTeamID={this.props.currentTeam.id}
                     onClose={this.backToPlaybookList}
                 />
             );
@@ -122,7 +122,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                     <div className='title'>
                         {'Playbooks'}
                         <div className='light'>
-                            {'(' + this.props.currentTeamName + ')'}
+                            {'(' + this.props.currentTeam.display_name + ')'}
                         </div>
                     </div>
                     <div className='header-button-div'>
