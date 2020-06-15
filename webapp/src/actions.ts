@@ -79,15 +79,10 @@ export function getIncident(id: string) {
                 dispatch(fetchUser(incident.commander_user_id));
             }
 
-            // Fetch primary channel and team data
-            let c = getChannel(getState(), incident.primary_channel_id) as Channel;
+            // Fetch primary channel
+            const c = getChannel(getState(), incident.primary_channel_id) as Channel;
             if (!c) {
-                // Must wait to fetch channel data before fetching its team data
-                /* eslint-disable no-await-in-loop */
-                c = await dispatch(fetchChannel(incident.primary_channel_id)) as Channel;
-            }
-            if (!getTeam(getState(), c.team_id)) {
-                dispatch(fetchTeam(c.team_id));
+                await dispatch(fetchChannel(incident.primary_channel_id));
             }
 
             dispatch(receivedIncidentDetails(incident));

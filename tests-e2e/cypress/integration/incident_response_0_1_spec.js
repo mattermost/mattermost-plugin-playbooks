@@ -52,13 +52,13 @@ describe('Incident Response Plugin, v0.1', () => {
 			cy.get('#interactiveDialogCancel').click();
 		});
 		cy.get('#interactiveDialogModal').should('not.be.visible');
-	
+
 		// Login as sysadmin to check that incident did not get created:
 		cy.apiLogout();
 		cy.apiLogin('sysadmin');
 		cy.apiGetAllIncidents().then((response) => {
 			const allIncidents = JSON.parse(response.body);
-			allIncidents.forEach((incident) => {
+			allIncidents.incidents.forEach((incident) => {
 				assert.notEqual(incident.name, newIncident);
 			});
 		});

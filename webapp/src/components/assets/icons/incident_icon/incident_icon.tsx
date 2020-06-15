@@ -18,17 +18,13 @@ export default class IncidentIcon extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const iconClass = classNames('icon', 'fa', 'fa-exclamation', {
-            active: this.props.isRHSOpen,
-        });
-
         // If it has been mounted, we know our parent is always a button.
         const parent = this.myRef.current ? this.myRef.current.parentNode as HTMLButtonElement : null;
         if (parent) {
             if (this.props.isRHSOpen) {
-                parent.classList.add('active');
+                parent.classList.add('channel-header__icon--active');
             } else {
-                parent.classList.remove('active');
+                parent.classList.remove('channel-header__icon--active');
             }
         }
 
@@ -36,7 +32,7 @@ export default class IncidentIcon extends React.PureComponent<Props> {
             <i
                 id='incidentIcon'
                 ref={this.myRef}
-                className={iconClass}
+                className={'icon fa fa-exclamation'}
             />
         );
     }
