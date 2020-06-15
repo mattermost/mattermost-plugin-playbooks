@@ -45,8 +45,9 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         this.props.actions.getPlaybooksForCurrentTeam();
     }
 
-    public toggleEditMode = () => {
-        this.setState({editMode: !this.state.editMode});
+    public exitEditMode = () => {
+        this.props.actions.getPlaybooksForCurrentTeam();
+        this.setState({editMode: false});
     }
 
     public editPlaybook = (playbook?: Playbook) => {
@@ -170,7 +171,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                         <PlaybookEdit
                             playbook={this.state.selectedPlaybook}
                             currentTeamID={this.props.currentTeamID}
-                            onClose={this.toggleEditMode}
+                            onClose={this.exitEditMode}
                         />
                     )
                 }

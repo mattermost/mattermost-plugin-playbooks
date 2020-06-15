@@ -97,7 +97,7 @@ func TestCreateIncident(t *testing.T) {
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
-		poster.EXPECT().PublishWebsocketEventToTeam("incident_updated", gomock.Any(), teamID)
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), gomock.Any())
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username")
 
