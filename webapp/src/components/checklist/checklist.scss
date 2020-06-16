@@ -27,6 +27,10 @@ $font-family: Open Sans;
         padding: 0 0.8rem 0 0;
     }
 
+    .timestamp {
+        color: var(--center-channel-color-56);
+    }
+
     .checkbox-container__close {
         cursor: pointer;
         opacity: 0;
@@ -41,10 +45,6 @@ $font-family: Open Sans;
         &:hover {
             opacity: 1;
         }
-    }
-
-    a {
-        color: #3d3c40 !important;
     }
 
     input[type="checkbox"] + label {
