@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
+import {Switch, Route, RouteComponentProps} from 'react-router-dom';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
@@ -18,28 +19,27 @@ import {FetchIncidentsParams, Incident, IncidentWithDetails} from 'src/types/inc
 import {
     fetchCommandersInTeam,
     fetchIncidents,
-    fetchIncident,
-    fetchIncidentWithDetails,
 } from 'src/client';
 import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details';
 import StatusBadge from '../status_badge';
+import {navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import './incident_list.scss';
 
 const debounceDelay = 300; // in milliseconds
 const PER_PAGE = 15;
 
-interface Props {
+interface Props extends RouteComponentProps {
     currentTeamId: string;
     currentTeamName: string;
+    currentTeamDisplayName: string;
     getUser: (userId: string) => UserProfile;
 }
 
 export function BackstageIncidentList(props: Props) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [totalCount, setTotalCount] = useState(0);
-    const [selectedIncident, setSelectedIncident] = useState<IncidentWithDetails | null>(null);
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
@@ -102,18 +102,12 @@ export function BackstageIncidentList(props: Props) {
         setFetchParams({...fetchParams, commander_user_id: userId});
     }
 
-    async function openIncidentDetails(incident: Incident) {
-        try {
-            const incidentDetails = await fetchIncidentWithDetails(incident.id) as Incident;
-            setSelectedIncident(incidentDetails);
-        } catch (e) {
-            const incidentWithoutDetails = await fetchIncident(incident.id) as Incident;
-            setSelectedIncident(incidentWithoutDetails);
-        }
+    function openIncidentDetails(incident: Incident) {
+        navigateToTeamPluginUrl(props.currentTeamName, `/incidents/${incident.id}`);
     }
 
     const closeIncidentDetails = () => {
-        setSelectedIncident(null);
+        navigateToTeamPluginUrl(props.currentTeamName, '/incidents');
     };
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
@@ -144,143 +138,152 @@ export function BackstageIncidentList(props: Props) {
         (fetchParams.status && fetchParams.status !== 'all')
     );
 
-    return (
-        <>
-            {!selectedIncident && (
-                <div className='IncidentList'>
-                    <div className='Backstage__header'>
-                        <div className='title'>
-                            {'Incidents'}
-                            <div className='light'>
-                                {'(' + props.currentTeamName + ')'}
-                            </div>
-                        </div>
-                    </div>
-                    <div className='list'>
-                        <div className='IncidentList__filters'>
-                            <SearchInput
-                                default={fetchParams.search_term}
-                                onSearch={debounce(setSearchTerm, debounceDelay)}
-                            />
-                            <ProfileSelector
-                                commanderId={fetchParams.commander_user_id}
-                                enableEdit={true}
-                                isClearable={true}
-                                customControl={ControlComponent}
-                                controlledOpenToggle={profileSelectorToggle}
-                                getUsers={fetchCommanders}
-                                onSelectedChange={setCommanderId}
-                            />
-                            <StatusFilter
-                                default={fetchParams.status}
-                                onChange={setStatus}
-                            />
-                        </div>
-                        <div className='Backstage-list-header'>
-                            <div className='row'>
-                                <div className='col-sm-3'>
-                                    <SortableColHeader
-                                        name={'Name'}
-                                        order={fetchParams.order ? fetchParams.order : 'desc'}
-                                        active={fetchParams.sort ? fetchParams.sort === 'name' : false}
-                                        onClick={() => colHeaderClicked('name')}
-                                    />
-                                </div>
-                                <div className='col-sm-2'>
-                                    <SortableColHeader
-                                        name={'Status'}
-                                        order={fetchParams.order ? fetchParams.order : 'desc'}
-                                        active={fetchParams.sort ? fetchParams.sort === 'status' : false}
-                                        onClick={() => colHeaderClicked('status')}
-                                    />
-                                </div>
-                                <div className='col-sm-2'>
-                                    <SortableColHeader
-                                        name={'Start Time'}
-                                        order={fetchParams.order ? fetchParams.order : 'desc'}
-                                        active={fetchParams.sort ? fetchParams.sort === 'created_at' : false}
-                                        onClick={() => colHeaderClicked('created_at')}
-                                    />
-                                </div>
-                                <div className='col-sm-2'>
-                                    <SortableColHeader
-                                        name={'End Time'}
-                                        order={fetchParams.order ? fetchParams.order : 'desc'}
-                                        active={fetchParams.sort ? fetchParams.sort === 'ended_at' : false}
-                                        onClick={() => colHeaderClicked('ended_at')}
-                                    />
-                                </div>
-                                <div className='col-sm-3'> {'Commander'} </div>
-                            </div>
-                        </div>
+    const detailsComponent = (
+        <BackstageIncidentDetails
+            onClose={closeIncidentDetails}
+        />
+    );
 
-                        {
-                            !incidents.length && !isFiltering &&
-                            <div className='text-center pt-8'>
-                                {'There are no incidents for '}
-                                <i>{props.currentTeamName}</i>
-                                {'.'}
-                            </div>
-                        }
-                        {
-                            !incidents.length && isFiltering &&
-                            <div className='text-center pt-8'>
-                                {'There are no incidents for '}
-                                <i>{props.currentTeamName}</i>
-                                {' matching those filters.'}
-                            </div>
-                        }
-
-                        {
-                            incidents.map((incident) => (
-                                <div
-                                    className='row incident-item'
-                                    key={incident.id}
-                                    onClick={() => openIncidentDetails(incident)}
-                                >
-                                    <TextWithTooltip
-                                        id={incident.id}
-                                        text={incident.name}
-                                        className='col-sm-3 incident-item__title'
-                                    />
-                                    <div className='col-sm-2'>
-                                        <StatusBadge isActive={incident.is_active}/>
-                                    </div>
-                                    <div
-                                        className='col-sm-2'
-                                    >
-                                        {
-                                            moment.unix(incident.created_at).format('MMM DD LT')
-                                        }
-                                    </div>
-                                    <div className='col-sm-2'>
-                                        {
-                                            endedAt(incident.is_active, incident.ended_at)
-                                        }
-                                    </div>
-                                    <div className='col-sm-3'>
-                                        <Profile userId={incident.commander_user_id}/>
-                                    </div>
-                                </div>
-                            ))
-                        }
-                        <PaginationRow
-                            page={fetchParams.page ? fetchParams.page : 0}
-                            perPage={fetchParams.per_page ? fetchParams.per_page : PER_PAGE}
-                            totalCount={totalCount}
-                            setPage={setPage}
-                        />
+    const listComponent = (
+        <div className='IncidentList'>
+            <div className='Backstage__header'>
+                <div className='title'>
+                    {'Incidents'}
+                    <div className='light'>
+                        {'(' + props.currentTeamDisplayName + ')'}
                     </div>
                 </div>
-            )}
-            {
-                selectedIncident &&
-                <BackstageIncidentDetails
-                    incident={selectedIncident}
-                    onClose={closeIncidentDetails}
+            </div>
+            <div className='list'>
+                <div className='IncidentList__filters'>
+                    <SearchInput
+                        default={fetchParams.search_term}
+                        onSearch={debounce(setSearchTerm, debounceDelay)}
+                    />
+                    <ProfileSelector
+                        commanderId={fetchParams.commander_user_id}
+                        enableEdit={true}
+                        isClearable={true}
+                        customControl={ControlComponent}
+                        controlledOpenToggle={profileSelectorToggle}
+                        getUsers={fetchCommanders}
+                        onSelectedChange={setCommanderId}
+                    />
+                    <StatusFilter
+                        default={fetchParams.status}
+                        onChange={setStatus}
+                    />
+                </div>
+                <div className='Backstage-list-header'>
+                    <div className='row'>
+                        <div className='col-sm-3'>
+                            <SortableColHeader
+                                name={'Name'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'name' : false}
+                                onClick={() => colHeaderClicked('name')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'Status'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'status' : false}
+                                onClick={() => colHeaderClicked('status')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'Start Time'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'created_at' : false}
+                                onClick={() => colHeaderClicked('created_at')}
+                            />
+                        </div>
+                        <div className='col-sm-2'>
+                            <SortableColHeader
+                                name={'End Time'}
+                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                active={fetchParams.sort ? fetchParams.sort === 'ended_at' : false}
+                                onClick={() => colHeaderClicked('ended_at')}
+                            />
+                        </div>
+                        <div className='col-sm-3'> {'Commander'} </div>
+                    </div>
+                </div>
+
+                {
+                    !incidents.length && !isFiltering &&
+                    <div className='text-center pt-8'>
+                        {'There are no incidents for '}
+                        <i>{props.currentTeamDisplayName}</i>
+                        {'.'}
+                    </div>
+                }
+                {
+                    !incidents.length && isFiltering &&
+                    <div className='text-center pt-8'>
+                        {'There are no incidents for '}
+                        <i>{props.currentTeamDisplayName}</i>
+                        {' matching those filters.'}
+                    </div>
+                }
+
+                {
+                    incidents.map((incident) => (
+                        <div
+                            className='row incident-item'
+                            key={incident.id}
+                            onClick={() => openIncidentDetails(incident)}
+                        >
+                            <TextWithTooltip
+                                id={incident.id}
+                                text={incident.name}
+                                className='col-sm-3 incident-item__title'
+                            />
+                            <div className='col-sm-2'>
+                                <StatusBadge isActive={incident.is_active}/>
+                            </div>
+                            <div
+                                className='col-sm-2'
+                            >
+                                {
+                                    moment.unix(incident.created_at).format('MMM DD LT')
+                                }
+                            </div>
+                            <div className='col-sm-2'>
+                                {
+                                    endedAt(incident.is_active, incident.ended_at)
+                                }
+                            </div>
+                            <div className='col-sm-3'>
+                                <Profile userId={incident.commander_user_id}/>
+                            </div>
+                        </div>
+                    ))
+                }
+                <PaginationRow
+                    page={fetchParams.page ? fetchParams.page : 0}
+                    perPage={fetchParams.per_page ? fetchParams.per_page : PER_PAGE}
+                    totalCount={totalCount}
+                    setPage={setPage}
                 />
-            }
-        </>
+            </div>
+        </div>
+    );
+
+    return (
+        <Switch>
+            <Route
+                exact={true}
+                path={props.match.path}
+            >
+                {listComponent}
+            </Route>
+            <Route path={`${props.match.path}/:incidentId`}>
+                {detailsComponent}
+            </Route>
+        </Switch>
     );
 }
 

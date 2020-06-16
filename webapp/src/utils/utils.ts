@@ -2,6 +2,8 @@ import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
 import cssVars from 'css-vars-ponyfill';
 
+import {pluginId} from 'src/manifest';
+
 const MOBILE_SCREEN_WIDTH = 768;
 
 export const getFullName = (firstName: string, lastName: string): string => {
@@ -75,3 +77,14 @@ export const registerCssVars = (theme: any) => {
     });
 };
 
+export const navigateToUrl = (urlPath: string) => {
+    WebappUtils.browserHistory.push(urlPath);
+};
+
+export const navigateToTeamPluginUrl = (teamName: string, urlPath: string) => {
+    let cleanPath = urlPath;
+    while (cleanPath.startsWith('/')) {
+        cleanPath = cleanPath.substr(1);
+    }
+    WebappUtils.browserHistory.push(`/${teamName}/${pluginId}/` + cleanPath);
+};
