@@ -71,6 +71,8 @@ func (p *Plugin) OnActivate() error {
 	var telemetryClient interface {
 		incident.Telemetry
 		playbook.Telemetry
+		Enable() error
+		Disable() error
 	}
 
 	if rudderDataplaneURL == "" || rudderWriteKey == "" {
@@ -84,6 +86,22 @@ func (p *Plugin) OnActivate() error {
 			return errors.Wrapf(err, "failed init telemetry client")
 		}
 	}
+
+	p.config.RegisterConfigChangeListener(func() {
+		diagnosticsFlag := pluginAPIClient.Configuration.GetConfig().LogSettings.EnableDiagnostics
+		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
+
+		if telemetryEnabled {
+			if err := telemetryClient.Enable(); err != nil {
+				pluginAPIClient.Log.Warn("Telemetry could not be enabled", "Error", err)
+			}
+			return
+		}
+
+		if err := telemetryClient.Disable(); err != nil {
+			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
+		}
+	})
 
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
@@ -105,6 +123,15 @@ func (p *Plugin) OnActivate() error {
 
 	p.API.LogDebug("Incident response plugin Activated")
 	return nil
+}
+
+// OnConfigurationChange handles any change in the configuration
+func (p *Plugin) OnConfigurationChange() error {
+	if p.config == nil {
+		return nil
+	}
+
+	return p.config.OnConfigurationChange()
 }
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.

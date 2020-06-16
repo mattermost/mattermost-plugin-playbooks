@@ -13,6 +13,9 @@ type RudderTelemetry struct {
 	diagnosticID  string
 	pluginVersion string
 	serverVersion string
+	writeKey      string
+	dataPlaneURL  string
+	enabled       bool
 }
 
 // Unique strings that identify each of the tracked events
@@ -52,10 +55,22 @@ func NewRudder(dataPlaneURL, writeKey, diagnosticID string, pluginVersion, serve
 		return nil, err
 	}
 
-	return &RudderTelemetry{client, diagnosticID, pluginVersion, serverVersion}, nil
+	return &RudderTelemetry{
+		client:        client,
+		diagnosticID:  diagnosticID,
+		pluginVersion: pluginVersion,
+		serverVersion: serverVersion,
+		writeKey:      writeKey,
+		dataPlaneURL:  dataPlaneURL,
+		enabled:       true,
+	}, nil
 }
 
 func (t *RudderTelemetry) track(event string, properties map[string]interface{}) {
+	if !t.enabled {
+		return
+	}
+
 	properties["PluginVersion"] = t.pluginVersion
 	properties["ServerVersion"] = t.serverVersion
 
@@ -164,4 +179,36 @@ func (t *RudderTelemetry) UpdatePlaybook(playbook playbook.Playbook) {
 // DeletePlaybook tracks the deletion of a playbook.
 func (t *RudderTelemetry) DeletePlaybook(playbook playbook.Playbook) {
 	t.track(eventDeletePlaybook, playbookProperties(playbook))
+}
+
+// Enable creates a new client to track all future events. It does nothing if
+// a client is already enabled.
+func (t *RudderTelemetry) Enable() error {
+	if t.enabled {
+		return nil
+	}
+
+	newClient, err := rudder.NewWithConfig(t.writeKey, t.dataPlaneURL, rudder.Config{})
+	if err != nil {
+		return err
+	}
+
+	t.client = newClient
+	t.enabled = true
+	return nil
+}
+
+// Disable disables telemetry for all future events. It does nothing if the
+// client is already disabled.
+func (t *RudderTelemetry) Disable() error {
+	if !t.enabled {
+		return nil
+	}
+
+	if err := t.client.Close(); err != nil {
+		return err
+	}
+
+	t.enabled = false
+	return nil
 }
