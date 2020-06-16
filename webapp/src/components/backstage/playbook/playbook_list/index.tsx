@@ -1,6 +1,7 @@
 import {bindActionCreators, Dispatch} from 'redux';
 
 import {connect} from 'react-redux';
+import {withRouter} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
@@ -12,13 +13,9 @@ import PlaybookList from './playbook_list';
 
 const mapStateToProps = (state: object): object => {
     const currentTeam = getCurrentTeam(state);
-    const currentTeamID = currentTeam.id;
-    const currentTeamName = currentTeam.display_name;
-
     return {
         playbooks: playbooksForTeam(state) || [],
-        currentTeamName,
-        currentTeamID,
+        currentTeam,
     };
 };
 const mapDispatchToProps = (dispatch: Dispatch): object => {
@@ -29,4 +26,4 @@ const mapDispatchToProps = (dispatch: Dispatch): object => {
     };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(PlaybookList);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PlaybookList));
