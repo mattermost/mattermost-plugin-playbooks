@@ -147,7 +147,10 @@ export function BackstageIncidentList(props: Props) {
     const listComponent = (
         <div className='IncidentList'>
             <div className='Backstage__header'>
-                <div className='title'>
+                <div
+                    className='title'
+                    data-testid='titleIncident'
+                >
                     {'Incidents'}
                     <div className='light'>
                         {'(' + props.currentTeamDisplayName + ')'}
