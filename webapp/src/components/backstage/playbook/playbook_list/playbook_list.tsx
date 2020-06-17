@@ -2,28 +2,31 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {Switch, Route, RouteComponentProps} from 'react-router-dom';
+
+import {Team} from 'mattermost-redux/types/teams';
 
 import {newPlaybook, Playbook} from 'src/types/playbook';
+import {navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import {deletePlaybook} from 'src/client';
 
-import PlaybookEdit from '../playbook_edit';
+import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import '../playbook.scss';
 
-interface Props {
+interface Props extends RouteComponentProps {
     playbooks: Playbook[];
-    currentTeamID: string;
-    currentTeamName: string;
+    currentTeam: Team;
     actions: {
         getPlaybooksForCurrentTeam: () => void;
     };
 }
 
 interface State {
-    editMode: boolean;
+    newMode: boolean;
     selectedPlaybook?: Playbook | null;
     showConfirmation: boolean;
     showBanner: boolean;
@@ -34,7 +37,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         super(props);
 
         this.state = {
-            editMode: false,
+            newMode: false,
             selectedPlaybook: null,
             showConfirmation: false,
             showBanner: false,
@@ -45,14 +48,24 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         this.props.actions.getPlaybooksForCurrentTeam();
     }
 
-    public toggleEditMode = () => {
-        this.setState({editMode: !this.state.editMode});
+    public backToPlaybookList = () => {
+        this.setState({
+            newMode: false,
+        });
+        navigateToTeamPluginUrl(this.props.currentTeam.name, '/playbooks');
     }
 
-    public editPlaybook = (playbook?: Playbook) => {
+    public editPlaybook = (playbook: Playbook) => {
         this.setState({
-            editMode: true,
-            selectedPlaybook: playbook || newPlaybook(),
+            newMode: false,
+            selectedPlaybook: playbook,
+        });
+        navigateToTeamPluginUrl(this.props.currentTeam.name, `/playbooks/${playbook.id}`);
+    }
+
+    public newPlaybook = () => {
+        this.setState({
+            newMode: true,
         });
     }
 
@@ -92,92 +105,104 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             </div>
         );
 
-        return (
-            <>
-                {
-                    !this.state.editMode && (
-                        <div className='Playbook'>
-                            { deleteSuccessfulBanner }
-                            <div className='Backstage__header'>
-                                <div
-                                    className='title'
-                                    data-testid='titlePlaybook'
-                                >
-                                    {'Playbooks'}
-                                    <div className='light'>
-                                        {'(' + this.props.currentTeamName + ')'}
-                                    </div>
-                                </div>
-                                <div className='header-button-div'>
-                                    <button
-                                        className='btn btn-primary'
-                                        onClick={() => this.editPlaybook()}
-                                    >
-                                        <i className='icon-plus mr-2'/>
-                                        {'New Playbook'}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className='playbook-list'>
-                                {
-                                    <div className='Backstage-list-header'>
-                                        <div className='row'>
-                                            <div className='col-sm-10'> {'Name'} </div>
-                                            <div className='col-sm-2'> {'Actions'}</div>
-                                        </div>
-                                    </div>
-                                }
-                                {
-                                    !this.props.playbooks.length &&
-                                    <div className='text-center pt-8'>
-                                        {'There are no playbooks defined yet.'}
-                                    </div>
-                                }
+        const editComponent = (isNewPlaybook: boolean) => {
+            return (
+                <PlaybookEdit
+                    newPlaybook={isNewPlaybook}
+                    currentTeamID={this.props.currentTeam.id}
+                    onClose={this.backToPlaybookList}
+                />
+            );
+        };
 
-                                {
-                                    this.props.playbooks.map((p) => (
-                                        <div
-                                            className='row playbook-item'
-                                            key={p.id}
-                                        >
-                                            <TextWithTooltip
-                                                id={p.title}
-                                                text={p.title}
-                                                className={'col-sm-10 title'}
-                                            />
-                                            <div className='col-sm-2'>
-                                                <a onClick={() => this.editPlaybook(p)} >
-                                                    {'Edit'}
-                                                </a>
-                                                {' - '}
-                                                <a onClick={() => this.onConfirmDelete(p)} >
-                                                    {'Delete'}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    ))
-                                }
-                            </div>
-                            <ConfirmModal
-                                show={this.state.showConfirmation}
-                                title={'Confirm Playbook Deletion'}
-                                message={`Are you sure you want to delete the playbook "${this.state.selectedPlaybook?.title}"?`}
-                                confirmButtonText={'Delete Playbook'}
-                                onConfirm={this.onDelete}
-                                onCancel={this.hideConfirmModal}
-                            />
+        const listComponent = (
+            <div className='Playbook'>
+                { deleteSuccessfulBanner }
+                <div className='Backstage__header'>
+                    <div className='title'>
+                        {'Playbooks'}
+                        <div className='light'>
+                            {'(' + this.props.currentTeam.display_name + ')'}
                         </div>
-                    )}
-                {
-                    this.state.editMode && (
-                        <PlaybookEdit
-                            playbook={this.state.selectedPlaybook}
-                            currentTeamID={this.props.currentTeamID}
-                            onClose={this.toggleEditMode}
-                        />
-                    )
-                }
-            </>
+                    </div>
+                    <div className='header-button-div'>
+                        <button
+                            className='btn btn-primary'
+                            onClick={() => this.newPlaybook()}
+                        >
+                            <i className='icon-plus mr-2'/>
+                            {'New Playbook'}
+                        </button>
+                    </div>
+                </div>
+                <div className='playbook-list'>
+                    {
+                        <div className='Backstage-list-header'>
+                            <div className='row'>
+                                <div className='col-sm-10'> {'Name'} </div>
+                                <div className='col-sm-2'> {'Actions'}</div>
+                            </div>
+                        </div>
+                    }
+                    {
+                        !this.props.playbooks.length &&
+                        <div className='text-center pt-8'>
+                            {'There are no playbooks defined yet.'}
+                        </div>
+                    }
+
+                    {
+                        this.props.playbooks.map((p) => (
+                            <div
+                                className='row playbook-item'
+                                key={p.id}
+                            >
+                                <TextWithTooltip
+                                    id={p.title}
+                                    text={p.title}
+                                    className={'col-sm-10 title'}
+                                />
+                                <div className='col-sm-2'>
+                                    <a onClick={() => this.editPlaybook(p)} >
+                                        {'Edit'}
+                                    </a>
+                                    {' - '}
+                                    <a onClick={() => this.onConfirmDelete(p)} >
+                                        {'Delete'}
+                                    </a>
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+                <ConfirmModal
+                    show={this.state.showConfirmation}
+                    title={'Confirm Playbook Deletion'}
+                    message={`Are you sure you want to delete the playbook "${this.state.selectedPlaybook?.title}"?`}
+                    confirmButtonText={'Delete Playbook'}
+                    onConfirm={this.onDelete}
+                    onCancel={this.hideConfirmModal}
+                />
+            </div>
+        );
+
+        return (
+            <Switch>
+                <Route
+                    exact={true}
+                    path={this.props.match.path}
+                >
+                    {
+                        !this.state.newMode && listComponent
+                    }
+                    {
+                        this.state.newMode && editComponent(true)
+                    }
+                </Route>
+                <Route path={`${this.props.match.path}/:playbookId`}>
+                    {editComponent(false)}
+                </Route>
+            </Switch>
         );
     }
 }
