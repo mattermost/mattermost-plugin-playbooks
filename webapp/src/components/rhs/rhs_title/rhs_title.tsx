@@ -32,9 +32,7 @@ export default function RHSTitle(props: Props) {
             {
                 props.rhsState === RHSState.List && !props.isLoading &&
                 <React.Fragment>
-                    <div>
-                        <div className='title'>{'Incident List'}</div>
-                    </div>
+                    <div className='title'>{'Incident List'}</div>
                 </React.Fragment>
             }
             {
