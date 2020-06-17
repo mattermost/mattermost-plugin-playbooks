@@ -12,7 +12,7 @@
 
 import users from '../../fixtures/users.json';
 
-describe('Incident List View Verification in Backstage', () => {
+describe('Incident List View in Backstage', () => {
 	before(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
@@ -24,8 +24,9 @@ describe('Incident List View Verification in Backstage', () => {
 		cy.openIncidentBackstage();
 	});
 
-	it('Incident backstage has Incidents and team name in heading', () => {
+	it('Has "Incidents" and team name in heading', () => {
 		// * In the backstage, verify the header contains the team name -- eligendi
-		cy.findByTestId('titleIncident').should('be.visible').contains('eligendi');
+		cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
+		cy.findByTestId('titleIncident').contains('eligendi');
 	});
 });

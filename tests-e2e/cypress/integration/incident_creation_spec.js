@@ -23,7 +23,7 @@
 import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
-describe('Incident Creation Verification Using All Three Methods', () => {
+describe('Incident Creation', () => {
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
@@ -32,7 +32,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 	});
 
 	// Test Plan for v0.1 #18, 23, 28 Incident can be started while viewing a public channel
-	it('#18 Incident can be started with slash command while viewing a public channel', () => {
+	it('Can be started with slash command while viewing a public channel', () => {
 		// # Visit a public channel: off-topic
 		cy.visit('/ad-1/channels/off-topic');
 
@@ -42,7 +42,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(newIncident1);
 	});
 
-	it('#23 Incident can be started from RHS while viewing a public channel', () => {
+	it('Can be started from RHS while viewing a public channel', () => {
 		// * Verify that incident can be started from incident RHS
 		cy.visit('/ad-1/channels/off-topic');
 		const newIncident2 = "Public 2 - " + Date.now();
@@ -50,7 +50,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(newIncident2);
 	});
 
-	it('#28 Incident can be started from post menu while viewing a public channel', () => {
+	it('Can be started from post menu while viewing a public channel', () => {
 		// * Verify that incident can be started from post menu
 		cy.visit('/ad-1/channels/off-topic');
 		const newIncident3 = "Public 3 - " + Date.now();
@@ -59,7 +59,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 	});
 
 	// Test Plan for v0.1 #19, 24, 29 - Incident can be started while viewing a private channel
-	it('#19 - Incident can be started while viewing a private channel', () => {
+	it('Can be started while viewing a private channel', () => {
 		// # Visit a private channel: commodi
 		cy.visit('/ad-1/channels/autem-2')
 		
@@ -69,7 +69,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(newIncident1);
 	});
 
-	it('#24 - Incident can be started while viewing a private channel', () => {
+	it('Can be started while viewing a private channel', () => {
 		// # Visit a private channel: commodi
 		cy.visit('/ad-1/channels/autem-2')
 		
@@ -79,7 +79,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(newIncident2);
 	});
 
-	it('#29 - Incident can be started while viewing a private channel', () => {
+	it('Can be started while viewing a private channel', () => {
 		// # Visit a private channel: commodi
 		cy.visit('/ad-1/channels/autem-2')
 		
@@ -90,7 +90,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 	});
 
 	// Test Plan for v0.1 #20, 25, 30 - Incident can be started while viewing a group message channel
-	it('#20 - Incident can be started with slash command while viewing a group message channel', () => {
+	it('Can be started with slash command while viewing a group message channel', () => {
 		// # Create a GM channel and visit channel
 		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells']);
 		
@@ -100,7 +100,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(gm1);
 	});
 
-	it('#25 - Incident can be started from RHS while viewing a group message channel', () => {
+	it('Can be started from RHS while viewing a group message channel', () => {
 		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells', 'aaron.peterson']);
 
 		// * Verify that incident can be started from incident RHS
@@ -109,7 +109,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(gm2);
 	});
 
-	it('#30 - Incident can be started from post menu while viewing a group message channel', () => {
+	it('Can be started from post menu while viewing a group message channel', () => {
 		cy.apiCreateGroupChannel(['anne.stone', 'aaron.peterson']);
 		
 		// * Verify that incident can be started from post menu
@@ -119,7 +119,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 	});
 
 	// Test Plan for v0.1 #21, 26, 31 = Incident can be started while viewing a direct message channel
-	it('#21 - Incident can be started with slash command while viewing a direct message channel', () => {
+	it('Can be started with slash command while viewing a direct message channel', () => {
 		cy.visit('/');
 		// # Start a DM
 		cy.startDirectMessage('ashley.berry');
@@ -130,7 +130,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(dm1);
 	});
 
-	it('#26 - Incident can be started from RHS while viewing a direct message channel', () => {
+	it('Can be started from RHS while viewing a direct message channel', () => {
 		cy.visit('/');
 		cy.startDirectMessage('douglas.daniels');
 		// * Start incident from RHS
@@ -139,7 +139,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		cy.verifyIncidentCreated(dm2);
 	});
 
-	it('#31 - Incident can be started from post menu while viewing a direct message channel', () => {
+	it('Can be started from post menu while viewing a direct message channel', () => {
 		cy.visit('/');
 		cy.startDirectMessage('emily.meyer');
 		// * Start incident from post menu
@@ -149,7 +149,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 	});
 
 	// Test Plan for v0.1 #22, 27, 32 - Incident can be started while viewing the direct message channel to self
-	it('#22 - Incident can be started with slash command while viewing the direct message channel to self', () => {
+	it('Can be started with slash command while viewing the direct message channel to self', () => {
 		cy.visit('/');
 		cy.startDirectMessage('Victor Welch', true, 'user-1');
 		// * Start incident with slash command

@@ -12,33 +12,33 @@
 
 import users from '../fixtures/users.json';
 
-describe('Backstage Verification', () => {
+describe('Backstage', () => {
 	before(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 		cy.visit('/');
 	});
 
-	it('Incidents & Playbooks button in main menu defaults to incident backstage', () => {
+	it('Opens incident backstage by default with "Incidents & Playbooks" button in main menu', () => {
 		cy.openIncidentBackstage();
 
 		// * Verify that the heading is visible and contains "Incident"
 		cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
 	});
 
-	it('Playbooks LHS button opens playbooks backstage', () => {
+	it('Opens playbooks backstage with "Playbooks" LHS button', () => {
 		// # Switch to playbooks backstage
 		cy.findByTestId('playbooksLHSButton').click();
 
-		// * Verify that the heading is visible and contains "Playbook"
+		// * Verify that the heading is visible and contains "Playbooks"
 		cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
 	});
 
-	it('Incidents LHS button open incidents backstage', () => {
+	it('Opens incidents backstage with "Incidents" LHS button', () => {
 		// # Switch to incidents backstage
 		cy.findByTestId('incidentsLHSButton').click();
 
-		// * Verify again that the switch was successful by verifying the heading has "Incident"
+		// * Verify again that the switch was successful by verifying the heading is visible and has "Incidents"
 		cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
 	});
 });

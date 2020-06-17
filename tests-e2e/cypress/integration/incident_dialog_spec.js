@@ -19,11 +19,11 @@ function openIncidentDialog() {
 
 function closeIncidentDialog() {
 	cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.get('#interactiveDialogCancel').click();
-		});
+		cy.get('#interactiveDialogCancel').click();
+	});
 }
 
-describe('Incident Creation Modal Verification', () => {
+describe('Incident Creation Modal', () => {
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
@@ -31,32 +31,32 @@ describe('Incident Creation Modal Verification', () => {
 		openIncidentDialog();
 	});
 
-	it('Incident creation modal shows "Incident Details" heading', () => {
+	it('Shows "Incident Details" heading', () => {
 		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
 			cy.findByText("Incident Details").should('be.visible');
 		});
 		closeIncidentDialog();
 	});
 
-	it('Incident creation modal shows Commander', () => {
+	it('Shows Commander', () => {
 		cy.get('#interactiveDialogModalIntroductionText').contains('Commander');
 	});
 
-	it ('Incident creation modal contains channel name', () => {
+	it ('Contains channel name', () => {
 		// * Verify channel name is there
 		cy.findByTestId('incidentName').should('be.visible');
 		cy.findByText("Channel Name");
 		closeIncidentDialog();
 	});
 
-	it ('Incident creation modal contains playbook dropdown', () => {
+	it ('Contains playbook dropdown', () => {
 		// * Verify playbook dropdown is there
 		cy.findByTestId('autoCompleteSelector').should('be.visible');
 		cy.findByText("Playbook").should('be.visible');
 		closeIncidentDialog();
 	});
 
-	it('Incident creation is canceled when Cancel is clicked on Incident Response modal', () => {
+	it('Is canceled when Cancel is clicked on Incident Response modal', () => {
 		closeIncidentDialog();
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 

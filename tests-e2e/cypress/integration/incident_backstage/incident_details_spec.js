@@ -12,7 +12,7 @@
 
 import users from '../../fixtures/users.json';
 
-describe('Incident Details Verification in Backstage ', () => {
+describe('Incident Details View in Backstage ', () => {
 	const incident_backstage_1 = "Incident" + Date.now();
 	before(() => {
 		// # Login as non-admin user
@@ -28,7 +28,7 @@ describe('Incident Details Verification in Backstage ', () => {
 		cy.openIncidentBackstage();
 	});
 
-	it('Clicking on an incident in the list loads incident details page', () => {
+	it('Loads incident details page when clicking on an incident', () => {
 		// # Find the incident `incident_backstage_1` and click to open details view
 		cy.get('#incidentList').within(() => {
 			cy.findByText(incident_backstage_1).click();

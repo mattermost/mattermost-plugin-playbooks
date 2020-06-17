@@ -13,14 +13,14 @@
 import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
-describe('Incident Icon Verification', () => {
+describe('Incident Icon', () => {
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 	});
 
 	// Test Plan v0.1 #44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close
-	it('#44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close', () => {
+	it('#44 - Toggles the incident RHS open and close', () => {
 		cy.visit('/');
 		cy.get('#channel-header').within(() => {
 			cy.get('#incidentIcon').should('be.visible').click();

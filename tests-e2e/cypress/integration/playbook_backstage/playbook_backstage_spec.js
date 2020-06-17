@@ -12,7 +12,7 @@
 
 import users from '../../fixtures/users.json';
 
-describe('Playbook List View Verification in Backstage', () => {
+describe('Playbook List View in Backstage', () => {
 	before(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
@@ -27,8 +27,9 @@ describe('Playbook List View Verification in Backstage', () => {
 		cy.findByTestId('playbooksLHSButton').click();
 	});
 
-	it('Incident backstage has Incidents and team name in heading', () => {
-		// * Verify that the heading has the team's name -- eligendi
-		cy.findByTestId('titlePlaybook').should('be.visible').contains('eligendi');
+	it('Has "Playbooks" and team name in heading', () => {
+		// * Verify that the heading has "Playbooks" and the team's name -- eligendi
+		cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
+		cy.findByTestId('titlePlaybook').contains('eligendi');
 	});
 });
