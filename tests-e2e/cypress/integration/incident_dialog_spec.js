@@ -6,6 +6,9 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+/*
+ * This test spec contains tests for the incident creation modal
+ */
 import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
@@ -20,7 +23,7 @@ function closeIncidentDialog() {
 		});
 }
 
-describe('Test incident creation modal', () => {
+describe('Incident Creation Modal Verification', () => {
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
@@ -40,14 +43,14 @@ describe('Test incident creation modal', () => {
 	});
 
 	it ('Incident creation modal contains channel name', () => {
-		//Verify channel name is there
+		// * Verify channel name is there
 		cy.findByTestId('incidentName').should('be.visible');
 		cy.findByText("Channel Name");
 		closeIncidentDialog();
 	});
 
 	it ('Incident creation modal contains playbook dropdown', () => {
-		// Verify playbook dropdown is there
+		// * Verify playbook dropdown is there
 		cy.findByTestId('autoCompleteSelector').should('be.visible');
 		cy.findByText("Playbook").should('be.visible');
 		closeIncidentDialog();
@@ -57,16 +60,17 @@ describe('Test incident creation modal', () => {
 		closeIncidentDialog();
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 
-		// Fill the interactive dialog and press esc. Verify it's cancelled. No incident is created
+		// # Fill the interactive dialog and click Cancel
 		openIncidentDialog();
 		const newIncident = "New Incident" + Date.now();
 		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
 			cy.findByTestId('incidentNameinput').type(newIncident);
 			cy.get('#interactiveDialogCancel').click();
 		});
+		// * Verify it's cancelled
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 
-		// Login as sysadmin to check that incident did not get created:
+		// * Login as sysadmin to check that incident did not get created:
 		cy.apiLogout();
 		cy.apiLogin('sysadmin');
 		cy.apiGetAllIncidents().then((response) => {

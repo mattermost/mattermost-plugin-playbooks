@@ -154,10 +154,7 @@ export function BackstageIncidentList(props: Props) {
                             data-testid='titleIncident'
                         >
                             {'Incidents'}
-                            <div
-                                className='light'
-                                data-testid='titleTeamName'
-                            >
+                            <div className='light'>
                                 {'(' + props.currentTeamName + ')'}
                             </div>
                         </div>

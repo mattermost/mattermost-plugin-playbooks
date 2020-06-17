@@ -6,15 +6,17 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+/*
+ * This test spec contains tests for incident icon in channel header
+ */
+ 
 import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
-describe('Test incident creation using all three methods', () => {
+describe('Incident Icon Verification', () => {
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
-
-        //afteEach: delete all incidents here
 	});
 
 	// Test Plan v0.1 #44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close

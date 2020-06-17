@@ -6,9 +6,13 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+/*
+ * This test spec includes tests for the Incidents & Playbooks backstage
+ */
+
 import users from '../fixtures/users.json';
 
-describe('Test backstage', () => {
+describe('Backstage Verification', () => {
 	before(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
@@ -17,16 +21,24 @@ describe('Test backstage', () => {
 
 	it('Incidents & Playbooks button in main menu defaults to incident backstage', () => {
 		cy.openIncidentBackstage();
+
+		// * Verify that the heading contains "Incident"
 		cy.findByTestId('titleIncident').should('be.visible');
 	});
 
 	it('Playbooks LHS button opens playbooks backstage', () => {
+		// # Switch to playbooks backstage
 		cy.findByTestId('playbooksLHSButton').click();
+
+		// * Verify that the heading contains "Playbook"
 		cy.findByTestId('titlePlaybook').should('be.visible');
 	});
 
 	it('Incidents LHS button open incidents backstage', () => {
+		// # Switch to incidents backstage
 		cy.findByTestId('incidentsLHSButton').click();
+
+		// * Verify again that the swith was successful by verifying the heading has "Incident"
 		cy.findByTestId('titleIncident').should('be.visible');
 	});
 });

@@ -104,10 +104,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                     data-testid='titlePlaybook'
                                 >
                                     {'Playbooks'}
-                                    <div
-                                        className='light'
-                                        data-testid='titleTeamName'
-                                    >
+                                    <div className='light'>
                                         {'(' + this.props.currentTeamName + ')'}
                                     </div>
                                 </div>

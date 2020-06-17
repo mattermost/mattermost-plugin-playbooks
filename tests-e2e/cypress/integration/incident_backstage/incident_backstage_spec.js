@@ -6,29 +6,26 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-	// Add more incident backstage tests here
-	// Eg:
-	// - Verify Search box and it's content
-	// - Verify Commander dropdown content
-	// - Verify Status dropdown content
-	// - Verify incident list header content
-	// - Verify incident list content
+/*
+ * This test spec includes tests for the incident list view in incident backstage
+ */
 
 import users from '../../fixtures/users.json';
 
-describe('Test incident backstage', () => {
+describe('Incident List View Verification in Backstage', () => {
 	before(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
+
+		// # Go to eligendi's town-square channel
 		cy.visit('/ad-1/channels/town-square');
+
+		// # Launch Incident backstage
 		cy.openIncidentBackstage();
 	});
 
 	it('Incident backstage has Incidents and team name in heading', () => {
-		cy.findByTestId('titleIncident').should('be.visible').within(() => {
-			cy.findByTestId('titleTeamName').should('be.visible').within(() => {
-				cy.contains('eligendi');
-			});
-		});
+		// * In the backstage, verify the header contains the team name -- eligendi
+		cy.findByTestId('titleIncident').should('be.visible').contains('eligendi');
 	});
 });
