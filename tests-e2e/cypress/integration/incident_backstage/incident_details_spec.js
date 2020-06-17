@@ -35,8 +35,8 @@ describe('Incident Details Verification in Backstage ', () => {
 		});
 
 		// * Verify that the header contains the incident name
-		// The following is not the optimal way to do it, and will need to get replaced by
-		// a div id instead of the details-header class
+		// TODO: The following is not the optimal way to do it, and will need to get replaced by
+		// a div ID instead of the details-header class
 		cy.get('.details-header').contains(incident_backstage_1);
 	});
 });

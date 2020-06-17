@@ -67,10 +67,10 @@ describe('Incident Creation Modal Verification', () => {
 			cy.findByTestId('incidentNameinput').type(newIncident);
 			cy.get('#interactiveDialogCancel').click();
 		});
-		// * Verify it's cancelled
+		// * Verify it's canceled
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 
-		// * Login as sysadmin to check that incident did not get created:
+		// * Login as sysadmin to check that incident did not get created
 		cy.apiLogout();
 		cy.apiLogin('sysadmin');
 		cy.apiGetAllIncidents().then((response) => {

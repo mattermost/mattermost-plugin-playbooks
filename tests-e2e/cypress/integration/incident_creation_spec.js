@@ -28,7 +28,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 
-        //afteEach: delete all incidents here
+        //TODO:- afteEach: delete all incidents here
 	});
 
 	// Test Plan for v0.1 #18, 23, 28 Incident can be started while viewing a public channel
@@ -36,14 +36,14 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		// # Visit a public channel: off-topic
 		cy.visit('/ad-1/channels/off-topic');
 
-		// * INCIDENT CAN BE STARTED WITH SLASH COMMAND
+		// * Verify that incident can be started with slash command
 		const newIncident1 = "Public " + Date.now();
 		cy.startIncidentWithSlashCommand(newIncident1);
 		cy.verifyIncidentCreated(newIncident1);
 	});
 
 	it('#23 Incident can be started from RHS while viewing a public channel', () => {
-		// * INCIDENT CAN BE STARTED FROM INCIDENT RHS
+		// * Verify that incident can be started from incident RHS
 		cy.visit('/ad-1/channels/off-topic');
 		const newIncident2 = "Public 2 - " + Date.now();
 		cy.startIncidentFromRHS(newIncident2);
@@ -51,7 +51,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 	});
 
 	it('#28 Incident can be started from post menu while viewing a public channel', () => {
-		// * INCIDENT CAN BE STARTED FROM POST MENU
+		// * Verify that incident can be started from post menu
 		cy.visit('/ad-1/channels/off-topic');
 		const newIncident3 = "Public 3 - " + Date.now();
 		cy.startIncidentFromPostMenu(newIncident3);
@@ -63,7 +63,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		// # Visit a private channel: commodi
 		cy.visit('/ad-1/channels/autem-2')
 		
-		// * INCIDENT CAN BE STARTED WITH SLASH COMMAND
+		// * Verify that incident can be started with slash command
 		const newIncident1 = "Private " + Date.now();
 		cy.startIncidentWithSlashCommand(newIncident1);
 		cy.verifyIncidentCreated(newIncident1);
@@ -73,7 +73,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		// # Visit a private channel: commodi
 		cy.visit('/ad-1/channels/autem-2')
 		
-		// * INCIDENT CAN BE STARTED FROM INCIDENT RHS
+		// * Verify that incident can be started from incident RHS
 		const newIncident2 = "Private 2 - " + Date.now();
 		cy.startIncidentFromRHS(newIncident2);
 		cy.verifyIncidentCreated(newIncident2);
@@ -83,7 +83,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		// # Visit a private channel: commodi
 		cy.visit('/ad-1/channels/autem-2')
 		
-		// * INCIDENT CAN BE STARTED FROM POST MENU
+		// * Verify that incident can be started from post menu
 		const newIncident3 = "Private 3 - " + Date.now();
 		cy.startIncidentFromPostMenu(newIncident3);
 		cy.verifyIncidentCreated(newIncident3);
@@ -94,7 +94,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 		// # Create a GM channel and visit channel
 		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells']);
 		
-		// * INCIDENT CAN BE STARTED WITH SLASH COMMAND
+		// * Verify that incident can be started with slash command
 		const gm1 = "GM 1 - " + Date.now();
 		cy.startIncidentWithSlashCommand(gm1);
 		cy.verifyIncidentCreated(gm1);
@@ -102,7 +102,8 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 
 	it('#25 - Incident can be started from RHS while viewing a group message channel', () => {
 		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells', 'aaron.peterson']);
-		// * INCIDENT CAN BE STARTED FROM RHS
+
+		// * Verify that incident can be started from incident RHS
 		const gm2 = "GM 2 - " + Date.now();
 		cy.startIncidentFromRHS(gm2);
 		cy.verifyIncidentCreated(gm2);
@@ -111,7 +112,7 @@ describe('Incident Creation Verification Using All Three Methods', () => {
 	it('#30 - Incident can be started from post menu while viewing a group message channel', () => {
 		cy.apiCreateGroupChannel(['anne.stone', 'aaron.peterson']);
 		
-		// * INCIDENT CAN BE STARTED FROM POST MENU
+		// * Verify that incident can be started from post menu
 		const gm3 = "GM 3 - " + Date.now();
 		cy.startIncidentFromPostMenu(gm3);
 		cy.verifyIncidentCreated(gm3);
