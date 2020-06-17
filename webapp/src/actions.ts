@@ -6,7 +6,7 @@ import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 import {getChannel as fetchChannel} from 'mattermost-redux/actions/channels';
 import {getTeam as fetchTeam} from 'mattermost-redux/actions/teams';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam, getCurrentTeamId, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {generateId} from 'mattermost-redux/utils/helpers';
 
@@ -16,7 +16,7 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {ChecklistItem} from 'src/types/playbook';
-import {selectToggleRHS, backstageModal} from 'src/selectors';
+import {selectToggleRHS} from 'src/selectors';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -39,8 +39,6 @@ import {
     SetLoading,
     SetClientId,
     ReceivedPlaybooks,
-    SetBackstageModalSettings,
-    SET_BACKSTAGE_MODAL_SETTINGS,
     RECEIVED_PLAYBOOKS,
     RECEIVED_PLAYBOOK,
     REMOVE_PLAYBOOK,
@@ -62,7 +60,9 @@ import {
     clientRemoveChecklistItem,
     clientRenameChecklistItem,
     clientReorderChecklist,
+    clientFetchPlaybook,
     clientFetchPlaybooks,
+    fetchIncidentWithDetails,
 } from './client';
 
 // @ts-ignore
@@ -79,20 +79,26 @@ export function getIncident(id: string) {
                 dispatch(fetchUser(incident.commander_user_id));
             }
 
-            // Fetch primary channel and team data
-            let c = getChannel(getState(), incident.primary_channel_id) as Channel;
+            // Fetch primary channel
+            const c = getChannel(getState(), incident.primary_channel_id) as Channel;
             if (!c) {
-                // Must wait to fetch channel data before fetching its team data
-                /* eslint-disable no-await-in-loop */
-                c = await dispatch(fetchChannel(incident.primary_channel_id)) as Channel;
-            }
-            if (!getTeam(getState(), c.team_id)) {
-                dispatch(fetchTeam(c.team_id));
+                await dispatch(fetchChannel(incident.primary_channel_id));
             }
 
             dispatch(receivedIncidentDetails(incident));
         } catch (error) {
             dispatch(receivedError(error));
+        }
+    };
+}
+
+export function getIncidentWithDetails(id: String) {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        try {
+            const incident = await fetchIncidentWithDetails(id) as Incident;
+            dispatch(receivedIncidentDetails(incident));
+        } catch {
+            dispatch(getIncident(id));
         }
     };
 }
@@ -154,6 +160,17 @@ export function getPlaybooksForTeam(teamID: string) {
 export function getPlaybooksForCurrentTeam() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         dispatch(getPlaybooksForTeam(getCurrentTeamId(getState())));
+    };
+}
+
+export function getPlaybook(playbookID: string) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        try {
+            const playbook = await clientFetchPlaybook(playbookID);
+            dispatch(receivedPlaybook(playbook));
+        } catch (error) {
+            console.error(error); //eslint-disable-line no-console
+        }
     };
 }
 
@@ -316,26 +333,9 @@ export function removePlaybook(playbook: Playbook): ReceivedPlaybook {
     };
 }
 
-export function setBackstageModal(open: boolean, selectedArea?: BackstageArea): SetBackstageModalSettings {
-    return {
-        type: SET_BACKSTAGE_MODAL_SETTINGS,
-        open,
-        selectedArea,
-    };
-}
-
 export function toggleRHS() {
     return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         selectToggleRHS(getState())();
     };
 }
 
-export function navigateToUrl(urlPath: string) {
-    return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        WebappUtils.browserHistory.push(urlPath);
-
-        if (backstageModal(getState()).open) {
-            dispatch(setBackstageModal(false));
-        }
-    };
-}

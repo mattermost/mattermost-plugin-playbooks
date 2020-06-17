@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {RouteComponentProps} from 'react-router-dom';
 
 import Toggle from 'src/components/widgets/toggle';
 
@@ -11,37 +12,59 @@ import {ChecklistDetails} from 'src/components/checklist/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {MAX_NAME_LENGTH} from 'src/utils/constants';
 
-import BackIcon from '../../assets/icons/back_icon';
+import BackIcon from 'src/components/assets/icons/back_icon';
 
-import './playbook.scss';
+import '../playbook.scss';
 
-interface Props {
+export interface Props extends RouteComponentProps {
     playbook: Playbook;
+    newPlaybook: boolean;
     currentTeamID: string;
     onClose: () => void;
+    actions: {
+        getPlaybook: (playbookId: String) => void;
+    };
 }
 
 interface State{
     title: string;
     checklists: Checklist[];
-    newPlaybook: boolean;
     changesMade: boolean;
     confirmOpen: boolean;
     public: boolean;
 }
 
-export default class PlaybookEdit extends React.PureComponent<Props, State> {
+export class PlaybookEdit extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
 
         this.state = {
-            title: this.props.playbook?.title,
+            title: this.props.playbook.title,
             checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
-            newPlaybook: !this.props.playbook.id,
             changesMade: false,
             confirmOpen: false,
-            public: this.props.playbook?.create_public_incident,
+            public: this.props.playbook.create_public_incident,
         };
+    }
+
+    componentDidMount() {
+        // If the user directly navigates to /playbooks/:playbookId, the store may not
+        // contain the playbook requested. This happens only when we are not creating
+        // a new playbook but the playbook in the props is still empty (it has no ID).
+        if (!this.props.newPlaybook && !this.props.playbook.id) {
+            this.props.actions.getPlaybook(this.props.match.params.playbookId);
+        }
+    }
+
+    componentDidUpdate(prevProps) {
+        if (this.props.playbook.id !== prevProps.playbook.id) {
+            // eslint-disable-next-line react/no-did-update-set-state
+            this.setState({
+                title: this.props.playbook.title,
+                checklists: JSON.parse(JSON.stringify(this.props.playbook.checklists)),
+                public: this.props.playbook.create_public_incident,
+            });
+        }
     }
 
     public onSave = async () => {
@@ -150,10 +173,9 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const title = this.state.newPlaybook ? 'New Playbook' : 'Edit Playbook';
         const saveDisabled = this.state.title.trim() === '' || !this.state.changesMade;
 
-        return (
+        const notFoundComponent = (
             <div className='Playbook'>
                 <div className='Backstage__header'>
                     <div className='title'>
@@ -161,7 +183,21 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                             className='Backstage__header__back'
                             onClick={this.confirmOrClose}
                         />
-                        {title}
+                        {'Playbook Not Found'}
+                    </div>
+                </div>
+            </div>
+        );
+
+        const editComponent = (
+            <div className='Playbook'>
+                <div className='Backstage__header'>
+                    <div className='title'>
+                        <BackIcon
+                            className='Backstage__header__back'
+                            onClick={this.confirmOrClose}
+                        />
+                        {this.props.newPlaybook ? 'New Playbook' : 'Edit Playbook'}
                     </div>
                     <div className='header-button-div'>
                         <button
@@ -236,5 +272,9 @@ export default class PlaybookEdit extends React.PureComponent<Props, State> {
                 />
             </div>
         );
+
+        const isPlaybookDefined = this.props.newPlaybook || this.props.playbook.id;
+
+        return isPlaybookDefined ? editComponent : notFoundComponent;
     }
 }

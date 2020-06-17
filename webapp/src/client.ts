@@ -62,6 +62,10 @@ export function clientFetchPlaybooks(teamID: string) {
     return doGet(`${apiUrl}/playbooks?teamid=${teamID}`);
 }
 
+export function clientFetchPlaybook(playbookID: string) {
+    return doGet(`${apiUrl}/playbooks/${playbookID}`);
+}
+
 export async function savePlaybook(playbook: Playbook) {
     if (!playbook.id) {
         const {data} = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
