@@ -29,9 +29,9 @@ type ServiceImpl struct {
 }
 
 // NewConfigService Creates a new ServiceImpl struct.
-func NewConfigService(api *pluginapi.Client) *ServiceImpl {
+func NewConfigService(api *pluginapi.Client, manifest *model.Manifest) *ServiceImpl {
 	c := &ServiceImpl{
-		manifest: Manifest,
+		manifest: manifest,
 	}
 	c.api = api
 	c.configuration = new(Configuration)
