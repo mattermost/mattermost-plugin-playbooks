@@ -86,13 +86,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                     ticks: {
                         reverse: true,
                         fontColor: changeOpacity(this.props.theme.centerChannelColor, 0.72),
-                        callback: (value: string) => {
-                            const MAX_CHARS = 25;
-                            if (value.length > MAX_CHARS) {
-                                return value.substring(0, MAX_CHARS) + '...';
-                            }
-                            return value;
-                        },
+                        callback: this.yAxisLabel,
                     },
                     gridLines: {
                         display: false,
@@ -110,9 +104,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                 bodyFontFamily: 'Open Sans',
                 yPadding: 6,
                 callbacks: {
-                    title: (tooltipItem: ChartTooltipItem[]): string => {
-                        return tooltipItem[0].yLabel as string || '';
-                    },
+                    title: this.tooltipTitle,
                     label: this.tooltipLabel,
                 },
             },
@@ -135,6 +127,10 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             x: position.x,
             y: position.y - 12,
         };
+    }
+
+    public tooltipTitle(tooltipItem: ChartTooltipItem[]): string {
+        return tooltipItem[0].yLabel as string || '';
     }
 
     public tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
@@ -171,6 +167,14 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         }
 
         return `${duration.seconds()} s`;
+    }
+
+    public yAxisLabel(value: string) {
+        const MAX_CHARS = 25;
+        if (value.length > MAX_CHARS) {
+            return value.substring(0, MAX_CHARS) + '...';
+        }
+        return value;
     }
 
     public initData() {
