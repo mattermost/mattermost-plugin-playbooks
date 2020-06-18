@@ -83,9 +83,6 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                     type: 'category',
                     position: 'left',
                     display: true,
-                    afterFit: (scaleInstance) => {
-                        scaleInstance.width = 200; // sets the width to 200px
-                    },
                     ticks: {
                         reverse: true,
                         fontColor: changeOpacity(this.props.theme.centerChannelColor, 0.72),
