@@ -51,10 +51,14 @@ $announcement-bar-height: 32px;
             }
 
             .title {
-                font-weight: 600;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                overflow: hidden;
+                display: flex;
+
+                > span {
+                    font-weight: 600;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    overflow: hidden;
+                }
             }
         }
     }

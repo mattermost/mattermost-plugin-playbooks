@@ -41,12 +41,12 @@ const TextWithTooltip = (props: Props) => {
     }, []);
 
     const text = (
-        <a
+        <span
             ref={setRef}
             className={props.className}
         >
             {props.text}
-        </a>
+        </span>
     );
 
     if (showTooltip) {
