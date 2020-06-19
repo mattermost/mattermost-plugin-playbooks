@@ -157,7 +157,10 @@ export function BackstageIncidentList(props: Props) {
                     </div>
                 </div>
             </div>
-            <div className='list'>
+            <div
+                id='incidentList'
+                className='list'
+            >
                 <div className='IncidentList__filters'>
                     <SearchInput
                         default={fetchParams.search_term}
