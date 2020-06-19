@@ -439,6 +439,28 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	return nil
 }
 
+// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for _, checklist := range theIncident.Playbook.Checklists {
+		for _, item := range checklist.Items {
+			ret = append(ret, model.AutocompleteListItem{
+				Item:     item.Title,
+				Hint:     "hint",
+				HelpText: "Check this item",
+			})
+		}
+	}
+
+	return ret, nil
+}
+
 func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
 	// Get main channel details
 	channel, err := s.pluginAPI.Channel.Get(incident.PrimaryChannelID)

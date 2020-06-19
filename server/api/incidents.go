@@ -62,6 +62,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
 
 	checklistsRouter := incidentRouterAuthorized.PathPrefix("/checklists").Subrouter()
+	checklistsRouter.HandleFunc("/autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
@@ -551,6 +552,30 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// getChecklistAutocomplete handles the GET /incidents/{id}/checklists/autocomplete api endpoint
+func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	data, err := h.incidentService.GetChecklistAutocomplete(id)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {

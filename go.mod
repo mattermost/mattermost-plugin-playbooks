@@ -7,7 +7,7 @@ require (
 	github.com/golang/mock v1.4.3
 	github.com/gorilla/mux v1.7.4
 	github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200626173704-d13af3838960
-	github.com/mattermost/mattermost-server/v5 v5.23.1
+	github.com/mattermost/mattermost-server/v5 v5.24.1
 	github.com/mholt/archiver/v3 v3.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
