@@ -42,7 +42,20 @@ func getCommand() *model.Command {
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: start, end",
 		AutoCompleteHint: "[command]",
+		AutocompleteData: getAutocompleteData(),
 	}
+}
+
+func getAutocompleteData() *model.AutocompleteData {
+	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end")
+
+	start := model.NewAutocompleteData("start", "", "Starts a new incident")
+	slashIncident.AddCommand(start)
+
+	end := model.NewAutocompleteData("end", "", "Ends the incident associated with the current channel")
+	slashIncident.AddCommand(end)
+
+	return slashIncident
 }
 
 // Runner handles commands.
