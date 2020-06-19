@@ -26,7 +26,6 @@ interface Props extends RouteComponentProps {
 }
 
 interface State {
-    newMode: boolean;
     selectedPlaybook?: Playbook | null;
     showConfirmation: boolean;
     showBanner: boolean;
@@ -37,7 +36,6 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
         super(props);
 
         this.state = {
-            newMode: false,
             selectedPlaybook: null,
             showConfirmation: false,
             showBanner: false,
@@ -49,24 +47,18 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
     }
 
     public backToPlaybookList = () => {
-        this.setState({
-            newMode: false,
-        });
         navigateToTeamPluginUrl(this.props.currentTeam.name, '/playbooks');
     }
 
     public editPlaybook = (playbook: Playbook) => {
         this.setState({
-            newMode: false,
             selectedPlaybook: playbook,
         });
         navigateToTeamPluginUrl(this.props.currentTeam.name, `/playbooks/${playbook.id}`);
     }
 
     public newPlaybook = () => {
-        this.setState({
-            newMode: true,
-        });
+        navigateToTeamPluginUrl(this.props.currentTeam.name, '/playbooks/new');
     }
 
     public hideConfirmModal = () => {
@@ -192,12 +184,10 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                     exact={true}
                     path={this.props.match.path}
                 >
-                    {
-                        !this.state.newMode && listComponent
-                    }
-                    {
-                        this.state.newMode && editComponent(true)
-                    }
+                    {listComponent}
+                </Route>
+                <Route path={`${this.props.match.path}/new`}>
+                    {editComponent(true)}
                 </Route>
                 <Route path={`${this.props.match.path}/:playbookId`}>
                     {editComponent(false)}

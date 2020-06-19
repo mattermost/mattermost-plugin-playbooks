@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
+import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
 import {CSSTransition} from 'react-transition-group';
 
 import classNames from 'classnames';
@@ -16,14 +17,13 @@ import './backstage.scss';
 import Waves from '../assets/waves';
 
 interface Props {
-    selectedArea: BackstageArea;
     currentTeamId: string;
     currentTeamName: string;
     currentTeamDisplayName: string;
     theme: Record<string, string>;
 }
 
-export const Backstage = ({selectedArea, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
+export const Backstage = (props: Props): React.ReactElement<Props> => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -35,19 +35,10 @@ export const Backstage = ({selectedArea, currentTeamId, currentTeamName, current
     }, []);
 
     const onBack = () => {
-        navigateToUrl(`/${currentTeamName}`);
+        navigateToUrl(`/${props.currentTeamName}`);
     };
 
-    let activeArea = <PlaybookList/>;
-    if (selectedArea === BackstageArea.Incidents) {
-        activeArea = (
-            <BackstageIncidentList
-                currentTeamId={currentTeamId}
-                currentTeamName={currentTeamName}
-                currentTeamDisplayName={currentTeamDisplayName}
-            />
-        );
-    }
+    const match = useRouteMatch();
 
     return (
         <div className='Backstage'>
@@ -62,22 +53,37 @@ export const Backstage = ({selectedArea, currentTeamId, currentTeamName, current
                     </div>
                 </div>
                 <div className='menu'>
-                    <div
-                        className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
-                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/incidents')}
+                    <NavLink
+                        to='incidents'
+                        className={'menu-title'}
+                        activeClassName={'active'}
+                        component={<div/>}
                     >
                         {'Incidents'}
-                    </div>
-                    <div
-                        className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
-                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/playbooks')}
+                    </NavLink>
+                    <NavLink
+                        to='playbooks'
+                        className={'menu-title'}
+                        activeClassName={'active'}
+                        component={<div/>}
                     >
                         {'Playbooks'}
-                    </div>
+                    </NavLink>
                 </div>
             </div>
             <div className='content-container'>
-                {activeArea}
+                <Switch>
+                    <Route path={`${match.url}/playbooks`}>
+                        <PlaybookList/>
+                    </Route>
+                    <Route path={`${match.url}/incidents`}>
+                        <BackstageIncidentList
+                            currentTeamId={props.currentTeamId}
+                            currentTeamName={props.currentTeamName}
+                            currentTeamDisplayName={props.currentTeamDisplayName}
+                        />
+                    </Route>
+                </Switch>
             </div>
             <Waves/>
         </div>
