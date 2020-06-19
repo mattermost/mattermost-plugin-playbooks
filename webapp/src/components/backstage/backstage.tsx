@@ -63,12 +63,14 @@ export const Backstage = ({selectedArea, currentTeamId, currentTeamName, current
                 </div>
                 <div className='menu'>
                     <div
+                        data-testid='incidentsLHSButton'
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
                         onClick={() => navigateToTeamPluginUrl(currentTeamName, '/incidents')}
                     >
                         {'Incidents'}
                     </div>
                     <div
+                        data-testid='playbooksLHSButton'
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
                         onClick={() => navigateToTeamPluginUrl(currentTeamName, '/playbooks')}
                     >

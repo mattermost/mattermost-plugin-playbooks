@@ -119,7 +119,10 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             <div className='Playbook'>
                 { deleteSuccessfulBanner }
                 <div className='Backstage__header'>
-                    <div className='title'>
+                    <div
+                        data-testid='titlePlaybook'
+                        className='title'
+                    >
                         {'Playbooks'}
                         <div className='light'>
                             {'(' + this.props.currentTeam.display_name + ')'}

@@ -147,14 +147,20 @@ export function BackstageIncidentList(props: Props) {
     const listComponent = (
         <div className='IncidentList'>
             <div className='Backstage__header'>
-                <div className='title'>
+                <div
+                    className='title'
+                    data-testid='titleIncident'
+                >
                     {'Incidents'}
                     <div className='light'>
                         {'(' + props.currentTeamDisplayName + ')'}
                     </div>
                 </div>
             </div>
-            <div className='list'>
+            <div
+                id='incidentList'
+                className='list'
+            >
                 <div className='IncidentList__filters'>
                     <SearchInput
                         default={fetchParams.search_term}
@@ -298,4 +304,3 @@ const endedAt = (isActive: boolean, time: number) => {
     }
     return '--';
 };
-
