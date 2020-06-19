@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
-
 import {
     DragDropContext,
     Draggable,
@@ -13,6 +12,7 @@ import {
 } from 'react-beautiful-dnd';
 
 import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {MAX_NAME_LENGTH} from 'src/utils/constants';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';
@@ -191,6 +191,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                         autoFocus={true}
                         type='text'
                         value={newValue}
+                        maxLength={MAX_NAME_LENGTH}
                         className='form-control mt-2'
                         placeholder={'Enter a new item'}
                         onKeyDown={(e) => onEscapeKey(e)}

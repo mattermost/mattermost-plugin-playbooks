@@ -5,6 +5,7 @@ import React, {useState} from 'react';
 import moment from 'moment';
 
 import {ChecklistItem} from 'src/types/playbook';
+import {MAX_NAME_LENGTH} from 'src/utils/constants';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -101,6 +102,7 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                 className='form-control'
                 type='text'
                 value={title}
+                maxLength={MAX_NAME_LENGTH}
                 onBlur={submit}
                 onKeyPress={(e) => {
                     if (e.key === 'Enter') {

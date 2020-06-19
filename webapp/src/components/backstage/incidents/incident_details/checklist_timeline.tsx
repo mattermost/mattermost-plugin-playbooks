@@ -4,7 +4,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import moment from 'moment';
-
 import Chart, {ChartOptions, ChartTooltipItem, ChartTooltipModel, Point} from 'chart.js';
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
@@ -87,6 +86,7 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                     ticks: {
                         reverse: true,
                         fontColor: changeOpacity(this.props.theme.centerChannelColor, 0.72),
+                        callback: this.yAxisLabel,
                     },
                     gridLines: {
                         display: false,
@@ -104,13 +104,13 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
                 bodyFontFamily: 'Open Sans',
                 yPadding: 6,
                 callbacks: {
-                    title: () => '', // Empty tooltip title
+                    title: this.tooltipTitle,
                     label: this.tooltipLabel,
                 },
             },
             layout: {
                 padding: {
-                    top: 50,
+                    top: 70,
                 },
             },
         };
@@ -127,6 +127,10 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
             x: position.x,
             y: position.y - 12,
         };
+    }
+
+    public tooltipTitle(tooltipItem: ChartTooltipItem[]): string {
+        return tooltipItem[0].yLabel as string || '';
     }
 
     public tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
@@ -163,6 +167,14 @@ export default class ChecklistTimeline extends React.PureComponent<Props> {
         }
 
         return `${duration.seconds()} s`;
+    }
+
+    public yAxisLabel(value: string) {
+        const MAX_CHARS = 25;
+        if (value.length > MAX_CHARS) {
+            return value.substring(0, MAX_CHARS) + '...';
+        }
+        return value;
     }
 
     public initData() {
