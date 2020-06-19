@@ -43,13 +43,17 @@ $font-family: Open Sans;
                         background-color: var(--button-bg);
                     }
                 }
-            }
 
-            .incident-item__title {
-                font-weight: 600;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                overflow: hidden;
+                &__title {
+                    display: flex;
+
+                    > span {
+                        font-weight: 600;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        overflow: hidden;
+                    }
+                }
             }
 
             .pagination-row {

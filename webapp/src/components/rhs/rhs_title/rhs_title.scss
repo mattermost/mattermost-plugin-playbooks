@@ -3,6 +3,7 @@
     flex-direction: row;
     align-items: flex-end;
     justify-content: space-between;
+    overflow: hidden;
 
     .fa-angle-left {
         cursor: pointer;
@@ -24,5 +25,11 @@
     .incident-details {
         display: flex;
         align-items: center;
+        overflow: hidden;
+    }
+    
+    .title {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }

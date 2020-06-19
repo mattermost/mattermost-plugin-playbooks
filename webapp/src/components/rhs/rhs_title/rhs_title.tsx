@@ -3,6 +3,7 @@
 
 import React from 'react';
 
+import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Spinner from 'src/components/assets/icons/spinner';
 import {Incident} from 'src/types/incident';
 import {RHSState} from 'src/types/rhs';
@@ -32,9 +33,11 @@ export default function RHSTitle(props: Props) {
             {
                 props.rhsState === RHSState.List && !props.isLoading &&
                 <React.Fragment>
-                    <div>
-                        <div className='title'>{'Incident List'}</div>
-                    </div>
+                    <TextWithTooltip
+                        id={'title'}
+                        className='title'
+                        text={'Incident List'}
+                    />
                 </React.Fragment>
             }
             {
@@ -45,7 +48,11 @@ export default function RHSTitle(props: Props) {
                             className='fa fa-angle-left'
                             onClick={goBack}
                         />
-                        <div className='title'>{props.incident.name}</div>
+                        <TextWithTooltip
+                            id={'title'}
+                            className='title'
+                            text={props.incident.name}
+                        />
                     </div>
                 </React.Fragment>
             }
