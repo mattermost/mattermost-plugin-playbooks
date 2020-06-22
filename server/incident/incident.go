@@ -141,7 +141,7 @@ type Store interface {
 
 	// GetAllIncidentMembersCount returns the count of all members of an incident since the
 	// beginning of the incident, excluding bots.
-	GetAllIncidentMembersCount(incidentID string) (int, error)
+	GetAllIncidentMembersCount(incidentID string) (int64, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

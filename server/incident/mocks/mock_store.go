@@ -49,10 +49,10 @@ func (mr *MockStoreMockRecorder) CreateIncident(arg0 interface{}) *gomock.Call {
 }
 
 // GetAllIncidentMembersCount mocks base method
-func (m *MockStore) GetAllIncidentMembersCount(arg0 string) (int, error) {
+func (m *MockStore) GetAllIncidentMembersCount(arg0 string) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllIncidentMembersCount", arg0)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -457,7 +457,7 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 		ChannelDisplayName: channel.DisplayName,
 		TeamName:           team.Name,
 		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         int64(numMembers),
+		NumMembers:         numMembers,
 	}
 	return incidentWithDetails, nil
 }

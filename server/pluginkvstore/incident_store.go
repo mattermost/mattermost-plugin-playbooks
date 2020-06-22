@@ -173,14 +173,14 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 
 // GetAllIncidentMembersCount returns the count of all members of an incident since the
 // beginning of the incident, excluding bots.
-func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int, error) {
+func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, error) {
 	db, err := s.pluginAPI.Store.GetMasterDB()
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get a database connection")
 	}
 
-	var numMembers int
-	err = db.QueryRow("SELECT COUNT(DISTINCT UserId) FROM ChannelMemberHistory as u WHERE ChannelId = ? AND u.UserId NOT IN (SELECT UserId FROM Bots)", incidentID).Scan(&numMembers)
+	var numMembers int64
+	err = db.QueryRow("SELECT COUNT(DISTINCT UserId) FROM ChannelMemberHistory AS u WHERE ChannelId = ? AND u.UserId NOT IN (SELECT UserId FROM Bots)", incidentID).Scan(&numMembers)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to query database")
 	}
