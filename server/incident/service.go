@@ -445,9 +445,10 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
-	channelStats, err := s.pluginAPI.Channel.GetChannelStats(incident.PrimaryChannelID)
+
+	numMembers, err := s.store.GetAllIncidentMembersCount(incident.PrimaryChannelID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve channel id '%s' stats", incident.PrimaryChannelID)
+		return nil, errors.Wrapf(err, "failed to get the count of incident members for channel id '%s'", incident.PrimaryChannelID)
 	}
 
 	incidentWithDetails := &Details{
@@ -456,7 +457,7 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 		ChannelDisplayName: channel.DisplayName,
 		TeamName:           team.Name,
 		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         channelStats.MemberCount,
+		NumMembers:         numMembers,
 	}
 	return incidentWithDetails, nil
 }
