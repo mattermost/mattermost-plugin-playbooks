@@ -5,6 +5,7 @@ import React, {useState} from 'react';
 import moment from 'moment';
 
 import {ChecklistItem} from 'src/types/playbook';
+import {MAX_NAME_LENGTH} from 'src/utils/constants';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -46,26 +47,26 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
                 />
                 <label>
                     {title}
-                    <a
-                        className={'light small'}
-                        href={`/_redirect/pl/${checklistItem.checked_post_id}`}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            if (!checklistItem.checked_post_id) {
-                                return;
-                            }
-
-                            // @ts-ignore
-                            window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
-                            if (onRedirect) {
-                                onRedirect();
-                            }
-                        }}
-                    >
-                        {timestamp}
-                    </a>
                 </label>
             </div>
+            <a
+                className={'timestamp small'}
+                href={`/_redirect/pl/${checklistItem.checked_post_id}`}
+                onClick={(e) => {
+                    e.preventDefault();
+                    if (!checklistItem.checked_post_id) {
+                        return;
+                    }
+
+                    // @ts-ignore
+                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
+                    if (onRedirect) {
+                        onRedirect();
+                    }
+                }}
+            >
+                {timestamp}
+            </a>
         </div>
     );
 };
@@ -101,6 +102,7 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                 className='form-control'
                 type='text'
                 value={title}
+                maxLength={MAX_NAME_LENGTH}
                 onBlur={submit}
                 onKeyPress={(e) => {
                     if (e.key === 'Enter') {

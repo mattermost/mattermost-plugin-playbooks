@@ -8,20 +8,20 @@ import {debounce} from 'debounce';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {registerCssVars, isMobile} from 'src/utils/utils';
+import {registerCssVars, isMobile, navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import {pluginId} from './manifest';
 import IncidentIcon from './components/assets/icons/incident_icon';
 import RightHandSidebar from './components/rhs';
 import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
-import BackstageModal from './components/backstage/backstage_modal';
+import Backstage from './components/backstage';
 
 import {Hooks} from './hooks';
 import {
     setToggleRHSAction,
-    setBackstageModal,
 } from './actions';
 import reducer from './reducer';
 import {BackstageArea} from './types/backstage';
@@ -53,7 +53,10 @@ export default class Plugin {
             } else if (!mainMenuActionId && !isMobile()) {
                 mainMenuActionId = registry.registerMainMenuAction(
                     'Incidents & Playbooks',
-                    () => store.dispatch(setBackstageModal(true, BackstageArea.Incidents)),
+                    () => {
+                        const team = getCurrentTeam(store.getState());
+                        navigateToTeamPluginUrl(team.name, '/incidents');
+                    },
                 );
             }
         };
@@ -94,7 +97,8 @@ export default class Plugin {
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
 
-        registry.registerRootComponent(BackstageModal);
+        registry.registerNeedsTeamRoute('/incidents', () => <Backstage selectedArea={BackstageArea.Incidents}/>);
+        registry.registerNeedsTeamRoute('/playbooks', () => <Backstage selectedArea={BackstageArea.Playbooks}/>);
     }
 
     public updateTheme(state: GlobalState) {

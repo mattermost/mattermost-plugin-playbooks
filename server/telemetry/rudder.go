@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/pkg/errors"
@@ -12,6 +11,7 @@ import (
 type RudderTelemetry struct {
 	client        rudder.Client
 	diagnosticID  string
+	pluginVersion string
 	serverVersion string
 }
 
@@ -34,9 +34,13 @@ const (
 // dataPlaneURL with the writeKey, identified with the diagnosticID. The
 // version of the server is also sent with every event tracked.
 // If either diagnosticID or serverVersion are empty, an error is returned.
-func NewRudder(dataPlaneURL, writeKey, diagnosticID string, serverVersion string) (*RudderTelemetry, error) {
+func NewRudder(dataPlaneURL, writeKey, diagnosticID string, pluginVersion, serverVersion string) (*RudderTelemetry, error) {
 	if diagnosticID == "" {
 		return nil, errors.New("diagnosticID should not be empty")
+	}
+
+	if pluginVersion == "" {
+		return nil, errors.New("pluginVersion should not be empty")
 	}
 
 	if serverVersion == "" {
@@ -48,11 +52,11 @@ func NewRudder(dataPlaneURL, writeKey, diagnosticID string, serverVersion string
 		return nil, err
 	}
 
-	return &RudderTelemetry{client, diagnosticID, serverVersion}, nil
+	return &RudderTelemetry{client, diagnosticID, pluginVersion, serverVersion}, nil
 }
 
 func (t *RudderTelemetry) track(event string, properties map[string]interface{}) {
-	properties["PluginVersion"] = config.Manifest.Version
+	properties["PluginVersion"] = t.pluginVersion
 	properties["ServerVersion"] = t.serverVersion
 
 	t.client.Enqueue(rudder.Track{

@@ -1,7 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect} from 'react';
+import {CSSTransition} from 'react-transition-group';
 
 import classNames from 'classnames';
 
@@ -9,26 +10,41 @@ import BackstageIncidentList from 'src/components/backstage/incidents/incident_l
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 
 import {BackstageArea} from 'src/types/backstage';
+import {navigateToUrl, navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import './backstage.scss';
 import Waves from '../assets/waves';
 
 interface Props {
-    onBack: () => void;
     selectedArea: BackstageArea;
     currentTeamId: string;
     currentTeamName: string;
-    setSelectedArea: (area: BackstageArea) => void;
+    currentTeamDisplayName: string;
     theme: Record<string, string>;
 }
 
-const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, currentTeamName}: Props): React.ReactElement<Props> => {
+export const Backstage = ({selectedArea, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
+    useEffect(() => {
+        // This class, critical for all the styling to work, is added by ChannelController,
+        // which is not loaded when rendering this root component.
+        document.body.classList.add('app__body');
+
+        return function cleanUp() {
+            document.body.classList.remove('app__body');
+        };
+    }, []);
+
+    const onBack = () => {
+        navigateToUrl(`/${currentTeamName}`);
+    };
+
     let activeArea = <PlaybookList/>;
     if (selectedArea === BackstageArea.Incidents) {
         activeArea = (
             <BackstageIncidentList
                 currentTeamId={currentTeamId}
                 currentTeamName={currentTeamName}
+                currentTeamDisplayName={currentTeamDisplayName}
             />
         );
     }
@@ -46,18 +62,17 @@ const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, curren
                     </div>
                 </div>
                 <div className='menu'>
-                    {/*<div className={classNames('menu-title', {active: selectedArea === BackstageArea.Dashboard})}>
-                        {'Dashboard'}
-                    </div>*/}
                     <div
+                        data-testid='incidentsLHSButton'
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
-                        onClick={() => setSelectedArea(BackstageArea.Incidents)}
+                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/incidents')}
                     >
                         {'Incidents'}
                     </div>
                     <div
+                        data-testid='playbooksLHSButton'
                         className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
-                        onClick={() => setSelectedArea(BackstageArea.Playbooks)}
+                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/playbooks')}
                     >
                         {'Playbooks'}
                     </div>
@@ -70,5 +85,3 @@ const Backstage = ({onBack, selectedArea, setSelectedArea, currentTeamId, curren
         </div>
     );
 };
-
-export default Backstage;
