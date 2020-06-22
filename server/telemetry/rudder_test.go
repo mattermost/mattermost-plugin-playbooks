@@ -61,14 +61,15 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 		data <- p
 	}))
 
-	client, err := rudder.NewWithConfig("dummy_key", server.URL, rudder.Config{
+	writeKey := "dummy_key"
+	client, err := rudder.NewWithConfig(writeKey, server.URL, rudder.Config{
 		BatchSize: 1,
 		Interval:  1 * time.Millisecond,
 		Verbose:   true,
 	})
 	require.NoError(t, err)
 
-	return &RudderTelemetry{client, diagnosticID, pluginVersion, serverVersion}, server
+	return &RudderTelemetry{client, diagnosticID, pluginVersion, serverVersion, writeKey, server.URL, true}, server
 }
 
 var dummyIncident = &incident.Incident{
@@ -177,6 +178,99 @@ func TestRudderTelemetry(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDisableTelemetry(t *testing.T) {
+	t.Run("disable client", func(t *testing.T) {
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		err := rudderClient.Disable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case _ = <-data:
+			require.Fail(t, "Received Event message while being disabled")
+		case <-time.After(time.Second * 1):
+			break
+		}
+	})
+
+	t.Run("disable client is idempotent", func(t *testing.T) {
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		err := rudderClient.Disable()
+		require.NoError(t, err)
+
+		err = rudderClient.Disable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case _ = <-data:
+			require.Fail(t, "Received Event message while being disabled")
+		case <-time.After(time.Second * 1):
+			break
+		}
+	})
+
+	t.Run("re-disable client", func(t *testing.T) {
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		// Make sure it's enabled before disabling
+		err := rudderClient.Enable()
+		require.NoError(t, err)
+
+		err = rudderClient.Disable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case _ = <-data:
+			require.Fail(t, "Received Event message while being disabled")
+		case <-time.After(time.Second * 1):
+			break
+		}
+	})
+
+	t.Run("re-enable client", func(t *testing.T) {
+		// The default timeout in a new Rudder client is 5s. When enabling a
+		// disabled client, the config is reset to these defaults.
+		// We could replace the client directly in the test, but that kind of
+		// defeats the purpose of testing Enable.
+		if testing.Short() {
+			t.Skip("Skipping re-enable client test: takes at least 6 seconds")
+		}
+
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		// Make sure it's disabled before enabling
+		err := rudderClient.Disable()
+		require.NoError(t, err)
+
+		err = rudderClient.Enable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case payload := <-data:
+			assertPayload(t, payload, eventCreateIncident)
+		case <-time.After(time.Second * 6):
+			require.Fail(t, "Did not receive Event message")
+		}
+	})
 }
 
 func TestIncidentProperties(t *testing.T) {
