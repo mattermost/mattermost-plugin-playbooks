@@ -125,7 +125,7 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-// OnConfigurationChange handles any change in the configuration
+// OnConfigurationChange handles any change in the configuration.
 func (p *Plugin) OnConfigurationChange() error {
 	if p.config == nil {
 		return nil
