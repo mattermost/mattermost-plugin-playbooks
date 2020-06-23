@@ -9,11 +9,11 @@ import (
 type NoopTelemetry struct{}
 
 // CreateIncident does nothing
-func (t *NoopTelemetry) CreateIncident(incident *incident.Incident, public bool) {
+func (t *NoopTelemetry) CreateIncident(incdnt *incident.Incident, public bool) {
 }
 
 // EndIncident does nothing
-func (t *NoopTelemetry) EndIncident(incident *incident.Incident) {
+func (t *NoopTelemetry) EndIncident(*incident.Incident) {
 }
 
 // AddChecklistItem does nothing.
@@ -37,13 +37,13 @@ func (t *NoopTelemetry) MoveChecklistItem(incidentID, userID string) {
 }
 
 // CreatePlaybook does nothing.
-func (t *NoopTelemetry) CreatePlaybook(playbook playbook.Playbook) {
+func (t *NoopTelemetry) CreatePlaybook(pbook playbook.Playbook) {
 }
 
 // UpdatePlaybook does nothing.
-func (t *NoopTelemetry) UpdatePlaybook(playbook playbook.Playbook) {
+func (t *NoopTelemetry) UpdatePlaybook(pbook playbook.Playbook) {
 }
 
 // DeletePlaybook does nothing.
-func (t *NoopTelemetry) DeletePlaybook(playbook playbook.Playbook) {
+func (t *NoopTelemetry) DeletePlaybook(pbook playbook.Playbook) {
 }

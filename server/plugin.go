@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
@@ -16,6 +15,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // These credentials for Rudder need to be populated at build-time,

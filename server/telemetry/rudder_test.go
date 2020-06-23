@@ -23,9 +23,9 @@ var (
 )
 
 func TestNewRudder(t *testing.T) {
-	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID, pluginVersion, serverVersion)
-	require.Equal(t, rudder.diagnosticID, diagnosticID)
-	require.Equal(t, rudder.serverVersion, serverVersion)
+	r, err := NewRudder("dummy_key", "dummy_url", diagnosticID, pluginVersion, serverVersion)
+	require.Equal(t, r.diagnosticID, diagnosticID)
+	require.Equal(t, r.serverVersion, serverVersion)
 	require.NoError(t, err)
 }
 
@@ -157,14 +157,30 @@ func TestRudderTelemetry(t *testing.T) {
 		Event      string
 		FuncToTest func()
 	}{
-		"create incident":                       {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident, true) }},
-		"end incident":                          {eventEndIncident, func() { rudderClient.EndIncident(dummyIncident) }},
-		"add checklist item":                    {eventAddChecklistItem, func() { rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID) }},
-		"remove checklist item":                 {eventRemoveChecklistItem, func() { rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID) }},
-		"rename checklist item":                 {eventRenameChecklistItem, func() { rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID) }},
-		"modify checked checklist item check":   {eventCheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true) }},
-		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false) }},
-		"move checklist item":                   {eventMoveChecklistItem, func() { rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID) }},
+		"create incident": {eventCreateIncident, func() {
+			rudderClient.CreateIncident(dummyIncident, true)
+		}},
+		"end incident": {eventEndIncident, func() {
+			rudderClient.EndIncident(dummyIncident)
+		}},
+		"add checklist item": {eventAddChecklistItem, func() {
+			rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID)
+		}},
+		"remove checklist item": {eventRemoveChecklistItem, func() {
+			rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID)
+		}},
+		"rename checklist item": {eventRenameChecklistItem, func() {
+			rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID)
+		}},
+		"modify checked checklist item check": {eventCheckChecklistItem, func() {
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true)
+		}},
+		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() {
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false)
+		}},
+		"move checklist item": {eventMoveChecklistItem, func() {
+			rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID)
+		}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			tc.FuncToTest()

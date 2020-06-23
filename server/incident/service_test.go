@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-response/server/config/mocks"
@@ -15,6 +14,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 func TestCreateIncident(t *testing.T) {
@@ -25,7 +26,7 @@ func TestCreateIncident(t *testing.T) {
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_poster.NewMockPoster(controller)
 		configService := mock_config.NewMockService(controller)
-		telemetry := &telemetry.NoopTelemetry{}
+		telemetryService := &telemetry.NoopTelemetry{}
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -38,7 +39,7 @@ func TestCreateIncident(t *testing.T) {
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.display_name.app_error"})
 
-		s := incident.NewService(client, store, poster, configService, telemetry)
+		s := incident.NewService(client, store, poster, configService, telemetryService)
 
 		_, err := s.CreateIncident(incdnt, true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
@@ -51,7 +52,7 @@ func TestCreateIncident(t *testing.T) {
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_poster.NewMockPoster(controller)
 		configService := mock_config.NewMockService(controller)
-		telemetry := &telemetry.NoopTelemetry{}
+		telemetryService := &telemetry.NoopTelemetry{}
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -64,7 +65,7 @@ func TestCreateIncident(t *testing.T) {
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.2_or_more.app_error"})
 
-		s := incident.NewService(client, store, poster, configService, telemetry)
+		s := incident.NewService(client, store, poster, configService, telemetryService)
 
 		_, err := s.CreateIncident(incdnt, true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
@@ -77,7 +78,7 @@ func TestCreateIncident(t *testing.T) {
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_poster.NewMockPoster(controller)
 		configService := mock_config.NewMockService(controller)
-		telemetry := &telemetry.NoopTelemetry{}
+		telemetryService := &telemetry.NoopTelemetry{}
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -89,7 +90,13 @@ func TestCreateIncident(t *testing.T) {
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
-		pluginAPI.On("CreateChannel", &model.Channel{TeamId: teamID, Type: model.CHANNEL_PRIVATE, DisplayName: "###", Name: "", Header: "The channel was created by the Incident Response plugin."}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
+		pluginAPI.On("CreateChannel", &model.Channel{
+			TeamId:      teamID,
+			Type:        model.CHANNEL_PRIVATE,
+			DisplayName: "###",
+			Name:        "",
+			Header:      "The channel was created by the Incident Response plugin.",
+		}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
@@ -101,7 +108,7 @@ func TestCreateIncident(t *testing.T) {
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username")
 
-		s := incident.NewService(client, store, poster, configService, telemetry)
+		s := incident.NewService(client, store, poster, configService, telemetryService)
 
 		_, err := s.CreateIncident(incdnt, true)
 		require.NoError(t, err)
@@ -114,7 +121,7 @@ func TestCreateIncident(t *testing.T) {
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_poster.NewMockPoster(controller)
 		configService := mock_config.NewMockService(controller)
-		telemetry := &telemetry.NoopTelemetry{}
+		telemetryService := &telemetry.NoopTelemetry{}
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -128,7 +135,7 @@ func TestCreateIncident(t *testing.T) {
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 
-		s := incident.NewService(client, store, poster, configService, telemetry)
+		s := incident.NewService(client, store, poster, configService, telemetryService)
 
 		_, err := s.CreateIncident(incdnt, true)
 		require.EqualError(t, err, "failed to create incident channel: : , ")
@@ -254,8 +261,8 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
 
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			controller := gomock.NewController(t)
 			defer controller.Finish()
@@ -265,9 +272,9 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 			store := mock_incident.NewMockStore(controller)
 			poster := mock_poster.NewMockPoster(controller)
 			configService := mock_config.NewMockService(controller)
-			telemetry := &telemetry.NoopTelemetry{}
+			telemetryService := &telemetry.NoopTelemetry{}
 
-			s := incident.NewService(client, store, poster, configService, telemetry)
+			s := incident.NewService(client, store, poster, configService, telemetryService)
 
 			// Mocked calls:
 			tt.prepStore(store)
