@@ -199,7 +199,7 @@ func (t *RudderTelemetry) Enable() error {
 
 	newClient, err := rudder.NewWithConfig(t.writeKey, t.dataPlaneURL, rudder.Config{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating a new Rudder client in Enable failed")
 	}
 
 	t.client = newClient
@@ -218,7 +218,7 @@ func (t *RudderTelemetry) Disable() error {
 	}
 
 	if err := t.client.Close(); err != nil {
-		return err
+		return errors.Wrap(err, "closing the Rudder client in Disable failed")
 	}
 
 	t.enabled = false
