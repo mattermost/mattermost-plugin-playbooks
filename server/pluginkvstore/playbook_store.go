@@ -58,7 +58,7 @@ func (p *PlaybookStore) addToIndex(playbookID string) error {
 	newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookID)
 
 	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(IndexKey, &newIndex) // , pluginapi.SetAtomic(&index))
+	saved, err := p.kvAPI.Set(IndexKey, &newIndex)
 	if err != nil {
 		return errors.Wrapf(err, "unable to add playbook to index")
 	} else if !saved {
@@ -83,7 +83,7 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 	}
 
 	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(IndexKey, &newIndex) // , pluginapi.SetAtomic(&index))
+	saved, err := p.kvAPI.Set(IndexKey, &newIndex)
 	if err != nil {
 		return errors.Wrapf(err, "unable to add playbook to index")
 	} else if !saved {
