@@ -69,7 +69,15 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 	})
 	require.NoError(t, err)
 
-	return &RudderTelemetry{client, diagnosticID, pluginVersion, serverVersion, writeKey, server.URL, true}, server
+	return &RudderTelemetry{
+		client:        client,
+		diagnosticID:  diagnosticID,
+		pluginVersion: pluginVersion,
+		serverVersion: serverVersion,
+		writeKey:      writeKey,
+		dataPlaneURL:  server.URL,
+		enabled:       true,
+	}, server
 }
 
 var dummyIncident = &incident.Incident{

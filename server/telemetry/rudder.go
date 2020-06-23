@@ -1,6 +1,8 @@
 package telemetry
 
 import (
+	"sync"
+
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/pkg/errors"
@@ -16,6 +18,7 @@ type RudderTelemetry struct {
 	writeKey      string
 	dataPlaneURL  string
 	enabled       bool
+	mutex         sync.RWMutex
 }
 
 // Unique strings that identify each of the tracked events
@@ -67,6 +70,9 @@ func NewRudder(dataPlaneURL, writeKey, diagnosticID string, pluginVersion, serve
 }
 
 func (t *RudderTelemetry) track(event string, properties map[string]interface{}) {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
 	if !t.enabled {
 		return
 	}
@@ -184,6 +190,9 @@ func (t *RudderTelemetry) DeletePlaybook(playbook playbook.Playbook) {
 // Enable creates a new client to track all future events. It does nothing if
 // a client is already enabled.
 func (t *RudderTelemetry) Enable() error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if t.enabled {
 		return nil
 	}
@@ -201,6 +210,9 @@ func (t *RudderTelemetry) Enable() error {
 // Disable disables telemetry for all future events. It does nothing if the
 // client is already disabled.
 func (t *RudderTelemetry) Disable() error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if !t.enabled {
 		return nil
 	}
