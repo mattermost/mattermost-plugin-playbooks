@@ -87,7 +87,7 @@ func (p *Plugin) OnActivate() error {
 		}
 	}
 
-	p.config.RegisterConfigChangeListener(func() {
+	toggleTelemetry := func() {
 		diagnosticsFlag := pluginAPIClient.Configuration.GetConfig().LogSettings.EnableDiagnostics
 		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
 
@@ -101,7 +101,10 @@ func (p *Plugin) OnActivate() error {
 		if err := telemetryClient.Disable(); err != nil {
 			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
 		}
-	})
+	}
+
+	toggleTelemetry()
+	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
