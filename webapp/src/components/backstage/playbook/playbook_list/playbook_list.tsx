@@ -77,6 +77,8 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
     public onDelete = async () => {
         if (this.state.selectedPlaybook) {
             await deletePlaybook(this.state.selectedPlaybook);
+            this.props.actions.getPlaybooksForCurrentTeam();
+
             this.hideConfirmModal();
 
             this.setState({showBanner: true}, () => {
@@ -97,17 +99,7 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             </div>
         );
 
-        const editComponent = (isNewPlaybook: boolean) => {
-            return (
-                <PlaybookEdit
-                    newPlaybook={isNewPlaybook}
-                    currentTeamID={this.props.currentTeam.id}
-                    onClose={this.backToPlaybookList}
-                />
-            );
-        };
-
-        const listComponent = (
+        return (
             <div className='Playbook'>
                 { deleteSuccessfulBanner }
                 <div className='Backstage__header'>
@@ -180,23 +172,6 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                     onCancel={this.hideConfirmModal}
                 />
             </div>
-        );
-
-        return (
-            <Switch>
-                <Route
-                    exact={true}
-                    path={this.props.match.path}
-                >
-                    {listComponent}
-                </Route>
-                <Route path={`${this.props.match.path}/new`}>
-                    {editComponent(true)}
-                </Route>
-                <Route path={`${this.props.match.path}/:playbookId`}>
-                    {editComponent(false)}
-                </Route>
-            </Switch>
         );
     }
 }

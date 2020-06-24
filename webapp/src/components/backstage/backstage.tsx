@@ -3,14 +3,11 @@
 
 import React, {useEffect} from 'react';
 import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
-import {CSSTransition} from 'react-transition-group';
-
-import classNames from 'classnames';
 
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
+import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 
-import {BackstageArea} from 'src/types/backstage';
 import {navigateToUrl, navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import './backstage.scss';
@@ -34,11 +31,15 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
         };
     }, []);
 
-    const onBack = () => {
+    const match = useRouteMatch();
+
+    const goToMattermost = () => {
         navigateToUrl(`/${props.currentTeamName}`);
     };
 
-    const match = useRouteMatch();
+    const goToPlaybooks = () => {
+        navigateToTeamPluginUrl(props.currentTeamName, '/playbooks');
+    };
 
     return (
         <div className='Backstage'>
@@ -46,7 +47,7 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
                 <div className='Backstage__sidebar__header'>
                     <div
                         className='cursor--pointer'
-                        onClick={onBack}
+                        onClick={goToMattermost}
                     >
                         <i className='icon-arrow-left mr-2 back-icon'/>
                         {'Back to Mattermost'}
@@ -55,19 +56,17 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
                 <div className='menu'>
                     <NavLink
                         data-testid='incidentsLHSButton'
-                        to='incidents'
+                        to={`${match.url}/incidents`}
                         className={'menu-title'}
                         activeClassName={'active'}
-                        component={<div/>}
                     >
                         {'Incidents'}
                     </NavLink>
                     <NavLink
                         data-testid='playbooksLHSButton'
-                        to='playbooks'
+                        to={`${match.url}/playbooks`}
                         className={'menu-title'}
                         activeClassName={'active'}
-                        component={<div/>}
                     >
                         {'Playbooks'}
                     </NavLink>
@@ -75,6 +74,24 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
             </div>
             <div className='content-container'>
                 <Switch>
+                    <Route path={`${match.url}/playbooks/new`}>
+                        <PlaybookEdit
+                            newPlaybook={true}
+                            currentTeamID={props.currentTeamId}
+                            onClose={goToPlaybooks}
+                        />
+                    </Route>
+                    <Route
+                        path={`${match.url}/playbooks/:playbookId`}
+                        render={(playbookEditRenderProps) => (
+                            <PlaybookEdit
+                                playbookId={playbookEditRenderProps.match.params.playbookId}
+                                newPlaybook={false}
+                                currentTeamID={props.currentTeamId}
+                                onClose={goToPlaybooks}
+                            />
+                        )}
+                    />
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
                     </Route>

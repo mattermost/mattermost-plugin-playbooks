@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {RouteComponentProps} from 'react-router-dom';
 
 import Toggle from 'src/components/widgets/toggle';
 
@@ -16,8 +15,9 @@ import BackIcon from 'src/components/assets/icons/back_icon';
 
 import '../playbook.scss';
 
-export interface Props extends RouteComponentProps {
+export interface Props {
     playbook: Playbook;
+    playbookId: string;
     newPlaybook: boolean;
     currentTeamID: string;
     onClose: () => void;
