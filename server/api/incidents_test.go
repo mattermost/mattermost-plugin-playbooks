@@ -155,11 +155,11 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
 
-		incidentJson, err := json.Marshal(testIncident)
+		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJson))
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -192,11 +192,11 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
 
-		incidentJson, err := json.Marshal(testIncident)
+		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJson))
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -226,11 +226,11 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 
-		incidentJson, err := json.Marshal(testIncident)
+		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJson))
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -255,11 +255,11 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 
-		incidentJson, err := json.Marshal(testIncident)
+		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJson))
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -284,11 +284,11 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 
-		incidentJson, err := json.Marshal(testIncident)
+		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJson))
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
