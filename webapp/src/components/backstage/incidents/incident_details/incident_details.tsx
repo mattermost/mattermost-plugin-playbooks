@@ -8,6 +8,7 @@ import {RouteComponentProps} from 'react-router-dom';
 
 import {exportChannelUrl} from 'src/client';
 import {Incident} from 'src/types/incident';
+import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
 import {OVERLAY_DELAY} from 'src/utils/constants';
@@ -27,7 +28,7 @@ interface Props extends RouteComponentProps {
     theme: Record<string, string>;
     onClose: () => void;
     actions: {
-        getIncidentWithDetails: (id: String) => void;
+        getIncidentWithDetails: (id: string) => void;
     };
 }
 
@@ -164,7 +165,12 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         className='Backstage__header__back'
                         onClick={this.props.onClose}
                     />
-                    <span className='title-text mr-1'>{`Incident ${this.props.incident.name}`}</span>
+                    <TextWithTooltip
+                        id='title'
+                        className='title-text mr-1'
+                        text={`Incident ${this.props.incident.name}`}
+                        placement='bottom'
+                    />
 
                     { this.props.involvedInIncident &&
                     <OverlayTrigger

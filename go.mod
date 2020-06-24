@@ -15,7 +15,7 @@ require (
 	github.com/klauspost/compress v1.10.7 // indirect
 	github.com/klauspost/pgzip v1.2.4 // indirect
 	github.com/mattermost/ldap v3.0.4+incompatible // indirect
-	github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200423151631-d6f334d539a1
+	github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200602123139-fc81b1d7ce2e
 	github.com/mattermost/mattermost-server/v5 v5.23.1
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mholt/archiver/v3 v3.3.0

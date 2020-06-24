@@ -8,9 +8,10 @@ interface Props {
     id: string;
     text: string;
     className?: string;
+    placement?: 'top' | 'bottom' | 'right' | 'left';
 }
 
-const TextWithTooltip = (props: Props) => {
+const TextWithTooltip: React.FC<Props> = (props: Props) => {
     const ref = useRef<HTMLAnchorElement|null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
@@ -41,18 +42,18 @@ const TextWithTooltip = (props: Props) => {
     }, []);
 
     const text = (
-        <a
+        <span
             ref={setRef}
             className={props.className}
         >
             {props.text}
-        </a>
+        </span>
     );
 
     if (showTooltip) {
         return (
             <OverlayTrigger
-                placement='top'
+                placement={props.placement}
                 delayShow={OVERLAY_DELAY}
                 overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
             >
@@ -62,6 +63,10 @@ const TextWithTooltip = (props: Props) => {
     }
 
     return text;
+};
+
+TextWithTooltip.defaultProps = {
+    placement: 'top',
 };
 
 export default TextWithTooltip;

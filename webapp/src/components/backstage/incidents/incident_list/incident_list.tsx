@@ -147,14 +147,20 @@ export function BackstageIncidentList(props: Props) {
     const listComponent = (
         <div className='IncidentList'>
             <div className='Backstage__header'>
-                <div className='title'>
+                <div
+                    className='title'
+                    data-testid='titleIncident'
+                >
                     {'Incidents'}
                     <div className='light'>
                         {'(' + props.currentTeamDisplayName + ')'}
                     </div>
                 </div>
             </div>
-            <div className='list'>
+            <div
+                id='incidentList'
+                className='list'
+            >
                 <div className='IncidentList__filters'>
                     <SearchInput
                         default={fetchParams.search_term}
@@ -236,11 +242,12 @@ export function BackstageIncidentList(props: Props) {
                             key={incident.id}
                             onClick={() => openIncidentDetails(incident)}
                         >
-                            <TextWithTooltip
-                                id={incident.id}
-                                text={incident.name}
-                                className='col-sm-3 incident-item__title'
-                            />
+                            <a className='col-sm-3 incident-item__title'>
+                                <TextWithTooltip
+                                    id={incident.id}
+                                    text={incident.name}
+                                />
+                            </a>
                             <div className='col-sm-2'>
                                 <StatusBadge isActive={incident.is_active}/>
                             </div>
@@ -298,4 +305,3 @@ const endedAt = (isActive: boolean, time: number) => {
     }
     return '--';
 };
-

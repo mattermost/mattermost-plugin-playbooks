@@ -1,3 +1,18 @@
 # Mattermost Incident Response Plugin
 
 This plugin allows you to coordinate and manage incidents within Mattermost.
+
+##### Running E2E Tests:
+
+_To run the Cypress E2E tests in your local environment, do the following:_
+
+- cd to tests-e2e
+- Run `npm install`
+- Run `npm run cypress:open`
+- Once Cypress dashboard opens, select the test spec and run.
+
+- Running `npm test` from within the tests-e2e directory runs all the tests headlessly.
+
+Running the tests successfully will require the test data, hence running `make test-data` will be required.
+
+For a full documentation on E2E tests for webapp and troubleshooting, please see https://developers.mattermost.com/contribute/webapp/end-to-end-tests/

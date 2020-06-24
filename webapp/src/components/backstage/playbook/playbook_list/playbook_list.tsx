@@ -111,7 +111,10 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             <div className='Playbook'>
                 { deleteSuccessfulBanner }
                 <div className='Backstage__header'>
-                    <div className='title'>
+                    <div
+                        data-testid='titlePlaybook'
+                        className='title'
+                    >
                         {'Playbooks'}
                         <div className='light'>
                             {'(' + this.props.currentTeam.display_name + ')'}
@@ -149,11 +152,12 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
                                 className='row playbook-item'
                                 key={p.id}
                             >
-                                <TextWithTooltip
-                                    id={p.title}
-                                    text={p.title}
-                                    className={'col-sm-10 title'}
-                                />
+                                <a className='col-sm-10 title'>
+                                    <TextWithTooltip
+                                        id={p.title}
+                                        text={p.title}
+                                    />
+                                </a>
                                 <div className='col-sm-2'>
                                     <a onClick={() => this.editPlaybook(p)} >
                                         {'Edit'}

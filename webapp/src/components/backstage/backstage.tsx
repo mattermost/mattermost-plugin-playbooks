@@ -54,6 +54,7 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
                 </div>
                 <div className='menu'>
                     <NavLink
+                        data-testid='incidentsLHSButton'
                         to='incidents'
                         className={'menu-title'}
                         activeClassName={'active'}
@@ -62,6 +63,7 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
                         {'Incidents'}
                     </NavLink>
                     <NavLink
+                        data-testid='playbooksLHSButton'
                         to='playbooks'
                         className={'menu-title'}
                         activeClassName={'active'}

@@ -79,7 +79,7 @@ func (p *Plugin) OnActivate() error {
 	} else {
 		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
 		serverVersion := pluginAPIClient.System.GetServerVersion()
-		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, serverVersion)
+		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, config.Manifest.Version, serverVersion)
 		if err != nil {
 			return errors.Wrapf(err, "failed init telemetry client")
 		}
@@ -89,7 +89,7 @@ func (p *Plugin) OnActivate() error {
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		pluginkvstore.NewIncidentStore(&pluginAPIClient.KV, p.bot),
+		pluginkvstore.NewIncidentStore(pluginkvstore.NewClient(pluginAPIClient), p.bot),
 		p.bot,
 		p.config,
 		telemetryClient,

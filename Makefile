@@ -102,6 +102,7 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/incident/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-response/server/incident Service
 	mockgen -destination server/incident/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-response/server/incident Store
 	mockgen -destination server/pluginkvstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore KVAPI
+	mockgen -destination server/pluginkvstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore StoreAPI
 endif
 
 ## Builds the server, if it exists, including support for multiple architectures.

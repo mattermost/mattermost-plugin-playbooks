@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	rudder "github.com/rudderlabs/analytics-go"
@@ -17,13 +16,14 @@ import (
 
 var (
 	diagnosticID    = "dummy_diagnostic_id"
+	pluginVersion   = "dummy_plugin_version"
 	serverVersion   = "dummy_server_version"
 	dummyIncidentID = "dummy_incident_id"
 	dummyUserID     = "dummy_user_id"
 )
 
 func TestNewRudder(t *testing.T) {
-	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID, serverVersion)
+	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID, pluginVersion, serverVersion)
 	require.Equal(t, rudder.diagnosticID, diagnosticID)
 	require.Equal(t, rudder.serverVersion, serverVersion)
 	require.NoError(t, err)
@@ -68,7 +68,7 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 	})
 	require.NoError(t, err)
 
-	return &RudderTelemetry{client, diagnosticID, serverVersion}, server
+	return &RudderTelemetry{client, diagnosticID, pluginVersion, serverVersion}, server
 }
 
 var dummyIncident = &incident.Incident{
@@ -132,7 +132,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	require.Contains(t, properties, "ServerVersion")
 	require.Equal(t, properties["ServerVersion"], serverVersion)
 	require.Contains(t, properties, "PluginVersion")
-	require.Equal(t, properties["PluginVersion"], config.Manifest.Version)
+	require.Equal(t, properties["PluginVersion"], pluginVersion)
 
 	if expectedEvent == eventCreateIncident {
 		require.Contains(t, properties, "Public")
