@@ -72,7 +72,7 @@ export default class Plugin {
         // Store the toggleRHS action to use later
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
-        registry.registerChannelHeaderButtonAction(IncidentIcon, boundToggleRHSAction, 'Incidents', 'Incidents');
+        registry.registerChannelHeaderButtonAction(<IncidentIcon/>, boundToggleRHSAction, 'Incidents', 'Incidents');
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED,
