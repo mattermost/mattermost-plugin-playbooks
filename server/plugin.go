@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
@@ -16,6 +15,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -46,7 +47,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
-	p.config = config.NewConfigService(pluginAPIClient)
+	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
@@ -81,7 +82,7 @@ func (p *Plugin) OnActivate() error {
 	} else {
 		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
 		serverVersion := pluginAPIClient.System.GetServerVersion()
-		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, config.Manifest.Version, serverVersion)
+		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
 		if err != nil {
 			return errors.Wrapf(err, "failed init telemetry client")
 		}

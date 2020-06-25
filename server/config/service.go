@@ -6,8 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // ServiceImpl holds access to the plugin's Configuration.
@@ -29,9 +30,9 @@ type ServiceImpl struct {
 }
 
 // NewConfigService Creates a new ServiceImpl struct.
-func NewConfigService(api *pluginapi.Client) *ServiceImpl {
+func NewConfigService(api *pluginapi.Client, manifest *model.Manifest) *ServiceImpl {
 	c := &ServiceImpl{
-		manifest: Manifest,
+		manifest: manifest,
 	}
 	c.api = api
 	c.configuration = new(Configuration)

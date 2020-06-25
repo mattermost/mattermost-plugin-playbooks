@@ -3,9 +3,11 @@ package permissions
 import (
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // ErrNoPermissions if the error is caused by the user not having permissions

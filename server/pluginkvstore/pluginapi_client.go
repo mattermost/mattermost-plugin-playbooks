@@ -31,9 +31,9 @@ type PluginAPIClient struct {
 
 // NewClient receives a pluginapi.Client and returns the PluginAPIClient, which is what the
 // store will use to access pluginapi.Client.
-func NewClient(pluginapi *pluginapi.Client) PluginAPIClient {
+func NewClient(api *pluginapi.Client) PluginAPIClient {
 	return PluginAPIClient{
-		KV:    &pluginapi.KV,
-		Store: pluginapi.Store,
+		KV:    &api.KV,
+		Store: api.Store,
 	}
 }

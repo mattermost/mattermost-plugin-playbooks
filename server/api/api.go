@@ -64,7 +64,7 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(jsonBytes)
+	_, _ = w.Write(jsonBytes)
 }
 
 // HandleErrorWithCode writes code, errTitle and err as json into the response.
