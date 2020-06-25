@@ -216,7 +216,7 @@ func TestDisableTelemetry(t *testing.T) {
 		rudderClient.CreateIncident(dummyIncident, true)
 
 		select {
-		case _ = <-data:
+		case <-data:
 			require.Fail(t, "Received Event message while being disabled")
 		case <-time.After(time.Second * 1):
 			break
@@ -237,7 +237,7 @@ func TestDisableTelemetry(t *testing.T) {
 		rudderClient.CreateIncident(dummyIncident, true)
 
 		select {
-		case _ = <-data:
+		case <-data:
 			require.Fail(t, "Received Event message while being disabled")
 		case <-time.After(time.Second * 1):
 			break
@@ -259,7 +259,7 @@ func TestDisableTelemetry(t *testing.T) {
 		rudderClient.CreateIncident(dummyIncident, true)
 
 		select {
-		case _ = <-data:
+		case <-data:
 			require.Fail(t, "Received Event message while being disabled")
 		case <-time.After(time.Second * 1):
 			break
