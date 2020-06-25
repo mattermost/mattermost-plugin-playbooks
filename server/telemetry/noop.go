@@ -8,6 +8,16 @@ import (
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.
 type NoopTelemetry struct{}
 
+// Enable does nothing, returning always nil.
+func (t *NoopTelemetry) Enable() error {
+	return nil
+}
+
+// Disable does nothing, returning always nil.
+func (t *NoopTelemetry) Disable() error {
+	return nil
+}
+
 // CreateIncident does nothing
 func (t *NoopTelemetry) CreateIncident(*incident.Incident, bool) {
 }
