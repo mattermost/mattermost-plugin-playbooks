@@ -238,8 +238,7 @@ func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInf
 
 	// Set of commander ids
 	commanders := make(map[string]bool)
-	for i := range results.Incidents {
-		h := &results.Incidents[i]
+	for _, h := range results.Incidents {
 		if _, ok := commanders[h.CommanderUserID]; !ok {
 			commanders[h.CommanderUserID] = true
 		}
