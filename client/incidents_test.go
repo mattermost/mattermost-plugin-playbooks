@@ -24,3 +24,24 @@ func TestIncidentsService_Get(t *testing.T) {
 	want := &Incident{ID: "1"}
 	require.Equal(t, want, i)
 }
+
+func TestIncidentsService_List(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/"+buildAPIURL(apiVersion+"/incidents"), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		testFormValues(t, r, values{
+			"page": "2",
+		})
+		fmt.Fprint(w, `{}`)
+	})
+
+	list, err := client.Incidents.List(context.Background(), IncidentListOptions{ListOptions: ListOptions{Page: 2}})
+	require.NoError(t, err)
+	require.NotNil(t, list)
+	require.Nil(t, list.Items)
+	require.Equal(t, 0, list.TotalCount)
+	require.Equal(t, 0, list.PageCount)
+	require.False(t, list.HasMore)
+}

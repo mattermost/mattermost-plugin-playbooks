@@ -38,3 +38,17 @@ func testMethod(t *testing.T, r *http.Request, want string) {
 	got := r.Method
 	require.Equal(t, want, got, "request method: %v, want %v", got, want)
 }
+
+type values map[string]string
+
+func testFormValues(t *testing.T, r *http.Request, values values) {
+	t.Helper()
+	want := url.Values{}
+	for k, v := range values {
+		want.Set(k, v)
+	}
+
+	r.ParseForm()
+	got := r.Form
+	require.Equal(t, want, got, "request parameters: %v, want %v", got, want)
+}

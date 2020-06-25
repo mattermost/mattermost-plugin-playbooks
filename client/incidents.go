@@ -165,6 +165,7 @@ func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (
 	}
 
 	// Should be returned by the server
+	opts.PerPage = 1000
 	pageCount := int(math.Floor(float64(i.TotalCount / opts.PerPage)))
 	return &IncidentList{
 		ListResult: ListResult{
