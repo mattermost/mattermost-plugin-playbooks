@@ -55,6 +55,11 @@ func getAutocompleteData() *model.AutocompleteData {
 	end := model.NewAutocompleteData("end", "", "Ends the incident associated with the current channel")
 	slashIncident.AddCommand(end)
 
+	checklist := model.NewAutocompleteData("check", "[checklist item]", "Check or Un-Check a checklist item.")
+	checklist.AddDynamicListArgument("List of checklist items is downloading from your incident response plugin",
+		"api/v1/incidents/checklist-autocomplete", true)
+	slashIncident.AddCommand(checklist)
+
 	return slashIncident
 }
 

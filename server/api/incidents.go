@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"strings"
@@ -48,6 +49,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -62,7 +64,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
 
 	checklistsRouter := incidentRouterAuthorized.PathPrefix("/checklists").Subrouter()
-	checklistsRouter.HandleFunc("/autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
@@ -554,12 +555,27 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
-// getChecklistAutocomplete handles the GET /incidents/{id}/checklists/autocomplete api endpoint
+// getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
 func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	dump, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		fmt.Println("<><> error dumping:")
+		fmt.Println(err)
+	}
+	fmt.Println("<><> getChecklistAutocomplete request dump:")
+	fmt.Println(string(dump))
 
-	data, err := h.incidentService.GetChecklistAutocomplete(id)
+	fmt.Printf("<><> URL: %+v\n", r.URL)
+	query := r.URL.Query()
+	fmt.Printf("<><> Query: %+v\n", query)
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(query.Get("channel_id"))
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	data, err := h.incidentService.GetChecklistAutocomplete(incidentID)
 	if err != nil {
 		HandleError(w, err)
 		return
