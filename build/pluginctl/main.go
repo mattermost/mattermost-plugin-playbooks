@@ -1,17 +1,13 @@
-// main handles deployment of the plugin to a development server using either the Client4 API
-// or by copying the plugin bundle into a sibling mattermost-server/plugin directory.
+// main handles deployment of the plugin to a development server using the Client4 API.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-
-	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mholt/archiver/v3"
 )
 
 const helpText = `
@@ -46,11 +42,6 @@ func pluginctl() error {
 		}
 		return deploy(client, os.Args[2], os.Args[3])
 	case "reset":
-		if client == nil {
-			return errors.New("In order to reset, please set the following three environment variables:\n\n" +
-				"MM_SERVICESETTINGS_SITEURL\nMM_ADMIN_USERNAME\nMM_ADMIN_PASSWORD\n\n" +
-				"or, if using a token, set: MM_ADMIN_TOKEN")
-		}
 		return resetPlugin(client, os.Args[2])
 	default:
 		return errors.New("invalid second argument")
@@ -63,90 +54,50 @@ func getClient() (*model.Client4, error) {
 	adminUsername := os.Getenv("MM_ADMIN_USERNAME")
 	adminPassword := os.Getenv("MM_ADMIN_PASSWORD")
 
-	if siteURL != "" {
+	if siteURL == "" {
+		return nil, errors.New("MM_SERVICESETTINGS_SITEURL is not set")
+	}
+
+	client := model.NewAPIv4Client(siteURL)
+
+	if adminToken != "" {
+		log.Printf("Authenticating using token against %s.", siteURL)
+		client.SetToken(adminToken)
+		return client, nil
+	}
+
+	if adminUsername != "" && adminPassword != "" {
 		client := model.NewAPIv4Client(siteURL)
-
-		if adminToken != "" {
-			log.Printf("Authenticating using token against %s.", siteURL)
-			client.SetToken(adminToken)
-			return client, nil
+		log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
+		_, resp := client.Login(adminUsername, adminPassword)
+		if resp.Error != nil {
+			return nil, fmt.Errorf("failed to login as %s: %w", adminUsername, resp.Error)
 		}
-
-		if adminUsername != "" && adminPassword != "" {
-			client := model.NewAPIv4Client(siteURL)
-			log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
-			_, resp := client.Login(adminUsername, adminPassword)
-			if resp.Error != nil {
-				return nil, errors.Wrapf(resp.Error, "failed to login as %s", adminUsername)
-			}
-			return client, nil
-		}
+		return client, nil
 	}
-	return nil, nil
+
+	return nil, errors.New("one of MM_ADMIN_TOKEN or MM_ADMIN_USERNAME/MM_ADMIN_PASSWORD must be defined")
 }
 
-// deploy handles deployment of the plugin to a development server.
-func deploy(client *model.Client4, pluginID, bundlePath string) error {
-	if client != nil {
-		return uploadPlugin(client, pluginID, bundlePath)
-	}
-	return copyPlugin(pluginID, bundlePath)
-}
-
-// uploadPlugin attempts to upload and enable a plugin via the Client4 API.
+// deploy attempts to upload and enable a plugin via the Client4 API.
 // It will fail if plugin uploads are disabled.
-func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
+func deploy(client *model.Client4, pluginID, bundlePath string) error {
 	pluginBundle, err := os.Open(bundlePath)
 	if err != nil {
-		return errors.Wrapf(err, "failed to open %s", bundlePath)
+		return fmt.Errorf("failed to open %s: %w", bundlePath, err)
 	}
 	defer pluginBundle.Close()
 
 	log.Print("Uploading plugin via API.")
 	_, resp := client.UploadPluginForced(pluginBundle)
 	if resp.Error != nil {
-		return errors.Wrap(resp.Error, "Failed to upload plugin bundle")
+		return fmt.Errorf("failed to upload plugin bundle: %s", resp.Error.Error())
 	}
 
 	log.Print("Enabling plugin.")
 	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
-		return errors.Wrap(resp.Error, "Failed to enable plugin")
-	}
-
-	return nil
-}
-
-// copyPlugin attempts to install a plugin by copying it to a sibling ../mattermost-server/plugin
-// directory. A server restart is required before the plugin will start.
-func copyPlugin(pluginID, bundlePath string) error {
-	targetPath, _ := filepath.Abs("../mattermost-server")
-	_, err := os.Stat(targetPath)
-	if os.IsNotExist(err) {
-		return errors.New("no supported deployment method available, please install plugin manually")
-	} else if err != nil {
-		return errors.Wrapf(err, "failed to stat %s", targetPath)
-	}
-
-	log.Printf("Installing plugin to mattermost-server found in %s.", targetPath)
-	log.Print("Server restart required to load updated plugin.")
-
-	targetPath = filepath.Join(targetPath, "plugins")
-
-	err = os.MkdirAll(targetPath, 0777)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create %s", targetPath)
-	}
-
-	existingPluginPath := filepath.Join(targetPath, pluginID)
-	err = os.RemoveAll(existingPluginPath)
-	if err != nil {
-		return errors.Wrapf(err, "failed to remove existing existing plugin directory %s", existingPluginPath)
-	}
-
-	err = archiver.Unarchive(bundlePath, targetPath)
-	if err != nil {
-		return errors.Wrapf(err, "failed to unarchive %s into %s", bundlePath, targetPath)
+		return fmt.Errorf("failed to enable plugin: %s", resp.Error.Error())
 	}
 
 	return nil
@@ -157,13 +108,13 @@ func resetPlugin(client *model.Client4, pluginID string) error {
 	log.Print("Disabling plugin.")
 	_, resp := client.DisablePlugin(pluginID)
 	if resp.Error != nil {
-		return errors.Wrap(resp.Error, "failed to disable plugin")
+		return fmt.Errorf("failed to disable plugin: %w", resp.Error)
 	}
 
 	log.Print("Enabling plugin.")
 	_, resp = client.EnablePlugin(pluginID)
 	if resp.Error != nil {
-		return errors.Wrap(resp.Error, "failed to enable plugin")
+		return fmt.Errorf("failed to enable plugin: %w", resp.Error)
 	}
 
 	return nil

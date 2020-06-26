@@ -166,7 +166,6 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 		if header.PrimaryChannelID == channelID {
 			return header.ID, nil
 		}
-
 	}
 	return "", errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have an incident", channelID)
 }
@@ -180,7 +179,15 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 	}
 
 	var numMembers int64
-	err = db.QueryRow("SELECT COUNT(DISTINCT UserId) FROM ChannelMemberHistory AS u WHERE ChannelId = ? AND u.UserId NOT IN (SELECT UserId FROM Bots)", incidentID).Scan(&numMembers)
+	err = db.QueryRow(`
+		SELECT
+		    COUNT(DISTINCT UserId)
+		FROM
+		    ChannelMemberHistory AS u
+		WHERE
+		    ChannelId = ?
+		AND u.UserId NOT IN (SELECT UserId FROM Bots)
+	`, incidentID).Scan(&numMembers)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to query database")
 	}

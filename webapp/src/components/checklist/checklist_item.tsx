@@ -31,13 +31,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
         <div
             className={'checkbox-container' + (disabled ? ' light' : '')}
         >
-            <div
-                onClick={() => {
-                    if (!disabled && onChange) {
-                        onChange(!checklistItem.checked);
-                    }
-                }}
-            >
+            <div >
                 <input
                     className='checkbox'
                     type='checkbox'
@@ -45,28 +39,34 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
                     readOnly={!onChange}
                     checked={checklistItem.checked}
                 />
-                <label>
+                <label
+                    onClick={() => {
+                        if (!disabled && onChange) {
+                            onChange(!checklistItem.checked);
+                        }
+                    }}
+                >
                     {title}
                 </label>
-            </div>
-            <a
-                className={'timestamp small'}
-                href={`/_redirect/pl/${checklistItem.checked_post_id}`}
-                onClick={(e) => {
-                    e.preventDefault();
-                    if (!checklistItem.checked_post_id) {
-                        return;
-                    }
+                <a
+                    className={'timestamp small'}
+                    href={`/_redirect/pl/${checklistItem.checked_post_id}`}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        if (!checklistItem.checked_post_id) {
+                            return;
+                        }
 
-                    // @ts-ignore
-                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
-                    if (onRedirect) {
-                        onRedirect();
-                    }
-                }}
-            >
-                {timestamp}
-            </a>
+                        // @ts-ignore
+                        window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
+                        if (onRedirect) {
+                            onRedirect();
+                        }
+                    }}
+                >
+                    {timestamp}
+                </a>
+            </div>
         </div>
     );
 };

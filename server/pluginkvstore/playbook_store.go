@@ -58,7 +58,7 @@ func (p *PlaybookStore) addToIndex(playbookID string) error {
 	newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookID)
 
 	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(IndexKey, &newIndex) //, pluginapi.SetAtomic(&index))
+	saved, err := p.kvAPI.Set(IndexKey, &newIndex)
 	if err != nil {
 		return errors.Wrapf(err, "unable to add playbook to index")
 	} else if !saved {
@@ -83,7 +83,7 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 	}
 
 	// Set atomic doesn't seeem to work properly.
-	saved, err := p.kvAPI.Set(IndexKey, &newIndex) //, pluginapi.SetAtomic(&index))
+	saved, err := p.kvAPI.Set(IndexKey, &newIndex)
 	if err != nil {
 		return errors.Wrapf(err, "unable to add playbook to index")
 	} else if !saved {
@@ -94,22 +94,22 @@ func (p *PlaybookStore) removeFromIndex(playbookid string) error {
 }
 
 // Create creates a new playbook
-func (p *PlaybookStore) Create(playbook playbook.Playbook) (string, error) {
-	playbook.ID = model.NewId()
+func (p *PlaybookStore) Create(pbook playbook.Playbook) (string, error) {
+	pbook.ID = model.NewId()
 
-	saved, err := p.kvAPI.Set(PlaybookKey+playbook.ID, &playbook)
+	saved, err := p.kvAPI.Set(PlaybookKey+pbook.ID, &pbook)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to save playbook to KV store")
 	} else if !saved {
 		return "", errors.New("unable to save playbook to KV store, KV Set didn't save")
 	}
 
-	err = p.addToIndex(playbook.ID)
+	err = p.addToIndex(pbook.ID)
 	if err != nil {
 		return "", err
 	}
 
-	return playbook.ID, nil
+	return pbook.ID, nil
 }
 
 // Get retrieves a playbook

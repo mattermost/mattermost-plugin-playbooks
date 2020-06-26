@@ -23,9 +23,9 @@ var (
 )
 
 func TestNewRudder(t *testing.T) {
-	rudder, err := NewRudder("dummy_key", "dummy_url", diagnosticID, pluginVersion, serverVersion)
-	require.Equal(t, rudder.diagnosticID, diagnosticID)
-	require.Equal(t, rudder.serverVersion, serverVersion)
+	r, err := NewRudder("dummy_key", "dummy_url", diagnosticID, pluginVersion, serverVersion)
+	require.Equal(t, r.diagnosticID, diagnosticID)
+	require.Equal(t, r.serverVersion, serverVersion)
 	require.NoError(t, err)
 }
 
@@ -61,14 +61,23 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 		data <- p
 	}))
 
-	client, err := rudder.NewWithConfig("dummy_key", server.URL, rudder.Config{
+	writeKey := "dummy_key"
+	client, err := rudder.NewWithConfig(writeKey, server.URL, rudder.Config{
 		BatchSize: 1,
 		Interval:  1 * time.Millisecond,
 		Verbose:   true,
 	})
 	require.NoError(t, err)
 
-	return &RudderTelemetry{client, diagnosticID, pluginVersion, serverVersion}, server
+	return &RudderTelemetry{
+		client:        client,
+		diagnosticID:  diagnosticID,
+		pluginVersion: pluginVersion,
+		serverVersion: serverVersion,
+		writeKey:      writeKey,
+		dataPlaneURL:  server.URL,
+		enabled:       true,
+	}, server
 }
 
 var dummyIncident = &incident.Incident{
@@ -157,14 +166,30 @@ func TestRudderTelemetry(t *testing.T) {
 		Event      string
 		FuncToTest func()
 	}{
-		"create incident":                       {eventCreateIncident, func() { rudderClient.CreateIncident(dummyIncident, true) }},
-		"end incident":                          {eventEndIncident, func() { rudderClient.EndIncident(dummyIncident) }},
-		"add checklist item":                    {eventAddChecklistItem, func() { rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID) }},
-		"remove checklist item":                 {eventRemoveChecklistItem, func() { rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID) }},
-		"rename checklist item":                 {eventRenameChecklistItem, func() { rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID) }},
-		"modify checked checklist item check":   {eventCheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true) }},
-		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() { rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false) }},
-		"move checklist item":                   {eventMoveChecklistItem, func() { rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID) }},
+		"create incident": {eventCreateIncident, func() {
+			rudderClient.CreateIncident(dummyIncident, true)
+		}},
+		"end incident": {eventEndIncident, func() {
+			rudderClient.EndIncident(dummyIncident)
+		}},
+		"add checklist item": {eventAddChecklistItem, func() {
+			rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID)
+		}},
+		"remove checklist item": {eventRemoveChecklistItem, func() {
+			rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID)
+		}},
+		"rename checklist item": {eventRenameChecklistItem, func() {
+			rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID)
+		}},
+		"modify checked checklist item check": {eventCheckChecklistItem, func() {
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true)
+		}},
+		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() {
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false)
+		}},
+		"move checklist item": {eventMoveChecklistItem, func() {
+			rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID)
+		}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			tc.FuncToTest()
@@ -177,6 +202,99 @@ func TestRudderTelemetry(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDisableTelemetry(t *testing.T) {
+	t.Run("disable client", func(t *testing.T) {
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		err := rudderClient.Disable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case <-data:
+			require.Fail(t, "Received Event message while being disabled")
+		case <-time.After(time.Second * 1):
+			break
+		}
+	})
+
+	t.Run("disable client is idempotent", func(t *testing.T) {
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		err := rudderClient.Disable()
+		require.NoError(t, err)
+
+		err = rudderClient.Disable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case <-data:
+			require.Fail(t, "Received Event message while being disabled")
+		case <-time.After(time.Second * 1):
+			break
+		}
+	})
+
+	t.Run("re-disable client", func(t *testing.T) {
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		// Make sure it's enabled before disabling
+		err := rudderClient.Enable()
+		require.NoError(t, err)
+
+		err = rudderClient.Disable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case <-data:
+			require.Fail(t, "Received Event message while being disabled")
+		case <-time.After(time.Second * 1):
+			break
+		}
+	})
+
+	t.Run("re-enable client", func(t *testing.T) {
+		// The default timeout in a new Rudder client is 5s. When enabling a
+		// disabled client, the config is reset to these defaults.
+		// We could replace the client directly in the test, but that kind of
+		// defeats the purpose of testing Enable.
+		if testing.Short() {
+			t.Skip("Skipping re-enable client test: takes at least 6 seconds")
+		}
+
+		data := make(chan rudderPayload)
+		rudderClient, rudderServer := setupRudder(t, data)
+		defer rudderServer.Close()
+
+		// Make sure it's disabled before enabling
+		err := rudderClient.Disable()
+		require.NoError(t, err)
+
+		err = rudderClient.Enable()
+		require.NoError(t, err)
+
+		rudderClient.CreateIncident(dummyIncident, true)
+
+		select {
+		case payload := <-data:
+			assertPayload(t, payload, eventCreateIncident)
+		case <-time.After(time.Second * 6):
+			require.Fail(t, "Did not receive Event message")
+		}
+	})
 }
 
 func TestIncidentProperties(t *testing.T) {

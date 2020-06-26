@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "$id": "https://github.com/mattermost/mattermost-plugin-incident-response/blob/master/server/playbook/schema.json",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "checklists": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "checked": {
+                  "type": "boolean"
+                },
+                "checked_modified": {
+                  "type": "string"
+                },
+                "checked_post_id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "checked"
+              ]
+            }
+          }
+        },
+        "required": [
+          "title",
+          "items"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "team_id"
+  ]
+}
