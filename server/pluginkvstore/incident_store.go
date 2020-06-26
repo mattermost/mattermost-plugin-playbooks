@@ -1,6 +1,7 @@
 package pluginkvstore
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 	"unicode"
@@ -22,9 +23,9 @@ const (
 
 type idHeaderMap map[string]incident.Header
 
-func (i *idHeaderMap) clone() idHeaderMap {
-	newMap := make(idHeaderMap, len(*i))
-	for k, v := range *i {
+func (i idHeaderMap) clone() idHeaderMap {
+	newMap := make(idHeaderMap, len(i))
+	for k, v := range i {
 		newMap[k] = v
 	}
 	return newMap
@@ -242,22 +243,21 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 }
 
 func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
-	for i := 0; i < setRetries; i++ {
-		headers, err := s.getIDHeaders()
-		if err != nil {
-			return errors.Wrapf(err, "failed to get all headers")
+	addID := func(oldValue []byte) (interface{}, error) {
+		var headers idHeaderMap
+		if err := json.Unmarshal(oldValue, &headers); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal oldValue into an idHeaderMap")
 		}
 
 		newHeaders := headers.clone()
 		newHeaders[incdnt.ID] = incdnt.Header
-
-		if saved, err := s.pluginAPI.Set(allHeadersKey, newHeaders, pluginapi.SetAtomic(&headers)); err != nil {
-			return errors.Wrapf(err, "failed to set all headers value")
-		} else if saved {
-			return nil
-		}
+		return newHeaders, nil
 	}
-	return errors.New("failed to set all headers value, pluginAPI.Set return false too many times")
+
+	if err := s.pluginAPI.KV.SetAtomicWithRetries(allHeadersKey, addID); err != nil {
+		return errors.Wrap(err, "failed to set allHeaders atomically")
+	}
+	return nil
 }
 
 func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {

@@ -1,6 +1,8 @@
 package pluginkvstore
 
 import (
+	"encoding/json"
+
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
@@ -12,8 +14,6 @@ const (
 	PlaybookKey = keyVersionPrefix + "playbook_"
 	// IndexKey is the key for the playbook index. Only exported for testing.
 	IndexKey = keyVersionPrefix + "playbookindex"
-
-	setRetries = 5
 )
 
 // PlaybookStore is a kvs store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
@@ -51,48 +51,46 @@ func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 }
 
 func (p *PlaybookStore) addToIndex(playbookID string) error {
-	for i := 0; i < setRetries; i++ {
-		index, err := p.getIndex()
-		if err != nil {
-			return err
+	addID := func(oldValue []byte) (interface{}, error) {
+		var index playbookIndex
+		if err := json.Unmarshal(oldValue, &index); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal oldValue into a playbookIndex")
 		}
 
 		newIndex := index.clone()
 		newIndex.PlaybookIDs = append(newIndex.PlaybookIDs, playbookID)
 
-		saved, err := p.kvAPI.Set(IndexKey, &newIndex, pluginapi.SetAtomic(&index))
-		if err != nil {
-			return errors.Wrapf(err, "unable to add playbook to index")
-		} else if saved {
-			return nil
-		}
+		return newIndex, nil
 	}
-	return errors.New("unable add playbook to index, kvAPI.Set returned false too many times")
+
+	if err := p.kvAPI.SetAtomicWithRetries(IndexKey, addID); err != nil {
+		return errors.Wrap(err, "failed to set playbookIndex atomically")
+	}
+	return nil
 }
 
-func (p *PlaybookStore) removeFromIndex(playbookid string) error {
-	for i := 0; i < setRetries; i++ {
-		index, err := p.getIndex()
-		if err != nil {
-			return err
+func (p *PlaybookStore) removeFromIndex(playbookID string) error {
+	addID := func(oldValue []byte) (interface{}, error) {
+		var index playbookIndex
+		if err := json.Unmarshal(oldValue, &index); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal oldValue into a playbookIndex")
 		}
 
 		newIndex := index.clone()
 		for i := range newIndex.PlaybookIDs {
-			if newIndex.PlaybookIDs[i] == playbookid {
+			if newIndex.PlaybookIDs[i] == playbookID {
 				newIndex.PlaybookIDs = append(newIndex.PlaybookIDs[:i], newIndex.PlaybookIDs[i+1:]...)
 				break
 			}
 		}
 
-		saved, err := p.kvAPI.Set(IndexKey, &newIndex, pluginapi.SetAtomic(&index))
-		if err != nil {
-			return errors.Wrapf(err, "unable to remove playbook from index")
-		} else if saved {
-			return nil
-		}
+		return newIndex, nil
 	}
-	return errors.New("unable remove playbook from index, kvAPI.Set returned false too many times")
+
+	if err := p.kvAPI.SetAtomicWithRetries(IndexKey, addID); err != nil {
+		return errors.Wrap(err, "failed to set playbookIndex atomically")
+	}
+	return nil
 }
 
 // Create creates a new playbook
@@ -160,20 +158,14 @@ func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 		return errors.New("updating playbook without ID")
 	}
 
-	for i := 0; i < setRetries; i++ {
-		old, err := p.Get(updated.ID)
-		if err != nil {
-			return errors.Wrap(err, "could not get previous playbook when updating")
-		}
-
-		saved, err := p.kvAPI.Set(PlaybookKey+updated.ID, &updated, pluginapi.SetAtomic(&old))
-		if err != nil {
-			return errors.Wrapf(err, "unable to update playbook in KV store")
-		} else if saved {
-			return nil
-		}
+	ignoreOldValue := func(oldValue []byte) (interface{}, error) {
+		return updated, nil
 	}
-	return errors.New("unable to update playbook in KV store, kvAPI.Set returned false too many times")
+
+	if err := p.kvAPI.SetAtomicWithRetries(PlaybookKey+updated.ID, ignoreOldValue); err != nil {
+		return errors.Wrap(err, "failed to set playbookIndex atomically")
+	}
+	return nil
 }
 
 // Delete deletes a playbook. We do not mind if there is contention: if the playbook
