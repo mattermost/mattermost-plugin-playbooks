@@ -219,5 +219,4 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
-
 }
