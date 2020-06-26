@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	AllHeadersKey  = keyVersionPrefix + "all_headers"
-	IncidentKey    = keyVersionPrefix + "incident_"
+	allHeadersKey  = keyVersionPrefix + "all_headers"
+	incidentKey    = keyVersionPrefix + "incident_"
 	perPageDefault = 1000
 )
 
@@ -202,7 +202,7 @@ func (s *incidentStore) NukeDB() error {
 
 // toIncidentKey converts an incident to an internal key used to store in the KV Store.
 func toIncidentKey(incidentID string) string {
-	return IncidentKey + incidentID
+	return incidentKey + incidentID
 }
 
 func toHeaders(headers idHeaderMap) []incident.Header {
@@ -227,7 +227,7 @@ func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, erro
 
 func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	headers := idHeaderMap{}
-	if err := s.pluginAPI.KV.Get(AllHeadersKey, &headers); err != nil {
+	if err := s.pluginAPI.KV.Get(allHeadersKey, &headers); err != nil {
 		return nil, errors.Wrapf(err, "failed to get all headers value")
 	}
 	return headers, nil
@@ -242,7 +242,7 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	headers[incdnt.ID] = incdnt.Header
 
 	// TODO: Should be using CompareAndSet, but deep copy is expensive.
-	if saved, err := s.pluginAPI.KV.Set(AllHeadersKey, headers); err != nil {
+	if saved, err := s.pluginAPI.KV.Set(allHeadersKey, headers); err != nil {
 		return errors.Wrapf(err, "failed to set all headers value")
 	} else if !saved {
 		return errors.New("failed to set all headers value")
