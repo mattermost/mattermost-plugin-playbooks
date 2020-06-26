@@ -109,7 +109,6 @@ export default class PlaybookList extends React.PureComponent<Props, State> {
             return (
                 <PlaybookEdit
                     newPlaybook={isNewPlaybook}
-                    currentTeamID={this.props.currentTeam.id}
                     onClose={this.backToPlaybookList}
                 />
             );

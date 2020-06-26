@@ -7,6 +7,7 @@ import {connect} from 'react-redux';
 import {bindActionCreators, Dispatch} from 'redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {playbooksForTeam} from 'src/selectors';
 import {newPlaybook} from 'src/types/playbook';
@@ -16,9 +17,12 @@ import {PlaybookEdit, Props} from './playbook_edit';
 
 const mapStateToProps = (state: GlobalState, ownProps: Props): object => {
     const playbook = playbooksForTeam(state).find((p) => p.id === ownProps.match.params.playbookId);
+    const currentTeam = getCurrentTeam(state);
 
     return {
         playbook: playbook || newPlaybook(),
+        currentTeamID: currentTeam.id,
+        currentTeamName: currentTeam.name,
     };
 };
 

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {RouteComponentProps} from 'react-router-dom';
+import {RouteComponentProps, Redirect} from 'react-router-dom';
 
 import Toggle from 'src/components/widgets/toggle';
 
@@ -10,16 +10,18 @@ import {Playbook, Checklist, ChecklistItem} from 'src/types/playbook';
 import {savePlaybook} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {MAX_NAME_LENGTH} from 'src/utils/constants';
+import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/utils/constants';
 
 import BackIcon from 'src/components/assets/icons/back_icon';
 
 import '../playbook.scss';
+import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/utils/utils';
 
 export interface Props extends RouteComponentProps {
     playbook: Playbook;
     newPlaybook: boolean;
     currentTeamID: string;
+    currentTeamName: string;
     onClose: () => void;
     actions: {
         getPlaybook: (playbookId: String) => void;
@@ -173,23 +175,13 @@ export class PlaybookEdit extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
+        if (!this.props.newPlaybook && !this.props.playbook.id) {
+            return <Redirect to={teamPluginErrorUrl(this.props.currentTeamName, ErrorPageTypes.PLAYBOOKS)}/>;
+        }
+
         const saveDisabled = this.state.title.trim() === '' || !this.state.changesMade;
 
-        const notFoundComponent = (
-            <div className='Playbook'>
-                <div className='Backstage__header'>
-                    <div className='title'>
-                        <BackIcon
-                            className='Backstage__header__back'
-                            onClick={this.confirmOrClose}
-                        />
-                        {'Playbook Not Found'}
-                    </div>
-                </div>
-            </div>
-        );
-
-        const editComponent = (
+        return (
             <div className='Playbook'>
                 <div className='Backstage__header'>
                     <div className='title'>
@@ -272,9 +264,5 @@ export class PlaybookEdit extends React.PureComponent<Props, State> {
                 />
             </div>
         );
-
-        const isPlaybookDefined = this.props.newPlaybook || this.props.playbook.id;
-
-        return isPlaybookDefined ? editComponent : notFoundComponent;
     }
 }
