@@ -21,10 +21,11 @@ export interface ChecklistItem {
     checked_post_id: string;
 }
 
-export function newPlaybook(): Playbook {
+export function emptyPlaybook(): Playbook {
     return {
         title: '',
         team_id: '',
+        create_public_incident: false,
         checklists: [{
             title: 'Checklist',
             items: [],
@@ -32,7 +33,7 @@ export function newPlaybook(): Playbook {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line
 export function isPlaybook(arg: any): arg is Playbook {
     return arg &&
         typeof arg.id === 'string' &&
@@ -42,14 +43,14 @@ export function isPlaybook(arg: any): arg is Playbook {
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line
 export function isChecklist(arg: any): arg is Checklist {
     return arg &&
         typeof arg.title === 'string' &&
         arg.items && Array.isArray(arg.items) && arg.items.every(isChecklistItem);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line
 export function isChecklistItem(arg: any): arg is ChecklistItem {
     return arg &&
         typeof arg.title === 'string' &&

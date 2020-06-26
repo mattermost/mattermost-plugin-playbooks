@@ -1,8 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {useEffect, FC} from 'react';
 import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
+import {useSelector} from 'react-redux';
+
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
@@ -13,14 +18,7 @@ import {navigateToUrl, navigateToTeamPluginUrl} from 'src/utils/utils';
 import './backstage.scss';
 import Waves from '../assets/waves';
 
-interface Props {
-    currentTeamId: string;
-    currentTeamName: string;
-    currentTeamDisplayName: string;
-    theme: Record<string, string>;
-}
-
-export const Backstage = (props: Props): React.ReactElement<Props> => {
+const Backstage: FC = () => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -31,14 +29,16 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
         };
     }, []);
 
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+
     const match = useRouteMatch();
 
     const goToMattermost = () => {
-        navigateToUrl(`/${props.currentTeamName}`);
+        navigateToUrl(`/${currentTeam.name}`);
     };
 
     const goToPlaybooks = () => {
-        navigateToTeamPluginUrl(props.currentTeamName, '/playbooks');
+        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
 
     return (
@@ -77,7 +77,7 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
                     <Route path={`${match.url}/playbooks/new`}>
                         <PlaybookEdit
                             newPlaybook={true}
-                            currentTeamID={props.currentTeamId}
+                            currentTeamID={currentTeam.id}
                             onClose={goToPlaybooks}
                         />
                     </Route>
@@ -87,7 +87,7 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
                             <PlaybookEdit
                                 playbookId={playbookEditRenderProps.match.params.playbookId}
                                 newPlaybook={false}
-                                currentTeamID={props.currentTeamId}
+                                currentTeamID={currentTeam.id}
                                 onClose={goToPlaybooks}
                             />
                         )}
@@ -97,9 +97,9 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList
-                            currentTeamId={props.currentTeamId}
-                            currentTeamName={props.currentTeamName}
-                            currentTeamDisplayName={props.currentTeamDisplayName}
+                            currentTeamId={currentTeam.id}
+                            currentTeamName={currentTeam.name}
+                            currentTeamDisplayName={currentTeam.display_name}
                         />
                     </Route>
                 </Switch>
@@ -108,3 +108,5 @@ export const Backstage = (props: Props): React.ReactElement<Props> => {
         </div>
     );
 };
+
+export default Backstage;

@@ -6,7 +6,7 @@ import {Switch, Route, RouteComponentProps} from 'react-router-dom';
 
 import {Team} from 'mattermost-redux/types/teams';
 
-import {newPlaybook, Playbook} from 'src/types/playbook';
+import {Playbook} from 'src/types/playbook';
 import {navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import {deletePlaybook} from 'src/client';

@@ -42,3 +42,5 @@ const Waves: FC = () => (
         </defs>
     </svg>
 );
+
+export default Waves;

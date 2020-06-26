@@ -17,14 +17,13 @@ import IncidentIcon from './components/assets/icons/incident_icon';
 import RightHandSidebar from './components/rhs';
 import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
-import Backstage from './components/backstage';
+import Backstage from './components/backstage/backstage';
 
 import {Hooks} from './hooks';
 import {
     setToggleRHSAction,
 } from './actions';
 import reducer from './reducer';
-import {BackstageArea} from './types/backstage';
 import {
     handleWebsocketIncidentUpdate,
     handleWebsocketIncidentCreated,
