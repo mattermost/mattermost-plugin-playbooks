@@ -55,6 +55,9 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
+	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
+	channelRouter.HandleFunc("/{id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
+
 	checklistsRouter := incidentRouterAuthorized.PathPrefix("/checklists").Subrouter()
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
@@ -281,6 +284,49 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	}
 
 	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(incidentToGet)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
+// getIncidentByChannel handles the /incidents/channel/{id} endpoint.
+func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	channelID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.hasPermissionsToOrPublic(channelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+			errors.Errorf("userid: %s does not have permissions to view the incident from channelid %s", userID, channelID))
+		return
+	}
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			HandleErrorWithCode(w, http.StatusNotFound, "Not found",
+				errors.Errorf("incident for channel id %s not found", channelID))
+
+			return
+		}
+		HandleError(w, err)
+		return
+	}
+
+	incidentToGet, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
 		HandleError(w, err)
 		return
