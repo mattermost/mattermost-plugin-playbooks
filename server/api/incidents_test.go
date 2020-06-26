@@ -126,6 +126,7 @@ func TestIncidents(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 
@@ -169,6 +170,7 @@ func TestIncidents(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 		var resultIncident incident.Incident
@@ -207,6 +209,7 @@ func TestIncidents(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 		var resultIncident incident.Incident
@@ -242,6 +245,7 @@ func TestIncidents(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 
@@ -301,6 +305,7 @@ func TestIncidents(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 }

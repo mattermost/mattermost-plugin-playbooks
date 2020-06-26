@@ -196,20 +196,15 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.New("commander user does not have permissions for the team")
 	}
 
-	var playbookTemplate *playbook.Playbook
+	public := true
 	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" && newIncident.Playbook.ID != "-1" {
-		var playbook playbook.Playbook
-		playbook, err := h.playbookService.Get(newIncident.Playbook.ID)
-
+		pb, err := h.playbookService.Get(newIncident.Playbook.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
-		newIncident.Playbook = &playbook
-	}
 
-	public := true
-	if playbookTemplate != nil {
-		public = playbookTemplate.CreatePublicIncident
+		newIncident.Playbook = &pb
+		public = newIncident.Playbook.CreatePublicIncident
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -225,7 +220,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	return h.incidentService.CreateIncident(&newIncident, public)
 }
 
-func (h *IncidentHandler) hasPermissionsToOrPublic(channelID string, userID string) bool {
+func (h *IncidentHandler) hasPermissionsToOrPublic(channelID, userID string) bool {
 	channel, err := h.pluginAPI.Channel.Get(channelID)
 	if err != nil {
 		h.log.Warnf("Unable to get channel to determine permissions: %v", err)
