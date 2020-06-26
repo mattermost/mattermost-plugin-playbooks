@@ -1,13 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {FC, useEffect, useState} from 'react';
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
-import {Switch, Route, RouteComponentProps} from 'react-router-dom';
+import {Switch, Route, useRouteMatch} from 'react-router-dom';
+import {useSelector} from 'react-redux';
 
-import {UserProfile} from 'mattermost-redux/types/users';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
+import {User} from 'mattermost-redux/types/users';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/backstage/incidents/incident_list/sortable_col_header';
@@ -15,7 +20,7 @@ import {StatusFilter} from 'src/components/backstage/incidents/incident_list/sta
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
 import {PaginationRow} from 'src/components/backstage/incidents/incident_list/pagination_row';
-import {FetchIncidentsParams, Incident, IncidentWithDetails} from 'src/types/incident';
+import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {
     fetchCommandersInTeam,
     fetchIncidents,
@@ -30,20 +35,16 @@ import './incident_list.scss';
 const debounceDelay = 300; // in milliseconds
 const PER_PAGE = 15;
 
-interface Props extends RouteComponentProps {
-    currentTeamId: string;
-    currentTeamName: string;
-    currentTeamDisplayName: string;
-    getUser: (userId: string) => UserProfile;
-}
-
-export function BackstageIncidentList(props: Props) {
+const BackstageIncidentList: FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [totalCount, setTotalCount] = useState(0);
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const match = useRouteMatch();
+    const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => User;
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
-            team_id: props.currentTeamId,
+            team_id: currentTeam.id,
             page: 0,
             per_page: PER_PAGE,
             sort: 'created_at',
@@ -52,8 +53,8 @@ export function BackstageIncidentList(props: Props) {
     );
 
     useEffect(() => {
-        setFetchParams({...fetchParams, team_id: props.currentTeamId});
-    }, [props.currentTeamId]);
+        setFetchParams({...fetchParams, team_id: currentTeam.id});
+    }, [currentTeam.id]);
 
     useEffect(() => {
         async function fetchIncidentsAsync() {
@@ -94,8 +95,8 @@ export function BackstageIncidentList(props: Props) {
     }
 
     async function fetchCommanders() {
-        const commanders = await fetchCommandersInTeam(props.currentTeamId);
-        return commanders.map((c) => props.getUser(c.user_id));
+        const commanders = await fetchCommandersInTeam(currentTeam.id);
+        return commanders.map((c) => selectUser(c.user_id));
     }
 
     function setCommanderId(userId?: string) {
@@ -103,11 +104,11 @@ export function BackstageIncidentList(props: Props) {
     }
 
     function openIncidentDetails(incident: Incident) {
-        navigateToTeamPluginUrl(props.currentTeamName, `/incidents/${incident.id}`);
+        navigateToTeamPluginUrl(currentTeam.name, `/incidents/${incident.id}`);
     }
 
     const closeIncidentDetails = () => {
-        navigateToTeamPluginUrl(props.currentTeamName, '/incidents');
+        navigateToTeamPluginUrl(currentTeam.name, '/incidents');
     };
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
@@ -153,7 +154,7 @@ export function BackstageIncidentList(props: Props) {
                 >
                     {'Incidents'}
                     <div className='light'>
-                        {'(' + props.currentTeamDisplayName + ')'}
+                        {'(' + currentTeam.display_name + ')'}
                     </div>
                 </div>
             </div>
@@ -222,7 +223,7 @@ export function BackstageIncidentList(props: Props) {
                     !incidents.length && !isFiltering &&
                     <div className='text-center pt-8'>
                         {'There are no incidents for '}
-                        <i>{props.currentTeamDisplayName}</i>
+                        <i>{currentTeam.display_name}</i>
                         {'.'}
                     </div>
                 }
@@ -230,7 +231,7 @@ export function BackstageIncidentList(props: Props) {
                     !incidents.length && isFiltering &&
                     <div className='text-center pt-8'>
                         {'There are no incidents for '}
-                        <i>{props.currentTeamDisplayName}</i>
+                        <i>{currentTeam.display_name}</i>
                         {' matching those filters.'}
                     </div>
                 }
@@ -283,16 +284,16 @@ export function BackstageIncidentList(props: Props) {
         <Switch>
             <Route
                 exact={true}
-                path={props.match.path}
+                path={match.path}
             >
                 {listComponent}
             </Route>
-            <Route path={`${props.match.path}/:incidentId`}>
+            <Route path={`${match.path}/:incidentId`}>
                 {detailsComponent}
             </Route>
         </Switch>
     );
-}
+};
 
 const endedAt = (isActive: boolean, time: number) => {
     if (isActive) {
@@ -305,3 +306,5 @@ const endedAt = (isActive: boolean, time: number) => {
     }
     return '--';
 };
+
+export default BackstageIncidentList;

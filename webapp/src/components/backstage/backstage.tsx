@@ -9,7 +9,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import BackstageIncidentList from 'src/components/backstage/incidents/incident_list';
+import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 
