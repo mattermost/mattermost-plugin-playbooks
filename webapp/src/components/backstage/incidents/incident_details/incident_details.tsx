@@ -1,12 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {FC, useState, useEffect} from 'react';
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
-import {RouteComponentProps} from 'react-router-dom';
+import {useRouteMatch} from 'react-router-dom';
 
-import {exportChannelUrl} from 'src/client';
+import Spinner from 'src/components/assets/icons/spinner';
+
+import {fetchIncidentWithDetails} from 'src/client';
 import {Incident} from 'src/types/incident';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
@@ -17,271 +19,199 @@ import {navigateToUrl} from 'src/utils/utils';
 import StatusBadge from '../status_badge';
 
 import ChecklistTimeline from './checklist_timeline';
+import ExportLink from './export_link';
 
 import './incident_details.scss';
 
-interface Props extends RouteComponentProps {
-    incident: Incident;
-    involvedInIncident: boolean;
-    exportAvailable: boolean;
-    exportLicensed: boolean;
-    theme: Record<string, string>;
+interface MatchParams {
+    incidentId: string
+}
+
+interface Props {
     onClose: () => void;
-    actions: {
-        getIncidentWithDetails: (id: string) => void;
+}
+
+const BackstageIncidentDetails: FC<Props> = (props: Props) => {
+    const [incident, setIncident] = useState<Incident | null>(null);
+
+    const match = useRouteMatch<MatchParams>();
+
+    const fetchIncident = async (incidentId: string) => {
+        setIncident(await fetchIncidentWithDetails(incidentId));
     };
-}
 
-interface State {
-    showBanner: boolean;
-}
+    useEffect(() => {
+        fetchIncident(match.params.incidentId);
+    }, [match.params.incidentId]);
 
-export default class BackstageIncidentDetails extends React.PureComponent<Props, State> {
-    constructor(props: Props) {
-        super(props);
-
-        this.state = {
-            showBanner: false,
-        };
-    }
-
-    componentDidMount() {
-        this.props.actions.getIncidentWithDetails(this.props.match.params.incidentId);
-    }
-
-    public timeFrameText = () => {
-        const mom = moment.unix(this.props.incident.ended_at);
-
-        let endedText = 'Ongoing';
-
-        if (!this.props.incident.is_active) {
-            endedText = mom.isSameOrAfter('2020-01-01') ? mom.format('DD MMM h:mmA') : '--';
-        }
-
-        const startedText = moment.unix(this.props.incident.created_at).format('DD MMM h:mmA');
-
-        return (`${startedText} - ${endedText}`);
-    }
-
-    public duration = () => {
-        if (!this.props.incident.is_active && moment.unix(this.props.incident.ended_at).isSameOrBefore('2020-01-01')) {
-            // No end datetime available to calculate duration
-            return '--';
-        }
-
-        const endTime = this.props.incident.is_active ? moment() : moment.unix(this.props.incident.ended_at);
-
-        const duration = moment.duration(endTime.diff(moment.unix(this.props.incident.created_at)));
-
-        if (duration.days()) {
-            return `${duration.days()} days ${duration.hours()} h`;
-        }
-
-        if (duration.hours()) {
-            return `${duration.hours()} h ${duration.minutes()} m`;
-        }
-
-        if (duration.minutes()) {
-            return `${duration.minutes()} m`;
-        }
-
-        return `${duration.seconds()} s`;
-    }
-
-    public goToChannel = () => {
-        navigateToUrl(`/${this.props.incident.team_name}/channels/${this.props.incident.channel_name}`);
-    }
-
-    public onExportClick =() => {
-        this.setState({showBanner: true}, () => {
-            window.setTimeout(() => {
-                this.setState({showBanner: false});
-            }, 2500);
-        });
-    }
-
-    public exportLink = () => {
-        const linkText = (
-            <>
-                <i className='icon icon-download-outline export-icon'/>
-                {'Export Incident Channel'}
-            </>
-        );
-
-        let link = (
-            <a
-                className={'export-link'}
-                href={exportChannelUrl(this.props.incident.primary_channel_id)}
-                target={'_new'}
-                onClick={this.onExportClick}
-            >
-                {linkText}
-            </a>
-        );
-        if (!this.props.exportAvailable || !this.props.exportLicensed) {
-            link = (
-                <div className={'disabled'}>
-                    {linkText}
-                </div>
-            );
-        }
-
-        let tooltip = (
-            <Tooltip id='export'>
-                {'Download a CSV containing all messages from the incident channel'}
-            </Tooltip>
-        );
-
-        if (!this.props.exportAvailable) {
-            tooltip = (
-                <Tooltip id='exportUnavailable'>
-                    {'Install and enable the Channel Export plugin to support exporting this incident'}
-                </Tooltip>
-            );
-        } else if (!this.props.exportLicensed) {
-            tooltip = (
-                <Tooltip id='exportUnlicensed'>
-                    {'Exporting an incident channel requires a Mattermost Enterprise E20 license'}
-                </Tooltip>
-            );
-        }
-
+    if (incident === null) {
         return (
-            <OverlayTrigger
-                placement='bottom'
-                delayShow={OVERLAY_DELAY}
-                overlay={tooltip}
-            >
-                {link}
-            </OverlayTrigger>
+            <div className='BackstageIncidentDetails'>
+                <Spinner/>
+            </div>
+        );
+
+    // Not having the channel name is a proxy for determining if the full details where able to be fetched.
+    // This means a fetch failure will also land the user here.
+    } else if (!incident.channel_name) {
+        return (
+            <div className='BackstageIncidentDetails'>
+                <div className='details-header'>
+                    <div className='title'>
+                        <BackIcon
+                            className='Backstage__header__back'
+                            onClick={props.onClose}
+                        />
+                    </div>
+                </div>
+                <div className='no-permission-div'>
+                    {'You are not a participant in this incident. Contact the commander to request access.'}
+                </div>
+            </div>
         );
     }
 
-    public render(): JSX.Element {
-        const detailsHeader = (
+    const goToChannel = () => {
+        navigateToUrl(`/${incident.team_name}/channels/${incident.channel_name}`);
+    };
+
+    return (
+        <div className='BackstageIncidentDetails'>
             <div className='details-header'>
                 <div className='title'>
                     <BackIcon
                         className='Backstage__header__back'
-                        onClick={this.props.onClose}
+                        onClick={props.onClose}
                     />
                     <TextWithTooltip
                         id='title'
                         className='title-text mr-1'
-                        text={`Incident ${this.props.incident.name}`}
+                        text={`Incident ${incident.name}`}
                         placement='bottom'
                     />
 
-                    { this.props.involvedInIncident &&
                     <OverlayTrigger
                         placement='bottom'
-                        delayShow={OVERLAY_DELAY}
+                        delay={OVERLAY_DELAY}
                         overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
                     >
                         <button className='link-icon style--none mr-2'>
                             <i
                                 className='icon icon-link-variant'
-                                onClick={this.goToChannel}
+                                onClick={goToChannel}
                             />
                         </button>
                     </OverlayTrigger>
-                    }
-                    <StatusBadge isActive={this.props.incident.is_active}/>
+                    <StatusBadge isActive={incident.is_active}/>
                 </div>
                 <div className='commander-div'>
                     <span className='label p-0 mr-2'>{'Commander:'}</span>
                     <Profile
-                        userId={this.props.incident.commander_user_id}
+                        userId={incident.commander_user_id}
                         classNames={{ProfileButton: true, profile: true}}
                     />
                 </div>
-            </div>);
-
-        const downloadStartedBanner = this.state.showBanner && (
-            <div className='banner'>
-                <div className='banner__text'>
-                    <i className='icon icon-download-outline mr-1'/>
-                    {'Downloading incident channel export'}
-                </div>
             </div>
-        );
-
-        if (!this.props.involvedInIncident) {
-            return (
-                <div className='BackstageIncidentDetails'>
-                    {detailsHeader}
-                    <div className='no-permission-div'>
-                        {'You are not a participant in this incident. Contact the commander to request access.'}
+            <div className='subheader'>
+                { /*Summary will be a tab once Post Mortem is included */}
+                <div className='summary-tab'>
+                    {'Summary'}
+                </div>
+                <ExportLink incident={incident}/>
+            </div>
+            <div className='statistics-row'>
+                <div className='statistics-row__block'>
+                    <div className='title'>
+                        {'Duration'}
+                    </div>
+                    <div className='content'>
+                        <i className='icon icon-clock-outline box-icon'/>
+                        {duration(incident)}
+                    </div>
+                    <div className='block-footer text-right'>
+                        <span>{timeFrameText(incident)}</span>
                     </div>
                 </div>
-            );
-        }
-
-        return (
-            <div className='BackstageIncidentDetails'>
-                {downloadStartedBanner}
-                {detailsHeader}
-                <div className='subheader'>
-                    { /*Summary will be a tab once Post Mortem is included */}
-                    <div className='summary-tab'>
-                        {'Summary'}
-                    </div>
-                    {this.exportLink()}
-                </div>
-                <div className='statistics-row'>
+                <OverlayTrigger
+                    placement='bottom'
+                    delay={OVERLAY_DELAY}
+                    overlay={<Tooltip id='goToChannel'>{'Number of users currently in the incident channel'}</Tooltip>}
+                >
                     <div className='statistics-row__block'>
                         <div className='title'>
-                            {'Duration'}
+                            {'Members Involved'}
                         </div>
                         <div className='content'>
-                            <i className='icon icon-clock-outline box-icon'/>
-                            {this.duration()}
-                        </div>
-                        <div className='block-footer text-right'>
-                            <span>{this.timeFrameText()}</span>
+                            <i className='icon icon-account-multiple-outline box-icon'/>
+                            {incident.num_members}
                         </div>
                     </div>
-                    <OverlayTrigger
-                        placement='bottom'
-                        delayShow={OVERLAY_DELAY}
-                        overlay={<Tooltip id='goToChannel'>{'Number of users currently in the incident channel'}</Tooltip>}
-                    >
-                        <div className='statistics-row__block'>
-                            <div className='title'>
-                                {'Members Involved'}
-                            </div>
-                            <div className='content'>
-                                <i className='icon icon-account-multiple-outline box-icon'/>
-                                {this.props.incident.num_members}
-                            </div>
-                        </div>
-                    </OverlayTrigger>
-                    <div className='statistics-row__block'>
-                        <div className='title'>
-                            {'Messages'}
-                        </div>
-                        <div className='content'>
-                            <i className='icon icon-send box-icon'/>
-                            {this.props.incident.total_posts}
-                        </div>
-                        <div className='block-footer text-right'>
-                            <a
-                                className='link'
-                                onClick={this.goToChannel}
-                            >
-                                {'Jump to Channel'}
-                                <i className='icon icon-arrow-right'/>
-                            </a>
-                        </div>
+                </OverlayTrigger>
+                <div className='statistics-row__block'>
+                    <div className='title'>
+                        {'Messages'}
                     </div>
-                </div>
-                <div className='chart-block'>
-                    <ChecklistTimeline
-                        incident={this.props.incident}
-                        theme={this.props.theme}
-                    />
+                    <div className='content'>
+                        <i className='icon icon-send box-icon'/>
+                        {incident.total_posts}
+                    </div>
+                    <div className='block-footer text-right'>
+                        <a
+                            className='link'
+                            onClick={goToChannel}
+                        >
+                            {'Jump to Channel'}
+                            <i className='icon icon-arrow-right'/>
+                        </a>
+                    </div>
                 </div>
             </div>
-        );
+            <div className='chart-block'>
+                <ChecklistTimeline
+                    incident={incident}
+                />
+            </div>
+        </div>
+    );
+};
+
+const duration = (incident: Incident) => {
+    if (!incident.is_active && moment.unix(incident.ended_at).isSameOrBefore('2020-01-01')) {
+        // No end datetime available to calculate duration
+        return '--';
     }
-}
+
+    const endTime = incident.is_active ? moment() : moment.unix(incident.ended_at);
+
+    const timeSinceCreation = moment.duration(endTime.diff(moment.unix(incident.created_at)));
+
+    if (timeSinceCreation.days()) {
+        return `${timeSinceCreation.days()} days ${timeSinceCreation.hours()} h`;
+    }
+
+    if (timeSinceCreation.hours()) {
+        return `${timeSinceCreation.hours()} h ${timeSinceCreation.minutes()} m`;
+    }
+
+    if (timeSinceCreation.minutes()) {
+        return `${timeSinceCreation.minutes()} m`;
+    }
+
+    return `${timeSinceCreation.seconds()} s`;
+};
+
+const timeFrameText = (incident: Incident) => {
+    const mom = moment.unix(incident.ended_at);
+
+    let endedText = 'Ongoing';
+
+    if (!incident.is_active) {
+        endedText = mom.isSameOrAfter('2020-01-01') ? mom.format('DD MMM h:mmA') : '--';
+    }
+
+    const startedText = moment.unix(incident.created_at).format('DD MMM h:mmA');
+
+    return (`${startedText} - ${endedText}`);
+};
+
+export default BackstageIncidentDetails;

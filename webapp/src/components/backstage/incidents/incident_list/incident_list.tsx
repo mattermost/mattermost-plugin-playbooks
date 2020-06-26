@@ -26,7 +26,7 @@ import {
     fetchIncidents,
 } from 'src/client';
 import Profile from 'src/components/profile';
-import BackstageIncidentDetails from '../incident_details';
+import BackstageIncidentDetails from '../incident_details/incident_details';
 import StatusBadge from '../status_badge';
 import {navigateToTeamPluginUrl} from 'src/utils/utils';
 
