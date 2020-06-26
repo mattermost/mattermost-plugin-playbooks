@@ -4,3 +4,8 @@
 export const OVERLAY_DELAY = 400;
 
 export const MAX_NAME_LENGTH = 64;
+
+export const ErrorPageTypes = {
+    INCIDENTS: 'incidents',
+    PLAYBOOKS: 'playbooks',
+};

@@ -18,6 +18,7 @@ import RightHandSidebar from './components/rhs';
 import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import Backstage from './components/backstage';
+import ErrorPage from './components/error_page';
 
 import {Hooks} from './hooks';
 import {
@@ -99,6 +100,7 @@ export default class Plugin {
 
         registry.registerNeedsTeamRoute('/incidents', () => <Backstage selectedArea={BackstageArea.Incidents}/>);
         registry.registerNeedsTeamRoute('/playbooks', () => <Backstage selectedArea={BackstageArea.Playbooks}/>);
+        registry.registerNeedsTeamRoute('/error', () => <ErrorPage/>);
     }
 
     public updateTheme(state: GlobalState) {
