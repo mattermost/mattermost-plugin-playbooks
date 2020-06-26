@@ -9,15 +9,16 @@ import {BackstageArea} from 'src/types/backstage';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
 import {OVERLAY_DELAY} from 'src/utils/constants';
+import {navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import './rhs_header.scss';
 
 interface Props {
     isMobile: boolean;
     hasPermissionToCreateChannels: boolean;
+    currentTeamName: string;
     actions: {
         startIncident: () => void;
-        openBackstageModal: (selectedArea: BackstageArea) => void;
     };
 }
 
@@ -39,7 +40,7 @@ export default function RHSHeader(props: Props) {
                         >
                             <button
                                 className='rhs-header-bar__button'
-                                onClick={() => props.actions.openBackstageModal(BackstageArea.Playbooks)}
+                                onClick={() => navigateToTeamPluginUrl(props.currentTeamName, '/playbooks')}
                             >
                                 <PlaybookIcon/>
                             </button>

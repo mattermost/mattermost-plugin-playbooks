@@ -271,7 +271,9 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			}
 
 			s := &incidentStore{
-				pluginAPI: kvAPI,
+				pluginAPI: PluginAPIClient{
+					KV: kvAPI,
+				},
 			}
 			got, err := s.GetIncidents(tt.options)
 			if (err != nil) != tt.wantErr {

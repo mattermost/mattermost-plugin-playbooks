@@ -4,12 +4,15 @@
 import React from 'react';
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {RouteComponentProps} from 'react-router-dom';
 
 import {exportChannelUrl} from 'src/client';
 import {Incident} from 'src/types/incident';
+import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
 import {OVERLAY_DELAY} from 'src/utils/constants';
+import {navigateToUrl} from 'src/utils/utils';
 
 import StatusBadge from '../status_badge';
 
@@ -17,7 +20,7 @@ import ChecklistTimeline from './checklist_timeline';
 
 import './incident_details.scss';
 
-interface Props {
+interface Props extends RouteComponentProps {
     incident: Incident;
     involvedInIncident: boolean;
     exportAvailable: boolean;
@@ -25,7 +28,7 @@ interface Props {
     theme: Record<string, string>;
     onClose: () => void;
     actions: {
-        navigateToUrl: (urlPath: string) => void;
+        getIncidentWithDetails: (id: string) => void;
     };
 }
 
@@ -41,6 +44,11 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
             showBanner: false,
         };
     }
+
+    componentDidMount() {
+        this.props.actions.getIncidentWithDetails(this.props.match.params.incidentId);
+    }
+
     public timeFrameText = () => {
         const mom = moment.unix(this.props.incident.ended_at);
 
@@ -81,7 +89,7 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public goToChannel = () => {
-        this.props.actions.navigateToUrl(`/${this.props.incident.team_name}/channels/${this.props.incident.channel_name}`);
+        navigateToUrl(`/${this.props.incident.team_name}/channels/${this.props.incident.channel_name}`);
     }
 
     public onExportClick =() => {
@@ -157,7 +165,12 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
                         className='Backstage__header__back'
                         onClick={this.props.onClose}
                     />
-                    <span className='title-text mr-1'>{`Incident ${this.props.incident.name}`}</span>
+                    <TextWithTooltip
+                        id='title'
+                        className='title-text mr-1'
+                        text={`Incident ${this.props.incident.name}`}
+                        placement='bottom'
+                    />
 
                     { this.props.involvedInIncident &&
                     <OverlayTrigger

@@ -44,3 +44,17 @@ Cypress.Commands.add('startIncidentFromPostMenu', (incidentID) => {
 	cy.findByTestId('incidentPostMenuIcon').click();
 	cy.startIncident(incidentID);
 });
+
+// Open Incidents backstage
+Cypress.Commands.add('openIncidentBackstage', () => {
+	cy.get('#lhsHeader').should('be.visible').within(() => {
+        // # Click hamburger main menu
+        cy.get('#sidebarHeaderDropdownButton').click();
+
+        // * Dropdown menu should be visible
+        cy.get('.dropdown-menu').should('be.visible').within(() => {
+            // 'Incidents & Playbooks' button should be visible, then click
+            cy.findByText('Incidents & Playbooks').should('be.visible').click();
+        });
+	});
+});

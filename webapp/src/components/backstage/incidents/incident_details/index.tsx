@@ -2,29 +2,29 @@
 // See LICENSE.txt for license information.
 import {bindActionCreators, Dispatch} from 'redux';
 import {connect} from 'react-redux';
+import {withRouter} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {Incident} from 'src/types/incident';
 
-import {navigateToUrl} from 'src/actions';
+import {getIncidentWithDetails} from 'src/actions';
 
-import {isExportLicensed} from 'src/selectors';
+import {incidentDetails, isExportLicensed} from 'src/selectors';
 
 import BackstageIncidentDetails from './incident_details';
 
-type Props = {
-    incident: Incident;
-}
-
-function mapStateToProps(state: GlobalState, ownProps: Props) {
+function mapStateToProps(state: GlobalState) {
     const isExportPluginLoaded = Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']);
 
+    const incident = incidentDetails(state);
+
     // Determine if involved in incident by checking if full details fetched.
-    const involvedInIncident = Boolean(ownProps.incident.channel_name);
+    const involvedInIncident = Boolean(incident.channel_name);
 
     return {
+        incident,
         involvedInIncident,
         exportAvailable: isExportPluginLoaded,
         exportLicensed: isExportLicensed(state),
@@ -35,10 +35,10 @@ function mapStateToProps(state: GlobalState, ownProps: Props) {
 function mapDispatchToProps(dispatch: Dispatch) {
     return {
         actions: bindActionCreators({
-            navigateToUrl,
+            getIncidentWithDetails,
         }, dispatch),
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentDetails);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BackstageIncidentDetails));
 

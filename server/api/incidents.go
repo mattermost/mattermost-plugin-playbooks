@@ -30,7 +30,8 @@ type IncidentHandler struct {
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster, log bot.Logger) *IncidentHandler {
+func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
+	api *pluginapi.Client, poster bot.Poster, log bot.Logger) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		playbookService: playbookService,
@@ -135,7 +136,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		resp := &model.SubmitDialogResponse{
 			Error: permissionMessage,
 		}
-		w.Write(resp.ToJson())
+		_, _ = w.Write(resp.ToJson())
 		return
 	}
 
@@ -170,7 +171,10 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{"client_id": state.ClientID, "incident": newIncident}, request.UserId)
+	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{
+		"client_id": state.ClientID,
+		"incident":  newIncident,
+	}, request.UserId)
 
 	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
 		HandleError(w, err)
@@ -180,14 +184,22 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *IncidentHandler) hasPermissionsToOrPublic(channelID string, userID string) bool {
+func (h *IncidentHandler) hasPermissionsToOrPublic(channelID, userID string) bool {
 	channel, err := h.pluginAPI.Channel.Get(channelID)
 	if err != nil {
 		h.log.Warnf("Unable to get channel to determine permissions: %v", err)
 		return false
 	}
 
-	return h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) || (channel.Type == model.CHANNEL_OPEN && h.pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS))
+	if h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
+		return true
+	}
+
+	if channel.Type == model.CHANNEL_OPEN && h.pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
+		return true
+	}
+
+	return false
 }
 
 // getIncidents handles the GET /incidents endpoint.
@@ -331,7 +343,11 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 	// Check permissions (if is an admin, they will have permissions to view all teams)
 	userID := r.Header.Get("Mattermost-User-ID")
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf("userID %s does not have view permission for teamID %s", userID, teamID))
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+			"userID %s does not have view permission for teamID %s",
+			userID,
+			teamID,
+		))
 		return
 	}
 
@@ -541,14 +557,14 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
-func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(incident.PrimaryChannelID)
+func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {
+	channel, err := h.pluginAPI.Channel.Get(incdnt.PrimaryChannelID)
 	if err != nil {
 		return err
 	}
 
-	msg := fmt.Sprintf("Incident %s started in ~%s", incident.Name, channel.Name)
-	h.poster.Ephemeral(incident.CommanderUserID, channelID, "%s", msg)
+	msg := fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name)
+	h.poster.Ephemeral(incdnt.CommanderUserID, channelID, "%s", msg)
 
 	return nil
 }
@@ -556,7 +572,7 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incident *incident.Incident
 func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	// NOTE: we are failing early instead of turning bad parameters into the default
 	teamID := u.Query().Get("team_id")
-	if len(teamID) != 0 && !model.IsValidId(teamID) {
+	if teamID != "" && !model.IsValidId(teamID) {
 		return nil, errors.New("bad parameter 'team_id': must be 26 characters or blank")
 	}
 
@@ -601,11 +617,12 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, erro
 
 	param = u.Query().Get("order")
 	var order incident.SortDirection
-	if param == "asc" {
+	switch param {
+	case "asc":
 		order = incident.Asc
-	} else if param == "desc" || param == "" {
+	case "desc", "":
 		order = incident.Desc
-	} else {
+	default:
 		return nil, errors.Wrapf(err, "bad parameter 'order_by'")
 	}
 

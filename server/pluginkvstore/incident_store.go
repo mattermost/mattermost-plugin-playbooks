@@ -5,7 +5,6 @@ import (
 	"strings"
 	"unicode"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -36,12 +35,12 @@ var _ incident.Store = (*incidentStore)(nil)
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
-	pluginAPI KVAPI
+	pluginAPI PluginAPIClient
 	log       bot.Logger
 }
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
-func NewIncidentStore(pluginAPI KVAPI, log bot.Logger) incident.Store {
+func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger) incident.Store {
 	newStore := &incidentStore{
 		pluginAPI: pluginAPI,
 		log:       log,
@@ -101,7 +100,7 @@ func (s *incidentStore) CreateIncident(incdnt *incident.Incident) (*incident.Inc
 	}
 	incdnt.ID = model.NewId()
 
-	saved, err := s.pluginAPI.Set(toIncidentKey(incdnt.ID), incdnt)
+	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store new incident")
 	} else if !saved {
@@ -134,7 +133,7 @@ func (s *incidentStore) UpdateIncident(incdnt *incident.Incident) error {
 		return errors.Wrapf(err, "incident with id (%s) does not exist", incdnt.ID)
 	}
 
-	saved, err := s.pluginAPI.Set(toIncidentKey(incdnt.ID), incdnt)
+	saved, err := s.pluginAPI.KV.Set(toIncidentKey(incdnt.ID), incdnt)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update incident")
 	} else if !saved {
@@ -175,14 +174,38 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 		if header.PrimaryChannelID == channelID {
 			return header.ID, nil
 		}
-
 	}
 	return "", errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have an incident", channelID)
 }
 
+// GetAllIncidentMembersCount returns the count of all members of an incident since the
+// beginning of the incident, excluding bots.
+func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, error) {
+	db, err := s.pluginAPI.Store.GetMasterDB()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get a database connection")
+	}
+
+	var numMembers int64
+	err = db.QueryRow(`
+		SELECT
+		    COUNT(DISTINCT UserId)
+		FROM
+		    ChannelMemberHistory AS u
+		WHERE
+		    ChannelId = ?
+		AND u.UserId NOT IN (SELECT UserId FROM Bots)
+	`, incidentID).Scan(&numMembers)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to query database")
+	}
+
+	return numMembers, nil
+}
+
 // NukeDB removes all incident related data.
 func (s *incidentStore) NukeDB() error {
-	return s.pluginAPI.DeleteAll()
+	return s.pluginAPI.KV.DeleteAll()
 }
 
 // toIncidentKey converts an incident to an internal key used to store in the KV Store.
@@ -201,7 +224,7 @@ func toHeaders(headers idHeaderMap) []incident.Header {
 
 func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, error) {
 	var incdnt incident.Incident
-	if err := s.pluginAPI.Get(toIncidentKey(incidentID), &incdnt); err != nil {
+	if err := s.pluginAPI.KV.Get(toIncidentKey(incidentID), &incdnt); err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident")
 	}
 	if incdnt.ID == "" {
@@ -212,7 +235,7 @@ func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, erro
 
 func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	headers := idHeaderMap{}
-	if err := s.pluginAPI.Get(allHeadersKey, &headers); err != nil {
+	if err := s.pluginAPI.KV.Get(allHeadersKey, &headers); err != nil {
 		return nil, errors.Wrapf(err, "failed to get all headers value")
 	}
 	return headers, nil
