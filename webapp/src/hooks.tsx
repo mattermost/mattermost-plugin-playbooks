@@ -12,8 +12,7 @@ import {generateId} from 'mattermost-redux/utils/helpers';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
-import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
+import {PermissionsOptions, haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 
 import {fetchIncidentWithDetailsByChannel} from 'src/client';
 
