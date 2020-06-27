@@ -13,7 +13,7 @@ import BackstageIncidentList from 'src/components/backstage/incidents/incident_l
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 
-import {navigateToUrl, navigateToTeamPluginUrl} from 'src/utils/utils';
+import {navigateToUrl, navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import './backstage.scss';
 import Waves from '../assets/waves';

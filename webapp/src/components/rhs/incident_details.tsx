@@ -19,7 +19,7 @@ import {Checklist, ChecklistItem} from 'src/types/playbook';
 
 import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
 
-import {isMobile} from 'src/utils/utils';
+import {isMobile} from 'src/mobile';
 import {toggleRHS, endIncident} from 'src/actions';
 import './incident_details.scss';
 

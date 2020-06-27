@@ -28,7 +28,7 @@ import {
 import Profile from 'src/components/profile';
 import BackstageIncidentDetails from '../incident_details/incident_details';
 import StatusBadge from '../status_badge';
-import {navigateToTeamPluginUrl} from 'src/utils/utils';
+import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import './incident_list.scss';
 

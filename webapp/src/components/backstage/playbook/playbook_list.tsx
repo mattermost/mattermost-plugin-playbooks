@@ -9,7 +9,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
 import {Playbook} from 'src/types/playbook';
-import {navigateToTeamPluginUrl} from 'src/utils/utils';
+import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 

@@ -14,7 +14,7 @@ import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
 import {OVERLAY_DELAY} from 'src/constants';
-import {navigateToUrl} from 'src/utils/utils';
+import {navigateToUrl} from 'src/browser_routing';
 
 import StatusBadge from '../status_badge';
 

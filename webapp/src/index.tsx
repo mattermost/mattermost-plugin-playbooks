@@ -10,7 +10,10 @@ import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {registerCssVars, isMobile, navigateToTeamPluginUrl} from 'src/utils/utils';
+import {registerCssVars} from 'src/css';
+
+import {isMobile} from 'src/mobile';
+import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {pluginId} from './manifest';
 import IncidentIcon from './components/assets/icons/incident_icon';

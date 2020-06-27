@@ -13,10 +13,12 @@ import {useSelector, useDispatch} from 'react-redux';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {navigateToTeamPluginUrl} from 'src/browser_routing';
+
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
 import {OVERLAY_DELAY} from 'src/constants';
-import {navigateToTeamPluginUrl, isMobile} from 'src/utils/utils';
+import {isMobile} from 'src/mobile';
 
 import './rhs_header.scss';
 
