@@ -7,7 +7,7 @@ import Toggle from 'src/components/widgets/toggle';
 
 import {Playbook, Checklist, ChecklistItem, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
-import {ChecklistDetails} from 'src/components/checklist/checklist';
+import {ChecklistDetails} from 'src/components/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {MAX_NAME_LENGTH} from 'src/constants';
 

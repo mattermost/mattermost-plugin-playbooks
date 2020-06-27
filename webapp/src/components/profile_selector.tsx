@@ -10,7 +10,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 
 import './profile_selector.scss';
 import Profile from 'src/components/profile';
-import ProfileButton from 'src/components/profile/profile_selector/profile_button/profile_button';
+import ProfileButton from 'src/components/profile_button';
 
 interface Props {
     commanderId?: string;

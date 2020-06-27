@@ -13,11 +13,11 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {Team} from 'mattermost-redux/types/teams';
 
 import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientRenameChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
-import {ChecklistDetails} from 'src/components/checklist/checklist';
+import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
-import ProfileSelector from 'src/components/profile/profile_selector/profile_selector';
+import ProfileSelector from 'src/components/profile_selector';
 
 import {isMobile} from 'src/mobile';
 import {toggleRHS, endIncident} from 'src/actions';
