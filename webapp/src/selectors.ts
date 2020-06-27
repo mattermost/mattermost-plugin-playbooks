@@ -6,6 +6,7 @@ import {getLicense} from 'mattermost-redux/selectors/entities/general';
 
 import {pluginId} from './manifest';
 
+//@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 
 export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;

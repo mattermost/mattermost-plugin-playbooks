@@ -96,11 +96,7 @@ const Backstage: FC = () => {
                         <PlaybookList/>
                     </Route>
                     <Route path={`${match.url}/incidents`}>
-                        <BackstageIncidentList
-                            currentTeamId={currentTeam.id}
-                            currentTeamName={currentTeam.name}
-                            currentTeamDisplayName={currentTeam.display_name}
-                        />
+                        <BackstageIncidentList/>
                     </Route>
                 </Switch>
             </div>

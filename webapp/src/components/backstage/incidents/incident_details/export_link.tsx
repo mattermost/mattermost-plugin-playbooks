@@ -20,6 +20,7 @@ interface ExportLinkProps {
 }
 
 const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
+    //@ts-ignore plugins state is a thing
     const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
     const exportLicensed = useSelector<GlobalState, boolean>(isExportLicensed);
 

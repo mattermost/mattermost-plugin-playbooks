@@ -54,7 +54,7 @@ const TextWithTooltip: React.FC<Props> = (props: Props) => {
         return (
             <OverlayTrigger
                 placement={props.placement}
-                delayShow={OVERLAY_DELAY}
+                delay={OVERLAY_DELAY}
                 overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
             >
                 {text}

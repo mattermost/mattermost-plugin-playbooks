@@ -82,5 +82,3 @@ export function setClientId(clientId: string): SetClientId {
         clientId,
     };
 }
-
-

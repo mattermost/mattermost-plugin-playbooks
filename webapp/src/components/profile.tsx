@@ -25,7 +25,7 @@ interface Props {
 const Profile: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, props.userId));
-    const teamnameNameDisplaySetting = useSelector<GlobalState, string>(getTeammateNameDisplaySetting);
+    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
 
     useEffect(() => {
         if (!user) {
@@ -48,7 +48,7 @@ const Profile: FC<Props> = (props: Props) => {
         <div className={classNames('IncidentProfile', props.classNames)}>
             <img
                 className='image'
-                src={profileUri}
+                src={profileUri || ''}
             />
             <div className='name'>{name}</div>
             {props.extra}

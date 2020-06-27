@@ -4,13 +4,7 @@
 import React, {FC} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
-import {useSelector, useDispatch} from 'react-redux';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Channel} from 'mattermost-redux/types/channels';
-import {Team} from 'mattermost-redux/types/teams';
+import {useDispatch} from 'react-redux';
 
 import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientRenameChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
@@ -53,8 +47,6 @@ function renderThumbVertical(props: any): JSX.Element {
 
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
-    const primaryChannel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.incident.primary_channel_id));
-    const primaryTeam = useSelector<GlobalState, Team>((state) => getTeam(state, primaryChannel.team_id));
 
     const fetchUsers = async () => {
         return fetchUsersInChannel(props.incident.primary_channel_id);

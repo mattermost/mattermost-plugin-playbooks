@@ -316,7 +316,7 @@ func (h *IncidentHandler) getIncidentWithDetailsByChannel(w http.ResponseWriter,
 		return
 	}
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+	if err = permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 				errors.Errorf("userid: %s does not have permissions to view the incident details", userID))

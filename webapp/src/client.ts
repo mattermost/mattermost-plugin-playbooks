@@ -13,7 +13,7 @@ import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
-import {FetchIncidentsParams, FetchIncidentsReturn, Incident} from 'src/types/incident';
+import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
@@ -59,6 +59,7 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     };
 
     try {
+        //@ts-ignore Typing in mattermost-redux is wrong
         const data = await Client4.executeCommand(command, args);
         dispatch(setTriggerId(data?.trigger_id));
     } catch (error) {

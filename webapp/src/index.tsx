@@ -6,6 +6,8 @@ import {Store} from 'redux';
 import {debounce} from 'debounce';
 
 import {GlobalState} from 'mattermost-redux/types/store';
+
+//@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';

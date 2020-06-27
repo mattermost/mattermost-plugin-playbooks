@@ -29,7 +29,7 @@ export default function ProfileButton(props: Props) {
             className={'IncidentProfileButton'}
         >
             <Profile
-                userId={props.userId}
+                userId={props.userId || ''}
                 classNames={{active: props.enableEdit}}
                 extra={downChevron}
                 nameFormatter={formatName}

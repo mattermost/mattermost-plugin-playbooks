@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 
-import ReactSelect, {ActionTypes, ControlProps} from 'react-select';
+import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import {css} from '@emotion/core';
 
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -195,7 +195,7 @@ export default function ProfileSelector(props: Props) {
 }
 
 // styles for the select component
-const selectStyles = {
+const selectStyles: StylesConfig = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {

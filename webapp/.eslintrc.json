@@ -267,7 +267,7 @@
     "no-lonely-if": 2,
     "no-loop-func": 2,
     "no-magic-numbers": [
-      1,
+      0,
       {
         "ignore": [
           -1,
@@ -641,6 +641,7 @@
         "@typescript-eslint/no-var-requires": 0,
         "@typescript-eslint/prefer-interface": 0,
         "@typescript-eslint/explicit-function-return-type": 0,
+        "@typescript-eslint/explicit-module-boundary-types": 0,
         "@typescript-eslint/indent": [
           2,
           4,

@@ -29,13 +29,12 @@ const PlaybookList: FC = () => {
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
-    const fetchPlaybooks = async () => {
-        setPlaybooks(await clientFetchPlaybooks(currentTeam.id));
-    };
-
     useEffect(() => {
+        const fetchPlaybooks = async () => {
+            setPlaybooks(await clientFetchPlaybooks(currentTeam.id));
+        };
         fetchPlaybooks();
-    }, [currentTeam]);
+    }, [currentTeam.id]);
 
     const editPlaybook = (playbook: Playbook) => {
         setSelectedPlaybook(playbook);
@@ -58,7 +57,7 @@ const PlaybookList: FC = () => {
     const onDelete = async () => {
         if (selectedPlaybook) {
             await deletePlaybook(selectedPlaybook);
-            fetchPlaybooks();
+            setPlaybooks(await clientFetchPlaybooks(currentTeam.id));
             hideConfirmModal();
             setShowBanner(true);
 

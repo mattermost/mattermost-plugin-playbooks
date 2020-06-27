@@ -37,7 +37,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             }
         };
         fetchData();
-    }, []);
+    }, [props.playbookId]);
 
     const onSave = async () => {
         await savePlaybook(playbook);

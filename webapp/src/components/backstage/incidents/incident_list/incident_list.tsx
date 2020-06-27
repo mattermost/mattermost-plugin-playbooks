@@ -11,7 +11,7 @@ import {useSelector} from 'react-redux';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import {User} from 'mattermost-redux/types/users';
+import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
@@ -40,7 +40,7 @@ const BackstageIncidentList: FC = () => {
     const [totalCount, setTotalCount] = useState(0);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const match = useRouteMatch();
-    const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => User;
+    const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
@@ -53,7 +53,9 @@ const BackstageIncidentList: FC = () => {
     );
 
     useEffect(() => {
-        setFetchParams({...fetchParams, team_id: currentTeam.id});
+        setFetchParams((oldParams) => {
+            return {...oldParams, team_id: currentTeam.id};
+        });
     }, [currentTeam.id]);
 
     useEffect(() => {

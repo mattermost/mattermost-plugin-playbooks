@@ -48,6 +48,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         // Check if current channel is and incident channel.
         if (currentTeamIncidentChannels.has(currentChannelId)) {
             if (!incidentRHSOpen) {
+                //@ts-ignore thunk
                 store.dispatch(toggleRHS());
             }
         }

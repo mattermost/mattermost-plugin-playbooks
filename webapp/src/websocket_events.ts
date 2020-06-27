@@ -1,7 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {WebSocketMessage} from './types/websocket_events';
+import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
+
 import {isIncident, Incident} from './types/incident';
 
 export const websocketSubscribers = new Set<(incident: Incident) => void>();

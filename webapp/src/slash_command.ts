@@ -1,3 +1,5 @@
+import {Store} from 'redux';
+import {GlobalState} from 'mattermost-redux/types/store';
 import {generateId} from 'mattermost-redux/utils/helpers';
 
 import {setClientId} from 'src/actions';

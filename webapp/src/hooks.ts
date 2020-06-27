@@ -2,7 +2,8 @@ import {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {haveITeamPermission, PermissionsOptions} from 'mattermost-redux/selectors/entities/roles';
+import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
+import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';

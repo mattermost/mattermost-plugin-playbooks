@@ -1,13 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {FC} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Post} from 'mattermost-redux/types/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
-import {isCombinedUserActivityPost} from 'mattermost-redux/utils/post_list';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
 import IncidentPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
@@ -19,10 +18,10 @@ interface Props {
     theme: Record<string, string>;
 }
 
-const StartIncidentPostMenu: FC = (props: Props) => {
+const StartIncidentPostMenu: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
     const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
-    if (!post || isCombinedUserActivityPost(post) || isSystemMessage(post)) {
+    if (!post || isSystemMessage(post)) {
         return null;
     }
 
