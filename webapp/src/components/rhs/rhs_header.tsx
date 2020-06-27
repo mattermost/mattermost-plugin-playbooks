@@ -28,15 +28,17 @@ import {startIncident} from 'src/actions';
 export default function RHSHeader() {
     const dispatch = useDispatch();
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    const canCreateChannels =
+    const canCreatePublicChannels =
         useCurrentTeamPermission(
             {
                 permission: Permissions.CREATE_PUBLIC_CHANNEL,
-            }) ||
+            });
+    const canCreatePrivateChannels =
         useCurrentTeamPermission(
             {
                 permission: Permissions.CREATE_PRIVATE_CHANNEL,
             });
+    const canCreateChannels = canCreatePublicChannels || canCreatePrivateChannels;
 
     return (
         <div className='rhs-header-bar'>
