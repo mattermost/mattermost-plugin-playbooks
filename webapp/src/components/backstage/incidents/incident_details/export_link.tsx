@@ -20,10 +20,8 @@ interface ExportLinkProps {
 }
 
 const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
-    let exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
-    let exportLicensed = useSelector<GlobalState, boolean>(isExportLicensed);
-    exportAvailable = true;
-    exportLicensed = true;
+    const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
+    const exportLicensed = useSelector<GlobalState, boolean>(isExportLicensed);
 
     const [showBanner, setShowBanner] = useState(false);
 
