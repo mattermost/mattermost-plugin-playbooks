@@ -15,7 +15,7 @@ import BackIcon from 'src/components/assets/icons/back_icon';
 
 import './playbook.scss';
 
-export interface Props {
+interface Props {
     playbookId?: string;
     newPlaybook: boolean;
     currentTeamID: string;
