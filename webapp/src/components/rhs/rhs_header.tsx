@@ -4,65 +4,78 @@
 import React from 'react';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
+import {Permissions} from 'mattermost-redux/constants';
+
+import {Team} from 'mattermost-redux/types/teams';
+
+import {useSelector, useDispatch} from 'react-redux';
+
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+
 import {BackstageArea} from 'src/types/backstage';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
 import {OVERLAY_DELAY} from 'src/utils/constants';
-import {navigateToTeamPluginUrl} from 'src/utils/utils';
+import {navigateToTeamPluginUrl, isMobile} from 'src/utils/utils';
 
 import './rhs_header.scss';
 
-interface Props {
-    isMobile: boolean;
-    hasPermissionToCreateChannels: boolean;
-    currentTeamName: string;
-    actions: {
-        startIncident: () => void;
-    };
-}
+import {useCurrentTeamPermission} from 'src/hooks';
+import {startIncident} from 'src/actions';
 
-export default function RHSHeader(props: Props) {
+export default function RHSHeader() {
+    const dispatch = useDispatch();
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const canCreateChannels =
+        useCurrentTeamPermission(
+            {
+                permission: Permissions.CREATE_PUBLIC_CHANNEL,
+            }) ||
+        useCurrentTeamPermission(
+            {
+                permission: Permissions.CREATE_PRIVATE_CHANNEL,
+            });
+
     return (
         <div className='rhs-header-bar'>
-            <React.Fragment>
-                <div>
-                    {/* filter dropdown placeholder */}
-                </div>
+            <div>
+                {/* filter dropdown placeholder */}
+            </div>
 
-                <div className={'header-buttons'}>
-                    {
-                        !props.isMobile &&
+            <div className={'header-buttons'}>
+                {
+                    !isMobile() &&
                         <OverlayTrigger
                             placement='bottom'
-                            delayShow={OVERLAY_DELAY}
+                            delay={OVERLAY_DELAY}
                             overlay={<Tooltip id='playbooksTooltip'>{'Playbooks'}</Tooltip>}
                         >
                             <button
                                 className='rhs-header-bar__button'
-                                onClick={() => navigateToTeamPluginUrl(props.currentTeamName, '/playbooks')}
+                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
                             >
                                 <PlaybookIcon/>
                             </button>
                         </OverlayTrigger>
-                    }
-                    {
-                        props.hasPermissionToCreateChannels &&
+                }
+                {
+                    canCreateChannels &&
                         <OverlayTrigger
                             placement='bottom'
-                            delayShow={OVERLAY_DELAY}
+                            delay={OVERLAY_DELAY}
                             overlay={<Tooltip id='startIncidentTooltip'>{'Start New Incident'}</Tooltip>}
                         >
                             <button
                                 className='rhs-header-bar__button'
-                                onClick={() => props.actions.startIncident()}
+                                onClick={() => dispatch(startIncident())}
                             >
                                 <PlusIcon/>
                             </button>
                         </OverlayTrigger>
-                    }
-                </div>
-            </React.Fragment>
+                }
+            </div>
         </div>
     );
 }

@@ -14,7 +14,7 @@ import {registerCssVars, isMobile, navigateToTeamPluginUrl} from 'src/utils/util
 
 import {pluginId} from './manifest';
 import IncidentIcon from './components/assets/icons/incident_icon';
-import RightHandSidebar from './components/rhs';
+import RightHandSidebar from './components/rhs/rhs_main';
 import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import Backstage from './components/backstage/backstage';
@@ -26,9 +26,6 @@ import {
 import reducer from './reducer';
 import {
     handleWebsocketIncidentUpdate,
-    handleWebsocketIncidentCreated,
-    handleWebsocketPlaybookCreateModify,
-    handleWebsocketPlaybookDelete,
 } from './websocket_events';
 import {
     WEBSOCKET_INCIDENT_UPDATED,
@@ -76,18 +73,6 @@ export default class Plugin {
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED,
             handleWebsocketIncidentUpdate(store.dispatch, store.getState));
-
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED,
-            handleWebsocketIncidentCreated(store.dispatch, store.getState));
-
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED,
-            handleWebsocketPlaybookCreateModify(store.dispatch));
-
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_UPDATED,
-            handleWebsocketPlaybookCreateModify(store.dispatch));
-
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED,
-            handleWebsocketPlaybookDelete(store.dispatch));
 
         // Listen to when the theme is loaded
         registry.registerWebSocketEventHandler('preferences_changed',

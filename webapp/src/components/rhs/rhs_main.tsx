@@ -1,111 +1,59 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import Scrollbars from 'react-custom-scrollbars';
+import React, {FC, useEffect} from 'react';
+import {useDispatch} from 'react-redux';
 
+import {setRHSOpen} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
-import {Incident} from 'src/types/incident';
-import {RHSState} from 'src/types/rhs';
 import RHSHeader from 'src/components/rhs/rhs_header';
+import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
 
-import IncidentList from './incident_list';
 import RHSIncidentDetails from './incident_details';
-
 import './rhs.scss';
 
-export function renderView(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--view'
-        />);
-}
+const RightHandSidebar: FC = () => {
+    const dispatch = useDispatch();
+    const [incident, incidentState] = useCurrentIncident();
 
-export function renderThumbHorizontal(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--horizontal'
-        />);
-}
+    useEffect(() => {
+        dispatch(setRHSOpen(true));
+        return () => {
+            dispatch(setRHSOpen(false));
+        };
+    }, []);
 
-export function renderThumbVertical(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--vertical'
-        />);
-}
-
-interface Props {
-    incidents: Incident[];
-    incident: Incident;
-    rhsState: RHSState;
-    isLoading: boolean;
-    actions: {
-        startIncident: () => void;
-        getIncidentsForCurrentTeam: () => void;
-        getIncident: (id: string) => void;
-        setRHSState: (state: RHSState) => void;
-        setRHSOpen: (open: boolean) => void;
-    };
-}
-
-export default class RightHandSidebar extends React.PureComponent<Props> {
-    public componentDidMount(): void {
-        this.props.actions.getIncidentsForCurrentTeam();
-        this.props.actions.setRHSOpen(true);
-    }
-
-    public componentWillUnmount(): void {
-        this.props.actions.setRHSOpen(false);
-    }
-
-    public handleClick = (id: string) => {
-        this.props.actions.getIncident(id);
-        this.props.actions.setRHSState(RHSState.Details);
-    }
-
-    public render(): JSX.Element {
+    if (incidentState === CurrentIncidentState.Loading) {
         return (
             <div className='incident-rhs'>
-                <RHSHeader/>
                 <div className='incident-rhs__content'>
-                    {
-                        this.props.isLoading &&
-                        <div className='spinner-container'>
-                            <Spinner/>
-                            <span>{'Loading...'}</span>
-                        </div>
-                    }
-                    <div>
-                        {
-                            this.props.rhsState === RHSState.List && !this.props.isLoading &&
-                            <Scrollbars
-                                autoHide={true}
-                                autoHideTimeout={500}
-                                autoHideDuration={500}
-                                renderThumbHorizontal={renderThumbHorizontal}
-                                renderThumbVertical={renderThumbVertical}
-                                renderView={renderView}
-                                style={{position: 'absolute'}}
-                            >
-                                <IncidentList
-                                    incidents={this.props.incidents}
-                                    onClick={this.handleClick}
-                                />
-                            </Scrollbars>
-                        }
-                        {
-                            this.props.rhsState === RHSState.Details && !this.props.isLoading &&
-                            <RHSIncidentDetails
-                                incident={this.props.incident}
-                            />
-                        }
+                    <div className='spinner-container'>
+                        <Spinner/>
+                        <span>{'Loading...'}</span>
                     </div>
                 </div>
             </div>
         );
+    } else if (incident === null || incidentState === CurrentIncidentState.NotFound) {
+        return (
+            <div className='incident-rhs'>
+                <div className='incident-rhs__content'>
+                    {'No incident for this channel.'}
+                </div>
+            </div>
+        );
     }
-}
+
+    return (
+        <div className='incident-rhs'>
+            <RHSHeader/>
+            <div className='incident-rhs__content'>
+                <RHSIncidentDetails
+                    incident={incident}
+                />
+            </div>
+        </div>
+    );
+};
+
+export default RightHandSidebar;

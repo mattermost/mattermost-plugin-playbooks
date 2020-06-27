@@ -45,6 +45,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/channel/{channel_id:[A-Za-z0-9]+}", handler.getIncidentWithDetailsByChannel).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -269,6 +270,50 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
+			return
+		}
+		HandleError(w, err)
+		return
+	}
+
+	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(incidentToGet)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
+func (h *IncidentHandler) getIncidentWithDetailsByChannel(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	channelID := vars["channel_id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			HandleErrorWithCode(w, http.StatusNotFound, "Not Found", err)
+		} else {
+			HandleError(w, err)
+		}
+		return
+	}
 
 	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {

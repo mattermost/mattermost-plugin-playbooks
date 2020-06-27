@@ -41,6 +41,10 @@ export function fetchIncidentWithDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}/details`);
 }
 
+export function fetchIncidentWithDetailsByChannel(channelId: string) {
+    return doGet(`${apiUrl}/incidents/channel/${channelId}`);
+}
+
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
     const currentChannel = getCurrentChannel(getState());
     const currentTeamId = getCurrentTeamId(getState());
