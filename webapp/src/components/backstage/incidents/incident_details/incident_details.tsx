@@ -13,7 +13,7 @@ import {Incident} from 'src/types/incident';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
-import {OVERLAY_DELAY} from 'src/utils/constants';
+import {OVERLAY_DELAY} from 'src/constants';
 import {navigateToUrl} from 'src/utils/utils';
 
 import StatusBadge from '../status_badge';

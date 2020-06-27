@@ -9,7 +9,7 @@ import {Playbook, Checklist, ChecklistItem, emptyPlaybook} from 'src/types/playb
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {MAX_NAME_LENGTH} from 'src/utils/constants';
+import {MAX_NAME_LENGTH} from 'src/constants';
 
 import BackIcon from 'src/components/assets/icons/back_icon';
 

@@ -12,7 +12,7 @@ import {
 } from 'react-beautiful-dnd';
 
 import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {MAX_NAME_LENGTH} from 'src/utils/constants';
+import {MAX_NAME_LENGTH} from 'src/constants';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';

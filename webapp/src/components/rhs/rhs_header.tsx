@@ -15,7 +15,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
-import {OVERLAY_DELAY} from 'src/utils/constants';
+import {OVERLAY_DELAY} from 'src/constants';
 import {navigateToTeamPluginUrl, isMobile} from 'src/utils/utils';
 
 import './rhs_header.scss';

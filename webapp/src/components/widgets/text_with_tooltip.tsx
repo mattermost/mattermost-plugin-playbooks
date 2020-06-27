@@ -2,7 +2,7 @@ import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {debounce} from 'debounce';
 
-import {OVERLAY_DELAY} from 'src/utils/constants';
+import {OVERLAY_DELAY} from 'src/constants';
 
 interface Props {
     id: string;

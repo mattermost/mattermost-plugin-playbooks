@@ -8,7 +8,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
-import {OVERLAY_DELAY} from 'src/utils/constants';
+import {OVERLAY_DELAY} from 'src/constants';
 
 import {isExportLicensed} from 'src/selectors';
 import {exportChannelUrl} from 'src/client';
