@@ -4,11 +4,11 @@
 import React, {useRef, FC} from 'react';
 import {useSelector} from 'react-redux';
 
-import {rhsOpen} from 'src/selectors';
+import {workflowsRHSOpen} from 'src/selectors';
 
 const IncidentIcon: FC = () => {
     const myRef = useRef(null);
-    const isRHSOpen = useSelector(rhsOpen);
+    const isRHSOpen = useSelector(workflowsRHSOpen);
 
     // If it has been mounted, we know our parent is always a button.
     const parent = myRef?.current ? myRef?.current?.parentNode as HTMLButtonElement : null;

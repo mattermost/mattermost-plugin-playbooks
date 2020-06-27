@@ -12,7 +12,8 @@
     "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx --ext tsx --ext ts . --quiet --fix --cache",
     "test": "jest --forceExit --detectOpenHandles --verbose",
     "test:watch": "jest --watch",
-    "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2"
+    "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2",
+    "check-types": "tsc"
   },
   "author": "",
   "license": "",
@@ -61,8 +62,6 @@
     "jest": "26.0.1",
     "jest-canvas-mock": "2.2.0",
     "jest-junit": "10.0.0",
-    "mattermost-redux": "github:mattermost/mattermost-redux#3bb89a5450b94da564d3a286fefb5945a1c3fca8",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
     "node-sass": "4.14.1",
     "react-beautiful-dnd": "13.0.0",
     "react-bootstrap": "github:mattermost/react-bootstrap#c6957962364e0818a51bbfd13e89919903b422d6",
@@ -72,6 +71,8 @@
     "webpack-cli": "3.3.11"
   },
   "dependencies": {
+    "mattermost-redux": "5.24.2",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
     "@emotion/babel-preset-css-prop": "^10.0.27",
     "@emotion/core": "^10.0.28",
     "@types/chart.js": "2.9.21",

@@ -36,7 +36,7 @@ export const selectToggleRHS = (state: GlobalState) => pluginState(state).toggle
 
 export const rhsState = (state: GlobalState) => pluginState(state).rhsState;
 
-export const rhsOpen = (state: GlobalState) => pluginState(state).rhsOpen;
+export const workflowsRHSOpen = (state: GlobalState) => pluginState(state).rhsOpen;
 
 export const isLoading = (state: GlobalState) => pluginState(state).isLoading;
 

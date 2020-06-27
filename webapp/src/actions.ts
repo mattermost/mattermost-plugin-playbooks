@@ -65,9 +65,6 @@ import {
     fetchIncidentWithDetails,
 } from './client';
 
-// @ts-ignore
-const WebappUtils = window.WebappUtils;
-
 export function getIncident(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         try {
@@ -92,7 +89,7 @@ export function getIncident(id: string) {
     };
 }
 
-export function getIncidentWithDetails(id: String) {
+export function getIncidentWithDetails(id: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         try {
             const incident = await fetchIncidentWithDetails(id) as Incident;

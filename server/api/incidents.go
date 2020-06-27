@@ -45,6 +45,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channel/{channel_id:[A-Za-z0-9]+}", handler.getIncidentWithDetailsByChannel).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
@@ -409,6 +410,55 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 	}
 
 	jsonBytes, err := json.Marshal(commanders)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
+// getCommanders handles the /incidents/commanders api endpoint.
+func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
+	teamID := r.URL.Query().Get("team_id")
+	if teamID == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+	}
+
+	// Check permissions (if is an admin, they will have permissions to view all teams)
+	userID := r.Header.Get("Mattermost-User-ID")
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+			"userID %s does not have view permission for teamID %s",
+			userID,
+			teamID,
+		))
+		return
+	}
+
+	options := incident.HeaderFilterOptions{
+		TeamID: teamID,
+		Status: incident.Ongoing,
+		HasPermissionsTo: func(channelID string) bool {
+			return h.hasPermissionsToOrPublic(channelID, userID)
+		},
+	}
+	incidents, err := h.incidentService.GetIncidents(options)
+	if err != nil {
+		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
+		return
+	}
+
+	channelIds := make([]string, 0, len(incidents.Incidents))
+	for _, incident := range incidents.Incidents {
+		channelIds = append(channelIds, incident.PrimaryChannelID)
+	}
+
+	jsonBytes, err := json.Marshal(channelIds)
 	if err != nil {
 		HandleError(w, err)
 		return

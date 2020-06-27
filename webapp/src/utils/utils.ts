@@ -6,6 +6,9 @@ import {pluginId} from 'src/manifest';
 
 const MOBILE_SCREEN_WIDTH = 768;
 
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
+
 export const getFullName = (firstName: string, lastName: string): string => {
     if (firstName && lastName) {
         return firstName + ' ' + lastName;

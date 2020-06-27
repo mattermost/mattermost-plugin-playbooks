@@ -1,14 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {RECEIVED_DIALOG_TRIGGER_ID} from 'mattermost-redux/action_types/integrations';
+import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {pluginId} from 'src/manifest';
 
 import {Incident} from './incident';
 import {RHSState} from './rhs';
 import {Playbook} from './playbook';
-import {BackstageArea} from './backstage';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
@@ -61,7 +60,7 @@ export interface ReceivedError {
 }
 
 export interface SetTriggerId {
-    type: typeof RECEIVED_DIALOG_TRIGGER_ID;
+    type: typeof Integrations.RECEIVED_DIALOG_TRIGGER_ID;
     data: string;
 }
 

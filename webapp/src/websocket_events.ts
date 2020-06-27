@@ -1,17 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Dispatch, AnyAction} from 'redux';
-
-import {GetStateFunc} from 'mattermost-redux/types/actions';
-
 import {WebSocketMessage} from './types/websocket_events';
 import {isIncident, Incident} from './types/incident';
 
 export const websocketSubscribers = new Set<(incident: Incident) => void>();
 
-export function handleWebsocketIncidentUpdate(dispatch: Dispatch<AnyAction>, getState: GetStateFunc) {
-    return (msg: WebSocketMessage) => {
+export function handleWebsocketIncidentUpdate() {
+    return (msg: WebSocketMessage): void => {
         if (!msg.data.payload) {
             return;
         }
