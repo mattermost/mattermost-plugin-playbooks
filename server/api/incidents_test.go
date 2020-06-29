@@ -217,6 +217,6 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 }

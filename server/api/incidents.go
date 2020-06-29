@@ -56,7 +56,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
-	channelRouter.HandleFunc("/{id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
+	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
 
 	checklistsRouter := incidentRouterAuthorized.PathPrefix("/checklists").Subrouter()
 
@@ -305,12 +305,13 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 // getIncidentByChannel handles the /incidents/channel/{id} endpoint.
 func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	channelID := vars["id"]
+	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !h.hasPermissionsToOrPublic(channelID, userID) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-			errors.Errorf("userid: %s does not have permissions to view the incident from channelid %s", userID, channelID))
+		h.log.Warnf("User %s does not have permissions to get incident for channel %s", userID, channelID)
+		HandleErrorWithCode(w, http.StatusNotFound, "Not found",
+			errors.Errorf("incident for channel id %s not found", channelID))
 		return
 	}
 
