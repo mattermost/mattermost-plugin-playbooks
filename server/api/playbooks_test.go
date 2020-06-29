@@ -251,7 +251,7 @@ func TestPlaybooks(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
 	t.Run("create playbook no permission", func(t *testing.T) {
@@ -269,7 +269,7 @@ func TestPlaybooks(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
 	t.Run("get playbook no permission", func(t *testing.T) {
@@ -288,7 +288,7 @@ func TestPlaybooks(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
 	t.Run("get playbooks no permission", func(t *testing.T) {
@@ -306,7 +306,7 @@ func TestPlaybooks(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
 	t.Run("update playbooks no permission", func(t *testing.T) {
@@ -325,7 +325,7 @@ func TestPlaybooks(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
 	t.Run("create playbook playbook with ID", func(t *testing.T) {
