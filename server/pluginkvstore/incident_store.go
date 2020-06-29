@@ -1,6 +1,7 @@
 package pluginkvstore
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 	"unicode"
@@ -21,6 +22,14 @@ const (
 )
 
 type idHeaderMap map[string]incident.Header
+
+func (i idHeaderMap) clone() idHeaderMap {
+	newMap := make(idHeaderMap, len(i))
+	for k, v := range i {
+		newMap[k] = v
+	}
+	return newMap
+}
 
 // Ensure incidentStore implements the incident.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
@@ -234,20 +243,20 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 }
 
 func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
-	headers, err := s.getIDHeaders()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get all headers")
+	addID := func(oldValue []byte) (interface{}, error) {
+		var headers idHeaderMap
+		if err := json.Unmarshal(oldValue, &headers); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal oldValue into an idHeaderMap")
+		}
+
+		newHeaders := headers.clone()
+		newHeaders[incdnt.ID] = incdnt.Header
+		return newHeaders, nil
 	}
 
-	headers[incdnt.ID] = incdnt.Header
-
-	// TODO: Should be using CompareAndSet, but deep copy is expensive.
-	if saved, err := s.pluginAPI.KV.Set(allHeadersKey, headers); err != nil {
-		return errors.Wrapf(err, "failed to set all headers value")
-	} else if !saved {
-		return errors.New("failed to set all headers value")
+	if err := s.pluginAPI.KV.SetAtomicWithRetries(allHeadersKey, addID); err != nil {
+		return errors.Wrap(err, "failed to set allHeaders atomically")
 	}
-
 	return nil
 }
 
