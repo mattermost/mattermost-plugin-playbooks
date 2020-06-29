@@ -70,7 +70,7 @@ func (p *PlaybookStore) addToIndex(playbookID string) error {
 }
 
 func (p *PlaybookStore) removeFromIndex(playbookID string) error {
-	removeId := func(oldValue []byte) (interface{}, error) {
+	removeID := func(oldValue []byte) (interface{}, error) {
 		var index playbookIndex
 		if err := json.Unmarshal(oldValue, &index); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal oldValue into a playbookIndex")
@@ -87,7 +87,7 @@ func (p *PlaybookStore) removeFromIndex(playbookID string) error {
 		return newIndex, nil
 	}
 
-	if err := p.kvAPI.SetAtomicWithRetries(IndexKey, removeId); err != nil {
+	if err := p.kvAPI.SetAtomicWithRetries(IndexKey, removeID); err != nil {
 		return errors.Wrap(err, "failed to set playbookIndex atomically")
 	}
 	return nil
