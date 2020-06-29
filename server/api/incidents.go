@@ -133,7 +133,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		playbookTemplate = &playbook.Playbook{ID: playbookID}
 	}
 
-	payloadIncident := &incident.Incident{
+	payloadIncident := incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
@@ -143,7 +143,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		Playbook: playbookTemplate,
 	}
 
-	newIncident, err := h.createIncident(*payloadIncident, request.UserId)
+	newIncident, err := h.createIncident(payloadIncident, request.UserId)
 	if err != nil {
 		var msg string
 
