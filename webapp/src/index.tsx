@@ -97,8 +97,7 @@ export default class Plugin {
         const hooks = new Hooks(store);
         registry.registerSlashCommandWillBePostedHook(hooks.slashCommandWillBePostedHook);
 
-        registry.registerNeedsTeamRoute('/incidents', () => <Backstage selectedArea={BackstageArea.Incidents}/>);
-        registry.registerNeedsTeamRoute('/playbooks', () => <Backstage selectedArea={BackstageArea.Playbooks}/>);
+        registry.registerNeedsTeamRoute('/', Backstage);
     }
 
     public updateTheme(state: GlobalState) {

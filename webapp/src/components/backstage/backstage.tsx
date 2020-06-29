@@ -2,28 +2,25 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect} from 'react';
-import {CSSTransition} from 'react-transition-group';
-
-import classNames from 'classnames';
+import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
 
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
+import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 
-import {BackstageArea} from 'src/types/backstage';
 import {navigateToUrl, navigateToTeamPluginUrl} from 'src/utils/utils';
 
 import './backstage.scss';
 import Waves from '../assets/waves';
 
 interface Props {
-    selectedArea: BackstageArea;
     currentTeamId: string;
     currentTeamName: string;
     currentTeamDisplayName: string;
     theme: Record<string, string>;
 }
 
-export const Backstage = ({selectedArea, currentTeamId, currentTeamName, currentTeamDisplayName}: Props): React.ReactElement<Props> => {
+export const Backstage = (props: Props): React.ReactElement<Props> => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -34,20 +31,15 @@ export const Backstage = ({selectedArea, currentTeamId, currentTeamName, current
         };
     }, []);
 
-    const onBack = () => {
-        navigateToUrl(`/${currentTeamName}`);
+    const match = useRouteMatch();
+
+    const goToMattermost = () => {
+        navigateToUrl(`/${props.currentTeamName}`);
     };
 
-    let activeArea = <PlaybookList/>;
-    if (selectedArea === BackstageArea.Incidents) {
-        activeArea = (
-            <BackstageIncidentList
-                currentTeamId={currentTeamId}
-                currentTeamName={currentTeamName}
-                currentTeamDisplayName={currentTeamDisplayName}
-            />
-        );
-    }
+    const goToPlaybooks = () => {
+        navigateToTeamPluginUrl(props.currentTeamName, '/playbooks');
+    };
 
     return (
         <div className='Backstage'>
@@ -55,31 +47,62 @@ export const Backstage = ({selectedArea, currentTeamId, currentTeamName, current
                 <div className='Backstage__sidebar__header'>
                     <div
                         className='cursor--pointer'
-                        onClick={onBack}
+                        onClick={goToMattermost}
                     >
                         <i className='icon-arrow-left mr-2 back-icon'/>
                         {'Back to Mattermost'}
                     </div>
                 </div>
                 <div className='menu'>
-                    <div
+                    <NavLink
                         data-testid='incidentsLHSButton'
-                        className={classNames('menu-title', {active: selectedArea === BackstageArea.Incidents})}
-                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/incidents')}
+                        to={`${match.url}/incidents`}
+                        className={'menu-title'}
+                        activeClassName={'active'}
                     >
                         {'Incidents'}
-                    </div>
-                    <div
+                    </NavLink>
+                    <NavLink
                         data-testid='playbooksLHSButton'
-                        className={classNames('menu-title', {active: selectedArea === BackstageArea.Playbooks})}
-                        onClick={() => navigateToTeamPluginUrl(currentTeamName, '/playbooks')}
+                        to={`${match.url}/playbooks`}
+                        className={'menu-title'}
+                        activeClassName={'active'}
                     >
                         {'Playbooks'}
-                    </div>
+                    </NavLink>
                 </div>
             </div>
             <div className='content-container'>
-                {activeArea}
+                <Switch>
+                    <Route path={`${match.url}/playbooks/new`}>
+                        <PlaybookEdit
+                            newPlaybook={true}
+                            currentTeamID={props.currentTeamId}
+                            onClose={goToPlaybooks}
+                        />
+                    </Route>
+                    <Route
+                        path={`${match.url}/playbooks/:playbookId`}
+                        render={(playbookEditRenderProps) => (
+                            <PlaybookEdit
+                                playbookId={playbookEditRenderProps.match.params.playbookId}
+                                newPlaybook={false}
+                                currentTeamID={props.currentTeamId}
+                                onClose={goToPlaybooks}
+                            />
+                        )}
+                    />
+                    <Route path={`${match.url}/playbooks`}>
+                        <PlaybookList/>
+                    </Route>
+                    <Route path={`${match.url}/incidents`}>
+                        <BackstageIncidentList
+                            currentTeamId={props.currentTeamId}
+                            currentTeamName={props.currentTeamName}
+                            currentTeamDisplayName={props.currentTeamDisplayName}
+                        />
+                    </Route>
+                </Switch>
             </div>
             <Waves/>
         </div>
