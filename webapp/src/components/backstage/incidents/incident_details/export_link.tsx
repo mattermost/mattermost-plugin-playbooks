@@ -19,6 +19,8 @@ interface ExportLinkProps {
     incident: Incident
 }
 
+const ExportBannerTimeout = 2500;
+
 const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     //@ts-ignore plugins state is a thing
     const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
@@ -30,7 +32,7 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
         setShowBanner(true);
         window.setTimeout(() => {
             setShowBanner(false);
-        }, 2500);
+        }, ExportBannerTimeout);
     };
 
     const downloadStartedBanner = showBanner && (
