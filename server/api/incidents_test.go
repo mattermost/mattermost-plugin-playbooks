@@ -229,41 +229,9 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		retI := testIncident
-		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
-
-		incidentJSON, err := json.Marshal(testIncident)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	})
-
-	t.Run("create invalid incident - missing commander", func(t *testing.T) {
-		reset()
-		defer mockCtrl.Finish()
-
-		testIncident := incident.Incident{
-			Header: incident.Header{
-				TeamID: "testTeamID",
-				Name:   "incidentName",
-			},
-		}
-
-		retI := testIncident
-		retI.PrimaryChannelID = "channelID"
-		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 
 		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
@@ -290,8 +258,35 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		retI := testIncident
-		retI.PrimaryChannelID = "channelID"
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+
+		incidentJSON, err := json.Marshal(testIncident)
+		require.NoError(t, err)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("create invalid incident - channel id already set", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+		}
+
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 

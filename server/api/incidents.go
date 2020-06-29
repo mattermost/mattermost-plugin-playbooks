@@ -183,6 +183,18 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.New("incident already has an id")
 	}
 
+	if newIncident.PrimaryChannelID != "" {
+		return nil, errors.New("incident channel already has an id")
+	}
+
+	if newIncident.CreatedAt != 0 {
+		return nil, errors.New("incident channel already has created at date")
+	}
+
+	if newIncident.EndedAt != 0 {
+		return nil, errors.New("incident channel already has ended at date")
+	}
+
 	if newIncident.TeamID == "" {
 		return nil, errors.New("missing team id of incident")
 	}
