@@ -9,7 +9,7 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {fetchIncidentWithDetailsByChannel} from 'src/client';
+import {fetchIncidentByChannel} from 'src/client';
 import {websocketSubscribers} from 'src/websocket_events';
 
 import {Incident} from './types/incident';
@@ -34,7 +34,7 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
     useEffect(() => {
         const fetchIncident = async () => {
             try {
-                setIncident(await fetchIncidentWithDetailsByChannel(currentChannel.id));
+                setIncident(await fetchIncidentByChannel(currentChannel.id));
                 setState(CurrentIncidentState.Loaded);
             } catch (err) {
                 if (err.status_code === 404) {
