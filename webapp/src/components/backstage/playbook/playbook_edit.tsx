@@ -17,7 +17,6 @@ import './playbook.scss';
 
 interface Props {
     playbookId?: string;
-    newPlaybook: boolean;
     currentTeamID: string;
     onClose: () => void;
 }
@@ -136,21 +135,23 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const saveDisabled = playbook.title.trim() === '' || !changesMade;
 
-    const notFoundComponent = (
-        <div className='Playbook'>
-            <div className='Backstage__header'>
-                <div className='title'>
-                    <BackIcon
-                        className='Backstage__header__back'
-                        onClick={confirmOrClose}
-                    />
-                    {'Playbook Not Found'}
+    if (props.playbookId && !playbook.id) {
+        return (
+            <div className='Playbook'>
+                <div className='Backstage__header'>
+                    <div className='title'>
+                        <BackIcon
+                            className='Backstage__header__back'
+                            onClick={confirmOrClose}
+                        />
+                        {'Playbook Not Found'}
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
-    const editComponent = (
+    return (
         <div className='Playbook'>
             <div className='Backstage__header'>
                 <div className='title'>
@@ -158,7 +159,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         className='Backstage__header__back'
                         onClick={confirmOrClose}
                     />
-                    {props.newPlaybook ? 'New Playbook' : 'Edit Playbook'}
+                    {props.playbookId ? 'Edit Playbook' : 'New Playbook'}
                 </div>
                 <div className='header-button-div'>
                     <button
@@ -232,10 +233,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             />
         </div>
     );
-
-    const isPlaybookDefined = props.newPlaybook || playbook.id;
-
-    return isPlaybookDefined ? editComponent : notFoundComponent;
 };
 
 export default PlaybookEdit;

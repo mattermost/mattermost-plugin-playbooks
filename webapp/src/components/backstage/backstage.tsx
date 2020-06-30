@@ -76,7 +76,6 @@ const Backstage: FC = () => {
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
                         <PlaybookEdit
-                            newPlaybook={true}
                             currentTeamID={currentTeam.id}
                             onClose={goToPlaybooks}
                         />
@@ -86,7 +85,6 @@ const Backstage: FC = () => {
                         render={(playbookEditRenderProps) => (
                             <PlaybookEdit
                                 playbookId={playbookEditRenderProps.match.params.playbookId}
-                                newPlaybook={false}
                                 currentTeamID={currentTeam.id}
                                 onClose={goToPlaybooks}
                             />
