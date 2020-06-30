@@ -42,7 +42,9 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
-	incidentsRouter.HandleFunc("/create-dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
+
+	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 
@@ -93,6 +95,24 @@ func (h *IncidentHandler) permissionsToIncidentChannelRequired(next http.Handler
 	})
 }
 
+func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var payloadIncident incident.Incident
+	if err := json.NewDecoder(r.Body).Decode(&payloadIncident); err != nil {
+		HandleError(w, errors.Wrapf(err, "unable to decode incident"))
+		return
+	}
+
+	newIncident, err := h.createIncident(payloadIncident, userID)
+	if err != nil {
+		HandleError(w, errors.Wrapf(err, "unable to create incident"))
+		return
+	}
+
+	ReturnJSON(w, &newIncident)
+}
+
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
 // the create incident dialog.
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
@@ -113,37 +133,10 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	var playbookTemplate *playbook.Playbook
 	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
-		if playbookID != "" && playbookID != "-1" {
-			var pb playbook.Playbook
-			pb, err = h.playbookService.Get(playbookID)
-			if err != nil {
-				HandleError(w, errors.Wrapf(err, "failed to get playbook"))
-				return
-			}
-			playbookTemplate = &pb
-		}
+		playbookTemplate = &playbook.Playbook{ID: playbookID}
 	}
 
-	public := true
-	if playbookTemplate != nil {
-		public = playbookTemplate.CreatePublicIncident
-	}
-
-	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
-	permissionMessage := "You don't have permissions to create a private channel."
-	if public {
-		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
-		permissionMessage = "You don't have permission to create a public channel."
-	}
-	if !h.pluginAPI.User.HasPermissionToTeam(request.UserId, request.TeamId, permission) {
-		resp := &model.SubmitDialogResponse{
-			Error: permissionMessage,
-		}
-		_, _ = w.Write(resp.ToJson())
-		return
-	}
-
-	newIncident, err := h.incidentService.CreateIncident(&incident.Incident{
+	payloadIncident := incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
@@ -151,8 +144,9 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		},
 		PostID:   state.PostID,
 		Playbook: playbookTemplate,
-	}, public)
+	}
 
+	newIncident, err := h.createIncident(payloadIncident, request.UserId)
 	if err != nil {
 		var msg string
 
@@ -185,6 +179,60 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID string) (*incident.Incident, error) {
+	if newIncident.ID != "" {
+		return nil, errors.New("incident already has an id")
+	}
+
+	if newIncident.PrimaryChannelID != "" {
+		return nil, errors.New("incident channel already has an id")
+	}
+
+	if newIncident.CreatedAt != 0 {
+		return nil, errors.New("incident channel already has created at date")
+	}
+
+	if newIncident.EndedAt != 0 {
+		return nil, errors.New("incident channel already has ended at date")
+	}
+
+	if newIncident.TeamID == "" {
+		return nil, errors.New("missing team id of incident")
+	}
+
+	if newIncident.CommanderUserID == "" {
+		return nil, errors.New("missing commander user id of incident")
+	}
+
+	// Commander should have permission to the team
+	if !h.pluginAPI.User.HasPermissionToTeam(newIncident.CommanderUserID, newIncident.TeamID, model.PERMISSION_VIEW_TEAM) {
+		return nil, errors.New("commander user does not have permissions for the team")
+	}
+
+	public := true
+	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" && newIncident.Playbook.ID != "-1" {
+		pb, err := h.playbookService.Get(newIncident.Playbook.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get playbook")
+		}
+
+		newIncident.Playbook = &pb
+		public = newIncident.Playbook.CreatePublicIncident
+	}
+
+	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
+	permissionMessage := "You don't have permissions to create a private channel."
+	if public {
+		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
+		permissionMessage = "You don't have permission to create a public channel."
+	}
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, newIncident.TeamID, permission) {
+		return nil, errors.New(permissionMessage)
+	}
+
+	return h.incidentService.CreateIncident(&newIncident, public)
 }
 
 func (h *IncidentHandler) hasPermissionsToOrPublic(channelID, userID string) bool {

@@ -129,7 +129,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, c
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/create-dialog",
+		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/dialog",
 			s.configService.GetManifest().Id),
 		Dialog:    *dialog,
 		TriggerId: triggerID,

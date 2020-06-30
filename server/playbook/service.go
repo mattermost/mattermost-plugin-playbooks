@@ -12,12 +12,6 @@ type service struct {
 	telemetry Telemetry
 }
 
-const (
-	playbookCreated = "playbook_created"
-	playbookUpdated = "playbook_updated"
-	playbookDeleted = "playbook_deleted"
-)
-
 // NewService returns a new playbook service
 func NewService(store Store, poster bot.Poster, telemetry Telemetry) Service {
 	return &service{
