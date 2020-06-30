@@ -2,7 +2,7 @@ import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {debounce} from 'debounce';
 
-import {OVERLAY_DELAY} from 'src/utils/constants';
+import {OVERLAY_DELAY} from 'src/constants';
 
 interface Props {
     id: string;
@@ -54,7 +54,7 @@ const TextWithTooltip: React.FC<Props> = (props: Props) => {
         return (
             <OverlayTrigger
                 placement={props.placement}
-                delayShow={OVERLAY_DELAY}
+                delay={OVERLAY_DELAY}
                 overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
             >
                 {text}

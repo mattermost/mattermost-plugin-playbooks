@@ -12,7 +12,7 @@ import {
 } from 'react-beautiful-dnd';
 
 import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {MAX_NAME_LENGTH} from 'src/utils/constants';
+import {MAX_NAME_LENGTH} from 'src/constants';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';
@@ -182,6 +182,8 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                         addItem({
                             title: newValue,
                             checked: false,
+                            checked_post_id: '',
+                            checked_modified: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);

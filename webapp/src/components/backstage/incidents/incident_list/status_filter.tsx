@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 
-import ReactSelect from 'react-select';
+import ReactSelect, {StylesConfig} from 'react-select';
 
 import './status_filter.scss';
 
@@ -82,7 +82,7 @@ export function StatusFilter(props: Props) {
 }
 
 // styles for the select component
-const selectStyles = {
+const selectStyles: StylesConfig = {
     control: (provided) => ({...provided, height: 0, minHeight: 0}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
