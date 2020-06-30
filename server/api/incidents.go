@@ -302,7 +302,7 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	}
 }
 
-// getIncidentByChannel handles the /incidents/channel/{id} endpoint.
+// getIncidentByChannel handles the /incidents/channel/{channel_id} endpoint.
 func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
