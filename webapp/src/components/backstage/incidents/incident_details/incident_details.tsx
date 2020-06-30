@@ -135,7 +135,7 @@ const BackstageIncidentDetails: FC<Props> = (props: Props) => {
                 <OverlayTrigger
                     placement='bottom'
                     delay={OVERLAY_DELAY}
-                    overlay={<Tooltip id='goToChannel'>{'Number of users currently in the incident channel'}</Tooltip>}
+                    overlay={<Tooltip id='goToChannel'>{'Number of users involved in the incident'}</Tooltip>}
                 >
                     <div className='statistics-row__block'>
                         <div className='title'>
