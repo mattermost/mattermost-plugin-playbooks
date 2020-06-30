@@ -9,10 +9,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
-import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
-import {registerCssVars} from 'src/css';
 
 import {isMobile} from 'src/mobile';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
@@ -41,8 +38,6 @@ import {makeSlashCommandHook} from './slash_command';
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
         registry.registerReducer(reducer);
-
-        this.updateTheme(store.getState());
 
         let mainMenuActionId: string | null;
         const updateMainMenuAction = () => {
@@ -77,21 +72,12 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdate());
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentUpdate());
 
-        // Listen to when the theme is loaded
-        registry.registerWebSocketEventHandler('preferences_changed',
-            () => this.updateTheme(store.getState() as GlobalState));
-
         // Listen for channel changes and open the RHS when approperate.
         store.subscribe(makeRHSOpener(store));
 
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
 
         registry.registerNeedsTeamRoute('/', Backstage);
-    }
-
-    updateTheme(state: GlobalState): void {
-        const theme = getTheme(state);
-        registerCssVars(theme);
     }
 }
 
