@@ -13,6 +13,7 @@ const keyVersionPrefix = "v2_"
 type KVAPI interface {
 	Set(key string, value interface{}, options ...pluginapi.KVSetOption) (bool, error)
 	Get(key string, out interface{}) error
+	SetAtomicWithRetries(key string, valueFunc func(oldValue []byte) (newValue interface{}, err error)) error
 	DeleteAll() error
 }
 

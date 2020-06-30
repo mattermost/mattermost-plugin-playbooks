@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -125,5 +126,99 @@ func TestIncidents(t *testing.T) {
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("get incident by channel id", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testIncidentHeader := incident.Header{
+			ID:               "incidentID",
+			CommanderUserID:  "testUserID",
+			TeamID:           "testTeamID",
+			Name:             "incidentName",
+			PrimaryChannelID: "channelID",
+		}
+
+		testIncident := incident.Incident{
+			Header: testIncidentHeader,
+		}
+
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+
+		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("incidentID", nil)
+		incidentService.EXPECT().GetIncident("incidentID").Return(&testIncident, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.PrimaryChannelID, nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var resultIncident incident.Incident
+		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		require.NoError(t, err)
+		assert.Equal(t, resultIncident, testIncident)
+	})
+
+	t.Run("get incident by channel id - not found", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testIncidentHeader := incident.Header{
+			ID:               "incidentID",
+			CommanderUserID:  "testUserID",
+			TeamID:           "testTeamID",
+			Name:             "incidentName",
+			PrimaryChannelID: "channelID",
+		}
+
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+
+		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("", incident.ErrNotFound)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.PrimaryChannelID, nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("get incident by channel id - not authorized", func(t *testing.T) {
+		reset()
+		defer mockCtrl.Finish()
+
+		testIncidentHeader := incident.Header{
+			ID:               "incidentID",
+			CommanderUserID:  "testUserID",
+			TeamID:           "testTeamID",
+			Name:             "incidentName",
+			PrimaryChannelID: "channelID",
+		}
+
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.PrimaryChannelID, nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 }
