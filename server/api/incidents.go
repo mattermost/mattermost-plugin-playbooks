@@ -422,7 +422,6 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// getCommanders handles the /incidents/commanders api endpoint.
 func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
 	if teamID == "" {
