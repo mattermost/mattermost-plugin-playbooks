@@ -8,7 +8,7 @@ import './rhs_title.scss';
 export default function RHSTitle() {
     return (
         <div className='rhs-incident-title'>
-            {'Workflow'}
+            {'Incident'}
         </div>
     );
 }
