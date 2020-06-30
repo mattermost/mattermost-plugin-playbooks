@@ -42,7 +42,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
-	incidentsRouter.HandleFunc("", handler.postIncident).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
 
 	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
@@ -92,7 +92,7 @@ func (h *IncidentHandler) permissionsToIncidentChannelRequired(next http.Handler
 	})
 }
 
-func (h *IncidentHandler) postIncident(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var payloadIncident incident.Incident
