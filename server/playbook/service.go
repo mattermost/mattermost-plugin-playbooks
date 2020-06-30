@@ -34,7 +34,6 @@ func (s *service) Create(playbook Playbook) (string, error) {
 	}
 	playbook.ID = newID
 
-	s.poster.PublishWebsocketEventToTeam(playbookCreated, playbook, playbook.TeamID)
 	s.telemetry.CreatePlaybook(playbook)
 
 	return newID, nil
@@ -69,7 +68,6 @@ func (s *service) Update(playbook Playbook) error {
 		return err
 	}
 
-	s.poster.PublishWebsocketEventToTeam(playbookUpdated, playbook, playbook.TeamID)
 	s.telemetry.UpdatePlaybook(playbook)
 
 	return nil
@@ -84,7 +82,6 @@ func (s *service) Delete(playbook Playbook) error {
 		return err
 	}
 
-	s.poster.PublishWebsocketEventToTeam(playbookDeleted, playbook, playbook.TeamID)
 	s.telemetry.DeletePlaybook(playbook)
 
 	return nil

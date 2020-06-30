@@ -91,18 +91,9 @@ func TestPlaybooks(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		mockkvapi.EXPECT().Set(gomock.Any(), gomock.Any()).Return(true, nil)
-		playbookIndex := struct {
-			PlaybookIDs []string `json:"playbook_ids"`
-		}{
-			PlaybookIDs: []string{
-				"playbookid1",
-			},
-		}
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Set(pluginkvstore.IndexKey, gomock.Any(), gomock.Any()).Return(true, nil)
+		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.IndexKey, gomock.Any()).Return(nil)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		poster.EXPECT().PublishWebsocketEventToTeam("playbook_created", gomock.Any(), "testteamid")
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(playbooktest))
@@ -181,10 +172,9 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
-		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(true, nil)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid).Times(1)
+		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).Times(1)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		poster.EXPECT().PublishWebsocketEventToTeam("playbook_updated", gomock.Any(), "testteamid")
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -206,23 +196,12 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		playbookIndex := struct {
-			PlaybookIDs []string `json:"playbook_ids"`
-		}{
-			PlaybookIDs: []string{
-				"playbookid1",
-				"testplaybookid",
-				"playbookid2",
-			},
-		}
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
-		mockkvapi.EXPECT().Set(pluginkvstore.IndexKey, gomock.Any()).Return(true, nil)
+		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.IndexKey, gomock.Any()).Return(nil).Times(1)
 
 		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"testplaybookid", nil).Return(true, nil)
 
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		poster.EXPECT().PublishWebsocketEventToTeam("playbook_deleted", gomock.Any(), "testteamid")
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
