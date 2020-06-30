@@ -4,12 +4,18 @@
 import React, {FC, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 
-import {setRHSOpen} from 'src/actions';
+import {setRHSOpen, startIncident} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
 import RHSHeader from 'src/components/rhs/rhs_header';
 import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
 
+import IncidentIcon from '../assets/icons/incident_icon';
+
 import RHSIncidentDetails from './incident_details';
+
+// @ts-ignore
+const {formatText, messageHtmlToComponent} = window.PostUtils;
+
 import './rhs.scss';
 
 const RightHandSidebar: FC = () => {
@@ -37,8 +43,22 @@ const RightHandSidebar: FC = () => {
     } else if (incident === null || incidentState === CurrentIncidentState.NotFound) {
         return (
             <div className='incident-rhs'>
-                <div className='incident-rhs__content'>
-                    {'No incident for this channel.'}
+                <div className='no-incidents'>
+                    <div className='inner-text'>
+                        <IncidentIcon/>
+                    </div>
+                    <div className='inner-text'>
+                        {'There is no active incident in this channel.'}
+                    </div>
+                    <div className='inner-text'>
+                        {messageHtmlToComponent(formatText('You can create incidents by the post dropdown menu, and by the slash command `/incident start`'))}
+                    </div>
+                    <a
+                        className='link'
+                        onClick={() => dispatch(startIncident())}
+                    >
+                        {'+ Create new incident'}
+                    </a>
                 </div>
             </div>
         );
