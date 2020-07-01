@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import * as TIMEOUTS from '../fixtures/timeouts';
+
 const incidentStartCommand = "/incident start";
 
 // function startIncident(incidentID) {
@@ -15,7 +17,8 @@ Cypress.Commands.add('startIncident', (incidentID) => {
 // Starts incident with the `/incident start` slash command
 // function startIncidentWithSlashCommand(incidentID) {
 Cypress.Commands.add('startIncidentWithSlashCommand', (incidentID) => {
-	cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}');
+	cy.findByTestId('post_textbox').clear().type(incidentStartCommand).type('{enter}');
+	cy.wait(TIMEOUTS.MEDIUM);
 	cy.startIncident(incidentID);
 });
 
@@ -29,8 +32,9 @@ Cypress.Commands.add('startIncidentFromRHS', (incidentID) => {
 		cy.get('#incidentIcon').click();
 	});
 	cy.get('#rhsContainer').should('be.visible').within(() => {
-		cy.findByText('Incident List').should('be.visible');
-		cy.get('#incidentRHSIconPlus').click();
+		// cy.findByText('Incident List').should('be.visible');
+		// cy.get('#incidentRHSIconPlus').click();
+		cy.findByText('+ Create new incident').click();
 	});
 	cy.startIncident(incidentID);
 });
