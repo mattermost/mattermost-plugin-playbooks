@@ -4,15 +4,15 @@
 import React from 'react';
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
-import {RouteComponentProps, Redirect} from 'react-router-dom';
+import {RouteComponentProps} from 'react-router-dom';
 
 import {exportChannelUrl} from 'src/client';
 import {Incident} from 'src/types/incident';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
-import {OVERLAY_DELAY, ErrorPageTypes} from 'src/utils/constants';
-import {teamPluginErrorUrl, navigateToUrl} from 'src/utils/utils';
+import {OVERLAY_DELAY} from 'src/utils/constants';
+import {navigateToUrl} from 'src/utils/utils';
 
 import StatusBadge from '../status_badge';
 
@@ -27,7 +27,6 @@ interface Props extends RouteComponentProps {
     exportLicensed: boolean;
     theme: Record<string, string>;
     onClose: () => void;
-    currentTeamName: String;
     actions: {
         getIncidentWithDetails: (id: string) => void;
     };
@@ -43,14 +42,11 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
 
         this.state = {
             showBanner: false,
-            fullDetailsFetched: false,
         };
     }
 
     componentDidMount() {
-        this.props.actions.getIncidentWithDetails(this.props.match.params.incidentId).then(() => {
-            this.setState({fullDetailsFetched: true});
-        });
+        this.props.actions.getIncidentWithDetails(this.props.match.params.incidentId);
     }
 
     public timeFrameText = () => {
@@ -162,10 +158,6 @@ export default class BackstageIncidentDetails extends React.PureComponent<Props,
     }
 
     public render(): JSX.Element {
-        if (this.state.fullDetailsFetched && !this.props.involvedInIncident) {
-            return <Redirect to={teamPluginErrorUrl(this.props.currentTeamName, ErrorPageTypes.INCIDENTS)}/>;
-        }
-
         const detailsHeader = (
             <div className='details-header'>
                 <div className='title'>

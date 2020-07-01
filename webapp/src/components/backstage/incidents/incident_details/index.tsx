@@ -6,7 +6,6 @@ import {withRouter} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Incident} from 'src/types/incident';
 
@@ -29,7 +28,6 @@ function mapStateToProps(state: GlobalState) {
         involvedInIncident,
         exportAvailable: isExportPluginLoaded,
         exportLicensed: isExportLicensed(state),
-        currentTeamName: getCurrentTeam(state).name,
         theme: getTheme(state),
     };
 }
