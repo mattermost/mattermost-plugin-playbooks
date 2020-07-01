@@ -8,8 +8,8 @@ import React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 
 import WarningIcon from 'src/components/assets/icons/warning_icon';
-import {ErrorPageTypes} from 'src/utils/constants';
-import {teamPluginUrl} from 'src/utils/utils';
+import {ErrorPageTypes} from 'src/constants';
+import {teamPluginUrl} from 'src/browser_routing';
 
 interface Props extends RouteComponentProps {
     teamName: String,
