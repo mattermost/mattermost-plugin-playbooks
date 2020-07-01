@@ -12,7 +12,7 @@ import {ErrorPageTypes} from 'src/constants';
 import {teamPluginUrl} from 'src/browser_routing';
 
 interface Props extends RouteComponentProps {
-    teamName: String,
+    teamName: string,
 }
 
 export default class ErrorPage extends React.PureComponent<Props> {

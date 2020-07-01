@@ -18,3 +18,7 @@ export const teamPluginUrl = (teamName: string, urlPath: string) => {
 export const navigateToTeamPluginUrl = (teamName: string, urlPath: string) => {
     WebappUtils.browserHistory.push(teamPluginUrl(teamName, urlPath));
 };
+
+export const teamPluginErrorUrl = (teamName: string, type: string) => {
+    return teamPluginUrl(teamName, `/error?type=${type}`);
+};
