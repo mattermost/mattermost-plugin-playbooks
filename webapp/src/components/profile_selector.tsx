@@ -3,15 +3,14 @@
 
 import React, {useEffect, useState} from 'react';
 
-import ReactSelect, {ActionTypes, ControlProps} from 'react-select';
+import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import {css} from '@emotion/core';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import './profile_selector.scss';
 import Profile from 'src/components/profile';
-import ProfileButton from 'src/components/profile/profile_selector/profile_button/profile_button';
-import {getUserDescription} from 'src/utils/utils';
+import ProfileButton from 'src/components/profile_button';
 
 interface Props {
     commanderId?: string;
@@ -32,6 +31,30 @@ interface Option {
 interface ActionObj {
     action: ActionTypes;
 }
+
+export const getFullName = (firstName: string, lastName: string): string => {
+    if (firstName && lastName) {
+        return firstName + ' ' + lastName;
+    } else if (firstName) {
+        return firstName;
+    } else if (lastName) {
+        return lastName;
+    }
+
+    return '';
+};
+
+export const getUserDescription = (firstName: string, lastName: string, nickName: string): string => {
+    if ((firstName || lastName) && nickName) {
+        return ` ${getFullName(firstName, lastName)} (${nickName})`;
+    } else if (nickName) {
+        return ` (${nickName})`;
+    } else if (firstName || lastName) {
+        return ` ${getFullName(firstName, lastName)}`;
+    }
+
+    return '';
+};
 
 export default function ProfileSelector(props: Props) {
     const [isOpen, setOpen] = useState(false);
@@ -172,7 +195,7 @@ export default function ProfileSelector(props: Props) {
 }
 
 // styles for the select component
-const selectStyles = {
+const selectStyles: StylesConfig = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {

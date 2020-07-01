@@ -80,3 +80,17 @@ func (mr *MockKVAPIMockRecorder) Set(arg0, arg1 interface{}, arg2 ...interface{}
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockKVAPI)(nil).Set), varargs...)
 }
+
+// SetAtomicWithRetries mocks base method
+func (m *MockKVAPI) SetAtomicWithRetries(arg0 string, arg1 func([]byte) (interface{}, error)) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAtomicWithRetries", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAtomicWithRetries indicates an expected call of SetAtomicWithRetries
+func (mr *MockKVAPIMockRecorder) SetAtomicWithRetries(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAtomicWithRetries", reflect.TypeOf((*MockKVAPI)(nil).SetAtomicWithRetries), arg0, arg1)
+}

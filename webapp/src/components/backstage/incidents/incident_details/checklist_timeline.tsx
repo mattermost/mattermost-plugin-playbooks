@@ -1,10 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React, {FC, useState, useEffect, useRef} from 'react';
 import moment from 'moment';
 import Chart, {ChartOptions, ChartTooltipItem, ChartTooltipModel, Point} from 'chart.js';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {useSelector} from 'react-redux';
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
@@ -16,7 +19,6 @@ import EmptyChecklistImage from 'src/components/assets/empty_checklist';
 import './incident_details.scss';
 
 interface Props {
-    theme: Record<string, string>;
     incident: Incident;
 }
 
@@ -26,274 +28,270 @@ interface ChartData{
     datasets: any[];
 }
 
-export default class ChecklistTimeline extends React.PureComponent<Props> {
-    chart: Chart | null = null;
-    chartOptions: ChartOptions;
-    chartData: ChartData;
+const ChecklistTimeline: FC<Props> = (props: Props) => {
+    const theme = useSelector<GlobalState, Record<string, string>>(getTheme);
+    const canvas = useRef<HTMLCanvasElement>(null);
 
-    constructor(props: Props) {
-        super(props);
+    const [chart, setChart] = useState<Chart | null>(null);
+    const chartOptions = initChartOptions(theme);
+    const chartData = initData(theme, props.incident);
 
-        this.chartOptions = this.initChartOptions();
-        this.chartData = this.initData();
-    }
-
-    public componentDidMount(): void {
-        this.initChart();
-    }
-
-    public componentWillUnmount(): void {
-        if (this.chart) {
-            this.chart.destroy();
-        }
-    }
-
-    public initChartOptions() {
-        Chart.Tooltip.positioners.custom = this.tooltipPosition;
-
-        const chartOptions: ChartOptions = {
-            maintainAspectRatio: false,
-            responsive: true,
-            showLines: false,
-            legend: {
-                display: false,
-            },
-            scales: {
-                xAxes: [{
-                    type: 'linear',
-                    display: true,
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Duration',
-                        fontColor: changeOpacity(this.props.theme.centerChannelColor, 0.56),
-                    },
-                    gridLines: {
-
-                        // Length and spacing of dashes on grid lines.
-                        borderDash: [8, 4],
-                        color: changeOpacity(this.props.theme.centerChannelColor, 0.16),
-                        zeroLineColor: changeOpacity(this.props.theme.centerChannelColor, 0.16),
-                    },
-                    ticks: {
-                        fontColor: changeOpacity(this.props.theme.centerChannelColor, 0.72),
-                        callback: this.durationTickLabel,
-                    },
-                }],
-                yAxes: [{
-                    type: 'category',
-                    position: 'left',
-                    display: true,
-                    ticks: {
-                        reverse: true,
-                        fontColor: changeOpacity(this.props.theme.centerChannelColor, 0.72),
-                        callback: this.yAxisLabel,
-                    },
-                    gridLines: {
-                        display: false,
-                    },
-                }],
-            },
-            tooltips: {
-                custom: this.tooltipColorBox,
-                bodyAlign: 'center',
-                position: 'custom',
-
-                // @ts-ignore
-                yAlign: 'bottom',
-                xAlign: 'center',
-                bodyFontFamily: 'Open Sans',
-                yPadding: 6,
-                callbacks: {
-                    title: this.tooltipTitle,
-                    label: this.tooltipLabel,
-                },
-            },
-            layout: {
-                padding: {
-                    top: 70,
-                },
-            },
-        };
-
-        return chartOptions;
-    }
-
-    public tooltipPosition(elements: any[], position: Point): Point {
-        if (!elements.length) {
-            return {x: 0, y: 0};
-        }
-
-        return {
-            x: position.x,
-            y: position.y - 12,
-        };
-    }
-
-    public tooltipTitle(tooltipItem: ChartTooltipItem[]): string {
-        return tooltipItem[0].yLabel as string || '';
-    }
-
-    public tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
-        if (tooltipItem.index == null) {
-            return '';
-        }
-
-        const timeUpdated = moment(data.checklistItems[tooltipItem.index].checked_modified);
-        return timeUpdated.format('MMM DD LT');
-    }
-
-    public tooltipColorBox(tooltip: ChartTooltipModel) {
-        if (!tooltip) {
+    useEffect(() => {
+        if (!canvas || !canvas.current) {
             return;
         }
-
-        // disable displaying the color box
-        tooltip.displayColors = false;
-    }
-
-    public durationTickLabel(xValue: number) {
-        const duration = moment.duration(xValue);
-
-        if (duration.days()) {
-            return `${duration.days()} days ${duration.hours()} h`;
-        }
-
-        if (duration.hours()) {
-            return `${duration.hours()} h ${duration.minutes()} m`;
-        }
-
-        if (duration.minutes()) {
-            return `${duration.minutes()} m`;
-        }
-
-        return `${duration.seconds()} s`;
-    }
-
-    public yAxisLabel(value: string) {
-        const MAX_CHARS = 25;
-        if (value.length > MAX_CHARS) {
-            return value.substring(0, MAX_CHARS) + '...';
-        }
-        return value;
-    }
-
-    public initData() {
-        const pointhoverBg = changeOpacity(this.props.theme.buttonBg, 0.16);
-        const chartData = {
-            yLabels: [] as string[],
-            checklistItems: [] as ChecklistItem[],
-
-            datasets: [{
-                pointBackgroundColor: this.props.theme.buttonBg,
-                pointHoverBorderColor: pointhoverBg,
-                pointRadius: 3,
-                pointHoverRadius: 3,
-                pointHoverBorderWidth: 12,
-                data: [] as any,
-            }],
+        setChart(initChart(canvas.current, chartData, chartOptions));
+        return () => { //eslint-disable-line consistent-return
+            if (chart) {
+                chart.destroy();
+            }
         };
+    }, []);
 
-        const checklistItems = this.props.incident.playbook.checklists[0]?.items || [];
+    let content;
 
-        // Add points to the graph for checked items
-        chartData.checklistItems = checklistItems.filter((item) => (
-            item.checked && moment(item.checked_modified).isSameOrAfter('2020-01-01')
-        )).map((item: ChecklistItem) => {
-            const checkedTime = moment(item.checked_modified);
-            const duration = moment.duration(checkedTime.diff(moment.unix(this.props.incident.created_at)));
-
-            chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
-            return item;
-        });
-
-        chartData.yLabels = checklistItems.map((item) => item.title).reverse();
-
-        // Add an initial/last tick to scale
-        chartData.yLabels.unshift('');
-
-        return chartData;
-    }
-
-    public initChart = (): void => {
-        if (!this.refs.canvas) {
-            return;
-        }
-
-        const el = ReactDOM.findDOMNode(this.refs.canvas) as HTMLCanvasElement;
-        const ctx = el.getContext('2d') as CanvasRenderingContext2D;
-
-        Chart.defaults.customLine = Chart.defaults.line;
-
-        // Custom draw grid line on hover
-        Chart.controllers.customLine = Chart.controllers.line.extend({
-            draw(ease: any) {
-                Chart.controllers.line.prototype.draw.call(this, ease);
-
-                // eslint-disable-next-line no-underscore-dangle
-                if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
-                    // Only draw the custom line when showing the tooltip
-
-                    // eslint-disable-next-line no-underscore-dangle
-                    const activePoint = this.chart.tooltip._active[0];
-
-                    const y = activePoint.tooltipPosition().y;
-                    const x = activePoint.tooltipPosition().x;
-
-                    // draw line
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(this.chart.chartArea.left, y);
-                    ctx.lineWidth = 0.5;
-
-                    ctx.lineTo(x, y);
-                    ctx.lineTo(x, this.chart.chartArea.bottom);
-
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            },
-        });
-
-        const dataCopy = JSON.parse(JSON.stringify(this.chartData));
-        this.chart = new Chart(ctx, {type: 'customLine', data: dataCopy, options: this.chartOptions});
-    };
-
-    public render(): JSX.Element {
-        let content;
-
-        const checklistItems = this.props.incident.playbook.checklists[0]?.items || [];
-        if (checklistItems.length === 0) {
-            content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
+    const checklistItems = props.incident.playbook.checklists[0]?.items || [];
+    if (checklistItems.length === 0) {
+        content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
+            <div>
                 <div>
-                    <div>
-                        <EmptyChecklistImage theme={this.props.theme}/>
-                    </div>
-                    <div className='chart-label mt-7'>
-                        {'The incident has no checklist items yet'}
-                    </div>
+                    <EmptyChecklistImage theme={theme}/>
+                </div>
+                <div className='chart-label mt-7'>
+                    {'The incident has no checklist items yet'}
                 </div>
             </div>
-            );
-        } else {
-            // Calculate height based on amount of items using ratio of 40px per item.
-            const chartHeight = Math.max(400, this.chartData.yLabels.length * 40);
-            content = (<>
-                <div className='chart-title'>
-                    {'Time occurrence of each checklist item'}
-                </div>
-                <div style={{height: `${chartHeight}px`}}>
-                    <canvas
-                        ref='canvas'
-                    />
-                </div>
-            </>
-            );
-        }
-
-        return (
-            <div className='col-sm-12'>
-                {content}
+        </div>
+        );
+    } else {
+        // Calculate height based on amount of items using ratio of 40px per item.
+        const chartHeight = Math.max(400, chartData.yLabels.length * 40);
+        content = (<>
+            <div className='chart-title'>
+                {'Time occurrence of each checklist item'}
             </div>
+            <div style={{height: `${chartHeight}px`}}>
+                <canvas
+                    ref={canvas}
+                />
+            </div>
+        </>
         );
     }
+
+    return (
+        <div className='col-sm-12'>
+            {content}
+        </div>
+    );
+};
+
+function initChartOptions(theme: Record<string, string>) {
+    Chart.Tooltip.positioners.custom = tooltipPosition;
+
+    const chartOptions: ChartOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+        showLines: false,
+        legend: {
+            display: false,
+        },
+        scales: {
+            xAxes: [{
+                type: 'linear',
+                display: true,
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Duration',
+                    fontColor: changeOpacity(theme.centerChannelColor, 0.56),
+                },
+                gridLines: {
+
+                    // Length and spacing of dashes on grid lines.
+                    borderDash: [8, 4],
+                    color: changeOpacity(theme.centerChannelColor, 0.16),
+                    zeroLineColor: changeOpacity(theme.centerChannelColor, 0.16),
+                },
+                ticks: {
+                    fontColor: changeOpacity(theme.centerChannelColor, 0.72),
+                    callback: durationTickLabel,
+                },
+            }],
+            yAxes: [{
+                type: 'category',
+                position: 'left',
+                display: true,
+                ticks: {
+                    reverse: true,
+                    fontColor: changeOpacity(theme.centerChannelColor, 0.72),
+                    callback: yAxisLabel,
+                },
+                gridLines: {
+                    display: false,
+                },
+            }],
+        },
+        tooltips: {
+            custom: tooltipColorBox,
+            bodyAlign: 'center',
+            position: 'custom',
+
+            // @ts-ignore
+            yAlign: 'bottom',
+            xAlign: 'center',
+            bodyFontFamily: 'Open Sans',
+            yPadding: 6,
+            callbacks: {
+                title: tooltipTitle,
+                label: tooltipLabel,
+            },
+        },
+        layout: {
+            padding: {
+                top: 70,
+            },
+        },
+    };
+
+    return chartOptions;
 }
+
+function tooltipPosition(elements: any[], position: Point): Point {
+    if (!elements.length) {
+        return {x: 0, y: 0};
+    }
+
+    return {
+        x: position.x,
+        y: position.y - 12,
+    };
+}
+
+function tooltipTitle(tooltipItem: ChartTooltipItem[]): string {
+    return tooltipItem[0].yLabel as string || '';
+}
+
+function tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
+    if (tooltipItem.index == null) {
+        return '';
+    }
+
+    const timeUpdated = moment(data.checklistItems[tooltipItem.index].checked_modified);
+    return timeUpdated.format('MMM DD LT');
+}
+
+function tooltipColorBox(tooltip: ChartTooltipModel) {
+    if (!tooltip) {
+        return;
+    }
+
+    // disable displaying the color box
+    tooltip.displayColors = false;
+}
+
+function durationTickLabel(xValue: number) {
+    const duration = moment.duration(xValue);
+
+    if (duration.days()) {
+        return `${duration.days()} days ${duration.hours()} h`;
+    }
+
+    if (duration.hours()) {
+        return `${duration.hours()} h ${duration.minutes()} m`;
+    }
+
+    if (duration.minutes()) {
+        return `${duration.minutes()} m`;
+    }
+
+    return `${duration.seconds()} s`;
+}
+
+function yAxisLabel(value: string) {
+    const MAX_CHARS = 25;
+    if (value.length > MAX_CHARS) {
+        return value.substring(0, MAX_CHARS) + '...';
+    }
+    return value;
+}
+
+function initData(theme: Record<string, string>, incident: Incident) {
+    const pointhoverBg = changeOpacity(theme.buttonBg, 0.16);
+    const chartData = {
+        yLabels: [] as string[],
+        checklistItems: [] as ChecklistItem[],
+
+        datasets: [{
+            pointBackgroundColor: theme.buttonBg,
+            pointHoverBorderColor: pointhoverBg,
+            pointRadius: 3,
+            pointHoverRadius: 3,
+            pointHoverBorderWidth: 12,
+            data: [] as any,
+        }],
+    };
+
+    const checklistItems = incident.playbook.checklists[0]?.items || [];
+
+    // Add points to the graph for checked items
+    chartData.checklistItems = checklistItems.filter((item) => (
+        item.checked && moment(item.checked_modified).isSameOrAfter('2020-01-01')
+    )).map((item: ChecklistItem) => {
+        const checkedTime = moment(item.checked_modified);
+        const duration = moment.duration(checkedTime.diff(moment.unix(incident.created_at)));
+
+        chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
+        return item;
+    });
+
+    chartData.yLabels = checklistItems.map((item) => item.title).reverse();
+
+    // Add an initial/last tick to scale
+    chartData.yLabels.unshift('');
+
+    return chartData;
+}
+
+function initChart(canvas: HTMLCanvasElement, chartData: ChartData, chartOptions: ChartOptions): Chart | null {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        return null;
+    }
+
+    Chart.defaults.customLine = Chart.defaults.line;
+
+    // Custom draw grid line on hover
+    Chart.controllers.customLine = Chart.controllers.line.extend({
+        draw(ease: any) {
+            Chart.controllers.line.prototype.draw.call(this, ease);
+
+            // eslint-disable-next-line no-underscore-dangle
+            if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
+                // Only draw the custom line when showing the tooltip
+
+                // eslint-disable-next-line no-underscore-dangle
+                const activePoint = this.chart.tooltip._active[0];
+
+                const y = activePoint.tooltipPosition().y;
+                const x = activePoint.tooltipPosition().x;
+
+                // draw line
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(this.chart.chartArea.left, y);
+                ctx.lineWidth = 0.5;
+
+                ctx.lineTo(x, y);
+                ctx.lineTo(x, this.chart.chartArea.bottom);
+
+                ctx.stroke();
+                ctx.restore();
+            }
+        },
+    });
+
+    const dataCopy = JSON.parse(JSON.stringify(chartData));
+    return new Chart(ctx, {type: 'customLine', data: dataCopy, options: chartOptions});
+}
+
+export default ChecklistTimeline;

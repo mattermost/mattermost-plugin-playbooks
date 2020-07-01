@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import moment from 'moment';
 
 import {ChecklistItem} from 'src/types/playbook';
-import {MAX_NAME_LENGTH} from 'src/utils/constants';
+import {MAX_NAME_LENGTH} from 'src/constants';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
