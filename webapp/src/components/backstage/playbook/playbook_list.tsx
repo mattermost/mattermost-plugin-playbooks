@@ -93,6 +93,7 @@ const PlaybookList: FC = () => {
             <div
                 className='row playbook-item'
                 key={p.id}
+                onClick={() => editPlaybook(p)}
             >
                 <a className='col-sm-10 title'>
                     <TextWithTooltip
