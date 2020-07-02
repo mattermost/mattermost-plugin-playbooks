@@ -1,0 +1,1065 @@
+openapi: "3.0.0"
+info:
+  version: 0.5.0
+  title: Workflows API
+  contact:
+    name: Mattermost
+    url: https://mattermost.com/
+    email: support@mattermost.com
+servers:
+  - url: http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1
+paths:
+  /incidents:
+    get:
+      summary: List all incidents
+      operationId: listIncidents
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: team_id
+          in: query
+          description: Which team to filter by
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Defaults to 0
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: per_page
+          in: query
+          description: Defaults to 0
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: sort
+          in: query
+          description: Defaults to created_at
+          required: false
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: Defaults to desc
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Defaults to all
+          required: false
+          schema:
+            type: string
+        - name: commander_user_id
+          in: query
+          description: Gets incidents that matches commander_user_id
+          required: false
+          schema:
+            type: string
+        - name: search_term
+          in: query
+          description: Returns results of the search term
+          required: false
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: A paged list of incidents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentList"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Creates a new incident
+      operationId: createIncidentFromPost
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      requestBody:
+        description: Incident payload
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Incident"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -H 'Content-Type: application/json'\
+            -d '{"name": "ExampleIncident", "commander_user_id": "guo3e74njbbdxcpa6p43q974ar", "team_id": "ni8duypfe7bamprxqeffd563gy"}'
+      responses:
+        200:
+          description: Created incident
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/create-dialog:
+    post:
+      summary: Internal - Creates a new incident from dialog
+      operationId: createIncidentFromDialog
+      security:
+        - BearerAuth: []
+      tags:
+        - Internal-Incidents
+      responses:
+        200:
+          description: Null response
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /incidents/end-dialog:
+    post:
+      summary: Internal - Ends an incident from dialog
+      operationId: incidentEndDialog
+      security:
+        - BearerAuth: []
+      tags:
+        - Internal-Incidents
+      responses:
+        200:
+          description: Null response
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/commanders:
+    get:
+      summary: Gets commanders for a given team
+      operationId: getCommanders
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: team_id
+          in: query
+          description: Which team to filter by
+          required: true
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/commanders?team_id=ni8duypfe7bamprxqeffd563gy' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Commanders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommanderInfo"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/channels:
+    get:
+      summary: Gets channels for all incidents
+      operationId: getChannels
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: team_id
+          in: query
+          description: Which team to filter by
+          required: true
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/channels?team_id=ni8duypfe7bamprxqeffd563gy' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Channel ids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/channel/{channel_id}:
+    get:
+      summary: Find incident by channel_id
+      operationId: getIncidentByChannelId
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          description: Channel id
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/channel/bdjeidoautgdjxqtgrmm78cg8a' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Incident
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}:
+    get:
+      summary: Get an incident
+      operationId: getIncident
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Incident
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/details:
+    get:
+      summary: Get incident details
+      operationId: getIncidentDetails
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter/details' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Incident details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetails"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/end:
+    put:
+      summary: End an incident
+      operationId: endIncident
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/commander:
+    post:
+      summary: Update incident commander
+      operationId: updateIncidentCommander
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+      requestBody:
+        description: Update commander payload
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commander_id:
+                  type: string
+                  example: mx3xyzdojfgyfdx8sc8of1gdme
+              required:
+                - commander_id
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter/commander' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"commander_id": "guo3e74njbbdxcpa6p43q974ar"}'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/checklists/{checklist}/add:
+    put:
+      summary: Add a checklist item
+      operationId: addChecklistItem
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Checklist number
+          schema:
+            type: integer
+      requestBody:
+        description: Checklist item payload
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistItem"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/add' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"title": "Title"}'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/checklists/{checklist}/reorder:
+    put:
+      summary: Reorder a checklist item
+      operationId: reoderChecklistItem
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Checklist number
+          schema:
+            type: integer
+      requestBody:
+        description: Reorder checklist item payload
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                item_num:
+                  type: integer
+                  example: 2
+                new_location:
+                  type: integer
+                  example: 2
+              required:
+                - item_num
+                - new_location
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/reorder' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"item_num": 0, "new_location": 2}'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/checklists/{checklist}/item/{item}:
+    put:
+      summary: Rename a checklist item
+      operationId: renameChecklistItem
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Checklist number
+          schema:
+            type: integer
+        - name: item
+          in: path
+          required: true
+          description: Item number
+          schema:
+            type: integer
+      requestBody:
+        description: Rename checklist item payload
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: New Title
+              required:
+                - title
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"title": "new_title"}'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete a checklist item
+      operationId: deleteChecklistItem
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Checklist number
+          schema:
+            type: integer
+        - name: item
+          in: path
+          required: true
+          description: Item number
+          schema:
+            type: integer
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/checklists/{checklist}/item/{item}/check:
+    put:
+      summary: Checks a checklist item
+      operationId: checkChecklistItem
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Checklist number
+          schema:
+            type: integer
+        - name: item
+          in: path
+          required: true
+          description: Item number
+          schema:
+            type: integer
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/check' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /incidents/{id}/checklists/{checklist}/item/{item}/uncheck:
+    put:
+      summary: Unchecks a checklist item
+      operationId: uncheckChecklistItem
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident id
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Checklist number
+          schema:
+            type: integer
+        - name: item
+          in: path
+          required: true
+          description: Item number
+          schema:
+            type: integer
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/uncheck' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /playbooks:
+    get:
+      summary: List all playbooks
+      operationId: listPlaybooks
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: teamid
+          in: query
+          description: Which team to filter by
+          required: true
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks?teamid=ni8duypfe7bamprxqeffd563gy' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Playbooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Playbook"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Create a playbook
+      operationId: createPlaybook
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      requestBody:
+        description: Playbook
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Playbook"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks?teamid=ni8duypfe7bamprxqeffd563gy' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_incident": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
+      responses:
+        200:
+          description: Playbook ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: mx3xyzdojfgyfdx8sc8of1gdme
+                required:
+                  - id
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /playbooks/{id}:
+    get:
+      summary: Get a playbook
+      operationId: getPlaybook
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          description: Playbook id
+          required: true
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks/qp96egozepn58mg93wein1e8pe' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Playbook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playbook"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      summary: Update a playbook
+      operationId: updatePlaybook
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          description: Playbook id
+          required: true
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      requestBody:
+        description: Playbook payload
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Playbook"
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks/qp96egozepn58mg93wein1e8pe' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_incident": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete a playbook
+      operationId: deletePlaybook
+      security:
+        - BearerAuth: []
+      tags:
+        - Playbooks
+      parameters:
+        - name: id
+          in: path
+          description: Playbook id
+          required: true
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks/qp96egozepn58mg93wein1e8pe' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/200"
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    200:
+      title: Successful response
+      type: object
+      properties:
+        status:
+          type: string
+          example: OK
+    Incident:
+      type: object
+      required:
+        - id
+        - name
+        - is_active
+        - commander_user_id
+        - team_id
+        - primary_channel_id
+        - created_at
+        - ended_at
+      properties:
+        id:
+          type: string
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        name:
+          type: string
+          example: ExampleIncident
+        is_active:
+          type: boolean
+          example: false
+        commander_user_id:
+          type: string
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        team_id:
+          type: string
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        primary_channel_id:
+          type: string
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        created_at:
+          type: integer
+          format: int64
+          example: 1591130815
+        ended_at:
+          type: integer
+          format: int64
+          example: 1591130815
+    IncidentDetails:
+      allOf:
+        - $ref: "#/components/schemas/Incident"
+        - type: object
+          required:
+            - channel_name
+            - channel_display_name
+            - team_name
+            - num_members
+            - total_posts
+          properties:
+            channel_name:
+              type: string
+            channel_display_name:
+              type: string
+            team_name:
+              type: string
+            num_members:
+              type: integer
+              format: int64
+              example: 202
+            total_posts:
+              type: integer
+              format: int64
+              example: 202
+    IncidentList:
+      type: object
+      required:
+        - Incidents
+        - total_count
+      properties:
+        incidents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Incident"
+        total_count:
+          type: integer
+          format: int32
+          example: 305
+    CommanderInfo:
+      type: object
+      required:
+        - user_id
+        - username
+      properties:
+        user_id:
+          type: string
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        username:
+          type: string
+          example: exampleusername
+    Playbook:
+      type: object
+      required:
+        - id
+        - title
+        - team_id
+        - create_public_incident
+        - checklists
+      properties:
+        id:
+          type: string
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        title:
+          type: string
+          example: Playbook
+        team_id:
+          type: string
+          example: mx3xyzdojfgyfdx8sc8of1gdme
+        create_public_incident:
+          type: boolean
+          example: true
+        checklists:
+          type: array
+          items:
+            $ref: "#/components/schemas/Checklist"
+    Checklist:
+      type: object
+      required:
+        - title
+        - items
+      properties:
+        title:
+          type: string
+          example: Title
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChecklistItem"
+    ChecklistItem:
+      type: object
+      required:
+        - title
+        - checked
+        - checked_modified
+        - checked_post_id
+      properties:
+        title:
+          type: string
+          example: Title
+        checked:
+          type: boolean
+          example: true
+        checked_modified:
+          type: string
+          example: "2020-06-17T21:05:57.958365-04:00"
+        checked_post_id:
+          type: string
+          example: cqw187crwtn8tdjr11umtrwftr
+    Error:
+      type: object
+      required:
+        - error
+        - details
+      properties:
+        error:
+          type: string
+        details:
+          type: string
