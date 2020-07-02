@@ -28,10 +28,10 @@ export default class ErrorPage extends React.PureComponent<Props> {
         const queryString = this.props.location.search.substr(1);
         const params = qs.parse(queryString);
 
-        let title = 'Page Not Found';
-        let message = 'The page you were trying to reach does not exist';
-        let returnTo = '/';
-        let returnToMsg = 'Back to Mattermost';
+        let title;
+        let message;
+        let returnTo;
+        let returnToMsg;
 
         switch (params.type) {
         case ErrorPageTypes.INCIDENTS:
@@ -45,6 +45,12 @@ export default class ErrorPage extends React.PureComponent<Props> {
             message = "The playbook you're requesting is private or does not exist. Please contact an Administrator to access the playbook.";
             returnTo = teamPluginUrl(this.props.teamName, '/playbooks');
             returnToMsg = 'Back to Playbooks';
+            break;
+        case ErrorPageTypes.DEFAULT:
+            title = 'Page Not Found';
+            message = 'The page you were trying to reach does not exist.';
+            returnTo = '/';
+            returnToMsg = 'Back to Mattermost';
             break;
         }
 

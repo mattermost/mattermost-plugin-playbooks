@@ -78,7 +78,7 @@ export default class Plugin {
 
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
 
-        registry.registerNeedsTeamRoute('/error', () => <ErrorPage/>);
+        registry.registerNeedsTeamRoute('/error', ErrorPage);
         registry.registerNeedsTeamRoute('/', Backstage);
     }
 }
