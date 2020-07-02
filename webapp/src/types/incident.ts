@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Playbook, isPlaybook} from './playbook';
+import {Playbook, isPlaybook, emptyPlaybook} from './playbook';
 
 export interface Incident {
     id: string;
@@ -24,6 +24,25 @@ export interface Incident {
 export interface FetchIncidentsReturn {
     incidents: Incident[];
     total_count: number;
+}
+
+export function emptyIncident() : Incident {
+    return {
+        id: '',
+        name: '',
+        is_active: false,
+        commander_user_id: '',
+        team_id: '',
+        primary_channel_id: '',
+        created_at: 0,
+        ended_at: 0,
+        playbook: emptyPlaybook(),
+        channel_name: '',
+        channel_display_name: '',
+        team_name: '',
+        num_members: 0,
+        total_posts: 0,
+    };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
