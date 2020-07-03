@@ -1,6 +1,7 @@
 package pluginkvstore
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -8,6 +9,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
+	mock_plugin "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks/serverpluginapi"
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/stretchr/testify/require"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 var id1 = incident.Incident{
@@ -285,4 +291,43 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateHeaders(t *testing.T) {
+	t.Run("Update empty headers", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		pluginAPI := mock_plugin.NewMockAPI(mockCtrl)
+
+		// Make KVGet return an empty value to simulate that the key is not set yet
+		pluginAPI.EXPECT().
+			KVGet(allHeadersKey).
+			Return([]byte{}, nil).
+			Times(1)
+
+		// Verify that KVSet is called to set the first value, proving that
+		// SetAtomicWithRetries was called inside updateHeader
+		value, err := json.Marshal(idHeaderMap{id1.ID: id1.Header})
+		require.NoError(t, err)
+		kvSetOptions := model.PluginKVSetOptions{
+			Atomic:          true,
+			OldValue:        nil,
+			ExpireInSeconds: 0,
+		}
+		pluginAPI.EXPECT().
+			KVSetWithOptions(allHeadersKey, value, kvSetOptions).
+			Return(true, nil).
+			Times(1)
+
+		// Set the wrapped plugin API client with the mocked underlying plugin API
+		// and assign it to the store
+		pluginAPIClient := pluginapi.NewClient(pluginAPI)
+		s := &incidentStore{
+			pluginAPI: PluginAPIClient{
+				KV: &pluginAPIClient.KV,
+			},
+		}
+
+		err = s.updateHeader(&id1)
+		require.NoError(t, err)
+	})
 }
