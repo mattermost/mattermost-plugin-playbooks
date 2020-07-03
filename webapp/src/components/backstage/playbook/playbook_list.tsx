@@ -102,11 +102,16 @@ const PlaybookList: FC = () => {
                     />
                 </a>
                 <div className='col-sm-2'>
-                    <a onClick={() => editPlaybook(p)} >
+                    <a>
                         {'Edit'}
                     </a>
                     {' - '}
-                    <a onClick={() => onConfirmDelete(p)} >
+                    <a
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onConfirmDelete(p);
+                        }}
+                    >
                         {'Delete'}
                     </a>
                 </div>
