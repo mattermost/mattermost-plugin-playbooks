@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"strings"
@@ -557,18 +556,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
 func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
-	dump, err := httputil.DumpRequest(r, true)
-	if err != nil {
-		fmt.Println("<><> error dumping:")
-		fmt.Println(err)
-	}
-	fmt.Println("<><> getChecklistAutocomplete request dump:")
-	fmt.Println(string(dump))
-
-	fmt.Printf("<><> URL: %+v\n", r.URL)
 	query := r.URL.Query()
-	fmt.Printf("<><> Query: %+v\n", query)
-
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(query.Get("channel_id"))
 	if err != nil {
 		HandleError(w, err)
