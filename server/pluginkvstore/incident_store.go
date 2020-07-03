@@ -244,6 +244,10 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 
 func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	addID := func(oldValue []byte) (interface{}, error) {
+		if oldValue == nil {
+			return idHeaderMap{incdnt.ID: incdnt.Header}, nil
+		}
+
 		var headers idHeaderMap
 		if err := json.Unmarshal(oldValue, &headers); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal oldValue into an idHeaderMap")
