@@ -17,8 +17,8 @@ export interface Checklist {
 export interface ChecklistItem {
     title: string;
     checked: boolean;
-    checked_modified: string;
-    checked_post_id: string;
+    checked_modified?: string;
+    checked_post_id?: string;
 }
 
 export function emptyPlaybook(): Playbook {

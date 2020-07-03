@@ -182,8 +182,6 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                         addItem({
                             title: newValue,
                             checked: false,
-                            checked_post_id: '',
-                            checked_modified: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);
