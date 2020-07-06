@@ -4,17 +4,21 @@
 import React, {FC, useState, useEffect} from 'react';
 import moment from 'moment';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
-import {useRouteMatch} from 'react-router-dom';
+import {Redirect, useRouteMatch} from 'react-router-dom';
+import {useSelector} from 'react-redux';
+
+import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import Spinner from 'src/components/assets/icons/spinner';
-
 import {fetchIncidentWithDetails} from 'src/client';
 import {Incident} from 'src/types/incident';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
-import {OVERLAY_DELAY} from 'src/constants';
-import {navigateToUrl} from 'src/browser_routing';
+import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
+import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
 import StatusBadge from '../status_badge';
 
@@ -32,43 +36,41 @@ interface Props {
 }
 
 const BackstageIncidentDetails: FC<Props> = (props: Props) => {
-    const [incident, setIncident] = useState<Incident | null>(null);
+    const [incident, setIncident] = useState<Incident>({} as Incident);
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const match = useRouteMatch<MatchParams>();
 
+    const FetchingStateType = {
+        loading: 'loading',
+        fetched: 'fetched',
+        notFound: 'notfound',
+    };
+    const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
+
     const fetchIncident = async (incidentId: string) => {
-        setIncident(await fetchIncidentWithDetails(incidentId));
+        try {
+            setIncident(await fetchIncidentWithDetails(incidentId));
+            setFetchingState(FetchingStateType.fetched);
+        } catch {
+            setFetchingState(FetchingStateType.notFound);
+        }
     };
 
     useEffect(() => {
         fetchIncident(match.params.incidentId);
     }, [match.params.incidentId]);
 
-    if (incident === null) {
+    if (fetchingState === FetchingStateType.loading) {
         return (
             <div className='BackstageIncidentDetails'>
                 <Spinner/>
             </div>
         );
+    }
 
-    // Not having the channel name is a proxy for determining if the full details where able to be fetched.
-    // This means a fetch failure will also land the user here.
-    } else if (!incident.channel_name) {
-        return (
-            <div className='BackstageIncidentDetails'>
-                <div className='details-header'>
-                    <div className='title'>
-                        <BackIcon
-                            className='Backstage__header__back'
-                            onClick={props.onClose}
-                        />
-                    </div>
-                </div>
-                <div className='no-permission-div'>
-                    {'You are not a participant in this incident. Contact the commander to request access.'}
-                </div>
-            </div>
-        );
+    if (fetchingState === FetchingStateType.notFound) {
+        return <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.INCIDENTS)}/>;
     }
 
     const goToChannel = () => {

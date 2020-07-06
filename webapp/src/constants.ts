@@ -4,3 +4,9 @@
 export const OVERLAY_DELAY = 400;
 
 export const MAX_NAME_LENGTH = 64;
+
+export enum ErrorPageTypes {
+    INCIDENTS = 'incidents',
+    PLAYBOOKS = 'playbooks',
+    DEFAULT = 'default',
+}

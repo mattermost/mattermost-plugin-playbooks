@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, FC} from 'react';
-import {Switch, Route, NavLink, useRouteMatch} from 'react-router-dom';
+import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -12,8 +12,9 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
+import {ErrorPageTypes} from 'src/constants';
 
-import {navigateToUrl, navigateToTeamPluginUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
 import './backstage.scss';
 import Waves from '../assets/waves';
@@ -76,25 +77,26 @@ const Backstage: FC = () => {
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
                         <PlaybookEdit
-                            currentTeamID={currentTeam.id}
+                            isNew={true}
+                            currentTeam={currentTeam}
                             onClose={goToPlaybooks}
                         />
                     </Route>
-                    <Route
-                        path={`${match.url}/playbooks/:playbookId`}
-                        render={(playbookEditRenderProps) => (
-                            <PlaybookEdit
-                                playbookId={playbookEditRenderProps.match.params.playbookId}
-                                currentTeamID={currentTeam.id}
-                                onClose={goToPlaybooks}
-                            />
-                        )}
-                    />
+                    <Route path={`${match.url}/playbooks/:playbookId`}>
+                        <PlaybookEdit
+                            isNew={false}
+                            currentTeam={currentTeam}
+                            onClose={goToPlaybooks}
+                        />
+                    </Route>
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
+                    </Route>
+                    <Route>
+                        <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
                     </Route>
                 </Switch>
             </div>

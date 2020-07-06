@@ -7,10 +7,18 @@ export const navigateToUrl = (urlPath: string) => {
     WebappUtils.browserHistory.push(urlPath);
 };
 
-export const navigateToTeamPluginUrl = (teamName: string, urlPath: string) => {
+export const teamPluginUrl = (teamName: string, urlPath: string) => {
     let cleanPath = urlPath;
     while (cleanPath.startsWith('/')) {
         cleanPath = cleanPath.substr(1);
     }
-    WebappUtils.browserHistory.push(`/${teamName}/${pluginId}/` + cleanPath);
+    return `/${teamName}/${pluginId}/` + cleanPath;
+};
+
+export const navigateToTeamPluginUrl = (teamName: string, urlPath: string) => {
+    WebappUtils.browserHistory.push(teamPluginUrl(teamName, urlPath));
+};
+
+export const teamPluginErrorUrl = (teamName: string, type: string) => {
+    return teamPluginUrl(teamName, `/error?type=${type}`);
 };

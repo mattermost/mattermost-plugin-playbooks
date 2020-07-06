@@ -20,6 +20,7 @@ import RightHandSidebar from './components/rhs/rhs_main';
 import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import Backstage from './components/backstage/backstage';
+import ErrorPage from './components/error_page';
 
 import {
     setToggleRHSAction,
@@ -77,6 +78,7 @@ export default class Plugin {
 
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
 
+        registry.registerNeedsTeamRoute('/error', ErrorPage);
         registry.registerNeedsTeamRoute('/', Backstage);
     }
 }

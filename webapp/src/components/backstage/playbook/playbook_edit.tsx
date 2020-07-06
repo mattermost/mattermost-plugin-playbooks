@@ -2,40 +2,69 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect} from 'react';
+import {Redirect, useParams, useLocation} from 'react-router-dom';
 
+import {Team} from 'mattermost-redux/types/teams';
+
+import {teamPluginErrorUrl} from 'src/browser_routing';
 import {Playbook, Checklist, ChecklistItem, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Toggle from 'src/components/widgets/toggle';
-import {MAX_NAME_LENGTH} from 'src/constants';
-
 import BackIcon from 'src/components/assets/icons/back_icon';
+import Spinner from 'src/components/assets/icons/spinner';
+import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/constants';
 
 import './playbook.scss';
 
 interface Props {
-    playbookId?: string;
-    currentTeamID: string;
+    isNew: boolean;
+    currentTeam: Team;
     onClose: () => void;
+}
+
+interface URLParams {
+    playbookId?: string;
 }
 
 const PlaybookEdit: FC<Props> = (props: Props) => {
     const [playbook, setPlaybook] = useState<Playbook>({
         ...emptyPlaybook(),
-        team_id: props.currentTeamID,
+        team_id: props.currentTeam.id,
     });
     const [changesMade, setChangesMade] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
+    const urlParams = useParams<URLParams>();
+
+    const FetchingStateType = {
+        loading: 'loading',
+        fetched: 'fetched',
+        notFound: 'notfound',
+    };
+    const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
+
     useEffect(() => {
         const fetchData = async () => {
-            if (props.playbookId) {
-                setPlaybook(await clientFetchPlaybook(props.playbookId));
+            // No need to fetch anything if we're adding a new playbook
+            if (props.isNew) {
+                return;
+            }
+
+            if (urlParams.playbookId) {
+                const fetchedPlaybook = emptyPlaybook();
+
+                try {
+                    setPlaybook(await clientFetchPlaybook(urlParams.playbookId));
+                    setFetchingState(FetchingStateType.fetched);
+                } catch {
+                    setFetchingState(FetchingStateType.notFound);
+                }
             }
         };
         fetchData();
-    }, [props.playbookId]);
+    }, [urlParams.playbookId, props.isNew]);
 
     const onSave = async () => {
         await savePlaybook(playbook);
@@ -134,20 +163,15 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const saveDisabled = playbook.title.trim() === '' || !changesMade;
 
-    if (props.playbookId && !playbook.id) {
-        return (
-            <div className='Playbook'>
-                <div className='Backstage__header'>
-                    <div className='title'>
-                        <BackIcon
-                            className='Backstage__header__back'
-                            onClick={confirmOrClose}
-                        />
-                        {'Playbook Not Found'}
-                    </div>
-                </div>
-            </div>
-        );
+    if (!props.isNew) {
+        switch (fetchingState) {
+        case FetchingStateType.notFound:
+            return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
+            break;
+        case FetchingStateType.loading:
+            return <Spinner/>;
+            break;
+        }
     }
 
     return (
@@ -158,7 +182,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         className='Backstage__header__back'
                         onClick={confirmOrClose}
                     />
-                    {props.playbookId ? 'Edit Playbook' : 'New Playbook'}
+                    {props.isNew ? 'New Playbook' : 'Edit Playbook' }
                 </div>
                 <div className='header-button-div'>
                     <button
