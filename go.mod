@@ -3,6 +3,7 @@ module github.com/mattermost/mattermost-plugin-incident-response
 go 1.13
 
 require (
+	github.com/Masterminds/squirrel v1.1.0
 	github.com/golang/mock v1.4.3
 	github.com/gorilla/mux v1.7.4
 	github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200626173704-d13af3838960
