@@ -347,6 +347,18 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	return nil
 }
 
+// ToggleCheckedState checks or unchecks the specified checklist item
+func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	newState := !incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Checked
+
+	return s.ModifyCheckedState(incidentID, userID, newState, checklistNumber, itemNumber)
+}
+
 // AddChecklistItem adds an item to the specified checklist
 func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error {
 	incidentToModify, err := s.checklistParamsVerify(incidentID, userID, checklistNumber)
@@ -448,12 +460,12 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 
 	ret := make([]model.AutocompleteListItem, 0)
 
-	for _, checklist := range theIncident.Playbook.Checklists {
-		for _, item := range checklist.Items {
+	for i, checklist := range theIncident.Playbook.Checklists {
+		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
-				Item:     item.Title,
-				Hint:     "hint",
-				HelpText: "Check this item",
+				Item:     fmt.Sprintf("%d %d", i, j),
+				Hint:     fmt.Sprintf("\"%s\"", item.Title),
+				HelpText: "Check/uncheck this item",
 			})
 		}
 	}

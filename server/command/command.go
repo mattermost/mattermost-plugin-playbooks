@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -20,6 +21,7 @@ import (
 const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
+	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -40,7 +42,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end",
+		AutoCompleteDesc: "Available commands: start, end, check",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
@@ -119,6 +121,40 @@ func (r *Runner) actionStart(args []string) {
 	if err := r.incidentService.OpenCreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID, playbooks); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
+	}
+}
+
+func (r *Runner) actionCheck(args []string) {
+	if len(args) != 2 {
+		r.postCommandResponse(helpText)
+		return
+	}
+
+	checklist, err := strconv.Atoi(args[0])
+	if err != nil {
+		r.postCommandResponse("Error parsing the first argument. Must be a number.")
+		return
+	}
+
+	item, err := strconv.Atoi(args[1])
+	if err != nil {
+		r.postCommandResponse("Error parsing the second argument. Must be a number.")
+		return
+	}
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only check/uncheck an item from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	err = r.incidentService.ToggleCheckedState(incidentID, r.args.UserId, checklist, item)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error checking/unchecking item: %v", err))
 	}
 }
 
@@ -402,6 +438,8 @@ func (r *Runner) Execute() error {
 		r.actionStart(parameters)
 	case "end":
 		r.actionEnd()
+	case "check":
+		r.actionCheck(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "st":

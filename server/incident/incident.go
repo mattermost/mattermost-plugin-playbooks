@@ -107,6 +107,9 @@ type Service interface {
 	// Idempotent, will not perform any actions if the checklist item is already in the specified state
 	ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error
 
+	// ToggleCheckedState checks or unchecks the specified checklist item
+	ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error
+
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
 
