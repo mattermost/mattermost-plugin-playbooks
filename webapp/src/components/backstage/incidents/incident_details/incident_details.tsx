@@ -13,7 +13,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import Spinner from 'src/components/assets/icons/spinner';
 import {fetchIncidentWithDetails} from 'src/client';
-import {Incident, emptyIncident} from 'src/types/incident';
+import {Incident} from 'src/types/incident';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
@@ -36,7 +36,7 @@ interface Props {
 }
 
 const BackstageIncidentDetails: FC<Props> = (props: Props) => {
-    const [incident, setIncident] = useState<Incident>(emptyIncident());
+    const [incident, setIncident] = useState<Incident>({} as Incident);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const match = useRouteMatch<MatchParams>();

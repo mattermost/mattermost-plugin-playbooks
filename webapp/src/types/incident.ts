@@ -26,25 +26,6 @@ export interface FetchIncidentsReturn {
     total_count: number;
 }
 
-export function emptyIncident() : Incident {
-    return {
-        id: '',
-        name: '',
-        is_active: false,
-        commander_user_id: '',
-        team_id: '',
-        primary_channel_id: '',
-        created_at: 0,
-        ended_at: 0,
-        playbook: emptyPlaybook(),
-        channel_name: '',
-        channel_display_name: '',
-        team_name: '',
-        num_members: 0,
-        total_posts: 0,
-    };
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isIncident(arg: any): arg is Incident {
     const optional = arg.post_id ? typeof arg.post_id === 'string' : true as boolean;
