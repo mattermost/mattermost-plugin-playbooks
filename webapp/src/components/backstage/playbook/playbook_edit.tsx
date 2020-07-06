@@ -19,7 +19,6 @@ import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/constants';
 import './playbook.scss';
 
 interface Props {
-    playbookId?: string;
     isNew: boolean;
     currentTeam: Team;
     onClose: () => void;
@@ -38,7 +37,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     const urlParams = useParams<URLParams>();
-    const urlPlaybookId = urlParams.playbookId;
 
     const FetchingStateType = {
         loading: 'loading',
@@ -54,12 +52,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                 return;
             }
 
-            const id = props.playbookId || urlPlaybookId;
-            if (id) {
+            if (urlParams.playbookId) {
                 const fetchedPlaybook = emptyPlaybook();
 
                 try {
-                    setPlaybook(await clientFetchPlaybook(id));
+                    setPlaybook(await clientFetchPlaybook(urlParams.playbookId));
                     setFetchingState(FetchingStateType.fetched);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
@@ -67,7 +64,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             }
         };
         fetchData();
-    }, [props.playbookId, props.isNew]);
+    }, [urlParams.playbookId, props.isNew]);
 
     const onSave = async () => {
         await savePlaybook(playbook);
