@@ -5,9 +5,10 @@ import (
 )
 
 type Subscription struct {
-	ID         string
-	URL        url.URL
-	PlaybookId string
+	ID         string  `json:"id"`
+	URL        url.URL `json:"url"`
+	PlaybookID string  `json:"playbook_id"`
+	UserID     string  `json:"user_id"`
 }
 
 type Service interface {

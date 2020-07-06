@@ -34,15 +34,6 @@ func NewSubscriptionStore(kvAPI KVAPI) *SubscriptionStore {
 	}
 }
 
-func (s *SubscriptionStore) getIndex() (subscriptionIndex, error) {
-	var index subscriptionIndex
-	if err := s.kvAPI.Get(indexKey, &index); err != nil {
-		return index, errors.Wrap(err, "unable to get subscription index")
-	}
-
-	return index, nil
-}
-
 func (s *SubscriptionStore) addToIndex(subscriptionID string) error {
 	addID := func(oldValue []byte) (interface{}, error) {
 		var index subscriptionIndex

@@ -125,7 +125,7 @@ func (p *Plugin) OnActivate() error {
 
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient)
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
-	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, pluginAPIClient)
+	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrapf(err, "failed register commands")
