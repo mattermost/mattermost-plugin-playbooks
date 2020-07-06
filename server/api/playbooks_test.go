@@ -88,7 +88,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("create playbook", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		mockkvapi.EXPECT().Set(gomock.Any(), gomock.Any()).Return(true, nil)
 		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.IndexKey, gomock.Any()).Return(nil)
@@ -108,7 +107,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbook", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/testplaybookid", nil)
@@ -130,7 +128,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbooks", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
@@ -165,7 +162,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("update playbook", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
@@ -189,7 +185,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("delete playbook", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/testplaybookid", nil)
@@ -216,7 +211,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("delete playbook no permission", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/testplaybookid", nil)
@@ -235,7 +229,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("create playbook no permission", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(playbooktest))
@@ -253,7 +246,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbook no permission", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/testplaybookid", nil)
@@ -272,7 +264,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbooks no permission", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
@@ -290,7 +281,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("update playbooks no permission", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(withid))
@@ -309,7 +299,6 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("create playbook playbook with ID", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(withid))

@@ -256,7 +256,6 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			defer mockCtrl.Finish()
 			kvAPI := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
 			kvAPI.EXPECT().
 				Get(allHeadersKey, gomock.Any()).

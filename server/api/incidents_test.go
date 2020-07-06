@@ -54,7 +54,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident from dialog", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -104,7 +103,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: "testTeamID",
@@ -132,7 +130,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -181,7 +178,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident without playbook", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
@@ -220,7 +216,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create invalid incident - missing commander", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
@@ -249,7 +244,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create invalid incident - missing team", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
@@ -277,7 +271,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create invalid incident - channel id already set", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
@@ -306,7 +299,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incident by channel id", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testIncidentHeader := incident.Header{
 			ID:               "incidentID",
@@ -344,7 +336,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testIncidentHeader := incident.Header{
 			ID:               "incidentID",
@@ -372,7 +363,6 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incident by channel id - not authorized", func(t *testing.T) {
 		reset()
-		defer mockCtrl.Finish()
 
 		testIncidentHeader := incident.Header{
 			ID:               "incidentID",
