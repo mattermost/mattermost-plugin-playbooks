@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-incident-response
 
-go 1.13
+go 1.14
 
 require (
 	github.com/Masterminds/squirrel v1.1.0

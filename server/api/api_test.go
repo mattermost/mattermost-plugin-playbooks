@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,9 +24,6 @@ func TestAPI(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			mockCtrl := gomock.NewController(t)
-			defer mockCtrl.Finish()
-
 			handler := NewHandler()
 			writer := httptest.NewRecorder()
 			tc.test(t, handler, writer)

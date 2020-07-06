@@ -52,6 +52,12 @@ func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 
 func (p *PlaybookStore) addToIndex(playbookID string) error {
 	addID := func(oldValue []byte) (interface{}, error) {
+		if oldValue == nil {
+			return playbookIndex{
+				PlaybookIDs: []string{playbookID},
+			}, nil
+		}
+
 		var index playbookIndex
 		if err := json.Unmarshal(oldValue, &index); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal oldValue into a playbookIndex")
@@ -71,6 +77,10 @@ func (p *PlaybookStore) addToIndex(playbookID string) error {
 
 func (p *PlaybookStore) removeFromIndex(playbookID string) error {
 	removeID := func(oldValue []byte) (interface{}, error) {
+		if oldValue == nil {
+			return nil, nil
+		}
+
 		var index playbookIndex
 		if err := json.Unmarshal(oldValue, &index); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal oldValue into a playbookIndex")
