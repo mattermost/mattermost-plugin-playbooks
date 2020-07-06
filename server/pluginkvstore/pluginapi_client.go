@@ -21,6 +21,7 @@ type KVAPI interface {
 // It is implemented by mattermost-plugin-api/Client.Store, or by the mock StoreAPI.
 type StoreAPI interface {
 	GetMasterDB() (*sql.DB, error)
+	DriverName() string
 }
 
 // PluginAPIClient is the struct combining the interfaces defined above, which is everything
