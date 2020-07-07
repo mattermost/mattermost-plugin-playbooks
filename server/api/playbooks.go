@@ -8,7 +8,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -53,8 +52,11 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		logrus.Warnf("userID %s does not have permission to create playbook on teamID %s", userID, pbook.TeamID)
-		HandleErrorWithCode(w, http.StatusNotFound, "team not found", errors.Errorf("team not found"))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create playbook on teamID %s",
+			userID,
+			pbook.TeamID,
+		))
 		return
 	}
 
@@ -83,8 +85,11 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		logrus.Warnf("userID %s does not have permission to get playbook on teamID %s", userID, pbook.TeamID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Team not found", errors.Errorf("team not found"))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to get playbook on teamID %s",
+			userID,
+			pbook.TeamID,
+		))
 		return
 	}
 
@@ -110,8 +115,11 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, oldPlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		logrus.Warnf("userID %s does not have permission to update playbook on teamID %s", userID, oldPlaybook.TeamID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Team not found", errors.Errorf("team not found"))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to update playbook on teamID %s",
+			userID,
+			oldPlaybook.TeamID,
+		))
 		return
 	}
 
@@ -138,8 +146,11 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookToDelete.TeamID, model.PERMISSION_VIEW_TEAM) {
-		logrus.Warnf("userID %s does not have permission to delete a playbook on teamID %s", userID, playbookToDelete.TeamID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Team not found", errors.Errorf("team not found"))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to delete a playbook on teamID %s",
+			userID,
+			playbookToDelete.TeamID,
+		))
 		return
 	}
 
@@ -166,8 +177,11 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		logrus.Warnf("userID %s does not have permission to get playbooks on teamID %s", userID, teamID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Team not found", errors.Errorf("team not found"))
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to get playbooks on teamID %s",
+			userID,
+			teamID,
+		))
 		return
 	}
 

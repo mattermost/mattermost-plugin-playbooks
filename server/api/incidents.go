@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
@@ -82,13 +81,11 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 func (h *IncidentHandler) permissionsToIncidentChannelRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		incidentID := vars["id"]
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		if err := permissions.CheckHasPermissionsToIncidentChannel(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
-				logrus.Warnf("userID %s does not have permission for incidentID %s", userID, incidentID)
-				HandleErrorWithCode(w, http.StatusNotFound, "Not found", err)
+				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
 			}
 			HandleError(w, err)
@@ -242,7 +239,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 func (h *IncidentHandler) hasPermissionsToOrPublic(channelID, userID string) bool {
 	channel, err := h.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		logrus.Warnf("Unable to get channel to determine permissions: %v", err)
+		h.log.Warnf("Unable to get channel to determine permissions: %v", err)
 		return false
 	}
 
@@ -302,8 +299,7 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !h.hasPermissionsToOrPublic(incidentToGet.PrimaryChannelID, userID) {
-		logrus.Warnf("userID %s does not have permission for channelID %s", userID, incidentToGet.PrimaryChannelID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Incident not found.", nil)
+		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
 
@@ -328,8 +324,8 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 
 	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
-			logrus.Warnf("userid: %s does not have permissions to view the incident details %s", userID, incidentID)
-			HandleErrorWithCode(w, http.StatusNotFound, "Not found", errors.New("incident not found"))
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 			return
 		}
 		HandleError(w, err)
@@ -443,8 +439,11 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 	// Check permissions (if is an admin, they will have permissions to view all teams)
 	userID := r.Header.Get("Mattermost-User-ID")
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
-		logrus.Warnf("userID %s does not have view permission for teamID %s", userID, teamID)
-		HandleErrorWithCode(w, http.StatusNotFound, "team not found", errors.New("teamID %s does not exist"))
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+			"userID %s does not have view permission for teamID %s",
+			userID,
+			teamID,
+		))
 		return
 	}
 
@@ -537,8 +536,8 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	// Check if the target user (params.CommanderID) has permissions
 	if err := permissions.CheckHasPermissionsToIncidentChannel(params.CommanderID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
-			logrus.Warnf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID)
-			HandleErrorWithCode(w, http.StatusNotFound, "incident channel not found", errors.Errorf("channel not found"))
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
 			return
 		}
 		HandleError(w, err)
@@ -559,12 +558,12 @@ func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, c
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to parse checklist"))
+		HandleError(w, err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to parse item"))
+		HandleError(w, err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -591,14 +590,14 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleError(w, err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var checklistItem playbook.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
-		HandleError(w, errors.Wrapf(err, "unable to decode ChecklistItem"))
+		HandleError(w, err)
 		return
 	}
 
@@ -623,12 +622,12 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleError(w, err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		HandleError(w, err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -647,12 +646,12 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleError(w, err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		HandleError(w, err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -679,7 +678,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleError(w, err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -689,7 +688,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 		NewLocation int `json:"new_location"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to unmarshal edit params"))
+		HandleError(w, err)
 		return
 	}
 
