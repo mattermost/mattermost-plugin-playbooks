@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React, {FC, useState} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
 import {useDispatch} from 'react-redux';
@@ -63,6 +63,16 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         }
     };
 
+    const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(0);
+
+    const checklists = props.incident.playbook.checklists || [];
+    const defaultChecklist = {title: 'Default Stage', items: []};
+    const selectedChecklist = checklists[selectedChecklistIndex] || defaultChecklist;
+
+    if (selectedChecklist.title === '') {
+        selectedChecklist.title = defaultChecklist.title;
+    }
+
     return (
         <React.Fragment>
             <Scrollbars
@@ -84,38 +94,35 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             onSelectedChange={onSelectedProfileChange}
                         />
                     </div>
-
-                    {props.incident.playbook.checklists?.map((checklist: Checklist, index: number) => (
-                        <ChecklistDetails
-                            checklist={checklist}
-                            enableEdit={true}
-                            key={checklist.title + index}
-                            onChange={(itemNum: number, checked: boolean) => {
-                                if (checked) {
-                                    checkItem(props.incident.id, index, itemNum);
-                                } else {
-                                    uncheckItem(props.incident.id, index, itemNum);
-                                }
-                            }}
-                            onRedirect={() => {
-                                if (isMobile()) {
-                                    dispatch(toggleRHS());
-                                }
-                            }}
-                            addItem={(checklistItem: ChecklistItem) => {
-                                clientAddChecklistItem(props.incident.id, index, checklistItem);
-                            }}
-                            removeItem={(itemNum: number) => {
-                                clientRemoveChecklistItem(props.incident.id, index, itemNum);
-                            }}
-                            editItem={(itemNum: number, newTitle: string) => {
-                                clientRenameChecklistItem(props.incident.id, index, itemNum, newTitle);
-                            }}
-                            reorderItems={(itemNum: number, newPosition: number) => {
-                                clientReorderChecklist(props.incident.id, index, itemNum, newPosition);
-                            }}
-                        />
-                    ))}
+                    <ChecklistDetails
+                        checklist={selectedChecklist}
+                        enableEdit={true}
+                        key={selectedChecklist.title + selectedChecklistIndex}
+                        onChange={(itemNum: number, checked: boolean) => {
+                            if (checked) {
+                                checkItem(props.incident.id, selectedChecklistIndex, itemNum);
+                            } else {
+                                uncheckItem(props.incident.id, selectedChecklistIndex, itemNum);
+                            }
+                        }}
+                        onRedirect={() => {
+                            if (isMobile()) {
+                                dispatch(toggleRHS());
+                            }
+                        }}
+                        addItem={(checklistItem: ChecklistItem) => {
+                            clientAddChecklistItem(props.incident.id, selectedChecklistIndex, checklistItem);
+                        }}
+                        removeItem={(itemNum: number) => {
+                            clientRemoveChecklistItem(props.incident.id, selectedChecklistIndex, itemNum);
+                        }}
+                        editItem={(itemNum: number, newTitle: string) => {
+                            clientRenameChecklistItem(props.incident.id, selectedChecklistIndex, itemNum, newTitle);
+                        }}
+                        reorderItems={(itemNum: number, newPosition: number) => {
+                            clientReorderChecklist(props.incident.id, selectedChecklistIndex, itemNum, newPosition);
+                        }}
+                    />
                 </div>
             </Scrollbars>
             <div className='footer-div'>
