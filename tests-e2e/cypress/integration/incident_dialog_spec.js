@@ -14,7 +14,8 @@ import * as TIMEOUTS from '../fixtures/timeouts';
 
 function openIncidentDialog() {
 	const incidentStartCommand = '/incident start';
-	cy.findByTestId('post_textbox').clear().type(incidentStartCommand + '{enter}');
+	cy.findByTestId('post_textbox').clear().type(incidentStartCommand).type('{enter}');
+	cy.wait(TIMEOUTS.MEDIUM);
 }
 
 function closeIncidentDialog() {
@@ -42,7 +43,7 @@ describe('Incident Creation Modal', () => {
 		cy.get('#interactiveDialogModalIntroductionText').contains('Commander');
 	});
 
-	it ('Contains channel name', () => {
+	it('Contains channel name', () => {
 		// * Verify channel name is there
 		cy.findByTestId('incidentName').should('be.visible');
 		cy.findByText("Channel Name");

@@ -13,7 +13,7 @@ import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
-import {FetchIncidentsParams, FetchIncidentsReturn, Incident} from 'src/types/incident';
+import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
@@ -41,6 +41,14 @@ export function fetchIncidentWithDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}/details`);
 }
 
+export function fetchIncidentByChannel(channelId: string) {
+    return doGet(`${apiUrl}/incidents/channel/${channelId}`);
+}
+
+export function fetchIncidentChannels(teamID: string) {
+    return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}`);
+}
+
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
     const currentChannel = getCurrentChannel(getState());
     const currentTeamId = getCurrentTeamId(getState());
@@ -51,6 +59,7 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     };
 
     try {
+        //@ts-ignore Typing in mattermost-redux is wrong
         const data = await Client4.executeCommand(command, args);
         dispatch(setTriggerId(data?.trigger_id));
     } catch (error) {

@@ -1,10 +1,12 @@
 package pluginkvstore
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 	"unicode"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -22,20 +24,35 @@ const (
 
 type idHeaderMap map[string]incident.Header
 
+func (i idHeaderMap) clone() idHeaderMap {
+	newMap := make(idHeaderMap, len(i))
+	for k, v := range i {
+		newMap[k] = v
+	}
+	return newMap
+}
+
 // Ensure incidentStore implements the incident.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
-	pluginAPI PluginAPIClient
-	log       bot.Logger
+	pluginAPI    PluginAPIClient
+	log          bot.Logger
+	queryBuilder sq.StatementBuilderType
 }
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger) incident.Store {
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		builder = builder.PlaceholderFormat(sq.Dollar)
+	}
+
 	newStore := &incidentStore{
-		pluginAPI: pluginAPI,
-		log:       log,
+		pluginAPI:    pluginAPI,
+		log:          log,
+		queryBuilder: builder,
 	}
 	return newStore
 }
@@ -178,16 +195,19 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 		return 0, errors.Wrap(err, "failed to get a database connection")
 	}
 
+	query := s.queryBuilder.
+		Select("COUNT(DISTINCT UserId)").
+		From("ChannelMemberHistory AS u").
+		Where(sq.Eq{"ChannelId": incidentID}).
+		Where(sq.Expr("u.UserId NOT IN (SELECT UserId FROM Bots)"))
+
+	queryStr, queryArgs, err := query.ToSql()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to build the query to retrieve all members in an incident")
+	}
+
 	var numMembers int64
-	err = db.QueryRow(`
-		SELECT
-		    COUNT(DISTINCT UserId)
-		FROM
-		    ChannelMemberHistory AS u
-		WHERE
-		    ChannelId = ?
-		AND u.UserId NOT IN (SELECT UserId FROM Bots)
-	`, incidentID).Scan(&numMembers)
+	err = db.QueryRow(queryStr, queryArgs...).Scan(&numMembers)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to query database")
 	}
@@ -234,20 +254,24 @@ func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 }
 
 func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
-	headers, err := s.getIDHeaders()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get all headers")
+	addID := func(oldValue []byte) (interface{}, error) {
+		if oldValue == nil {
+			return idHeaderMap{incdnt.ID: incdnt.Header}, nil
+		}
+
+		var headers idHeaderMap
+		if err := json.Unmarshal(oldValue, &headers); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal oldValue into an idHeaderMap")
+		}
+
+		newHeaders := headers.clone()
+		newHeaders[incdnt.ID] = incdnt.Header
+		return newHeaders, nil
 	}
 
-	headers[incdnt.ID] = incdnt.Header
-
-	// TODO: Should be using CompareAndSet, but deep copy is expensive.
-	if saved, err := s.pluginAPI.KV.Set(allHeadersKey, headers); err != nil {
-		return errors.Wrapf(err, "failed to set all headers value")
-	} else if !saved {
-		return errors.New("failed to set all headers value")
+	if err := s.pluginAPI.KV.SetAtomicWithRetries(allHeadersKey, addID); err != nil {
+		return errors.Wrap(err, "failed to set allHeaders atomically")
 	}
-
 	return nil
 }
 

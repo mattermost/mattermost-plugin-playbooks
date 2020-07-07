@@ -11,7 +11,6 @@
  */
  
 import users from '../fixtures/users.json';
-import * as TIMEOUTS from '../fixtures/timeouts';
 
 describe('Incident Icon', () => {
 	beforeEach(() => {
@@ -26,7 +25,7 @@ describe('Incident Icon', () => {
 			cy.get('#incidentIcon').should('be.visible').click();
 		});
 		cy.get('#rhsContainer').should('be.visible').within(() => {
-			cy.findByText('Incident List').should('be.visible');
+			cy.findByText('Incident').should('be.visible');
 		});
 		/**
 		* TODO:

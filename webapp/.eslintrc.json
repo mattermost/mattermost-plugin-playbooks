@@ -1,5 +1,8 @@
 {
-  "extends": "eslint:recommended",
+  "extends": [
+      "eslint:recommended",
+      "plugin:react-hooks/recommended"
+  ],
   "parserOptions": {
     "ecmaVersion": 8,
     "sourceType": "module",
@@ -264,7 +267,7 @@
     "no-lonely-if": 2,
     "no-loop-func": 2,
     "no-magic-numbers": [
-      1,
+      0,
       {
         "ignore": [
           -1,
@@ -542,7 +545,7 @@
       }
     ],
     "react/prefer-es6-class": 2,
-    "react/prefer-stateless-function": 0,
+    "react/prefer-stateless-function": 2,
     "react/prop-types": [
       2,
       {
@@ -638,6 +641,7 @@
         "@typescript-eslint/no-var-requires": 0,
         "@typescript-eslint/prefer-interface": 0,
         "@typescript-eslint/explicit-function-return-type": 0,
+        "@typescript-eslint/explicit-module-boundary-types": 0,
         "@typescript-eslint/indent": [
           2,
           4,
