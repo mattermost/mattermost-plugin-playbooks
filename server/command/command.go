@@ -167,7 +167,7 @@ func (r *Runner) actionSelftest(args []string) {
 		TeamID: r.args.TeamId,
 		Checklists: []playbook.Checklist{
 			{
-				Title: "Checklist",
+				Title: "Identification",
 				Items: []playbook.ChecklistItem{
 					{
 						Title: "Create Jira ticket",
@@ -188,12 +188,22 @@ func (r *Runner) actionSelftest(args []string) {
 					{
 						Title: "Identify blast Analyze data logs",
 					},
+				},
+			},
+			{
+				Title: "Resolution",
+				Items: []playbook.ChecklistItem{
 					{
 						Title: "Align on plan of attack",
 					},
 					{
 						Title: "Confirm resolution",
 					},
+				},
+			},
+			{
+				Title: "Analysis",
+				Items: []playbook.ChecklistItem{
 					{
 						Title: "Writeup root-cause analysis",
 					},
