@@ -1,5 +1,30 @@
 $font-family: Open Sans;
 
+
+// Checklist component
+.checklist-inner-container {
+    display: flex;
+    flex-direction: column;
+
+    .title {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        padding: 0 0 8px;
+
+        .checkbox-title__edit {
+            width: 70px;
+            padding: 0 5px 0 5px;
+        }
+
+        &:hover {
+            .checkbox-container__close {
+                opacity: 1;
+            }
+        }
+    }
+}
+
 // Checkbox component
 .checkbox-container {
     align-items: center;
@@ -29,22 +54,6 @@ $font-family: Open Sans;
 
     .timestamp {
         color: var(--center-channel-color-56);
-    }
-
-    .checkbox-container__close {
-        cursor: pointer;
-        opacity: 0;
-        width: 3.2rem;
-        height: 3.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        color: var(--error-text);
-
-        &:hover {
-            opacity: 1;
-        }
     }
 
     input[type="checkbox"] + label {
@@ -105,5 +114,21 @@ $font-family: Open Sans;
         font-weight: normal;
         word-break: break-word;
         display: inline;
+    }
+}
+// Used by Checklist and Checkbox components
+.checkbox-container__close {
+    cursor: pointer;
+    opacity: 0;
+    width: 3.2rem;
+    height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--error-text);
+
+    &:hover {
+        opacity: 1;
     }
 }
