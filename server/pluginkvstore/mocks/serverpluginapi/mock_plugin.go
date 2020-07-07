@@ -283,6 +283,20 @@ func (mr *MockAPIMockRecorder) DeletePost(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePost", reflect.TypeOf((*MockAPI)(nil).DeletePost), arg0)
 }
 
+// DeletePreferencesForUser mocks base method
+func (m *MockAPI) DeletePreferencesForUser(arg0 string, arg1 []model.Preference) *model.AppError {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePreferencesForUser", arg0, arg1)
+	ret0, _ := ret[0].(*model.AppError)
+	return ret0
+}
+
+// DeletePreferencesForUser indicates an expected call of DeletePreferencesForUser
+func (mr *MockAPIMockRecorder) DeletePreferencesForUser(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePreferencesForUser", reflect.TypeOf((*MockAPI)(nil).DeletePreferencesForUser), arg0, arg1)
+}
+
 // DeleteTeam mocks base method
 func (m *MockAPI) DeleteTeam(arg0 string) *model.AppError {
 	m.ctrl.T.Helper()
@@ -351,6 +365,21 @@ func (m *MockAPI) EnablePlugin(arg0 string) *model.AppError {
 func (mr *MockAPIMockRecorder) EnablePlugin(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnablePlugin", reflect.TypeOf((*MockAPI)(nil).EnablePlugin), arg0)
+}
+
+// ExecuteSlashCommand mocks base method
+func (m *MockAPI) ExecuteSlashCommand(arg0 *model.CommandArgs) (*model.CommandResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExecuteSlashCommand", arg0)
+	ret0, _ := ret[0].(*model.CommandResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExecuteSlashCommand indicates an expected call of ExecuteSlashCommand
+func (mr *MockAPIMockRecorder) ExecuteSlashCommand(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteSlashCommand", reflect.TypeOf((*MockAPI)(nil).ExecuteSlashCommand), arg0)
 }
 
 // GetBot mocks base method
@@ -933,6 +962,21 @@ func (m *MockAPI) GetPostsSince(arg0 string, arg1 int64) (*model.PostList, *mode
 func (mr *MockAPIMockRecorder) GetPostsSince(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPostsSince", reflect.TypeOf((*MockAPI)(nil).GetPostsSince), arg0, arg1)
+}
+
+// GetPreferencesForUser mocks base method
+func (m *MockAPI) GetPreferencesForUser(arg0 string) ([]model.Preference, *model.AppError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPreferencesForUser", arg0)
+	ret0, _ := ret[0].([]model.Preference)
+	ret1, _ := ret[1].(*model.AppError)
+	return ret0, ret1
+}
+
+// GetPreferencesForUser indicates an expected call of GetPreferencesForUser
+func (mr *MockAPIMockRecorder) GetPreferencesForUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreferencesForUser", reflect.TypeOf((*MockAPI)(nil).GetPreferencesForUser), arg0)
 }
 
 // GetProfileImage mocks base method
@@ -1650,6 +1694,20 @@ func (mr *MockAPIMockRecorder) PluginHTTP(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PluginHTTP", reflect.TypeOf((*MockAPI)(nil).PluginHTTP), arg0)
 }
 
+// PublishUserTyping mocks base method
+func (m *MockAPI) PublishUserTyping(arg0, arg1, arg2 string) *model.AppError {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PublishUserTyping", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*model.AppError)
+	return ret0
+}
+
+// PublishUserTyping indicates an expected call of PublishUserTyping
+func (mr *MockAPIMockRecorder) PublishUserTyping(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishUserTyping", reflect.TypeOf((*MockAPI)(nil).PublishUserTyping), arg0, arg1, arg2)
+}
+
 // PublishWebSocketEvent mocks base method
 func (m *MockAPI) PublishWebSocketEvent(arg0 string, arg1 map[string]interface{}, arg2 *model.WebsocketBroadcast) {
 	m.ctrl.T.Helper()
@@ -1789,6 +1847,21 @@ func (m *MockAPI) SearchPostsInTeam(arg0 string, arg1 []*model.SearchParams) ([]
 func (mr *MockAPIMockRecorder) SearchPostsInTeam(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPostsInTeam", reflect.TypeOf((*MockAPI)(nil).SearchPostsInTeam), arg0, arg1)
+}
+
+// SearchPostsInTeamForUser mocks base method
+func (m *MockAPI) SearchPostsInTeamForUser(arg0, arg1 string, arg2 model.SearchParameter) (*model.PostSearchResults, *model.AppError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchPostsInTeamForUser", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*model.PostSearchResults)
+	ret1, _ := ret[1].(*model.AppError)
+	return ret0, ret1
+}
+
+// SearchPostsInTeamForUser indicates an expected call of SearchPostsInTeamForUser
+func (mr *MockAPIMockRecorder) SearchPostsInTeamForUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPostsInTeamForUser", reflect.TypeOf((*MockAPI)(nil).SearchPostsInTeamForUser), arg0, arg1, arg2)
 }
 
 // SearchTeams mocks base method
@@ -1992,6 +2065,20 @@ func (m *MockAPI) UpdatePost(arg0 *model.Post) (*model.Post, *model.AppError) {
 func (mr *MockAPIMockRecorder) UpdatePost(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePost", reflect.TypeOf((*MockAPI)(nil).UpdatePost), arg0)
+}
+
+// UpdatePreferencesForUser mocks base method
+func (m *MockAPI) UpdatePreferencesForUser(arg0 string, arg1 []model.Preference) *model.AppError {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePreferencesForUser", arg0, arg1)
+	ret0, _ := ret[0].(*model.AppError)
+	return ret0
+}
+
+// UpdatePreferencesForUser indicates an expected call of UpdatePreferencesForUser
+func (mr *MockAPIMockRecorder) UpdatePreferencesForUser(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePreferencesForUser", reflect.TypeOf((*MockAPI)(nil).UpdatePreferencesForUser), arg0, arg1)
 }
 
 // UpdateTeam mocks base method

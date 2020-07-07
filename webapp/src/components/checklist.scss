@@ -6,8 +6,36 @@ $font-family: Open Sans;
     display: flex;
     padding: 0.6rem 0;
 
+    live {
+        height: 35px;
+    }
+
     &:first-child {
         padding-top: 0.2rem;
+    }
+
+    button {
+        width: 53px;
+        height: 29px;
+        border: 1px solid #166DE0;
+        box-sizing: border-box;
+        border-radius: 4px;
+        font-family: Open Sans;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 17px;
+        text-align: center;
+        background: #ffffff;
+        color: #166DE0;
+        cursor: pointer;
+    }
+
+    button:disabled {
+        border: 1px solid rgba(61, 60, 64, 0.64);
+        color: rgba(61, 60, 64, 0.64);
+        background: rgba(61, 60, 64, 0.08);
+        cursor: default;
     }
 
     // Checkbox
@@ -47,10 +75,16 @@ $font-family: Open Sans;
         }
     }
 
+    button + label {
+        padding: 0 8px 0 10px;
+        margin: 0;
+    }
+
     input[type="checkbox"] + label {
         margin: 0;
         position: relative;
         cursor: pointer;
+        padding: 0 8px 0 63px;
     }
 
     input[type="checkbox"]:disabled + label {
@@ -69,6 +103,8 @@ $font-family: Open Sans;
         border: 1px solid #dddddd;
         box-sizing: border-box;
         border-radius: 4px;
+
+        margin-left: 18px;
     }
 
     input[type="checkbox"]:checked + label:before {
@@ -94,6 +130,7 @@ $font-family: Open Sans;
 
         transition: transform 0.15s;
         transform: scale(0) rotate(90deg);
+        margin-left: 18px;
     }
 
     input[type="checkbox"]:checked + label:after {
@@ -101,9 +138,15 @@ $font-family: Open Sans;
     }
 
     label {
-        padding: 0 8px 0 32px;
         font-weight: normal;
         word-break: break-word;
         display: inline;
     }
 }
+
+.checkbox-textboxes {
+    .form-control {
+        margin-top: 5px;
+    }
+}
+
