@@ -24,10 +24,13 @@ func (i *subscriptionIndex) clone() subscriptionIndex {
 	return newIndex
 }
 
+// SubscriptionStore is KVStore backend for a subscription service.
 type SubscriptionStore struct {
 	kvAPI KVAPI
 }
 
+// NewSubscriptionStore creates a new subscription store that uses the passed
+// KV API.
 func NewSubscriptionStore(kvAPI KVAPI) *SubscriptionStore {
 	return &SubscriptionStore{
 		kvAPI: kvAPI,
@@ -53,6 +56,9 @@ func (s *SubscriptionStore) addToIndex(subscriptionID string) error {
 	return nil
 }
 
+// Create stores a new subscription in the KV store. It returns the new ID of
+// the subscription, or an empty string and a non-nil error if the KV store
+// failed to save the subscription or failed to add the new ID to the index.
 func (s *SubscriptionStore) Create(subs subscription.Subscription) (string, error) {
 	subs.ID = model.NewId()
 

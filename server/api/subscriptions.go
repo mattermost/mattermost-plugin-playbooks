@@ -13,12 +13,15 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
+// SubscriptionHandler handles all requests under /eventsubscriptions.
 type SubscriptionHandler struct {
 	subscriptionService subscription.Service
 	playbookService     playbook.Service
 	pluginAPI           *pluginapi.Client
 }
 
+// NewSubscriptionHandler registers a new subscription handler to the router
+// passed, using the services provided.
 func NewSubscriptionHandler(router *mux.Router, subscriptionService subscription.Service, playbookService playbook.Service,
 	api *pluginapi.Client) *SubscriptionHandler {
 	handler := &SubscriptionHandler{
