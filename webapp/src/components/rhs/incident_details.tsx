@@ -4,6 +4,8 @@
 import React, {FC, useState} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
+import ReactSelect, {ActionTypes} from 'react-select';
+
 import {useDispatch} from 'react-redux';
 
 import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientRenameChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
@@ -45,6 +47,15 @@ function renderThumbVertical(props: any): JSX.Element {
         />);
 }
 
+interface Option {
+    value: number;
+    label: string;
+}
+
+interface ActionObj {
+    action: ActionTypes;
+}
+
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -73,6 +84,14 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         selectedChecklist.title = defaultChecklist.title;
     }
 
+    const onChecklistChange = (option: Option, action: ActionObj) => {
+        if (action.action === 'clear') {
+            return;
+        }
+
+        setSelectedChecklistIndex(option.value);
+    };
+
     return (
         <React.Fragment>
             <Scrollbars
@@ -94,8 +113,21 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             onSelectedChange={onSelectedProfileChange}
                         />
                     </div>
+                    <div className='inner-container'>
+                        <div className='title'>{'Stage'}</div>
+                        <ReactSelect
+                            options={checklists.map((checklist, idx) => {
+                                return {value: idx, label: checklist.title};
+                            })}
+                            onChange={(option, action) => onChecklistChange(option as Option, action as ActionObj)}
+                            defaultValue={{value: selectedChecklistIndex, label: selectedChecklist.title}}
+                            className={'incident-stage-select'}
+                            classNamePrefix={'incident-stage-select'}
+                        />
+                    </div>
                     <ChecklistDetails
                         checklist={selectedChecklist}
+                        title={'Checklist'}
                         enableEdit={true}
                         key={selectedChecklist.title + selectedChecklistIndex}
                         onChange={(itemNum: number, checked: boolean) => {

@@ -36,6 +36,54 @@ $font-family: Open Sans;
                 text-decoration: underline;
             }
         }
+
+        .incident-stage-select {
+            background-color: var(--center-channel-bg);
+            color: var(--center-channel-color);
+
+            &__option--is-selected,
+            &__option--is-focused {
+                background-color: var(--center-channel-color-08);
+                color: inherit;
+            }
+
+            &__control {
+                margin-left: 0;
+                border: none;
+                background: transparent;
+                box-shadow: inset 0 0 0 1px var(--center-channel-color-20);
+
+                &:hover {
+                    box-shadow: inset 0 0 0 1px var(--center-channel-color-40);
+                }
+
+                &--is-focused,
+                &--is-focused:hover {
+                    box-shadow: inset 0 0 0 2px var(--button-bg);
+                }
+            }
+
+            &__option {
+                &:active {
+                    background-color: var(--center-channel-color-08);
+                }
+            }
+
+            &__menu {
+                background: var(--center-channel-bg);
+                color: inherit;
+            }
+
+            &__input,
+            &__single-value {
+                color: inherit
+            }
+
+            &__placeholder {
+                color: var(--center-channel-color-20);
+            }
+        }
+
     }
 
     .footer-div {
