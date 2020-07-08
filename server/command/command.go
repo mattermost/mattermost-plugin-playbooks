@@ -49,7 +49,7 @@ func getCommand() *model.Command {
 }
 
 func getAutocompleteData() *model.AutocompleteData {
-	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end")
+	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end, check")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
