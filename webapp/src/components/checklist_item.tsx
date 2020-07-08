@@ -16,6 +16,11 @@ interface ChecklistItemDetailsProps {
     onRedirect?: () => void;
 }
 
+// @ts-ignore
+const {formatText, messageHtmlToComponent} = window.PostUtils;
+
+const markdownOptions = {singleline: true, mentionHighlight: false, atMentions: true};
+
 export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedirect}: ChecklistItemDetailsProps): React.ReactElement => {
     const [spinner, setSpinner] = useState(false);
 
@@ -35,7 +40,6 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
         <input
             className='checkbox'
             type='checkbox'
-            id={title}
             disabled={disabled}
             readOnly={!onChange}
             checked={checklistItem.checked}
@@ -78,8 +82,8 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
             className={'checkbox-container live' + (disabled ? ' light' : '')}
         >
             {activation}
-            <label htmlFor={title}>
-                {title}
+            <label>
+                {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
             </label>
             <a
                 className={'timestamp small'}
