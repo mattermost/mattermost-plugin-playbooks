@@ -7,6 +7,8 @@ import moment from 'moment';
 import {ChecklistItem} from 'src/types/playbook';
 import {MAX_NAME_LENGTH} from 'src/constants';
 
+import Spinner from './assets/icons/spinner';
+
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
     disabled: boolean;
@@ -15,6 +17,8 @@ interface ChecklistItemDetailsProps {
 }
 
 export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedirect}: ChecklistItemDetailsProps): React.ReactElement => {
+    const [spinner, setSpinner] = useState(false);
+
     let timestamp = '';
     let title = checklistItem.title;
     if (checklistItem.checked) {
@@ -27,67 +31,97 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
         title += ' ';
     }
 
+    let activation = (
+        <input
+            className='checkbox'
+            type='checkbox'
+            id={title}
+            disabled={disabled}
+            readOnly={!onChange}
+            checked={checklistItem.checked}
+            onClick={() => {
+                if (!disabled && onChange) {
+                    onChange(!checklistItem.checked);
+                }
+            }}
+        />
+    );
+    if (checklistItem.command) {
+        if (checklistItem.checked) {
+            activation = (
+                <button
+                    type='button'
+                    disabled={true}
+                >
+                    {'Done'}
+                </button>
+            );
+        } else {
+            activation = (
+                <button
+                    type='button'
+                    onClick={() => {
+                        if (onChange && !disabled) {
+                            onChange(true);
+                            setSpinner(true);
+                        }
+                    }}
+                >
+                    {spinner ? <Spinner/> : 'Run'}
+                </button>
+            );
+        }
+    }
+
     return (
         <div
-            className={'checkbox-container' + (disabled ? ' light' : '')}
+            className={'checkbox-container live' + (disabled ? ' light' : '')}
         >
-            <div >
-                <input
-                    className='checkbox'
-                    type='checkbox'
-                    disabled={disabled}
-                    readOnly={!onChange}
-                    checked={checklistItem.checked}
-                />
-                <label
-                    onClick={() => {
-                        if (!disabled && onChange) {
-                            onChange(!checklistItem.checked);
-                        }
-                    }}
-                >
-                    {title}
-                </label>
-                <a
-                    className={'timestamp small'}
-                    href={`/_redirect/pl/${checklistItem.checked_post_id}`}
-                    onClick={(e) => {
-                        e.preventDefault();
-                        if (!checklistItem.checked_post_id) {
-                            return;
-                        }
+            {activation}
+            <label htmlFor={title}>
+                {title}
+            </label>
+            <a
+                className={'timestamp small'}
+                href={`/_redirect/pl/${checklistItem.checked_post_id}`}
+                onClick={(e) => {
+                    e.preventDefault();
+                    if (!checklistItem.checked_post_id) {
+                        return;
+                    }
 
-                        // @ts-ignore
-                        window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
-                        if (onRedirect) {
-                            onRedirect();
-                        }
-                    }}
-                >
-                    {timestamp}
-                </a>
-            </div>
+                    // @ts-ignore
+                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
+                    if (onRedirect) {
+                        onRedirect();
+                    }
+                }}
+            >
+                {timestamp}
+            </a>
         </div>
     );
 };
 
 interface ChecklistItemDetailsEditProps {
     checklistItem: ChecklistItem;
-    onEdit: (newvalue: string) => void;
+    onEdit: (newvalue: ChecklistItem) => void;
     onRemove: () => void;
 }
 
 export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
     const [title, setTitle] = useState(checklistItem.title);
+    const [command, setCommand] = useState(checklistItem.command);
 
     const submit = () => {
         const trimmedTitle = title.trim();
+        const trimmedCommand = command.trim();
         if (trimmedTitle === '') {
             setTitle(checklistItem.title);
             return;
         }
-        if (trimmedTitle !== checklistItem.title) {
-            onEdit(trimmedTitle);
+        if (trimmedTitle !== checklistItem.title || trimmedCommand !== checklistItem.command) {
+            onEdit({...checklistItem, ...{title: trimmedTitle, command: trimmedCommand}});
         }
     };
 
@@ -98,21 +132,39 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
             <i
                 className='icon icon-menu pr-2'
             />
-            <input
-                className='form-control'
-                type='text'
-                value={title}
-                maxLength={MAX_NAME_LENGTH}
-                onBlur={submit}
-                onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                        submit();
-                    }
-                }}
-                onChange={(e) => {
-                    setTitle(e.target.value);
-                }}
-            />
+            <div className='checkbox-textboxes'>
+                <input
+                    className='form-control'
+                    type='text'
+                    value={title}
+                    maxLength={MAX_NAME_LENGTH}
+                    onBlur={submit}
+                    placeholder={'Title'}
+                    onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            submit();
+                        }
+                    }}
+                    onChange={(e) => {
+                        setTitle(e.target.value);
+                    }}
+                />
+                <input
+                    className='form-control'
+                    type='text'
+                    value={command}
+                    onBlur={submit}
+                    placeholder={'/Slash Command'}
+                    onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            submit();
+                        }
+                    }}
+                    onChange={(e) => {
+                        setCommand(e.target.value);
+                    }}
+                />
+            </div>
             <span
                 onClick={onRemove}
                 className='checkbox-container__close'

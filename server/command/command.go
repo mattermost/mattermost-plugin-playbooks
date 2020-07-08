@@ -375,7 +375,7 @@ func (r *Runner) actionSelftest(args []string) {
 	}
 
 	if err := r.incidentService.RenameChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
-		"I should say this! and be unchecked and first!"); err != nil {
+		"I should say this! and be unchecked and first!", ""); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
