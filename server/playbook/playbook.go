@@ -16,6 +16,7 @@ type Playbook struct {
 	TeamID               string      `json:"team_id"`
 	CreatePublicIncident bool        `json:"create_public_incident"`
 	Checklists           []Checklist `json:"checklists"`
+	MemberIDs            []string    `json:"member_ids"`
 }
 
 // Checklist represents a checklist in a playbook

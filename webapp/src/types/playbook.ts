@@ -7,6 +7,7 @@ export interface Playbook {
     team_id: string;
     create_public_incident: boolean;
     checklists: Checklist[];
+    member_ids: string[];
 }
 
 export interface Checklist {
@@ -30,6 +31,7 @@ export function emptyPlaybook(): Playbook {
             title: 'Checklist',
             items: [],
         }],
+        member_ids: [],
     };
 }
 
