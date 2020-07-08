@@ -113,7 +113,7 @@ type Service interface {
 	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
 
 	// RenameChecklistItem changes the title of a specified checklist item
-	RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error
+	RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand string) error
 
 	// MoveChecklistItem moves a checklist item from one position to anouther
 	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error

@@ -657,14 +657,15 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		Title string `json:"title"`
+		Title   string `json:"title"`
+		Command string `json:"command"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		HandleError(w, errors.Wrap(err, "failed to unmarshal edit params state"))
 		return
 	}
 
-	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title); err != nil {
+	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command); err != nil {
 		HandleError(w, err)
 		return
 	}

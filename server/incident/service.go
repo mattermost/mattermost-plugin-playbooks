@@ -342,6 +342,23 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
+	channel, err := s.pluginAPI.Channel.Get(mainChannelID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get main channel")
+	}
+
+	if itemToCheck.Checked && itemToCheck.Command != "" {
+		_, err := s.pluginAPI.SlashCommand.ExecuteSlashCommand(&model.CommandArgs{
+			UserId:    userID,
+			ChannelId: mainChannelID,
+			TeamId:    channel.TeamId,
+			Command:   itemToCheck.Command,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	return nil
@@ -389,13 +406,14 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 }
 
 // RenameChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle string) error {
+func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
