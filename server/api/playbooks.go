@@ -96,7 +96,7 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.hasPermissionsToPlaybook(&pbook, userID) {
+	if !h.hasPermissionsToPlaybook(pbook, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbook on teamID %s",
 			userID,
@@ -135,7 +135,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.hasPermissionsToPlaybook(&oldPlaybook, userID) {
+	if !h.hasPermissionsToPlaybook(oldPlaybook, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to update playbook on teamID %s",
 			userID,
@@ -175,7 +175,7 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.hasPermissionsToPlaybook(&playbookToDelete, userID) {
+	if !h.hasPermissionsToPlaybook(playbookToDelete, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to delete playbook on teamID %s",
 			userID,
@@ -223,7 +223,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 
 	allowedPlaybooks := []playbook.Playbook{}
 	for _, pb := range playbooks {
-		if h.hasPermissionsToPlaybook(&pb, userID) {
+		if h.hasPermissionsToPlaybook(pb, userID) {
 			allowedPlaybooks = append(allowedPlaybooks, pb)
 		}
 	}
@@ -231,7 +231,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	ReturnJSON(w, &allowedPlaybooks)
 }
 
-func (h *PlaybookHandler) hasPermissionsToPlaybook(pbook *playbook.Playbook, userID string) bool {
+func (h *PlaybookHandler) hasPermissionsToPlaybook(pbook playbook.Playbook, userID string) bool {
 	for _, memberID := range pbook.MemberIDs {
 		if memberID == userID {
 			return true

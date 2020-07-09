@@ -34,14 +34,16 @@ interface URLParams {
 }
 
 const PlaybookEdit: FC<Props> = (props: Props) => {
-    const currentUserId = useSelector(getCurrentUserId); 
+    const dispatch = useDispatch();
+
+    const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<Playbook>({
         ...emptyPlaybook(),
         member_ids: [currentUserId],
         team_id: props.currentTeam.id,
     });
-    const [memberIds, setMemberIds] = useState([] as string[])
+    const [memberIds, setMemberIds] = useState([currentUserId]);
     const [changesMade, setChangesMade] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -62,13 +64,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             }
 
             if (urlParams.playbookId) {
-                const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId)
+                const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
 
                 try {
                     setPlaybook(fetchedPlaybook);
                     setFetchingState(FetchingStateType.fetched);
 
-                    setMemberIds (fetchedPlaybook.member_ids)
+                    setMemberIds(fetchedPlaybook.member_ids);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
                 }
@@ -173,18 +175,17 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleUsersInput = (userIds: string[]) => {
-        playbook.member_ids = userIds
-        setMemberIds(userIds || [])
+        playbook.member_ids = userIds;
+        setMemberIds(userIds || []);
 
         setChangesMade(true);
-    }
+    };
 
     const searchUsers = (term: string) => {
-        const dispatch = useDispatch();
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
 
-    const saveDisabled = playbook.title.trim() === '' || memberIds.length == 0 || !changesMade;
+    const saveDisabled = playbook.title.trim() === '' || memberIds.length === 0 || !changesMade;
 
     if (!props.isNew) {
         switch (fetchingState) {
@@ -246,13 +247,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     </div>
                 </div>
                 <div className='inner-container'>
-                        <div className='title'>{'Members'}</div>
-                        <ProfileSearchInput
-                            placeholder={"Invite members..."}
-                            onChange={handleUsersInput}
-                            userIds={playbook.member_ids}
-                            searchProfiles={searchUsers}>
-                        </ProfileSearchInput>
+                    <div className='title'>{'Members'}</div>
+                    <ProfileSearchInput
+                        placeholder={'Invite members...'}
+                        onChange={handleUsersInput}
+                        userIds={playbook.member_ids}
+                        searchProfiles={searchUsers}
+                    />
                 </div>
                 <div className='checklist-container'>
                     {playbook.checklists?.map((checklist: Checklist, checklistIndex: number) => (

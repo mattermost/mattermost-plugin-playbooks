@@ -662,10 +662,10 @@ func addRandomBits(name string) string {
 	return fmt.Sprintf("%s-%s", name, randBits[:4])
 }
 
-func canStartIncidentWithPlaybook(userId string, pb playbook.Playbook) bool {
+func canStartIncidentWithPlaybook(userID string, pb playbook.Playbook) bool {
 	// Members of a playbook can use it to start incident
 	for _, memberID := range pb.MemberIDs {
-		if memberID == userId {
+		if memberID == userID {
 			return true
 		}
 	}
