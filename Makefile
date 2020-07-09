@@ -140,11 +140,6 @@ endif
 deploy-from-watch: bundle
 	./build/bin/pluginctl deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
 
-## Runs the redocly server.
-.PHONY: api-server
-api-server:
-	npx @redocly/openapi-cli preview-docs server/api/api.yaml
-
 ## Setup dlv for attaching, identifying the plugin PID for other targets.
 .PHONY: setup-attach
 setup-attach:
