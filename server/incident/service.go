@@ -342,9 +342,38 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
+	channel, err := s.pluginAPI.Channel.Get(mainChannelID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get main channel")
+	}
+
+	if itemToCheck.Checked && itemToCheck.Command != "" {
+		_, err := s.pluginAPI.SlashCommand.ExecuteSlashCommand(&model.CommandArgs{
+			UserId:    userID,
+			ChannelId: mainChannelID,
+			TeamId:    channel.TeamId,
+			Command:   itemToCheck.Command,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	return nil
+}
+
+// ToggleCheckedState checks or unchecks the specified checklist item
+func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	newState := !incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Checked
+
+	return s.ModifyCheckedState(incidentID, userID, newState, checklistNumber, itemNumber)
 }
 
 // AddChecklistItem adds an item to the specified checklist
@@ -389,13 +418,14 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 }
 
 // RenameChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle string) error {
+func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
@@ -437,6 +467,28 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	s.telemetry.MoveChecklistItem(incidentID, userID)
 
 	return nil
+}
+
+// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for i, checklist := range theIncident.Playbook.Checklists {
+		for j, item := range checklist.Items {
+			ret = append(ret, model.AutocompleteListItem{
+				Item:     fmt.Sprintf("%d %d", i, j),
+				Hint:     fmt.Sprintf("\"%s\"", item.Title),
+				HelpText: "Check/uncheck this item",
+			})
+		}
+	}
+
+	return ret, nil
 }
 
 func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {

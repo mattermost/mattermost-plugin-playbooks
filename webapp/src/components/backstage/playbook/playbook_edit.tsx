@@ -101,11 +101,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         updateChecklist(allChecklists);
     };
 
-    const onEditItem = (checklistItemIndex: number, newTitle: string, checklistIndex: number): void => {
+    const onEditItem = (checklistItemIndex: number, newItem: ChecklistItem, checklistIndex: number): void => {
         const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
         const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
 
-        changedChecklist.items[checklistItemIndex].title = newTitle;
+        changedChecklist.items[checklistItemIndex] = newItem;
         allChecklists[checklistIndex] = changedChecklist;
 
         updateChecklist(allChecklists);
@@ -238,17 +238,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     onChange={handleTitleChange}
                 />
                 <div className='public-item'>
-                    <div
-                        className='checkbox-container'
-                    >
-                        <Toggle
-                            toggled={playbook.create_public_incident}
-                            onToggle={handlePublicChange}
-                        />
-                        <label>
-                            {'Create Public Incident'}
-                        </label>
-                    </div>
+                    <Toggle
+                        toggled={playbook.create_public_incident}
+                        onToggle={handlePublicChange}
+                    />
+                    <label>
+                        {'Create Public Incident'}
+                    </label>
                 </div>
                 <div className='checklists-container'>
                     {playbook.checklists?.map((checklist: Checklist, checklistIndex: number) => (
@@ -275,8 +271,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 removeItem={(chceklistItemIndex: number) => {
                                     onDeleteItem(chceklistItemIndex, checklistIndex);
                                 }}
-                                editItem={(checklistItemIndex: number, newTitle: string) => {
-                                    onEditItem(checklistItemIndex, newTitle, checklistIndex);
+                                editItem={(checklistItemIndex: number, newItem: ChecklistItem) => {
+                                    onEditItem(checklistItemIndex, newItem, checklistIndex);
                                 }}
                                 reorderItems={(checklistItemIndex: number, newPosition: number) => {
                                     onReorderItem(checklistItemIndex, newPosition, checklistIndex);

@@ -29,7 +29,7 @@ interface Props {
     onRedirect?: (itemNum: number) => void;
     addItem: (checklistItem: ChecklistItem) => void;
     removeItem: (itemNum: number) => void;
-    editItem: (itemNum: number, newTitle: string) => void;
+    editItem: (itemNum: number, newItem: ChecklistItem) => void;
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
@@ -146,7 +146,7 @@ export const ChecklistDetails = ({checklist, editMode: propEditMode = false, ena
                         >
                             <ChecklistItemDetailsEdit
                                 checklistItem={checklistItems[rubric.source.index]}
-                                onEdit={(editedTo: string) => {
+                                onEdit={(editedTo: ChecklistItem) => {
                                     editItem(rubric.source.index, editedTo);
                                 }}
                                 onRemove={() => {
@@ -184,7 +184,7 @@ export const ChecklistDetails = ({checklist, editMode: propEditMode = false, ena
                                                     >
                                                         <ChecklistItemDetailsEdit
                                                             checklistItem={checklistItem}
-                                                            onEdit={(editedTo: string) => {
+                                                            onEdit={(editedTo: ChecklistItem) => {
                                                                 editItem(index, editedTo);
                                                             }}
                                                             onRemove={() => {
@@ -221,35 +221,7 @@ export const ChecklistDetails = ({checklist, editMode: propEditMode = false, ena
                     )}
                 </Droppable>
             </DragDropContext>
-            {inputExpanded &&
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        if (newValue.trim() === '') {
-                            setInputExpanded(false);
-                            return;
-                        }
-                        addItem({
-                            title: newValue,
-                            checked: false,
-                        });
-                        setNewValue('');
-                        setInputExpanded(false);
-                    }}
-                >
-                    <input
-                        autoFocus={true}
-                        type='text'
-                        value={newValue}
-                        maxLength={MAX_NAME_LENGTH}
-                        className='form-control mt-2'
-                        placeholder={'Enter a new item'}
-                        onKeyDown={(e) => onEscapeKey(e)}
-                        onChange={(e) => setNewValue(e.target.value)}
-                    />
-                    <small className='light mt-1 d-block'>{'Press Enter to Add Item or Escape to Cancel'}</small>
-                </form>
-            }
+            { }
             {enableEditChecklistItems && !inputExpanded &&
                 <div className='IncidentDetails__add-item'>
                     <a

@@ -6,7 +6,7 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientRenameChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
+import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
@@ -108,8 +108,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             removeItem={(itemNum: number) => {
                                 clientRemoveChecklistItem(props.incident.id, index, itemNum);
                             }}
-                            editItem={(itemNum: number, newTitle: string) => {
-                                clientRenameChecklistItem(props.incident.id, index, itemNum, newTitle);
+                            editItem={(itemNum: number, newItem: ChecklistItem) => {
+                                clientEditChecklistItem(props.incident.id, index, itemNum, newItem);
                             }}
                             reorderItems={(itemNum: number, newPosition: number) => {
                                 clientReorderChecklist(props.incident.id, index, itemNum, newPosition);

@@ -48,6 +48,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -553,17 +554,45 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
+// getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
+func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(query.Get("channel_id"))
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	data, err := h.incidentService.GetChecklistAutocomplete(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
 func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -590,14 +619,14 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var checklistItem playbook.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to decode ChecklistItem"))
 		return
 	}
 
@@ -622,12 +651,12 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -646,25 +675,26 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		Title string `json:"title"`
+		Title   string `json:"title"`
+		Command string `json:"command"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to unmarshal edit params state"))
+		HandleError(w, errors.Wrap(err, "failed to unmarshal edit params state"))
 		return
 	}
 
-	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title); err != nil {
+	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -678,7 +708,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -688,7 +718,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 		NewLocation int `json:"new_location"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to unmarshal edit params"))
 		return
 	}
 
