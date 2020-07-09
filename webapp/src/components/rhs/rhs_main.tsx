@@ -18,8 +18,8 @@ const {formatText, messageHtmlToComponent} = window.PostUtils;
 
 import './rhs.scss';
 
-interface Props {	
-    theme: Record<string, string>;	
+interface Props {
+    theme: Record<string, string>;
 }
 
 const RightHandSidebar: FC<Props> = (props: Props) => {
