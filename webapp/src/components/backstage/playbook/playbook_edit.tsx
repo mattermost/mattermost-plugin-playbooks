@@ -212,17 +212,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     onChange={handleTitleChange}
                 />
                 <div className='public-item'>
-                    <div
-                        className='checkbox-container'
-                    >
-                        <Toggle
-                            toggled={playbook.create_public_incident}
-                            onToggle={handlePublicChange}
-                        />
-                        <label>
-                            {'Create Public Incident'}
-                        </label>
-                    </div>
+                    <Toggle
+                        toggled={playbook.create_public_incident}
+                        onToggle={handlePublicChange}
+                    />
+                    <label>
+                        {'Create Public Incident'}
+                    </label>
                 </div>
                 <div className='checklist-container'>
                     {playbook.checklists?.map((checklist: Checklist, checklistIndex: number) => (

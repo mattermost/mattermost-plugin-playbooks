@@ -14,13 +14,6 @@ $announcement-bar-height: 32px;
         width: 400px;
     }
 
-    .checklist-container {
-        margin: 10px;
-        padding-top: 22px;
-        font-size: 14px;
-        width: 400px;
-    }
-
     .inner-container {
         display: flex;
         flex-direction: column;
@@ -32,7 +25,21 @@ $announcement-bar-height: 32px;
     }
 
     .public-item {
+        display: flex;
+        margin: 10px;
         margin-top: 15px;
+        padding-top: 22px;
+        padding: 0.6rem 0;
+        font-size: 14px;
+        width: 400px;
+
+        button {
+            margin-right: 13px;
+        }
+
+        label {
+            font-weight: normal;
+        }
     }
 
     .playbook-list {
