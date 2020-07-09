@@ -9,7 +9,7 @@ import Spinner from 'src/components/assets/icons/spinner';
 import RHSHeader from 'src/components/rhs/rhs_header';
 import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
 
-import IncidentIcon from '../assets/icons/incident_icon';
+import IncidentRHSIcon from '../assets/icons/incident_rhs_icon';
 
 import RHSIncidentDetails from './incident_details';
 
@@ -18,7 +18,11 @@ const {formatText, messageHtmlToComponent} = window.PostUtils;
 
 import './rhs.scss';
 
-const RightHandSidebar: FC = () => {
+interface Props {	
+    theme: Record<string, string>;	
+}
+
+const RightHandSidebar: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
     const [incident, incidentState] = useCurrentIncident();
 
@@ -45,7 +49,7 @@ const RightHandSidebar: FC = () => {
             <div className='incident-rhs'>
                 <div className='no-incidents'>
                     <div className='inner-text'>
-                        <IncidentIcon/>
+                        <IncidentRHSIcon theme={props.theme}/>
                     </div>
                     <div className='inner-text'>
                         {'There is no active incident in this channel.'}
