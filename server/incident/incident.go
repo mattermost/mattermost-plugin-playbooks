@@ -1,6 +1,7 @@
 package incident
 
 import (
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
@@ -106,6 +107,9 @@ type Service interface {
 	// Idempotent, will not perform any actions if the checklist item is already in the specified state
 	ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error
 
+	// ToggleCheckedState checks or unchecks the specified checklist item
+	ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error
+
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
 
@@ -113,10 +117,13 @@ type Service interface {
 	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
 
 	// RenameChecklistItem changes the title of a specified checklist item
-	RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error
+	RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand string) error
 
 	// MoveChecklistItem moves a checklist item from one position to anouther
 	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
+
+	// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+	GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

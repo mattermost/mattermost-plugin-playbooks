@@ -8,7 +8,7 @@ import ReactSelect, {ActionTypes} from 'react-select';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientRenameChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
+import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
@@ -127,8 +127,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     </div>
                     <ChecklistDetails
                         checklist={selectedChecklist}
+                        backstage={false}
                         title={'Checklist'}
-                        enableEdit={true}
                         key={selectedChecklist.title + selectedChecklistIndex}
                         onChange={(itemNum: number, checked: boolean) => {
                             if (checked) {
@@ -148,8 +148,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                         removeItem={(itemNum: number) => {
                             clientRemoveChecklistItem(props.incident.id, selectedChecklistIndex, itemNum);
                         }}
-                        editItem={(itemNum: number, newTitle: string) => {
-                            clientRenameChecklistItem(props.incident.id, selectedChecklistIndex, itemNum, newTitle);
+                        editItem={(itemNum: number, newItem: ChecklistItem) => {
+                            clientEditChecklistItem(props.incident.id, selectedChecklistIndex, itemNum, newItem);
                         }}
                         reorderItems={(itemNum: number, newPosition: number) => {
                             clientReorderChecklist(props.incident.id, selectedChecklistIndex, itemNum, newPosition);

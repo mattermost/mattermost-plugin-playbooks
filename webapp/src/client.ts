@@ -159,11 +159,12 @@ export async function clientRemoveChecklistItem(incidentID: string, checklistNum
     return data;
 }
 
-export async function clientRenameChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newTitle: string) {
+export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newItem: ChecklistItem) {
     const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'put',
         body: JSON.stringify({
-            title: newTitle,
+            title: newItem.title,
+            command: newItem.command,
         }),
     });
 
