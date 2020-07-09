@@ -15,7 +15,7 @@ import Spinner from 'src/components/assets/icons/spinner';
 import {fetchIncidentWithDetails} from 'src/client';
 import {Incident} from 'src/types/incident';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import Profile from 'src/components/profile';
+import Profile from 'src/components/profile/profile';
 import BackIcon from 'src/components/assets/icons/back_icon';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
