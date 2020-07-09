@@ -33,6 +33,11 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
 
     useEffect(() => {
         const fetchIncident = async () => {
+            if (!currentChannel) {
+                setState(CurrentIncidentState.NotFound);
+                return;
+            }
+
             try {
                 setIncident(await fetchIncidentByChannel(currentChannel.id));
                 setState(CurrentIncidentState.Loaded);
@@ -44,7 +49,7 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
         };
         setState(CurrentIncidentState.Loading);
         fetchIncident();
-    }, [currentChannel.id]);
+    }, [currentChannel?.id]);
 
     useEffect(() => {
         const doUpdate = (updatedIncident: Incident) => {
