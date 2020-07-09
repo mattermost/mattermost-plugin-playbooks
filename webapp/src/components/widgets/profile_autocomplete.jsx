@@ -8,10 +8,10 @@ import {getProfilesByIds} from 'mattermost-redux/actions/users';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-// ProfileSearchInput searches and selects user profiles displayed by username.
+// ProfileAutocomplete searches and selects user profiles displayed by username.
 // Users prop receives an array of user ids and
 // returns the selected users ids in the `OnChange` value parameter.
-const ProfileSearchInput = (props) => {
+const ProfileAutocomplete = (props) => {
     const dispatch = useDispatch();
 
     const currentUser = useSelector(getCurrentUser);
@@ -120,14 +120,14 @@ const ProfileSearchInput = (props) => {
     );
 };
 
-ProfileSearchInput.propTypes = {
+ProfileAutocomplete.propTypes = {
     placeholder: PropTypes.string,
     userIds: PropTypes.array,
     onChange: PropTypes.func,
     searchProfiles: PropTypes.func.isRequired,
 };
 
-export default ProfileSearchInput;
+export default ProfileAutocomplete;
 
 const customStyles = {
     control: (provided) => ({

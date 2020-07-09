@@ -21,7 +21,7 @@ import Spinner from 'src/components/assets/icons/spinner';
 import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/constants';
 
 import './playbook.scss';
-import ProfileSearchInput from 'src/components/widgets/profile_autocomplete';
+import ProfileAutocomplete from 'src/components/widgets/profile_autocomplete';
 
 interface Props {
     isNew: boolean;
@@ -248,7 +248,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                 </div>
                 <div className='inner-container'>
                     <div className='title'>{'Members'}</div>
-                    <ProfileSearchInput
+                    <ProfileAutocomplete
                         placeholder={'Invite members...'}
                         onChange={handleUsersInput}
                         userIds={playbook.member_ids}
