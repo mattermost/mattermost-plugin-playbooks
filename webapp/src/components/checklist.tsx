@@ -221,7 +221,36 @@ export const ChecklistDetails = ({checklist, editMode: propEditMode = false, ena
                     )}
                 </Droppable>
             </DragDropContext>
-            { }
+            {enableEditChecklistItems && inputExpanded &&
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        if (newValue.trim() === '') {
+                            setInputExpanded(false);
+                            return;
+                        }
+                        addItem({
+                            title: newValue,
+                            checked: false,
+                            command: '',
+                        });
+                        setNewValue('');
+                        setInputExpanded(false);
+                    }}
+                >
+                    <input
+                        autoFocus={true}
+                        type='text'
+                        value={newValue}
+                        maxLength={MAX_NAME_LENGTH}
+                        className='form-control mt-2'
+                        placeholder={'Enter a new item'}
+                        onKeyDown={(e) => onEscapeKey(e)}
+                        onChange={(e) => setNewValue(e.target.value)}
+                    />
+                    <small className='light mt-1 d-block'>{'Press Enter to Add Item or Escape to Cancel'}</small>
+                </form>
+            }
             {enableEditChecklistItems && !inputExpanded &&
                 <div className='IncidentDetails__add-item'>
                     <a
