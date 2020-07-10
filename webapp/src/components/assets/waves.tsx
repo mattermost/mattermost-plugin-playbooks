@@ -2,10 +2,25 @@
 // See License for license information.
 
 import React, {FC} from 'react';
+import styled from 'styled-components';
+
+const WavesSVG = styled.svg`
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 70%;
+    height: auto;
+    opacity: 0.03;
+    pointer-events: none;
+
+    stop {
+        stop-color: var(--button-bg);
+    }
+`;
 
 const Waves: FC = () => (
-    <svg
-        className='Backstage__waves'
+    <WavesSVG
         width='1600'
         height='675'
         viewBox='0
@@ -40,7 +55,7 @@ const Waves: FC = () => (
                 />
             </linearGradient>
         </defs>
-    </svg>
+    </WavesSVG>
 );
 
 export default Waves;

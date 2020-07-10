@@ -9,6 +9,8 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import styled from 'styled-components';
+
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
@@ -16,8 +18,72 @@ import {ErrorPageTypes} from 'src/constants';
 
 import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
-import './backstage.scss';
 import Waves from '../assets/waves';
+
+const BackstageContainer = styled.div`
+    overflow: hidden;
+    background: var(--center-channel-bg);
+`;
+
+const BackstageSidebar = styled.div`
+    position: absolute;
+    height: 100vh;
+    width: 32rem;
+    font-size: 16px;
+    line-height: 24px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+`;
+
+const BackstageSidebarHeader = styled.div`
+    padding: 32px 0px 0px 32px;
+    cursor: pointer;
+`;
+
+const BackstageSidebarMenu = styled.div`
+    padding: 4rem 0 0 2.4rem;
+    width: 100%;
+    font-weight: 600;
+
+    .menu-title {
+    }
+
+`;
+
+const SidebarNavLink = styled(NavLink)`
+    display: block;
+    border-radius: 4px 0 0 4px;
+    height: 48px;
+    padding-left: 1.6rem;
+    line-height: 48px;
+    opacity: 0.56;
+    color: var(--sidebar-text);
+
+    &:hover {
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    &.active {
+        background: var(--center-channel-bg);
+        color: var(--center-channel-color);
+        opacity: 1;
+
+        &:hover {
+            cursor: default;
+        }
+    }
+    
+`;
+
+const BackstageBody = styled.div`
+    position: relative;
+    z-index: 1;
+    margin-left: 32rem;
+    width: calc(100% - 32rem);
+    overflow: auto;
+    height: 100vh;
+`;
 
 const Backstage: FC = () => {
     useEffect(() => {
@@ -43,37 +109,32 @@ const Backstage: FC = () => {
     };
 
     return (
-        <div className='Backstage'>
-            <div className='Backstage__sidebar'>
-                <div className='Backstage__sidebar__header'>
-                    <div
-                        className='cursor--pointer'
-                        onClick={goToMattermost}
-                    >
-                        <i className='icon-arrow-left mr-2 back-icon'/>
-                        {'Back to Mattermost'}
-                    </div>
-                </div>
-                <div className='menu'>
-                    <NavLink
+        <BackstageContainer>
+            <BackstageSidebar>
+                <BackstageSidebarHeader
+                    onClick={goToMattermost}
+                >
+                    <i className='icon-arrow-left mr-2 back-icon'/>
+                    {'Back to Mattermost'}
+                </BackstageSidebarHeader>
+                <BackstageSidebarMenu>
+                    <SidebarNavLink
                         data-testid='incidentsLHSButton'
                         to={`${match.url}/incidents`}
-                        className={'menu-title'}
                         activeClassName={'active'}
                     >
                         {'Incidents'}
-                    </NavLink>
-                    <NavLink
+                    </SidebarNavLink>
+                    <SidebarNavLink
                         data-testid='playbooksLHSButton'
                         to={`${match.url}/playbooks`}
-                        className={'menu-title'}
                         activeClassName={'active'}
                     >
                         {'Playbooks'}
-                    </NavLink>
-                </div>
-            </div>
-            <div className='content-container'>
+                    </SidebarNavLink>
+                </BackstageSidebarMenu>
+            </BackstageSidebar>
+            <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
                         <PlaybookEdit
@@ -99,9 +160,9 @@ const Backstage: FC = () => {
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
                     </Route>
                 </Switch>
-            </div>
+            </BackstageBody>
             <Waves/>
-        </div>
+        </BackstageContainer>
     );
 };
 

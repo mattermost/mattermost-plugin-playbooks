@@ -18,6 +18,7 @@ import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 import './playbook.scss';
+import BackstageListHeader from '../backstage_list_header';
 
 const DeleteBannerTimeout = 5000;
 
@@ -143,12 +144,12 @@ const PlaybookList: FC = () => {
                 </div>
             </div>
             <div className='playbook-list'>
-                <div className='Backstage-list-header'>
+                <BackstageListHeader>
                     <div className='row'>
                         <div className='col-sm-10'> {'Name'} </div>
                         <div className='col-sm-2'> {'Actions'}</div>
                     </div>
-                </div>
+                </BackstageListHeader>
                 {body}
             </div>
             <ConfirmModal
