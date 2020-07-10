@@ -41,10 +41,6 @@ func (h *SubscriptionHandler) hasPermissionsToPlaybook(userID string, pbook play
 	return h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM)
 }
 
-func (h *SubscriptionHandler) hasPermissionsToAddSubscription(requestorID, userID string, pbook playbook.Playbook) bool {
-	return requestorID == userID || h.pluginAPI.User.HasPermissionToTeam(requestorID, pbook.TeamID, model.PERMISSION_MANAGE_TEAM)
-}
-
 func (h *SubscriptionHandler) postSubscription(w http.ResponseWriter, r *http.Request) {
 	var newSubscription subscription.Subscription
 	if err := json.NewDecoder(r.Body).Decode(&newSubscription); err != nil {
@@ -55,13 +51,6 @@ func (h *SubscriptionHandler) postSubscription(w http.ResponseWriter, r *http.Re
 	pbook, err := h.playbookService.Get(newSubscription.PlaybookID)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "unable to get playbookk"))
-		return
-	}
-
-	requestorID := r.Header.Get("Mattermost-User-ID")
-
-	if !h.hasPermissionsToAddSubscription(requestorID, newSubscription.UserID, pbook) {
-		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
