@@ -48,6 +48,21 @@ func (mr *MockServiceMockRecorder) AddChecklistItem(arg0, arg1, arg2, arg3 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChecklistItem", reflect.TypeOf((*MockService)(nil).AddChecklistItem), arg0, arg1, arg2, arg3)
 }
 
+// ChangeActiveStage mocks base method
+func (m *MockService) ChangeActiveStage(arg0, arg1 string, arg2 int) (*incident.Incident, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChangeActiveStage", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*incident.Incident)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ChangeActiveStage indicates an expected call of ChangeActiveStage
+func (mr *MockServiceMockRecorder) ChangeActiveStage(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeActiveStage", reflect.TypeOf((*MockService)(nil).ChangeActiveStage), arg0, arg1, arg2)
+}
+
 // ChangeCommander mocks base method
 func (m *MockService) ChangeCommander(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
