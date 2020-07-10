@@ -8,7 +8,7 @@ import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
+import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist, setActiveStage} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem, emptyChecklist} from 'src/types/playbook';
@@ -83,6 +83,39 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         setSelectedChecklistIndex(option.value);
     };
 
+    const isActive = (stageIdx: number) => {
+        return stageIdx === props.incident.active_stage;
+    };
+
+    const setCurrentStageAsActive = () => {
+        setActiveStage(props.incident.id, selectedChecklistIndex);
+    };
+
+    const stage = (
+        <React.Fragment>
+            <div className='title'>
+                {'Stage'}
+                { !isActive(selectedChecklistIndex) &&
+                    <a
+                        onClick={setCurrentStageAsActive}
+                        className='stage-title__set-active'
+                    >
+                        <span className='font-weight--normal'>{'(Set as active stage)'}</span>
+                    </a>
+                }
+            </div>
+            <ReactSelect
+                options={checklists.map((checklist, idx) => {
+                    return {value: idx, label: checklist.title + (isActive(idx) ? ' (Active)' : '')};
+                })}
+                onChange={(option, action) => onChecklistChange(option as Option, action as ActionMeta<OptionTypeBase>)}
+                defaultValue={{value: selectedChecklistIndex, label: selectedChecklist.title}}
+                className={'incident-stage-select'}
+                classNamePrefix={'incident-stage-select'}
+            />
+        </React.Fragment>
+    );
+
     return (
         <React.Fragment>
             <Scrollbars
@@ -105,16 +138,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                         />
                     </div>
                     <div className='inner-container'>
-                        <div className='title'>{'Stage'}</div>
-                        <ReactSelect
-                            options={checklists.map((checklist, idx) => {
-                                return {value: idx, label: checklist.title};
-                            })}
-                            onChange={(option, action) => onChecklistChange(option as Option, action as ActionMeta<OptionTypeBase>)}
-                            defaultValue={{value: selectedChecklistIndex, label: selectedChecklist.title}}
-                            className={'incident-stage-select'}
-                            classNamePrefix={'incident-stage-select'}
-                        />
+                        {stage}
                     </div>
                     <ChecklistDetails
                         checklist={selectedChecklist}
