@@ -171,6 +171,14 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     return data;
 }
 
+export async function setActiveStage(incidentId: string, activeStage: number) {
+    const data = await doPatch(`${apiUrl}/incidents/${incidentId}`, JSON.stringify({
+        active_stage: activeStage,
+    }));
+
+    return data;
+}
+
 export function exportChannelUrl(channelId: string) {
     const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 
@@ -200,6 +208,15 @@ export const doPost = async (url: string, body = {}) => {
 export const doPut = async (url: string, body = {}) => {
     const {data} = await doFetchWithResponse(url, {
         method: 'put',
+        body,
+    });
+
+    return data;
+};
+
+export const doPatch = async (url: string, body = {}) => {
+    const {data} = await doFetchWithResponse(url, {
+        method: 'PATCH',
         body,
     });
 

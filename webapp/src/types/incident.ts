@@ -19,6 +19,7 @@ export interface Incident {
     team_name: string;
     num_members: number;
     total_posts: number;
+    active_stage: number;
 }
 
 export interface FetchIncidentsReturn {
