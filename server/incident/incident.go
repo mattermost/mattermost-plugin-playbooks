@@ -26,6 +26,10 @@ type Header struct {
 	ActiveStage      int    `json:"active_stage"`
 }
 
+type UpdateOptions struct {
+	ActiveStage *int `json:"active_stage"`
+}
+
 // Details holds the incident's channel and team metadata.
 type Details struct {
 	Incident
