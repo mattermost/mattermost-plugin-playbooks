@@ -56,6 +56,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
+	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
@@ -113,6 +114,51 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 	}
 
 	ReturnJSON(w, &newIncident)
+}
+
+func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	oldIncident, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if !h.hasPermissionsToOrPublic(oldIncident.PrimaryChannelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
+		return
+	}
+
+	var updates incident.UpdateOptions
+	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		HandleError(w, errors.Wrapf(err, "unable to decode payload"))
+		return
+	}
+
+	updatedIncident := oldIncident
+
+	if updates.ActiveStage != nil {
+		updatedIncident, err = h.incidentService.ChangeActiveStage(oldIncident.ID, userID, *updates.ActiveStage)
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+	}
+
+	jsonBytes, err := json.Marshal(updatedIncident)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
