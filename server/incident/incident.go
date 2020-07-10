@@ -23,6 +23,7 @@ type Header struct {
 	PrimaryChannelID string `json:"primary_channel_id"`
 	CreatedAt        int64  `json:"created_at"`
 	EndedAt          int64  `json:"ended_at"`
+	ActiveStage      int    `json:"active_stage"`
 }
 
 // Details holds the incident's channel and team metadata.
@@ -117,6 +118,10 @@ type Service interface {
 
 	// MoveChecklistItem moves a checklist item from one position to anouther
 	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
+
+	// ChangeActiveStage processes a request from userID to change the active
+	// stage of incidentID to stageIdx.
+	ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

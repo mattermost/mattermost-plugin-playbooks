@@ -388,6 +388,45 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	return nil
 }
 
+// ChangeActiveStage processes a request from userID to change the active
+// stage of incidentID to stageIdx.
+func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error) {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !incidentToModify.IsActive {
+		return nil, ErrIncidentNotActive
+	} else if incidentToModify.ActiveStage == stageIdx {
+		return incidentToModify, nil
+	}
+
+	if stageIdx < 0 || stageIdx >= len(incidentToModify.Playbook.Checklists) {
+		return nil, errors.Errorf("index %d out of bounds: incident %s has %d stages", stageIdx, incidentID, len(incidentToModify.Playbook.Checklists))
+	}
+
+	oldActiveStage := incidentToModify.ActiveStage
+	incidentToModify.ActiveStage = stageIdx
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return nil, errors.Wrapf(err, "failed to update incident")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
+
+	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
+		incidentToModify.Playbook.Checklists[oldActiveStage].Title,
+		incidentToModify.Playbook.Checklists[stageIdx].Title,
+	)
+
+	mainChannelID := incidentToModify.PrimaryChannelID
+	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return nil, err
+	}
+
+	return incidentToModify, nil
+}
+
 // RenameChecklistItem changes the title of a specified checklist item
 func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
