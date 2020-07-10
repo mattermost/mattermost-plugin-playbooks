@@ -88,8 +88,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     {props.incident.playbook.checklists?.map((checklist: Checklist, index: number) => (
                         <ChecklistDetails
                             checklist={checklist}
-                            enableEditChecklistItems={true}
                             key={checklist.title + index}
+
                             onChange={(itemNum: number, checked: boolean) => {
                                 if (checked) {
                                     checkItem(props.incident.id, index, itemNum);
