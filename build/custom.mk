@@ -16,6 +16,6 @@ ifneq ($(HAS_SERVER),)
 endif
 
 ## Runs the redocly server.
-.PHONY: api-server
-api-server:
+.PHONY: docs-server
+docs-server:
 	npx @redocly/openapi-cli@1.0.0-beta.3 preview-docs server/api/api.yaml
