@@ -19,7 +19,7 @@ import './checklist.scss';
 
 interface Props {
     checklist: Checklist;
-    editMode?: boolean;
+    startEditMode?: boolean;
     showEditModeButton?: boolean;
     enableEditTitle?: boolean;
     enableEditChecklistItems: boolean;
@@ -33,7 +33,7 @@ interface Props {
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, editMode: propEditMode = false, enableEditTitle = false, showEditModeButton = true, enableEditChecklistItems, titleChange, removeList, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, startEditMode: propEditMode = false, enableEditTitle = false, showEditModeButton = true, enableEditChecklistItems, titleChange, removeList, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
     const [newValue, setNewValue] = useState('');
     const [checklistTitle, setChecklistTitle] = useState(checklist.title);
     const [inputExpanded, setInputExpanded] = useState(false);

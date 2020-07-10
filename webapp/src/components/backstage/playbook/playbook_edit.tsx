@@ -254,7 +254,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         >
                             <ChecklistDetails
                                 checklist={checklist}
-                                editMode={true}
+                                startEditMode={true}
                                 enableEditTitle={true}
                                 showEditModeButton={false}
                                 enableEditChecklistItems={true}
