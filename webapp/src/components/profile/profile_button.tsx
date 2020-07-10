@@ -4,7 +4,7 @@
 import React from 'react';
 
 import './profile_button.scss';
-import Profile from 'src/components/profile';
+import Profile from 'src/components/profile/profile';
 
 interface Props {
     userId?: string;
