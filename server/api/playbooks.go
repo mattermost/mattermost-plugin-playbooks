@@ -87,15 +87,6 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to get playbook on teamID %s",
-			userID,
-			pbook.TeamID,
-		))
-		return
-	}
-
 	if !h.hasPermissionsToPlaybook(pbook, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbook on teamID %s",
@@ -123,15 +114,6 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	oldPlaybook, err := h.playbookService.Get(vars["id"])
 	if err != nil {
 		HandleError(w, err)
-		return
-	}
-
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, oldPlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to update playbook on teamID %s",
-			userID,
-			oldPlaybook.TeamID,
-		))
 		return
 	}
 
@@ -163,15 +145,6 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	playbookToDelete, err := h.playbookService.Get(vars["id"])
 	if err != nil {
 		HandleError(w, err)
-		return
-	}
-
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookToDelete.TeamID, model.PERMISSION_VIEW_TEAM) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to delete a playbook on teamID %s",
-			userID,
-			playbookToDelete.TeamID,
-		))
 		return
 	}
 
@@ -231,8 +204,12 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	ReturnJSON(w, &allowedPlaybooks)
 }
 
-func (h *PlaybookHandler) hasPermissionsToPlaybook(pbook playbook.Playbook, userID string) bool {
-	for _, memberID := range pbook.MemberIDs {
+func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, thePlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
+		return false
+	}
+
+	for _, memberID := range thePlaybook.MemberIDs {
 		if memberID == userID {
 			return true
 		}
