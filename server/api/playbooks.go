@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -26,6 +25,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
 		pluginAPI:       api,
+		log:             log,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -238,12 +238,6 @@ func (h *PlaybookHandler) hasPermissionsToPlaybook(pbook playbook.Playbook, user
 		}
 	}
 
-	user, err := h.pluginAPI.User.Get(userID)
-	if err != nil {
-		h.log.Warnf("Unable to get user %s to determine playbok permissions: %v", userID, err)
-		return false
-	}
-
 	// Fallback to admin role that have access to all playbooks.
-	return strings.Contains(user.Roles, model.SYSTEM_ADMIN_ROLE_ID)
+	return h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
 }

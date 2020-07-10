@@ -64,9 +64,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             }
 
             if (urlParams.playbookId) {
-                const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
-
                 try {
+                    const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
                     setPlaybook(fetchedPlaybook);
                     setFetchingState(FetchingStateType.fetched);
 
