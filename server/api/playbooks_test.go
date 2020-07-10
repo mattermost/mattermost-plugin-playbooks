@@ -111,7 +111,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		mockkvapi.EXPECT().Set(gomock.Any(), gomock.Any()).Return(true, nil)
-		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.IndexKey, gomock.Any()).Return(nil)
+		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 
@@ -164,7 +164,7 @@ func TestPlaybooks(t *testing.T) {
 				"playbookid2",
 			},
 		}
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
@@ -215,7 +215,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.IndexKey, gomock.Any()).Return(nil).Times(1)
+		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil).Times(1)
 
 		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"testplaybookid", nil).Return(true, nil)
 
@@ -429,7 +429,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.IndexKey, gomock.Any()).Return(nil).Times(1)
+		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil).Times(1)
 
 		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"playbookwithmember", nil).Return(true, nil)
 
@@ -456,7 +456,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq.Header.Add("Mattermost-User-ID", "unknownMember")
 		require.NoError(t, err)
 
-		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.IndexKey, gomock.Any()).Return(nil).Times(1)
+		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil).Times(1)
 
 		mockkvapi.EXPECT().Set(pluginkvstore.PlaybookKey+"playbookwithmember", nil).Return(true, nil)
 
@@ -487,7 +487,7 @@ func TestPlaybooks(t *testing.T) {
 				"playbookid2",
 			},
 		}
-		mockkvapi.EXPECT().Get(pluginkvstore.IndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid2", gomock.Any()).Return(nil).SetArg(1, withMember)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)

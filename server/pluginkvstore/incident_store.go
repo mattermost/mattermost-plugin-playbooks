@@ -17,9 +17,11 @@ import (
 )
 
 const (
-	allHeadersKey  = keyVersionPrefix + "all_headers"
-	incidentKey    = keyVersionPrefix + "incident_"
-	perPageDefault = 1000
+	// IncidentKey is the key for individual incidents. Only exported for testing.
+	IncidentKey = keyVersionPrefix + "incident_"
+	// IncidentHeadersKey is the key for the incident headers index. Only exported for testing.
+	IncidentHeadersKey = keyVersionPrefix + "all_headers"
+	perPageDefault     = 1000
 )
 
 type idHeaderMap map[string]incident.Header
@@ -222,7 +224,7 @@ func (s *incidentStore) NukeDB() error {
 
 // toIncidentKey converts an incident to an internal key used to store in the KV Store.
 func toIncidentKey(incidentID string) string {
-	return incidentKey + incidentID
+	return IncidentKey + incidentID
 }
 
 func toHeaders(headers idHeaderMap) []incident.Header {
@@ -247,7 +249,7 @@ func (s *incidentStore) getIncident(incidentID string) (*incident.Incident, erro
 
 func (s *incidentStore) getIDHeaders() (idHeaderMap, error) {
 	headers := idHeaderMap{}
-	if err := s.pluginAPI.KV.Get(allHeadersKey, &headers); err != nil {
+	if err := s.pluginAPI.KV.Get(IncidentHeadersKey, &headers); err != nil {
 		return nil, errors.Wrapf(err, "failed to get all headers value")
 	}
 	return headers, nil
@@ -269,7 +271,7 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 		return newHeaders, nil
 	}
 
-	if err := s.pluginAPI.KV.SetAtomicWithRetries(allHeadersKey, addID); err != nil {
+	if err := s.pluginAPI.KV.SetAtomicWithRetries(IncidentHeadersKey, addID); err != nil {
 		return errors.Wrap(err, "failed to set allHeaders atomically")
 	}
 	return nil
