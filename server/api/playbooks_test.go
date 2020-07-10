@@ -135,7 +135,7 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_ADMIN_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -168,7 +168,7 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_ADMIN_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -194,7 +194,7 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid).Times(1)
 		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).Times(1)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_ADMIN_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -221,7 +221,7 @@ func TestPlaybooks(t *testing.T) {
 
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"testplaybookid", gomock.Any()).Return(nil).SetArg(1, withid)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_ADMIN_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -345,7 +345,7 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_USER_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).SetArg(1, withMember)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -367,7 +367,7 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "unknownMember").Return(&model.User{Id: "unknownMember", Username: "unknownMember", Roles: model.SYSTEM_USER_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).SetArg(1, withMember)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -388,7 +388,7 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).SetArg(1, withMember).Times(1)
 		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).Times(1)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_USER_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -412,7 +412,7 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).SetArg(1, withMember).Times(1)
 		mockkvapi.EXPECT().SetAtomicWithRetries(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).Times(1)
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "unknownMember").Return(&model.User{Id: "unknownMember", Username: "unknownMember", Roles: model.SYSTEM_USER_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -435,7 +435,7 @@ func TestPlaybooks(t *testing.T) {
 
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).SetArg(1, withMember)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_USER_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -462,7 +462,7 @@ func TestPlaybooks(t *testing.T) {
 
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookwithmember", gomock.Any()).Return(nil).SetArg(1, withMember)
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "unknownMember").Return(&model.User{Id: "unknownMember", Username: "unknownMember", Roles: model.SYSTEM_USER_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -491,7 +491,7 @@ func TestPlaybooks(t *testing.T) {
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest)
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid2", gomock.Any()).Return(nil).SetArg(1, withMember)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Id: "testuserid", Username: "username", Roles: model.SYSTEM_USER_ROLE_ID}, nil)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
