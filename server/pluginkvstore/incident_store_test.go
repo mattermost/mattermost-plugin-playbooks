@@ -264,13 +264,13 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			kvAPI := mock_pluginkvstore.NewMockKVAPI(mockCtrl)
 			kvAPI.EXPECT().
-				Get(allHeadersKey, gomock.Any()).
+				Get(IncidentHeadersKey, gomock.Any()).
 				SetArg(1, dbHeaderMap).
 				Times(1)
 
 			for _, i := range []incident.Incident{id1, id2, id3, id4, id5, id6, id7} {
 				kvAPI.EXPECT().
-					Get(fmt.Sprintf(incidentKey+"%s", i.ID), gomock.Any()).
+					Get(fmt.Sprintf(IncidentKey+"%s", i.ID), gomock.Any()).
 					SetArg(1, i).
 					AnyTimes()
 			}
@@ -299,7 +299,7 @@ func TestUpdateHeaders(t *testing.T) {
 
 		// Make KVGet return an empty value to simulate that the key is not set yet
 		pluginAPI.EXPECT().
-			KVGet(allHeadersKey).
+			KVGet(IncidentHeadersKey).
 			Return([]byte{}, nil).
 			Times(1)
 
@@ -313,7 +313,7 @@ func TestUpdateHeaders(t *testing.T) {
 			ExpireInSeconds: 0,
 		}
 		pluginAPI.EXPECT().
-			KVSetWithOptions(allHeadersKey, value, kvSetOptions).
+			KVSetWithOptions(IncidentHeadersKey, value, kvSetOptions).
 			Return(true, nil).
 			Times(1)
 
