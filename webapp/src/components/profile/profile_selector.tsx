@@ -9,8 +9,8 @@ import {css} from '@emotion/core';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import './profile_selector.scss';
-import Profile from 'src/components/profile';
-import ProfileButton from 'src/components/profile_button';
+import Profile from 'src/components/profile/profile';
+import ProfileButton from 'src/components/profile/profile_button';
 
 interface Props {
     commanderId?: string;

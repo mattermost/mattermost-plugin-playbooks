@@ -20,6 +20,7 @@ export interface ChecklistItem {
     checked: boolean;
     checked_modified?: string;
     checked_post_id?: string;
+    command: string;
 }
 
 export function emptyPlaybook(): Playbook {
@@ -58,5 +59,6 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.title === 'string' &&
         typeof arg.checked_post_id === 'string' &&
         typeof arg.checked_modified === 'string' &&
-        typeof arg.checked === 'boolean';
+        typeof arg.checked === 'boolean' &&
+        typeof arg.command === 'string';
 }

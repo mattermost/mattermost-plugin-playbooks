@@ -8,6 +8,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
 )
 
@@ -89,6 +90,21 @@ func (m *MockService) EndIncident(arg0, arg1 string) error {
 func (mr *MockServiceMockRecorder) EndIncident(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndIncident", reflect.TypeOf((*MockService)(nil).EndIncident), arg0, arg1)
+}
+
+// GetChecklistAutocomplete mocks base method
+func (m *MockService) GetChecklistAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChecklistAutocomplete", arg0)
+	ret0, _ := ret[0].([]model.AutocompleteListItem)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChecklistAutocomplete indicates an expected call of GetChecklistAutocomplete
+func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistAutocomplete", reflect.TypeOf((*MockService)(nil).GetChecklistAutocomplete), arg0)
 }
 
 // GetCommanders mocks base method
@@ -265,15 +281,29 @@ func (mr *MockServiceMockRecorder) RemoveChecklistItem(arg0, arg1, arg2, arg3 in
 }
 
 // RenameChecklistItem mocks base method
-func (m *MockService) RenameChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4 string) error {
+func (m *MockService) RenameChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RenameChecklistItem", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "RenameChecklistItem", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RenameChecklistItem indicates an expected call of RenameChecklistItem
-func (mr *MockServiceMockRecorder) RenameChecklistItem(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) RenameChecklistItem(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklistItem", reflect.TypeOf((*MockService)(nil).RenameChecklistItem), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklistItem", reflect.TypeOf((*MockService)(nil).RenameChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// ToggleCheckedState mocks base method
+func (m *MockService) ToggleCheckedState(arg0, arg1 string, arg2, arg3 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToggleCheckedState", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ToggleCheckedState indicates an expected call of ToggleCheckedState
+func (mr *MockServiceMockRecorder) ToggleCheckedState(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleCheckedState", reflect.TypeOf((*MockService)(nil).ToggleCheckedState), arg0, arg1, arg2, arg3)
 }

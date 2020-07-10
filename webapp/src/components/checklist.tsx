@@ -19,16 +19,16 @@ import './checklist.scss';
 
 interface Props {
     checklist: Checklist;
-    enableEdit: boolean;
+    backstage: boolean;
     onChange?: (itemNum: number, checked: boolean) => void;
     onRedirect?: (itemNum: number) => void;
     addItem: (checklistItem: ChecklistItem) => void;
     removeItem: (itemNum: number) => void;
-    editItem: (itemNum: number, newTitle: string) => void;
+    editItem: (itemNum: number, newItem: ChecklistItem) => void;
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, backstage, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -75,15 +75,13 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
             <div className='title'>
                 {checklist.title}
                 {' '}
-                { enableEdit &&
-                    <a
-                        onClick={() => {
-                            setEditMode(!editMode);
-                        }}
-                    >
-                        <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
-                    </a>
-                }
+                <a
+                    onClick={() => {
+                        setEditMode(!editMode);
+                    }}
+                >
+                    <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
+                </a>
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
@@ -96,7 +94,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                         >
                             <ChecklistItemDetailsEdit
                                 checklistItem={checklistItems[rubric.source.index]}
-                                onEdit={(editedTo: string) => {
+                                onEdit={(editedTo: ChecklistItem) => {
                                     editItem(rubric.source.index, editedTo);
                                 }}
                                 onRemove={() => {
@@ -134,7 +132,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                                                     >
                                                         <ChecklistItemDetailsEdit
                                                             checklistItem={checklistItem}
-                                                            onEdit={(editedTo: string) => {
+                                                            onEdit={(editedTo: ChecklistItem) => {
                                                                 editItem(index, editedTo);
                                                             }}
                                                             onRemove={() => {
@@ -152,7 +150,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                                     <ChecklistItemDetails
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
-                                        disabled={!enableEdit}
+                                        disabled={backstage}
                                         onChange={(checked: boolean) => {
                                             if (onChange) {
                                                 onChange(index, checked);
@@ -182,6 +180,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                         addItem({
                             title: newValue,
                             checked: false,
+                            command: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);
@@ -200,7 +199,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                     <small className='light mt-1 d-block'>{'Press Enter to Add Item or Escape to Cancel'}</small>
                 </form>
             }
-            {enableEdit && !inputExpanded &&
+            {!inputExpanded &&
                 <div className='IncidentDetails__add-item'>
                     <a
                         href='#'

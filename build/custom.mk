@@ -14,3 +14,8 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/pluginkvstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore StoreAPI
 	mockgen -destination server/pluginkvstore/mocks/serverpluginapi/mock_plugin.go github.com/mattermost/mattermost-server/v5/plugin API
 endif
+
+## Runs the redocly server.
+.PHONY: api-server
+api-server:
+	npx @redocly/openapi-cli@1.0.0-beta.3 preview-docs server/api/api.yaml

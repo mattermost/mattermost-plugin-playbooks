@@ -6,12 +6,12 @@ import Scrollbars from 'react-custom-scrollbars';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientRenameChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
+import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
-import ProfileSelector from 'src/components/profile_selector';
+import ProfileSelector from 'src/components/profile/profile_selector';
 
 import {isMobile} from 'src/mobile';
 import {toggleRHS, endIncident} from 'src/actions';
@@ -88,7 +88,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     {props.incident.playbook.checklists?.map((checklist: Checklist, index: number) => (
                         <ChecklistDetails
                             checklist={checklist}
-                            enableEdit={true}
+                            backstage={false}
                             key={checklist.title + index}
                             onChange={(itemNum: number, checked: boolean) => {
                                 if (checked) {
@@ -108,8 +108,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             removeItem={(itemNum: number) => {
                                 clientRemoveChecklistItem(props.incident.id, index, itemNum);
                             }}
-                            editItem={(itemNum: number, newTitle: string) => {
-                                clientRenameChecklistItem(props.incident.id, index, itemNum, newTitle);
+                            editItem={(itemNum: number, newItem: ChecklistItem) => {
+                                clientEditChecklistItem(props.incident.id, index, itemNum, newItem);
                             }}
                             reorderItems={(itemNum: number, newPosition: number) => {
                                 clientReorderChecklist(props.incident.id, index, itemNum, newPosition);
