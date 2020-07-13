@@ -13,7 +13,7 @@ import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem} from 'src/types/playbook';
 
-import ProfileSelector from 'src/components/profile_selector';
+import ProfileSelector from 'src/components/profile/profile_selector';
 
 import {isMobile} from 'src/mobile';
 import {toggleRHS, endIncident} from 'src/actions';
@@ -127,7 +127,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     </div>
                     <ChecklistDetails
                         checklist={selectedChecklist}
-                        backstage={false}
+                        enableEditChecklistItems={true}
                         overwriteTitle={'Checklist'}
                         key={selectedChecklist.title + selectedChecklistIndex}
                         onChange={(itemNum: number, checked: boolean) => {

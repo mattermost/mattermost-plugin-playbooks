@@ -18,14 +18,14 @@ import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/backstage/incidents/incident_list/sortable_col_header';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
-import ProfileSelector from 'src/components/profile_selector';
+import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/backstage/incidents/incident_list/pagination_row';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {
     fetchCommandersInTeam,
     fetchIncidents,
 } from 'src/client';
-import Profile from 'src/components/profile';
+import Profile from 'src/components/profile/profile';
 import BackstageIncidentDetails from '../incident_details/incident_details';
 import StatusBadge from '../status_badge';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';

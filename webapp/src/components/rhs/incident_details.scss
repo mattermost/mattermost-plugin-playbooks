@@ -16,17 +16,6 @@ $font-family: Open Sans;
             height: 3.2rem;
         }
 
-        .inner-container {
-            display: flex;
-            flex-direction: column;
-
-            .title {
-                font-weight: 600;
-                padding: 0 0 8px;
-            }
-        }
-
-
         // Link component
         .link {
             cursor: pointer;
@@ -84,6 +73,23 @@ $font-family: Open Sans;
             }
         }
 
+        .title {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            padding: 0 0 8px;
+
+            .checkbox-title__edit {
+                width: 70px;
+                padding: 0 5px 0 5px;
+            }
+
+            &:hover {
+                .checkbox-container__close {
+                    opacity: 1;
+                }
+            }
+        }
     }
 
     .footer-div {
