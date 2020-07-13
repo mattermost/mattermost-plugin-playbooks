@@ -32,6 +32,8 @@ $announcement-bar-height: 32px;
     .inner-container {
         display: flex;
         flex-direction: column;
+        margin: 10px;
+        width: 400px;
 
         .title {
             font-weight: 600;

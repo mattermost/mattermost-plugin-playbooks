@@ -3,6 +3,10 @@
 
 import React, {FC, useState, useEffect} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
+import {useSelector, useDispatch} from 'react-redux';
+
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {searchProfiles} from 'mattermost-redux/actions/users';
 
 import {Team} from 'mattermost-redux/types/teams';
 
@@ -17,6 +21,7 @@ import Spinner from 'src/components/assets/icons/spinner';
 import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/constants';
 
 import './playbook.scss';
+import ProfileAutocomplete from 'src/components/widgets/profile_autocomplete';
 
 interface Props {
     isNew: boolean;
@@ -29,10 +34,16 @@ interface URLParams {
 }
 
 const PlaybookEdit: FC<Props> = (props: Props) => {
+    const dispatch = useDispatch();
+
+    const currentUserId = useSelector(getCurrentUserId);
+
     const [playbook, setPlaybook] = useState<Playbook>({
         ...emptyPlaybook(),
+        member_ids: [currentUserId],
         team_id: props.currentTeam.id,
     });
+    const [memberIds, setMemberIds] = useState([currentUserId]);
     const [changesMade, setChangesMade] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -53,11 +64,12 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             }
 
             if (urlParams.playbookId) {
-                const fetchedPlaybook = emptyPlaybook();
-
                 try {
-                    setPlaybook(await clientFetchPlaybook(urlParams.playbookId));
+                    const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
+                    setPlaybook(fetchedPlaybook);
                     setFetchingState(FetchingStateType.fetched);
+
+                    setMemberIds(fetchedPlaybook.member_ids);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
                 }
@@ -161,6 +173,17 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleUsersInput = (userIds: string[]) => {
+        playbook.member_ids = userIds;
+        setMemberIds(userIds || []);
+
+        setChangesMade(true);
+    };
+
+    const searchUsers = (term: string) => {
+        return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
+    };
+
     const handleAddNewStage = () => {
         const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
 
@@ -189,7 +212,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         updateChecklist(allChecklists);
     };
 
-    const saveDisabled = playbook.title.trim() === '' || !changesMade;
+    const saveDisabled = playbook.title.trim() === '' || memberIds.length === 0 || !changesMade;
 
     if (!props.isNew) {
         switch (fetchingState) {
@@ -245,6 +268,15 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     <label>
                         {'Create Public Incident'}
                     </label>
+                </div>
+                <div className='inner-container'>
+                    <div className='title'>{'Members'}</div>
+                    <ProfileAutocomplete
+                        placeholder={'Invite members...'}
+                        onChange={handleUsersInput}
+                        userIds={playbook.member_ids}
+                        searchProfiles={searchUsers}
+                    />
                 </div>
                 <div className='checklists-container'>
                     {playbook.checklists?.map((checklist: Checklist, checklistIndex: number) => (
