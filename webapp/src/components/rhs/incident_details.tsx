@@ -4,7 +4,7 @@
 import React, {FC, useState} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
-import ReactSelect, {ActionTypes} from 'react-select';
+import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
 
 import {useDispatch} from 'react-redux';
 
@@ -52,9 +52,7 @@ interface Option {
     label: string;
 }
 
-interface ActionObj {
-    action: ActionTypes;
-}
+type ActionObj = ActionMeta<OptionTypeBase>;
 
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
