@@ -14,6 +14,21 @@ $announcement-bar-height: 32px;
         width: 400px;
     }
 
+    .checklists-container {
+        padding-bottom: 22px;
+
+        .new-stage {
+            padding-top: 25px;
+        }
+    }
+
+    .checklist-container {
+        margin: 10px;
+        padding-top: 22px;
+        font-size: 14px;
+        width: 400px;
+    }
+
     .inner-container {
         display: flex;
         flex-direction: column;

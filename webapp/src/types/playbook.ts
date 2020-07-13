@@ -28,11 +28,15 @@ export function emptyPlaybook(): Playbook {
         title: '',
         team_id: '',
         create_public_incident: false,
-        checklists: [{
-            title: 'Checklist',
-            items: [],
-        }],
+        checklists: [emptyChecklist()],
         member_ids: [],
+    };
+}
+
+export function emptyChecklist(): Checklist {
+    return {
+        title: 'Default Stage',
+        items: [],
     };
 }
 

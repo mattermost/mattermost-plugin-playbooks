@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation} from 'react-router-dom';
+import {Redirect, useParams} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -11,7 +11,7 @@ import {searchProfiles} from 'mattermost-redux/actions/users';
 import {Team} from 'mattermost-redux/types/teams';
 
 import {teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, ChecklistItem, emptyPlaybook} from 'src/types/playbook';
+import {Playbook, Checklist, ChecklistItem, emptyPlaybook, emptyChecklist} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -184,6 +184,34 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
 
+    const handleAddNewStage = () => {
+        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
+
+        const checklist = emptyChecklist();
+        checklist.title = 'New stage';
+        allChecklists.push(checklist);
+
+        updateChecklist(allChecklists);
+    };
+
+    const onDeleteList = (checklistIndex: number) => {
+        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
+
+        allChecklists.splice(checklistIndex, 1);
+
+        updateChecklist(allChecklists);
+    };
+
+    const handleChecklistTitleChange = (checklistIndex: number, newTitle: string) => {
+        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
+        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
+
+        changedChecklist.title = newTitle;
+        allChecklists[checklistIndex] = changedChecklist;
+
+        updateChecklist(allChecklists);
+    };
+
     const saveDisabled = playbook.title.trim() === '' || memberIds.length === 0 || !changesMade;
 
     if (!props.isNew) {
@@ -250,26 +278,52 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         searchProfiles={searchUsers}
                     />
                 </div>
-                <div className='checklist-container'>
+                <div className='checklists-container'>
                     {playbook.checklists?.map((checklist: Checklist, checklistIndex: number) => (
-                        <ChecklistDetails
-                            checklist={checklist}
-                            backstage={true}
+                        <div
+                            className='checklist-container'
                             key={checklist.title + checklistIndex}
-                            addItem={(checklistItem: ChecklistItem) => {
-                                onAddItem(checklistItem, checklistIndex);
-                            }}
-                            removeItem={(chceklistItemIndex: number) => {
-                                onDeleteItem(chceklistItemIndex, checklistIndex);
-                            }}
-                            editItem={(checklistItemIndex: number, newItem: ChecklistItem) => {
-                                onEditItem(checklistItemIndex, newItem, checklistIndex);
-                            }}
-                            reorderItems={(checklistItemIndex: number, newPosition: number) => {
-                                onReorderItem(checklistItemIndex, newPosition, checklistIndex);
-                            }}
-                        />
+                        >
+                            <ChecklistDetails
+                                checklist={checklist}
+                                startEditMode={true}
+                                enableEditTitle={true}
+                                showEditModeButton={false}
+                                enableEditChecklistItems={true}
+
+                                titleChange={(newTitle) => {
+                                    handleChecklistTitleChange(checklistIndex, newTitle);
+                                }}
+                                removeList={() => {
+                                    onDeleteList(checklistIndex);
+                                }}
+                                addItem={(checklistItem: ChecklistItem) => {
+                                    onAddItem(checklistItem, checklistIndex);
+                                }}
+                                removeItem={(chceklistItemIndex: number) => {
+                                    onDeleteItem(chceklistItemIndex, checklistIndex);
+                                }}
+                                editItem={(checklistItemIndex: number, newItem: ChecklistItem) => {
+                                    onEditItem(checklistItemIndex, newItem, checklistIndex);
+                                }}
+                                reorderItems={(checklistItemIndex: number, newPosition: number) => {
+                                    onReorderItem(checklistItemIndex, newPosition, checklistIndex);
+                                }}
+                            />
+                        </div>
                     ))}
+
+                    <div className='new-stage'>
+                        <a
+                            href='#'
+                            onClick={() => {
+                                handleAddNewStage();
+                            }}
+                        >
+                            <i className='icon icon-plus'/>
+                            {'Add new stage'}
+                        </a>
+                    </div>
                 </div>
             </div>
             <ConfirmModal

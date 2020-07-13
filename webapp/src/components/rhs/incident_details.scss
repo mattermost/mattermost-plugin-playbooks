@@ -16,17 +16,6 @@ $font-family: Open Sans;
             height: 3.2rem;
         }
 
-        .inner-container {
-            display: flex;
-            flex-direction: column;
-
-            .title {
-                font-weight: 600;
-                padding: 0 0 8px;
-            }
-        }
-
-
         // Link component
         .link {
             cursor: pointer;
