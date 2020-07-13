@@ -68,8 +68,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
                     setPlaybook(fetchedPlaybook);
                     setFetchingState(FetchingStateType.fetched);
-
-                    setMemberIds(fetchedPlaybook.member_ids);
+                    if (fetchedPlaybook.member_ids) {
+                        setMemberIds(fetchedPlaybook.member_ids);
+                    }
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
                 }
@@ -192,7 +193,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     <ProfileAutocomplete
                         placeholder={'Invite members...'}
                         onChange={handleUsersInput}
-                        userIds={playbook.member_ids}
+                        userIds={memberIds}
                         searchProfiles={searchUsers}
                     />
                 </div>
