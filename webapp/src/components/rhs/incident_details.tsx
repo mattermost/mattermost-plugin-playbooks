@@ -75,10 +75,6 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(0);
 
     const checklists = props.incident.playbook.checklists || [];
-
-    if (selectedChecklist.title === '') {
-        selectedChecklist.title = defaultChecklist.title;
-    }
     const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
 
     const onChecklistChange = (option: Option, action: ActionObj) => {
