@@ -142,6 +142,7 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                     type='text'
                     value={title}
                     maxLength={MAX_NAME_LENGTH}
+                    onClick={(e) => e.stopPropagation()}
                     onBlur={submit}
                     placeholder={'Title'}
                     onKeyPress={(e) => {
@@ -159,6 +160,7 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                     value={command}
                     onBlur={submit}
                     placeholder={'/Slash Command'}
+                    onClick={(e) => e.stopPropagation()}
                     onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                             submit();

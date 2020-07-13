@@ -11,9 +11,9 @@ import {searchProfiles} from 'mattermost-redux/actions/users';
 import {Team} from 'mattermost-redux/types/teams';
 
 import {teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, ChecklistItem, emptyPlaybook, emptyChecklist} from 'src/types/playbook';
+import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
-import {ChecklistDetails} from 'src/components/checklist';
+import {MultiChecklistEditor} from 'src/components/multi_checklist_editor';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Toggle from 'src/components/widgets/toggle';
 import BackIcon from 'src/components/assets/icons/back_icon';
@@ -91,60 +91,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
-    const onAddItem = (checklistItem: ChecklistItem, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, playbook.checklists[checklistIndex]);
-
-        changedChecklist.items = [...changedChecklist.items, checklistItem];
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
-    };
-
-    const onDeleteItem = (checklistItemIndex: number, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
-
-        changedChecklist.items = [
-            ...changedChecklist.items.slice(0, checklistItemIndex),
-            ...changedChecklist.items.slice(checklistItemIndex + 1, changedChecklist.items.length)];
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
-    };
-
-    const onEditItem = (checklistItemIndex: number, newItem: ChecklistItem, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
-
-        changedChecklist.items[checklistItemIndex] = newItem;
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
-    };
-
-    const onReorderItem = (checklistItemIndex: number, newIndex: number, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
-
-        const itemToMove = changedChecklist.items[checklistItemIndex];
-
-        // Remove from current index
-        changedChecklist.items = [
-            ...changedChecklist.items.slice(0, checklistItemIndex),
-            ...changedChecklist.items.slice(checklistItemIndex + 1, changedChecklist.items.length)];
-
-        // Add in new index
-        changedChecklist.items = [
-            ...changedChecklist.items.slice(0, newIndex),
-            itemToMove,
-            ...changedChecklist.items.slice(newIndex, changedChecklist.items.length + 1)];
-
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
-    };
-
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPlaybook({
             ...playbook,
@@ -182,34 +128,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
-    };
-
-    const handleAddNewStage = () => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-
-        const checklist = emptyChecklist();
-        checklist.title = 'New stage';
-        allChecklists.push(checklist);
-
-        updateChecklist(allChecklists);
-    };
-
-    const onDeleteList = (checklistIndex: number) => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-
-        allChecklists.splice(checklistIndex, 1);
-
-        updateChecklist(allChecklists);
-    };
-
-    const handleChecklistTitleChange = (checklistIndex: number, newTitle: string) => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
-
-        changedChecklist.title = newTitle;
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
     };
 
     const saveDisabled = playbook.title.trim() === '' || memberIds.length === 0 || !changesMade;
@@ -278,52 +196,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         searchProfiles={searchUsers}
                     />
                 </div>
-                <div className='checklists-container'>
-                    {playbook.checklists?.map((checklist: Checklist, checklistIndex: number) => (
-                        <div
-                            className='checklist-container'
-                            key={checklist.title + checklistIndex}
-                        >
-                            <ChecklistDetails
-                                checklist={checklist}
-                                startEditMode={true}
-                                enableEditTitle={true}
-                                showEditModeButton={false}
-                                enableEditChecklistItems={true}
-
-                                titleChange={(newTitle) => {
-                                    handleChecklistTitleChange(checklistIndex, newTitle);
-                                }}
-                                removeList={() => {
-                                    onDeleteList(checklistIndex);
-                                }}
-                                addItem={(checklistItem: ChecklistItem) => {
-                                    onAddItem(checklistItem, checklistIndex);
-                                }}
-                                removeItem={(chceklistItemIndex: number) => {
-                                    onDeleteItem(chceklistItemIndex, checklistIndex);
-                                }}
-                                editItem={(checklistItemIndex: number, newItem: ChecklistItem) => {
-                                    onEditItem(checklistItemIndex, newItem, checklistIndex);
-                                }}
-                                reorderItems={(checklistItemIndex: number, newPosition: number) => {
-                                    onReorderItem(checklistItemIndex, newPosition, checklistIndex);
-                                }}
-                            />
-                        </div>
-                    ))}
-
-                    <div className='new-stage'>
-                        <a
-                            href='#'
-                            onClick={() => {
-                                handleAddNewStage();
-                            }}
-                        >
-                            <i className='icon icon-plus'/>
-                            {'Add new stage'}
-                        </a>
-                    </div>
+                <div className='multi-checklist-editor-container'>
+                    <MultiChecklistEditor
+                        checklist={playbook.checklists}
+                        onChange={updateChecklist}
+                    />
                 </div>
             </div>
             <ConfirmModal
