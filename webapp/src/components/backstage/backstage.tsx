@@ -44,10 +44,6 @@ const BackstageSidebarMenu = styled.div`
     padding: 4rem 0 0 2.4rem;
     width: 100%;
     font-weight: 600;
-
-    .menu-title {
-    }
-
 `;
 
 const SidebarNavLink = styled(NavLink)`
@@ -73,7 +69,6 @@ const SidebarNavLink = styled(NavLink)`
             cursor: default;
         }
     }
-    
 `;
 
 const BackstageBody = styled.div`
