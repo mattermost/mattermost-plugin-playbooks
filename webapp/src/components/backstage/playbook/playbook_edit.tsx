@@ -43,7 +43,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         member_ids: [currentUserId],
         team_id: props.currentTeam.id,
     });
-    const [memberIds, setMemberIds] = useState([currentUserId]);
     const [changesMade, setChangesMade] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -66,11 +65,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             if (urlParams.playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
+                    fetchedPlaybook.member_ids = fetchedPlaybook.member_ids || [currentUserId];
                     setPlaybook(fetchedPlaybook);
                     setFetchingState(FetchingStateType.fetched);
-                    if (fetchedPlaybook.member_ids) {
-                        setMemberIds(fetchedPlaybook.member_ids);
-                    }
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
                 }
@@ -121,9 +118,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleUsersInput = (userIds: string[]) => {
-        playbook.member_ids = userIds;
-        setMemberIds(userIds || []);
-
+        setPlaybook({
+            ...playbook,
+            member_ids: userIds || [],
+        });
         setChangesMade(true);
     };
 
@@ -131,7 +129,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
 
-    const saveDisabled = playbook.title.trim() === '' || memberIds.length === 0 || !changesMade;
+    const saveDisabled = playbook.title.trim() === '' || playbook.member_ids.length === 0 || !changesMade;
 
     if (!props.isNew) {
         switch (fetchingState) {
@@ -193,7 +191,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     <ProfileAutocomplete
                         placeholder={'Invite members...'}
                         onChange={handleUsersInput}
-                        userIds={memberIds}
+                        userIds={playbook.member_ids}
                         searchProfiles={searchUsers}
                     />
                 </div>
