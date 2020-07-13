@@ -119,6 +119,17 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleUsersInput = (userIds: string[]) => {
+        playbook.member_ids = userIds;
+        setMemberIds(userIds || []);
+
+        setChangesMade(true);
+    };
+
+    const searchUsers = (term: string) => {
+        return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
+    };
+
     const saveDisabled = playbook.title.trim() === '' || memberIds.length === 0 || !changesMade;
 
     if (!props.isNew) {
