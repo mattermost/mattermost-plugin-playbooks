@@ -11,7 +11,7 @@ import {useDispatch} from 'react-redux';
 import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
-import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {Checklist, ChecklistItem, emptyChecklist} from 'src/types/playbook';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 
@@ -75,12 +75,11 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(0);
 
     const checklists = props.incident.playbook.checklists || [];
-    const defaultChecklist = {title: 'Default Stage', items: []};
-    const selectedChecklist = checklists[selectedChecklistIndex] || defaultChecklist;
 
     if (selectedChecklist.title === '') {
         selectedChecklist.title = defaultChecklist.title;
     }
+    const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
 
     const onChecklistChange = (option: Option, action: ActionObj) => {
         if (action.action === 'clear') {
