@@ -22,7 +22,7 @@ const helpText = "###### Mattermost Incident Response Plugin - Slash Command Hel
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
-	"* `/incident announce ~[channels]` - Announce the currrent channel's incident in other channels. \n" +
+	"* `/incident announce ~[channels]` - Announce the currrent incident in other channels. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -50,7 +50,7 @@ func getCommand() *model.Command {
 }
 
 func getAutocompleteData() *model.AutocompleteData {
-	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end, check")
+	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end, check, announce")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -63,7 +63,7 @@ func getAutocompleteData() *model.AutocompleteData {
 		"api/v1/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
-	announce := model.NewAutocompleteData("announce", "~[channels]", "Announce the current channel's incident in other channels.")
+	announce := model.NewAutocompleteData("announce", "~[channels]", "Announce the current incident in other channels.")
 	announce.AddNamedTextArgument("channel", "Channel to announce incident in", "~[channel]", "", true)
 	slashIncident.AddCommand(announce)
 
