@@ -10,7 +10,7 @@ import {navigateToUrl} from 'src/browser_routing';
 import {clientId} from './selectors';
 import {isIncident, Incident} from './types/incident';
 
-export const websocketSubscribers = new Set<(incident: Incident, clientId?: string) => void>();
+export const websocketSubscribers = new Set<(incident: Incident) => void>();
 
 export function handleWebsocketIncidentUpdate() {
     return (msg: WebSocketMessage): void => {
