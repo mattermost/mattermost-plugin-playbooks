@@ -81,7 +81,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
             className={'checkbox-container live' + (disabled ? ' light' : '')}
         >
             {activation}
-            <label>
+            <label title={title}>
                 {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
             </label>
             <a
