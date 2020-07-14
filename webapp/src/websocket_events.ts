@@ -37,8 +37,6 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc) {
             return;
         }
 
-        websocketSubscribers.forEach((fn) => fn(incident, payload.client_id));
-
         if (payload.client_id !== clientId(getState())) {
             return;
         }
