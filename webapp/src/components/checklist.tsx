@@ -19,12 +19,6 @@ import './checklist.scss';
 
 interface Props {
     checklist: Checklist;
-    startEditMode?: boolean;
-    showEditModeButton?: boolean;
-    enableEditTitle?: boolean;
-    enableEditChecklistItems: boolean;
-    titleChange?: (newTitle: string) => void;
-    removeList?: () => void;
     onChange?: (itemNum: number, checked: boolean) => void;
     onRedirect?: (itemNum: number) => void;
     addItem: (checklistItem: ChecklistItem) => void;
@@ -34,11 +28,10 @@ interface Props {
     overwriteTitle?: string;
 }
 
-export const ChecklistDetails = ({checklist, startEditMode: propEditMode = false, enableEditTitle = false, showEditModeButton = true, enableEditChecklistItems, titleChange, removeList, onChange, onRedirect, addItem, removeItem, editItem, reorderItems, overwriteTitle}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, removeItem, editItem, reorderItems, overwriteTitle}: Props): React.ReactElement => {
     const [newValue, setNewValue] = useState('');
-    const [checklistTitle, setChecklistTitle] = useState(overwriteTitle || checklist.title);
     const [inputExpanded, setInputExpanded] = useState(false);
-    const [editMode, setEditMode] = useState(propEditMode);
+    const [editMode, setEditMode] = useState(false);
 
     const [checklistItems, setChecklistItems] = useState(checklist.items);
 
@@ -74,67 +67,21 @@ export const ChecklistDetails = ({checklist, startEditMode: propEditMode = false
         reorderItems(result.source.index, result.destination.index);
     };
 
-    const onTitleChange = () => {
-        const trimmedTitle = checklistTitle.trim();
-        if (trimmedTitle === '') {
-            setChecklistTitle(checklist.title);
-            return;
-        }
-        if (trimmedTitle !== checklist.title) {
-            if (titleChange) {
-                titleChange(checklistTitle);
-            }
-        }
-    };
-
     return (
         <div
             className='checklist-inner-container'
         >
             <div className='title'>
-                {(!editMode || !enableEditTitle) && checklistTitle}
-                {
-                    editMode && enableEditTitle &&
-                    <input
-                        id={'checklist-name'}
-                        className='form-control input-name'
-                        type='text'
-                        placeholder='Default Stage'
-                        value={checklistTitle}
-                        maxLength={MAX_NAME_LENGTH}
-                        onBlur={onTitleChange}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                                onTitleChange();
-                            }
-                        }}
-                        onChange={(e) => {
-                            setChecklistTitle(e.target.value);
-                        }}
-                    />
-                }
+                {checklist.title}
                 {' '}
-                {
-                    showEditModeButton &&
-                    <a
-                        className='checkbox-title__edit'
-                        onClick={() => {
-                            setEditMode(!editMode);
-                        }}
-                    >
-                        <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
-                    </a>
-                }
-                {' '}
-                {
-                    editMode && enableEditTitle &&
-                    <span
-                        onClick={removeList}
-                        className='checkbox-container__close'
-                    >
-                        <i className='icon icon-close'/>
-                    </span>
-                }
+                <a
+                    className='checkbox-title__edit'
+                    onClick={() => {
+                        setEditMode(!editMode);
+                    }}
+                >
+                    <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
+                </a>
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
@@ -182,6 +129,12 @@ export const ChecklistDetails = ({checklist, startEditMode: propEditMode = false
                                                         {...draggableProvided.draggableProps}
                                                         {...draggableProvided.dragHandleProps}
                                                         style={draggableProvided.draggableProps.style}
+                                                        onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+                                                            if (event.defaultPrevented) {
+                                                                return;
+                                                            }
+                                                            event.currentTarget.focus();
+                                                        }}
                                                     >
                                                         <ChecklistItemDetailsEdit
                                                             checklistItem={checklistItem}
@@ -203,7 +156,7 @@ export const ChecklistDetails = ({checklist, startEditMode: propEditMode = false
                                     <ChecklistItemDetails
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
-                                        disabled={!enableEditChecklistItems}
+                                        disabled={false}
                                         onChange={(checked: boolean) => {
                                             if (onChange) {
                                                 onChange(index, checked);
@@ -222,7 +175,7 @@ export const ChecklistDetails = ({checklist, startEditMode: propEditMode = false
                     )}
                 </Droppable>
             </DragDropContext>
-            {enableEditChecklistItems && inputExpanded &&
+            {inputExpanded &&
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
@@ -252,7 +205,7 @@ export const ChecklistDetails = ({checklist, startEditMode: propEditMode = false
                     <small className='light mt-1 d-block'>{'Press Enter to Add Item or Escape to Cancel'}</small>
                 </form>
             }
-            {enableEditChecklistItems && !inputExpanded &&
+            {!inputExpanded &&
                 <div className='IncidentDetails__add-item'>
                     <a
                         href='#'

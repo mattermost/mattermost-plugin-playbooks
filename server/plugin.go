@@ -118,7 +118,7 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
-	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient)
+	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot)
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
