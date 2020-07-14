@@ -120,7 +120,6 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     </div>
                     <ChecklistDetails
                         checklist={selectedChecklist}
-                        overwriteTitle={'Checklist'}
                         key={selectedChecklist.title + selectedChecklistIndex}
                         onChange={(itemNum: number, checked: boolean) => {
                             if (checked) {

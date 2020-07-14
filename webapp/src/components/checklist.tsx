@@ -25,10 +25,9 @@ interface Props {
     removeItem: (itemNum: number) => void;
     editItem: (itemNum: number, newItem: ChecklistItem) => void;
     reorderItems: (itemNum: number, newPosition: number) => void;
-    overwriteTitle?: string;
 }
 
-export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, removeItem, editItem, reorderItems, overwriteTitle}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -72,8 +71,7 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
             className='checklist-inner-container'
         >
             <div className='title'>
-                {checklist.title}
-                {' '}
+                {'Checklist '}
                 <a
                     className='checkbox-title__edit'
                     onClick={() => {
