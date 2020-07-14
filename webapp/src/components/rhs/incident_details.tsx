@@ -52,8 +52,6 @@ interface Option {
     label: string;
 }
 
-type ActionObj = ActionMeta<OptionTypeBase>;
-
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -77,7 +75,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const checklists = props.incident.playbook.checklists || [];
     const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
 
-    const onChecklistChange = (option: Option, action: ActionObj) => {
+    const onChecklistChange = (option: Option, action: ActionMeta<OptionTypeBase>) => {
         if (action.action === 'clear') {
             return;
         }
@@ -112,7 +110,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             options={checklists.map((checklist, idx) => {
                                 return {value: idx, label: checklist.title};
                             })}
-                            onChange={(option, action) => onChecklistChange(option as Option, action as ActionObj)}
+                            onChange={(option, action) => onChecklistChange(option as Option, action as ActionMeta<OptionTypeBase>)}
                             defaultValue={{value: selectedChecklistIndex, label: selectedChecklist.title}}
                             className={'incident-stage-select'}
                             classNamePrefix={'incident-stage-select'}
