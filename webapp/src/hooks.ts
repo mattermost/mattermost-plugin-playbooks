@@ -11,9 +11,6 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import {fetchIncidentByChannel} from 'src/client';
 import {websocketSubscribers} from 'src/websocket_events';
-import {navigateToUrl} from 'src/browser_routing';
-
-import {clientId as clientIdSelector} from './selectors';
 
 import {Incident} from './types/incident';
 
@@ -31,8 +28,6 @@ export enum CurrentIncidentState {
 
 export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
     const currentChannel = useSelector<GlobalState, Channel>(getCurrentChannel);
-    const currentClientId = useSelector<GlobalState, string>(clientIdSelector);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [incident, setIncident] = useState<Incident | null>(null);
     const [state, setState] = useState<CurrentIncidentState>(CurrentIncidentState.Loading);
@@ -68,22 +63,5 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
             websocketSubscribers.delete(doUpdate);
         };
     }, [incident]);
-
-    useEffect(() => {
-        const doChannelSwitch = (createdIncident: Incident, clientId?: string) => {
-            if (clientId !== currentClientId) {
-                return;
-            }
-
-            // Navigate to the newly created channel
-            const url = `/${currentTeam.name}/channels/${createdIncident.primary_channel_id}`;
-            navigateToUrl(url);
-        };
-        websocketSubscribers.add(doChannelSwitch);
-        return () => {
-            websocketSubscribers.delete(doChannelSwitch);
-        };
-    });
-
     return [incident, state];
 }
