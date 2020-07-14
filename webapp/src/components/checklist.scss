@@ -76,6 +76,7 @@ $font-family: Open Sans;
 
     .timestamp {
         color: var(--center-channel-color-56);
+        flex-shrink: 0;
     }
 
     input[type="checkbox"] {
@@ -129,6 +130,10 @@ $font-family: Open Sans;
         display: inline;
         margin: 0;
         margin-right: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-grow: 1;
     }
 }
 

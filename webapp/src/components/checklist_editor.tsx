@@ -112,7 +112,6 @@ export const ChecklistEditor = ({
                             type='text'
                             placeholder='Default Stage'
                             value={checklistTitle}
-                            maxLength={MAX_NAME_LENGTH}
                             onClick={(e) => e.stopPropagation()}
                             onBlur={onTitleChange}
                             onKeyPress={(e) => {
@@ -212,7 +211,6 @@ export const ChecklistEditor = ({
                                 autoFocus={true}
                                 type='text'
                                 value={newValue}
-                                maxLength={MAX_NAME_LENGTH}
                                 className='form-control mt-2'
                                 placeholder={'Enter a new item'}
                                 onKeyDown={(e) => onEscapeKey(e)}

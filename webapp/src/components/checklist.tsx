@@ -194,7 +194,6 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                         autoFocus={true}
                         type='text'
                         value={newValue}
-                        maxLength={MAX_NAME_LENGTH}
                         className='form-control mt-2'
                         placeholder={'Enter a new item'}
                         onKeyDown={(e) => onEscapeKey(e)}
