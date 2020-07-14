@@ -179,19 +179,19 @@ func (r *Runner) actionAnnounce(args []string) {
 		return
 	}
 
-	incident, err := r.incidentService.GetIncident(incidentID)
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
 		return
 	}
 
-	commanderUser, err := r.pluginAPI.User.Get(incident.CommanderUserID)
+	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error retrieving commander user: %v", err))
 		return
 	}
 
-	incidentChannel, err := r.pluginAPI.Channel.Get(incident.PrimaryChannelID)
+	incidentChannel, err := r.pluginAPI.Channel.Get(currentIncident.PrimaryChannelID)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error retrieving incident channel: %v", err))
 		return
