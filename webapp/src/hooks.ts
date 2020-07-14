@@ -28,7 +28,6 @@ export enum CurrentIncidentState {
 
 export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
     const currentChannel = useSelector<GlobalState, Channel>(getCurrentChannel);
-
     const [incident, setIncident] = useState<Incident | null>(null);
     const [state, setState] = useState<CurrentIncidentState>(CurrentIncidentState.Loading);
 
@@ -63,5 +62,6 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
             websocketSubscribers.delete(doUpdate);
         };
     }, [incident]);
+
     return [incident, state];
 }
