@@ -26,9 +26,7 @@ import {
     setToggleRHSAction,
 } from './actions';
 import reducer from './reducer';
-import {
-    handleWebsocketIncidentUpdate,
-} from './websocket_events';
+import {handleWebsocketIncidentUpdate, handleWebsocketIncidentCreate} from './websocket_events';
 import {
     WEBSOCKET_INCIDENT_UPDATED,
     WEBSOCKET_INCIDENT_CREATED,
@@ -71,7 +69,7 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdate());
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentUpdate());
+        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreate());
 
         // Listen for channel changes and open the RHS when approperate.
         store.subscribe(makeRHSOpener(store));
