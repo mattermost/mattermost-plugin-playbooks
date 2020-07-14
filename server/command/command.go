@@ -22,6 +22,7 @@ const helpText = "###### Mattermost Incident Response Plugin - Slash Command Hel
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
+	"* `/incident announce ~[channels]` - Announce the currrent channel's incident in other channels. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -61,6 +62,10 @@ func getAutocompleteData() *model.AutocompleteData {
 	checklist.AddDynamicListArgument("List of checklist items is downloading from your incident response plugin",
 		"api/v1/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
+
+	announce := model.NewAutocompleteData("announce", "~[channels]", "Announce the current channel's incident in other channels.")
+	announce.AddNamedTextArgument("channel", "Channel to announce incident in", "~[channel]", "", true)
+	slashIncident.AddCommand(announce)
 
 	return slashIncident
 }
@@ -156,6 +161,60 @@ func (r *Runner) actionCheck(args []string) {
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error checking/unchecking item: %v", err))
 	}
+}
+
+func (r *Runner) actionAnnounce(args []string) {
+	if len(args) < 1 {
+		r.postCommandResponse(helpText)
+		return
+	}
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only announce from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	incident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	commanderUser, err := r.pluginAPI.User.Get(incident.CommanderUserID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving commander user: %v", err))
+		return
+	}
+
+	incidentChannel, err := r.pluginAPI.Channel.Get(incident.PrimaryChannelID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident channel: %v", err))
+		return
+	}
+
+	for _, channelarg := range args {
+		if err := r.announceChannel(strings.TrimPrefix(channelarg, "~"), commanderUser.Username, incidentChannel.Name); err != nil {
+			r.postCommandResponse("Error announcing to: " + channelarg)
+		}
+	}
+}
+
+func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
+	targetChannel, err := r.pluginAPI.Channel.GetByName(r.args.TeamId, targetChannelName, false)
+	if err != nil {
+		return err
+	}
+
+	if _, err := r.poster.PostMessage(targetChannel.Id, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Runner) actionEnd() {
@@ -440,6 +499,8 @@ func (r *Runner) Execute() error {
 		r.actionEnd()
 	case "check":
 		r.actionCheck(parameters)
+	case "announce":
+		r.actionAnnounce(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "st":
