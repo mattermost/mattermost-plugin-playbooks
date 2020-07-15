@@ -199,7 +199,7 @@ export const doGet = async (url: string) => {
 
 export const doPost = async (url: string, body = {}) => {
     const {data} = await doFetchWithResponse(url, {
-        method: 'post',
+        method: 'POST',
         body,
     });
 
@@ -208,7 +208,7 @@ export const doPost = async (url: string, body = {}) => {
 
 export const doPut = async (url: string, body = {}) => {
     const {data} = await doFetchWithResponse(url, {
-        method: 'put',
+        method: 'PUT',
         body,
     });
 
