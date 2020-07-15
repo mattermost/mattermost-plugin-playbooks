@@ -58,7 +58,7 @@ func HandleError(w http.ResponseWriter, err error) {
 	HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", err)
 }
 
-// HandleErrorWithCode writes code, errTitle and err as json into the response.
+// HandleErrorWithCode writes code, errMsg and errDetails as json into the response.
 func HandleErrorWithCode(w http.ResponseWriter, code int, errMsg string, errDetails error) {
 	w.WriteHeader(code)
 	details := ""
