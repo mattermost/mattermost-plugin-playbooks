@@ -41,20 +41,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePlugin
 	h.root.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), contextKey(PluginIDContextKey), sourcePluginID)))
 }
 
-// HandleError writes err as json into the response.
-func HandleError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusInternalServerError)
-	b, _ := json.Marshal(struct {
-		Error   string `json:"error"`
-		Details string `json:"details"`
-	}{
-		Error:   "An internal error has occurred. Check app server logs for details.",
-		Details: err.Error(),
-	})
-	logrus.Warn(string(b))
-	_, _ = w.Write(b)
-}
-
 // ReturnJSON writes the given pointer to object as json with a success response
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 	jsonBytes, err := json.Marshal(pointerToObject)
@@ -67,18 +53,23 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 	_, _ = w.Write(jsonBytes)
 }
 
-// HandleErrorWithCode writes code, errTitle and err as json into the response.
-func HandleErrorWithCode(w http.ResponseWriter, code int, errTitle string, err error) {
+// HandleError writes err as json into the response.
+func HandleError(w http.ResponseWriter, err error) {
+	HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", err)
+}
+
+// HandleErrorWithCode writes code, errMsg and errDetails as json into the response.
+func HandleErrorWithCode(w http.ResponseWriter, code int, errMsg string, errDetails error) {
 	w.WriteHeader(code)
 	details := ""
-	if err != nil {
-		details = err.Error()
+	if errDetails != nil {
+		details = errDetails.Error()
 	}
 	b, _ := json.Marshal(struct {
-		Error   string `json:"error"`
-		Details string `json:"details"`
+		Message string `json:"message"` // A human-readable message providing details about the error.
+		Details string `json:"details"` // More details about the error.
 	}{
-		Error:   errTitle,
+		Message: errMsg,
 		Details: details,
 	})
 	logrus.Warn(string(b))
