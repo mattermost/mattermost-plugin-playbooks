@@ -115,7 +115,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         }
     };
 
-    const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(0);
+    const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(props.incident.active_stage);
 
     const checklists = props.incident.playbook.checklists || [];
     const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
