@@ -143,7 +143,7 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 	if updates.ActiveStage != nil {
 		updatedIncident, err = h.incidentService.ChangeActiveStage(oldIncident.ID, userID, *updates.ActiveStage)
 		if err != nil {
-			HandleError(w, err)
+			HandleError(w, errors.Wrap(err, "unable to change active stage"))
 			return
 		}
 	}
