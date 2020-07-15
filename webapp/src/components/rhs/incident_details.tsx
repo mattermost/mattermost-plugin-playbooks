@@ -52,6 +52,51 @@ interface Option {
     label: string;
 }
 
+interface StageSelectorProps {
+    stages: Checklist[];
+    onStageSelected: (option: Option, action: ActionMeta<OptionTypeBase>) => void;
+    onStageActivated: () => void;
+    selectedStage: number;
+    activeStage: number;
+}
+
+const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
+    const isActive = (stageIdx: number) => {
+        return stageIdx === props.activeStage;
+    };
+
+    const toOption = (stageIdx: number) => {
+        return {
+            value: stageIdx,
+            label: props.stages[stageIdx].title + (isActive(stageIdx) ? ' (Active)' : ''),
+        };
+    };
+
+    return (
+        <React.Fragment>
+            <div className='title'>
+                {'Stage'}
+                { !isActive(props.selectedStage) &&
+                    <a
+                        onClick={props.onStageActivated}
+                        className='stage-title__set-active'
+                    >
+                        <span className='font-weight--normal'>{'(Set as active stage)'}</span>
+                    </a>
+                }
+            </div>
+            <ReactSelect
+                options={props.stages.map((_, idx) => toOption(idx))}
+                value={toOption(props.selectedStage)}
+                defaultValue={toOption(props.selectedStage)}
+                onChange={(option, action) => props.onStageSelected(option as Option, action as ActionMeta<OptionTypeBase>)}
+                className={'incident-stage-select'}
+                classNamePrefix={'incident-stage-select'}
+            />
+        </React.Fragment>
+    );
+};
+
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -75,7 +120,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const checklists = props.incident.playbook.checklists || [];
     const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
 
-    const onChecklistChange = (option: Option, action: ActionMeta<OptionTypeBase>) => {
+    const onStageSelected = (option: Option, action: ActionMeta<OptionTypeBase>) => {
         if (action.action === 'clear') {
             return;
         }
@@ -83,38 +128,9 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         setSelectedChecklistIndex(option.value);
     };
 
-    const isActive = (stageIdx: number) => {
-        return stageIdx === props.incident.active_stage;
-    };
-
     const setCurrentStageAsActive = () => {
         setActiveStage(props.incident.id, selectedChecklistIndex);
     };
-
-    const stage = (
-        <React.Fragment>
-            <div className='title'>
-                {'Stage'}
-                { !isActive(selectedChecklistIndex) &&
-                    <a
-                        onClick={setCurrentStageAsActive}
-                        className='stage-title__set-active'
-                    >
-                        <span className='font-weight--normal'>{'(Set as active stage)'}</span>
-                    </a>
-                }
-            </div>
-            <ReactSelect
-                options={checklists.map((checklist, idx) => {
-                    return {value: idx, label: checklist.title + (isActive(idx) ? ' (Active)' : '')};
-                })}
-                onChange={(option, action) => onChecklistChange(option as Option, action as ActionMeta<OptionTypeBase>)}
-                defaultValue={{value: selectedChecklistIndex, label: selectedChecklist.title}}
-                className={'incident-stage-select'}
-                classNamePrefix={'incident-stage-select'}
-            />
-        </React.Fragment>
-    );
 
     return (
         <React.Fragment>
@@ -138,7 +154,13 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                         />
                     </div>
                     <div className='inner-container'>
-                        {stage}
+                        <StageSelector
+                            stages={checklists}
+                            onStageSelected={onStageSelected}
+                            onStageActivated={setCurrentStageAsActive}
+                            selectedStage={selectedChecklistIndex}
+                            activeStage={props.incident.active_stage}
+                        />
                     </div>
                     <ChecklistDetails
                         checklist={selectedChecklist}
