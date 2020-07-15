@@ -502,12 +502,12 @@ func TestChangeActiveStage(t *testing.T) {
 				Header:   header,
 				Playbook: playbookWithChecklists(1),
 			},
-			updateOptions: incident.UpdateOptions{ActiveStage: pInt(10)},
+			updateOptions: incident.UpdateOptions{ActiveStage: nil},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
 				return &old
 			},
 			changeActiveStageErr: errors.Errorf("index %d out of bounds: incident %s has %d stages", 10, header.ID, 1),
-			expectedStatus:       http.StatusInternalServerError,
+			expectedStatus:       http.StatusOK,
 		},
 	}
 
@@ -550,9 +550,12 @@ func TestChangeActiveStage(t *testing.T) {
 
 			// Mock the main call to ChangeActiveStage iff the passed ActiveStage is set
 			expectedIncident := data.getExpectedIncident(data.oldIncident)
-			incidentService.EXPECT().
-				ChangeActiveStage(data.oldIncident.ID, "testuserid", *data.updateOptions.ActiveStage).
-				Return(expectedIncident, data.changeActiveStageErr)
+			if data.updateOptions.ActiveStage != nil {
+				incidentService.EXPECT().
+					ChangeActiveStage(data.oldIncident.ID, "testuserid", *data.updateOptions.ActiveStage).
+					Return(expectedIncident, data.changeActiveStageErr).
+					Times(1)
+			}
 
 			// Finally, make the request with all data provided
 			testrecorder := httptest.NewRecorder()
