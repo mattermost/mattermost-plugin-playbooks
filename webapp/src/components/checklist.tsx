@@ -71,7 +71,7 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
             className='checklist-inner-container'
         >
             <div className='title'>
-                {'Checklist '}
+                {'Checklist'}
                 <a
                     className='checkbox-title__edit'
                     onClick={() => {

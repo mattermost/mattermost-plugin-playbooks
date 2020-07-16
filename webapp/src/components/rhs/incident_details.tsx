@@ -8,7 +8,7 @@ import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
+import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist, setActiveStage} from 'src/client';
 import {ChecklistDetails} from 'src/components/checklist';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem, emptyChecklist} from 'src/types/playbook';
@@ -52,6 +52,51 @@ interface Option {
     label: string;
 }
 
+interface StageSelectorProps {
+    stages: Checklist[];
+    selectedStage: number;
+    activeStage: number;
+    onStageSelected: (option: Option, action: ActionMeta<OptionTypeBase>) => void;
+    onStageActivated: () => void;
+}
+
+const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
+    const isActive = (stageIdx: number) => {
+        return stageIdx === props.activeStage;
+    };
+
+    const toOption = (stageIdx: number) => {
+        return {
+            value: stageIdx,
+            label: props.stages[stageIdx].title + (isActive(stageIdx) ? ' (Active)' : ''),
+        };
+    };
+
+    return (
+        <React.Fragment>
+            <div className='title'>
+                {'Stage'}
+                { !isActive(props.selectedStage) &&
+                    <a
+                        onClick={props.onStageActivated}
+                        className='stage-title__set-active'
+                    >
+                        <span className='font-weight--normal'>{'(Set as active stage)'}</span>
+                    </a>
+                }
+            </div>
+            <ReactSelect
+                options={props.stages.map((_, idx) => toOption(idx))}
+                value={toOption(props.selectedStage)}
+                defaultValue={toOption(props.selectedStage)}
+                onChange={(option, action) => props.onStageSelected(option as Option, action as ActionMeta<OptionTypeBase>)}
+                className={'incident-stage-select'}
+                classNamePrefix={'incident-stage-select'}
+            />
+        </React.Fragment>
+    );
+};
+
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -70,17 +115,21 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         }
     };
 
-    const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(0);
+    const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(props.incident.active_stage);
 
     const checklists = props.incident.playbook.checklists || [];
     const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
 
-    const onChecklistChange = (option: Option, action: ActionMeta<OptionTypeBase>) => {
+    const onStageSelected = (option: Option, action: ActionMeta<OptionTypeBase>) => {
         if (action.action === 'clear') {
             return;
         }
 
         setSelectedChecklistIndex(option.value);
+    };
+
+    const setCurrentStageAsActive = () => {
+        setActiveStage(props.incident.id, selectedChecklistIndex);
     };
 
     return (
@@ -105,15 +154,12 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                         />
                     </div>
                     <div className='inner-container'>
-                        <div className='title'>{'Stage'}</div>
-                        <ReactSelect
-                            options={checklists.map((checklist, idx) => {
-                                return {value: idx, label: checklist.title};
-                            })}
-                            onChange={(option, action) => onChecklistChange(option as Option, action as ActionMeta<OptionTypeBase>)}
-                            defaultValue={{value: selectedChecklistIndex, label: selectedChecklist.title}}
-                            className={'incident-stage-select'}
-                            classNamePrefix={'incident-stage-select'}
+                        <StageSelector
+                            stages={checklists}
+                            selectedStage={selectedChecklistIndex}
+                            activeStage={props.incident.active_stage}
+                            onStageSelected={onStageSelected}
+                            onStageActivated={setCurrentStageAsActive}
                         />
                     </div>
                     <ChecklistDetails

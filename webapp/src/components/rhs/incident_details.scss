@@ -79,6 +79,10 @@ $font-family: Open Sans;
             font-weight: 600;
             padding: 0 0 8px;
 
+            .stage-title__set-active {
+                padding: 0 5px;
+            }
+
             .checkbox-title__edit {
                 width: 70px;
                 padding: 0 5px 0 5px;
