@@ -152,8 +152,8 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	} else {
 		require.Contains(t, properties, "IncidentID")
 		require.Equal(t, properties["IncidentID"], dummyIncidentID)
-		require.Contains(t, properties, "UserID")
-		require.Equal(t, properties["UserID"], dummyUserID)
+		require.Contains(t, properties, "UserActualID")
+		require.Equal(t, properties["UserActualID"], dummyUserID)
 	}
 }
 

@@ -119,8 +119,8 @@ func (t *RudderTelemetry) EndIncident(incdnt *incident.Incident) {
 
 func checklistItemProperties(incidentID, userID string) map[string]interface{} {
 	return map[string]interface{}{
-		"IncidentID": incidentID,
-		"UserID":     userID,
+		"IncidentID":   incidentID,
+		"UserActualID": userID,
 	}
 }
 
