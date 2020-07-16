@@ -54,10 +54,10 @@ interface Option {
 
 interface StageSelectorProps {
     stages: Checklist[];
-    onStageSelected: (option: Option, action: ActionMeta<OptionTypeBase>) => void;
-    onStageActivated: () => void;
     selectedStage: number;
     activeStage: number;
+    onStageSelected: (option: Option, action: ActionMeta<OptionTypeBase>) => void;
+    onStageActivated: () => void;
 }
 
 const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
@@ -156,10 +156,10 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     <div className='inner-container'>
                         <StageSelector
                             stages={checklists}
-                            onStageSelected={onStageSelected}
-                            onStageActivated={setCurrentStageAsActive}
                             selectedStage={selectedChecklistIndex}
                             activeStage={props.incident.active_stage}
+                            onStageSelected={onStageSelected}
+                            onStageActivated={setCurrentStageAsActive}
                         />
                     </div>
                     <ChecklistDetails
