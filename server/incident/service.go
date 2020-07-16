@@ -10,11 +10,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const (
@@ -88,7 +89,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 		return nil, errors.Wrapf(err, "failed to create incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.PrimaryChannelID)
 	s.telemetry.CreateIncident(incdnt, public)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
@@ -128,7 +129,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, c
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/create-dialog",
+		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/dialog",
 			s.configService.GetManifest().Id),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
@@ -143,7 +144,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, c
 
 // EndIncident completes the incident. It returns an ErrIncidentNotActive if the caller tries to
 // end an incident which is not active.
-func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
+func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 	incdnt, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to end incident")
@@ -161,7 +162,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 		return errors.Wrapf(err, "failed to end incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incdnt, incdnt.TeamID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.PrimaryChannelID)
 	s.telemetry.EndIncident(incdnt)
 
 	user, err := s.pluginAPI.User.Get(userID)
@@ -180,7 +181,7 @@ func (s *ServiceImpl) EndIncident(incidentID string, userID string) error {
 
 // OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 // be ended.
-func (s *ServiceImpl) OpenEndIncidentDialog(incidentID string, triggerID string) error {
+func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error {
 	dialog := model.Dialog{
 		Title:            "Confirm End Incident",
 		SubmitLabel:      "Confirm",
@@ -257,7 +258,7 @@ func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInf
 }
 
 // IsCommander returns true if the userID is the commander for incidentID.
-func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
+func (s *ServiceImpl) IsCommander(incidentID, userID string) bool {
 	incdnt, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return false
@@ -267,7 +268,7 @@ func (s *ServiceImpl) IsCommander(incidentID string, userID string) bool {
 
 // ChangeCommander processes a request from userID to change the commander for incidentID
 // to commanderID. Changing to the same commanderID is a no-op.
-func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commanderID string) error {
+func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return err
@@ -293,7 +294,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
@@ -307,7 +308,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID string, userID string, commande
 
 // ModifyCheckedState checks or unchecks the specified checklist item
 // Indeponant, will not perform any actions if the checklist item is already in the given checked state
-func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error {
+func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -318,7 +319,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return nil
 	}
 
-	// Send modification message before the actual modification becuase we need the postID
+	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
@@ -338,12 +339,41 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return errors.Wrapf(err, "failed to update incident, is now in inconsistant state")
+		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
+	channel, err := s.pluginAPI.Channel.Get(mainChannelID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get main channel")
+	}
+
+	if itemToCheck.Checked && itemToCheck.Command != "" {
+		_, err := s.pluginAPI.SlashCommand.ExecuteSlashCommand(&model.CommandArgs{
+			UserId:    userID,
+			ChannelId: mainChannelID,
+			TeamId:    channel.TeamId,
+			Command:   itemToCheck.Command,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	return nil
+}
+
+// ToggleCheckedState checks or unchecks the specified checklist item
+func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	newState := !incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Checked
+
+	return s.ModifyCheckedState(incidentID, userID, newState, checklistNumber, itemNumber)
 }
 
 // AddChecklistItem adds an item to the specified checklist
@@ -359,52 +389,95 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 	s.telemetry.AddChecklistItem(incidentID, userID)
 
 	return nil
 }
 
 // RemoveChecklistItem removes the item at the given index from the given checklist
-func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error {
+func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
-	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(incidentToModify.Playbook.Checklists[checklistNumber].Items[:itemNumber], incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber+1:]...)
+	incidentToModify.Playbook.Checklists[checklistNumber].Items = append(
+		incidentToModify.Playbook.Checklists[checklistNumber].Items[:itemNumber],
+		incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber+1:]...,
+	)
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 	s.telemetry.RemoveChecklistItem(incidentID, userID)
 
 	return nil
 }
 
+// ChangeActiveStage processes a request from userID to change the active
+// stage of incidentID to stageIdx.
+func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error) {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !incidentToModify.IsActive {
+		return nil, ErrIncidentNotActive
+	} else if incidentToModify.ActiveStage == stageIdx {
+		return incidentToModify, nil
+	}
+
+	if stageIdx < 0 || stageIdx >= len(incidentToModify.Playbook.Checklists) {
+		return nil, errors.Errorf("index %d out of bounds: incident %s has %d stages", stageIdx, incidentID, len(incidentToModify.Playbook.Checklists))
+	}
+
+	oldActiveStage := incidentToModify.ActiveStage
+	incidentToModify.ActiveStage = stageIdx
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return nil, errors.Wrapf(err, "failed to update incident")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
+
+	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
+		incidentToModify.Playbook.Checklists[oldActiveStage].Title,
+		incidentToModify.Playbook.Checklists[stageIdx].Title,
+	)
+
+	mainChannelID := incidentToModify.PrimaryChannelID
+	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+		return nil, err
+	}
+
+	return incidentToModify, nil
+}
+
 // RenameChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle string) error {
+func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 	s.telemetry.RenameChecklistItem(incidentID, userID)
 
 	return nil
 }
 
 // MoveChecklistItem moves a checklist item to a new location
-func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error {
+func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumber, itemNumber, newLocation int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -429,10 +502,32 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToTeam(incidentUpdatedWSEvent, incidentToModify, incidentToModify.TeamID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 	s.telemetry.MoveChecklistItem(incidentID, userID)
 
 	return nil
+}
+
+// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for i, checklist := range theIncident.Playbook.Checklists {
+		for j, item := range checklist.Items {
+			ret = append(ret, model.AutocompleteListItem{
+				Item:     fmt.Sprintf("%d %d", i, j),
+				Hint:     fmt.Sprintf("\"%s\"", item.Title),
+				HelpText: "Check/uncheck this item",
+			})
+		}
+	}
+
+	return ret, nil
 }
 
 func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
@@ -493,7 +588,7 @@ func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (st
 	return postID, nil
 }
 
-func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, checklistNumber int, itemNumber int) (*Incident, error) {
+func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, checklistNumber, itemNumber int) (*Incident, error) {
 	incidentToModify, err := s.checklistParamsVerify(incidentID, userID, checklistNumber)
 	if err != nil {
 		return nil, err
@@ -587,6 +682,10 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 		Value: "-1",
 	}}
 	for _, playbook := range playbooks {
+		if !canStartIncidentWithPlaybook(commanderID, playbook) {
+			continue
+		}
+
 		options = append(options, &model.PostActionOptions{
 			Text:  playbook.Title,
 			Value: playbook.ID,
@@ -652,4 +751,15 @@ func addRandomBits(name string) string {
 	}
 	randBits := model.NewId()
 	return fmt.Sprintf("%s-%s", name, randBits[:4])
+}
+
+func canStartIncidentWithPlaybook(userID string, pb playbook.Playbook) bool {
+	// Members of a playbook can use it to start incident
+	for _, memberID := range pb.MemberIDs {
+		if memberID == userID {
+			return true
+		}
+	}
+
+	return false
 }

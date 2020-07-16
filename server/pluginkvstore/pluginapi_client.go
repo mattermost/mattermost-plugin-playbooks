@@ -13,6 +13,7 @@ const keyVersionPrefix = "v2_"
 type KVAPI interface {
 	Set(key string, value interface{}, options ...pluginapi.KVSetOption) (bool, error)
 	Get(key string, out interface{}) error
+	SetAtomicWithRetries(key string, valueFunc func(oldValue []byte) (newValue interface{}, err error)) error
 	DeleteAll() error
 }
 
@@ -20,6 +21,7 @@ type KVAPI interface {
 // It is implemented by mattermost-plugin-api/Client.Store, or by the mock StoreAPI.
 type StoreAPI interface {
 	GetMasterDB() (*sql.DB, error)
+	DriverName() string
 }
 
 // PluginAPIClient is the struct combining the interfaces defined above, which is everything
@@ -31,9 +33,9 @@ type PluginAPIClient struct {
 
 // NewClient receives a pluginapi.Client and returns the PluginAPIClient, which is what the
 // store will use to access pluginapi.Client.
-func NewClient(pluginapi *pluginapi.Client) PluginAPIClient {
+func NewClient(api *pluginapi.Client) PluginAPIClient {
 	return PluginAPIClient{
-		KV:    &pluginapi.KV,
-		Store: pluginapi.Store,
+		KV:    &api.KV,
+		Store: api.Store,
 	}
 }

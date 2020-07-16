@@ -16,6 +16,7 @@ type Playbook struct {
 	TeamID               string      `json:"team_id"`
 	CreatePublicIncident bool        `json:"create_public_incident"`
 	Checklists           []Checklist `json:"checklists"`
+	MemberIDs            []string    `json:"member_ids"`
 }
 
 // Checklist represents a checklist in a playbook
@@ -30,6 +31,7 @@ type ChecklistItem struct {
 	Checked         bool      `json:"checked"`
 	CheckedModified time.Time `json:"checked_modified"`
 	CheckedPostID   string    `json:"checked_post_id"`
+	Command         string    `json:"command"`
 }
 
 // Service is the playbook service for managing playbooks

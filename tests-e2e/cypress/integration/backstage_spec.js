@@ -13,16 +13,15 @@
 import users from '../fixtures/users.json';
 
 describe('Backstage', () => {
-	before(() => {
+	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 		cy.visit('/');
+		cy.openIncidentBackstage();
 	});
 
 	it('Opens incident backstage by default with "Incidents & Playbooks" button in main menu', () => {
-		cy.openIncidentBackstage();
-
-		// * Verify that the heading is visible and contains "Incident"
+		// * Verify that when backstage loads, the heading is visible and contains "Incident"
 		cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
 	});
 

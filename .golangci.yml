@@ -52,6 +52,7 @@ linters-settings:
       - style
     disabled-checks:
       - hugeParam
+      - rangeValCopy
   gofmt:
     simplify: true
   goimports:

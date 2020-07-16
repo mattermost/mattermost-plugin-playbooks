@@ -13,7 +13,7 @@ import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
-import {FetchIncidentsParams, FetchIncidentsReturn, Incident} from 'src/types/incident';
+import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
 import {Playbook, ChecklistItem} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
@@ -41,6 +41,14 @@ export function fetchIncidentWithDetails(id: string) {
     return doGet(`${apiUrl}/incidents/${id}/details`);
 }
 
+export function fetchIncidentByChannel(channelId: string) {
+    return doGet(`${apiUrl}/incidents/channel/${channelId}`);
+}
+
+export function fetchIncidentChannels(teamID: string) {
+    return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}`);
+}
+
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
     const currentChannel = getCurrentChannel(getState());
     const currentTeamId = getCurrentTeamId(getState());
@@ -51,6 +59,7 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     };
 
     try {
+        //@ts-ignore Typing in mattermost-redux is wrong
         const data = await Client4.executeCommand(command, args);
         dispatch(setTriggerId(data?.trigger_id));
     } catch (error) {
@@ -72,10 +81,9 @@ export async function savePlaybook(playbook: Playbook) {
         return data;
     }
 
-    const {data} = await doFetchWithResponse(`${apiUrl}/playbooks/${playbook.id}`, {
-        method: 'put',
-        body: JSON.stringify(playbook),
-    });
+    const {data} = await doPut(`${apiUrl}/playbooks/${playbook.id}`,
+        JSON.stringify(playbook),
+    );
 
     return data;
 }
@@ -115,28 +123,21 @@ export async function setCommander(incidentId: string, commanderId: string) {
 }
 
 export async function checkItem(incidentID: string, checklistNum: number, itemNum: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/check`, {
-        method: 'put',
-        body: '',
-    });
+    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/check`);
 
     return data;
 }
 
 export async function uncheckItem(incidentID: string, checklistNum: number, itemNum: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/uncheck`, {
-        method: 'put',
-        body: '',
-    });
+    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/uncheck`);
 
     return data;
 }
 
 export async function clientAddChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/add`, {
-        method: 'put',
-        body: JSON.stringify(checklistItem),
-    });
+    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/add`,
+        JSON.stringify(checklistItem),
+    );
 
     return data;
 }
@@ -150,25 +151,31 @@ export async function clientRemoveChecklistItem(incidentID: string, checklistNum
     return data;
 }
 
-export async function clientRenameChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newTitle: string) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
-        method: 'put',
-        body: JSON.stringify({
-            title: newTitle,
-        }),
-    });
+export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newItem: ChecklistItem) {
+    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`,
+        JSON.stringify({
+            title: newItem.title,
+            command: newItem.command,
+        }));
 
     return data;
 }
 
 export async function clientReorderChecklist(incidentID: string, checklistNum: number, itemNum: number, newLocation: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/reorder`, {
-        method: 'put',
-        body: JSON.stringify({
+    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/reorder`,
+        JSON.stringify({
             item_num: itemNum,
             new_location: newLocation,
         }),
-    });
+    );
+
+    return data;
+}
+
+export async function setActiveStage(incidentId: string, activeStage: number) {
+    const data = await doPatch(`${apiUrl}/incidents/${incidentId}`, JSON.stringify({
+        active_stage: activeStage,
+    }));
 
     return data;
 }
@@ -192,7 +199,25 @@ export const doGet = async (url: string) => {
 
 export const doPost = async (url: string, body = {}) => {
     const {data} = await doFetchWithResponse(url, {
-        method: 'post',
+        method: 'POST',
+        body,
+    });
+
+    return data;
+};
+
+export const doPut = async (url: string, body = {}) => {
+    const {data} = await doFetchWithResponse(url, {
+        method: 'PUT',
+        body,
+    });
+
+    return data;
+};
+
+export const doPatch = async (url: string, body = {}) => {
+    const {data} = await doFetchWithResponse(url, {
+        method: 'PATCH',
         body,
     });
 

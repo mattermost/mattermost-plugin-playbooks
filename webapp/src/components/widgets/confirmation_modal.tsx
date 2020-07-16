@@ -194,7 +194,6 @@ export default class ConfirmModal extends React.Component<Props, State> {
             >
                 <Modal.Header closeButton={false}>
                     <Modal.Title
-                        componentClass='h1'
                         id='confirmModalLabel'
                     >
                         {this.props.title}

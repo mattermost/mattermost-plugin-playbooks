@@ -7,6 +7,7 @@ export interface Playbook {
     team_id: string;
     create_public_incident: boolean;
     checklists: Checklist[];
+    member_ids: string[];
 }
 
 export interface Checklist {
@@ -17,22 +18,29 @@ export interface Checklist {
 export interface ChecklistItem {
     title: string;
     checked: boolean;
-    checked_modified: string;
-    checked_post_id: string;
+    checked_modified?: string;
+    checked_post_id?: string;
+    command: string;
 }
 
-export function newPlaybook(): Playbook {
+export function emptyPlaybook(): Playbook {
     return {
         title: '',
         team_id: '',
-        checklists: [{
-            title: 'Checklist',
-            items: [],
-        }],
+        create_public_incident: false,
+        checklists: [emptyChecklist()],
+        member_ids: [],
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function emptyChecklist(): Checklist {
+    return {
+        title: 'Default Stage',
+        items: [],
+    };
+}
+
+// eslint-disable-next-line
 export function isPlaybook(arg: any): arg is Playbook {
     return arg &&
         typeof arg.id === 'string' &&
@@ -42,18 +50,19 @@ export function isPlaybook(arg: any): arg is Playbook {
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line
 export function isChecklist(arg: any): arg is Checklist {
     return arg &&
         typeof arg.title === 'string' &&
         arg.items && Array.isArray(arg.items) && arg.items.every(isChecklistItem);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line
 export function isChecklistItem(arg: any): arg is ChecklistItem {
     return arg &&
         typeof arg.title === 'string' &&
         typeof arg.checked_post_id === 'string' &&
         typeof arg.checked_modified === 'string' &&
-        typeof arg.checked === 'boolean';
+        typeof arg.checked === 'boolean' &&
+        typeof arg.command === 'string';
 }

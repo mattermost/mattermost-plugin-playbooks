@@ -1,111 +1,83 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import Scrollbars from 'react-custom-scrollbars';
+import React, {FC, useEffect} from 'react';
+import {useDispatch} from 'react-redux';
 
+import {setRHSOpen, startIncident} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
-import {Incident} from 'src/types/incident';
-import {RHSState} from 'src/types/rhs';
 import RHSHeader from 'src/components/rhs/rhs_header';
+import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
 
-import IncidentList from './incident_list';
+import IncidentRHSIcon from '../assets/icons/incident_rhs_icon';
+
 import RHSIncidentDetails from './incident_details';
+
+// @ts-ignore
+const {formatText, messageHtmlToComponent} = window.PostUtils;
 
 import './rhs.scss';
 
-export function renderView(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--view'
-        />);
-}
-
-export function renderThumbHorizontal(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--horizontal'
-        />);
-}
-
-export function renderThumbVertical(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--vertical'
-        />);
-}
-
 interface Props {
-    incidents: Incident[];
-    incident: Incident;
-    rhsState: RHSState;
-    isLoading: boolean;
-    actions: {
-        startIncident: () => void;
-        getIncidentsForCurrentTeam: () => void;
-        getIncident: (id: string) => void;
-        setRHSState: (state: RHSState) => void;
-        setRHSOpen: (open: boolean) => void;
-    };
+    theme: Record<string, string>;
 }
 
-export default class RightHandSidebar extends React.PureComponent<Props> {
-    public componentDidMount(): void {
-        this.props.actions.getIncidentsForCurrentTeam();
-        this.props.actions.setRHSOpen(true);
-    }
+const RightHandSidebar: FC<Props> = (props: Props) => {
+    const dispatch = useDispatch();
+    const [incident, incidentState] = useCurrentIncident();
 
-    public componentWillUnmount(): void {
-        this.props.actions.setRHSOpen(false);
-    }
+    useEffect(() => {
+        dispatch(setRHSOpen(true));
+        return () => {
+            dispatch(setRHSOpen(false));
+        };
+    }, []);
 
-    public handleClick = (id: string) => {
-        this.props.actions.getIncident(id);
-        this.props.actions.setRHSState(RHSState.Details);
-    }
-
-    public render(): JSX.Element {
+    if (incidentState === CurrentIncidentState.Loading) {
         return (
             <div className='incident-rhs'>
-                <RHSHeader/>
                 <div className='incident-rhs__content'>
-                    {
-                        this.props.isLoading &&
-                        <div className='spinner-container'>
-                            <Spinner/>
-                            <span>{'Loading...'}</span>
-                        </div>
-                    }
-                    <div>
-                        {
-                            this.props.rhsState === RHSState.List && !this.props.isLoading &&
-                            <Scrollbars
-                                autoHide={true}
-                                autoHideTimeout={500}
-                                autoHideDuration={500}
-                                renderThumbHorizontal={renderThumbHorizontal}
-                                renderThumbVertical={renderThumbVertical}
-                                renderView={renderView}
-                                style={{position: 'absolute'}}
-                            >
-                                <IncidentList
-                                    incidents={this.props.incidents}
-                                    onClick={this.handleClick}
-                                />
-                            </Scrollbars>
-                        }
-                        {
-                            this.props.rhsState === RHSState.Details && !this.props.isLoading &&
-                            <RHSIncidentDetails
-                                incident={this.props.incident}
-                            />
-                        }
+                    <div className='spinner-container'>
+                        <Spinner/>
+                        <span>{'Loading...'}</span>
                     </div>
                 </div>
             </div>
         );
+    } else if (incident === null || incidentState === CurrentIncidentState.NotFound) {
+        return (
+            <div className='incident-rhs'>
+                <div className='no-incidents'>
+                    <div className='inner-text'>
+                        <IncidentRHSIcon theme={props.theme}/>
+                    </div>
+                    <div className='inner-text'>
+                        {'There is no active incident in this channel.'}
+                    </div>
+                    <div className='inner-text'>
+                        {messageHtmlToComponent(formatText('You can create incidents by the post dropdown menu, and by the slash command `/incident start`'))}
+                    </div>
+                    <a
+                        className='link'
+                        onClick={() => dispatch(startIncident())}
+                    >
+                        {'+ Create new incident'}
+                    </a>
+                </div>
+            </div>
+        );
     }
-}
+
+    return (
+        <div className='incident-rhs'>
+            <RHSHeader/>
+            <div className='incident-rhs__content'>
+                <RHSIncidentDetails
+                    incident={incident}
+                />
+            </div>
+        </div>
+    );
+};
+
+export default RightHandSidebar;
