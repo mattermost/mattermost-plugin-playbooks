@@ -5,7 +5,6 @@ import React, {useState} from 'react';
 import moment from 'moment';
 
 import {ChecklistItem} from 'src/types/playbook';
-import {MAX_NAME_LENGTH} from 'src/constants';
 
 import Spinner from './assets/icons/spinner';
 
@@ -82,7 +81,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
             className={'checkbox-container live' + (disabled ? ' light' : '')}
         >
             {activation}
-            <label>
+            <label title={title}>
                 {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
             </label>
             <a
@@ -141,7 +140,6 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                     className='form-control'
                     type='text'
                     value={title}
-                    maxLength={MAX_NAME_LENGTH}
                     onClick={(e) => e.stopPropagation()}
                     onBlur={submit}
                     placeholder={'Title'}
