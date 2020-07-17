@@ -23,7 +23,6 @@ describe('Incident Creation Modal', () => {
 
 	before(() => {
 		cy.apiLogin('user-1');
-		cy.visit('/');
 		cy.createPlaybook('ad-1', dummyPlaybookName);
 	})
 
@@ -99,7 +98,7 @@ describe('Incident Creation Modal', () => {
 		cy.openIncidentDialogFromSlashCommand();
 		const newIncident = "New Incident" + Date.now();
 		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.findByTestId('incidentNameinput').type(newIncident);
+			cy.findByTestId('incidentNameinput').type(newIncident, {force: true});
 			cy.get('#interactiveDialogCancel').click();
 		});
 		// * Verify it's canceled

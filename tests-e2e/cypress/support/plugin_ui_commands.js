@@ -13,7 +13,7 @@ Cypress.Commands.add('startIncident', (playbookName, incidentID) => {
 		cy.selectPlaybookFromDropdown(playbookName);
 
 		// Type channel name
-		cy.findByTestId('incidentNameinput').type(incidentID);
+		cy.findByTestId('incidentNameinput').type(incidentID, {force: true});
 
 		// Submit
 		cy.get('#interactiveDialogSubmit').click();
@@ -24,7 +24,7 @@ Cypress.Commands.add('startIncident', (playbookName, incidentID) => {
 // Opens incident dialog using the `/incident start` slash command
 Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
 	cy.findByTestId('post_textbox').clear().type(incidentStartCommand);
-	cy.get('.suggestion--selected').click({force: true})
+	cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 100}); // disable autocomplete
 	cy.findByTestId('post_textbox').type('{enter}');
 
 	cy.get('#interactiveDialogModalLabel');
@@ -82,7 +82,7 @@ Cypress.Commands.add('openIncidentBackstage', () => {
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 	cy.visit(`/${teamName}/com.mattermost.plugin-incident-response/playbooks/new`);
 
-	cy.get('.header-button-div > button.btn-primary').should('be.visible');
+	cy.get('.header-button-div > button.btn-primary', {timeout: TIMEOUTS.LARGE}).should('be.visible');
 
 	// Type playbook name
 	cy.get('#playbook-name').type(playbookName);

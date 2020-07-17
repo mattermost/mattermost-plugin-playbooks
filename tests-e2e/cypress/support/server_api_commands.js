@@ -3,6 +3,7 @@
 
 import {getRandomInt} from '../utils';
 import users from '../fixtures/users.json';
+import timeouts from '../fixtures/timeouts';
 
 // *****************************************************************************
 // Authentication
@@ -35,6 +36,7 @@ Cypress.Commands.add('apiLogout', () => {
         url: '/api/v4/users/logout',
         method: 'POST',
         log: false,
+        timeout: timeouts.HUGE,
     });
 });
 

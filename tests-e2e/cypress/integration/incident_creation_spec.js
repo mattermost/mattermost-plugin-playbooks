@@ -28,7 +28,6 @@ describe('Incident Creation', () => {
 
 	before(() => {
 		cy.apiLogin('user-1');
-		cy.visit('/');
 		cy.createPlaybook('ad-1', dummyPlaybookName);
 	})
 
