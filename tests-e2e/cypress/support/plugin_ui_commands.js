@@ -24,8 +24,9 @@ Cypress.Commands.add('startIncident', (playbookName, incidentID) => {
 // Opens incident dialog using the `/incident start` slash command
 Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
 	cy.findByTestId('post_textbox').clear().type(incidentStartCommand);
-	cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 100}); // disable autocomplete
-	cy.findByTestId('post_textbox').type('{enter}');
+
+	// Using esc to make sure we exist out of slash command autocomplete
+	cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 100}).type('{enter}');
 
 	cy.get('#interactiveDialogModalLabel');
 });
@@ -82,13 +83,13 @@ Cypress.Commands.add('openIncidentBackstage', () => {
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 	cy.visit(`/${teamName}/com.mattermost.plugin-incident-response/playbooks/new`);
 
-	cy.get('.header-button-div > button.btn-primary', {timeout: TIMEOUTS.LARGE}).should('be.visible');
+	cy.findByTestId('save_playbook', {timeout: TIMEOUTS.LARGE}).should('be.visible');
 
 	// Type playbook name
 	cy.get('#playbook-name').type(playbookName);
 
 	// Save
-	cy.get('.header-button-div > button.btn-primary').click();
+	cy.findByTestId('save_playbook').click();
 });
 
 // Select the playbook from the dropdown menu

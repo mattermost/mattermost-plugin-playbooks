@@ -54,41 +54,27 @@ Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
  // Verify incident is created
 Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
     //Login as sysadmin to check that incident got created
-    const incidentFound = true;
+    let incidentFound;
 
-    cy.apiLogout();
-    cy.apiLogin('sysadmin');
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
-        allIncidents.incidents.forEach((incident) => {
-            if (incident.name == incidentID) {
-                assert.equal(incident.is_active, true);
-                incidentFound = true;
-            }
-        });
+        incidentFound = allIncidents.incidents.find((inc) => inc.name === incidentID);
+        assert.notEqual(incidentFound, undefined);
+        assert.equal(incidentFound.is_active, true)
     });
-
-    assert.equal(incidentFound, true);
 });
 
 // Verify incident is not created
 Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
     //Login as sysadmin to check that incident got created
-    const incidentFound = true;
+    let incidentFound;
 
-    cy.apiLogout();
-    cy.apiLogin('sysadmin');
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
-        allIncidents.incidents.forEach((incident) => {
-            if (incident.name == incidentID) {
-                assert.equal(incident.is_active, false);
-                incidentFound = true;
-            }
-        });
+        incidentFound = allIncidents.incidents.find((inc) => inc.name === incidentID);
+        assert.notEqual(incidentFound, undefined);
+        assert.equal(incidentFound.is_active, false)
     });
-
-    assert.equal(incidentFound, true);
 });
 
 

@@ -35,7 +35,7 @@ describe('Incident Creation', () => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 
-        //TODO:- afterEach: delete all incidents, playbooks here
+        //TODO:- afterEach: delete all incidents and playbooks here
 	});
 
 	// Test Plan for v0.1 #18, 23, 28 Incident can be started while viewing a public channel
