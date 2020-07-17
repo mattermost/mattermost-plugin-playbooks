@@ -701,9 +701,10 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
 	}
 
+	introText := fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
 	return &model.Dialog{
 		Title:            "Incident Details",
-		IntroductionText: fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown),
+		IntroductionText: introText,
 		Elements: []model.DialogElement{
 			{
 				DisplayName: "Playbook",
