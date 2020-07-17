@@ -40,7 +40,7 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
  * @param {String} workflowId
  * All parameters required
  */
- Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
+Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint + '/' + incidentId + '/end',
@@ -49,11 +49,13 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
         expect(response.status).to.equal(200);
         cy.wrap(response);
     });
- });
+});
 
  // Verify incident is created
 Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
     //Login as sysadmin to check that incident got created
+    const incidentFound = true;
+
     cy.apiLogout();
     cy.apiLogin('sysadmin');
     cy.apiGetAllIncidents().then((response) => {
@@ -61,14 +63,19 @@ Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
         allIncidents.incidents.forEach((incident) => {
             if (incident.name == incidentID) {
                 assert.equal(incident.is_active, true);
+                incidentFound = true;
             }
         });
     });
+
+    assert.equal(incidentFound, true);
 });
 
 // Verify incident is not created
 Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
     //Login as sysadmin to check that incident got created
+    const incidentFound = true;
+
     cy.apiLogout();
     cy.apiLogin('sysadmin');
     cy.apiGetAllIncidents().then((response) => {
@@ -76,9 +83,12 @@ Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
         allIncidents.incidents.forEach((incident) => {
             if (incident.name == incidentID) {
                 assert.equal(incident.is_active, false);
+                incidentFound = true;
             }
         });
     });
+
+    assert.equal(incidentFound, true);
 });
 
 

@@ -178,11 +178,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
-
-	var playbookTemplate *playbook.Playbook
-	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
-		playbookTemplate = &playbook.Playbook{ID: playbookID}
-	}
+	playbookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string)
 
 	payloadIncident := incident.Incident{
 		Header: incident.Header{
@@ -191,7 +187,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			Name:            name,
 		},
 		PostID:   state.PostID,
-		Playbook: playbookTemplate,
+		Playbook: &playbook.Playbook{ID: playbookID},
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
@@ -260,7 +256,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	public := true
-	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" && newIncident.Playbook.ID != "-1" {
+	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" {
 		pb, err := h.playbookService.Get(newIncident.Playbook.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")

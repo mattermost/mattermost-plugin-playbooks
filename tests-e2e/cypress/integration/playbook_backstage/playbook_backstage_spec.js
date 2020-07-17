@@ -17,8 +17,7 @@ describe('Playbook List View in Backstage', () => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 
-		// # Go to the team's town-square channel
-		cy.visit('/ad-1/channels/town-square');
+		cy.visit('/');
 	});
 
 	it('Has "Playbooks" and team name in heading', () => {

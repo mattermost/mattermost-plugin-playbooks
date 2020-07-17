@@ -254,17 +254,17 @@ func (mr *MockServiceMockRecorder) NukeDB() *gomock.Call {
 }
 
 // OpenCreateIncidentDialog mocks base method
-func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3 string, arg4 []playbook.Playbook) error {
+func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4 string, arg5 []playbook.Playbook) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenCreateIncidentDialog", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "OpenCreateIncidentDialog", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OpenCreateIncidentDialog indicates an expected call of OpenCreateIncidentDialog
-func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // OpenEndIncidentDialog mocks base method

@@ -11,11 +11,11 @@ function waitUntilPermanentPost() {
 function clickPostHeaderItem(postId, location, item) {
     if (postId) {
         cy.get(`#post_${postId}`).trigger('mouseover', {force: true});
-        cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${postId}`).click({force: true});
+        cy.get(`#${location}_${item}_${postId}`).click({force: true});
     } else {
         cy.getLastPostId().then((lastPostId) => {
             cy.get(`#post_${lastPostId}`).trigger('mouseover', {force: true});
-            cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${lastPostId}`).click({force: true});
+            cy.get(`#${location}_${item}_${lastPostId}`).click({force: true});
         });
     }
 }
@@ -41,7 +41,12 @@ Cypress.Commands.add('clickPostDotMenu', (postId, location = 'CENTER') => {
 */
 Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') => {
 	cy.get('#addDirectChannel').click();
-	cy.get('#selectItems').type(username + '{enter}{enter}');
+    cy.get('#selectItems').type(username);
+    cy.get('.clickable').contains(username).click({force: true});
+    if (!self) {
+        cy.get('#saveItems').click();
+    }
+
 	if (self === true && user === 'user-1'){
 		cy.get('#channelHeaderInfo').within(() => {
 			cy.findByText('user-1 (you)').should('be.visible');
@@ -50,5 +55,5 @@ Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') =
 		cy.get('#channel-header').within(() => {
 			cy.findByText(username).should('be.visible');
 		});
-	}
+    }
 });

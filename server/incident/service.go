@@ -122,8 +122,8 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 }
 
 // OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error {
-	dialog, err := s.newIncidentDialog(commanderID, postID, clientID, playbooks)
+func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error {
+	dialog, err := s.newIncidentDialog(teamID, commanderID, postID, clientID, playbooks)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new incident dialog")
 	}
@@ -663,7 +663,12 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 	return channel, nil
 }
 
-func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, playbooks []playbook.Playbook) (*model.Dialog, error) {
+func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID string, playbooks []playbook.Playbook) (*model.Dialog, error) {
+	team, err := s.pluginAPI.Team.Get(teamID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch team")
+	}
+
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch commander user")
@@ -677,10 +682,7 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
 	}
 
-	options := []*model.PostActionOptions{{
-		Text:  "None",
-		Value: "-1",
-	}}
+	var options []*model.PostActionOptions
 	for _, playbook := range playbooks {
 		if !canStartIncidentWithPlaybook(commanderID, playbook) {
 			continue
@@ -692,23 +694,29 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 		})
 	}
 
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	newPlaybookMarkdown := ""
+	if siteURL != nil && *siteURL != "" {
+		url := fmt.Sprintf("%s/%s/%s/playbooks/new", *siteURL, team.Name, s.configService.GetManifest().Id)
+		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
+	}
+
 	return &model.Dialog{
 		Title:            "Incident Details",
-		IntroductionText: fmt.Sprintf("**Commander:** %v", getUserDisplayName(user)),
+		IntroductionText: fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown),
 		Elements: []model.DialogElement{
+			{
+				DisplayName: "Playbook",
+				Name:        DialogFieldPlaybookIDKey,
+				Type:        "select",
+				Options:     options,
+			},
 			{
 				DisplayName: "Channel Name",
 				Name:        DialogFieldNameKey,
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
-			},
-			{
-				DisplayName: "Playbook",
-				Name:        DialogFieldPlaybookIDKey,
-				Type:        "select",
-				Options:     options,
-				Optional:    true,
 			},
 		},
 		SubmitLabel:    "Start Incident",
