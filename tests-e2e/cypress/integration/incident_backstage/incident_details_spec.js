@@ -17,6 +17,7 @@ describe('Incident Details View in Backstage ', () => {
 	const dummyPlaybookName = 'Dummy playbook' + Date.now();
 
 	before(() => {
+		// # Create a dummy playbook as non-admin user
 		cy.apiLogin('user-1');
 		cy.createPlaybook('ad-1', dummyPlaybookName);
 	})

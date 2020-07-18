@@ -9,13 +9,13 @@ const incidentStartCommand = "/incident start";
 // function startIncident(incidentID) {
 Cypress.Commands.add('startIncident', (playbookName, incidentID) => {
 	cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-		// Select playbook
+		// # Select playbook
 		cy.selectPlaybookFromDropdown(playbookName);
 
-		// Type channel name
+		// # Type channel name
 		cy.findByTestId('incidentNameinput').type(incidentID, {force: true});
 
-		// Submit
+		// # Submit
 		cy.get('#interactiveDialogSubmit').click();
 	});
 	cy.get('#interactiveDialogModal').should('not.be.visible');
@@ -85,10 +85,10 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 
 	cy.findByTestId('save_playbook', {timeout: TIMEOUTS.LARGE}).should('be.visible');
 
-	// Type playbook name
+	// # Type playbook name
 	cy.get('#playbook-name').type(playbookName);
 
-	// Save
+	// # Save
 	cy.findByTestId('save_playbook').click();
 });
 

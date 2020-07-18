@@ -22,6 +22,7 @@ describe('Incident Creation Modal', () => {
 	const dummyPlaybookName = 'Dummy playbook' + Date.now();
 
 	before(() => {
+		// # Create a dummy playbook as non-admin user
 		cy.apiLogin('user-1');
 		cy.createPlaybook('ad-1', dummyPlaybookName);
 	})
@@ -37,14 +38,14 @@ describe('Incident Creation Modal', () => {
 		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
 			cy.findByText("Incident Details").should('be.visible');
 
-			// Attempt to submit
+			// # Attempt to submit
 			cy.get('#interactiveDialogSubmit').click();
 		});
 
-		// Verify it didn't submit
+		// * Verify it didn't submit
 		cy.get('#interactiveDialogModal').should('be.visible');
 
-		// Verify required fields
+		// * Verify required fields
 		cy.findByTestId('autoCompleteSelector').contains('Playbook');
 		cy.findByTestId('autoCompleteSelector').contains('This field is required.');
 		cy.findByTestId('incidentName').contains('This field is required.');
@@ -67,7 +68,7 @@ describe('Incident Creation Modal', () => {
 		.then((href) => {
 			cy.visit(href);
 
-			// Verify it's the new playbook page
+			// * Verify it's the new playbook page
 			cy.get('.Backstage__header').contains('New Playbook').should('be.visible');
 		});
 	});
