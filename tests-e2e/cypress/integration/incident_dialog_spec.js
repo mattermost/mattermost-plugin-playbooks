@@ -105,14 +105,11 @@ describe('Incident Creation Modal', () => {
 		// * Verify it's canceled
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 
-		// * Login as sysadmin to check that incident did not get created
-		cy.apiLogout();
-		cy.apiLogin('sysadmin');
+		// * Verify that the incident did not get created
 		cy.apiGetAllIncidents().then((response) => {
 			const allIncidents = JSON.parse(response.body);
-			allIncidents.incidents.forEach((incident) => {
-				assert.notEqual(incident.name, newIncident);
-			});
+			const incidentFound = allIncidents.incidents.find((inc) => inc.name === newIncident);
+			assert.equal(incidentFound, undefined);
 		});
 	});
 });
