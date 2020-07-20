@@ -25,7 +25,7 @@ Cypress.Commands.add('startIncident', (playbookName, incidentID) => {
 Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
 	cy.findByTestId('post_textbox').clear().type(incidentStartCommand);
 
-	// Using esc to make sure we exist out of slash command autocomplete
+	// Using esc to make sure we exit out of slash command autocomplete
 	cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 100}).type('{enter}');
 
 	cy.get('#interactiveDialogModalLabel');
