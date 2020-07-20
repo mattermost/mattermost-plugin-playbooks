@@ -16,7 +16,7 @@ import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {MultiChecklistEditor} from 'src/components/multi_checklist_editor';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Toggle from 'src/components/widgets/toggle';
-import BackIcon from 'src/components/assets/icons/back_icon';
+import {BackstageHeaderBackIcon} from 'src/components/assets/icons/back_icon';
 import Spinner from 'src/components/assets/icons/spinner';
 import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/constants';
 
@@ -144,8 +144,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         <div className='Playbook'>
             <div className='Backstage__header'>
                 <div className='title'>
-                    <BackIcon
-                        className='Backstage__header__back'
+                    <BackstageHeaderBackIcon
                         onClick={confirmOrClose}
                     />
                     {props.isNew ? 'New Playbook' : 'Edit Playbook' }
