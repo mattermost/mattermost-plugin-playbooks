@@ -157,5 +157,19 @@ $font-family: Open Sans;
 .checkbox-textboxes {
     .form-control {
         margin-top: 5px;
+        min-width: 320px;
+    }
+
+    .custom-textarea {
+        border-radius: 2px;
+        border: 1px solid var(--center-channel-color-16);
+        min-height: unset;
+        height: 34px;
+
+        &:focus {
+            border-radius: 2px;
+            border: 1px solid var(--center-channel-color-40);
+            padding: 6px 12px;
+        }
     }
 }

@@ -160,12 +160,6 @@ export const ChecklistEditor = ({
                                                         {...draggableProvided.draggableProps}
                                                         {...draggableProvided.dragHandleProps}
                                                         style={draggableProvided.draggableProps.style}
-                                                        onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-                                                            if (event.defaultPrevented) {
-                                                                return;
-                                                            }
-                                                            event.currentTarget.focus();
-                                                        }}
                                                     >
                                                         <ChecklistItemDetailsEdit
                                                             checklistItem={checklistItem}

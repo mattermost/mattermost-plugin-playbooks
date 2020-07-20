@@ -1,8 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
+import {useSelector} from 'react-redux';
 import moment from 'moment';
+
+import Textbox from 'mattermost-webapp/components/textbox/textbox';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {Channel} from 'mattermost-redux/types/channels';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import {ChecklistItem} from 'src/types/playbook';
 
@@ -108,11 +114,14 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
 
 interface ChecklistItemDetailsEditProps {
     checklistItem: ChecklistItem;
+    suggestionsOnBottom?: boolean;
     onEdit: (newvalue: ChecklistItem) => void;
     onRemove: () => void;
 }
 
-export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
+export const ChecklistItemDetailsEdit = ({checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
+    const textboxRef = useRef(null);
+    const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [title, setTitle] = useState(checklistItem.title);
     const [command, setCommand] = useState(checklistItem.command);
 
@@ -127,6 +136,11 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
             onEdit({...checklistItem, ...{title: trimmedTitle, command: trimmedCommand}});
         }
     };
+
+    // @ts-ignore
+    const AutocompleteTextbox = window.Textbox;
+
+    const suggestionListStyle = suggestionsOnBottom ? 'bottom' : 'top';
 
     return (
         <div
@@ -143,8 +157,8 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                     onClick={(e) => e.stopPropagation()}
                     onBlur={submit}
                     placeholder={'Title'}
-                    onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === 'Escape') {
                             submit();
                         }
                     }}
@@ -152,21 +166,36 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                         setTitle(e.target.value);
                     }}
                 />
-                <input
+                <AutocompleteTextbox
+                    ref={textboxRef}
+                    id={'testID'}
+                    channelId={channelId}
+                    inputComponent={'input'}
+                    createMessage={'/slash command'}
+                    onKeyDown={(e: KeyboardEvent) => {
+                        if (e.key === 'Enter' || e.key === 'Escape') {
+                            if (textboxRef.current) {
+                                const myTextBox = textboxRef.current as unknown as Textbox;
+                                myTextBox.blur();
+                            }
+                        }
+                    }}
+                    onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                        if (e.target) {
+                            const input = e.target as HTMLInputElement;
+                            setCommand(input.value);
+                        }
+                    }}
+                    suggestionListStyle={suggestionListStyle}
+
                     className='form-control'
                     type='text'
                     value={command}
                     onBlur={submit}
-                    placeholder={'/Slash Command'}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                            submit();
-                        }
-                    }}
-                    onChange={(e) => {
-                        setCommand(e.target.value);
-                    }}
+
+                    // the following are required props but aren't used
+                    characterLimit={256}
+                    onKeyPress={(e: KeyboardEvent) => true}
                 />
             </div>
             <span

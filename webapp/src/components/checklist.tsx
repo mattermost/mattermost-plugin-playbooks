@@ -127,15 +127,10 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                                                         {...draggableProvided.draggableProps}
                                                         {...draggableProvided.dragHandleProps}
                                                         style={draggableProvided.draggableProps.style}
-                                                        onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-                                                            if (event.defaultPrevented) {
-                                                                return;
-                                                            }
-                                                            event.currentTarget.focus();
-                                                        }}
                                                     >
                                                         <ChecklistItemDetailsEdit
                                                             checklistItem={checklistItem}
+                                                            suggestionsOnBottom={index < 2}
                                                             onEdit={(editedTo: ChecklistItem) => {
                                                                 editItem(index, editedTo);
                                                             }}
