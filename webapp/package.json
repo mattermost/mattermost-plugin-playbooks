@@ -40,11 +40,13 @@
     "@types/react-intl": "3.0.0",
     "@types/react-router-dom": "5.1.5",
     "@types/react-transition-group": "4.4.0",
+    "@types/styled-components": "^5.1.1",
     "@typescript-eslint/eslint-plugin": "3.1.0",
     "@typescript-eslint/parser": "3.1.0",
     "babel-eslint": "^10.1.0",
     "babel-jest": "26.0.1",
     "babel-loader": "8.1.0",
+    "babel-plugin-styled-components": "^1.10.7",
     "babel-plugin-typescript-to-proptypes": "1.3.2",
     "classnames": "^2.2.6",
     "compass-mixins": "^0.12.10",
@@ -71,8 +73,6 @@
     "webpack-cli": "3.3.11"
   },
   "dependencies": {
-    "mattermost-redux": "5.24.2",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
     "@emotion/babel-preset-css-prop": "^10.0.27",
     "@emotion/core": "^10.0.28",
     "@types/chart.js": "2.9.21",
@@ -85,6 +85,8 @@
     "chart.js": "2.9.3",
     "core-js": "3.6.5",
     "debounce": "^1.2.0",
+    "mattermost-redux": "5.24.2",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
     "moment": "2.26.0",
     "qs": "6.9.4",
     "react": "16.13.1",
@@ -93,6 +95,7 @@
     "react-select": "3.1.0",
     "redux": "4.0.5",
     "reselect": "4.0.0",
+    "styled-components": "5.1.1",
     "typescript": "3.9.3"
   },
   "jest": {

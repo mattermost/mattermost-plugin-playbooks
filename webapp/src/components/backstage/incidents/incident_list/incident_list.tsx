@@ -31,6 +31,7 @@ import StatusBadge from '../status_badge';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import './incident_list.scss';
+import BackstageListHeader from '../../backstage_list_header';
 
 const debounceDelay = 300; // in milliseconds
 const PER_PAGE = 15;
@@ -183,7 +184,7 @@ const BackstageIncidentList: FC = () => {
                         onChange={setStatus}
                     />
                 </div>
-                <div className='Backstage-list-header'>
+                <BackstageListHeader>
                     <div className='row'>
                         <div className='col-sm-3'>
                             <SortableColHeader
@@ -219,7 +220,7 @@ const BackstageIncidentList: FC = () => {
                         </div>
                         <div className='col-sm-3'> {'Commander'} </div>
                     </div>
-                </div>
+                </BackstageListHeader>
 
                 {
                     !incidents.length && !isFiltering &&

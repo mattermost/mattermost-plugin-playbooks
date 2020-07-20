@@ -16,7 +16,7 @@ import {fetchIncidentWithDetails} from 'src/client';
 import {Incident} from 'src/types/incident';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile/profile';
-import BackIcon from 'src/components/assets/icons/back_icon';
+import {BackstageHeaderBackIcon} from 'src/components/assets/icons/back_icon';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
@@ -81,8 +81,7 @@ const BackstageIncidentDetails: FC<Props> = (props: Props) => {
         <div className='BackstageIncidentDetails'>
             <div className='details-header'>
                 <div className='title'>
-                    <BackIcon
-                        className='Backstage__header__back'
+                    <BackstageHeaderBackIcon
                         onClick={props.onClose}
                     />
                     <TextWithTooltip
