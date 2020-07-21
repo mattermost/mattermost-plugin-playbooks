@@ -375,7 +375,6 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, *got)
-
 		})
 	}
 }

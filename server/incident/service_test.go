@@ -220,7 +220,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
 					Return(&incident.GetIncidentsResults{
-						Incidents:  []incident.Incident{id1, id2, id3, id4, id5, id6},
+						Items:      []incident.Incident{id1, id2, id3, id4, id5, id6},
 						TotalCount: 6,
 					}, nil)
 			},
@@ -236,7 +236,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
 					Return(&incident.GetIncidentsResults{
-						Incidents:  []incident.Incident{id5, id6},
+						Items:      []incident.Incident{id5, id6},
 						TotalCount: 2,
 					}, nil)
 			},
@@ -251,7 +251,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
 					Return(&incident.GetIncidentsResults{
-						Incidents:  []incident.Incident{id1, id2, id3, id4},
+						Items:      []incident.Incident{id1, id2, id3, id4},
 						TotalCount: 4,
 					}, nil)
 			},
