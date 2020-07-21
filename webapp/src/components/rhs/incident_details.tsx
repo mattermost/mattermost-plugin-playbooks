@@ -8,10 +8,10 @@ import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, setActiveStage} from 'src/client';
+import {fetchUsersInChannel, setCommander, setActiveStage, setChecklistItemState} from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {Incident} from 'src/types/incident';
-import {Checklist, ChecklistItem, emptyChecklist} from 'src/types/playbook';
+import {Checklist, ChecklistItem, emptyChecklist, ChecklistItemState} from 'src/types/playbook';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 
@@ -173,13 +173,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                 <ChecklistItemDetails
                                     key={checklistItem.title + index}
                                     checklistItem={checklistItem}
-                                    disabled={false}
-                                    onChange={(checked: boolean) => {
-                                        if (checked) {
-                                            checkItem(props.incident.id, selectedChecklistIndex, index);
-                                        } else {
-                                            uncheckItem(props.incident.id, selectedChecklistIndex, index);
-                                        }
+                                    onChange={(newState: ChecklistItemState) => {
+                                        setChecklistItemState(props.incident.id, selectedChecklistIndex, index, newState);
                                     }}
                                     onRedirect={() => {
                                         if (isMobile()) {

@@ -308,34 +308,43 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 
 // ModifyCheckedState checks or unchecks the specified checklist item
 // Indeponant, will not perform any actions if the checklist item is already in the given checked state
-func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber, itemNumber int) error {
+func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
 	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
-	if newState == itemToCheck.Checked {
+	if newState == itemToCheck.State {
 		return nil
 	}
+
+	hasCommand := itemToCheck.Command != ""
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
-	if !newState {
-		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
+	modifyMessage := fmt.Sprintf(" \"%v\"", itemToCheck.Title)
+	if newState == playbook.ChecklistItemStateInProgress {
+		modifyMessage = fmt.Sprintf("started progress on \"%v\"", itemToCheck.Title)
+	} else if newState == playbook.ChecklistItemStateClosed {
+		if hasCommand {
+			modifyMessage = fmt.Sprintf("ran \"%v\"", itemToCheck.Title)
+		} else {
+			modifyMessage = fmt.Sprintf("finished \"%v\"", itemToCheck.Title)
+		}
 	}
+
 	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
 	}
 
-	itemToCheck.Checked = newState
-	itemToCheck.CheckedModified = time.Now()
-	itemToCheck.CheckedPostID = postID
+	itemToCheck.State = newState
+	itemToCheck.StateModified = time.Now()
+	itemToCheck.StateModifiedPostID = postID
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
@@ -347,7 +356,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return errors.Wrapf(err, "failed to get main channel")
 	}
 
-	if itemToCheck.Checked && itemToCheck.Command != "" {
+	if itemToCheck.State == playbook.ChecklistItemStateClosed && hasCommand {
 		_, err := s.pluginAPI.SlashCommand.ExecuteSlashCommand(&model.CommandArgs{
 			UserId:    userID,
 			ChannelId: mainChannelID,
@@ -362,18 +371,6 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	return nil
-}
-
-// ToggleCheckedState checks or unchecks the specified checklist item
-func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
-	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
-	if err != nil {
-		return err
-	}
-
-	newState := !incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Checked
-
-	return s.ModifyCheckedState(incidentID, userID, newState, checklistNumber, itemNumber)
 }
 
 // AddChecklistItem adds an item to the specified checklist

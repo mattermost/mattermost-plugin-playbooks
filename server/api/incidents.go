@@ -72,8 +72,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
 	checklistItem.HandleFunc("", handler.itemRename).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/check", handler.check).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 
 	return handler
 }
@@ -624,7 +623,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 	}
 }
 
-func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {
+func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
@@ -639,21 +638,21 @@ func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, c
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.ModifyCheckedState(id, userID, check, checklistNum, itemNum); err != nil {
+	var params struct {
+		NewState string `json:"new_state"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		HandleError(w, errors.Wrap(err, "failed to unmarshal"))
+		return
+	}
+
+	if err := h.incidentService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
 		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
-}
-
-func (h *IncidentHandler) check(w http.ResponseWriter, r *http.Request) {
-	h.checkuncheck(w, r, true)
-}
-
-func (h *IncidentHandler) uncheck(w http.ResponseWriter, r *http.Request) {
-	h.checkuncheck(w, r, false)
 }
 
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {

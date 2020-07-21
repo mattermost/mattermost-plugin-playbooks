@@ -9,7 +9,7 @@ import {
     DraggableProvided,
 } from 'react-beautiful-dnd';
 
-import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {MAX_NAME_LENGTH} from 'src/constants';
 
 import {ChecklistItemDetailsEdit} from './checklist_item';
@@ -200,7 +200,7 @@ export const ChecklistEditor = ({
                                 }
                                 onAddChecklistItem({
                                     title: newValue,
-                                    checked: false,
+                                    state: ChecklistItemState.Open,
                                     command: '',
                                 });
                                 setNewValue('');

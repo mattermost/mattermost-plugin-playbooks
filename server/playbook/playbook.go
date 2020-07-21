@@ -9,6 +9,12 @@ import (
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
+const (
+	ChecklistItemStateOpen       = ""
+	ChecklistItemStateInProgress = "in_progress"
+	ChecklistItemStateClosed     = "closed"
+)
+
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
 	ID                   string      `json:"id"`
@@ -27,11 +33,11 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	Title           string    `json:"title"`
-	Checked         bool      `json:"checked"`
-	CheckedModified time.Time `json:"checked_modified"`
-	CheckedPostID   string    `json:"checked_post_id"`
-	Command         string    `json:"command"`
+	Title               string    `json:"title"`
+	State               string    `json:"state"`
+	StateModified       time.Time `json:"state_modified"`
+	StateModifiedPostID string    `json:"state_modified_post_id"`
+	Command             string    `json:"command"`
 }
 
 // Service is the playbook service for managing playbooks

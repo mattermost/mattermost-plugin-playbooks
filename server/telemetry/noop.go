@@ -39,7 +39,7 @@ func (t *NoopTelemetry) RenameChecklistItem(string, string) {
 }
 
 // ModifyCheckedState does nothing.
-func (t *NoopTelemetry) ModifyCheckedState(string, string, bool) {
+func (t *NoopTelemetry) ModifyCheckedState(string, string, string) {
 }
 
 // MoveChecklistItem does nothing.

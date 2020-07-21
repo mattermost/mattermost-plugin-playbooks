@@ -1,17 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import moment from 'moment';
 
-import {ChecklistItem} from 'src/types/playbook';
+import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import Spinner from './assets/icons/spinner';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
-    disabled: boolean;
-    onChange?: (item: boolean) => void;
+    onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
 }
 
@@ -20,66 +19,87 @@ const {formatText, messageHtmlToComponent} = window.PostUtils;
 
 const markdownOptions = {singleline: true, mentionHighlight: false, atMentions: true};
 
-export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedirect}: ChecklistItemDetailsProps): React.ReactElement => {
+export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
     const [spinner, setSpinner] = useState(false);
 
+    useEffect(() => {
+        setSpinner(false);
+    }, [props.checklistItem]);
+
     let timestamp = '';
-    let title = checklistItem.title;
-    if (checklistItem.checked) {
-        const checkedModified = moment(checklistItem.checked_modified);
+    const title = props.checklistItem.title;
+
+    if (props.checklistItem.state === ChecklistItemState.Closed) {
+        const stateModified = moment(props.checklistItem.state_modified);
 
         // Avoid times before 2020 since those are errors
-        if (checkedModified.isSameOrAfter('2020-01-01')) {
-            timestamp = '(' + checkedModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
+        if (stateModified.isSameOrAfter('2020-01-01')) {
+            timestamp = '(' + stateModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
         }
-        title += ' ';
     }
 
-    let activation = (
-        <input
-            className='checkbox'
-            type='checkbox'
-            disabled={disabled}
-            readOnly={!onChange}
-            checked={checklistItem.checked}
-            onClick={() => {
-                if (!disabled && onChange) {
-                    onChange(!checklistItem.checked);
-                }
-            }}
-        />
-    );
-    if (checklistItem.command) {
-        if (checklistItem.checked) {
-            activation = (
-                <button
-                    type='button'
-                    disabled={true}
-                >
-                    {'Done'}
-                </button>
-            );
-        } else {
-            activation = (
-                <button
-                    title={checklistItem.command}
-                    type='button'
-                    onClick={() => {
-                        if (onChange && !disabled) {
-                            onChange(true);
-                            setSpinner(true);
-                        }
-                    }}
-                >
-                    {spinner ? <Spinner/> : 'Run'}
-                </button>
-            );
+    const isCommand = Boolean(props.checklistItem.command);
+    let activation = null;
+    switch (props.checklistItem.state) {
+    case ChecklistItemState.Open: {
+        let label = 'Start';
+        let hovertext = '';
+        if (isCommand) {
+            label = 'Run';
+            hovertext = props.checklistItem.command;
         }
+        activation = (
+            <button
+                title={hovertext}
+                type='button'
+                onClick={() => {
+                    if (props.onChange) {
+                        setSpinner(true);
+                        if (isCommand) {
+                            props.onChange(ChecklistItemState.Closed);
+                        } else {
+                            props.onChange(ChecklistItemState.InProgress);
+                        }
+                    }
+                }}
+            >
+                {spinner ? <Spinner/> : label}
+            </button>
+        );
+        break;
+    }
+    case ChecklistItemState.InProgress: {
+        activation = (
+            <button
+                type='button'
+                onClick={() => {
+                    if (props.onChange) {
+                        setSpinner(true);
+                        props.onChange(ChecklistItemState.Closed);
+                    }
+                }}
+            >
+                {'Finish'}
+            </button>
+        );
+        break;
+    }
+    case ChecklistItemState.Closed: {
+        activation = (
+            <button
+                type='button'
+                disabled={true}
+            >
+                {'Done'}
+            </button>
+        );
+        break;
+    }
     }
 
     return (
         <div
-            className={'checkbox-container live' + (disabled ? ' light' : '')}
+            className={'checkbox-container live'}
         >
             {activation}
             <label title={title}>
@@ -87,17 +107,17 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
             </label>
             <a
                 className={'timestamp small'}
-                href={`/_redirect/pl/${checklistItem.checked_post_id}`}
+                href={`/_redirect/pl/${props.checklistItem.state_modified_post_id}`}
                 onClick={(e) => {
                     e.preventDefault();
-                    if (!checklistItem.checked_post_id) {
+                    if (!props.checklistItem.state_modified_post_id) {
                         return;
                     }
 
                     // @ts-ignore
-                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${checklistItem.checked_post_id}`);
-                    if (onRedirect) {
-                        onRedirect();
+                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${props.checklistItem.state_modified_post_id}`);
+                    if (props.onRedirect) {
+                        props.onRedirect();
                     }
                 }}
             >

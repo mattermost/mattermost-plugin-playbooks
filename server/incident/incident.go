@@ -108,12 +108,9 @@ type Service interface {
 	// to commanderID. Changing to the same commanderID is a no-op.
 	ChangeCommander(incidentID string, userID string, commanderID string) error
 
-	// ModifyCheckedState checks or unchecks the specified checklist item
+	// ModifyCheckedState modifies the state of the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already in the specified state
-	ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error
-
-	// ToggleCheckedState checks or unchecks the specified checklist item
-	ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error
+	ModifyCheckedState(incidentID, userID string, newState string, checklistNumber int, itemNumber int) error
 
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
@@ -173,7 +170,7 @@ type Telemetry interface {
 
 	// ModifyCheckedState tracks the checking and unchecking of items by the user
 	// identified by userID in the incident identified by incidentID.
-	ModifyCheckedState(incidentID, userID string, newState bool)
+	ModifyCheckedState(incidentID, userID string, newState string)
 
 	// AddChecklistItem tracks the creation of a new checklist item by the user
 	// identified by userID in the incident identified by incidentID.
