@@ -123,7 +123,7 @@ func (r *Runner) actionStart(args []string) {
 		return
 	}
 
-	if err := r.incidentService.OpenCreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID, playbooks); err != nil {
+	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooks); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}

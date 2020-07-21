@@ -12,12 +12,6 @@
 import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
-function openIncidentDialog() {
-	const incidentStartCommand = '/incident start';
-	cy.findByTestId('post_textbox').clear().type(incidentStartCommand).type('{enter}');
-	cy.wait(TIMEOUTS.MEDIUM);
-}
-
 function closeIncidentDialog() {
 	cy.get('#interactiveDialogModal').should('be.visible').within(() => {
 		cy.get('#interactiveDialogCancel').click();
@@ -25,11 +19,36 @@ function closeIncidentDialog() {
 }
 
 describe('Incident Creation Modal', () => {
+	const dummyPlaybookName = 'Dummy playbook' + Date.now();
+
+	before(() => {
+		// # Create a dummy playbook as non-admin user
+		cy.apiLogin('user-1');
+		cy.createPlaybook('ad-1', dummyPlaybookName);
+	})
+
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 		cy.visit('/');
-		openIncidentDialog();
+		cy.openIncidentDialogFromSlashCommand();
+	});
+
+	it('Cannot create without filling required fields', () => {
+		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+			cy.findByText("Incident Details").should('be.visible');
+
+			// # Attempt to submit
+			cy.get('#interactiveDialogSubmit').click();
+		});
+
+		// * Verify it didn't submit
+		cy.get('#interactiveDialogModal').should('be.visible');
+
+		// * Verify required fields
+		cy.findByTestId('autoCompleteSelector').contains('Playbook');
+		cy.findByTestId('autoCompleteSelector').contains('This field is required.');
+		cy.findByTestId('incidentName').contains('This field is required.');
 	});
 
 	it('Shows "Incident Details" heading', () => {
@@ -37,6 +56,21 @@ describe('Incident Creation Modal', () => {
 			cy.findByText("Incident Details").should('be.visible');
 		});
 		closeIncidentDialog();
+	});
+
+	it('Shows create playbook markdown', () => {
+		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+			cy.findByText("Incident Details").should('be.visible');
+		});
+
+		cy.get('#interactiveDialogModalIntroductionText').find('a')
+		.invoke('attr', 'href')
+		.then((href) => {
+			cy.visit(href);
+
+			// * Verify it's the new playbook page
+			cy.get('.Backstage__header').contains('New Playbook').should('be.visible');
+		});
 	});
 
 	it('Shows Commander', () => {
@@ -62,23 +96,20 @@ describe('Incident Creation Modal', () => {
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 
 		// # Fill the interactive dialog and click Cancel
-		openIncidentDialog();
+		cy.openIncidentDialogFromSlashCommand();
 		const newIncident = "New Incident" + Date.now();
 		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.findByTestId('incidentNameinput').type(newIncident);
+			cy.findByTestId('incidentNameinput').type(newIncident, {force: true});
 			cy.get('#interactiveDialogCancel').click();
 		});
 		// * Verify it's canceled
 		cy.get('#interactiveDialogModal').should('not.be.visible');
 
-		// * Login as sysadmin to check that incident did not get created
-		cy.apiLogout();
-		cy.apiLogin('sysadmin');
+		// * Verify that the incident did not get created
 		cy.apiGetAllIncidents().then((response) => {
 			const allIncidents = JSON.parse(response.body);
-			allIncidents.incidents.forEach((incident) => {
-				assert.notEqual(incident.name, newIncident);
-			});
+			const incidentFound = allIncidents.incidents.find((inc) => inc.name === newIncident);
+			assert.equal(incidentFound, undefined);
 		});
 	});
 });

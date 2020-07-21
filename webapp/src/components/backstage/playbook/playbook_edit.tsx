@@ -157,6 +157,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         {'Cancel'}
                     </button>
                     <button
+                        data-testid='save_playbook'
                         className='btn btn-primary'
                         disabled={saveDisabled}
                         onClick={onSave}
