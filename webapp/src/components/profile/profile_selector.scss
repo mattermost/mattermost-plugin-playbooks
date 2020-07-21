@@ -63,14 +63,14 @@
 
     .incident-user-select__value-container {
         overflow: visible;
-        padding-left: 2.8rem;
+        padding-left: 3.2rem;
 
         &:before {
             position: absolute;
             left: 0.8rem;
             color: var(--center-channel-color-56);
             content: '\f349';
-            font-family: "mattermosticons";
+            font-family: 'compass-icons';
             font-style: normal;
             font-weight: normal;
             speak: none;
@@ -84,7 +84,7 @@
             text-transform: none;
             line-height: 1em;
             margin-left: .2em;
-            /* font-size: 120%; */
+            font-size: 16px;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
