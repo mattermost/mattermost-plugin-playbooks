@@ -91,6 +91,7 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                             ref={provided.innerRef}
                         >
                             <ChecklistItemDetailsEdit
+                                commandInputId={`commandInput-${rubric.source.index}`}
                                 checklistItem={checklistItems[rubric.source.index]}
                                 onEdit={(editedTo: ChecklistItem) => {
                                     editItem(rubric.source.index, editedTo);
@@ -129,6 +130,7 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                                                         style={draggableProvided.draggableProps.style}
                                                     >
                                                         <ChecklistItemDetailsEdit
+                                                            commandInputId={`commandInput-${index}`}
                                                             checklistItem={checklistItem}
                                                             suggestionsOnBottom={index < 2}
                                                             onEdit={(editedTo: ChecklistItem) => {

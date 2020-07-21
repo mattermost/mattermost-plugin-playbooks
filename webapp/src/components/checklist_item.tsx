@@ -5,9 +5,7 @@ import React, {useRef, useState} from 'react';
 import {useSelector} from 'react-redux';
 import moment from 'moment';
 
-import Textbox from 'mattermost-webapp/components/textbox/textbox';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {ChecklistItem} from 'src/types/playbook';
@@ -113,14 +111,15 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
 };
 
 interface ChecklistItemDetailsEditProps {
+    commandInputId: string;
     checklistItem: ChecklistItem;
     suggestionsOnBottom?: boolean;
     onEdit: (newvalue: ChecklistItem) => void;
     onRemove: () => void;
 }
 
-export const ChecklistItemDetailsEdit = ({checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
-    const textboxRef = useRef(null);
+export const ChecklistItemDetailsEdit = ({commandInputId, checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
+    const commandInputRef = useRef(null);
     const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [title, setTitle] = useState(checklistItem.title);
     const [command, setCommand] = useState(checklistItem.command);
@@ -167,16 +166,16 @@ export const ChecklistItemDetailsEdit = ({checklistItem, suggestionsOnBottom, on
                     }}
                 />
                 <AutocompleteTextbox
-                    ref={textboxRef}
-                    id={'testID'}
+                    ref={commandInputRef}
+                    id={commandInputId}
                     channelId={channelId}
                     inputComponent={'input'}
                     createMessage={'/slash command'}
                     onKeyDown={(e: KeyboardEvent) => {
                         if (e.key === 'Enter' || e.key === 'Escape') {
-                            if (textboxRef.current) {
-                                const myTextBox = textboxRef.current as unknown as Textbox;
-                                myTextBox.blur();
+                            if (commandInputRef.current) {
+                                // @ts-ignore
+                                commandInputRef.current!.blur();
                             }
                         }
                     }}
