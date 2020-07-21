@@ -62,7 +62,7 @@ const BackstageIncidentList: FC = () => {
     useEffect(() => {
         async function fetchIncidentsAsync() {
             const incidentsReturn = await fetchIncidents(fetchParams);
-            setIncidents(incidentsReturn.incidents);
+            setIncidents(incidentsReturn.items);
             setTotalCount(incidentsReturn.total_count);
         }
 

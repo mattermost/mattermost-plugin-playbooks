@@ -316,17 +316,18 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		HandleError(w, err)
-		return
+	// To return an empty array as opposed to null
+	items := results.Items
+	if items == nil {
+		items = []incident.Incident{}
 	}
 
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnList(w, listResult{
+		TotalCount: results.TotalCount,
+		PageCount:  results.PageCount,
+		HasMore:    results.HasMore,
+		Items:      items,
+	})
 }
 
 // getIncident handles the /incidents/{id} endpoint.
@@ -545,8 +546,8 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	channelIds := make([]string, 0, len(incidents.Incidents))
-	for _, incident := range incidents.Incidents {
+	channelIds := make([]string, 0, len(incidents.Items))
+	for _, incident := range incidents.Items {
 		channelIds = append(channelIds, incident.PrimaryChannelID)
 	}
 

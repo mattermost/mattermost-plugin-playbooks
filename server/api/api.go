@@ -15,6 +15,13 @@ type contextKey string
 // PluginIDContextKey Key used to store the sourcePluginID for http requests.
 const PluginIDContextKey = "plugin_id"
 
+type listResult struct {
+	TotalCount int         `json:"total_count"`
+	PageCount  int         `json:"page_count"`
+	HasMore    bool        `json:"has_more"`
+	Items      interface{} `json:"items"` // []incident.Incident, []playbook.Playbook, etc.
+}
+
 // Handler Root API handler.
 type Handler struct {
 	APIRouter *mux.Router
@@ -74,6 +81,26 @@ func HandleErrorWithCode(w http.ResponseWriter, code int, errMsg string, errDeta
 	})
 	logrus.Warn(string(b))
 	_, _ = w.Write(b)
+}
+
+// ReturnList writes the given list as json into the response.
+func ReturnList(w http.ResponseWriter, result listResult) {
+	jsonBytes, err := json.Marshal(listResult{
+		TotalCount: result.TotalCount,
+		PageCount:  result.PageCount,
+		HasMore:    result.HasMore,
+		Items:      result.Items,
+	})
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 // MattermostAuthorizationRequired checks if request is authorized.

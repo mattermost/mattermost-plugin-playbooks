@@ -2,6 +2,7 @@ package pluginkvstore
 
 import (
 	"encoding/json"
+	"math"
 	"sort"
 	"strings"
 	"unicode"
@@ -61,6 +62,10 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger) incident.Store 
 
 // GetIncidents gets all the incidents, abiding by the filter options, and the total count before paging.
 func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+	if options.PerPage == 0 {
+		options.PerPage = perPageDefault
+	}
+
 	headersMap, err := s.getIDHeaders()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get all headers value")
@@ -95,9 +100,19 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 		result = append(result, *i)
 	}
 
+	// Note: ignoring overflow for now
+	pageCount := int(math.Ceil((float64(totalCount) / float64(options.PerPage))))
+	hasMore := options.Page != pageCount-1
+	if totalCount == 0 {
+		pageCount = 0
+		hasMore = false
+	}
+
 	return &incident.GetIncidentsResults{
-		Incidents:  result,
 		TotalCount: totalCount,
+		PageCount:  pageCount,
+		HasMore:    hasMore,
+		Items:      result,
 	}, nil
 }
 
@@ -307,10 +322,6 @@ func sortHeaders(headers []incident.Header, sortField incident.SortField, order 
 }
 
 func pageHeaders(headers []incident.Header, page, perPage int) []incident.Header {
-	if perPage == 0 {
-		perPage = perPageDefault
-	}
-
 	// Note: ignoring overflow for now
 	start := min(page*perPage, len(headers))
 	end := min(start+perPage, len(headers))
