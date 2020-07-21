@@ -482,7 +482,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
-	t.Run("get playbooks", func(t *testing.T) {
+	t.Run("get playbooks with members", func(t *testing.T) {
 		reset()
 
 		playbookResult := struct {
