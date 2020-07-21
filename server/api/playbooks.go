@@ -201,7 +201,12 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ReturnJSON(w, &allowedPlaybooks)
+	ReturnList(w, listResult{
+		TotalCount: len(allowedPlaybooks),
+		PageCount:  1,
+		HasMore:    false,
+		Items:      allowedPlaybooks,
+	})
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
