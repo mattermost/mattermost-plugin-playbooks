@@ -20,6 +20,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
+type listIncidentResult struct {
+	listResult
+	Items []incident.Incident `json:"items"`
+}
+
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
@@ -317,17 +322,28 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// To return an empty array as opposed to null
-	items := results.Items
-	if items == nil {
-		items = []incident.Incident{}
+	if results.Items == nil {
+		results.Items = []incident.Incident{}
 	}
 
-	ReturnList(w, listResult{
-		TotalCount: results.TotalCount,
-		PageCount:  results.PageCount,
-		HasMore:    results.HasMore,
-		Items:      items,
+	jsonBytes, err := json.Marshal(listIncidentResult{
+		listResult: listResult{
+			TotalCount: results.TotalCount,
+			PageCount:  results.PageCount,
+			HasMore:    results.HasMore,
+		},
+		Items: results.Items,
 	})
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 // getIncident handles the /incidents/{id} endpoint.

@@ -434,7 +434,7 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, expectedList, actualList)
 	})
 
-	t.Run("get empty incidents", func(t *testing.T) {
+	t.Run("get empty list of incidents", func(t *testing.T) {
 		reset()
 
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)

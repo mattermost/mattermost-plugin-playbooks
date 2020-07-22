@@ -13,6 +13,11 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
+type listPlaybookResult struct {
+	listResult
+	Items []playbook.Playbook `json:"items"`
+}
+
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	playbookService playbook.Service
@@ -201,12 +206,24 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ReturnList(w, listResult{
-		TotalCount: len(allowedPlaybooks),
-		PageCount:  1,
-		HasMore:    false,
-		Items:      allowedPlaybooks,
+	jsonBytes, err := json.Marshal(listPlaybookResult{
+		listResult: listResult{
+			TotalCount: len(allowedPlaybooks),
+			PageCount:  1,
+			HasMore:    false,
+		},
+		Items: allowedPlaybooks,
 	})
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {

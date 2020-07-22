@@ -60,26 +60,6 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
 	_, _ = w.Write(jsonBytes)
 }
 
-// ReturnList writes the given list as json into the response.
-func ReturnList(w http.ResponseWriter, result listResult) {
-	jsonBytes, err := json.Marshal(listResult{
-		TotalCount: result.TotalCount,
-		PageCount:  result.PageCount,
-		HasMore:    result.HasMore,
-		Items:      result.Items,
-	})
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
-}
-
 // HandleError writes err as json into the response.
 func HandleError(w http.ResponseWriter, err error) {
 	HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", err)
