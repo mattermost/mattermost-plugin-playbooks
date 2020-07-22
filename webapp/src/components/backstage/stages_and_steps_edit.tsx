@@ -7,22 +7,35 @@ import {
     Droppable,
     DropResult,
     DroppableProvided,
+    Draggable,
+    DraggableProvided,
 } from 'react-beautiful-dnd';
+
+import styled from 'styled-components';
 
 import {Checklist, emptyChecklist} from 'src/types/playbook';
 
-import {ChecklistEditor} from './checklist_editor';
-import './checklist_editor.scss';
+import HorizontalBar from 'src/components/backstage/horizontal_bar';
+
+import {StageEditor} from './stage_edit';
+import DragHandle from './drag_handle';
+
+const NewStage = styled.button`
+    border: none;
+    background: none;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const NewStageContainer = styled.div`
+    margin: 20px 0;
+`;
 
 interface Props {
-    checklist: Checklist[];
+    checklists: Checklist[];
     onChange: (checklist: Checklist[]) => void;
 }
 
-export const MultiChecklistEditor = ({
-    checklist: propChecklist = [],
-    onChange,
-}: Props): React.ReactElement => {
+export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) {
             return;
@@ -46,15 +59,15 @@ export const MultiChecklistEditor = ({
     };
 
     const onReorderChecklist = (sourceIndex: number, destinationIndex: number) => {
-        const newChecklist = [...propChecklist];
+        const newChecklist = [...props.checklists];
         const [removed] = newChecklist.splice(sourceIndex, 1);
         newChecklist.splice(destinationIndex, 0, removed);
 
-        onChange(newChecklist);
+        props.onChange(newChecklist);
     };
 
     const onReorderChecklistItem = (checklistIndex: number, newChecklistIndex: number, checklistItemIndex: number, newChecklistItemIndex: number): void => {
-        const newChecklist = [...propChecklist];
+        const newChecklist = [...props.checklists];
 
         if (checklistIndex === newChecklistIndex) {
             // items moved within stage
@@ -65,7 +78,7 @@ export const MultiChecklistEditor = ({
             changedChecklist.items = changedChecklistItems;
 
             newChecklist[checklistIndex] = changedChecklist;
-            onChange(newChecklist);
+            props.onChange(newChecklist);
             return;
         }
 
@@ -88,75 +101,81 @@ export const MultiChecklistEditor = ({
         newChecklist[checklistIndex] = sourceChangedChecklist;
         newChecklist[newChecklistIndex] = destinationChangedChecklist;
 
-        onChange(newChecklist);
+        props.onChange(newChecklist);
     };
 
     const onAddChecklist = () => {
         const checklist = emptyChecklist();
         checklist.title = 'New stage';
-        const newChecklist = [...propChecklist, checklist];
+        const newChecklist = [...props.checklists, checklist];
 
-        onChange(newChecklist);
+        props.onChange(newChecklist);
     };
 
     const onChangeChecklist = (checklistIndex: number, checklist: Checklist) => {
-        const newChecklist = [...propChecklist];
+        const newChecklist = [...props.checklists];
         newChecklist[checklistIndex] = checklist;
 
-        onChange(newChecklist);
+        props.onChange(newChecklist);
     };
     const onRemoveChecklist = (checklistIndex: number) => {
-        const newChecklist = [...propChecklist];
+        const newChecklist = [...props.checklists];
         newChecklist.splice(checklistIndex, 1);
 
-        onChange(newChecklist);
+        props.onChange(newChecklist);
     };
 
     return (
-        <div className='multi-checklist-editor'>
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable
-                    droppableId='columns'
-                    direction='vertical'
-                    type='checklist'
-                >
-                    {(droppableProvided: DroppableProvided) => (
-                        <div
-                            ref={droppableProvided.innerRef}
-                            {...droppableProvided.droppableProps}
-                        >
-                            {propChecklist?.map((checklist: Checklist, checklistIndex: number) => (
-                                <div
-                                    key={checklist.title + checklistIndex}
-                                >
-                                    <ChecklistEditor
-                                        checklist={checklist}
-                                        checklistIndex={checklistIndex}
-
-                                        onChange={(newChecklist: Checklist) => {
-                                            onChangeChecklist(checklistIndex, newChecklist);
-                                        }}
-                                        onRemove={() => {
-                                            onRemoveChecklist(checklistIndex);
-                                        }}
-                                    />
-                                </div>
-                            ))}
-                            {droppableProvided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-
-                <div className='new-stage'>
-                    <a
-                        href='#'
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable
+                droppableId='columns'
+                direction='vertical'
+                type='checklist'
+            >
+                {(droppableProvided: DroppableProvided) => (
+                    <div
+                        ref={droppableProvided.innerRef}
+                        {...droppableProvided.droppableProps}
+                    >
+                        {props.checklists?.map((checklist: Checklist, checklistIndex: number) => (
+                            <Draggable
+                                key={checklist.title + checklistIndex}
+                                draggableId={checklist.title + checklistIndex}
+                                index={checklistIndex}
+                            >
+                                {(draggableProvided: DraggableProvided) => (
+                                    <DragHandle
+                                        draggableProvided={draggableProvided}
+                                        onDelete={() => onRemoveChecklist(checklistIndex)}
+                                    >
+                                        <StageEditor
+                                            checklist={checklist}
+                                            checklistIndex={checklistIndex}
+                                            onChange={(newChecklist: Checklist) => {
+                                                onChangeChecklist(checklistIndex, newChecklist);
+                                            }}
+                                            onRemove={() => {
+                                                onRemoveChecklist(checklistIndex);
+                                            }}
+                                        />
+                                    </DragHandle>
+                                )}
+                            </Draggable>
+                        ))}
+                        {droppableProvided.placeholder}
+                    </div>
+                )}
+            </Droppable>
+            <NewStageContainer>
+                <HorizontalBar>
+                    <NewStage
                         onClick={onAddChecklist}
                     >
-                        <i className='icon icon-plus'/>
-                        {'Add new stage'}
-                    </a>
-                </div>
-            </DragDropContext>
-        </div>
+                        <i className='icon-plus'/>
+                        {'New Stage'}
+                    </NewStage>
+                </HorizontalBar>
+            </NewStageContainer>
+        </DragDropContext>
     );
 };

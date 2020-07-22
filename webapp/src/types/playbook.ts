@@ -47,7 +47,7 @@ export interface ChecklistItem {
 
 export function emptyPlaybook(): Playbook {
     return {
-        title: '',
+        title: 'Untitled Playbook',
         team_id: '',
         create_public_incident: false,
         checklists: [emptyChecklist()],
@@ -58,7 +58,16 @@ export function emptyPlaybook(): Playbook {
 export function emptyChecklist(): Checklist {
     return {
         title: 'Default Stage',
-        items: [],
+        items: [emptyChecklistItem()],
+    };
+}
+
+export function emptyChecklistItem(): ChecklistItem {
+    return {
+        title: '',
+        state: ChecklistItemState.Open,
+        command: '',
+        description: '',
     };
 }
 

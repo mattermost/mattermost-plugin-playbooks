@@ -7,7 +7,7 @@ export default function WarningIcon() {
     return (
         <i
             id='warningIcon'
-            className='fa fa-warning'
+            className='fal fa-warning'
         />
     );
 }
