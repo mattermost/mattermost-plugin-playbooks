@@ -9,12 +9,6 @@ import (
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
-const (
-	ChecklistItemStateOpen       = ""
-	ChecklistItemStateInProgress = "in_progress"
-	ChecklistItemStateClosed     = "closed"
-)
-
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
 	ID                   string      `json:"id"`
@@ -81,4 +75,16 @@ type Telemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook)
+}
+
+const (
+	ChecklistItemStateOpen       = ""
+	ChecklistItemStateInProgress = "in_progress"
+	ChecklistItemStateClosed     = "closed"
+)
+
+func IsValidChecklistItemState(state string) bool {
+	return state == ChecklistItemStateClosed ||
+		state == ChecklistItemStateInProgress ||
+		state == ChecklistItemStateOpen
 }

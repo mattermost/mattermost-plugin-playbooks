@@ -646,6 +646,11 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !playbook.IsValidChecklistItemState(params.NewState) {
+		HandleError(w, errors.New("bad parameter new state"))
+		return
+	}
+
 	if err := h.incidentService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
 		HandleError(w, err)
 		return
