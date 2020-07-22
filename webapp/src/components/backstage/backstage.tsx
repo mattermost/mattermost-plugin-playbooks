@@ -39,7 +39,7 @@ const Icon = styled.i`
     }
 `;
 
-const BackstageTitlebar = styled.div`
+const BackstageNavbar = styled.div`
     display: flex;
     align-items: center;
     height: 80px;
@@ -110,7 +110,7 @@ const Backstage: FC = () => {
 
     return (
         <BackstageContainer>
-            <BackstageTitlebar>
+            <BackstageNavbar>
                 <Icon
                     className='icon-arrow-left back-icon'
                     onClick={goToMattermost}
@@ -131,7 +131,7 @@ const Backstage: FC = () => {
                     <i className='mr-2'/>
                     {'Playbooks'}
                 </BackstageTitlebarItem>
-            </BackstageTitlebar>
+            </BackstageNavbar>
             <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
