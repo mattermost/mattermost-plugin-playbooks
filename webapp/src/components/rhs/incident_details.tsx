@@ -8,8 +8,8 @@ import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientEditChecklistItem, clientRemoveChecklistItem, clientReorderChecklist, setActiveStage} from 'src/client';
-import {ChecklistDetails} from 'src/components/checklist';
+import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, setActiveStage} from 'src/client';
+import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem, emptyChecklist} from 'src/types/playbook';
 
@@ -162,34 +162,34 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             onStageActivated={setCurrentStageAsActive}
                         />
                     </div>
-                    <ChecklistDetails
-                        checklist={selectedChecklist}
-                        key={selectedChecklist.title + selectedChecklistIndex}
-                        onChange={(itemNum: number, checked: boolean) => {
-                            if (checked) {
-                                checkItem(props.incident.id, selectedChecklistIndex, itemNum);
-                            } else {
-                                uncheckItem(props.incident.id, selectedChecklistIndex, itemNum);
-                            }
-                        }}
-                        onRedirect={() => {
-                            if (isMobile()) {
-                                dispatch(toggleRHS());
-                            }
-                        }}
-                        addItem={(checklistItem: ChecklistItem) => {
-                            clientAddChecklistItem(props.incident.id, selectedChecklistIndex, checklistItem);
-                        }}
-                        removeItem={(itemNum: number) => {
-                            clientRemoveChecklistItem(props.incident.id, selectedChecklistIndex, itemNum);
-                        }}
-                        editItem={(itemNum: number, newItem: ChecklistItem) => {
-                            clientEditChecklistItem(props.incident.id, selectedChecklistIndex, itemNum, newItem);
-                        }}
-                        reorderItems={(itemNum: number, newPosition: number) => {
-                            clientReorderChecklist(props.incident.id, selectedChecklistIndex, itemNum, newPosition);
-                        }}
-                    />
+                    <div
+                        className='checklist-inner-container'
+                    >
+                        <div className='title'>
+                            {'Checklist'}
+                        </div>
+                        <div className='checklist'>
+                            {selectedChecklist.items.map((checklistItem: ChecklistItem, index: number) => (
+                                <ChecklistItemDetails
+                                    key={checklistItem.title + index}
+                                    checklistItem={checklistItem}
+                                    disabled={false}
+                                    onChange={(checked: boolean) => {
+                                        if (checked) {
+                                            checkItem(props.incident.id, selectedChecklistIndex, index);
+                                        } else {
+                                            uncheckItem(props.incident.id, selectedChecklistIndex, index);
+                                        }
+                                    }}
+                                    onRedirect={() => {
+                                        if (isMobile()) {
+                                            dispatch(toggleRHS());
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </Scrollbars>
             <div className='footer-div'>
