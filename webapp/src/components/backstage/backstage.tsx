@@ -49,26 +49,28 @@ const BackstageSidebarMenu = styled.div`
 `;
 
 const SidebarNavLink = styled(NavLink)`
-    display: block;
-    border-radius: 4px 0 0 4px;
-    height: 48px;
-    padding-left: 1.6rem;
-    line-height: 48px;
-    opacity: 0.56;
-    color: var(--sidebar-text);
-
-    &:hover {
-        opacity: 1;
-        cursor: pointer;
-    }
-
-    &.active {
-        background: var(--center-channel-bg);
-        color: var(--center-channel-color);
-        opacity: 1;
+    &&& {
+        display: block;
+        border-radius: 4px 0 0 4px;
+        height: 48px;
+        padding-left: 1.6rem;
+        line-height: 48px;
+        opacity: 0.56;
+        color: var(--sidebar-text);
 
         &:hover {
-            cursor: default;
+            opacity: 1;
+            cursor: pointer;
+        }
+
+        &.active {
+            background: var(--center-channel-bg);
+            color: var(--center-channel-color);
+            opacity: 1;
+
+            &:hover {
+                cursor: default;
+            }
         }
     }
 `;
