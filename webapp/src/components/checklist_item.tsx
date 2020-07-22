@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, FC} from 'react';
 import moment from 'moment';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
@@ -20,12 +20,6 @@ const {formatText, messageHtmlToComponent} = window.PostUtils;
 const markdownOptions = {singleline: true, mentionHighlight: false, atMentions: true};
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
-    const [spinner, setSpinner] = useState(false);
-
-    useEffect(() => {
-        setSpinner(false);
-    }, [props.checklistItem]);
-
     let timestamp = '';
     const title = props.checklistItem.title;
 
@@ -38,70 +32,18 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         }
     }
 
-    const isCommand = Boolean(props.checklistItem.command);
-    let activation = null;
-    switch (props.checklistItem.state) {
-    case ChecklistItemState.Open: {
-        let label = 'Start';
-        let hovertext = '';
-        if (isCommand) {
-            label = 'Run';
-            hovertext = props.checklistItem.command;
-        }
-        activation = (
-            <button
-                title={hovertext}
-                type='button'
-                onClick={() => {
-                    if (props.onChange) {
-                        setSpinner(true);
-                        if (isCommand) {
-                            props.onChange(ChecklistItemState.Closed);
-                        } else {
-                            props.onChange(ChecklistItemState.InProgress);
-                        }
-                    }
-                }}
-            >
-                {spinner ? <Spinner/> : label}
-            </button>
-        );
-        break;
-    }
-    case ChecklistItemState.InProgress: {
-        activation = (
-            <button
-                type='button'
-                onClick={() => {
-                    if (props.onChange) {
-                        setSpinner(true);
-                        props.onChange(ChecklistItemState.Closed);
-                    }
-                }}
-            >
-                {'Finish'}
-            </button>
-        );
-        break;
-    }
-    case ChecklistItemState.Closed: {
-        activation = (
-            <button
-                type='button'
-                disabled={true}
-            >
-                {'Done'}
-            </button>
-        );
-        break;
-    }
-    }
-
     return (
         <div
             className={'checkbox-container live'}
         >
-            {activation}
+            <ChecklistItemButton
+                item={props.checklistItem}
+                onChange={(item: ChecklistItemState) => {
+                    if (props.onChange) {
+                        props.onChange(item);
+                    }
+                }}
+            />
             <label title={title}>
                 {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
             </label>
@@ -197,5 +139,68 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                 <i className='icon icon-close'/>
             </span>
         </div>
+    );
+};
+
+interface ChecklistItemButtonProps {
+    onChange: (item: ChecklistItemState) => void;
+    item: ChecklistItem;
+}
+
+const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemButtonProps) => {
+    const [spinner, setSpinner] = useState(false);
+
+    useEffect(() => {
+        setSpinner(false);
+    }, [props.item]);
+
+    const isCommand = Boolean(props.item.command);
+
+    let title;
+    let label;
+    let disabled = false;
+    let onClick;
+    switch (props.item.state) {
+    case ChecklistItemState.Open: {
+        if (isCommand) {
+            label = 'Run';
+            title = props.item.command;
+            onClick = () => {
+                setSpinner(true);
+                props.onChange(ChecklistItemState.Closed);
+            };
+        } else {
+            label = 'Start';
+            onClick = () => {
+                setSpinner(true);
+                props.onChange(ChecklistItemState.InProgress);
+            };
+        }
+        break;
+    }
+    case ChecklistItemState.InProgress: {
+        label = 'Finish';
+        onClick = () => {
+            setSpinner(true);
+            props.onChange(ChecklistItemState.Closed);
+        };
+        break;
+    }
+    case ChecklistItemState.Closed: {
+        disabled = true;
+        label = 'Done';
+        break;
+    }
+    }
+
+    return (
+        <button
+            title={title}
+            type='button'
+            disabled={disabled}
+            onClick={onClick}
+        >
+            {spinner ? <Spinner/> : label}
+        </button>
     );
 };
