@@ -133,7 +133,7 @@ export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistIt
     };
 
     // @ts-ignore
-    const AutocompleteTextbox = window.Textbox;
+    const AutocompleteTextbox = window.Components.Textbox;
 
     const suggestionListStyle = suggestionsOnBottom ? 'bottom' : 'top';
 
