@@ -62,6 +62,7 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
         } else {
             activation = (
                 <button
+                    title={checklistItem.command}
                     type='button'
                     onClick={() => {
                         if (onChange && !disabled) {
