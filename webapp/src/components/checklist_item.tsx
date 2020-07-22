@@ -2,11 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef, useState} from 'react';
-import {useSelector} from 'react-redux';
 import moment from 'moment';
-
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {GlobalState} from 'mattermost-redux/types/store';
 
 import {ChecklistItem} from 'src/types/playbook';
 
@@ -112,15 +108,15 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
 
 interface ChecklistItemDetailsEditProps {
     commandInputId: string;
+    channelId?: string;
     checklistItem: ChecklistItem;
     suggestionsOnBottom?: boolean;
     onEdit: (newvalue: ChecklistItem) => void;
     onRemove: () => void;
 }
 
-export const ChecklistItemDetailsEdit = ({commandInputId, checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
+export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
     const commandInputRef = useRef(null);
-    const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [title, setTitle] = useState(checklistItem.title);
     const [command, setCommand] = useState(checklistItem.command);
 
