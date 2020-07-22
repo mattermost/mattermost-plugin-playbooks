@@ -18,7 +18,7 @@ import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import Profile from 'src/components/profile/profile';
 import {BackstageHeaderBackIcon} from 'src/components/assets/icons/back_icon';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
-import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
 import StatusBadge from '../status_badge';
 
@@ -31,11 +31,7 @@ interface MatchParams {
     incidentId: string
 }
 
-interface Props {
-    onClose: () => void;
-}
-
-const BackstageIncidentDetails: FC<Props> = (props: Props) => {
+const BackstageIncidentDetails: FC = () => {
     const [incident, setIncident] = useState<Incident>({} as Incident);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
@@ -77,12 +73,16 @@ const BackstageIncidentDetails: FC<Props> = (props: Props) => {
         navigateToUrl(`/${incident.team_name}/channels/${incident.channel_name}`);
     };
 
+    const closeIncidentDetails = () => {
+        navigateToTeamPluginUrl(currentTeam.name, '/incidents');
+    };
+
     return (
         <div className='BackstageIncidentDetails'>
             <div className='details-header'>
                 <div className='title'>
                     <BackstageHeaderBackIcon
-                        onClick={props.onClose}
+                        onClick={closeIncidentDetails}
                     />
                     <TextWithTooltip
                         id='title'

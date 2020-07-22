@@ -26,7 +26,6 @@ import {
     fetchIncidents,
 } from 'src/client';
 import Profile from 'src/components/profile/profile';
-import BackstageIncidentDetails from '../incident_details/incident_details';
 import StatusBadge from '../status_badge';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
@@ -110,10 +109,6 @@ const BackstageIncidentList: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, `/incidents/${incident.id}`);
     }
 
-    const closeIncidentDetails = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/incidents');
-    };
-
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const ControlComponent = (ownProps: ControlProps<any>) => {
         const resetLink = fetchParams.commander_user_id && (
@@ -140,12 +135,6 @@ const BackstageIncidentList: FC = () => {
         fetchParams.search_term ||
         fetchParams.commander_user_id ||
         (fetchParams.status && fetchParams.status !== 'all')
-    );
-
-    const detailsComponent = (
-        <BackstageIncidentDetails
-            onClose={closeIncidentDetails}
-        />
     );
 
     const listComponent = (
@@ -290,9 +279,6 @@ const BackstageIncidentList: FC = () => {
                 path={match.path}
             >
                 {listComponent}
-            </Route>
-            <Route path={`${match.path}/:incidentId`}>
-                {detailsComponent}
             </Route>
         </Switch>
     );
