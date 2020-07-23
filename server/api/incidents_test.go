@@ -103,6 +103,122 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
+	t.Run("create incident from dialog - no permissions for public channels", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testteamid",
+			CreatePublicIncident: true,
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldNameKey:       "incidentName",
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+			},
+		}
+
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		i := incident.Incident{
+			Header: incident.Header{
+				CommanderUserID: dialogRequest.UserId,
+				TeamID:          dialogRequest.TeamId,
+				Name:            "incidentName",
+			},
+			Playbook: &withid,
+		}
+		retI := i
+		retI.PrimaryChannelID = "channelID"
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var dialogResp model.SubmitDialogResponse
+		err = json.NewDecoder(resp.Body).Decode(&dialogResp)
+		require.Nil(t, err)
+
+		expectedDialogResp := model.SubmitDialogResponse{
+			Errors: map[string]string{
+				"incidentName": "You are not able to create a public channel: permissions error",
+			},
+		}
+
+		require.Equal(t, expectedDialogResp, dialogResp)
+	})
+
+	t.Run("create incident from dialog - no permissions for public channels", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testteamid",
+			CreatePublicIncident: false,
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldNameKey:       "incidentName",
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+			},
+		}
+
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		i := incident.Incident{
+			Header: incident.Header{
+				CommanderUserID: dialogRequest.UserId,
+				TeamID:          dialogRequest.TeamId,
+				Name:            "incidentName",
+			},
+			Playbook: &withid,
+		}
+		retI := i
+		retI.PrimaryChannelID = "channelID"
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var dialogResp model.SubmitDialogResponse
+		err = json.NewDecoder(resp.Body).Decode(&dialogResp)
+		require.Nil(t, err)
+
+		expectedDialogResp := model.SubmitDialogResponse{
+			Errors: map[string]string{
+				"incidentName": "You are not able to create a private channel: permissions error",
+			},
+		}
+
+		require.Equal(t, expectedDialogResp, dialogResp)
+	})
+
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
 		reset()
 
