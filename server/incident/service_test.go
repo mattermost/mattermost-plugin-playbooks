@@ -293,3 +293,108 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 		})
 	}
 }
+
+func TestServiceImpl_RestartIncident(t *testing.T) {
+	type args struct {
+		incidentID string
+		userID     string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		prepMocks func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API)
+		wantErr   bool
+	}{
+		{
+			name: "restart incident",
+			args: args{
+				incidentID: "incidentID1",
+				userID:     "userID1",
+			},
+			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
+				testIncident := incident.Incident{
+					Header: incident.Header{
+						ID:               "incidentID",
+						CommanderUserID:  "testUserID",
+						TeamID:           "testTeamID",
+						Name:             "incidentName",
+						PrimaryChannelID: "channelID",
+						IsActive:         false,
+					},
+					PostID:   "",
+					Playbook: nil,
+				}
+
+				store.EXPECT().
+					GetIncident("incidentID1").
+					Return(&testIncident, nil).Times(1)
+
+				testIncident2 := testIncident
+				testIncident2.IsActive = true
+				testIncident2.EndedAt = 0
+
+				store.EXPECT().
+					UpdateIncident(&testIncident2).
+					Return(nil).Times(1)
+
+				poster.EXPECT().
+					PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channelID").
+					Times(1)
+
+				api.On("GetUser", "userID1").
+					Return(&model.User{Username: "testuser"}, nil)
+
+				poster.EXPECT().
+					PostMessage("channelID", "This incident has been restarted by @%v", "testuser").
+					Return("messageID", nil).
+					Times(1)
+			},
+		},
+		{
+			name: "restart incident - incident is active",
+			args: args{
+				incidentID: "incidentID1",
+				userID:     "userID1",
+			},
+			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
+				testIncident := incident.Incident{
+					Header: incident.Header{
+						ID:               "incidentID",
+						CommanderUserID:  "testUserID",
+						TeamID:           "testTeamID",
+						Name:             "incidentName",
+						PrimaryChannelID: "channelID",
+						IsActive:         true,
+					},
+					PostID:   "",
+					Playbook: nil,
+				}
+
+				store.EXPECT().
+					GetIncident("incidentID1").
+					Return(&testIncident, nil).Times(1)
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			controller := gomock.NewController(t)
+			api := &plugintest.API{}
+			client := pluginapi.NewClient(api)
+			store := mock_incident.NewMockStore(controller)
+			poster := mock_poster.NewMockPoster(controller)
+			configService := mock_config.NewMockService(controller)
+			telemetryService := &telemetry.NoopTelemetry{}
+			service := incident.NewService(client, store, poster, configService, telemetryService)
+
+			tt.prepMocks(store, poster, api)
+
+			err := service.RestartIncident(tt.args.incidentID, tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RestartIncident() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
