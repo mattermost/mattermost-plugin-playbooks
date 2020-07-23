@@ -2,7 +2,7 @@
     "id": "com.mattermost.plugin-incident-response",
     "name": "Incident Response",
     "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
-    "version": "0.5.0-alpha.5",
+    "version": "0.5.0-alpha.6",
     "min_server_version": "5.26.0",
     "server": {
         "executables": {
