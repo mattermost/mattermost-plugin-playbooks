@@ -27,6 +27,7 @@ const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     display: flex;
     flex-direction: column;
+    height: 100%;
 `;
 
 const Icon = styled.i`
@@ -78,11 +79,9 @@ const BackstageTitlebarItem = styled(NavLink)`
 `;
 
 const BackstageBody = styled.div`
-    position: relative;
     z-index: 1;
     padding: 0 10rem;
     overflow: auto;
-    height: 100vh;
 `;
 
 const Backstage: FC = () => {

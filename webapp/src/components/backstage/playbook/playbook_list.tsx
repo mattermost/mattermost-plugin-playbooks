@@ -3,6 +3,7 @@
 
 import React, {FC, useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
+import styled from 'styled-components';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -17,8 +18,10 @@ import Spinner from 'src/components/assets/icons/spinner';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-import './playbook.scss';
+import NoContentPlaybookSvg from '../../assets/no_content_playbooks_svg';
+
 import BackstageListHeader from '../backstage_list_header';
+import './playbook.scss';
 
 const DeleteBannerTimeout = 5000;
 
@@ -123,44 +126,115 @@ const PlaybookList: FC = () => {
     return (
         <div className='Playbook'>
             { deleteSuccessfulBanner }
-            <div className='Backstage__header'>
-                <div
-                    data-testid='titlePlaybook'
-                    className='title'
-                >
-                    {'Playbooks'}
-                    <div className='light'>
-                        {'(' + currentTeam.display_name + ')'}
+            {
+                (playbooks?.length === 0) &&
+                <>
+                    <NoContentPage onNewPlaybook={newPlaybook}/>
+                    <NoContentPlaybookSvg/>
+                </>
+            }
+            {
+                (playbooks && playbooks.length !== 0) &&
+                <>
+                    <div className='Backstage__header'>
+                        <div
+                            data-testid='titlePlaybook'
+                            className='title'
+                        >
+                            {'Playbooks'}
+                            <div className='light'>
+                                {'(' + currentTeam.display_name + ')'}
+                            </div>
+                        </div>
+                        <div className='header-button-div'>
+                            <button
+                                className='btn btn-primary'
+                                onClick={() => newPlaybook()}
+                            >
+                                <i className='icon-plus mr-2'/>
+                                {'New Playbook'}
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div className='header-button-div'>
-                    <button
-                        className='btn btn-primary'
-                        onClick={() => newPlaybook()}
-                    >
-                        <i className='icon-plus mr-2'/>
-                        {'New Playbook'}
-                    </button>
-                </div>
-            </div>
-            <div className='playbook-list'>
-                <BackstageListHeader>
-                    <div className='row'>
-                        <div className='col-sm-10'> {'Name'} </div>
-                        <div className='col-sm-2'> {'Actions'}</div>
+                    <div className='playbook-list'>
+                        <BackstageListHeader>
+                            <div className='row'>
+                                <div className='col-sm-10'> {'Name'} </div>
+                                <div className='col-sm-2'> {'Actions'}</div>
+                            </div>
+                        </BackstageListHeader>
+                        {body}
                     </div>
-                </BackstageListHeader>
-                {body}
-            </div>
-            <ConfirmModal
-                show={showConfirmation}
-                title={'Confirm Playbook Deletion'}
-                message={`Are you sure you want to delete the playbook "${selectedPlaybook?.title}"?`}
-                confirmButtonText={'Delete Playbook'}
-                onConfirm={onDelete}
-                onCancel={hideConfirmModal}
-            />
+                    <ConfirmModal
+                        show={showConfirmation}
+                        title={'Confirm Playbook Deletion'}
+                        message={`Are you sure you want to delete the playbook "${selectedPlaybook?.title}"?`}
+                        confirmButtonText={'Delete Playbook'}
+                        onConfirm={onDelete}
+                        onCancel={hideConfirmModal}
+                    />
+                </>
+            }
         </div>
     );
 };
+
+const Container = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+const Title = styled.h2`
+    padding-top: 110px;
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 28px;
+    color: var(--center-channel-color);
+    text-align: center;
+`;
+
+const Description = styled.h5`
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 16px;
+    line-height: 24px;
+    color: rgba(var(--sys-center-channel-color-rgb), 0.72);
+    text-align: center;
+    max-width: 800px;
+`;
+
+const Button = styled.button`
+    display: inline-flex;
+    background: var(--button-bg);
+    color: var(--button-color);
+    border-radius: 4px;
+    border: 0px;
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 18px;
+    align-items: center;
+    padding: 14px 24px;
+`;
+
+const NoContentPage = (props: {onNewPlaybook: () => void}) => {
+    return (
+        <Container>
+            <Title className='title'>{'What are Playbooks?'}</Title>
+            <Description className='description'>{'A playbook is a workflow template. It is created ahead of time during planning and defines the stages and steps a workflow will have, along with who can start a workflow with the playbook.'}</Description>
+            <Button
+                className='btn btn-primary mt-6'
+                onClick={() => props.onNewPlaybook()}
+            >
+                <i className='icon-plus mr-2'/>
+                {'New Playbook'}
+            </Button>
+        </Container>
+    );
+};
+
 export default PlaybookList;
