@@ -841,6 +841,84 @@ func TestIncidents(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, resultIncident, testIncident)
 	})
+
+	t.Run("get incidents", func(t *testing.T) {
+		reset()
+
+		incident1 := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID1",
+				CommanderUserID:  "testUserID1",
+				TeamID:           "testTeamID1",
+				Name:             "incidentName1",
+				PrimaryChannelID: "channelID1",
+			},
+		}
+
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		result := &incident.GetIncidentsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []incident.Incident{incident1},
+		}
+		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var actualList incident.GetIncidentsResults
+		err = json.NewDecoder(resp.Body).Decode(&actualList)
+		require.NoError(t, err)
+		expectedList := incident.GetIncidentsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []incident.Incident{incident1},
+		}
+		assert.Equal(t, expectedList, actualList)
+	})
+
+	t.Run("get empty list of incidents", func(t *testing.T) {
+		reset()
+
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		result := &incident.GetIncidentsResults{
+			TotalCount: 0,
+			PageCount:  0,
+			HasMore:    false,
+			Items:      nil,
+		}
+		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var actualList incident.GetIncidentsResults
+		err = json.NewDecoder(resp.Body).Decode(&actualList)
+		require.NoError(t, err)
+		expectedList := incident.GetIncidentsResults{
+			TotalCount: 0,
+			PageCount:  0,
+			HasMore:    false,
+			Items:      []incident.Incident{},
+		}
+		assert.Equal(t, expectedList, actualList)
+	})
 }
 
 func TestChangeActiveStage(t *testing.T) {
