@@ -67,6 +67,9 @@ var ErrNotFound = errors.New("not found")
 // ErrChannelDisplayNameInvalid is used to indicate a channel name is too long.
 var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too long")
 
+// ErrPermission is used to indicate a user does not have permissions
+var ErrPermission = errors.New("permissions error")
+
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
 

@@ -196,6 +196,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 		if errors.Is(err, incident.ErrChannelDisplayNameInvalid) {
 			msg = "The channel name is invalid or too long. Please use a valid name with fewer than 64 characters."
+		} else if errors.Is(err, incident.ErrPermission) {
+			msg = err.Error()
 		}
 
 		if msg != "" {
@@ -267,13 +269,13 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
-	permissionMessage := "You don't have permissions to create a private channel."
+	permissionMessage := "You are not able to create a private channel"
 	if public {
 		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
-		permissionMessage = "You don't have permission to create a public channel."
+		permissionMessage = "You are not able to create a public channel"
 	}
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, newIncident.TeamID, permission) {
-		return nil, errors.New(permissionMessage)
+		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
 	}
 
 	return h.incidentService.CreateIncident(&newIncident, public)
