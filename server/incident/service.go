@@ -320,9 +320,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return err
 	}
 
-	if !incidentToModify.IsActive {
-		return ErrIncidentNotActive
-	} else if incidentToModify.CommanderUserID == commanderID {
+	if incidentToModify.CommanderUserID == commanderID {
 		return nil
 	}
 
