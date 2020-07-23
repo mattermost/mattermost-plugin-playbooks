@@ -10,9 +10,12 @@ import {
     DroppableProvided,
     DraggableProvided,
 } from 'react-beautiful-dnd';
+import {useSelector} from 'react-redux';
+
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {MAX_NAME_LENGTH} from 'src/constants';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';
@@ -28,6 +31,7 @@ interface Props {
 }
 
 export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+    const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -91,6 +95,8 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                             ref={provided.innerRef}
                         >
                             <ChecklistItemDetailsEdit
+                                commandInputId={`commandInput-${rubric.source.index}`}
+                                channelId={channelId}
                                 checklistItem={checklistItems[rubric.source.index]}
                                 onEdit={(editedTo: ChecklistItem) => {
                                     editItem(rubric.source.index, editedTo);
@@ -127,15 +133,12 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                                                         {...draggableProvided.draggableProps}
                                                         {...draggableProvided.dragHandleProps}
                                                         style={draggableProvided.draggableProps.style}
-                                                        onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-                                                            if (event.defaultPrevented) {
-                                                                return;
-                                                            }
-                                                            event.currentTarget.focus();
-                                                        }}
                                                     >
                                                         <ChecklistItemDetailsEdit
+                                                            commandInputId={`commandInput-${index}`}
+                                                            channelId={channelId}
                                                             checklistItem={checklistItem}
+                                                            suggestionsOnBottom={index < 2}
                                                             onEdit={(editedTo: ChecklistItem) => {
                                                                 editItem(index, editedTo);
                                                             }}
