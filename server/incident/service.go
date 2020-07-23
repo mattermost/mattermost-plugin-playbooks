@@ -219,6 +219,15 @@ func (s *ServiceImpl) RestartIncident(incidentID, userID string) error {
 // OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 // be ended.
 func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error {
+	currentIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	if !currentIncident.IsActive {
+		return ErrIncidentNotActive
+	}
+
 	dialog := model.Dialog{
 		Title:            "Confirm End Incident",
 		SubmitLabel:      "Confirm",

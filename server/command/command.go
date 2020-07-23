@@ -250,9 +250,6 @@ func (r *Runner) actionEnd() {
 	err = r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
 
 	switch {
-	case errors.Is(err, incident.ErrNotFound):
-		r.postCommandResponse("This channel is not associated with an incident.")
-		return
 	case errors.Is(err, incident.ErrIncidentNotActive):
 		r.postCommandResponse("This incident has already been closed.")
 		return
