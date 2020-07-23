@@ -12,8 +12,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
-import BackstageIncidentDetails
-    from 'src/components/backstage/incidents/incident_details/incident_details';
+import BackstageIncidentDetails from 'src/components/backstage/incidents/incident_details/incident_details';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 import {ErrorPageTypes} from 'src/constants';
