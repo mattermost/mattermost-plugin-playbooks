@@ -70,6 +70,9 @@ var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too lo
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
 
+// ErrIncidentActive is used to indicate trying to run a command on an incident that is active.
+var ErrIncidentActive = errors.New("incident active")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
@@ -83,6 +86,9 @@ type Service interface {
 
 	// EndIncident completes the incident with the given ID by the given user.
 	EndIncident(incidentID string, userID string) error
+
+	// RestartIncident restarts the incident with the given ID by the given user.
+	RestartIncident(incidentID, userID string) error
 
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
@@ -170,6 +176,9 @@ type Telemetry interface {
 
 	// EndIncident tracks the end of an incident.
 	EndIncident(incident *Incident)
+
+	// RestartIncident tracks the end of an incident.
+	RestartIncident(incident *Incident)
 
 	// ModifyCheckedState tracks the checking and unchecking of items by the user
 	// identified by userID in the incident identified by incidentID.

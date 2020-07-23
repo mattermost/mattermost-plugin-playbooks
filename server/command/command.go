@@ -43,28 +43,38 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, check",
+		AutoCompleteDesc: "Available commands: start, end, restart, check",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
 }
 
 func getAutocompleteData() *model.AutocompleteData {
-	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end, check, announce")
+	slashIncident := model.NewAutocompleteData("incident", "[command]",
+		"Available commands: start, end, restart, check, announce")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
 
-	end := model.NewAutocompleteData("end", "", "Ends the incident associated with the current channel")
+	end := model.NewAutocompleteData("end", "",
+		"Ends the incident associated with the current channel")
 	slashIncident.AddCommand(end)
 
-	checklist := model.NewAutocompleteData("check", "[checklist item]", "Check or uncheck a checklist item.")
-	checklist.AddDynamicListArgument("List of checklist items is downloading from your incident response plugin",
+	restart := model.NewAutocompleteData("restart", "",
+		"Restarts the incident associated with the current channel")
+	slashIncident.AddCommand(restart)
+
+	checklist := model.NewAutocompleteData("check", "[checklist item]",
+		"Check or uncheck a checklist item.")
+	checklist.AddDynamicListArgument(
+		"List of checklist items is downloading from your incident response plugin",
 		"api/v1/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
-	announce := model.NewAutocompleteData("announce", "~[channels]", "Announce the current incident in other channels.")
-	announce.AddNamedTextArgument("channel", "Channel to announce incident in", "~[channel]", "", true)
+	announce := model.NewAutocompleteData("announce", "~[channels]",
+		"Announce the current incident in other channels.")
+	announce.AddNamedTextArgument("channel", "Channel to announce incident in",
+		"~[channel]", "", true)
 	slashIncident.AddCommand(announce)
 
 	return slashIncident
@@ -245,6 +255,41 @@ func (r *Runner) actionEnd() {
 		return
 	case errors.Is(err, incident.ErrIncidentNotActive):
 		r.postCommandResponse("This incident has already been closed.")
+		return
+	case err != nil:
+		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		return
+	}
+}
+
+func (r *Runner) actionRestart() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only restart an incident from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	if err = permissions.CheckHasPermissionsToIncidentChannel(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	err = r.incidentService.RestartIncident(incidentID, r.args.UserId)
+
+	switch {
+	case errors.Is(err, incident.ErrNotFound):
+		r.postCommandResponse("This channel is not associated with an incident.")
+		return
+	case errors.Is(err, incident.ErrIncidentActive):
+		r.postCommandResponse("This incident is already active.")
 		return
 	case err != nil:
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
@@ -507,6 +552,8 @@ func (r *Runner) Execute() error {
 		r.actionStart(parameters)
 	case "end":
 		r.actionEnd()
+	case "restart":
+		r.actionRestart()
 	case "check":
 		r.actionCheck(parameters)
 	case "announce":
