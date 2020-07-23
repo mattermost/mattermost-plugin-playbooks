@@ -382,19 +382,15 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
-			return
-		}
+	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
-	if err != nil {
-		HandleError(w, err)
+	if !h.hasPermissionsToOrPublic(incidentToGet.PrimaryChannelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
 	}
 

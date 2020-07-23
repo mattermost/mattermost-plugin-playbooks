@@ -390,64 +390,71 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
-	t.Run("get incidents", func(t *testing.T) {
+	t.Run("get private incident - not part of channel", func(t *testing.T) {
 		reset()
 
-		incident1 := incident.Incident{
+		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID1",
-				CommanderUserID:  "testUserID1",
-				TeamID:           "testTeamID1",
-				Name:             "incidentName1",
-				PrimaryChannelID: "channelID1",
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
 			},
+			PostID:   "",
+			Playbook: nil,
 		}
 
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		result := &incident.GetIncidentsResults{
-			TotalCount: 100,
-			PageCount:  200,
-			HasMore:    true,
-			Items:      []incident.Incident{incident1},
-		}
-		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(false)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var actualList incident.GetIncidentsResults
-		err = json.NewDecoder(resp.Body).Decode(&actualList)
-		require.NoError(t, err)
-		expectedList := incident.GetIncidentsResults{
-			TotalCount: 100,
-			PageCount:  200,
-			HasMore:    true,
-			Items:      []incident.Incident{incident1},
-		}
-		assert.Equal(t, expectedList, actualList)
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
-	t.Run("get empty list of incidents", func(t *testing.T) {
+	t.Run("get private incident - part of channel", func(t *testing.T) {
 		reset()
 
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		result := &incident.GetIncidentsResults{
-			TotalCount: 0,
-			PageCount:  0,
-			HasMore:    false,
-			Items:      nil,
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
 		}
-		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(true)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -456,16 +463,383 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var actualList incident.GetIncidentsResults
-		err = json.NewDecoder(resp.Body).Decode(&actualList)
+		var resultIncident incident.Incident
+		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		expectedList := incident.GetIncidentsResults{
-			TotalCount: 0,
-			PageCount:  0,
-			HasMore:    false,
-			Items:      []incident.Incident{},
+		assert.Equal(t, resultIncident, testIncident)
+	})
+
+	t.Run("get public incident - not part of channel or team", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
 		}
-		assert.Equal(t, expectedList, actualList)
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+			Return(false)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("get public incident - not part of channel, but part of team", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
+		}
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+			Return(true)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var resultIncident incident.Incident
+		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		require.NoError(t, err)
+		assert.Equal(t, resultIncident, testIncident)
+	})
+
+	t.Run("get public incident - part of channel", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
+		}
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(true)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var resultIncident incident.Incident
+		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		require.NoError(t, err)
+		assert.Equal(t, resultIncident, testIncident)
+	})
+
+	t.Run("get private incident details - not part of channel", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
+		}
+
+		testIncidentDetails := incident.Details{
+			Incident:           testIncident,
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
+		}
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(false)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncidentWithDetails("incidentID").
+			Return(&testIncidentDetails, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/details", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("get private incident details - part of channel", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
+		}
+
+		testIncidentDetails := incident.Details{
+			Incident:           testIncident,
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
+		}
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(true)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncidentWithDetails("incidentID").
+			Return(&testIncidentDetails, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/details", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var resultIncident incident.Incident
+		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		require.NoError(t, err)
+		assert.Equal(t, resultIncident, testIncident)
+	})
+
+	t.Run("get public incident details - not part of channel or team", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
+		}
+
+		testIncidentDetails := incident.Details{
+			Incident:           testIncident,
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
+		}
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+			Return(false)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncidentWithDetails("incidentID").
+			Return(&testIncidentDetails, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/details", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("get public incident details - not part of channel, but part of team", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
+		}
+
+		testIncidentDetails := incident.Details{
+			Incident:           testIncident,
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
+		}
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+			Return(true)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncidentWithDetails("incidentID").
+			Return(&testIncidentDetails, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/details", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var resultIncident incident.Incident
+		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		require.NoError(t, err)
+		assert.Equal(t, resultIncident, testIncident)
+	})
+	t.Run("get public incident details - part of channel", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			Header: incident.Header{
+				ID:               "incidentID",
+				CommanderUserID:  "testUserID",
+				TeamID:           "testTeamID",
+				Name:             "incidentName",
+				PrimaryChannelID: "channelID",
+			},
+			PostID:   "",
+			Playbook: nil,
+		}
+
+		testIncidentDetails := incident.Details{
+			Incident:           testIncident,
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
+		}
+
+		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(true)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncidentWithDetails("incidentID").
+			Return(&testIncidentDetails, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/details", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var resultIncident incident.Incident
+		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		require.NoError(t, err)
+		assert.Equal(t, resultIncident, testIncident)
 	})
 }
 

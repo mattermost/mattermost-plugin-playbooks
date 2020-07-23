@@ -5,13 +5,14 @@ import React, {useEffect, FC} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-
 import styled from 'styled-components';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Team} from 'mattermost-redux/types/teams';
+
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
+import BackstageIncidentDetails from 'src/components/backstage/incidents/incident_details/incident_details';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 import {ErrorPageTypes} from 'src/constants';
@@ -47,26 +48,28 @@ const BackstageSidebarMenu = styled.div`
 `;
 
 const SidebarNavLink = styled(NavLink)`
-    display: block;
-    border-radius: 4px 0 0 4px;
-    height: 48px;
-    padding-left: 1.6rem;
-    line-height: 48px;
-    opacity: 0.56;
-    color: var(--sidebar-text);
-
-    &:hover {
-        opacity: 1;
-        cursor: pointer;
-    }
-
-    &.active {
-        background: var(--center-channel-bg);
-        color: var(--center-channel-color);
-        opacity: 1;
+    &&& {
+        display: block;
+        border-radius: 4px 0 0 4px;
+        height: 48px;
+        padding-left: 1.6rem;
+        line-height: 48px;
+        opacity: 0.56;
+        color: var(--sidebar-text);
 
         &:hover {
-            cursor: default;
+            opacity: 1;
+            cursor: pointer;
+        }
+
+        &.active {
+            background: var(--center-channel-bg);
+            color: var(--center-channel-color);
+            opacity: 1;
+
+            &:hover {
+                cursor: default;
+            }
         }
     }
 `;
@@ -147,6 +150,9 @@ const Backstage: FC = () => {
                     </Route>
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
+                    </Route>
+                    <Route path={`${match.url}/incidents/:incidentId`}>
+                        <BackstageIncidentDetails/>
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
