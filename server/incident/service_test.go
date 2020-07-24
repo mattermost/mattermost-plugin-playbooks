@@ -349,6 +349,7 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 					Return("messageID", nil).
 					Times(1)
 			},
+			wantErr: false,
 		},
 		{
 			name: "restart incident - incident is active",

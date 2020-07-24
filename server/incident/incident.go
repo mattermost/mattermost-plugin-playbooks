@@ -177,7 +177,7 @@ type Telemetry interface {
 	// EndIncident tracks the end of an incident.
 	EndIncident(incident *Incident)
 
-	// RestartIncident tracks the end of an incident.
+	// RestartIncident tracks the restart of an incident.
 	RestartIncident(incident *Incident)
 
 	// ModifyCheckedState tracks the checking and unchecking of items by the user
