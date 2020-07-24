@@ -733,13 +733,11 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Playbooks
+          description: A paged list of playbooks
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Playbook"
+                $ref: "#/components/schemas/PlaybookList"
         default:
           description: Error response
           content:
@@ -972,17 +970,26 @@ components:
     IncidentList:
       type: object
       required:
-        - Incidents
         - total_count
+        - page_count
+        - has_more
+        - items
       properties:
-        incidents:
-          type: array
-          items:
-            $ref: "#/components/schemas/Incident"
         total_count:
           type: integer
           format: int32
           example: 305
+        page_count:
+          type: integer
+          format: int32
+          example: 305
+        has_more:
+          type: boolean
+          example: true
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Incident"
     CommanderInfo:
       type: object
       required:
@@ -1020,6 +1027,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Checklist"
+    PlaybookList:
+      type: object
+      required:
+        - total_count
+        - page_count
+        - has_more
+        - items
+      properties:
+        total_count:
+          type: integer
+          format: int32
+          example: 305
+        page_count:
+          type: integer
+          format: int32
+          example: 305
+        has_more:
+          type: boolean
+          example: true
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Playbook"
     Checklist:
       type: object
       required:

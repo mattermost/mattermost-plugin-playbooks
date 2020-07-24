@@ -44,8 +44,10 @@ type Details struct {
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
 // the HeaderFilterOptions, and the TotalCount of the matching incidents before paging was applied.
 type GetIncidentsResults struct {
-	Incidents  []Incident `json:"incidents"`
 	TotalCount int        `json:"total_count"`
+	PageCount  int        `json:"page_count"`
+	HasMore    bool       `json:"has_more"`
+	Items      []Incident `json:"items"`
 }
 
 // CommanderInfo holds the summary information of a commander.
