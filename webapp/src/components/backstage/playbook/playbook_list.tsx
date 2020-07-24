@@ -222,6 +222,15 @@ const Button = styled.button`
     line-height: 18px;
     align-items: center;
     padding: 14px 24px;
+    transition: all 0.15s ease-out;
+
+    &:hover {
+        opacity: 0.8;
+    }
+
+    &:active  {
+        background: rgba(var(--button-bg-rgb), 0.8);
+    }
 
     i {
         font-size: 24px;
@@ -234,7 +243,7 @@ const NoContentPage = (props: {onNewPlaybook: () => void}) => {
             <Title>{'What are Playbooks?'}</Title>
             <Description>{'A playbook is a workflow template. It is created ahead of time during planning and defines the stages and steps a workflow will have, along with who can start a workflow with the playbook.'}</Description>
             <Button
-                className='btn btn-primary mt-6'
+                className='mt-6'
                 onClick={() => props.onNewPlaybook()}
             >
                 <i className='icon-plus mr-2'/>
