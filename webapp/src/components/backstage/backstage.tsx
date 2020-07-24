@@ -20,56 +20,60 @@ import {ErrorPageTypes} from 'src/constants';
 import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
 import Waves from '../assets/waves';
+import PlaybookIcon from '../assets/icons/playbook_icon';
+import WorkflowsIcon from '../assets/icons/workflows_icon';
 
 const BackstageContainer = styled.div`
     overflow: hidden;
     background: var(--center-channel-bg);
+    display: flex;
+    flex-direction: column;
 `;
 
-const BackstageSidebar = styled.div`
-    position: absolute;
-    height: 100vh;
-    width: 32rem;
-    font-size: 16px;
-    line-height: 24px;
-    background: var(--sidebar-bg);
-    color: var(--sidebar-text);
-`;
-
-const BackstageSidebarHeader = styled.div`
-    padding: 32px 0px 0px 32px;
+const Icon = styled.i`
     cursor: pointer;
+
+    &:hover {
+        text-decoration: unset;
+        color: var(--button-bg);
+        fill: var(--button-bg);
+    }
 `;
 
-const BackstageSidebarMenu = styled.div`
-    padding: 4rem 0 0 2.4rem;
-    width: 100%;
+const BackstageNavbar = styled.div`
+    display: flex;
+    align-items: center;
+    height: 80px;
+    padding: 24px 30px 24px 30px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-family: 'compass-icons';
+    box-shadow: 0px 1px 0px var(--center-channel-color-16);
+
+    font-family: 'Open Sans';
+    font-style: normal;
     font-weight: 600;
 `;
 
-const SidebarNavLink = styled(NavLink)`
-    &&& {
-        display: block;
-        border-radius: 4px 0 0 4px;
-        height: 48px;
-        padding-left: 1.6rem;
-        line-height: 48px;
-        opacity: 0.56;
-        color: var(--sidebar-text);
+const BackstageTitlebarItem = styled(NavLink)`
+    && {
+        cursor: pointer;
+        color: var(--center-channel-color);
+        fill: var(--center-channel-color);
+        margin-left: 38px;
+        display: flex;
+        align-items: center;
 
         &:hover {
-            opacity: 1;
-            cursor: pointer;
+            text-decoration: unset;
+            color: var(--button-bg);
+            fill: var(--button-bg);
         }
 
         &.active {
-            background: var(--center-channel-bg);
-            color: var(--center-channel-color);
-            opacity: 1;
-
-            &:hover {
-                cursor: default;
-            }
+            color: var(--button-bg);
+            fill: var(--button-bg);
+            text-decoration: unset;
         }
     }
 `;
@@ -77,8 +81,7 @@ const SidebarNavLink = styled(NavLink)`
 const BackstageBody = styled.div`
     position: relative;
     z-index: 1;
-    margin-left: 32rem;
-    width: calc(100% - 32rem);
+    padding: 0 10rem;
     overflow: auto;
     height: 100vh;
 `;
@@ -108,30 +111,28 @@ const Backstage: FC = () => {
 
     return (
         <BackstageContainer>
-            <BackstageSidebar>
-                <BackstageSidebarHeader
+            <BackstageNavbar>
+                <Icon
+                    className='icon-arrow-left back-icon'
                     onClick={goToMattermost}
+                />
+                <BackstageTitlebarItem
+                    to={`${match.url}/incidents`}
+                    activeClassName={'active'}
                 >
-                    <i className='icon-arrow-left mr-2 back-icon'/>
-                    {'Back to Mattermost'}
-                </BackstageSidebarHeader>
-                <BackstageSidebarMenu>
-                    <SidebarNavLink
-                        data-testid='incidentsLHSButton'
-                        to={`${match.url}/incidents`}
-                        activeClassName={'active'}
-                    >
-                        {'Incidents'}
-                    </SidebarNavLink>
-                    <SidebarNavLink
-                        data-testid='playbooksLHSButton'
-                        to={`${match.url}/playbooks`}
-                        activeClassName={'active'}
-                    >
-                        {'Playbooks'}
-                    </SidebarNavLink>
-                </BackstageSidebarMenu>
-            </BackstageSidebar>
+                    <WorkflowsIcon/>
+                    <i className='mr-2'/>
+                    {'Workflows'}
+                </BackstageTitlebarItem>
+                <BackstageTitlebarItem
+                    to={`${match.url}/playbooks`}
+                    activeClassName={'active'}
+                >
+                    <PlaybookIcon/>
+                    <i className='mr-2'/>
+                    {'Playbooks'}
+                </BackstageTitlebarItem>
+            </BackstageNavbar>
             <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
