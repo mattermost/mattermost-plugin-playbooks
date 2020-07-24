@@ -141,7 +141,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     }
 
     return (
-        <div className='Playbook'>
+        <div className='Playbook container-medium'>
             <div className='Backstage__header'>
                 <div className='title'>
                     <BackstageHeaderBackIcon
