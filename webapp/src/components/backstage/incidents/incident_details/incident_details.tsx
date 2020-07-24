@@ -63,8 +63,10 @@ const BackstageIncidentDetails: FC<Props> = (props: Props) => {
 
     if (fetchingState === FetchingStateType.loading) {
         return (
-            <div className='BackstageIncidentDetails'>
-                <Spinner/>
+            <div className='container-medium text-center'>
+                <div className='BackstageIncidentDetails'>
+                    <Spinner/>
+                </div>
             </div>
         );
     }
