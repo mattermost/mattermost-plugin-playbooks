@@ -2,7 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef, useState} from 'react';
+import {useSelector} from 'react-redux';
 import moment from 'moment';
+
+import {ChannelNamesMap} from 'mattermost-webapp/utils/text_formatting';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
+import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {ChecklistItem} from 'src/types/playbook';
 
@@ -18,9 +25,18 @@ interface ChecklistItemDetailsProps {
 // @ts-ignore
 const {formatText, messageHtmlToComponent} = window.PostUtils;
 
-const markdownOptions = {singleline: true, mentionHighlight: false, atMentions: true};
-
 export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedirect}: ChecklistItemDetailsProps): React.ReactElement => {
+    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const team = useSelector<GlobalState, Team>(getCurrentTeam);
+
+    const markdownOptions = {
+        singleline: true,
+        mentionHighlight: false,
+        atMentions: true,
+        team,
+        channelNamesMap,
+    };
+
     const [spinner, setSpinner] = useState(false);
 
     let timestamp = '';
