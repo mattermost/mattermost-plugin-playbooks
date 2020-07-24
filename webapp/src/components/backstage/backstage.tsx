@@ -31,6 +31,7 @@ const BackstageContainer = styled.div`
 `;
 
 const Icon = styled.i`
+    font-size: 18px;
     cursor: pointer;
 
     &:hover {
@@ -80,7 +81,6 @@ const BackstageTitlebarItem = styled(NavLink)`
 `;
 
 const BackstageBody = styled.div`
-    padding: 0 20px;
     z-index: 1;
     width: 100%;
     overflow: auto;
@@ -114,7 +114,7 @@ const Backstage: FC = () => {
         <BackstageContainer>
             <BackstageNavbar>
                 <Icon
-                    className='icon-chevron-left back-icon'
+                    className='icon-arrow-back-ios back-icon'
                     onClick={goToMattermost}
                 />
                 <BackstageTitlebarItem

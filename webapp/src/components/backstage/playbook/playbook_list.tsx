@@ -136,27 +136,27 @@ const PlaybookList: FC = () => {
             {
                 (playbooks && playbooks.length !== 0) &&
                 <>
-                    <div className='Backstage__header'>
-                        <div
-                            data-testid='titlePlaybook'
-                            className='title'
-                        >
-                            {'Playbooks'}
-                            <div className='light'>
-                                {'(' + currentTeam.display_name + ')'}
+                    <div className='playbook-list container-medium'>
+                        <div className='Backstage__header'>
+                            <div
+                                data-testid='titlePlaybook'
+                                className='title'
+                            >
+                                {'Playbooks'}
+                                <div className='light'>
+                                    {'(' + currentTeam.display_name + ')'}
+                                </div>
+                            </div>
+                            <div className='header-button-div'>
+                                <button
+                                    className='btn btn-primary'
+                                    onClick={() => newPlaybook()}
+                                >
+                                    <i className='icon-plus mr-2'/>
+                                    {'New Playbook'}
+                                </button>
                             </div>
                         </div>
-                        <div className='header-button-div'>
-                            <button
-                                className='btn btn-primary'
-                                onClick={() => newPlaybook()}
-                            >
-                                <i className='icon-plus mr-2'/>
-                                {'New Playbook'}
-                            </button>
-                        </div>
-                    </div>
-                    <div className='playbook-list'>
                         <BackstageListHeader>
                             <div className='row'>
                                 <div className='col-sm-10'> {'Name'} </div>

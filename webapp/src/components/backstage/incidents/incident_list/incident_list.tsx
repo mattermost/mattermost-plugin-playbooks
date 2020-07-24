@@ -149,7 +149,7 @@ const BackstageIncidentList: FC = () => {
     );
 
     const listComponent = (
-        <div className='IncidentList'>
+        <div className='IncidentList container-medium'>
             <div className='Backstage__header'>
                 <div
                     className='title'
