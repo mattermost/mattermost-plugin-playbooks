@@ -9,7 +9,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {Playbook} from 'src/types/playbook';
+import {Playbook, FetchPlaybooksReturn} from 'src/types/playbook';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
@@ -35,7 +35,8 @@ const PlaybookList: FC = () => {
 
     useEffect(() => {
         const fetchPlaybooks = async () => {
-            setPlaybooks(await clientFetchPlaybooks(currentTeam.id));
+            const result = await clientFetchPlaybooks(currentTeam.id) as FetchPlaybooksReturn;
+            setPlaybooks(result.items);
         };
         fetchPlaybooks();
     }, [currentTeam.id]);
@@ -61,7 +62,8 @@ const PlaybookList: FC = () => {
     const onDelete = async () => {
         if (selectedPlaybook) {
             await deletePlaybook(selectedPlaybook);
-            setPlaybooks(await clientFetchPlaybooks(currentTeam.id));
+            const result = await clientFetchPlaybooks(currentTeam.id) as FetchPlaybooksReturn;
+            setPlaybooks(result.items);
             hideConfirmModal();
             setShowBanner(true);
 

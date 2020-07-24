@@ -27,6 +27,7 @@
     "@babel/preset-typescript": "7.10.1",
     "@babel/runtime": "7.10.2",
     "@emotion/core": "^10.0.28",
+    "@testing-library/jest-dom": "^5.11.1",
     "@types/enzyme": "3.10.5",
     "@types/jest": "25.2.3",
     "@types/node": "14.0.9",

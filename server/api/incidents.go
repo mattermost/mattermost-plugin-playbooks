@@ -20,6 +20,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
+type listIncidentResult struct {
+	listResult
+	Items []incident.Incident `json:"items"`
+}
+
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
@@ -58,6 +63,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
 	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
@@ -196,6 +202,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 		if errors.Is(err, incident.ErrChannelDisplayNameInvalid) {
 			msg = "The channel name is invalid or too long. Please use a valid name with fewer than 64 characters."
+		} else if errors.Is(err, incident.ErrPermission) {
+			msg = err.Error()
 		}
 
 		if msg != "" {
@@ -267,13 +275,13 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
-	permissionMessage := "You don't have permissions to create a private channel."
+	permissionMessage := "You are not able to create a private channel"
 	if public {
 		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
-		permissionMessage = "You don't have permission to create a public channel."
+		permissionMessage = "You are not able to create a public channel"
 	}
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, newIncident.TeamID, permission) {
-		return nil, errors.New(permissionMessage)
+		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
 	}
 
 	return h.incidentService.CreateIncident(&newIncident, public)
@@ -316,7 +324,19 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(results)
+	// To return an empty array as opposed to null
+	if results.Items == nil {
+		results.Items = []incident.Incident{}
+	}
+
+	jsonBytes, err := json.Marshal(listIncidentResult{
+		listResult: listResult{
+			TotalCount: results.TotalCount,
+			PageCount:  results.PageCount,
+			HasMore:    results.HasMore,
+		},
+		Items: results.Items,
+	})
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -365,19 +385,15 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
-			return
-		}
+	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
-	if err != nil {
-		HandleError(w, err)
+	if !h.hasPermissionsToOrPublic(incidentToGet.PrimaryChannelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
 	}
 
@@ -444,6 +460,21 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	err := h.incidentService.EndIncident(vars["id"], userID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// restartIncident handles the /incidents/{id}/restart api endpoint.
+func (h *IncidentHandler) restartIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	err := h.incidentService.RestartIncident(vars["id"], userID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -545,8 +576,8 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	channelIds := make([]string, 0, len(incidents.Incidents))
-	for _, incident := range incidents.Incidents {
+	channelIds := make([]string, 0, len(incidents.Items))
+	for _, incident := range incidents.Items {
 		channelIds = append(channelIds, incident.PrimaryChannelID)
 	}
 
