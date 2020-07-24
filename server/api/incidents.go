@@ -58,6 +58,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
 	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
@@ -442,6 +443,21 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	err := h.incidentService.EndIncident(vars["id"], userID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// restartIncident handles the /incidents/{id}/restart api endpoint.
+func (h *IncidentHandler) restartIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	err := h.incidentService.RestartIncident(vars["id"], userID)
 	if err != nil {
 		HandleError(w, err)
 		return
