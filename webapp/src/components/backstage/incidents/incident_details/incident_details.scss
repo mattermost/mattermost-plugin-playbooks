@@ -14,7 +14,6 @@ $font-family: Open Sans;
         bottom: 0;
         left: 0;
         height: auto;
-        margin: 0 6rem;
 
         .link-icon {
             border-radius: 4px;
@@ -88,7 +87,6 @@ $font-family: Open Sans;
         display: flex;
         justify-content: space-between;
         font-weight: 600;
-        margin: 0 6rem;
 
         .summary-tab {
             color: var(--button-bg);
@@ -117,7 +115,6 @@ $font-family: Open Sans;
     .statistics-row {
         display: flex;
         flex-wrap: wrap;
-        margin: 0 44px;
     }
 
     .chart-block {
@@ -126,7 +123,7 @@ $font-family: Open Sans;
         background: var(--center-channel-bg);
         box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
         border-radius: 8px;
-        margin: 16px 60px;
+        margin: 2.4rem 0;
         height: 1%;
         overflow: hidden;
         flex: 0 0 26rem;
@@ -148,9 +145,13 @@ $font-family: Open Sans;
         background: var(--center-channel-bg);
         box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
         border-radius: 8px;
-        margin: 1.6rem;
+        margin: 0 0 0 3.2rem;
         height: 168px;
         flex: 0 0 26rem;
+
+        &:first-child {
+            margin: 0;
+        }
 
         .title {
             color: var(--center-channel-color-56);

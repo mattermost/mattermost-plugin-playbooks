@@ -59,8 +59,10 @@ const BackstageIncidentDetails: FC = () => {
 
     if (fetchingState === FetchingStateType.loading) {
         return (
-            <div className='BackstageIncidentDetails'>
-                <Spinner/>
+            <div className='container-medium text-center'>
+                <div className='BackstageIncidentDetails'>
+                    <Spinner/>
+                </div>
             </div>
         );
     }
@@ -78,99 +80,101 @@ const BackstageIncidentDetails: FC = () => {
     };
 
     return (
-        <div className='BackstageIncidentDetails'>
-            <div className='details-header'>
-                <div className='title'>
-                    <BackstageHeaderBackIcon
-                        onClick={closeIncidentDetails}
-                    />
-                    <TextWithTooltip
-                        id='title'
-                        className='title-text mr-1'
-                        text={`Incident ${incident.name}`}
-                        placement='bottom'
-                    />
+        <div className='container-medium'>
+            <div className='BackstageIncidentDetails'>
+                <div className='details-header'>
+                    <div className='title'>
+                        <BackstageHeaderBackIcon
+                            onClick={closeIncidentDetails}
+                        />
+                        <TextWithTooltip
+                            id='title'
+                            className='title-text mr-1'
+                            text={`Incident ${incident.name}`}
+                            placement='bottom'
+                        />
 
+                        <OverlayTrigger
+                            placement='bottom'
+                            delay={OVERLAY_DELAY}
+                            overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
+                        >
+                            <button className='link-icon style--none mr-2'>
+                                <i
+                                    className='icon icon-link-variant'
+                                    onClick={goToChannel}
+                                />
+                            </button>
+                        </OverlayTrigger>
+                        <StatusBadge isActive={incident.is_active}/>
+                    </div>
+                    <div className='commander-div'>
+                        <span className='label p-0 mr-2'>{'Commander:'}</span>
+                        <Profile
+                            userId={incident.commander_user_id}
+                            classNames={{ProfileButton: true, profile: true}}
+                        />
+                    </div>
+                </div>
+                <div className='subheader'>
+                    { /*Summary will be a tab once Post Mortem is included */}
+                    <div className='summary-tab'>
+                        {'Summary'}
+                    </div>
+                    <ExportLink incident={incident}/>
+                </div>
+                <div className='statistics-row'>
+                    <div className='statistics-row__block'>
+                        <div className='title'>
+                            {'Duration'}
+                        </div>
+                        <div className='content'>
+                            <i className='icon icon-clock-outline box-icon'/>
+                            {duration(incident)}
+                        </div>
+                        <div className='block-footer text-right'>
+                            <span>{timeFrameText(incident)}</span>
+                        </div>
+                    </div>
                     <OverlayTrigger
                         placement='bottom'
                         delay={OVERLAY_DELAY}
-                        overlay={<Tooltip id='goToChannel'>{'Go to Incident Channel'}</Tooltip>}
+                        overlay={<Tooltip id='goToChannel'>{'Number of users involved in the incident'}</Tooltip>}
                     >
-                        <button className='link-icon style--none mr-2'>
-                            <i
-                                className='icon icon-link-variant'
-                                onClick={goToChannel}
-                            />
-                        </button>
+                        <div className='statistics-row__block'>
+                            <div className='title'>
+                                {'Members Involved'}
+                            </div>
+                            <div className='content'>
+                                <i className='icon icon-account-multiple-outline box-icon'/>
+                                {incident.num_members}
+                            </div>
+                        </div>
                     </OverlayTrigger>
-                    <StatusBadge isActive={incident.is_active}/>
-                </div>
-                <div className='commander-div'>
-                    <span className='label p-0 mr-2'>{'Commander:'}</span>
-                    <Profile
-                        userId={incident.commander_user_id}
-                        classNames={{ProfileButton: true, profile: true}}
-                    />
-                </div>
-            </div>
-            <div className='subheader'>
-                { /*Summary will be a tab once Post Mortem is included */}
-                <div className='summary-tab'>
-                    {'Summary'}
-                </div>
-                <ExportLink incident={incident}/>
-            </div>
-            <div className='statistics-row'>
-                <div className='statistics-row__block'>
-                    <div className='title'>
-                        {'Duration'}
-                    </div>
-                    <div className='content'>
-                        <i className='icon icon-clock-outline box-icon'/>
-                        {duration(incident)}
-                    </div>
-                    <div className='block-footer text-right'>
-                        <span>{timeFrameText(incident)}</span>
-                    </div>
-                </div>
-                <OverlayTrigger
-                    placement='bottom'
-                    delay={OVERLAY_DELAY}
-                    overlay={<Tooltip id='goToChannel'>{'Number of users involved in the incident'}</Tooltip>}
-                >
                     <div className='statistics-row__block'>
                         <div className='title'>
-                            {'Members Involved'}
+                            {'Messages'}
                         </div>
                         <div className='content'>
-                            <i className='icon icon-account-multiple-outline box-icon'/>
-                            {incident.num_members}
+                            <i className='icon icon-send box-icon'/>
+                            {incident.total_posts}
+                        </div>
+                        <div className='block-footer text-right'>
+                            <a
+                                className='link'
+                                onClick={goToChannel}
+                            >
+                                {'Jump to Channel'}
+                                <i className='icon icon-arrow-right'/>
+                            </a>
                         </div>
                     </div>
-                </OverlayTrigger>
-                <div className='statistics-row__block'>
-                    <div className='title'>
-                        {'Messages'}
-                    </div>
-                    <div className='content'>
-                        <i className='icon icon-send box-icon'/>
-                        {incident.total_posts}
-                    </div>
-                    <div className='block-footer text-right'>
-                        <a
-                            className='link'
-                            onClick={goToChannel}
-                        >
-                            {'Jump to Channel'}
-                            <i className='icon icon-arrow-right'/>
-                        </a>
-                    </div>
                 </div>
-            </div>
-            <div className='chart-block'>
-                <ChecklistTimeline
-                    incident={incident}
-                />
+                <div className='chart-block'>
+                    <ChecklistTimeline
+                        incident={incident}
+                    />
+                </div>
             </div>
         </div>
     );

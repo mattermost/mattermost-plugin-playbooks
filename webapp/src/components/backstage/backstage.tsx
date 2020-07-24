@@ -28,9 +28,11 @@ const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     display: flex;
     flex-direction: column;
+    height: 100%;
 `;
 
 const Icon = styled.i`
+    font-size: 18px;
     cursor: pointer;
 
     &:hover {
@@ -60,7 +62,8 @@ const BackstageTitlebarItem = styled(NavLink)`
         cursor: pointer;
         color: var(--center-channel-color);
         fill: var(--center-channel-color);
-        margin-left: 38px;
+        padding: 8px;
+        margin-left: 28px;
         display: flex;
         align-items: center;
 
@@ -79,11 +82,10 @@ const BackstageTitlebarItem = styled(NavLink)`
 `;
 
 const BackstageBody = styled.div`
-    position: relative;
     z-index: 1;
-    padding: 0 10rem;
+    width: 100%;
     overflow: auto;
-    height: 100vh;
+    margin: 0 auto;
 `;
 
 const Backstage: FC = () => {
@@ -113,7 +115,7 @@ const Backstage: FC = () => {
         <BackstageContainer>
             <BackstageNavbar>
                 <Icon
-                    className='icon-arrow-left back-icon'
+                    className='icon-arrow-back-ios back-icon'
                     onClick={goToMattermost}
                 />
                 <BackstageTitlebarItem
@@ -163,7 +165,6 @@ const Backstage: FC = () => {
                     </Route>
                 </Switch>
             </BackstageBody>
-            <Waves/>
         </BackstageContainer>
     );
 };

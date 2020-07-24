@@ -136,12 +136,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         case FetchingStateType.notFound:
             return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
         case FetchingStateType.loading:
-            return <Spinner/>;
+            return (
+                <div className='Playbook container-medium text-center'>
+                    <Spinner/>
+                </div>
+            );
         }
     }
 
     return (
-        <div className='Playbook'>
+        <div className='Playbook container-medium'>
             <div className='Backstage__header'>
                 <div className='title'>
                     <BackstageHeaderBackIcon
