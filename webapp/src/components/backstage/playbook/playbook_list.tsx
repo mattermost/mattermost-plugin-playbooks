@@ -183,6 +183,7 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 0 20px;
 `;
 
 const Title = styled.h2`
@@ -201,7 +202,7 @@ const Description = styled.h5`
     font-weight: normal;
     font-size: 16px;
     line-height: 24px;
-    color: rgba(var(--sys-center-channel-color-rgb), 0.72);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     text-align: center;
     max-width: 800px;
 `;
@@ -219,6 +220,10 @@ const Button = styled.button`
     line-height: 18px;
     align-items: center;
     padding: 14px 24px;
+
+    i {
+        font-size: 24px;
+    }
 `;
 
 const NoContentPage = (props: {onNewPlaybook: () => void}) => {
