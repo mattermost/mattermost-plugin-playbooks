@@ -15,7 +15,7 @@ import {useSelector} from 'react-redux';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';
@@ -157,12 +157,6 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                                     <ChecklistItemDetails
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
-                                        disabled={false}
-                                        onChange={(checked: boolean) => {
-                                            if (onChange) {
-                                                onChange(index, checked);
-                                            }
-                                        }}
                                         onRedirect={() => {
                                             if (onRedirect) {
                                                 onRedirect(index);
@@ -186,7 +180,7 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                         }
                         addItem({
                             title: newValue,
-                            checked: false,
+                            state: ChecklistItemState.Open,
                             command: '',
                         });
                         setNewValue('');

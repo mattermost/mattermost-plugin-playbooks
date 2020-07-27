@@ -27,11 +27,11 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	Title           string    `json:"title"`
-	Checked         bool      `json:"checked"`
-	CheckedModified time.Time `json:"checked_modified"`
-	CheckedPostID   string    `json:"checked_post_id"`
-	Command         string    `json:"command"`
+	Title               string    `json:"title"`
+	State               string    `json:"state"`
+	StateModified       time.Time `json:"state_modified"`
+	StateModifiedPostID string    `json:"state_modified_post_id"`
+	Command             string    `json:"command"`
 }
 
 // Service is the playbook service for managing playbooks
@@ -75,4 +75,20 @@ type Telemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook)
+}
+
+const (
+	ChecklistItemStateOpen       = ""
+	ChecklistItemStateInProgress = "in_progress"
+	ChecklistItemStateClosed     = "closed"
+)
+
+func IsValidChecklistItemState(state string) bool {
+	return state == ChecklistItemStateClosed ||
+		state == ChecklistItemStateInProgress ||
+		state == ChecklistItemStateOpen
+}
+
+func (p *Playbook) IsValidChecklistItemIndex(checklist, item int) bool {
+	return p != nil && checklist >= 0 && item >= 0 && checklist < len(p.Checklists) && item < len(p.Checklists[checklist].Items)
 }

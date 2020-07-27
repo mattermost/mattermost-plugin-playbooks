@@ -23,18 +23,17 @@ type RudderTelemetry struct {
 
 // Unique strings that identify each of the tracked events
 const (
-	eventCreateIncident       = "CreateIncident"
-	eventEndIncident          = "EndIncident"
-	eventRestartIncident      = "RestartIncident"
-	eventAddChecklistItem     = "AddChecklistItem"
-	eventRemoveChecklistItem  = "RemoveChecklistItem"
-	eventRenameChecklistItem  = "RenameChecklistItem"
-	eventCheckChecklistItem   = "CheckChecklistItem"
-	eventUncheckChecklistItem = "UncheckChecklistItem"
-	eventMoveChecklistItem    = "MoveChecklistItem"
-	eventCreatePlaybook       = "CreatePlaybook"
-	eventUpdatePlaybook       = "UpdatePlaybook"
-	eventDeletePlaybook       = "DeletePlaybook"
+	eventCreateIncident           = "CreateIncident"
+	eventEndIncident              = "EndIncident"
+	eventRestartIncident          = "RestartIncident"
+	eventAddChecklistItem         = "AddChecklistItem"
+	eventRemoveChecklistItem      = "RemoveChecklistItem"
+	eventRenameChecklistItem      = "RenameChecklistItem"
+	eventModifyStateChecklistItem = "ModifyStateChecklistItem"
+	eventMoveChecklistItem        = "MoveChecklistItem"
+	eventCreatePlaybook           = "CreatePlaybook"
+	eventUpdatePlaybook           = "UpdatePlaybook"
+	eventDeletePlaybook           = "DeletePlaybook"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -150,12 +149,8 @@ func (t *RudderTelemetry) RenameChecklistItem(incidentID, userID string) {
 
 // ModifyCheckedState tracks the checking and unchecking of items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, newState bool) {
-	if newState {
-		t.track(eventCheckChecklistItem, checklistItemProperties(incidentID, userID))
-	} else {
-		t.track(eventUncheckChecklistItem, checklistItemProperties(incidentID, userID))
-	}
+func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID, newState string) {
+	t.track(eventModifyStateChecklistItem, checklistItemProperties(incidentID, userID))
 }
 
 // MoveChecklistItem tracks the movement of checklist items by the user

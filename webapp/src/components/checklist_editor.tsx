@@ -9,7 +9,7 @@ import {
     DraggableProvided,
 } from 'react-beautiful-dnd';
 
-import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';
@@ -194,7 +194,7 @@ export const ChecklistEditor = ({
                                 }
                                 onAddChecklistItem({
                                     title: newValue,
-                                    checked: false,
+                                    state: ChecklistItemState.Open,
                                     command: '',
                                 });
                                 setNewValue('');
