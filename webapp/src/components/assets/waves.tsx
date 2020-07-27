@@ -7,7 +7,7 @@ import styled from 'styled-components';
 const WavesSVG = styled.svg`
     position: absolute;
     left: 0;
-    bottom: 0;
+    bottom: -20%;
     width: 100%;
     max-height: 70%;
     height: auto;

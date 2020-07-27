@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect, FC} from 'react';
+import React, {useState, useEffect, useRef, FC} from 'react';
 import moment from 'moment';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
@@ -70,12 +70,16 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 };
 
 interface ChecklistItemDetailsEditProps {
+    commandInputId: string;
+    channelId?: string;
     checklistItem: ChecklistItem;
+    suggestionsOnBottom?: boolean;
     onEdit: (newvalue: ChecklistItem) => void;
     onRemove: () => void;
 }
 
-export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
+export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
+    const commandInputRef = useRef(null);
     const [title, setTitle] = useState(checklistItem.title);
     const [command, setCommand] = useState(checklistItem.command);
 
@@ -90,6 +94,11 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
             onEdit({...checklistItem, ...{title: trimmedTitle, command: trimmedCommand}});
         }
     };
+
+    // @ts-ignore
+    const AutocompleteTextbox = window.Components.Textbox;
+
+    const suggestionListStyle = suggestionsOnBottom ? 'bottom' : 'top';
 
     return (
         <div
@@ -106,8 +115,8 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                     onClick={(e) => e.stopPropagation()}
                     onBlur={submit}
                     placeholder={'Title'}
-                    onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === 'Escape') {
                             submit();
                         }
                     }}
@@ -115,21 +124,36 @@ export const ChecklistItemDetailsEdit = ({checklistItem, onEdit, onRemove}: Chec
                         setTitle(e.target.value);
                     }}
                 />
-                <input
+                <AutocompleteTextbox
+                    ref={commandInputRef}
+                    id={commandInputId}
+                    channelId={channelId}
+                    inputComponent={'input'}
+                    createMessage={'/slash command'}
+                    onKeyDown={(e: KeyboardEvent) => {
+                        if (e.key === 'Enter' || e.key === 'Escape') {
+                            if (commandInputRef.current) {
+                                // @ts-ignore
+                                commandInputRef.current!.blur();
+                            }
+                        }
+                    }}
+                    onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                        if (e.target) {
+                            const input = e.target as HTMLInputElement;
+                            setCommand(input.value);
+                        }
+                    }}
+                    suggestionListStyle={suggestionListStyle}
+
                     className='form-control'
                     type='text'
                     value={command}
                     onBlur={submit}
-                    placeholder={'/Slash Command'}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                            submit();
-                        }
-                    }}
-                    onChange={(e) => {
-                        setCommand(e.target.value);
-                    }}
+
+                    // the following are required props but aren't used
+                    characterLimit={256}
+                    onKeyPress={(e: KeyboardEvent) => true}
                 />
             </div>
             <span

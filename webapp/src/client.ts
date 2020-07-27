@@ -25,11 +25,9 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
 
     let data = await doGet(`${apiUrl}/incidents${queryParams}`);
     if (!data) {
-        data = {incidents: [], total_count: 0};
+        data = {items: [], total_count: 0, page_count: 0, has_more: false} as FetchIncidentsReturn;
     }
-    if (!data.incidents) {
-        data.incidents = [];
-    }
+
     return data as FetchIncidentsReturn;
 }
 

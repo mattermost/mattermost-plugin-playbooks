@@ -10,6 +10,13 @@ export interface Playbook {
     member_ids: string[];
 }
 
+export interface FetchPlaybooksReturn {
+    total_count: number;
+    page_count: number;
+    has_more: boolean;
+    items: Playbook[];
+}
+
 export interface Checklist {
     title: string;
     items: ChecklistItem[];

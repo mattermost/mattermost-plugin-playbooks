@@ -25,6 +25,7 @@ type RudderTelemetry struct {
 const (
 	eventCreateIncident           = "CreateIncident"
 	eventEndIncident              = "EndIncident"
+	eventRestartIncident          = "RestartIncident"
 	eventAddChecklistItem         = "AddChecklistItem"
 	eventRemoveChecklistItem      = "RemoveChecklistItem"
 	eventRenameChecklistItem      = "RenameChecklistItem"
@@ -114,6 +115,11 @@ func (t *RudderTelemetry) CreateIncident(incdnt *incident.Incident, public bool)
 // EndIncident tracks the end of the incident passed.
 func (t *RudderTelemetry) EndIncident(incdnt *incident.Incident) {
 	t.track(eventEndIncident, incidentProperties(incdnt))
+}
+
+// RestartIncident tracks the restart of the incident.
+func (t *RudderTelemetry) RestartIncident(incdnt *incident.Incident) {
+	t.track(eventRestartIncident, incidentProperties(incdnt))
 }
 
 func checklistItemProperties(incidentID, userID string) map[string]interface{} {

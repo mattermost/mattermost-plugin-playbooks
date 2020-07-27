@@ -26,6 +26,10 @@ func (t *NoopTelemetry) CreateIncident(*incident.Incident, bool) {
 func (t *NoopTelemetry) EndIncident(*incident.Incident) {
 }
 
+// RestartIncident does nothing
+func (t *NoopTelemetry) RestartIncident(*incident.Incident) {
+}
+
 // AddChecklistItem does nothing.
 func (t *NoopTelemetry) AddChecklistItem(string, string) {
 }

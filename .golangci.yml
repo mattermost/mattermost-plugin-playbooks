@@ -25,7 +25,6 @@ linters:
     - govet
     - ineffassign
     - interfacer
-    - lll
     - misspell
     - scopelint
     - staticcheck
@@ -62,8 +61,6 @@ linters-settings:
   govet:
     check-shadowing: true
     enable-all: true
-  lll:
-    line-length: 150
   misspell:
     locale: US
 

@@ -151,6 +151,18 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("get playbooks", func(t *testing.T) {
 		reset()
 
+		playbookResult := struct {
+			TotalCount int                 `json:"total_count"`
+			PageCount  int                 `json:"page_count"`
+			HasMore    bool                `json:"has_more"`
+			Items      []playbook.Playbook `json:"items"`
+		}{
+			TotalCount: 2,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []playbook.Playbook{playbooktest, playbooktest},
+		}
+
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
@@ -177,8 +189,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		result, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		playbooks := []playbook.Playbook{playbooktest, playbooktest}
-		playbooksBytes, err := json.Marshal(&playbooks)
+		playbooksBytes, err := json.Marshal(&playbookResult)
 		require.NoError(t, err)
 		assert.Equal(t, playbooksBytes, result)
 	})
@@ -471,8 +482,20 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
-	t.Run("get playbooks", func(t *testing.T) {
+	t.Run("get playbooks with members", func(t *testing.T) {
 		reset()
+
+		playbookResult := struct {
+			TotalCount int                 `json:"total_count"`
+			PageCount  int                 `json:"page_count"`
+			HasMore    bool                `json:"has_more"`
+			Items      []playbook.Playbook `json:"items"`
+		}{
+			TotalCount: 1,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []playbook.Playbook{withMember},
+		}
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
@@ -500,8 +523,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		result, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		filteredPlaybooks := []playbook.Playbook{withMember}
-		playbooksBytes, err := json.Marshal(&filteredPlaybooks)
+		playbooksBytes, err := json.Marshal(&playbookResult)
 		require.NoError(t, err)
 		assert.Equal(t, playbooksBytes, result)
 	})

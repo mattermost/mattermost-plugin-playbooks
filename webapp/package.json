@@ -1,8 +1,5 @@
 {
-  "name": "mattermost-plugin-incident-response",
-  "version": "0.5.0-alpha.5",
-  "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
-  "main": "src/index.js",
+  "private": true,
   "scripts": {
     "build": "webpack --mode=production",
     "build:watch": "webpack --mode=production --watch",
@@ -30,6 +27,7 @@
     "@babel/preset-typescript": "7.10.1",
     "@babel/runtime": "7.10.2",
     "@emotion/core": "^10.0.28",
+    "@testing-library/jest-dom": "^5.11.1",
     "@types/enzyme": "3.10.5",
     "@types/jest": "25.2.3",
     "@types/node": "14.0.9",
@@ -86,7 +84,7 @@
     "core-js": "3.6.5",
     "debounce": "^1.2.0",
     "mattermost-redux": "5.24.2",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#23f5f93d9f12a7e2b5623e5cee6814366abd9a0f",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#0b27dbfaa79b88cc207d835bbe604577d9397425",
     "moment": "2.26.0",
     "qs": "6.9.4",
     "react": "16.13.1",

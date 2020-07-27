@@ -2,13 +2,15 @@ $font-family: Open Sans;
 // Matching webapp variable for bar
 $announcement-bar-height: 32px;
 
+.container-medium {
+    margin: 0 auto;
+    max-width: 1160px;
+    padding: 0 20px;
+}
+
 .Playbook {
     font-family: $font-family;
     color: var(--center-channel-color-90);
-
-    .playbook-fields {
-        padding: 3.2rem 0px 0px 6rem;
-    }
 
     .input-name {
         width: 400px;
@@ -52,8 +54,6 @@ $announcement-bar-height: 32px;
     }
 
     .playbook-list {
-        padding: 2rem 6rem;
-
         .playbook-item {
             cursor: pointer;
             display: flex;

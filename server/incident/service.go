@@ -179,9 +179,55 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 	return nil
 }
 
+// RestartIncident restarts the incident with the given ID by the given user.
+func (s *ServiceImpl) RestartIncident(incidentID, userID string) error {
+	currentIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	if currentIncident.IsActive {
+		return ErrIncidentActive
+	}
+
+	currentIncident.IsActive = true
+	currentIncident.EndedAt = 0
+
+	if err = s.store.UpdateIncident(currentIncident); err != nil {
+		return errors.Wrapf(err, "failed to restart incident")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, currentIncident,
+		currentIncident.PrimaryChannelID)
+	s.telemetry.RestartIncident(currentIncident)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	// Post in the  main incident channel that @user has restarted the incident.
+	// Main channel is the only channel in the incident for now.
+	if _, err := s.poster.PostMessage(currentIncident.PrimaryChannelID,
+		"This incident has been restarted by @%v", user.Username); err != nil {
+		return errors.Wrap(err, "failed to post restart incident messsage")
+	}
+
+	return nil
+}
+
 // OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 // be ended.
 func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error {
+	currentIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	if !currentIncident.IsActive {
+		return ErrIncidentNotActive
+	}
+
 	dialog := model.Dialog{
 		Title:            "Confirm End Incident",
 		SubmitLabel:      "Confirm",
@@ -238,7 +284,7 @@ func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInf
 
 	// Set of commander ids
 	commanders := make(map[string]bool)
-	for _, h := range results.Incidents {
+	for _, h := range results.Items {
 		if _, ok := commanders[h.CommanderUserID]; !ok {
 			commanders[h.CommanderUserID] = true
 		}
@@ -274,9 +320,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return err
 	}
 
-	if !incidentToModify.IsActive {
-		return ErrIncidentNotActive
-	} else if incidentToModify.CommanderUserID == commanderID {
+	if incidentToModify.CommanderUserID == commanderID {
 		return nil
 	}
 

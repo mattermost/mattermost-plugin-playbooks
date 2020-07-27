@@ -45,6 +45,12 @@ export function endIncident() {
     };
 }
 
+export function restartIncident() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, '/incident restart');
+    };
+}
+
 export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,

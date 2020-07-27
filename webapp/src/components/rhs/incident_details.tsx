@@ -8,7 +8,12 @@ import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
 
 import {useDispatch} from 'react-redux';
 
-import {fetchUsersInChannel, setCommander, setActiveStage, setChecklistItemState} from 'src/client';
+import {
+    fetchUsersInChannel,
+    setCommander,
+    setActiveStage,
+    setChecklistItemState,
+} from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem, emptyChecklist, ChecklistItemState} from 'src/types/playbook';
@@ -16,7 +21,7 @@ import {Checklist, ChecklistItem, emptyChecklist, ChecklistItemState} from 'src/
 import ProfileSelector from 'src/components/profile/profile_selector';
 
 import {isMobile} from 'src/mobile';
-import {toggleRHS, endIncident} from 'src/actions';
+import {toggleRHS, endIncident, restartIncident} from 'src/actions';
 import './incident_details.scss';
 
 interface Props {
@@ -76,13 +81,13 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
         <React.Fragment>
             <div className='title'>
                 {'Stage'}
-                { !isActive(props.selectedStage) &&
-                    <a
-                        onClick={props.onStageActivated}
-                        className='stage-title__set-active'
-                    >
-                        <span className='font-weight--normal'>{'(Set as active stage)'}</span>
-                    </a>
+                {!isActive(props.selectedStage) &&
+                <a
+                    onClick={props.onStageActivated}
+                    className='stage-title__set-active'
+                >
+                    <span className='font-weight--normal'>{'(Set as active stage)'}</span>
+                </a>
                 }
             </div>
             <ReactSelect
@@ -131,6 +136,25 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const setCurrentStageAsActive = () => {
         setActiveStage(props.incident.id, selectedChecklistIndex);
     };
+
+    let changeStateButton = (
+        <button
+            className='btn btn-primary'
+            onClick={() => dispatch(endIncident())}
+        >
+            {'End Incident'}
+        </button>
+    );
+    if (!props.incident.is_active) {
+        changeStateButton = (
+            <button
+                className='btn btn-primary'
+                onClick={() => dispatch(restartIncident())}
+            >
+                {'Restart Incident'}
+            </button>
+        );
+    }
 
     return (
         <React.Fragment>
@@ -188,12 +212,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                 </div>
             </Scrollbars>
             <div className='footer-div'>
-                <button
-                    className='btn btn-primary'
-                    onClick={() => dispatch(endIncident())}
-                >
-                    {'End Incident'}
-                </button>
+                {changeStateButton}
             </div>
         </React.Fragment>
     );

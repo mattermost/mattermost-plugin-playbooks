@@ -308,3 +308,17 @@ func (mr *MockServiceMockRecorder) RenameChecklistItem(arg0, arg1, arg2, arg3, a
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklistItem", reflect.TypeOf((*MockService)(nil).RenameChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5)
 }
+
+// RestartIncident mocks base method
+func (m *MockService) RestartIncident(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestartIncident", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestartIncident indicates an expected call of RestartIncident
+func (mr *MockServiceMockRecorder) RestartIncident(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestartIncident", reflect.TypeOf((*MockService)(nil).RestartIncident), arg0, arg1)
+}
