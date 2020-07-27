@@ -22,6 +22,7 @@ import NoContentPlaybookSvg from '../../assets/no_content_playbooks_svg';
 
 import BackstageListHeader from '../backstage_list_header';
 import './playbook.scss';
+import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 
 const DeleteBannerTimeout = 5000;
 
@@ -95,31 +96,43 @@ const PlaybookList: FC = () => {
             </div>
         );
     } else {
-        body = playbooks.map((p) => (
+        body = playbooks.map((p: Playbook) => (
             <div
                 className='row playbook-item'
                 key={p.id}
                 onClick={() => editPlaybook(p)}
             >
-                <a className='col-sm-10 title'>
+                <a className='col-sm-4 title'>
                     <TextWithTooltip
                         id={p.title}
                         text={p.title}
                     />
                 </a>
+                <div
+                    className='col-sm-2'
+                >
+                    {
+                        p.checklists.length
+                    }
+                </div>
+                <div
+                    className='col-sm-2'
+                >
+                    {
+
+                        /* Calculate all steps for this playbook */
+                        p.checklists.reduce((acc, currValue) => (currValue.items.length + acc), 0)
+                    }
+                </div>
                 <div className='col-sm-2'>
-                    <a>
-                        {'Edit'}
-                    </a>
-                    {' - '}
-                    <a
-                        onClick={(e) => {
-                            e.stopPropagation();
+                    <PlaybookActionMenu
+                        onEdit={() => {
+                            editPlaybook(p);
+                        }}
+                        onDelete={() => {
                             onConfirmDelete(p);
                         }}
-                    >
-                        {'Delete'}
-                    </a>
+                    />
                 </div>
             </div>
         ));
@@ -161,7 +174,9 @@ const PlaybookList: FC = () => {
                         </div>
                         <BackstageListHeader>
                             <div className='row'>
-                                <div className='col-sm-10'> {'Name'} </div>
+                                <div className='col-sm-4'> {'Name'} </div>
+                                <div className='col-sm-2'> {'Stages'} </div>
+                                <div className='col-sm-2'> {'Steps'} </div>
                                 <div className='col-sm-2'> {'Actions'}</div>
                             </div>
                         </BackstageListHeader>
@@ -250,6 +265,26 @@ const NoContentPage = (props: {onNewPlaybook: () => void}) => {
                 {'New Playbook'}
             </Button>
         </Container>
+    );
+};
+
+interface PlaybookActionMenuProps {
+    onEdit: () => void;
+    onDelete: () => void;
+}
+
+const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
+    return (
+        <DotMenu>
+            <DropdownMenuItem
+                text='Edit'
+                onClick={props.onEdit}
+            />
+            <DropdownMenuItem
+                text='Delete'
+                onClick={props.onDelete}
+            />
+        </DotMenu>
     );
 };
 

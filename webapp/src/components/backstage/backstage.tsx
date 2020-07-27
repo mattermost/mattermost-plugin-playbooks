@@ -84,7 +84,7 @@ const BackstageTitlebarItem = styled(NavLink)`
 const BackstageBody = styled.div`
     z-index: 1;
     width: 100%;
-    overflow: auto;
+    overflow: visible;
     margin: 0 auto;
 `;
 
