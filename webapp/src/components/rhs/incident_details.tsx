@@ -168,17 +168,16 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     }
 
     const [now, setNow] = useState(moment());
-    const tick = () => {
-        setNow(moment());
-    };
     useEffect(() => {
+        const tick = () => {
+            setNow(moment());
+        };
         const timerId = setInterval(() => tick(), 1000);
 
-        // cleanup function
         return () => {
             clearInterval(timerId);
         };
-    });
+    }, []);
 
     const duration = moment.duration(now.diff(moment.unix(props.incident.created_at)));
     let durationString = '';
