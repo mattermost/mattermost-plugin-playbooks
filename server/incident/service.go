@@ -358,6 +358,10 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return err
 	}
 
+	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
+	}
+
 	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
 	if newState == itemToCheck.State {
 		return nil

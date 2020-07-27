@@ -165,6 +165,11 @@ func (r *Runner) actionAdvance(args []string) {
 		return
 	}
 
+	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklist, item) {
+		r.postCommandResponse("Invalid checklist item indices.")
+		return
+	}
+
 	itemToModify := incidentToModify.Playbook.Checklists[checklist].Items[item]
 	newState := ""
 	switch itemToModify.State {

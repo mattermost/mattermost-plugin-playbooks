@@ -88,3 +88,7 @@ func IsValidChecklistItemState(state string) bool {
 		state == ChecklistItemStateInProgress ||
 		state == ChecklistItemStateOpen
 }
+
+func (p *Playbook) IsValidChecklistItemIndex(checklist, item int) bool {
+	return p != nil && checklist >= 0 && item >= 0 && checklist < len(p.Checklists) && item < len(p.Checklists[checklist].Items)
+}
