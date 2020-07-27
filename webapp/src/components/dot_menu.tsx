@@ -47,13 +47,12 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
     return (
         <div
             ref={rootRef}
+            onClick={(e) => {
+                e.stopPropagation();
+                toggleOpen();
+            }}
         >
-            <IconWrapper
-                onClick={(e) => {
-                    e.stopPropagation();
-                    toggleOpen();
-                }}
-            >
+            <IconWrapper>
                 <DotMenuIcon/>
             </IconWrapper>
             <div

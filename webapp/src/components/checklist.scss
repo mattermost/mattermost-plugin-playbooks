@@ -102,13 +102,13 @@ $font-family: Open Sans;
     }
 
     input[type="checkbox"]::before {
-        font-family: mattermosticons;
+        font-family: 'compass-icons', mattermosticons;
         text-rendering: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         content: "\f12c";
 
-        font-size: 11px;
+        font-size: 12px;
         position: absolute;
         left: -1.5rem;
         top: 0.3rem;
