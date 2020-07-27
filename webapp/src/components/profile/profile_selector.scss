@@ -70,7 +70,7 @@
             left: 0.8rem;
             color: var(--center-channel-color-56);
             content: '\f349';
-            font-family: 'compass-icons';
+            font-family: 'compass-icons', mattermosticons;
             font-style: normal;
             font-weight: normal;
             speak: none;
@@ -79,7 +79,6 @@
             width: 1em;
             margin-right: .2em;
             text-align: center;
-            /* opacity: .8; */
             font-variant: normal;
             text-transform: none;
             line-height: 1em;

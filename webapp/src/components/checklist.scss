@@ -102,7 +102,7 @@ $font-family: Open Sans;
     }
 
     input[type="checkbox"]::before {
-        font-family: 'compass-icons';
+        font-family: 'compass-icons', mattermosticons;
         text-rendering: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
