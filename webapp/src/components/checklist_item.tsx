@@ -93,13 +93,18 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
         }
     }
 
+    const formatText1 = formatText(title, markdownOptions);
+
+    console.log('<><> formatText1:');
+    console.log(formatText1);
+
     return (
         <div
             className={'checkbox-container live' + (disabled ? ' light' : '')}
         >
             {activation}
             <label title={title}>
-                {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                {messageHtmlToComponent(formatText1, true, {})}
             </label>
             <a
                 className={'timestamp small'}
