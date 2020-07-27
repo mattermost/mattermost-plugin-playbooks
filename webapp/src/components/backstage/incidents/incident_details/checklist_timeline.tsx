@@ -50,7 +50,7 @@ const ChecklistTimeline: FC<Props> = (props: Props) => {
 
     let content;
 
-    const checklistItems = props.incident.playbook.checklists[0]?.items || [];
+    const checklistItems = props.incident.playbook.checklists?.[0]?.items || [];
     if (checklistItems.length === 0) {
         content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
             <div>
@@ -231,7 +231,7 @@ function initData(theme: Record<string, string>, incident: Incident) {
         }],
     };
 
-    const checklistItems = incident.playbook.checklists[0]?.items || [];
+    const checklistItems = incident.playbook.checklists?.[0]?.items || [];
 
     // Add points to the graph for checked items
     chartData.checklistItems = checklistItems.filter((item) => (
