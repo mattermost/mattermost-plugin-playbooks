@@ -181,11 +181,8 @@ func TestRudderTelemetry(t *testing.T) {
 		"rename checklist item": {eventRenameChecklistItem, func() {
 			rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID)
 		}},
-		"modify checked checklist item check": {eventCheckChecklistItem, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true)
-		}},
-		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false)
+		"modify checked checklist item": {eventModifyStateChecklistItem, func() {
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen)
 		}},
 		"move checklist item": {eventMoveChecklistItem, func() {
 			rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID)

@@ -11,7 +11,7 @@ import {useSelector} from 'react-redux';
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
-import {ChecklistItem} from 'src/types/playbook';
+import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {Incident} from 'src/types/incident';
 
 import EmptyChecklistImage from 'src/components/assets/empty_checklist';
@@ -176,7 +176,7 @@ function tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
         return '';
     }
 
-    const timeUpdated = moment(data.checklistItems[tooltipItem.index].checked_modified);
+    const timeUpdated = moment(data.checklistItems[tooltipItem.index].state_modified);
     return timeUpdated.format('MMM DD LT');
 }
 
@@ -235,9 +235,9 @@ function initData(theme: Record<string, string>, incident: Incident) {
 
     // Add points to the graph for checked items
     chartData.checklistItems = checklistItems.filter((item) => (
-        item.checked && moment(item.checked_modified).isSameOrAfter('2020-01-01')
+        item.state === ChecklistItemState.Closed && moment(item.state_modified).isSameOrAfter('2020-01-01')
     )).map((item: ChecklistItem) => {
-        const checkedTime = moment(item.checked_modified);
+        const checkedTime = moment(item.state_modified);
         const duration = moment.duration(checkedTime.diff(moment.unix(incident.created_at)));
 
         chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
