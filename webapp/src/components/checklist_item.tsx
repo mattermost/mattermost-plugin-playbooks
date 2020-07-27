@@ -9,8 +9,9 @@ import {ChannelNamesMap} from 'mattermost-webapp/utils/text_formatting';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {navigateToUrl} from 'src/browser_routing';
 import {ChecklistItem} from 'src/types/playbook';
 
 import Spinner from './assets/icons/spinner';
@@ -28,6 +29,7 @@ const {formatText, messageHtmlToComponent} = window.PostUtils;
 export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedirect}: ChecklistItemDetailsProps): React.ReactElement => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
+    const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
 
     const markdownOptions = {
         singleline: true,
@@ -93,18 +95,17 @@ export const ChecklistItemDetails = ({checklistItem, disabled, onChange, onRedir
         }
     }
 
-    const formatText1 = formatText(title, markdownOptions);
-
-    console.log('<><> formatText1:');
-    console.log(formatText1);
-
     return (
         <div
             className={'checkbox-container live' + (disabled ? ' light' : '')}
         >
             {activation}
             <label title={title}>
-                {messageHtmlToComponent(formatText1, true, {})}
+                <div
+                    onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                >
+                    {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                </div>
             </label>
             <a
                 className={'timestamp small'}
@@ -223,4 +224,14 @@ export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistIt
             </span>
         </div>
     );
+};
+
+const handleFormattedTextClick = (e: React.MouseEvent<HTMLElement, MouseEvent>, currentRelativeTeamUrl: string) => {
+    // @ts-ignore
+    const channelMentionAttribute = e.target.getAttributeNode('data-channel-mention');
+
+    if (channelMentionAttribute) {
+        e.preventDefault();
+        navigateToUrl(currentRelativeTeamUrl + '/channels/' + channelMentionAttribute.value);
+    }
 };
