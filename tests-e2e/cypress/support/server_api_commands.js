@@ -3,6 +3,7 @@
 
 import {getRandomInt} from '../utils';
 import users from '../fixtures/users.json';
+import timeouts from '../fixtures/timeouts';
 
 // *****************************************************************************
 // Authentication
@@ -35,6 +36,7 @@ Cypress.Commands.add('apiLogout', () => {
         url: '/api/v4/users/logout',
         method: 'POST',
         log: false,
+        timeout: timeouts.HUGE,
     });
 });
 
@@ -178,13 +180,13 @@ Cypress.Commands.add('apiGetUsers', (usernames = []) => {
     });
 });
 
-Cypress.Commands.add('apiCreateGroupChannel', (userList = []) => {
+Cypress.Commands.add('apiCreateGroupChannel', (userList = [], teamName) => {
     cy.apiGetUsers(userList).then((res) => {
         const userIds = res.body.map((user) => user.id);
         cy.apiCreateGroup(userIds).then((resp) => {
             cy.apiGetTeams().then((response) => {
-                const team = response.body[0];
-                cy.visit(`/${team.name}/messages/${resp.body.name}`);
+                const teamNameUrl = teamName ? teamName : response.body[0].name;
+                cy.visit(`/${teamNameUrl}/messages/${resp.body.name}`);
             });
         });
     });

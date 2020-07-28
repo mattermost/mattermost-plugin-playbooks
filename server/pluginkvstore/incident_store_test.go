@@ -3,7 +3,6 @@ package pluginkvstore
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -114,13 +113,18 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 	tests := []struct {
 		name    string
 		options incident.HeaderFilterOptions
-		want    []incident.Incident
+		want    incident.GetIncidentsResults
 		wantErr bool
 	}{
 		{
 			name:    "simple getHeaders, no options",
 			options: incident.HeaderFilterOptions{},
-			want:    []incident.Incident{id7, id6, id4, id5, id3, id2, id1},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id7, id6, id4, id5, id3, id2, id1},
+			},
 		},
 		{
 			name: "team1 only, ascending",
@@ -128,14 +132,24 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				TeamID: "team1",
 				Order:  incident.Asc,
 			},
-			want: []incident.Incident{id1, id2, id3},
+			want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id1, id2, id3},
+			},
 		},
 		{
 			name: "sort by ended_at",
 			options: incident.HeaderFilterOptions{
 				Sort: incident.EndedAt,
 			},
-			want: []incident.Incident{id7, id6, id3, id2, id5, id4, id1},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id7, id6, id3, id2, id5, id4, id1},
+			},
 		},
 		{
 			name: "no options, paged by 1",
@@ -143,7 +157,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    0,
 				PerPage: 1,
 			},
-			want: []incident.Incident{id7},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  7,
+				HasMore:    true,
+				Items:      []incident.Incident{id7},
+			},
 		},
 		{
 			name: "no options, paged by 3",
@@ -151,7 +170,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    0,
 				PerPage: 3,
 			},
-			want: []incident.Incident{id7, id6, id4},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  3,
+				HasMore:    true,
+				Items:      []incident.Incident{id7, id6, id4},
+			},
 		},
 		{
 			name: "no options, page 1 by 2",
@@ -159,7 +183,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    1,
 				PerPage: 2,
 			},
-			want: []incident.Incident{id4, id5},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  4,
+				HasMore:    true,
+				Items:      []incident.Incident{id4, id5},
+			},
 		},
 		{
 			name: "no options, page 1 by 3",
@@ -167,7 +196,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    1,
 				PerPage: 3,
 			},
-			want: []incident.Incident{id5, id3, id2},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  3,
+				HasMore:    true,
+				Items:      []incident.Incident{id5, id3, id2},
+			},
 		},
 		{
 			name: "no options, page 1 by 5",
@@ -175,7 +209,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    1,
 				PerPage: 5,
 			},
-			want: []incident.Incident{id2, id1},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []incident.Incident{id2, id1},
+			},
 		},
 		{
 			name: "sorted by ended, ascending, page 1 by 2",
@@ -185,7 +224,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Page:    1,
 				PerPage: 2,
 			},
-			want: []incident.Incident{id5, id2},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  4,
+				HasMore:    true,
+				Items:      []incident.Incident{id5, id2},
+			},
 		},
 		{
 			name: "only active, page 1 by 2",
@@ -194,7 +238,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				PerPage: 2,
 				Status:  incident.Ongoing,
 			},
-			want: []incident.Incident{id5, id2},
+			want: incident.GetIncidentsResults{
+				TotalCount: 5,
+				PageCount:  3,
+				HasMore:    true,
+				Items:      []incident.Incident{id5, id2},
+			},
 		},
 		{
 			name: "active, commander3, asc",
@@ -203,7 +252,12 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				CommanderID: "commander3",
 				Order:       incident.Asc,
 			},
-			want: []incident.Incident{id5},
+			want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id5},
+			},
 		},
 		{
 			name: "commander1, asc, by ended_at",
@@ -212,14 +266,24 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				Order:       incident.Asc,
 				Sort:        incident.EndedAt,
 			},
-			want: []incident.Incident{id1, id3},
+			want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id1, id3},
+			},
 		},
 		{
 			name: "search for horse",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "horse",
 			},
-			want: []incident.Incident{id3, id2},
+			want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id3, id2},
+			},
 		},
 		{
 			name: "search for aliens & commander3",
@@ -227,14 +291,24 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				CommanderID: "commander3",
 				SearchTerm:  "aliens",
 			},
-			want: []incident.Incident{id4},
+			want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id4},
+			},
 		},
 		{
 			name: "fuzzy search using starting characters -- not implemented",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "sbsm",
 			},
-			want: nil,
+			want: incident.GetIncidentsResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      nil,
+			},
 		},
 		{
 			name: "fuzzy search using starting characters, active -- not implemented",
@@ -242,21 +316,36 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				SearchTerm: "sbsm",
 				Status:     incident.Ongoing,
 			},
-			want: nil,
+			want: incident.GetIncidentsResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      nil,
+			},
 		},
 		{
 			name: "case-insensitive and unicode-normalized",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "ziggurat",
 			},
-			want: []incident.Incident{id7, id6},
+			want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id7, id6},
+			},
 		},
 		{
 			name: "case-insensitive and unicode-normalized with unicode search term",
 			options: incident.HeaderFilterOptions{
 				SearchTerm: "ziggūràt",
 			},
-			want: []incident.Incident{id7, id6},
+			want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id7, id6},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -282,12 +371,10 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			}
 			got, err := s.GetIncidents(tt.options)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetIncidents() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetIncidents() error = %v\nwantErr = %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Incidents, tt.want) {
-				t.Errorf("GetIncidents() got = %v, want %v", got, tt.want)
-			}
+			require.Equal(t, tt.want, *got)
 		})
 	}
 }

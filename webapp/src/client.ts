@@ -14,7 +14,7 @@ import {ClientError} from 'mattermost-redux/client/client4';
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
 import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
-import {Playbook, ChecklistItem} from 'src/types/playbook';
+import {Playbook, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
@@ -25,11 +25,9 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
 
     let data = await doGet(`${apiUrl}/incidents${queryParams}`);
     if (!data) {
-        data = {incidents: [], total_count: 0};
+        data = {items: [], total_count: 0, page_count: 0, has_more: false} as FetchIncidentsReturn;
     }
-    if (!data.incidents) {
-        data.incidents = [];
-    }
+
     return data as FetchIncidentsReturn;
 }
 
@@ -122,14 +120,12 @@ export async function setCommander(incidentId: string, commanderId: string) {
     }
 }
 
-export async function checkItem(incidentID: string, checklistNum: number, itemNum: number) {
-    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/check`);
-
-    return data;
-}
-
-export async function uncheckItem(incidentID: string, checklistNum: number, itemNum: number) {
-    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/uncheck`);
+export async function setChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
+    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
+        JSON.stringify({
+            new_state: newState,
+        }),
+    );
 
     return data;
 }

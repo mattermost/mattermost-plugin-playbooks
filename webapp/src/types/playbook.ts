@@ -10,16 +10,29 @@ export interface Playbook {
     member_ids: string[];
 }
 
+export interface FetchPlaybooksReturn {
+    total_count: number;
+    page_count: number;
+    has_more: boolean;
+    items: Playbook[];
+}
+
 export interface Checklist {
     title: string;
     items: ChecklistItem[];
 }
 
+export enum ChecklistItemState {
+    Open = '',
+    InProgress = 'in_progress',
+    Closed = 'closed',
+}
+
 export interface ChecklistItem {
     title: string;
-    checked: boolean;
-    checked_modified?: string;
-    checked_post_id?: string;
+    state: ChecklistItemState;
+    state_modified?: string;
+    state_modified_post_id?: string;
     command: string;
 }
 
@@ -61,8 +74,8 @@ export function isChecklist(arg: any): arg is Checklist {
 export function isChecklistItem(arg: any): arg is ChecklistItem {
     return arg &&
         typeof arg.title === 'string' &&
-        typeof arg.checked_post_id === 'string' &&
-        typeof arg.checked_modified === 'string' &&
-        typeof arg.checked === 'boolean' &&
+        typeof arg.state_modified === 'string' &&
+        typeof arg.state_modified_post_id === 'string' &&
+        typeof arg.state === 'string' &&
         typeof arg.command === 'string';
 }

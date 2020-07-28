@@ -44,8 +44,10 @@ type Details struct {
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
 // the HeaderFilterOptions, and the TotalCount of the matching incidents before paging was applied.
 type GetIncidentsResults struct {
-	Incidents  []Incident `json:"incidents"`
 	TotalCount int        `json:"total_count"`
+	PageCount  int        `json:"page_count"`
+	HasMore    bool       `json:"has_more"`
+	Items      []Incident `json:"items"`
 }
 
 // CommanderInfo holds the summary information of a commander.
@@ -67,8 +69,14 @@ var ErrNotFound = errors.New("not found")
 // ErrChannelDisplayNameInvalid is used to indicate a channel name is too long.
 var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too long")
 
+// ErrPermission is used to indicate a user does not have permissions
+var ErrPermission = errors.New("permissions error")
+
 // ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
 var ErrIncidentNotActive = errors.New("incident not active")
+
+// ErrIncidentActive is used to indicate trying to run a command on an incident that is active.
+var ErrIncidentActive = errors.New("incident active")
 
 // Service is the incident/service interface.
 type Service interface {
@@ -79,10 +87,13 @@ type Service interface {
 	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
-	OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error
+	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error
 
 	// EndIncident completes the incident with the given ID by the given user.
 	EndIncident(incidentID string, userID string) error
+
+	// RestartIncident restarts the incident with the given ID by the given user.
+	RestartIncident(incidentID, userID string) error
 
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
@@ -108,12 +119,9 @@ type Service interface {
 	// to commanderID. Changing to the same commanderID is a no-op.
 	ChangeCommander(incidentID string, userID string, commanderID string) error
 
-	// ModifyCheckedState checks or unchecks the specified checklist item
+	// ModifyCheckedState modifies the state of the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already in the specified state
-	ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber int, itemNumber int) error
-
-	// ToggleCheckedState checks or unchecks the specified checklist item
-	ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error
+	ModifyCheckedState(incidentID, userID string, newState string, checklistNumber int, itemNumber int) error
 
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
@@ -171,9 +179,12 @@ type Telemetry interface {
 	// EndIncident tracks the end of an incident.
 	EndIncident(incident *Incident)
 
+	// RestartIncident tracks the restart of an incident.
+	RestartIncident(incident *Incident)
+
 	// ModifyCheckedState tracks the checking and unchecking of items by the user
 	// identified by userID in the incident identified by incidentID.
-	ModifyCheckedState(incidentID, userID string, newState bool)
+	ModifyCheckedState(incidentID, userID string, newState string)
 
 	// AddChecklistItem tracks the creation of a new checklist item by the user
 	// identified by userID in the incident identified by incidentID.

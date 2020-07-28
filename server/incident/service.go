@@ -122,8 +122,8 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 }
 
 // OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) OpenCreateIncidentDialog(commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error {
-	dialog, err := s.newIncidentDialog(commanderID, postID, clientID, playbooks)
+func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error {
+	dialog, err := s.newIncidentDialog(teamID, commanderID, postID, clientID, playbooks)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new incident dialog")
 	}
@@ -179,9 +179,55 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 	return nil
 }
 
+// RestartIncident restarts the incident with the given ID by the given user.
+func (s *ServiceImpl) RestartIncident(incidentID, userID string) error {
+	currentIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	if currentIncident.IsActive {
+		return ErrIncidentActive
+	}
+
+	currentIncident.IsActive = true
+	currentIncident.EndedAt = 0
+
+	if err = s.store.UpdateIncident(currentIncident); err != nil {
+		return errors.Wrapf(err, "failed to restart incident")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, currentIncident,
+		currentIncident.PrimaryChannelID)
+	s.telemetry.RestartIncident(currentIncident)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
+
+	// Post in the  main incident channel that @user has restarted the incident.
+	// Main channel is the only channel in the incident for now.
+	if _, err := s.poster.PostMessage(currentIncident.PrimaryChannelID,
+		"This incident has been restarted by @%v", user.Username); err != nil {
+		return errors.Wrap(err, "failed to post restart incident messsage")
+	}
+
+	return nil
+}
+
 // OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 // be ended.
 func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error {
+	currentIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	if !currentIncident.IsActive {
+		return ErrIncidentNotActive
+	}
+
 	dialog := model.Dialog{
 		Title:            "Confirm End Incident",
 		SubmitLabel:      "Confirm",
@@ -238,7 +284,7 @@ func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInf
 
 	// Set of commander ids
 	commanders := make(map[string]bool)
-	for _, h := range results.Incidents {
+	for _, h := range results.Items {
 		if _, ok := commanders[h.CommanderUserID]; !ok {
 			commanders[h.CommanderUserID] = true
 		}
@@ -274,9 +320,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return err
 	}
 
-	if !incidentToModify.IsActive {
-		return ErrIncidentNotActive
-	} else if incidentToModify.CommanderUserID == commanderID {
+	if incidentToModify.CommanderUserID == commanderID {
 		return nil
 	}
 
@@ -308,34 +352,47 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 
 // ModifyCheckedState checks or unchecks the specified checklist item
 // Indeponant, will not perform any actions if the checklist item is already in the given checked state
-func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState bool, checklistNumber, itemNumber int) error {
+func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
+	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
+	}
+
 	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
-	if newState == itemToCheck.Checked {
+	if newState == itemToCheck.State {
 		return nil
 	}
+
+	hasCommand := itemToCheck.Command != ""
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
-	if !newState {
-		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
+	modifyMessage := fmt.Sprintf(" \"%v\"", itemToCheck.Title)
+	if newState == playbook.ChecklistItemStateInProgress {
+		modifyMessage = fmt.Sprintf("started progress on \"%v\"", itemToCheck.Title)
+	} else if newState == playbook.ChecklistItemStateClosed {
+		if hasCommand {
+			modifyMessage = fmt.Sprintf("ran \"%v\"", itemToCheck.Title)
+		} else {
+			modifyMessage = fmt.Sprintf("finished \"%v\"", itemToCheck.Title)
+		}
 	}
+
 	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
 	}
 
-	itemToCheck.Checked = newState
-	itemToCheck.CheckedModified = time.Now()
-	itemToCheck.CheckedPostID = postID
+	itemToCheck.State = newState
+	itemToCheck.StateModified = time.Now()
+	itemToCheck.StateModifiedPostID = postID
 	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
@@ -347,7 +404,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 		return errors.Wrapf(err, "failed to get main channel")
 	}
 
-	if itemToCheck.Checked && itemToCheck.Command != "" {
+	if itemToCheck.State == playbook.ChecklistItemStateClosed && hasCommand {
 		_, err := s.pluginAPI.SlashCommand.ExecuteSlashCommand(&model.CommandArgs{
 			UserId:    userID,
 			ChannelId: mainChannelID,
@@ -362,18 +419,6 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID string, newState boo
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	return nil
-}
-
-// ToggleCheckedState checks or unchecks the specified checklist item
-func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
-	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
-	if err != nil {
-		return err
-	}
-
-	newState := !incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].Checked
-
-	return s.ModifyCheckedState(incidentID, userID, newState, checklistNumber, itemNumber)
 }
 
 // AddChecklistItem adds an item to the specified checklist
@@ -663,7 +708,12 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 	return channel, nil
 }
 
-func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, playbooks []playbook.Playbook) (*model.Dialog, error) {
+func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID string, playbooks []playbook.Playbook) (*model.Dialog, error) {
+	team, err := s.pluginAPI.Team.Get(teamID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch team")
+	}
+
 	user, err := s.pluginAPI.User.Get(commanderID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch commander user")
@@ -677,10 +727,7 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
 	}
 
-	options := []*model.PostActionOptions{{
-		Text:  "None",
-		Value: "-1",
-	}}
+	var options []*model.PostActionOptions
 	for _, playbook := range playbooks {
 		if !canStartIncidentWithPlaybook(commanderID, playbook) {
 			continue
@@ -692,23 +739,30 @@ func (s *ServiceImpl) newIncidentDialog(commanderID, postID, clientID string, pl
 		})
 	}
 
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	newPlaybookMarkdown := ""
+	if siteURL != nil && *siteURL != "" {
+		url := fmt.Sprintf("%s/%s/%s/playbooks/new", *siteURL, team.Name, s.configService.GetManifest().Id)
+		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
+	}
+
+	introText := fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
 	return &model.Dialog{
 		Title:            "Incident Details",
-		IntroductionText: fmt.Sprintf("**Commander:** %v", getUserDisplayName(user)),
+		IntroductionText: introText,
 		Elements: []model.DialogElement{
+			{
+				DisplayName: "Playbook",
+				Name:        DialogFieldPlaybookIDKey,
+				Type:        "select",
+				Options:     options,
+			},
 			{
 				DisplayName: "Channel Name",
 				Name:        DialogFieldNameKey,
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
-			},
-			{
-				DisplayName: "Playbook",
-				Name:        DialogFieldPlaybookIDKey,
-				Type:        "select",
-				Options:     options,
-				Optional:    true,
 			},
 		},
 		SubmitLabel:    "Start Incident",

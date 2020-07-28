@@ -4,27 +4,27 @@
 import * as TIMEOUTS from '../fixtures/timeouts';
 
 function waitUntilPermanentPost() {
-    cy.get('#postListContent').should('be.visible');
-    cy.waitUntil(() => cy.findAllByTestId('postView').last().then((el) => !(el[0].id.includes(':'))));
+	cy.get('#postListContent').should('be.visible');
+	cy.waitUntil(() => cy.findAllByTestId('postView').last().then((el) => !(el[0].id.includes(':'))));
 }
 
 function clickPostHeaderItem(postId, location, item) {
-    if (postId) {
-        cy.get(`#post_${postId}`).trigger('mouseover', {force: true});
-        cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${postId}`).click({force: true});
-    } else {
-        cy.getLastPostId().then((lastPostId) => {
-            cy.get(`#post_${lastPostId}`).trigger('mouseover', {force: true});
-            cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${lastPostId}`).click({force: true});
-        });
-    }
+	if (postId) {
+		cy.get(`#post_${postId}`).trigger('mouseover', {force: true});
+		cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${postId}`).click({force: true});
+	} else {
+		cy.getLastPostId().then((lastPostId) => {
+			cy.get(`#post_${lastPostId}`).trigger('mouseover', {force: true});
+			cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${lastPostId}`).click({force: true});
+		});
+	}
 }
 
 Cypress.Commands.add('getLastPostId', () => {
-    waitUntilPermanentPost();
+	waitUntilPermanentPost();
 
-    cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':').
-        invoke('replace', 'post_', '');
+	cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':').
+		invoke('replace', 'post_', '');
 });
 
 /**
@@ -33,7 +33,7 @@ Cypress.Commands.add('getLastPostId', () => {
  * @param {String} location - as 'CENTER', 'RHS_ROOT', 'RHS_COMMENT', 'SEARCH'
  */
 Cypress.Commands.add('clickPostDotMenu', (postId, location = 'CENTER') => {
-    clickPostHeaderItem(postId, location, 'button');
+	clickPostHeaderItem(postId, location, 'button');
 });
 
 /**
@@ -41,7 +41,12 @@ Cypress.Commands.add('clickPostDotMenu', (postId, location = 'CENTER') => {
 */
 Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') => {
 	cy.get('#addDirectChannel').click();
-	cy.get('#selectItems').type(username + '{enter}{enter}');
+	cy.get('#selectItems').type(username);
+	cy.get('.clickable').contains(username).click({force: true});
+	if (!self) {
+		cy.get('#saveItems').click();
+	}
+
 	if (self === true && user === 'user-1'){
 		cy.get('#channelHeaderInfo').within(() => {
 			cy.findByText('user-1 (you)').should('be.visible');

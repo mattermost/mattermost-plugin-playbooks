@@ -212,7 +212,7 @@ func (mr *MockServiceMockRecorder) IsCommander(arg0, arg1 interface{}) *gomock.C
 }
 
 // ModifyCheckedState mocks base method
-func (m *MockService) ModifyCheckedState(arg0, arg1 string, arg2 bool, arg3, arg4 int) error {
+func (m *MockService) ModifyCheckedState(arg0, arg1, arg2 string, arg3, arg4 int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ModifyCheckedState", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
@@ -254,17 +254,17 @@ func (mr *MockServiceMockRecorder) NukeDB() *gomock.Call {
 }
 
 // OpenCreateIncidentDialog mocks base method
-func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3 string, arg4 []playbook.Playbook) error {
+func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4 string, arg5 []playbook.Playbook) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenCreateIncidentDialog", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "OpenCreateIncidentDialog", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OpenCreateIncidentDialog indicates an expected call of OpenCreateIncidentDialog
-func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // OpenEndIncidentDialog mocks base method
@@ -309,16 +309,16 @@ func (mr *MockServiceMockRecorder) RenameChecklistItem(arg0, arg1, arg2, arg3, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklistItem", reflect.TypeOf((*MockService)(nil).RenameChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
-// ToggleCheckedState mocks base method
-func (m *MockService) ToggleCheckedState(arg0, arg1 string, arg2, arg3 int) error {
+// RestartIncident mocks base method
+func (m *MockService) RestartIncident(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToggleCheckedState", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "RestartIncident", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ToggleCheckedState indicates an expected call of ToggleCheckedState
-func (mr *MockServiceMockRecorder) ToggleCheckedState(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// RestartIncident indicates an expected call of RestartIncident
+func (mr *MockServiceMockRecorder) RestartIncident(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleCheckedState", reflect.TypeOf((*MockService)(nil).ToggleCheckedState), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestartIncident", reflect.TypeOf((*MockService)(nil).RestartIncident), arg0, arg1)
 }

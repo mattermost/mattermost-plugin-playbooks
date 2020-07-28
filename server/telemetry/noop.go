@@ -26,6 +26,10 @@ func (t *NoopTelemetry) CreateIncident(*incident.Incident, bool) {
 func (t *NoopTelemetry) EndIncident(*incident.Incident) {
 }
 
+// RestartIncident does nothing
+func (t *NoopTelemetry) RestartIncident(*incident.Incident) {
+}
+
 // AddChecklistItem does nothing.
 func (t *NoopTelemetry) AddChecklistItem(string, string) {
 }
@@ -39,7 +43,7 @@ func (t *NoopTelemetry) RenameChecklistItem(string, string) {
 }
 
 // ModifyCheckedState does nothing.
-func (t *NoopTelemetry) ModifyCheckedState(string, string, bool) {
+func (t *NoopTelemetry) ModifyCheckedState(string, string, string) {
 }
 
 // MoveChecklistItem does nothing.

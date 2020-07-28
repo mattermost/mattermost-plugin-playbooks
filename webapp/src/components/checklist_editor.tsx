@@ -9,8 +9,7 @@ import {
     DraggableProvided,
 } from 'react-beautiful-dnd';
 
-import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {MAX_NAME_LENGTH} from 'src/constants';
+import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';
@@ -160,14 +159,9 @@ export const ChecklistEditor = ({
                                                         {...draggableProvided.draggableProps}
                                                         {...draggableProvided.dragHandleProps}
                                                         style={draggableProvided.draggableProps.style}
-                                                        onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-                                                            if (event.defaultPrevented) {
-                                                                return;
-                                                            }
-                                                            event.currentTarget.focus();
-                                                        }}
                                                     >
                                                         <ChecklistItemDetailsEdit
+                                                            commandInputId={`commandInput-${checklistIndex}-${idx}`}
                                                             checklistItem={checklistItem}
                                                             onEdit={(item: ChecklistItem) => {
                                                                 onChangeChecklistItem(idx, item);
@@ -200,7 +194,7 @@ export const ChecklistEditor = ({
                                 }
                                 onAddChecklistItem({
                                     title: newValue,
-                                    checked: false,
+                                    state: ChecklistItemState.Open,
                                     command: '',
                                 });
                                 setNewValue('');
