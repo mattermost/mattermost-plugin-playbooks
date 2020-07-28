@@ -772,14 +772,14 @@ func TestSortingPlaybooks(t *testing.T) {
 				result, err := ioutil.ReadAll(resp.Body)
 				assert.NoError(t, err)
 
-				error := struct {
+				errorResult := struct {
 					Message string `json:"message"`
 					Details string `json:"details"`
 				}{}
 
-				err = json.Unmarshal(result, &error)
+				err = json.Unmarshal(result, &errorResult)
 				require.NoError(t, err)
-				assert.Contains(t, error.Details, data.expectedErr.Error())
+				assert.Contains(t, errorResult.Details, data.expectedErr.Error())
 			}
 		})
 	}
