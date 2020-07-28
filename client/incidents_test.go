@@ -10,8 +10,7 @@ import (
 )
 
 func TestIncidentsService_Get(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	client, mux, _ := setup(t)
 
 	mux.HandleFunc("/"+buildAPIURL(apiVersion+"/incidents/1"), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
@@ -26,8 +25,7 @@ func TestIncidentsService_Get(t *testing.T) {
 }
 
 func TestIncidentsService_List(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	client, mux, _ := setup(t)
 
 	mux.HandleFunc("/"+buildAPIURL(apiVersion+"/incidents"), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")

@@ -11,8 +11,21 @@ import (
 
 // Playbook represents a playbook.
 type Playbook struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID         string      `json:"id"`
+	Title      string      `json:"title"`
+	Checklists []Checklist `json:"checklists"`
+}
+
+// Checklist represents a playbook's checklist.
+type Checklist struct {
+	Title string          `json:"title"`
+	Items []ChecklistItem `json:"items"`
+}
+
+// ChecklistItem represents an item in a checklist.
+type ChecklistItem struct {
+	Title string `json:"title"`
+	State string `json:"state"`
 }
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.

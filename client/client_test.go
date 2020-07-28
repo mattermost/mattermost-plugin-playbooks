@@ -12,7 +12,7 @@ import (
 // setup sets up a test HTTP server along with a workflows Client that is
 // configured to talk to that test server. Tests should register handlers on
 // mux which provide mock responses for the API method being tested.
-func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown func()) {
+func setup(t *testing.T) (client *Client, mux *http.ServeMux, serverURL string) {
 	baseURLPath := ""
 
 	// mux is the HTTP request multiplexer used with the test server.
@@ -23,6 +23,7 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 
 	// server is a test HTTP server used to provide mock API responses.
 	server := httptest.NewServer(apiHandler)
+	t.Cleanup(server.Close)
 
 	// client is the workflows client being tested and is
 	// configured to use test server.
@@ -30,7 +31,7 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 	url, _ := url.Parse(server.URL + baseURLPath + "/")
 	client.BaseURL = url
 
-	return client, mux, server.URL, server.Close
+	return client, mux, server.URL
 }
 
 func testMethod(t *testing.T, r *http.Request, want string) {
