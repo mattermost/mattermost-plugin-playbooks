@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -527,4 +528,220 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, playbooksBytes, result)
 	})
+}
+
+func TestSortingPlaybooks(t *testing.T) {
+	playbooktest1 := playbook.Playbook{
+		Title:  "A",
+		TeamID: "testteamid",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "A",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this1",
+					},
+				},
+			},
+		},
+	}
+	playbooktest2 := playbook.Playbook{
+		Title:  "B",
+		TeamID: "testteamid",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "B",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this1",
+					},
+					{
+						Title: "Do this2",
+					},
+				},
+			},
+			{
+				Title: "B",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this1",
+					},
+					{
+						Title: "Do this2",
+					},
+				},
+			},
+		},
+	}
+	playbooktest3 := playbook.Playbook{
+		Title:  "C",
+		TeamID: "testteamid",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "C",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this1",
+					},
+					{
+						Title: "Do this2",
+					},
+					{
+						Title: "Do this3",
+					},
+				},
+			},
+			{
+				Title: "C",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this1",
+					},
+					{
+						Title: "Do this2",
+					},
+					{
+						Title: "Do this3",
+					},
+				},
+			},
+			{
+				Title: "C",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this1",
+					},
+					{
+						Title: "Do this2",
+					},
+					{
+						Title: "Do this3",
+					},
+				},
+			},
+		},
+	}
+
+	var mockCtrl *gomock.Controller
+	var mockkvapi *mock_pluginkvstore.MockKVAPI
+	var handler *Handler
+	var store *pluginkvstore.PlaybookStore
+	var poster *mock_poster.MockPoster
+	var logger *mock_poster.MockLogger
+	var playbookService playbook.Service
+	var pluginAPI *plugintest.API
+	var client *pluginapi.Client
+
+	reset := func() {
+		mockCtrl = gomock.NewController(t)
+		mockkvapi = mock_pluginkvstore.NewMockKVAPI(mockCtrl)
+		handler = NewHandler()
+		store = pluginkvstore.NewPlaybookStore(mockkvapi)
+		poster = mock_poster.NewMockPoster(mockCtrl)
+		telemetry := &telemetry.NoopTelemetry{}
+		playbookService = playbook.NewService(store, poster, telemetry)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+	}
+
+	testData := []struct {
+		testName      string
+		sortField     string
+		sortDirection string
+		expectedList  []playbook.Playbook
+	}{
+		{
+			testName:      "get playbooks with no sort fields",
+			sortField:     "",
+			sortDirection: "",
+			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+		},
+		{
+			testName:      "get playbooks with sort=title direction=asc",
+			sortField:     "title",
+			sortDirection: "asc",
+			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+		},
+		{
+			testName:      "get playbooks with sort=title direction=asc",
+			sortField:     "title",
+			sortDirection: "desc",
+			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+		},
+		{
+			testName:      "get playbooks with sort=stages direction=asc",
+			sortField:     "stages",
+			sortDirection: "asc",
+			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+		},
+		{
+			testName:      "get playbooks with sort=stages direction=asc",
+			sortField:     "stages",
+			sortDirection: "desc",
+			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+		},
+		{
+			testName:      "get playbooks with sort=steps direction=asc",
+			sortField:     "steps",
+			sortDirection: "asc",
+			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+		},
+		{
+			testName:      "get playbooks with sort=steps direction=asc",
+			sortField:     "steps",
+			sortDirection: "desc",
+			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+		},
+	}
+
+	for _, data := range testData {
+		t.Run(data.testName, func(t *testing.T) {
+			reset()
+
+			playbookResult := struct {
+				TotalCount int                 `json:"total_count"`
+				PageCount  int                 `json:"page_count"`
+				HasMore    bool                `json:"has_more"`
+				Items      []playbook.Playbook `json:"items"`
+			}{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      data.expectedList,
+			}
+
+			testrecorder := httptest.NewRecorder()
+			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v1/playbooks?teamid=testteamid&sort=%s&direction=%s", data.sortField, data.sortDirection), nil)
+			testreq.Header.Add("Mattermost-User-ID", "testuserid")
+			require.NoError(t, err)
+
+			playbookIndex := struct {
+				PlaybookIDs []string `json:"playbook_ids"`
+			}{
+				PlaybookIDs: []string{
+					"playbookid1",
+					"playbookid2",
+					"playbookid3",
+				},
+			}
+			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
+			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest1)
+			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest2)
+			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid3", gomock.Any()).Return(nil).SetArg(1, playbooktest3)
+			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+			handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+			resp := testrecorder.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			result, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+			playbooksBytes, err := json.Marshal(&playbookResult)
+			require.NoError(t, err)
+			assert.Equal(t, playbooksBytes, result)
+		})
+	}
 }

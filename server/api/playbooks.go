@@ -178,6 +178,15 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	teamID := params.Get("teamid")
 	userID := r.Header.Get("Mattermost-User-ID")
+	sortField := playbook.SortField(params.Get("sort"))
+	if sortField == "" {
+		sortField = playbook.Title
+	}
+
+	sortDirection := playbook.SortDirection(params.Get("direction"))
+	if sortDirection == "" {
+		sortDirection = playbook.Asc
+	}
 
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
@@ -193,7 +202,11 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playbooks, err := h.playbookService.GetPlaybooksForTeam(teamID)
+	opts := playbook.Options{
+		Sort:      sortField,
+		Direction: sortDirection,
+	}
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(teamID, opts)
 	if err != nil {
 		HandleError(w, err)
 		return

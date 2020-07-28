@@ -23,6 +23,7 @@ import NoContentPlaybookSvg from '../../assets/no_content_playbooks_svg';
 import BackstageListHeader from '../backstage_list_header';
 import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import {SortableColHeader} from '../incidents/incident_list/sortable_col_header';
 
 const DeleteBannerTimeout = 5000;
 
@@ -34,13 +35,31 @@ const PlaybookList: FC = () => {
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
+    const [fetchParams, setFetchParams] = useState<{sort: string, direction: string}>(
+        {
+            sort: 'title',
+            direction: 'asc',
+        },
+    );
+
+    function colHeaderClicked(colName: string) {
+        if (fetchParams.sort === colName) {
+            // we're already sorting on this column; reverse the order
+            const newSortDirection = fetchParams.direction === 'asc' ? 'desc' : 'asc';
+            setFetchParams({...fetchParams, direction: newSortDirection});
+            return;
+        }
+
+        setFetchParams({...fetchParams, sort: colName, direction: 'asc'});
+    }
+
     useEffect(() => {
         const fetchPlaybooks = async () => {
-            const result = await clientFetchPlaybooks(currentTeam.id) as FetchPlaybooksReturn;
+            const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
             setPlaybooks(result.items);
         };
         fetchPlaybooks();
-    }, [currentTeam.id]);
+    }, [currentTeam.id, fetchParams]);
 
     const editPlaybook = (playbook: Playbook) => {
         setSelectedPlaybook(playbook);
@@ -63,7 +82,7 @@ const PlaybookList: FC = () => {
     const onDelete = async () => {
         if (selectedPlaybook) {
             await deletePlaybook(selectedPlaybook);
-            const result = await clientFetchPlaybooks(currentTeam.id) as FetchPlaybooksReturn;
+            const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
             setPlaybooks(result.items);
             hideConfirmModal();
             setShowBanner(true);
@@ -174,10 +193,31 @@ const PlaybookList: FC = () => {
                         </div>
                         <BackstageListHeader>
                             <div className='row'>
-                                <div className='col-sm-4'> {'Name'} </div>
-                                <div className='col-sm-2'> {'Stages'} </div>
-                                <div className='col-sm-2'> {'Steps'} </div>
-                                <div className='col-sm-2'> {'Actions'}</div>
+                                <div className='col-sm-4'>
+                                    <SortableColHeader
+                                        name={'Name'}
+                                        order={fetchParams.direction}
+                                        active={fetchParams.sort === 'title'}
+                                        onClick={() => colHeaderClicked('title')}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>
+                                    <SortableColHeader
+                                        name={'Stages'}
+                                        order={fetchParams.direction}
+                                        active={fetchParams.sort === 'stages'}
+                                        onClick={() => colHeaderClicked('stages')}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>
+                                    <SortableColHeader
+                                        name={'Steps'}
+                                        order={fetchParams.direction}
+                                        active={fetchParams.sort === 'steps'}
+                                        onClick={() => colHeaderClicked('steps')}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>{'Actions'}</div>
                             </div>
                         </BackstageListHeader>
                         {body}

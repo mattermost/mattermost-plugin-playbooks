@@ -11,10 +11,6 @@ $font-family: Open Sans;
     font-family: $font-family;
     color: var(--center-channel-color-90);
 
-    .sortable-col-header {
-        cursor: pointer;
-    }
-
     .list {
         .incident-item {
             display: flex;
