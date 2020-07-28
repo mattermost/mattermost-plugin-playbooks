@@ -5,12 +5,12 @@
 Package client provides a client for using the Workflows API.
 
 Usage:
-	import "github.com/mattermost/mattermost-plugin-incident-response/client"
+	import ir "github.com/mattermost/mattermost-plugin-incident-response/client"
 
 Construct a new Workflows client, then use the various services on the client to
 access different parts of the workflows API. For example:
 
-	client, err := github.NewClient("http://localhost:8065", nil)
+	client, err := ir.NewClient("http://localhost:8065", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -20,7 +20,7 @@ access different parts of the workflows API. For example:
 
 Some API methods have optional parameters that can be passed. For example:
 
-	client, err := github.NewClient("http://localhost:8065", nil)
+	client, err := ir.NewClient("http://localhost:8065", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,8 +41,8 @@ The workflows client does not directly handle authentication. Instead, when
 creating a new client, pass an http.Client that can handle authentication for
 you. The easiest and recommended way to do this is using the golang.org/x/oauth2
 library, but you can always use any other library that provides an http.Client.
-If you have an OAuth2 access token (for example, a personal API token), you can
-use it with the oauth2 library using:
+If you have an OAuth2 access token (for example, a personal API token as per https://docs.mattermost.com/developer/personal-access-tokens.html),
+you can use it with the oauth2 library using:
 
 	import (
 		ir "github.com/mattermost/mattermost-plugin-incident-response/client"
@@ -56,7 +56,7 @@ use it with the oauth2 library using:
 		)
 		tc := oauth2.NewClient(ctx, ts)
 
-		client, err := github.NewClient("http://localhost:8065", tc)
+		client, err := ir.NewClient("http://localhost:8065", tc)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -73,14 +73,14 @@ See the oauth2 docs for complete instructions on using that library.
 
 Pagination
 
-All requests for resource collections (incidents, playbooks, webhooks, etc.)
+All requests for resource collections (incidents, playbooks, eventsubscriptions, etc.)
 support pagination. Pagination options are described in the
 ir.ListOptions struct and passed to the list methods directly or as an
 embedded type of a more specific list options struct (for example
 ir.IncidentListOptions). Pages information is available via the
 ir.ListResult struct.
 
-	client, err := github.NewClient("http://localhost:8065", nil)
+	client, err := ir.NewClient("http://localhost:8065", nil)
 	if err != nil {
 		log.Fatal(err)
 	}

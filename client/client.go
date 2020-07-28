@@ -62,10 +62,9 @@ type ListOptions struct {
 
 // ListResult contains pagination data for List methods.
 type ListResult struct {
-	TotalCount int `json:"total_count"`
-	PageCount  int `json:"page_count"`
-
-	HasMore bool `json:"has_more"`
+	TotalCount int  `json:"total_count"`
+	PageCount  int  `json:"page_count"`
+	HasMore    bool `json:"has_more"`
 }
 
 // SortDirection is the type used to specify the ascending or descending order of returned results.
@@ -79,7 +78,10 @@ const (
 	Asc SortDirection = "asc"
 )
 
-// NewClient creates a new instance of Client.
+// NewClient creates a new instance of Client. If a nil httpClient is
+// provided, a new http.Client will be used. To use API methods which require
+// authentication, provide an http.Client that will perform the authentication
+// for you (such as that provided by the golang.org/x/oauth2 library).
 func NewClient(mattermostSiteURL string, httpClient *http.Client) (*Client, error) {
 	if httpClient == nil {
 		httpClient = &http.Client{}
@@ -100,8 +102,7 @@ func NewClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
 // in which case it is resolved relative to the BaseURL of the Client.
 // Relative URLs should always be specified without a preceding slash. If
-// specified, the value pointed to by body is JSON encoded and included as the
-// request body.
+// specified, the body parameter is JSON encoded.
 func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
 	u, err := c.BaseURL.Parse(buildAPIURL(urlStr))
 	if err != nil {
@@ -123,7 +124,7 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 		return nil, err
 	}
 
-	if body != nil {
+	if buf != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if c.UserAgent != "" {
@@ -148,11 +149,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		// If we got an error, and the context has been canceled,
-		// the context's error is probably more useful.
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, errors.Wrapf(ctx.Err(), "client err=%s", err.Error())
 		default:
 		}
 
@@ -171,6 +170,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 		} else {
 			decErr := json.NewDecoder(resp.Body).Decode(v)
 			if decErr == io.EOF {
+				// TODO: Confirm if this happens only on empty bodies. If so, check that first before decoding.
 				decErr = nil // ignore EOF errors caused by empty response body
 			}
 			if decErr != nil {
@@ -184,14 +184,11 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 // CheckResponse checks the API response for errors, and returns them if
 // present. A response is considered an error if it has a status code outside
-// the 200 range or equal to 202 Accepted.
+// the 200 range.
 // API error responses are expected to have response
 // body, and a JSON response body that maps to ErrorResponse.
 func CheckResponse(r *http.Response) error {
-	if r.StatusCode == http.StatusAccepted {
-		return nil
-	}
-	if c := r.StatusCode; 200 <= c && c <= 299 {
+	if c := r.StatusCode; http.StatusOK <= c && c <= 299 {
 		return nil
 	}
 	errorResponse := &ErrorResponse{Response: r}
