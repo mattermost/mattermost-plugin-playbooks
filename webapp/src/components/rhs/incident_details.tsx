@@ -172,7 +172,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         const tick = () => {
             setNow(moment());
         };
-        const timerId = setInterval(() => tick(), 1000);
+        const quarterSecond = 250;
+        const timerId = setInterval(tick, quarterSecond);
 
         return () => {
             clearInterval(timerId);
