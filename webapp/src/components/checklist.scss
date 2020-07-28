@@ -58,9 +58,9 @@ $font-family: Open Sans;
     }
 
     button:disabled {
-        border: 1px solid rgba(61, 60, 64, 0.64);
-        color: rgba(61, 60, 64, 0.64);
-        background: rgba(61, 60, 64, 0.08);
+        border: 0px;
+        color: var(--center-channel-color);
+        background: var(--center-channel-color-56);
         cursor: default;
     }
 
