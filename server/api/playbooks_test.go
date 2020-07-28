@@ -744,9 +744,9 @@ func TestSortingPlaybooks(t *testing.T) {
 				PlaybookIDs []string `json:"playbook_ids"`
 			}{
 				PlaybookIDs: []string{
-					"playbookid1",
-					"playbookid2",
 					"playbookid3",
+					"playbookid2",
+					"playbookid1",
 				},
 			}
 			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).Return(nil).SetArg(1, playbookIndex)
