@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -651,48 +652,70 @@ func TestSortingPlaybooks(t *testing.T) {
 		sortField     string
 		sortDirection string
 		expectedList  []playbook.Playbook
+		expectedErr   error
 	}{
+		{
+			testName:      "get playbooks with invalid sort field",
+			sortField:     "test",
+			sortDirection: "",
+			expectedList:  nil,
+			expectedErr:   errors.New("invalid sort field test"),
+		},
+		{
+			testName:      "get playbooks with invalid sort direction",
+			sortField:     "",
+			sortDirection: "test",
+			expectedList:  nil,
+			expectedErr:   errors.New("invalid sort direction test"),
+		},
 		{
 			testName:      "get playbooks with no sort fields",
 			sortField:     "",
 			sortDirection: "",
 			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedErr:   nil,
 		},
 		{
 			testName:      "get playbooks with sort=title direction=asc",
 			sortField:     "title",
 			sortDirection: "asc",
 			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedErr:   nil,
 		},
 		{
 			testName:      "get playbooks with sort=title direction=asc",
 			sortField:     "title",
 			sortDirection: "desc",
 			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+			expectedErr:   nil,
 		},
 		{
 			testName:      "get playbooks with sort=stages direction=asc",
 			sortField:     "stages",
 			sortDirection: "asc",
 			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedErr:   nil,
 		},
 		{
 			testName:      "get playbooks with sort=stages direction=asc",
 			sortField:     "stages",
 			sortDirection: "desc",
 			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+			expectedErr:   nil,
 		},
 		{
 			testName:      "get playbooks with sort=steps direction=asc",
 			sortField:     "steps",
 			sortDirection: "asc",
 			expectedList:  []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedErr:   nil,
 		},
 		{
 			testName:      "get playbooks with sort=steps direction=asc",
 			sortField:     "steps",
 			sortDirection: "desc",
 			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+			expectedErr:   nil,
 		},
 	}
 
@@ -736,12 +759,28 @@ func TestSortingPlaybooks(t *testing.T) {
 			handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 			resp := testrecorder.Result()
 			defer resp.Body.Close()
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			result, err := ioutil.ReadAll(resp.Body)
-			assert.NoError(t, err)
-			playbooksBytes, err := json.Marshal(&playbookResult)
-			require.NoError(t, err)
-			assert.Equal(t, playbooksBytes, result)
+
+			if data.expectedErr == nil {
+				assert.Equal(t, http.StatusOK, resp.StatusCode)
+				result, err := ioutil.ReadAll(resp.Body)
+				assert.NoError(t, err)
+				playbooksBytes, err := json.Marshal(&playbookResult)
+				require.NoError(t, err)
+				assert.Equal(t, playbooksBytes, result)
+			} else {
+				assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+				result, err := ioutil.ReadAll(resp.Body)
+				assert.NoError(t, err)
+
+				error := struct {
+					Message string `json:"message"`
+					Details string `json:"details"`
+				}{}
+
+				err = json.Unmarshal(result, &error)
+				require.NoError(t, err)
+				assert.Contains(t, error.Details, data.expectedErr.Error())
+			}
 		})
 	}
 }
