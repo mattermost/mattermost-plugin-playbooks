@@ -21,7 +21,7 @@ import (
 const (
 	apiVersion = "v1"
 	manifestID = "com.mattermost.plugin-incident-response"
-	userAgent  = "go-client"
+	userAgent  = "go-client/" + apiVersion
 )
 
 // Client manages communication with the workflows API.
@@ -32,9 +32,9 @@ type Client struct {
 	// User agent used when communicating with the workflows API. Defaults to go-client.
 	UserAgent string
 
-	Incidents *IncidentsService
-	Playbooks *PlaybooksService
-	Webhooks  *WebhooksService
+	Incidents          *IncidentsService
+	Playbooks          *PlaybooksService
+	EventSubscriptions *EventSubscriptionsService
 }
 
 // ErrorResponse reports an error caused by an API request.
@@ -93,7 +93,7 @@ func NewClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c := &Client{client: httpClient, BaseURL: siteURL, UserAgent: userAgent}
 	c.Incidents = &IncidentsService{c}
 	c.Playbooks = &PlaybooksService{c}
-	c.Webhooks = &WebhooksService{c}
+	c.EventSubscriptions = &EventSubscriptionsService{c}
 	return c, nil
 }
 
