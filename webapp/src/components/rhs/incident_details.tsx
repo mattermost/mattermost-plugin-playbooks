@@ -3,7 +3,7 @@
 
 import React, {FC, useEffect, useState} from 'react';
 import {useDispatch} from 'react-redux';
-import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
+import ReactSelect, {ActionMeta, OptionTypeBase, StylesConfig} from 'react-select';
 import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import moment from 'moment';
@@ -65,6 +65,18 @@ interface StageSelectorProps {
     onStageActivated: () => void;
 }
 
+const optionStyles: StylesConfig = {
+    option: (provided) => {
+        return {
+            ...provided,
+            wordBreak: 'break-word',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+        };
+    },
+};
+
 const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
     const isActive = (stageIdx: number) => {
         return stageIdx === props.activeStage;
@@ -97,6 +109,7 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
                 onChange={(option, action) => props.onStageSelected(option as Option, action as ActionMeta<OptionTypeBase>)}
                 className={'incident-stage-select'}
                 classNamePrefix={'incident-stage-select'}
+                styles={optionStyles}
             />
         </React.Fragment>
     );

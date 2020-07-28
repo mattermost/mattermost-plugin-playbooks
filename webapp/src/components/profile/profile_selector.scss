@@ -33,9 +33,12 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
 
-    .incident-user-select__option--is-selected,
-    .incident-user-select__option--is-focused {
+    .incident-user-select__option--is-selected {
         background-color: var(--center-channel-color-08);
+    }
+
+    .incident-user-select__option--is-focused {
+        background-color: var(--center-channel-color-16);
         color: inherit;
     }
 
