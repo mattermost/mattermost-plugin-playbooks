@@ -7,9 +7,21 @@ import styled from 'styled-components';
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
+const DropdownMenuWrapper = styled.div`
+    position: relative;
+`;
+
 const DropdownMenu = styled.div`
     display: flex;
     flex-direction: column;
+
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 160px;
+    text-align: left;
+    list-style: none;
+
     padding: 10px 0;
     font-family: Open Sans;
     font-style: normal;
@@ -17,6 +29,12 @@ const DropdownMenu = styled.div`
     font-size: 14px;
     color: var(--center-channel-color);
     position: 'fixed';
+
+    background: var(--center-channel-bg);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+
     z-index: 1;
 `;
 
@@ -55,19 +73,14 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
             <IconWrapper>
                 <DotMenuIcon/>
             </IconWrapper>
-            <div
-                className='dropdown'
-                style={{position: 'relative'}}
-            >
+            <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu
-                        className='dropdown-menu'
-                    >
+                    <DropdownMenu>
                         {props.children}
                     </DropdownMenu>
                 }
-            </div>
+            </DropdownMenuWrapper>
         </div>
     );
 };
