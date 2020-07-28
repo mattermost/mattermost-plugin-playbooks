@@ -5,13 +5,13 @@ import React, {useRef, useState, useEffect, FC} from 'react';
 import {useSelector} from 'react-redux';
 import moment from 'moment';
 
-import {ChannelNamesMap} from 'mattermost-webapp/utils/text_formatting';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {navigateToUrl} from 'src/browser_routing';
+import {handleFormattedTextClick} from 'src/browser_routing';
+import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import Spinner from './assets/icons/spinner';
@@ -249,14 +249,4 @@ const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemB
             {spinner ? <Spinner/> : label}
         </button>
     );
-};
-
-const handleFormattedTextClick = (e: React.MouseEvent<HTMLElement, MouseEvent>, currentRelativeTeamUrl: string) => {
-    // @ts-ignore
-    const channelMentionAttribute = e.target.getAttributeNode('data-channel-mention');
-
-    if (channelMentionAttribute) {
-        e.preventDefault();
-        navigateToUrl(currentRelativeTeamUrl + '/channels/' + channelMentionAttribute.value);
-    }
 };
