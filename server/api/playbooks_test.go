@@ -165,7 +165,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?team_id=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -303,7 +303,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?team_id=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -499,7 +499,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?teamid=testteamid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?team_id=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -713,7 +713,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			}
 
 			testrecorder := httptest.NewRecorder()
-			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v1/playbooks?teamid=testteamid&sort=%s&direction=%s", data.sortField, data.sortDirection), nil)
+			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v1/playbooks?team_id=testteamid&sort=%s&direction=%s", data.sortField, data.sortDirection), nil)
 			testreq.Header.Add("Mattermost-User-ID", "testuserid")
 			require.NoError(t, err)
 

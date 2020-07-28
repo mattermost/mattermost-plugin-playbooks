@@ -67,7 +67,7 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
 
 export function clientFetchPlaybooks(teamID: string, params: FetchIncidentsParams) {
     const queryParams = qs.stringify({
-        teamid: teamID,
+        team_id: teamID,
         ...params,
     }, {addQueryPrefix: true});
     return doGet(`${apiUrl}/playbooks${queryParams}`);

@@ -176,7 +176,7 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 
 func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	teamID := params.Get("teamid")
+	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 	sortField := playbook.SortField(params.Get("sort"))
 	if sortField == "" {
