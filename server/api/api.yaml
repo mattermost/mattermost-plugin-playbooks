@@ -726,10 +726,24 @@ paths:
           schema:
             type: string
             example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: sort
+          in: query
+          description: Specify the sort field. Defaults to title.
+          required: false
+          schema:
+            type: string
+            example: title
+        - name: direction
+          in: query
+          description: Specify the ascending or descending order of the result. Defaults to asc.
+          required: false
+          schema:
+            type: string
+            example: asc
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks?team_id=ni8duypfe7bamprxqeffd563gy&sort=title&direction=asc' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
