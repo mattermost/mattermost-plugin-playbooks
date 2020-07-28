@@ -1,12 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState} from 'react';
-import Scrollbars from 'react-custom-scrollbars';
-
-import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
-
+import React, {FC, useEffect, useState} from 'react';
 import {useDispatch} from 'react-redux';
+import ReactSelect, {ActionMeta, OptionTypeBase} from 'react-select';
+import Scrollbars from 'react-custom-scrollbars';
+import styled from 'styled-components';
+import moment from 'moment';
 
 import {
     fetchUsersInChannel,
@@ -102,6 +102,16 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
     );
 };
 
+const Duration = styled.div`
+    padding-top: .5em;
+    color: var(--center-channel-color-80);
+`;
+
+const DurationTime = styled.span`
+    color: var(--center-channel-color);
+    font-weight: 600;
+`;
+
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -156,6 +166,32 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         );
     }
 
+    const [now, setNow] = useState(moment());
+    useEffect(() => {
+        const tick = () => {
+            setNow(moment());
+        };
+        const quarterSecond = 250;
+        const timerId = setInterval(tick, quarterSecond);
+
+        return () => {
+            clearInterval(timerId);
+        };
+    }, []);
+
+    const duration = moment.duration(now.diff(moment.unix(props.incident.created_at)));
+    let durationString = '';
+    if (duration.days() > 0) {
+        durationString += duration.days() + 'd ';
+    }
+    if (duration.hours() > 0) {
+        durationString += duration.hours() + 'h ';
+    }
+    if (duration.minutes() > 0) {
+        durationString += duration.minutes() + 'm ';
+    }
+    durationString += duration.seconds() + 's';
+
     return (
         <React.Fragment>
             <Scrollbars
@@ -185,6 +221,10 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             onStageSelected={onStageSelected}
                             onStageActivated={setCurrentStageAsActive}
                         />
+                        <Duration>
+                            {'Duration: '}
+                            <DurationTime>{durationString}</DurationTime>
+                        </Duration>
                     </div>
                     <div
                         className='checklist-inner-container'
