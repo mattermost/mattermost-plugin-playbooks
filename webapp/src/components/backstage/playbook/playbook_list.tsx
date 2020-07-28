@@ -23,7 +23,7 @@ import NoContentPlaybookSvg from '../../assets/no_content_playbooks_svg';
 import BackstageListHeader from '../backstage_list_header';
 import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-import {SortableColHeader} from '../incidents/incident_list/sortable_col_header';
+import {SortableColHeader} from 'src/components/sortable_col_header';
 
 const DeleteBannerTimeout = 5000;
 
