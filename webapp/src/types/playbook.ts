@@ -17,6 +17,11 @@ export interface FetchPlaybooksReturn {
     items: Playbook[];
 }
 
+export interface FetchIncidentsParams {
+    sort?: string;
+    direction?: string;
+}
+
 export interface Checklist {
     title: string;
     items: ChecklistItem[];

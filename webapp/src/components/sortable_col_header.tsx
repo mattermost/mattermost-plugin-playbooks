@@ -3,6 +3,11 @@
 
 import React from 'react';
 import classNames from 'classnames';
+import styled from 'styled-components';
+
+const Header = styled.div`
+    cursor: pointer;
+`;
 
 interface Props {
     name: string;
@@ -18,8 +23,7 @@ export function SortableColHeader(props: Props) {
     });
 
     return (
-        <div
-            className='sortable-col-header'
+        <Header
             onClick={() => props.onClick()}
         >
             {props.name}
@@ -27,6 +31,6 @@ export function SortableColHeader(props: Props) {
                 props.active &&
                 <i className={chevron}/>
             }
-        </div>
+        </Header>
     );
 }
