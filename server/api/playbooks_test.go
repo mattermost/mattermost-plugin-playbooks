@@ -683,7 +683,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			expectedErr:   nil,
 		},
 		{
-			testName:      "get playbooks with sort=title direction=asc",
+			testName:      "get playbooks with sort=title direction=desc",
 			sortField:     "title",
 			sortDirection: "desc",
 			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
@@ -697,7 +697,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			expectedErr:   nil,
 		},
 		{
-			testName:      "get playbooks with sort=stages direction=asc",
+			testName:      "get playbooks with sort=stages direction=desc",
 			sortField:     "stages",
 			sortDirection: "desc",
 			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
@@ -711,7 +711,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			expectedErr:   nil,
 		},
 		{
-			testName:      "get playbooks with sort=steps direction=asc",
+			testName:      "get playbooks with sort=steps direction=desc",
 			sortField:     "steps",
 			sortDirection: "desc",
 			expectedList:  []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},

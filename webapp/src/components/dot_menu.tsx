@@ -107,9 +107,7 @@ export const DropdownMenuItem = (props: {text: string, onClick: () => void}) => 
     return (
         <DropdownMenuItemStyled
             href='#'
-            onClick={() => {
-                props.onClick();
-            }}
+            onClick={props.onClick}
         >
             {props.text}
         </DropdownMenuItemStyled>
