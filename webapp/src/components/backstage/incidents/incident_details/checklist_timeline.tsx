@@ -231,10 +231,11 @@ function initData(theme: Record<string, string>, incident: Incident) {
         }],
     };
 
-    const checklistItems = incident.playbook.checklists?.[0]?.items || [];
+    // Flatten steps into one list
+    const checklistItems = incident.playbook.checklists?.reduce((prevValue, currValue) => ([...prevValue, ...currValue.items]), [] as ChecklistItem[]);
 
     // Add points to the graph for checked items
-    chartData.checklistItems = checklistItems.filter((item) => (
+    chartData.checklistItems = checklistItems.filter((item: ChecklistItem) => (
         item.state === ChecklistItemState.Closed && moment(item.state_modified).isSameOrAfter('2020-01-01')
     )).map((item: ChecklistItem) => {
         const checkedTime = moment(item.state_modified);
