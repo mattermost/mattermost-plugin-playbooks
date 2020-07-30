@@ -11,7 +11,7 @@ import {useSelector} from 'react-redux';
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
-import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItem, ChecklistItemState, Checklist} from 'src/types/playbook';
 import {Incident} from 'src/types/incident';
 
 import EmptyChecklistImage from 'src/components/assets/empty_checklist';
@@ -232,7 +232,10 @@ function initData(theme: Record<string, string>, incident: Incident) {
     };
 
     // Flatten steps into one list
-    const checklistItems = incident.playbook.checklists?.reduce((prevValue, currValue) => ([...prevValue, ...currValue.items]), [] as ChecklistItem[]);
+    const checklistItems = incident.playbook.checklists?.reduce(
+        (prevValue: ChecklistItem[], currValue: Checklist) => ([...prevValue, ...currValue.items]),
+        [] as ChecklistItem[],
+    );
 
     // Add points to the graph for checked items
     chartData.checklistItems = checklistItems.filter((item: ChecklistItem) => (
