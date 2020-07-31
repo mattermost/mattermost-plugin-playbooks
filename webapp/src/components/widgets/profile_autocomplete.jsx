@@ -8,6 +8,8 @@ import {getProfilesByIds} from 'mattermost-redux/actions/users';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
+import './profile_autocomplete.scss';
+
 // ProfileAutocomplete searches and selects user profiles displayed by username.
 // Users prop receives an array of user ids and
 // returns the selected users ids in the `OnChange` value parameter.
@@ -116,6 +118,8 @@ const ProfileAutocomplete = (props) => {
             value={userProfiles}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null}}
             styles={customStyles}
+            classNamePrefix='profile-autocomplete'
+            className='profile-autocomplete'
         />
     );
 };
