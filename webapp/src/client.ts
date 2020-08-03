@@ -124,6 +124,16 @@ export async function setCommander(incidentId: string, commanderId: string) {
     }
 }
 
+export async function setAssignee(incidentId: string, checklistNum: number, itemNum: number, assigneeId: string) {
+    const body = JSON.stringify({assignee_id: assigneeId});
+    try {
+        const data = await doPut(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
+        return data;
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
     const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
         JSON.stringify({

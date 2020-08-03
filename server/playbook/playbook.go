@@ -27,11 +27,14 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	Title               string    `json:"title"`
-	State               string    `json:"state"`
-	StateModified       time.Time `json:"state_modified"`
-	StateModifiedPostID string    `json:"state_modified_post_id"`
-	Command             string    `json:"command"`
+	Title                  string    `json:"title"`
+	State                  string    `json:"state"`
+	StateModified          time.Time `json:"state_modified"`
+	StateModifiedPostID    string    `json:"state_modified_post_id"`
+	AssigneeID             string    `json:"assignee_id"`
+	AssigneeModified       time.Time `json:"assignee_modified"`
+	AssigneeModifiedPostID string    `json:"assignee_modified_post_id"`
+	Command                string    `json:"command"`
 }
 
 // SortField enumerates the available fields we can sort on.

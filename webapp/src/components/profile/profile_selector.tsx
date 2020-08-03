@@ -13,11 +13,16 @@ import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 
 interface Props {
-    commanderId?: string;
+    selectedUserId?: string;
+    placeholder: string;
+    placeholderButtonClass?: string;
+    profileButtonClass?: string;
     enableEdit: boolean;
     isClearable?: boolean;
     customControl?: (props: ControlProps<any>) => React.ReactElement;
     controlledOpenToggle?: boolean;
+    withoutProfilePic?: boolean
+    defaultValue?: string;
     getUsers: () => Promise<UserProfile[]>;
     onSelectedChange: (userId?: string) => void;
 }
@@ -116,20 +121,20 @@ export default function ProfileSelector(props: Props) {
 
     const [selected, setSelected] = useState<Option | null>(null);
 
-    // Whenever the commanderId changes we have to set the selected, but we can only do this once we
+    // Whenever the selectedUserId changes we have to set the selected, but we can only do this once we
     // have userOptions
     useEffect(() => {
         if (userOptions === []) {
             return;
         }
 
-        const commander = userOptions.find((option: Option) => option.userId === props.commanderId);
-        if (commander) {
-            setSelected(commander);
+        const user = userOptions.find((option: Option) => option.userId === props.selectedUserId);
+        if (user) {
+            setSelected(user);
         } else {
             setSelected(null);
         }
-    }, [userOptions, props.commanderId]);
+    }, [userOptions, props.selectedUserId]);
 
     const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
@@ -143,11 +148,13 @@ export default function ProfileSelector(props: Props) {
     };
 
     let target;
-    if (props.commanderId) {
+    if (props.selectedUserId) {
         target = (
             <ProfileButton
                 enableEdit={props.enableEdit}
-                userId={props.commanderId}
+                userId={props.selectedUserId}
+                withoutProfilePic={props.withoutProfilePic}
+                profileButtonClass={props.profileButtonClass}
                 onClick={props.enableEdit ? toggleOpen : () => null}
             />
         );
@@ -155,9 +162,9 @@ export default function ProfileSelector(props: Props) {
         target = (
             <button
                 onClick={toggleOpen}
-                className={'IncidentFilter-button'}
+                className={props.placeholderButtonClass || 'IncidentFilter-button'}
             >
-                {'Commander'}
+                {props.placeholder}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
             </button>
         );
@@ -165,7 +172,10 @@ export default function ProfileSelector(props: Props) {
 
     // The following is awkward, but makes TS happy.
     const baseComponents = {DropdownIndicator: null, IndicatorSeparator: null};
-    const components = props.customControl ? {...baseComponents, Control: props.customControl} : baseComponents;
+    const components = props.customControl ? {
+        ...baseComponents,
+        Control: props.customControl,
+    } : baseComponents;
 
     return (
         <Dropdown

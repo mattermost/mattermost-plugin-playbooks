@@ -160,7 +160,8 @@ const BackstageIncidentList: FC = () => {
                         onSearch={debounce(setSearchTerm, debounceDelay)}
                     />
                     <ProfileSelector
-                        commanderId={fetchParams.commander_user_id}
+                        selectedUserId={fetchParams.commander_user_id}
+                        placeholder={'Commander'}
                         enableEdit={true}
                         isClearable={true}
                         customControl={ControlComponent}

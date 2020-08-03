@@ -92,17 +92,22 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
     return (
         <React.Fragment>
             <div className='title'>
-                {'Stage'}
-                {!isActive(props.selectedStage) &&
-                <a
-                    onClick={props.onStageActivated}
-                    className='stage-title__set-active'
-                >
-                    <span className='font-weight--normal'>{'(Set as active stage)'}</span>
-                </a>
+                {'Stages'}
+                {
+                    !isActive(props.selectedStage) &&
+                    <a
+                        onClick={props.onStageActivated}
+                        className='stage-title__set-active'
+                    >
+                        <span className='font-weight--normal'>{'(Set as active stage)'}</span>
+                    </a>
                 }
+                <span className='stage-title__count'>
+                    {`(${props.selectedStage + 1}/${props.stages.length})`}
+                </span>
             </div>
             <ReactSelect
+                components={{IndicatorSeparator: null}}
                 options={props.stages.map((_, idx) => toOption(idx))}
                 value={toOption(props.selectedStage)}
                 defaultValue={toOption(props.selectedStage)}
@@ -114,16 +119,6 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
         </React.Fragment>
     );
 };
-
-const Duration = styled.div`
-    padding-top: .5em;
-    color: var(--center-channel-color-80);
-`;
-
-const DurationTime = styled.span`
-    color: var(--center-channel-color);
-    font-weight: 600;
-`;
 
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
@@ -217,14 +212,24 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                 style={{position: 'absolute'}}
             >
                 <div className='IncidentDetails'>
-                    <div className='inner-container'>
-                        <div className='title'>{'Commander'}</div>
-                        <ProfileSelector
-                            commanderId={props.incident.commander_user_id}
-                            enableEdit={true}
-                            getUsers={fetchUsers}
-                            onSelectedChange={onSelectedProfileChange}
-                        />
+                    <div className='side-by-side'>
+                        <div className='inner-container first-container'>
+                            <div className='first-title'>{'Commander'}</div>
+                            <ProfileSelector
+                                selectedUserId={props.incident.commander_user_id}
+                                placeholder={'Assign Commander'}
+                                placeholderButtonClass={'NoAssignee-button'}
+                                profileButtonClass={'Assigned-button'}
+                                enableEdit={true}
+                                getUsers={fetchUsers}
+                                onSelectedChange={onSelectedProfileChange}
+                                withoutProfilePic={true}
+                            />
+                        </div>
+                        <div className='first-title'>
+                            {'Duration: '}
+                            <div className='time'>{durationString}</div>
+                        </div>
                     </div>
                     <div className='inner-container'>
                         <StageSelector
@@ -234,10 +239,6 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             onStageSelected={onStageSelected}
                             onStageActivated={setCurrentStageAsActive}
                         />
-                        <Duration>
-                            {'Duration: '}
-                            <DurationTime>{durationString}</DurationTime>
-                        </Duration>
                     </div>
                     <div
                         className='checklist-inner-container'
@@ -250,6 +251,10 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                 <ChecklistItemDetails
                                     key={checklistItem.title + index}
                                     checklistItem={checklistItem}
+                                    checklistNum={selectedChecklistIndex}
+                                    itemNum={index}
+                                    primaryChannelId={props.incident.primary_channel_id}
+                                    incidentId={props.incident.id}
                                     onChange={(newState: ChecklistItemState) => {
                                         setChecklistItemState(props.incident.id, selectedChecklistIndex, index, newState);
                                     }}

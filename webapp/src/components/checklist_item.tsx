@@ -1,31 +1,42 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef, useState, useEffect, FC} from 'react';
-import {useSelector} from 'react-redux';
+import React, {FC, useRef, useState} from 'react';
+import {useDispatch, useStore, useSelector} from 'react-redux';
 import moment from 'moment';
+import classNames from 'classnames';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {clientExecuteCommand, fetchUsersInChannel, setAssignee, setCommander} from 'src/client';
+import Spinner from 'src/components/assets/icons/spinner';
+import ProfileSelector from 'src/components/profile/profile_selector';
+import {useTimeout} from 'src/hooks';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
-import Spinner from './assets/icons/spinner';
-
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
+    checklistNum: number;
+    itemNum: number;
+    primaryChannelId: string;
+    incidentId?: string;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
 }
+
+const RunningTimeout = 1000;
 
 // @ts-ignore
 const {formatText, messageHtmlToComponent} = window.PostUtils;
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
+    const store = useStore();
+    const dispatch = useDispatch();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
@@ -36,6 +47,26 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         atMentions: true,
         team,
         channelNamesMap,
+    };
+
+    const [running, setRunning] = useState(false);
+
+    // Setting running to true triggers the timeout by setting the delay to RunningTimeout
+    useTimeout(() => setRunning(false), running ? RunningTimeout : null);
+
+    const fetchUsers = async () => {
+        return fetchUsersInChannel(props.primaryChannelId);
+    };
+
+    const onAssigneeChange = async (userId?: string) => {
+        if (!userId || !props.incidentId) {
+            return;
+        }
+        const response = await setAssignee(props.incidentId, props.checklistNum, props.itemNum, userId);
+        if (response.error) {
+            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
+        }
     };
 
     let timestamp = '';
@@ -51,43 +82,77 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     }
 
     return (
-        <div
-            className={'checkbox-container live'}
-        >
-            <ChecklistItemButton
-                item={props.checklistItem}
-                onChange={(item: ChecklistItemState) => {
-                    if (props.onChange) {
-                        props.onChange(item);
-                    }
-                }}
-            />
-            <label title={title}>
-                <div
-                    onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
-                >
-                    {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
-                </div>
-            </label>
-            <a
-                className={'timestamp small'}
-                href={`/_redirect/pl/${props.checklistItem.state_modified_post_id}`}
-                onClick={(e) => {
-                    e.preventDefault();
-                    if (!props.checklistItem.state_modified_post_id) {
-                        return;
-                    }
-
-                    // @ts-ignore
-                    window.WebappUtils.browserHistory.push(`/_redirect/pl/${props.checklistItem.state_modified_post_id}`);
-                    if (props.onRedirect) {
-                        props.onRedirect();
-                    }
-                }}
+        <>
+            <div
+                className={'checkbox-container live'}
             >
-                {timestamp}
-            </a>
-        </div>
+                <ChecklistItemButton
+                    item={props.checklistItem}
+                    onChange={(item: ChecklistItemState) => {
+                        if (props.onChange) {
+                            props.onChange(item);
+                        }
+                    }}
+                />
+                <label title={title}>
+                    <div
+                        onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                    >
+                    {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                    </div>
+                </label>
+                <a
+                    className={'timestamp small'}
+                    href={`/_redirect/pl/${props.checklistItem.state_modified_post_id}`}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        if (!props.checklistItem.state_modified_post_id) {
+                            return;
+                        }
+
+                        // @ts-ignore
+                        window.WebappUtils.browserHistory.push(`/_redirect/pl/${props.checklistItem.state_modified_post_id}`);
+                        if (props.onRedirect) {
+                            props.onRedirect();
+                        }
+                    }}
+                >
+                    {timestamp}
+                </a>
+            </div>
+            {
+                props.checklistItem.command !== '' &&
+                <div className={'checklist-command-container'}>
+                    <div className={'command'}>
+                        {props.checklistItem.command}
+                    </div>
+                    <div
+                        className={classNames('run', {running})}
+                        onClick={() => {
+                            if (!running) {
+                                setRunning(true);
+                                clientExecuteCommand(dispatch, store.getState, props.checklistItem.command);
+                            }
+                        }}
+                    >
+                        {'(Run)'}
+                    </div>
+                    {running && <Spinner/>}
+                </div>
+            }
+            <div className={'assignee-container'}>
+                <ProfileSelector
+                    selectedUserId={props.checklistItem.assignee_id}
+                    placeholder={'No Assignee'}
+                    placeholderButtonClass={'NoAssignee-button'}
+                    profileButtonClass={'Assigned-button'}
+                    enableEdit={true}
+                    getUsers={fetchUsers}
+                    onSelectedChange={onAssigneeChange}
+                    withoutProfilePic={true}
+                />
+            </div>
+        </>
     );
 };
 
@@ -194,59 +259,15 @@ interface ChecklistItemButtonProps {
 }
 
 const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemButtonProps) => {
-    const [spinner, setSpinner] = useState(false);
-
-    useEffect(() => {
-        setSpinner(false);
-    }, [props.item]);
-
-    const isCommand = Boolean(props.item.command);
-
-    let title;
-    let label;
-    let disabled = false;
-    let onClick;
-    switch (props.item.state) {
-    case ChecklistItemState.Open: {
-        if (isCommand) {
-            label = 'Run';
-            title = props.item.command;
-            onClick = () => {
-                setSpinner(true);
-                props.onChange(ChecklistItemState.Closed);
-            };
-        } else {
-            label = 'Start';
-            onClick = () => {
-                setSpinner(true);
-                props.onChange(ChecklistItemState.InProgress);
-            };
-        }
-        break;
-    }
-    case ChecklistItemState.InProgress: {
-        label = 'Finish';
-        onClick = () => {
-            setSpinner(true);
-            props.onChange(ChecklistItemState.Closed);
-        };
-        break;
-    }
-    case ChecklistItemState.Closed: {
-        disabled = true;
-        label = 'Done';
-        break;
-    }
-    }
-
+    const isChecked = props.item.state === ChecklistItemState.Closed;
+    const nextState = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
     return (
-        <button
-            title={title}
-            type='button'
-            disabled={disabled}
-            onClick={onClick}
-        >
-            {spinner ? <Spinner/> : label}
-        </button>
-    );
+        <input
+            className='checkbox'
+            type='checkbox'
+            checked={isChecked}
+            onClick={() => {
+                props.onChange(nextState);
+            }}
+        />);
 };
