@@ -1,9 +1,17 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect, useRef, FC} from 'react';
+import React, {useRef, useState, useEffect, FC} from 'react';
+import {useSelector} from 'react-redux';
 import moment from 'moment';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
+import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+
+import {handleFormattedTextClick} from 'src/browser_routing';
+import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import Spinner from './assets/icons/spinner';
@@ -17,9 +25,19 @@ interface ChecklistItemDetailsProps {
 // @ts-ignore
 const {formatText, messageHtmlToComponent} = window.PostUtils;
 
-const markdownOptions = {singleline: true, mentionHighlight: false, atMentions: true};
-
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
+    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const team = useSelector<GlobalState, Team>(getCurrentTeam);
+    const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
+
+    const markdownOptions = {
+        singleline: true,
+        mentionHighlight: false,
+        atMentions: true,
+        team,
+        channelNamesMap,
+    };
+
     let timestamp = '';
     const title = props.checklistItem.title;
 
@@ -45,7 +63,11 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 }}
             />
             <label title={title}>
-                {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                <div
+                    onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                >
+                    {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                </div>
             </label>
             <a
                 className={'timestamp small'}
