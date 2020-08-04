@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -176,8 +177,9 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 
 func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	teamID := params.Get("teamid")
+	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
+	opts := parseGetPlaybooksOptions(r.URL)
 
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
@@ -193,7 +195,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playbooks, err := h.playbookService.GetPlaybooksForTeam(teamID)
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(teamID, opts)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -239,4 +241,23 @@ func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook
 
 	// Fallback to admin role that have access to all playbooks.
 	return h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+}
+
+func parseGetPlaybooksOptions(u *url.URL) playbook.Options {
+	params := u.Query()
+
+	sortField := playbook.SortField(params.Get("sort"))
+	if sortField == "" {
+		sortField = playbook.Title
+	}
+
+	sortDirection := playbook.SortDirection(params.Get("direction"))
+	if sortDirection == "" {
+		sortDirection = playbook.Asc
+	}
+
+	return playbook.Options{
+		Sort:      sortField,
+		Direction: sortDirection,
+	}
 }

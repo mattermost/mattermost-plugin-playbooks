@@ -15,7 +15,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import {SortableColHeader} from 'src/components/backstage/incidents/incident_list/sortable_col_header';
+import {SortableColHeader} from 'src/components/sortable_col_header';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';

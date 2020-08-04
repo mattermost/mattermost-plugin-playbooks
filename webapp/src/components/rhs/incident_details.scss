@@ -30,9 +30,11 @@ $font-family: Open Sans;
             background-color: var(--center-channel-bg);
             color: var(--center-channel-color);
 
-            &__option--is-selected,
-            &__option--is-focused {
+            &__option--is-selected {
                 background-color: var(--center-channel-color-08);
+            }
+            &__option--is-focused {
+                background-color: var(--center-channel-color-16);
                 color: inherit;
             }
 

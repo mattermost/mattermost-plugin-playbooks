@@ -34,6 +34,37 @@ type ChecklistItem struct {
 	Command             string    `json:"command"`
 }
 
+// SortField enumerates the available fields we can sort on.
+type SortField string
+
+const (
+	// Title sorts by the "title" field.
+	Title SortField = "title"
+
+	// Stages sorts by the number of checklists in a playbook.
+	Stages SortField = "stages"
+
+	// Steps sorts by the the number of steps in a playbook.
+	Steps SortField = "steps"
+)
+
+// SortDirection is the type used to specify the ascending or descending order of returned results.
+type SortDirection string
+
+const (
+	// Desc is descending order.
+	Desc SortDirection = "desc"
+
+	// Asc is ascending order.
+	Asc SortDirection = "asc"
+)
+
+// Options specifies the parameters when getting playbooks.
+type Options struct {
+	Sort      SortField
+	Direction SortDirection
+}
+
 // Service is the playbook service for managing playbooks
 type Service interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.
@@ -43,7 +74,7 @@ type Service interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(teamID string) ([]Playbook, error)
+	GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
