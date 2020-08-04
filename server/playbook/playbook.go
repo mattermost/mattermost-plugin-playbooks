@@ -35,6 +35,7 @@ type ChecklistItem struct {
 	AssigneeModified       time.Time `json:"assignee_modified"`
 	AssigneeModifiedPostID string    `json:"assignee_modified_post_id"`
 	Command                string    `json:"command"`
+	Description            string    `json:"description"`
 }
 
 // SortField enumerates the available fields we can sort on.
