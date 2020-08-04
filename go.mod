@@ -5,7 +5,6 @@ go 1.14
 require (
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/golang/mock v1.4.3
-	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-querystring v1.0.0
 	github.com/gorilla/mux v1.7.4
 	github.com/mattermost/mattermost-plugin-api v0.0.11-0.20200707171723-5b8d13c39e26
