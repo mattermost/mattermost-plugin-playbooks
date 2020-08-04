@@ -2,30 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-
+import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import {css} from '@emotion/core';
 
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-
-interface Props {
-    selectedUserId?: string;
-    placeholder: string;
-    placeholderButtonClass?: string;
-    profileButtonClass?: string;
-    enableEdit: boolean;
-    isClearable?: boolean;
-    customControl?: (props: ControlProps<any>) => React.ReactElement;
-    controlledOpenToggle?: boolean;
-    withoutProfilePic?: boolean
-    defaultValue?: string;
-    getUsers: () => Promise<UserProfile[]>;
-    onSelectedChange: (userId?: string) => void;
-}
 
 interface Option {
     value: string;
@@ -37,31 +24,25 @@ interface ActionObj {
     action: ActionTypes;
 }
 
-export const getFullName = (firstName: string, lastName: string): string => {
-    if (firstName && lastName) {
-        return firstName + ' ' + lastName;
-    } else if (firstName) {
-        return firstName;
-    } else if (lastName) {
-        return lastName;
-    }
-
-    return '';
-};
-
-export const getUserDescription = (firstName: string, lastName: string, nickName: string): string => {
-    if ((firstName || lastName) && nickName) {
-        return ` ${getFullName(firstName, lastName)} (${nickName})`;
-    } else if (nickName) {
-        return ` (${nickName})`;
-    } else if (firstName || lastName) {
-        return ` ${getFullName(firstName, lastName)}`;
-    }
-
-    return '';
-};
+interface Props {
+    selectedUserId?: string;
+    placeholder: string;
+    placeholderButtonClass?: string;
+    profileButtonClass?: string;
+    enableEdit: boolean;
+    isClearable?: boolean;
+    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    controlledOpenToggle?: boolean;
+    withoutProfilePic?: boolean;
+    defaultValue?: string;
+    selfIsFirstOption?: boolean;
+    getUsers: () => Promise<UserProfile[]>;
+    onSelectedChange: (userId?: string) => void;
+}
 
 export default function ProfileSelector(props: Props) {
+    const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         if (!isOpen) {
@@ -83,19 +64,25 @@ export default function ProfileSelector(props: Props) {
     const [userOptions, setUserOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
-        const formatName = (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-            const name = '@' + userName;
-            const description = getUserDescription(firstName, lastName, nickName);
-            return (
-                <>
-                    <span>{name}</span>
-                    {description && <span className={'description'}>{description}</span>}
-                </>
-            );
+        const formatName = (descriptionSuffix: string) => {
+            return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
+                const name = '@' + userName;
+                const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
+                return (
+                    <>
+                        <span>{name}</span>
+                        {description && <span className={'description'}>{description}</span>}
+                    </>
+                );
+            };
         };
 
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
+        };
+
+        const needsSuffix = (userId: string) => {
+            return props.selfIsFirstOption && userId === currentUserId;
         };
 
         const users = await props.getUsers();
@@ -105,12 +92,21 @@ export default function ProfileSelector(props: Props) {
                 label: (
                     <Profile
                         userId={user.id}
-                        nameFormatter={formatName}
+                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
                     />
                 ),
                 userId: user.id,
             });
         });
+
+        if (props.selfIsFirstOption) {
+            const idx = optionList.findIndex((elem) => elem.userId === currentUserId);
+            if (idx > 0) {
+                const currentUser = optionList.splice(idx, 1);
+                optionList.unshift(currentUser[0]);
+            }
+        }
+
         setUserOptions(optionList);
     }
 
@@ -260,3 +256,26 @@ const Blanket = (props: Record<string, any>) => (
     />
 );
 
+const getFullName = (firstName: string, lastName: string): string => {
+    if (firstName && lastName) {
+        return firstName + ' ' + lastName;
+    } else if (firstName) {
+        return firstName;
+    } else if (lastName) {
+        return lastName;
+    }
+
+    return '';
+};
+
+const getUserDescription = (firstName: string, lastName: string, nickName: string): string => {
+    if ((firstName || lastName) && nickName) {
+        return ` ${getFullName(firstName, lastName)} (${nickName})`;
+    } else if (nickName) {
+        return ` (${nickName})`;
+    } else if (firstName || lastName) {
+        return ` ${getFullName(firstName, lastName)}`;
+    }
+
+    return '';
+};

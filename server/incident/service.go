@@ -22,6 +22,7 @@ const (
 	// IncidentCreatedWSEvent is for incident creation.
 	IncidentCreatedWSEvent = "incident_created"
 	incidentUpdatedWSEvent = "incident_updated"
+	noAssigneeName         = "No Assignee"
 )
 
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
@@ -436,14 +437,34 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	// from the notification message.
 	s.telemetry.SetAssignee(incidentID, userID, assigneeID)
 
-	user, err := s.pluginAPI.User.Get(assigneeID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
+	var newUser *model.User
+	if assigneeID != "" {
+		newUser, err = s.pluginAPI.User.Get(assigneeID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
+		}
+	}
+	newAssigneeUsername := noAssigneeName
+	if newUser != nil {
+		newAssigneeUsername = newUser.Username
+	}
+
+	oldAssigneeID := itemToCheck.AssigneeID
+	var oldUser *model.User
+	if oldAssigneeID != "" {
+		oldUser, err = s.pluginAPI.User.Get(oldAssigneeID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
+		}
+	}
+	oldAssigneeUsername := noAssigneeName
+	if oldUser != nil {
+		oldAssigneeUsername = oldUser.Username
 	}
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("assigned checklist item \"%v\" to \"%v\"",
-		itemToCheck.Title, user.Username)
+	modifyMessage := fmt.Sprintf("assigned checklist item \"%v\" from \"%v\" to \"%v\"",
+		itemToCheck.Title, oldAssigneeUsername, newAssigneeUsername)
 	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err

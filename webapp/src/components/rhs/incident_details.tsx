@@ -235,6 +235,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                 getUsers={fetchUsers}
                                 onSelectedChange={onSelectedProfileChange}
                                 withoutProfilePic={true}
+                                selfIsFirstOption={true}
                             />
                         </div>
                         <div className='first-title'>

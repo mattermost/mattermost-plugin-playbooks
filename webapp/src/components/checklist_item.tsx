@@ -5,6 +5,7 @@ import React, {FC, useRef, useState} from 'react';
 import {useDispatch, useStore, useSelector} from 'react-redux';
 import moment from 'moment';
 import classNames from 'classnames';
+import {components, ControlProps} from 'react-select';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -59,7 +60,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     };
 
     const onAssigneeChange = async (userId?: string) => {
-        if (!userId || !props.incidentId) {
+        if (!props.incidentId) {
             return;
         }
         const response = await setAssignee(props.incidentId, props.checklistNum, props.itemNum, userId);
@@ -67,6 +68,29 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
         }
+    };
+
+    const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
+    const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
+    const ControlComponent = (ownProps: ControlProps<any>) => {
+        const resetLink = assignee_id && (
+            <a
+                className='IncidentFilter-reset'
+                onClick={() => {
+                    onAssigneeChange();
+                    setProfileSelectorToggle(!profileSelectorToggle);
+                }}
+            >
+                {'No Assignee'}
+            </a>
+        );
+
+        return (
+            <div>
+                <components.Control {...ownProps}/>
+                {resetLink}
+            </div>
+        );
     };
 
     let timestamp = '';
@@ -150,6 +174,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     getUsers={fetchUsers}
                     onSelectedChange={onAssigneeChange}
                     withoutProfilePic={true}
+                    selfIsFirstOption={true}
+                    customControl={ControlComponent}
+                    controlledOpenToggle={profileSelectorToggle}
                 />
             </div>
         </>

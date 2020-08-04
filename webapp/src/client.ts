@@ -124,7 +124,7 @@ export async function setCommander(incidentId: string, commanderId: string) {
     }
 }
 
-export async function setAssignee(incidentId: string, checklistNum: number, itemNum: number, assigneeId: string) {
+export async function setAssignee(incidentId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
     const body = JSON.stringify({assignee_id: assigneeId});
     try {
         const data = await doPut(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
