@@ -90,7 +90,7 @@ type IncidentsService struct {
 func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOptions) (*Incident, error) {
 	// Just a proof of concept, this will be switched over to POST /incidents
 	// TODO: switch to using /incidents
-	u := fmt.Sprintf("%s/%s", apiVersion, "incidents/create-dialog")
+	u := fmt.Sprintf("%s", "incidents/create-dialog")
 	dialogRequest := model.SubmitDialogRequest{
 		TeamId:     opts.TeamID,
 		UserId:     opts.CommanderUserID,
@@ -115,7 +115,7 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 
 // Get an incident.
 func (s *IncidentsService) Get(ctx context.Context, incidentID string) (*Incident, error) {
-	u := fmt.Sprintf("%s/%s/%s", apiVersion, "incidents", incidentID)
+	u := fmt.Sprintf("%s/%s", "incidents", incidentID)
 	req, err := s.client.NewRequest(http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts I
 
 // List the incidents.
 func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (*IncidentList, error) {
-	u := fmt.Sprintf("%s/%s", apiVersion, "incidents")
+	u := fmt.Sprintf("%s", "incidents")
 	u, err := addOptions(u, opts)
 	if err != nil {
 		return nil, err

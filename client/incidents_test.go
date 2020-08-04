@@ -12,7 +12,7 @@ import (
 func TestIncidentsService_Get(t *testing.T) {
 	client, mux, _ := setup(t)
 
-	mux.HandleFunc("/"+buildAPIURL(apiVersion+"/incidents/1"), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/"+buildAPIURL("incidents/1"), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		fmt.Fprint(w, `{"id": "1"}`)
 	})
@@ -27,7 +27,7 @@ func TestIncidentsService_Get(t *testing.T) {
 func TestIncidentsService_List(t *testing.T) {
 	client, mux, _ := setup(t)
 
-	mux.HandleFunc("/"+buildAPIURL(apiVersion+"/incidents"), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/"+buildAPIURL("incidents"), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		testFormValues(t, r, values{
 			"page": "2",

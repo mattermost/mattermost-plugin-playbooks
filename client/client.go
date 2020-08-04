@@ -106,7 +106,7 @@ func NewClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
 	u, err := c.BaseURL.Parse(buildAPIURL(urlStr))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to urlStr %s", urlStr)
 	}
 
 	var buf io.ReadWriter
@@ -116,13 +116,13 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 		enc.SetEscapeHTML(false)
 		err = enc.Encode(body)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to encode body %s", body)
 		}
 	}
 
 	req, err := http.NewRequest(method, u.String(), buf)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to create request for url %s", u)
 	}
 
 	if buf != nil {
@@ -216,12 +216,12 @@ func addOptions(s string, opts interface{}) (string, error) {
 
 	u, err := url.Parse(s)
 	if err != nil {
-		return s, err
+		return s, errors.Wrapf(err, "failed to parse %s", s)
 	}
 
 	qs, err := query.Values(opts)
 	if err != nil {
-		return s, err
+		return s, errors.Wrapf(err, "failed to opts %+v", opts)
 	}
 
 	u.RawQuery = qs.Encode()
@@ -229,7 +229,7 @@ func addOptions(s string, opts interface{}) (string, error) {
 }
 
 func buildAPIURL(urlStr string) string {
-	return fmt.Sprintf("plugins/%s/api/%s", manifestID, urlStr)
+	return fmt.Sprintf("plugins/%s/api/%s/%s", manifestID, apiVersion, urlStr)
 }
 
 // Bool is a helper routine that allocates a new bool value
