@@ -404,7 +404,7 @@ func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNum
 	}
 
 	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indicies")
+		return errors.New("invalid checklist item indices")
 	}
 
 	isOpen := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].State == playbook.ChecklistItemStateOpen
@@ -425,7 +425,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indicies")
+		return errors.New("invalid checklist item indices")
 	}
 
 	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
@@ -433,42 +433,36 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		return nil
 	}
 
-	// Send modification message before the actual modification because we need the postID
-	// from the notification message.
-	s.telemetry.SetAssignee(incidentID, userID, assigneeID)
-
-	var newUser *model.User
+	newAssigneeUsername := noAssigneeName
 	if assigneeID != "" {
-		newUser, err = s.pluginAPI.User.Get(assigneeID)
+		newUser, err := s.pluginAPI.User.Get(assigneeID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
-	}
-	newAssigneeUsername := noAssigneeName
-	if newUser != nil {
 		newAssigneeUsername = newUser.Username
 	}
 
-	oldAssigneeID := itemToCheck.AssigneeID
-	var oldUser *model.User
-	if oldAssigneeID != "" {
-		oldUser, err = s.pluginAPI.User.Get(oldAssigneeID)
+	oldAssigneeUsername := noAssigneeName
+	if itemToCheck.AssigneeID != "" {
+		oldUser, err := s.pluginAPI.User.Get(itemToCheck.AssigneeID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
-	}
-	oldAssigneeUsername := noAssigneeName
-	if oldUser != nil {
 		oldAssigneeUsername = oldUser.Username
 	}
 
 	mainChannelID := incidentToModify.PrimaryChannelID
 	modifyMessage := fmt.Sprintf("assigned checklist item \"%v\" from \"%v\" to \"%v\"",
 		itemToCheck.Title, oldAssigneeUsername, newAssigneeUsername)
+
+	// Send modification message before the actual modification because we need the postID
+	// from the notification message.
 	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
 	}
+
+	s.telemetry.SetAssignee(incidentID, userID)
 
 	itemToCheck.AssigneeID = assigneeID
 	itemToCheck.AssigneeModified = time.Now()

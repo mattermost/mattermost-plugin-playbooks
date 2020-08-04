@@ -195,7 +195,7 @@ type Telemetry interface {
 
 	// SetAssignee tracks the changing of an assignee on an item by the user
 	// identified by userID in the incident identified by incidentID.
-	SetAssignee(incidentID, userID, assigneeID string)
+	SetAssignee(incidentID, userID string)
 
 	// AddChecklistItem tracks the creation of a new checklist item by the user
 	// identified by userID in the incident identified by incidentID.

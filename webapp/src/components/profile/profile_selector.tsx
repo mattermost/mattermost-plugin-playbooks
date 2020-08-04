@@ -257,15 +257,7 @@ const Blanket = (props: Record<string, any>) => (
 );
 
 const getFullName = (firstName: string, lastName: string): string => {
-    if (firstName && lastName) {
-        return firstName + ' ' + lastName;
-    } else if (firstName) {
-        return firstName;
-    } else if (lastName) {
-        return lastName;
-    }
-
-    return '';
+    return (firstName + ' ' + lastName).trim();
 };
 
 const getUserDescription = (firstName: string, lastName: string, nickName: string): string => {

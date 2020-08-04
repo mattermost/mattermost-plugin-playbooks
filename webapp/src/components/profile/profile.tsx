@@ -49,10 +49,12 @@ const Profile: FC<Props> = (props: Props) => {
         <div className={classNames('IncidentProfile', props.classNames)}>
             {
                 !props.withoutProfilePic &&
-                <img
-                    className='image'
-                    src={profileUri || ''}
-                />
+                <div className='mr-2'>
+                    <img
+                        className='image'
+                        src={profileUri || ''}
+                    />
+                </div>
             }
             <div className='name'>{name}</div>
             {props.extra}

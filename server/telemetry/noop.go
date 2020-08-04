@@ -47,7 +47,7 @@ func (t *NoopTelemetry) ModifyCheckedState(string, string, string) {
 }
 
 // SetAssignee does nothing.
-func (t *NoopTelemetry) SetAssignee(incidentID, userID, assigneeID string) {
+func (t *NoopTelemetry) SetAssignee(incidentID, userID string) {
 }
 
 // MoveChecklistItem does nothing.

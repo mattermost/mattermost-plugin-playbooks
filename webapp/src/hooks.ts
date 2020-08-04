@@ -110,7 +110,8 @@ export function useClickOutsideRef(ref: MutableRefObject<HTMLElement | null>, ha
 }
 
 /**
- * Hook that sets a timeout and will cleanup after itself.
+ * Hook that sets a timeout and will cleanup after itself. Adapted from Dan Abramov's code:
+ * https://overreacted.io/making-setinterval-declarative-with-react-hooks/
  */
 export function useTimeout(callback: () => void, delay: number | null) {
     const timeoutRef = useRef<number>();
