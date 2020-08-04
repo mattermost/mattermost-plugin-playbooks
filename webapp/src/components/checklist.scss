@@ -178,9 +178,17 @@ $font-family: Open Sans;
         cursor: pointer;
         margin: 0 10px 0 4px;
 
+        &:hover {
+            text-decoration: underline;
+        }
+
         &.running {
             color: var(--center-channel-color-64);
             cursor: default;
+
+            &:hover {
+                text-decoration: none;
+            }
         }
     }
 }

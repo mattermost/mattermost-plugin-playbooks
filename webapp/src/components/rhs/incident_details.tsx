@@ -5,7 +5,6 @@ import React, {FC, useEffect, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import ReactSelect, {ActionMeta, OptionTypeBase, StylesConfig} from 'react-select';
 import Scrollbars from 'react-custom-scrollbars';
-import styled from 'styled-components';
 import moment from 'moment';
 
 import {
@@ -54,7 +53,7 @@ function renderThumbVertical(props: any): JSX.Element {
 
 interface Option {
     value: number;
-    label: string;
+    label: JSX.Element;
 }
 
 interface StageSelectorProps {
@@ -85,7 +84,17 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
     const toOption = (stageIdx: number) => {
         return {
             value: stageIdx,
-            label: props.stages[stageIdx].title + (isActive(stageIdx) ? ' (Active)' : ''),
+            label: (
+                <span>
+                    {props.stages[stageIdx].title}
+                    {
+                        isActive(stageIdx) &&
+                        <span className={'badge active'}>
+                            {'Active'}
+                        </span>
+                    }
+                </span>
+            ),
         };
     };
 
@@ -93,17 +102,19 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
         <React.Fragment>
             <div className='title'>
                 {'Stages'}
-                {
-                    !isActive(props.selectedStage) &&
-                    <a
-                        onClick={props.onStageActivated}
-                        className='stage-title__set-active'
-                    >
-                        <span className='font-weight--normal'>{'(Set as active stage)'}</span>
-                    </a>
-                }
-                <span className='stage-title__count'>
-                    {`(${props.selectedStage + 1}/${props.stages.length})`}
+                <span className='stage-title__right'>
+                    {
+                        !isActive(props.selectedStage) &&
+                        <a
+                            className='stage-title__set-active'
+                            onClick={props.onStageActivated}
+                        >
+                            {'Make Active'}
+                        </a>
+                    }
+                    <span className='stage-title__count'>
+                        {`(${props.selectedStage + 1}/${props.stages.length})`}
+                    </span>
                 </span>
             </div>
             <ReactSelect

@@ -95,6 +95,17 @@ $font-family: Open Sans;
             &__placeholder {
                 color: var(--center-channel-color-20);
             }
+
+            .badge {
+                display: inline-flex;
+                border-radius: 4px;
+                margin-left: 8px;
+                color: var(--button-color);
+                background: var(--center-channel-color-56);
+                font-size: 10px;
+                font-weight: 600;
+                line-height: 16px;
+            }
         }
 
         .title {
@@ -102,13 +113,19 @@ $font-family: Open Sans;
             align-items: center;
             font-weight: 600;
             padding: 0 0 8px;
+            font-size: 14px;
+
+            .stage-title__right {
+                margin-left: auto;
+            }
 
             .stage-title__set-active {
                 padding: 0 5px;
+                font-weight: 600;
+                font-size: 12px;
             }
 
             .stage-title__count {
-                margin-left: auto;
                 color: var(--center-channel-color-64);
                 font-weight: normal;
             }
