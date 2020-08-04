@@ -122,7 +122,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     <div
                         onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                     >
-                    {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                        {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
                     </div>
                 </label>
                 <a
