@@ -156,7 +156,7 @@ func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID, newState string
 
 // SetAssignee tracks the changing of an assignee on an item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) SetAssignee(incidentID, userID, assigneeID string) {
+func (t *RudderTelemetry) SetAssignee(incidentID, userID string) {
 	t.track(eventSetAssignee, checklistItemProperties(incidentID, userID))
 }
 

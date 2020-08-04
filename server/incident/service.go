@@ -435,8 +435,8 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 
 	newAssigneeUsername := noAssigneeName
 	if assigneeID != "" {
-		newUser, err := s.pluginAPI.User.Get(assigneeID)
-		if err != nil {
+		newUser, err2 := s.pluginAPI.User.Get(assigneeID)
+		if err2 != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 		newAssigneeUsername = newUser.Username
@@ -444,8 +444,8 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 
 	oldAssigneeUsername := noAssigneeName
 	if itemToCheck.AssigneeID != "" {
-		oldUser, err := s.pluginAPI.User.Get(itemToCheck.AssigneeID)
-		if err != nil {
+		oldUser, err2 := s.pluginAPI.User.Get(itemToCheck.AssigneeID)
+		if err2 != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 		oldAssigneeUsername = oldUser.Username
