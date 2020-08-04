@@ -24,14 +24,15 @@ func setup(t *testing.T) (client *Client, mux *http.ServeMux, serverURL string) 
 	// server is a test HTTP server used to provide mock API responses.
 	server := httptest.NewServer(apiHandler)
 	t.Cleanup(server.Close)
+	serverURL = server.URL
 
 	// client is the workflows client being tested and is
 	// configured to use test server.
 	client, _ = NewClient("", nil)
-	url, _ := url.Parse(server.URL + baseURLPath + "/")
-	client.BaseURL = url
+	parsedURL, _ := url.Parse(server.URL + baseURLPath + "/")
+	client.BaseURL = parsedURL
 
-	return client, mux, server.URL
+	return client, mux, serverURL
 }
 
 func testMethod(t *testing.T, r *http.Request, want string) {
@@ -49,7 +50,7 @@ func testFormValues(t *testing.T, r *http.Request, values values) {
 		want.Set(k, v)
 	}
 
-	r.ParseForm()
+	require.NoError(t, r.ParseForm())
 	got := r.Form
 	require.Equal(t, want, got, "request parameters: %v, want %v", got, want)
 }

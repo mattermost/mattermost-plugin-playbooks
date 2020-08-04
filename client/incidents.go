@@ -6,7 +6,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"math"
 	"net/http"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
@@ -105,10 +104,11 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 	}
 
 	i := new(Incident)
-	_, err = s.client.Do(ctx, req, i)
+	resp, err := s.client.Do(ctx, req, i)
 	if err != nil {
 		return nil, err
 	}
+	resp.Body.Close()
 
 	return i, nil
 }
@@ -122,10 +122,11 @@ func (s *IncidentsService) Get(ctx context.Context, incidentID string) (*Inciden
 	}
 
 	i := new(Incident)
-	_, err = s.client.Do(ctx, req, i)
+	resp, err := s.client.Do(ctx, req, i)
 	if err != nil {
 		return nil, err
 	}
+	resp.Body.Close()
 
 	return i, nil
 }
@@ -136,7 +137,7 @@ func (s *IncidentsService) GetByChannelID(ctx context.Context, channelID string)
 }
 
 // Update an incident.
-func (s *IncidentsService) Update(ctx context.Context, incidentID string, incident IncidentUpdateOptions) (*Incident, error) {
+func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts IncidentUpdateOptions) (*Incident, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -153,28 +154,14 @@ func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (
 		return nil, err
 	}
 
-	// Proof of concept, this will be updated to the correct payloads and we wouldn't need this anonymous struct
-	// TODO: remove anonymous struct
-	i := new(struct {
-		Incidents  []*Incident `json:"incidents"`
-		TotalCount int         `json:"total_count"`
-	})
-	_, err = s.client.Do(ctx, req, i)
+	result := &IncidentList{}
+	resp, err := s.client.Do(ctx, req, result)
 	if err != nil {
 		return nil, err
 	}
+	resp.Body.Close()
 
-	// Should be returned by the server
-	opts.PerPage = 1000
-	pageCount := int(math.Floor(float64(i.TotalCount / opts.PerPage)))
-	return &IncidentList{
-		ListResult: ListResult{
-			TotalCount: i.TotalCount,
-			PageCount:  pageCount,
-			HasMore:    pageCount-1 > opts.Page,
-		},
-		Items: i.Incidents,
-	}, nil
+	return result, nil
 }
 
 // Delete an incident.

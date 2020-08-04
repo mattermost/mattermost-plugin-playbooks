@@ -114,7 +114,8 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 		buf = &bytes.Buffer{}
 		enc := json.NewEncoder(buf)
 		enc.SetEscapeHTML(false)
-		if err = enc.Encode(body); err != nil {
+		err = enc.Encode(body)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -166,7 +167,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
-			io.Copy(w, resp.Body)
+			if _, err = io.Copy(w, resp.Body); err != nil {
+				return nil, err
+			}
 		} else {
 			decErr := json.NewDecoder(resp.Body).Decode(v)
 			if decErr == io.EOF {
@@ -194,7 +197,9 @@ func CheckResponse(r *http.Response) error {
 	errorResponse := &ErrorResponse{Response: r}
 	data, err := ioutil.ReadAll(r.Body)
 	if err == nil && data != nil {
-		json.Unmarshal(data, errorResponse)
+		if err := json.Unmarshal(data, errorResponse); err != nil {
+			return err
+		}
 	}
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 
