@@ -170,6 +170,7 @@ const TemplateItemContainer = styled.div`
     display: flex;
     flex-direction: column;
     cursor: pointer;
+    width: 198px;
 `;
 
 const TemplateItemDiv = styled.div`
@@ -221,7 +222,6 @@ const IconContainer = styled.div`
     align-items: center;
     justify-content: center;
     background: var(--center-channel-bg);
-    width: 198px;
     height: 156px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     box-sizing: border-box;
