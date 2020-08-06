@@ -192,7 +192,10 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         };
     }, []);
 
-    const duration = moment.duration(now.diff(moment.unix(props.incident.created_at)));
+    const start = moment.unix(props.incident.created_at);
+    const end = (props.incident.ended_at && moment.unix(props.incident.ended_at)) || now;
+
+    const duration = moment.duration(end.diff(start));
     let durationString = '';
     if (duration.days() > 0) {
         durationString += duration.days() + 'd ';
