@@ -6,13 +6,16 @@ import {useDispatch, useStore, useSelector} from 'react-redux';
 import moment from 'moment';
 import classNames from 'classnames';
 import {components, ControlProps} from 'react-select';
+import styled from 'styled-components';
+import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
+import Scrollbars from 'react-custom-scrollbars';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {clientExecuteCommand, fetchUsersInChannel, setAssignee, setCommander} from 'src/client';
+import {clientExecuteCommand, fetchUsersInChannel, setAssignee} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useTimeout} from 'src/hooks';
@@ -34,6 +37,107 @@ const RunningTimeout = 1000;
 
 // @ts-ignore
 const {formatText, messageHtmlToComponent} = window.PostUtils;
+
+const HoverableIcon = styled.i`
+    color: var(--center-channel-color-56);
+    cursor: pointer;
+
+    &:hover {
+        color: var(--center-channel-color);
+    }
+`;
+
+const InfoIcon = styled(HoverableIcon)`
+    position: relative;
+    top: 2px;
+`;
+
+const CloseIcon = styled(HoverableIcon)`
+    position: absolute;
+    right: 13px;
+    top: 13px;
+`;
+
+const StyledPopover = styled(Popover)<PopoverProps>`
+    min-width: 180px;
+    border-radius: 8px;
+
+    .popover-content {
+        padding: 16px 0px 15px 20px;
+    }
+
+    && .arrow {
+        display: block;
+    }
+`;
+
+const PaddedDiv = styled.div`
+    padding-right: 15px;
+`;
+
+const DescriptionTitle = styled.span`
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--center-channel-color);
+`;
+
+interface StepDescriptionProps {
+    text: string;
+    channelNames: ChannelNamesMap;
+    team: Team;
+}
+
+const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepDescriptionProps> => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const target = useRef(null);
+
+    const markdownOptions = {
+        atMentions: true,
+        team: props.team,
+        channelNamesMap: props.channelNames,
+    };
+
+    return (
+        <>
+            <InfoIcon
+                tabIndex={0}
+                className={'icon icon-information-outline'}
+                ref={target}
+                onClick={() => setShowTooltip(!showTooltip)}
+            />
+            <Overlay
+                show={showTooltip}
+                placement={'top'}
+                target={target.current}
+            >
+                <StyledPopover id='info-icon'>
+                    <CloseIcon
+                        className={'icon icon-close'}
+                        onClick={() => setShowTooltip(false)}
+                    />
+                    <DescriptionTitle>{'Step Description'}</DescriptionTitle>
+                    <Scrollbars
+                        autoHeight={true}
+                        autoHeightMax={200}
+                        renderThumbVertical={(thumbProps) => (
+                            <div
+                                {...thumbProps}
+                                className='scrollbar--vertical'
+                            />
+                        )}
+                    >
+                        <PaddedDiv>
+                            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
+                        </PaddedDiv>
+                    </Scrollbars>
+                </StyledPopover>
+            </Overlay>
+        </>
+    );
+};
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
     const store = useStore();
@@ -123,6 +227,13 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                     >
                         {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                        {props.checklistItem.description !== '' &&
+                            <StepDescription
+                                text={props.checklistItem.description}
+                                channelNames={channelNamesMap}
+                                team={team}
+                            />
+                        }
                     </div>
                 </label>
                 <a
@@ -298,3 +409,4 @@ const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemB
             }}
         />);
 };
+

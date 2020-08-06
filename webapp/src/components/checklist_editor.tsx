@@ -196,6 +196,7 @@ export const ChecklistEditor = ({
                                     title: newValue,
                                     state: ChecklistItemState.Open,
                                     command: '',
+                                    description: '',
                                 });
                                 setNewValue('');
                                 setInputExpanded(false);
