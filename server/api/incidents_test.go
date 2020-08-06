@@ -430,6 +430,7 @@ func TestIncidents(t *testing.T) {
 			Header: testIncidentHeader,
 		}
 
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
@@ -463,6 +464,7 @@ func TestIncidents(t *testing.T) {
 			PrimaryChannelID: "channelID",
 		}
 
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
@@ -490,6 +492,7 @@ func TestIncidents(t *testing.T) {
 			PrimaryChannelID: "channelID",
 		}
 
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
@@ -523,6 +526,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 
@@ -560,6 +564,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
@@ -602,6 +607,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
@@ -641,6 +647,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
@@ -685,6 +692,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
@@ -736,6 +744,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 
@@ -782,6 +791,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
@@ -833,6 +843,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
@@ -881,6 +892,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
@@ -933,6 +945,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
@@ -971,6 +984,7 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 100,
@@ -1005,6 +1019,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("get empty list of incidents", func(t *testing.T) {
 		reset()
 
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 0,
@@ -1177,6 +1192,7 @@ func TestChangeActiveStage(t *testing.T) {
 			// Mock underlying plugin API calls, granting all permissions
 			pluginAPI.On("GetChannel", mock.Anything).
 				Return(&model.Channel{}, nil)
+			pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 			pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).
 				Return(true)
 			pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).
