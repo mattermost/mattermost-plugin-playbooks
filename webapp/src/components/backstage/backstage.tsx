@@ -144,6 +144,7 @@ const Backstage: FC = () => {
                 <BackstageTitlebarItem
                     to={`${match.url}/incidents`}
                     activeClassName={'active'}
+                    data-testid='incidentsLHSButton'
                 >
                     <WorkflowsIcon/>
                     <i className='mr-2'/>
@@ -152,6 +153,7 @@ const Backstage: FC = () => {
                 <BackstageTitlebarItem
                     to={`${match.url}/playbooks`}
                     activeClassName={'active'}
+                    data-testid='playbooksLHSButton'
                 >
                     <PlaybookIcon/>
                     <i className='mr-2'/>
