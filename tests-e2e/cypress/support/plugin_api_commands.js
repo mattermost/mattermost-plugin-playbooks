@@ -56,7 +56,7 @@ Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
     //Login as sysadmin to check that incident got created
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
-        const incidentFound = allIncidents.incidents.find((inc) => inc.name === incidentID);
+        const incidentFound = allIncidents.items.find((inc) => inc.name === incidentID);
         assert.notEqual(incidentFound, undefined);
         assert.equal(incidentFound.is_active, true)
     });
@@ -67,7 +67,7 @@ Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
     //Login as sysadmin to check that incident got created
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
-        const incidentFound = allIncidents.incidents.find((inc) => inc.name === incidentID);
+        const incidentFound = allIncidents.items.find((inc) => inc.name === incidentID);
         assert.notEqual(incidentFound, undefined);
         assert.equal(incidentFound.is_active, false)
     });

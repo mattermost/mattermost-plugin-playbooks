@@ -293,6 +293,10 @@ func (h *IncidentHandler) hasPermissionsToOrPublic(channelID, userID string) boo
 		return false
 	}
 
+	if h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
+		return true
+	}
+
 	if h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
 		return true
 	}
