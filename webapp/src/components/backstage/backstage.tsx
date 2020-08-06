@@ -147,7 +147,7 @@ const Backstage: FC = () => {
                 >
                     <WorkflowsIcon/>
                     <i className='mr-2'/>
-                    {'Workflows'}
+                    {'Incidents'}
                 </BackstageTitlebarItem>
                 <BackstageTitlebarItem
                     to={`${match.url}/playbooks`}
