@@ -15,7 +15,7 @@ import {isMobile} from 'src/mobile';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {pluginId} from './manifest';
-import IncidentIcon from './components/assets/icons/incident_icon';
+import ChannelHeaderButton from './components/assets/icons/channel_header_button';
 import RightHandSidebar from './components/rhs/rhs_main';
 import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
@@ -65,7 +65,7 @@ export default class Plugin {
         // Store the toggleRHS action to use later
         store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
-        registry.registerChannelHeaderButtonAction(IncidentIcon, boundToggleRHSAction, 'Incidents', 'Incidents');
+        registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, 'Incidents', 'Incidents');
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdate());

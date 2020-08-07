@@ -8,7 +8,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {fetchIncidentChannels} from 'src/client';
 
-import {workflowsRHSOpen} from 'src/selectors';
+import {isIncidentRHSOpen} from 'src/selectors';
 import {toggleRHS} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
@@ -24,7 +24,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         //@ts-ignore Views not in global state
         const mmRhsOpen = state.views.rhs.isSidebarOpen;
 
-        const incidentRHSOpen = workflowsRHSOpen(state);
+        const incidentRHSOpen = isIncidentRHSOpen(state);
         if (
             !currentChannel ||
             !currentTeam ||

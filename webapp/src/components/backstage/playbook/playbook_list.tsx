@@ -296,7 +296,7 @@ const NoContentPage = (props: {onNewPlaybook: () => void}) => {
     return (
         <Container>
             <Title>{'What are Playbooks?'}</Title>
-            <Description>{'A playbook is a workflow template. It is created ahead of time during planning and defines the stages and steps a workflow will have, along with who can start a workflow with the playbook.'}</Description>
+            <Description>{'A playbook is an incident template. It is created ahead of time during planning and defines the stages and steps an incident will have, along with who can start an incident with the playbook.'}</Description>
             <Button
                 className='mt-6'
                 onClick={() => props.onNewPlaybook()}

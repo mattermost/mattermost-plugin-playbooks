@@ -20,7 +20,7 @@ import {ErrorPageTypes} from 'src/constants';
 import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
-import WorkflowsIcon from '../assets/icons/workflows_icon';
+import IncidentIcon from '../assets/icons/incident_icon';
 import RightDots from '../assets/right_dots';
 import LeftDots from '../assets/left_dots';
 
@@ -146,7 +146,7 @@ const Backstage: FC = () => {
                     activeClassName={'active'}
                     data-testid='incidentsLHSButton'
                 >
-                    <WorkflowsIcon/>
+                    <IncidentIcon/>
                     <i className='mr-2'/>
                     {'Incidents'}
                 </BackstageTitlebarItem>
