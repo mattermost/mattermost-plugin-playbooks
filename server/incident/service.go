@@ -439,7 +439,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		if err2 != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
-		newAssigneeUsername = newUser.Username
+		newAssigneeUsername = "@" + newUser.Username
 	}
 
 	oldAssigneeUsername := noAssigneeName
@@ -452,7 +452,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("assigned checklist item \"%v\" from \"%v\" to \"%v\"",
+	modifyMessage := fmt.Sprintf("changed assignee of checklist item \"%s\" from \"%s\" to %s",
 		itemToCheck.Title, oldAssigneeUsername, newAssigneeUsername)
 
 	// Send modification message before the actual modification because we need the postID
@@ -461,8 +461,6 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	if err != nil {
 		return err
 	}
-
-	s.telemetry.SetAssignee(incidentID, userID)
 
 	itemToCheck.AssigneeID = assigneeID
 	itemToCheck.AssigneeModified = time.Now()
@@ -473,6 +471,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		return errors.Wrapf(err, "failed to update incident; it is now in an inconsistent state")
 	}
 
+	s.telemetry.SetAssignee(incidentID, userID)
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	return nil
