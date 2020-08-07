@@ -185,7 +185,7 @@ const PlaybookList: FC = () => {
                         <div className='Backstage__header'>
                             <div
                                 data-testid='titlePlaybook'
-                                className='title'
+                                className='title list-title'
                             >
                                 {'Playbooks'}
                                 <div className='light'>

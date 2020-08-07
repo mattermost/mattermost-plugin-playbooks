@@ -147,14 +147,20 @@ export const PresetTemplates: PresetTemplate[] = [
     },
 ];
 
-const Container = styled.div`
+const RootContainer = styled.div`
     display: flex;
     flex-direction: column;
     overflow-x: auto;
     padding: 32px 0;
-    padding-right: 160px;
-    padding-left: 160px;
+    padding-right: 20px;
+    padding-left: 20px;
     background: rgba(var(--center-channel-color-rgb), 0.03);
+`;
+
+const InnerContainer = styled.div`
+    max-width: 1120px;
+    width: 100%;
+    margin: 0 auto;
 `;
 
 const Title = styled.div`
@@ -170,7 +176,7 @@ const TemplateItemContainer = styled.div`
     display: flex;
     flex-direction: column;
     cursor: pointer;
-    width: 198px;
+    min-width: 198px;
 `;
 
 const TemplateItemDiv = styled.div`
@@ -190,24 +196,26 @@ interface Props {
 
 const TemplateSelector: FC<Props> = ({templates = PresetTemplates, onSelect}: Props) => {
     return (
-        <Container>
-            <Title>{'Start a new playbook'}</Title>
-            <TemplateItemDiv>
-                {
-                    templates.map((template: PresetTemplate) => (
-                        <TemplateItem
-                            key={template.title}
-                            title={template.title}
-                            onClick={() => {
-                                onSelect(template);
-                            }}
-                        >
-                            {template.icon}
-                        </TemplateItem>
-                    ))
-                }
-            </TemplateItemDiv>
-        </Container>
+        <RootContainer>
+            <InnerContainer>
+                <Title>{'Start a new playbook'}</Title>
+                <TemplateItemDiv>
+                    {
+                        templates.map((template: PresetTemplate) => (
+                            <TemplateItem
+                                key={template.title}
+                                title={template.title}
+                                onClick={() => {
+                                    onSelect(template);
+                                }}
+                            >
+                                {template.icon}
+                            </TemplateItem>
+                        ))
+                    }
+                </TemplateItemDiv>
+            </InnerContainer>
+        </RootContainer>
     );
 };
 
