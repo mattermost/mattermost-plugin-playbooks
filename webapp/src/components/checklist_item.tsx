@@ -306,6 +306,7 @@ interface ChecklistItemDetailsEditProps {
 export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
     const commandInputRef = useRef(null);
     const [title, setTitle] = useState(checklistItem.title);
+    const [description, setDescription] = useState(checklistItem.description);
     const [command, setCommand] = useState(checklistItem.command);
 
     const submit = () => {
@@ -315,8 +316,8 @@ export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistIt
             setTitle(checklistItem.title);
             return;
         }
-        if (trimmedTitle !== checklistItem.title || trimmedCommand !== checklistItem.command) {
-            onEdit({...checklistItem, ...{title: trimmedTitle, command: trimmedCommand}});
+        if (trimmedTitle !== checklistItem.title || trimmedCommand !== checklistItem.command || description !== checklistItem.description) {
+            onEdit({...checklistItem, ...{title: trimmedTitle, command: trimmedCommand, description}});
         }
     };
 
@@ -379,6 +380,21 @@ export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistIt
                     // the following are required props but aren't used
                     characterLimit={256}
                     onKeyPress={(e: KeyboardEvent) => true}
+                />
+                <textarea
+                    className='form-control'
+                    value={description}
+                    onClick={(e) => e.stopPropagation()}
+                    onBlur={submit}
+                    placeholder={'Step description'}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                            submit();
+                        }
+                    }}
+                    onChange={(e) => {
+                        setDescription(e.target.value);
+                    }}
                 />
             </div>
             <span
