@@ -33,7 +33,7 @@ paths:
             format: int32
         - name: per_page
           in: query
-          description: Defaults to 0
+          description: Defaults to 1000
           required: false
           schema:
             type: integer
@@ -726,6 +726,20 @@ paths:
           schema:
             type: string
             example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: page
+          in: query
+          description: Defaults to 0
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: per_page
+          in: query
+          description: Defaults to 1000
+          required: false
+          schema:
+            type: integer
+            format: int32
         - name: sort
           in: query
           description: Specify the sort field. Defaults to title.
