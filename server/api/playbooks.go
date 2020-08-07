@@ -3,8 +3,10 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -12,17 +14,24 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
+type listPlaybookResult struct {
+	listResult
+	Items []playbook.Playbook `json:"items"`
+}
+
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
+	log             bot.Logger
 }
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
 		pluginAPI:       api,
+		log:             log,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -84,7 +93,7 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+	if !h.hasPermissionsToPlaybook(pbook, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbook on teamID %s",
 			userID,
@@ -114,7 +123,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, oldPlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
+	if !h.hasPermissionsToPlaybook(oldPlaybook, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to update playbook on teamID %s",
 			userID,
@@ -145,9 +154,9 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookToDelete.TeamID, model.PERMISSION_VIEW_TEAM) {
+	if !h.hasPermissionsToPlaybook(playbookToDelete, userID) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to delete a playbook on teamID %s",
+			"userID %s does not have permission to delete playbook on teamID %s",
 			userID,
 			playbookToDelete.TeamID,
 		))
@@ -168,8 +177,9 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 
 func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	teamID := params.Get("teamid")
+	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
+	opts := parseGetPlaybooksOptions(r.URL)
 
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
@@ -185,11 +195,69 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playbooks, err := h.playbookService.GetPlaybooksForTeam(teamID)
+	playbooks, err := h.playbookService.GetPlaybooksForTeam(teamID, opts)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	ReturnJSON(w, &playbooks)
+	allowedPlaybooks := []playbook.Playbook{}
+	for _, pb := range playbooks {
+		if h.hasPermissionsToPlaybook(pb, userID) {
+			allowedPlaybooks = append(allowedPlaybooks, pb)
+		}
+	}
+
+	jsonBytes, err := json.Marshal(listPlaybookResult{
+		listResult: listResult{
+			TotalCount: len(allowedPlaybooks),
+			PageCount:  1,
+			HasMore:    false,
+		},
+		Items: allowedPlaybooks,
+	})
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
+func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, thePlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
+		return false
+	}
+
+	for _, memberID := range thePlaybook.MemberIDs {
+		if memberID == userID {
+			return true
+		}
+	}
+
+	// Fallback to admin role that have access to all playbooks.
+	return h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+}
+
+func parseGetPlaybooksOptions(u *url.URL) playbook.Options {
+	params := u.Query()
+
+	sortField := playbook.SortField(params.Get("sort"))
+	if sortField == "" {
+		sortField = playbook.Title
+	}
+
+	sortDirection := playbook.SortDirection(params.Get("direction"))
+	if sortDirection == "" {
+		sortDirection = playbook.Asc
+	}
+
+	return playbook.Options{
+		Sort:      sortField,
+		Direction: sortDirection,
+	}
 }

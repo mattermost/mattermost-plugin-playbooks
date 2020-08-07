@@ -152,8 +152,8 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 	} else {
 		require.Contains(t, properties, "IncidentID")
 		require.Equal(t, properties["IncidentID"], dummyIncidentID)
-		require.Contains(t, properties, "UserID")
-		require.Equal(t, properties["UserID"], dummyUserID)
+		require.Contains(t, properties, "UserActualID")
+		require.Equal(t, properties["UserActualID"], dummyUserID)
 	}
 }
 
@@ -181,11 +181,8 @@ func TestRudderTelemetry(t *testing.T) {
 		"rename checklist item": {eventRenameChecklistItem, func() {
 			rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID)
 		}},
-		"modify checked checklist item check": {eventCheckChecklistItem, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, true)
-		}},
-		"modify checked checklist item uncheck": {eventUncheckChecklistItem, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, false)
+		"modify checked checklist item": {eventModifyStateChecklistItem, func() {
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen)
 		}},
 		"move checklist item": {eventMoveChecklistItem, func() {
 			rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID)

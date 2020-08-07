@@ -10,25 +10,28 @@ import {
     DroppableProvided,
     DraggableProvided,
 } from 'react-beautiful-dnd';
+import {useSelector} from 'react-redux';
 
-import {Checklist, ChecklistItem} from 'src/types/playbook';
-import {MAX_NAME_LENGTH} from 'src/constants';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {GlobalState} from 'mattermost-redux/types/store';
+
+import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
 import './checklist.scss';
 
 interface Props {
     checklist: Checklist;
-    enableEdit: boolean;
     onChange?: (itemNum: number, checked: boolean) => void;
     onRedirect?: (itemNum: number) => void;
     addItem: (checklistItem: ChecklistItem) => void;
     removeItem: (itemNum: number) => void;
-    editItem: (itemNum: number, newTitle: string) => void;
+    editItem: (itemNum: number, newItem: ChecklistItem) => void;
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+    const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -69,21 +72,18 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
 
     return (
         <div
-            key={checklist.title}
-            className='inner-container'
+            className='checklist-inner-container'
         >
             <div className='title'>
-                {checklist.title}
-                {' '}
-                { enableEdit &&
-                    <a
-                        onClick={() => {
-                            setEditMode(!editMode);
-                        }}
-                    >
-                        <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
-                    </a>
-                }
+                {'Checklist'}
+                <a
+                    className='checkbox-title__edit'
+                    onClick={() => {
+                        setEditMode(!editMode);
+                    }}
+                >
+                    <span className='font-weight--normal'>{editMode ? '(done)' : '(edit)'}</span>
+                </a>
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
@@ -95,8 +95,10 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                             ref={provided.innerRef}
                         >
                             <ChecklistItemDetailsEdit
+                                commandInputId={`commandInput-${rubric.source.index}`}
+                                channelId={channelId}
                                 checklistItem={checklistItems[rubric.source.index]}
-                                onEdit={(editedTo: string) => {
+                                onEdit={(editedTo: ChecklistItem) => {
                                     editItem(rubric.source.index, editedTo);
                                 }}
                                 onRemove={() => {
@@ -133,8 +135,11 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                                                         style={draggableProvided.draggableProps.style}
                                                     >
                                                         <ChecklistItemDetailsEdit
+                                                            commandInputId={`commandInput-${index}`}
+                                                            channelId={channelId}
                                                             checklistItem={checklistItem}
-                                                            onEdit={(editedTo: string) => {
+                                                            suggestionsOnBottom={index < 2}
+                                                            onEdit={(editedTo: ChecklistItem) => {
                                                                 editItem(index, editedTo);
                                                             }}
                                                             onRemove={() => {
@@ -152,12 +157,6 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                                     <ChecklistItemDetails
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
-                                        disabled={!enableEdit}
-                                        onChange={(checked: boolean) => {
-                                            if (onChange) {
-                                                onChange(index, checked);
-                                            }
-                                        }}
                                         onRedirect={() => {
                                             if (onRedirect) {
                                                 onRedirect(index);
@@ -181,7 +180,8 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                         }
                         addItem({
                             title: newValue,
-                            checked: false,
+                            state: ChecklistItemState.Open,
+                            command: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);
@@ -191,7 +191,6 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                         autoFocus={true}
                         type='text'
                         value={newValue}
-                        maxLength={MAX_NAME_LENGTH}
                         className='form-control mt-2'
                         placeholder={'Enter a new item'}
                         onKeyDown={(e) => onEscapeKey(e)}
@@ -200,7 +199,7 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
                     <small className='light mt-1 d-block'>{'Press Enter to Add Item or Escape to Cancel'}</small>
                 </form>
             }
-            {enableEdit && !inputExpanded &&
+            {!inputExpanded &&
                 <div className='IncidentDetails__add-item'>
                     <a
                         href='#'
@@ -216,4 +215,3 @@ export const ChecklistDetails = ({checklist, enableEdit, onChange, onRedirect, a
         </div>
     );
 };
-

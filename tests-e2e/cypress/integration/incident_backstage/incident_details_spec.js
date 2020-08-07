@@ -14,6 +14,14 @@ import users from '../../fixtures/users.json';
 
 describe('Incident Details View in Backstage ', () => {
 	const incident_backstage_1 = "Incident" + Date.now();
+	const dummyPlaybookName = 'Dummy playbook' + Date.now();
+
+	before(() => {
+		// # Create a dummy playbook as non-admin user
+		cy.apiLogin('user-1');
+		cy.createPlaybook('ad-1', dummyPlaybookName);
+	})
+
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
@@ -24,7 +32,7 @@ describe('Incident Details View in Backstage ', () => {
 
 	it('Loads incident details page when clicking on an incident', () => {
 		// # Start an incident with slash command
-		cy.startIncidentWithSlashCommand(incident_backstage_1);
+		cy.startIncidentWithSlashCommand(dummyPlaybookName, incident_backstage_1);
 		
 		// # Launch incident backstage
 		cy.openIncidentBackstage();

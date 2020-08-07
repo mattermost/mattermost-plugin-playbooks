@@ -33,9 +33,12 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
 
-    .incident-user-select__option--is-selected,
-    .incident-user-select__option--is-focused {
+    .incident-user-select__option--is-selected {
         background-color: var(--center-channel-color-08);
+    }
+
+    .incident-user-select__option--is-focused {
+        background-color: var(--center-channel-color-16);
         color: inherit;
     }
 
@@ -63,14 +66,14 @@
 
     .incident-user-select__value-container {
         overflow: visible;
-        padding-left: 2.8rem;
+        padding-left: 3.2rem;
 
         &:before {
             position: absolute;
             left: 0.8rem;
             color: var(--center-channel-color-56);
             content: '\f349';
-            font-family: "mattermosticons";
+            font-family: 'compass-icons', mattermosticons;
             font-style: normal;
             font-weight: normal;
             speak: none;
@@ -79,12 +82,11 @@
             width: 1em;
             margin-right: .2em;
             text-align: center;
-            /* opacity: .8; */
             font-variant: normal;
             text-transform: none;
             line-height: 1em;
             margin-left: .2em;
-            /* font-size: 120%; */
+            font-size: 16px;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }

@@ -5,19 +5,111 @@ import React, {useEffect, FC} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 
+import styled from 'styled-components';
+
+import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
 
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
+import BackstageIncidentDetails from 'src/components/backstage/incidents/incident_details/incident_details';
 import PlaybookList from 'src/components/backstage/playbook/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
 import {ErrorPageTypes} from 'src/constants';
 
 import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
 
-import './backstage.scss';
-import Waves from '../assets/waves';
+import PlaybookIcon from '../assets/icons/playbook_icon';
+import WorkflowsIcon from '../assets/icons/workflows_icon';
+import RightDots from '../assets/right_dots';
+import LeftDots from '../assets/left_dots';
+
+const RightFade = styled.div`
+    position: absolute;
+    top: 85px;
+    right: 0;
+    height: 100%;
+    width: 188px;
+    z-index: 0;
+    background: linear-gradient(270deg, var(--center-channel-bg),transparent 60%);
+    pointer-events: none;
+`;
+
+const LeftFade = styled.div`
+    position: absolute;
+    width: 176px;
+    top: 85px;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--center-channel-bg) 0%, rgba(255, 255, 255, 0) 94.89%);
+    pointer-events: none;
+`;
+
+const BackstageContainer = styled.div`
+    overflow: hidden;
+    background: var(--center-channel-bg);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+`;
+
+const Icon = styled.i`
+    font-size: 18px;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: unset;
+        color: var(--button-bg);
+        fill: var(--button-bg);
+    }
+`;
+
+const BackstageNavbar = styled.div`
+    display: flex;
+    align-items: center;
+    height: 80px;
+    padding: 24px 30px 24px 30px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-family: 'compass-icons';
+    box-shadow: 0px 1px 0px var(--center-channel-color-16);
+
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 600;
+`;
+
+const BackstageTitlebarItem = styled(NavLink)`
+    && {
+        cursor: pointer;
+        color: var(--center-channel-color);
+        fill: var(--center-channel-color);
+        padding: 8px;
+        margin-left: 28px;
+        display: flex;
+        align-items: center;
+
+        &:hover {
+            text-decoration: unset;
+            color: var(--button-bg);
+            fill: var(--button-bg);
+        }
+
+        &.active {
+            color: var(--button-bg);
+            fill: var(--button-bg);
+            text-decoration: unset;
+        }
+    }
+`;
+
+const BackstageBody = styled.div`
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    margin: 0 auto;
+`;
 
 const Backstage: FC = () => {
     useEffect(() => {
@@ -43,37 +135,32 @@ const Backstage: FC = () => {
     };
 
     return (
-        <div className='Backstage'>
-            <div className='Backstage__sidebar'>
-                <div className='Backstage__sidebar__header'>
-                    <div
-                        className='cursor--pointer'
-                        onClick={goToMattermost}
-                    >
-                        <i className='icon-arrow-left mr-2 back-icon'/>
-                        {'Back to Mattermost'}
-                    </div>
-                </div>
-                <div className='menu'>
-                    <NavLink
-                        data-testid='incidentsLHSButton'
-                        to={`${match.url}/incidents`}
-                        className={'menu-title'}
-                        activeClassName={'active'}
-                    >
-                        {'Incidents'}
-                    </NavLink>
-                    <NavLink
-                        data-testid='playbooksLHSButton'
-                        to={`${match.url}/playbooks`}
-                        className={'menu-title'}
-                        activeClassName={'active'}
-                    >
-                        {'Playbooks'}
-                    </NavLink>
-                </div>
-            </div>
-            <div className='content-container'>
+        <BackstageContainer>
+            <BackstageNavbar>
+                <Icon
+                    className='icon-arrow-back-ios back-icon'
+                    onClick={goToMattermost}
+                />
+                <BackstageTitlebarItem
+                    to={`${match.url}/incidents`}
+                    activeClassName={'active'}
+                    data-testid='incidentsLHSButton'
+                >
+                    <WorkflowsIcon/>
+                    <i className='mr-2'/>
+                    {'Incidents'}
+                </BackstageTitlebarItem>
+                <BackstageTitlebarItem
+                    to={`${match.url}/playbooks`}
+                    activeClassName={'active'}
+                    data-testid='playbooksLHSButton'
+                >
+                    <PlaybookIcon/>
+                    <i className='mr-2'/>
+                    {'Playbooks'}
+                </BackstageTitlebarItem>
+            </BackstageNavbar>
+            <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
                         <PlaybookEdit
@@ -92,6 +179,9 @@ const Backstage: FC = () => {
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
                     </Route>
+                    <Route path={`${match.url}/incidents/:incidentId`}>
+                        <BackstageIncidentDetails/>
+                    </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
                     </Route>
@@ -99,9 +189,12 @@ const Backstage: FC = () => {
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
                     </Route>
                 </Switch>
-            </div>
-            <Waves/>
-        </div>
+            </BackstageBody>
+            <RightDots/>
+            <RightFade/>
+            <LeftDots/>
+            <LeftFade/>
+        </BackstageContainer>
     );
 };
 

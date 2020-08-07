@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -20,6 +21,8 @@ import (
 const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
+	"* `/incident advance [list #] [item #]` - Advance an item to the next state. \n" +
+	"* `/incident announce ~[channels]` - Announce the currrent incident in other channels. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -40,9 +43,33 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end",
+		AutoCompleteDesc: "Available commands: start, end, restart, advance, announce",
 		AutoCompleteHint: "[command]",
+		AutocompleteData: getAutocompleteData(),
 	}
+}
+
+func getAutocompleteData() *model.AutocompleteData {
+	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end, restart, advance, announce")
+
+	start := model.NewAutocompleteData("start", "", "Starts a new incident")
+	slashIncident.AddCommand(start)
+
+	end := model.NewAutocompleteData("end", "", "Ends the incident associated with the current channel")
+	slashIncident.AddCommand(end)
+
+	restart := model.NewAutocompleteData("restart", "", "Restarts the incident associated with the current channel")
+	slashIncident.AddCommand(restart)
+
+	checklist := model.NewAutocompleteData("advance", "[list #] [item #]", "Check or uncheck a checklist item.")
+	checklist.AddDynamicListArgument("List of checklist items is downloading from your incident response plugin", "api/v1/incidents/checklist-autocomplete", true)
+	slashIncident.AddCommand(checklist)
+
+	announce := model.NewAutocompleteData("announce", "~[channels]", "Announce the current incident in other channels.")
+	announce.AddNamedTextArgument("channel", "Channel to announce incident in", "~[channel]", "", true)
+	slashIncident.AddCommand(announce)
+
+	return slashIncident
 }
 
 // Runner handles commands.
@@ -92,16 +119,132 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	playbooks, err := r.playbookService.GetPlaybooksForTeam(r.args.TeamId)
+	playbooks, err := r.playbookService.GetPlaybooksForTeam(r.args.TeamId, playbook.Options{Sort: playbook.Title, Direction: playbook.Asc})
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
 
-	if err := r.incidentService.OpenCreateIncidentDialog(r.args.UserId, r.args.TriggerId, postID, clientID, playbooks); err != nil {
+	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooks); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
+}
+
+func (r *Runner) actionAdvance(args []string) {
+	if len(args) != 2 {
+		r.postCommandResponse(helpText)
+		return
+	}
+
+	checklist, err := strconv.Atoi(args[0])
+	if err != nil {
+		r.postCommandResponse("Error parsing the first argument. Must be a number.")
+		return
+	}
+
+	item, err := strconv.Atoi(args[1])
+	if err != nil {
+		r.postCommandResponse("Error parsing the second argument. Must be a number.")
+		return
+	}
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only advance an item from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident id: %v", err))
+		return
+	}
+
+	incidentToModify, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklist, item) {
+		r.postCommandResponse("Invalid checklist item indices.")
+		return
+	}
+
+	itemToModify := incidentToModify.Playbook.Checklists[checklist].Items[item]
+	newState := ""
+	switch itemToModify.State {
+	case playbook.ChecklistItemStateInProgress:
+		newState = playbook.ChecklistItemStateClosed
+	case playbook.ChecklistItemStateOpen:
+		if itemToModify.Command != "" {
+			newState = playbook.ChecklistItemStateClosed
+		} else {
+			newState = playbook.ChecklistItemStateInProgress
+		}
+	default:
+		r.postCommandResponse("Not in a state with a next step.")
+		return
+	}
+
+	err = r.incidentService.ModifyCheckedState(incidentID, r.args.UserId, newState, checklist, item)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error modifying checklist item state: %v", err))
+		return
+	}
+}
+
+func (r *Runner) actionAnnounce(args []string) {
+	if len(args) < 1 {
+		r.postCommandResponse(helpText)
+		return
+	}
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only announce from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving commander user: %v", err))
+		return
+	}
+
+	incidentChannel, err := r.pluginAPI.Channel.Get(currentIncident.PrimaryChannelID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident channel: %v", err))
+		return
+	}
+
+	for _, channelarg := range args {
+		if err := r.announceChannel(strings.TrimPrefix(channelarg, "~"), commanderUser.Username, incidentChannel.Name); err != nil {
+			r.postCommandResponse("Error announcing to: " + channelarg)
+		}
+	}
+}
+
+func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
+	targetChannel, err := r.pluginAPI.Channel.GetByName(r.args.TeamId, targetChannelName, false)
+	if err != nil {
+		return err
+	}
+
+	if _, err := r.poster.PostMessage(targetChannel.Id, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Runner) actionEnd() {
@@ -127,11 +270,43 @@ func (r *Runner) actionEnd() {
 	err = r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
 
 	switch {
+	case errors.Is(err, incident.ErrIncidentNotActive):
+		r.postCommandResponse("This incident has already been closed.")
+		return
+	case err != nil:
+		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		return
+	}
+}
+
+func (r *Runner) actionRestart() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only restart an incident from within the incident's channel.")
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	if err = permissions.CheckHasPermissionsToIncidentChannel(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
+		}
+		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		return
+	}
+
+	err = r.incidentService.RestartIncident(incidentID, r.args.UserId)
+
+	switch {
 	case errors.Is(err, incident.ErrNotFound):
 		r.postCommandResponse("This channel is not associated with an incident.")
 		return
-	case errors.Is(err, incident.ErrIncidentNotActive):
-		r.postCommandResponse("This incident has already been closed.")
+	case errors.Is(err, incident.ErrIncidentActive):
+		r.postCommandResponse("This incident is already active.")
 		return
 	case err != nil:
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
@@ -167,14 +342,14 @@ func (r *Runner) actionSelftest(args []string) {
 		TeamID: r.args.TeamId,
 		Checklists: []playbook.Checklist{
 			{
-				Title: "Checklist",
+				Title: "Identification",
 				Items: []playbook.ChecklistItem{
 					{
 						Title: "Create Jira ticket",
 					},
 					{
-						Title:   "Add on-call team members",
-						Checked: true,
+						Title: "Add on-call team members",
+						State: playbook.ChecklistItemStateClosed,
 					},
 					{
 						Title: "Identify blast radius",
@@ -188,12 +363,22 @@ func (r *Runner) actionSelftest(args []string) {
 					{
 						Title: "Identify blast Analyze data logs",
 					},
+				},
+			},
+			{
+				Title: "Resolution",
+				Items: []playbook.ChecklistItem{
 					{
 						Title: "Align on plan of attack",
 					},
 					{
 						Title: "Confirm resolution",
 					},
+				},
+			},
+			{
+				Title: "Analysis",
+				Items: []playbook.ChecklistItem{
 					{
 						Title: "Writeup root-cause analysis",
 					},
@@ -298,19 +483,19 @@ func (r *Runner) actionSelftest(args []string) {
 	}
 
 	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{
-		Title:   "I should not say this.",
-		Checked: true,
+		Title: "I should not say this.",
+		State: playbook.ChecklistItemStateClosed,
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, true, 0, 0); err != nil {
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, playbook.ChecklistItemStateClosed, 0, 0); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, false, 0, 2); err != nil {
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, playbook.ChecklistItemStateOpen, 0, 2); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
@@ -321,7 +506,7 @@ func (r *Runner) actionSelftest(args []string) {
 	}
 
 	if err := r.incidentService.RenameChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
-		"I should say this! and be unchecked and first!"); err != nil {
+		"I should say this! and be unchecked and first!", ""); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
@@ -384,6 +569,12 @@ func (r *Runner) Execute() error {
 		r.actionStart(parameters)
 	case "end":
 		r.actionEnd()
+	case "advance":
+		r.actionAdvance(parameters)
+	case "restart":
+		r.actionRestart()
+	case "announce":
+		r.actionAnnounce(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "st":

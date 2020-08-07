@@ -24,11 +24,19 @@ import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
 describe('Incident Creation', () => {
+	const dummyPlaybookName = 'Dummy playbook' + Date.now();
+
+	before(() => {
+		// # Create a dummy playbook as non-admin user
+		cy.apiLogin('user-1');
+		cy.createPlaybook('ad-1', dummyPlaybookName);
+	})
+
 	beforeEach(() => {
 		// # Login as non-admin user
 		cy.apiLogin('user-1');
 
-        //TODO:- afteEach: delete all incidents here
+        //TODO:- afterEach: delete all incidents and playbooks here
 	});
 
 	// Test Plan for v0.1 #18, 23, 28 Incident can be started while viewing a public channel
@@ -38,7 +46,7 @@ describe('Incident Creation', () => {
 
 		// * Verify that incident can be started with slash command
 		const newIncident1 = "Public " + Date.now();
-		cy.startIncidentWithSlashCommand(newIncident1);
+		cy.startIncidentWithSlashCommand(dummyPlaybookName, newIncident1);
 		cy.verifyIncidentCreated(newIncident1);
 	});
 
@@ -46,7 +54,7 @@ describe('Incident Creation', () => {
 		// * Verify that incident can be started from incident RHS
 		cy.visit('/ad-1/channels/off-topic');
 		const newIncident2 = "Public 2 - " + Date.now();
-		cy.startIncidentFromRHS(newIncident2);
+		cy.startIncidentFromRHS(dummyPlaybookName, newIncident2);
 		cy.verifyIncidentCreated(newIncident2);
 	});
 
@@ -54,7 +62,7 @@ describe('Incident Creation', () => {
 		// * Verify that incident can be started from post menu
 		cy.visit('/ad-1/channels/off-topic');
 		const newIncident3 = "Public 3 - " + Date.now();
-		cy.startIncidentFromPostMenu(newIncident3);
+		cy.startIncidentFromPostMenu(dummyPlaybookName, newIncident3);
 		cy.verifyIncidentCreated(newIncident3);
 	});
 
@@ -65,7 +73,7 @@ describe('Incident Creation', () => {
 		
 		// * Verify that incident can be started with slash command
 		const newIncident1 = "Private " + Date.now();
-		cy.startIncidentWithSlashCommand(newIncident1);
+		cy.startIncidentWithSlashCommand(dummyPlaybookName, newIncident1);
 		cy.verifyIncidentCreated(newIncident1);
 	});
 
@@ -75,7 +83,7 @@ describe('Incident Creation', () => {
 		
 		// * Verify that incident can be started from incident RHS
 		const newIncident2 = "Private 2 - " + Date.now();
-		cy.startIncidentFromRHS(newIncident2);
+		cy.startIncidentFromRHS(dummyPlaybookName, newIncident2);
 		cy.verifyIncidentCreated(newIncident2);
 	});
 
@@ -85,36 +93,36 @@ describe('Incident Creation', () => {
 		
 		// * Verify that incident can be started from post menu
 		const newIncident3 = "Private 3 - " + Date.now();
-		cy.startIncidentFromPostMenu(newIncident3);
+		cy.startIncidentFromPostMenu(dummyPlaybookName, newIncident3);
 		cy.verifyIncidentCreated(newIncident3);
 	});
 
 	// Test Plan for v0.1 #20, 25, 30 - Incident can be started while viewing a group message channel
 	it('Can be started with slash command while viewing a group message channel', () => {
 		// # Create a GM channel and visit channel
-		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells']);
+		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells'], 'ad-1');
 		
 		// * Verify that incident can be started with slash command
 		const gm1 = "GM 1 - " + Date.now();
-		cy.startIncidentWithSlashCommand(gm1);
+		cy.startIncidentWithSlashCommand(dummyPlaybookName, gm1);
 		cy.verifyIncidentCreated(gm1);
 	});
 
 	it('Can be started from RHS while viewing a group message channel', () => {
-		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells', 'aaron.peterson']);
+		cy.apiCreateGroupChannel(['anne.stone', 'diana.wells', 'aaron.peterson'], 'ad-1');
 
 		// * Verify that incident can be started from incident RHS
 		const gm2 = "GM 2 - " + Date.now();
-		cy.startIncidentFromRHS(gm2);
+		cy.startIncidentFromRHS(dummyPlaybookName, gm2);
 		cy.verifyIncidentCreated(gm2);
 	});
 
 	it('Can be started from post menu while viewing a group message channel', () => {
-		cy.apiCreateGroupChannel(['anne.stone', 'aaron.peterson']);
+		cy.apiCreateGroupChannel(['anne.stone', 'aaron.peterson'], 'ad-1');
 		
 		// * Verify that incident can be started from post menu
 		const gm3 = "GM 3 - " + Date.now();
-		cy.startIncidentFromPostMenu(gm3);
+		cy.startIncidentFromPostMenu(dummyPlaybookName, gm3);
 		cy.verifyIncidentCreated(gm3);
 	});
 
@@ -126,7 +134,7 @@ describe('Incident Creation', () => {
 		
 		// * Start incident with slash command
 		const dm1 = "DM 1 - " + Date.now();
-		cy.startIncidentWithSlashCommand(dm1);
+		cy.startIncidentWithSlashCommand(dummyPlaybookName, dm1);
 		cy.verifyIncidentCreated(dm1);
 	});
 
@@ -135,7 +143,7 @@ describe('Incident Creation', () => {
 		cy.startDirectMessage('douglas.daniels');
 		// * Start incident from RHS
 		const dm2 = "DM 2 - " + Date.now();
-		cy.startIncidentFromRHS(dm2);
+		cy.startIncidentFromRHS(dummyPlaybookName, dm2);
 		cy.verifyIncidentCreated(dm2);
 	});
 
@@ -144,7 +152,7 @@ describe('Incident Creation', () => {
 		cy.startDirectMessage('emily.meyer');
 		// * Start incident from post menu
 		const dm3 = "DM 3 - " + Date.now();
-		cy.startIncidentFromPostMenu(dm3);
+		cy.startIncidentFromPostMenu(dummyPlaybookName, dm3);
 		cy.verifyIncidentCreated(dm3);
 	});
 
@@ -154,7 +162,7 @@ describe('Incident Creation', () => {
 		cy.startDirectMessage('Victor Welch', true, 'user-1');
 		// * Start incident with slash command
 		const dm_self_1 = "DM self 1 - " + Date.now();
-		cy.startIncidentWithSlashCommand(dm_self_1);
+		cy.startIncidentWithSlashCommand(dummyPlaybookName, dm_self_1);
 		cy.verifyIncidentCreated(dm_self_1);
 	});
 });

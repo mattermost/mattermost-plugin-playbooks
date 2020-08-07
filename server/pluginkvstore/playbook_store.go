@@ -12,8 +12,8 @@ import (
 const (
 	// PlaybookKey is the key for individual playbooks. Only exported for testing.
 	PlaybookKey = keyVersionPrefix + "playbook_"
-	// IndexKey is the key for the playbook index. Only exported for testing.
-	IndexKey = keyVersionPrefix + "playbookindex"
+	// PlaybookIndexKey is the key for the playbook index. Only exported for testing.
+	PlaybookIndexKey = keyVersionPrefix + "playbookindex"
 )
 
 // PlaybookStore is a kvs store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
@@ -43,7 +43,7 @@ func (i *playbookIndex) clone() playbookIndex {
 
 func (p *PlaybookStore) getIndex() (playbookIndex, error) {
 	var index playbookIndex
-	if err := p.kvAPI.Get(IndexKey, &index); err != nil {
+	if err := p.kvAPI.Get(PlaybookIndexKey, &index); err != nil {
 		return index, errors.Wrap(err, "unable to get playbook index")
 	}
 
@@ -69,7 +69,7 @@ func (p *PlaybookStore) addToIndex(playbookID string) error {
 		return newIndex, nil
 	}
 
-	if err := p.kvAPI.SetAtomicWithRetries(IndexKey, addID); err != nil {
+	if err := p.kvAPI.SetAtomicWithRetries(PlaybookIndexKey, addID); err != nil {
 		return errors.Wrap(err, "failed to set playbookIndex atomically")
 	}
 	return nil
@@ -97,7 +97,7 @@ func (p *PlaybookStore) removeFromIndex(playbookID string) error {
 		return newIndex, nil
 	}
 
-	if err := p.kvAPI.SetAtomicWithRetries(IndexKey, removeID); err != nil {
+	if err := p.kvAPI.SetAtomicWithRetries(PlaybookIndexKey, removeID); err != nil {
 		return errors.Wrap(err, "failed to set playbookIndex atomically")
 	}
 	return nil

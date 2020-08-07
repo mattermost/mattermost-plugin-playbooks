@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Playbook, isPlaybook, emptyPlaybook} from './playbook';
+import {Playbook, isPlaybook} from './playbook';
 
 export interface Incident {
     id: string;
@@ -19,11 +19,14 @@ export interface Incident {
     team_name: string;
     num_members: number;
     total_posts: number;
+    active_stage: number;
 }
 
 export interface FetchIncidentsReturn {
-    incidents: Incident[];
     total_count: number;
+    page_count: number;
+    has_more: boolean;
+    items: Incident[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

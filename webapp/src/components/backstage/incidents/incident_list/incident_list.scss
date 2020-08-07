@@ -1,85 +1,77 @@
 $font-family: Open Sans;
 
-.Backstage {
-    .IncidentProfileButton {
-        font-weight: 600;
-        height: 40px;
-        padding: 0 4px 0 12px;
-        border-radius: 4px;
-    }
+.IncidentProfileButton {
+    font-weight: 600;
+    height: 40px;
+    padding: 0 4px 0 12px;
+    border-radius: 4px;
+}
 
-    .IncidentList {
-        font-family: $font-family;
-        color: var(--center-channel-color-90);
+.IncidentList {
+    font-family: $font-family;
+    color: var(--center-channel-color-90);
 
-        .sortable-col-header {
+    .list {
+        .incident-item {
+            display: flex;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            align-items: center;
+            margin: 0;
+            border-bottom: 1px solid var(--center-channel-color-16);
             cursor: pointer;
-        }
 
-        .list {
-            padding: 2rem 6rem;
+            &:hover {
+                background: var(--center-channel-color-04);
+            }
 
-            .incident-item {
-                display: flex;
-                padding-top: 15px;
-                padding-bottom: 15px;
-                align-items: center;
-                margin: 0;
-                border-bottom: 1px solid var(--center-channel-color-16);
-                cursor: pointer;
+            .badge {
+                display: inline-flex;
+                border-radius: 4px;
+                padding: 12px 8px 12px 8px;
+                color: var(--button-color);
+                background: var(--center-channel-color-56);
 
-                &:hover {
-                    background: var(--center-channel-color-04);
-                }
-
-                .badge {
-                    display: inline-flex;
-                    border-radius: 4px;
-                    padding: 12px 8px 12px 8px;
-                    color: var(--sidebar-text);
-                    background: var(--center-channel-color-56);
-
-                    &.ongoing {
-                        background-color: var(--button-bg);
-                    }
-                }
-
-                &__title {
-                    display: flex;
-
-                    > span {
-                        font-weight: 600;
-                        text-overflow: ellipsis;
-                        white-space: nowrap;
-                        overflow: hidden;
-                    }
+                &.ongoing {
+                    background-color: var(--button-bg);
                 }
             }
 
-            .pagination-row {
-                margin-top: 10px;
-                font-size: 14px;
+            &__title {
+                display: flex;
 
-                button {
-                    font-weight: bold;
+                > span {
+                    font-weight: 600;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    overflow: hidden;
                 }
+            }
+        }
 
-                .count {
-                    padding-top: 8px;
-                    color: var(--center-channel-color-56)
-                }
+        .pagination-row {
+            margin-top: 10px;
+            font-size: 14px;
+
+            button {
+                font-weight: bold;
+            }
+
+            .count {
+                padding-top: 8px;
+                color: var(--center-channel-color-56)
             }
         }
     }
+}
 
-    .IncidentList__filters {
-        display: flex;
-        align-items: center;
-        margin: 0 -4px 20px;
+.IncidentList__filters {
+    display: flex;
+    align-items: center;
+    margin: 0 -4px 20px;
 
-        > div {
-            padding: 0 4px;
-        }
+    > div {
+        padding: 0 4px;
     }
 }
 
@@ -87,7 +79,7 @@ $font-family: Open Sans;
     display: flex;
     font-size: 2.8rem;
     line-height: 3.6rem;
-    padding: 4rem 6rem 3.2rem;
+    padding: 4rem 0 3.2rem;
     flex-direction: row;
     width: 100%;
 

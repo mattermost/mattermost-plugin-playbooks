@@ -1,20 +1,27 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
-import Scrollbars from 'react-custom-scrollbars';
-
+import React, {FC, useEffect, useState} from 'react';
 import {useDispatch} from 'react-redux';
+import ReactSelect, {ActionMeta, OptionTypeBase, StylesConfig} from 'react-select';
+import Scrollbars from 'react-custom-scrollbars';
+import styled from 'styled-components';
+import moment from 'moment';
 
-import {fetchUsersInChannel, setCommander, checkItem, uncheckItem, clientAddChecklistItem, clientRenameChecklistItem, clientRemoveChecklistItem, clientReorderChecklist} from 'src/client';
-import {ChecklistDetails} from 'src/components/checklist';
+import {
+    fetchUsersInChannel,
+    setCommander,
+    setActiveStage,
+    setChecklistItemState,
+} from 'src/client';
+import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {Incident} from 'src/types/incident';
-import {Checklist, ChecklistItem} from 'src/types/playbook';
+import {Checklist, ChecklistItem, emptyChecklist, ChecklistItemState} from 'src/types/playbook';
 
-import ProfileSelector from 'src/components/profile_selector';
+import ProfileSelector from 'src/components/profile/profile_selector';
 
 import {isMobile} from 'src/mobile';
-import {toggleRHS, endIncident} from 'src/actions';
+import {toggleRHS, endIncident, restartIncident} from 'src/actions';
 import './incident_details.scss';
 
 interface Props {
@@ -45,6 +52,79 @@ function renderThumbVertical(props: any): JSX.Element {
         />);
 }
 
+interface Option {
+    value: number;
+    label: string;
+}
+
+interface StageSelectorProps {
+    stages: Checklist[];
+    selectedStage: number;
+    activeStage: number;
+    onStageSelected: (option: Option, action: ActionMeta<OptionTypeBase>) => void;
+    onStageActivated: () => void;
+}
+
+const optionStyles: StylesConfig = {
+    option: (provided) => {
+        return {
+            ...provided,
+            wordBreak: 'break-word',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+        };
+    },
+};
+
+const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
+    const isActive = (stageIdx: number) => {
+        return stageIdx === props.activeStage;
+    };
+
+    const toOption = (stageIdx: number) => {
+        return {
+            value: stageIdx,
+            label: props.stages[stageIdx].title + (isActive(stageIdx) ? ' (Active)' : ''),
+        };
+    };
+
+    return (
+        <React.Fragment>
+            <div className='title'>
+                {'Stage'}
+                {!isActive(props.selectedStage) &&
+                <a
+                    onClick={props.onStageActivated}
+                    className='stage-title__set-active'
+                >
+                    <span className='font-weight--normal'>{'(Set as active stage)'}</span>
+                </a>
+                }
+            </div>
+            <ReactSelect
+                options={props.stages.map((_, idx) => toOption(idx))}
+                value={toOption(props.selectedStage)}
+                defaultValue={toOption(props.selectedStage)}
+                onChange={(option, action) => props.onStageSelected(option as Option, action as ActionMeta<OptionTypeBase>)}
+                className={'incident-stage-select'}
+                classNamePrefix={'incident-stage-select'}
+                styles={optionStyles}
+            />
+        </React.Fragment>
+    );
+};
+
+const Duration = styled.div`
+    padding-top: .5em;
+    color: var(--center-channel-color-80);
+`;
+
+const DurationTime = styled.span`
+    color: var(--center-channel-color);
+    font-weight: 600;
+`;
+
 const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -62,6 +142,71 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
             console.log(response.error); // eslint-disable-line no-console
         }
     };
+
+    const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(props.incident.active_stage);
+
+    const checklists = props.incident.playbook.checklists || [];
+    const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
+
+    const onStageSelected = (option: Option, action: ActionMeta<OptionTypeBase>) => {
+        if (action.action === 'clear') {
+            return;
+        }
+
+        setSelectedChecklistIndex(option.value);
+    };
+
+    const setCurrentStageAsActive = () => {
+        setActiveStage(props.incident.id, selectedChecklistIndex);
+    };
+
+    let changeStateButton = (
+        <button
+            className='btn btn-primary'
+            onClick={() => dispatch(endIncident())}
+        >
+            {'End Incident'}
+        </button>
+    );
+    if (!props.incident.is_active) {
+        changeStateButton = (
+            <button
+                className='btn btn-primary'
+                onClick={() => dispatch(restartIncident())}
+            >
+                {'Restart Incident'}
+            </button>
+        );
+    }
+
+    const [now, setNow] = useState(moment());
+    useEffect(() => {
+        const tick = () => {
+            setNow(moment());
+        };
+        const quarterSecond = 250;
+        const timerId = setInterval(tick, quarterSecond);
+
+        return () => {
+            clearInterval(timerId);
+        };
+    }, []);
+
+    const start = moment.unix(props.incident.created_at);
+    const end = (props.incident.ended_at && moment.unix(props.incident.ended_at)) || now;
+
+    const duration = moment.duration(end.diff(start));
+    let durationString = '';
+    if (duration.days() > 0) {
+        durationString += duration.days() + 'd ';
+    }
+    if (duration.hours() > 0) {
+        durationString += duration.hours() + 'h ';
+    }
+    if (duration.minutes() > 0) {
+        durationString += duration.minutes() + 'm ';
+    }
+    durationString += duration.seconds() + 's';
 
     return (
         <React.Fragment>
@@ -84,47 +229,46 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             onSelectedChange={onSelectedProfileChange}
                         />
                     </div>
-
-                    {props.incident.playbook.checklists?.map((checklist: Checklist, index: number) => (
-                        <ChecklistDetails
-                            checklist={checklist}
-                            enableEdit={true}
-                            key={checklist.title + index}
-                            onChange={(itemNum: number, checked: boolean) => {
-                                if (checked) {
-                                    checkItem(props.incident.id, index, itemNum);
-                                } else {
-                                    uncheckItem(props.incident.id, index, itemNum);
-                                }
-                            }}
-                            onRedirect={() => {
-                                if (isMobile()) {
-                                    dispatch(toggleRHS());
-                                }
-                            }}
-                            addItem={(checklistItem: ChecklistItem) => {
-                                clientAddChecklistItem(props.incident.id, index, checklistItem);
-                            }}
-                            removeItem={(itemNum: number) => {
-                                clientRemoveChecklistItem(props.incident.id, index, itemNum);
-                            }}
-                            editItem={(itemNum: number, newTitle: string) => {
-                                clientRenameChecklistItem(props.incident.id, index, itemNum, newTitle);
-                            }}
-                            reorderItems={(itemNum: number, newPosition: number) => {
-                                clientReorderChecklist(props.incident.id, index, itemNum, newPosition);
-                            }}
+                    <div className='inner-container'>
+                        <StageSelector
+                            stages={checklists}
+                            selectedStage={selectedChecklistIndex}
+                            activeStage={props.incident.active_stage}
+                            onStageSelected={onStageSelected}
+                            onStageActivated={setCurrentStageAsActive}
                         />
-                    ))}
+                        <Duration>
+                            {'Duration: '}
+                            <DurationTime>{durationString}</DurationTime>
+                        </Duration>
+                    </div>
+                    <div
+                        className='checklist-inner-container'
+                    >
+                        <div className='title'>
+                            {'Checklist'}
+                        </div>
+                        <div className='checklist'>
+                            {selectedChecklist.items.map((checklistItem: ChecklistItem, index: number) => (
+                                <ChecklistItemDetails
+                                    key={checklistItem.title + index}
+                                    checklistItem={checklistItem}
+                                    onChange={(newState: ChecklistItemState) => {
+                                        setChecklistItemState(props.incident.id, selectedChecklistIndex, index, newState);
+                                    }}
+                                    onRedirect={() => {
+                                        if (isMobile()) {
+                                            dispatch(toggleRHS());
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </Scrollbars>
             <div className='footer-div'>
-                <button
-                    className='btn btn-primary'
-                    onClick={() => dispatch(endIncident())}
-                >
-                    {'End Incident'}
-                </button>
+                {changeStateButton}
             </div>
         </React.Fragment>
     );

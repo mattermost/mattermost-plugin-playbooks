@@ -1,20 +1,67 @@
 $font-family: Open Sans;
 
+
+// Checklist component
+.checklist-inner-container {
+    display: flex;
+    flex-direction: column;
+
+    .title {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        padding: 0 0 8px;
+
+        .checkbox-title__edit {
+            width: 70px;
+            padding: 0 5px 0 5px;
+        }
+
+        &:hover {
+            .checkbox-container__close {
+                opacity: 1;
+            }
+        }
+    }
+}
+
 // Checkbox component
 .checkbox-container {
     align-items: center;
     display: flex;
     padding: 0.6rem 0;
 
+    live {
+        height: 35px;
+    }
+
     &:first-child {
         padding-top: 0.2rem;
     }
 
-    // Checkbox
-    input[type="checkbox"] {
-        position: absolute;
-        opacity: 0;
-        display: hidden;
+    button {
+        width: 53px;
+        height: 29px;
+        border: 1px solid #166DE0;
+        box-sizing: border-box;
+        border-radius: 4px;
+        font-family: Open Sans;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 17px;
+        text-align: center;
+        background: #ffffff;
+        color: #166DE0;
+        cursor: pointer;
+        margin-right: 13px;
+    }
+
+    button:disabled {
+        border: 0px;
+        color: var(--button-color);
+        background: var(--center-channel-color-56);
+        cursor: default;
     }
 
     &:hover {
@@ -29,81 +76,101 @@ $font-family: Open Sans;
 
     .timestamp {
         color: var(--center-channel-color-56);
+        flex-shrink: 0;
     }
 
-    .checkbox-container__close {
-        cursor: pointer;
-        opacity: 0;
-        width: 3.2rem;
-        height: 3.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        color: var(--error-text);
-
-        &:hover {
-            opacity: 1;
-        }
-    }
-
-    input[type="checkbox"] + label {
-        margin: 0;
-        position: relative;
-        cursor: pointer;
-    }
-
-    input[type="checkbox"]:disabled + label {
-        cursor: default;
-    }
-
-    input[type="checkbox"] + label:before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
+    input[type="checkbox"] {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
         width: 20px;
+        min-width: 20px;
         height: 20px;
-
         background: #ffffff;
         border: 1px solid #dddddd;
-        box-sizing: border-box;
         border-radius: 4px;
+        margin: 0;
+        cursor: pointer;
+        margin-left: 18px;
+        margin-right: 28px;
     }
 
-    input[type="checkbox"]:checked + label:before {
+    input[type="checkbox"]:checked {
         background: #2f80ed;
         border: 1px solid #2f80ed;
         box-sizing: border-box;
     }
 
-    input[type="checkbox"] + label:after {
-        /* Font Awesome */
-        font-family: mattermosticons;
+    input[type="checkbox"]::before {
+        font-family: 'compass-icons', mattermosticons;
         text-rendering: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        content: "\f12c"; /* icon-check */
+        content: "\f12c";
 
-        font-size: 11px;
+        font-size: 12px;
         position: absolute;
-        top: 3px;
-        left: 4px;
+        left: -1.5rem;
+        top: 0.3rem;
         font-weight: bold;
         color: #ffffff;
+        margin-left: 18px;
 
         transition: transform 0.15s;
         transform: scale(0) rotate(90deg);
     }
 
-    input[type="checkbox"]:checked + label:after {
+    input[type="checkbox"]:checked::before {
         transform: scale(1) rotate(0deg);
     }
 
     label {
-        padding: 0 8px 0 32px;
         font-weight: normal;
         word-break: break-word;
         display: inline;
+        margin: 0;
+        margin-right: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-grow: 1;
+    }
+}
+
+// Used by ChecklistEditor and ChecklistItemDetailsEdit components
+.checkbox-container__close {
+    cursor: pointer;
+    opacity: 0;
+    width: 3.2rem;
+    height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--error-text);
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.checkbox-textboxes {
+    width: 100%;
+    .form-control {
+        margin-top: 5px;
+        min-width: 320px;
+    }
+
+    .custom-textarea {
+        border-radius: 2px;
+        border: 1px solid var(--center-channel-color-16);
+        min-height: unset;
+        height: 34px;
+
+        &:focus {
+            border-radius: 2px;
+            border: 1px solid var(--center-channel-color-40);
+            padding: 6px 12px;
+        }
     }
 }

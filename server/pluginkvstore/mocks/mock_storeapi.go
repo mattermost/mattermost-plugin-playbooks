@@ -33,6 +33,20 @@ func (m *MockStoreAPI) EXPECT() *MockStoreAPIMockRecorder {
 	return m.recorder
 }
 
+// DriverName mocks base method
+func (m *MockStoreAPI) DriverName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriverName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// DriverName indicates an expected call of DriverName
+func (mr *MockStoreAPIMockRecorder) DriverName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriverName", reflect.TypeOf((*MockStoreAPI)(nil).DriverName))
+}
+
 // GetMasterDB mocks base method
 func (m *MockStoreAPI) GetMasterDB() (*sql.DB, error) {
 	m.ctrl.T.Helper()

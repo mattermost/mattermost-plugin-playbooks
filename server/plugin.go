@@ -120,10 +120,9 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
-
 	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
 
-	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient)
+	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot)
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 

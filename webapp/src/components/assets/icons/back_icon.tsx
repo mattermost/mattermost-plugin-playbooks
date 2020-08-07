@@ -3,7 +3,9 @@
 
 import React from 'react';
 
-const BackIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['button']>): JSX.Element => {
+import styled from 'styled-components';
+
+export const BackIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['button']>): JSX.Element => {
     return (
         <button
             {...props}
@@ -26,4 +28,10 @@ const BackIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['button']>)
     );
 };
 
-export default BackIcon;
+export const BackstageHeaderBackIcon = styled(BackIcon)`
+    margin-right: 8px;
+    background-color: transparent;
+    border: none;
+    color: var(--center-channel-color);
+    fill:  var(--center-channel-color);
+`;

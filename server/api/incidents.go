@@ -20,6 +20,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
+type listIncidentResult struct {
+	listResult
+	Items []incident.Incident `json:"items"`
+}
+
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
@@ -48,6 +53,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -55,7 +61,9 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.permissionsToIncidentChannelRequired)
+	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
@@ -70,8 +78,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
 	checklistItem.HandleFunc("", handler.itemRename).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/check", handler.check).Methods(http.MethodPut)
-	checklistItem.HandleFunc("/uncheck", handler.uncheck).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 
 	return handler
 }
@@ -114,6 +121,51 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 	ReturnJSON(w, &newIncident)
 }
 
+func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	oldIncident, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if !h.hasPermissionsToOrPublic(oldIncident.PrimaryChannelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
+		return
+	}
+
+	var updates incident.UpdateOptions
+	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		HandleError(w, errors.Wrapf(err, "unable to decode payload"))
+		return
+	}
+
+	updatedIncident := oldIncident
+
+	if updates.ActiveStage != nil {
+		updatedIncident, err = h.incidentService.ChangeActiveStage(oldIncident.ID, userID, *updates.ActiveStage)
+		if err != nil {
+			HandleError(w, errors.Wrap(err, "unable to change active stage"))
+			return
+		}
+	}
+
+	jsonBytes, err := json.Marshal(updatedIncident)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
 // the create incident dialog.
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
@@ -131,11 +183,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	name := request.Submission[incident.DialogFieldNameKey].(string)
-
-	var playbookTemplate *playbook.Playbook
-	if playbookID, hasPlaybookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string); hasPlaybookID {
-		playbookTemplate = &playbook.Playbook{ID: playbookID}
-	}
+	playbookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string)
 
 	payloadIncident := incident.Incident{
 		Header: incident.Header{
@@ -144,7 +192,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			Name:            name,
 		},
 		PostID:   state.PostID,
-		Playbook: playbookTemplate,
+		Playbook: &playbook.Playbook{ID: playbookID},
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
@@ -153,6 +201,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 		if errors.Is(err, incident.ErrChannelDisplayNameInvalid) {
 			msg = "The channel name is invalid or too long. Please use a valid name with fewer than 64 characters."
+		} else if errors.Is(err, incident.ErrPermission) {
+			msg = err.Error()
 		}
 
 		if msg != "" {
@@ -213,7 +263,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	public := true
-	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" && newIncident.Playbook.ID != "-1" {
+	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" {
 		pb, err := h.playbookService.Get(newIncident.Playbook.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
@@ -224,13 +274,13 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
-	permissionMessage := "You don't have permissions to create a private channel."
+	permissionMessage := "You are not able to create a private channel"
 	if public {
 		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
-		permissionMessage = "You don't have permission to create a public channel."
+		permissionMessage = "You are not able to create a public channel"
 	}
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, newIncident.TeamID, permission) {
-		return nil, errors.New(permissionMessage)
+		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
 	}
 
 	return h.incidentService.CreateIncident(&newIncident, public)
@@ -241,6 +291,10 @@ func (h *IncidentHandler) hasPermissionsToOrPublic(channelID, userID string) boo
 	if err != nil {
 		h.log.Warnf("Unable to get channel to determine permissions: %v", err)
 		return false
+	}
+
+	if h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
+		return true
 	}
 
 	if h.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
@@ -273,7 +327,19 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(results)
+	// To return an empty array as opposed to null
+	if results.Items == nil {
+		results.Items = []incident.Incident{}
+	}
+
+	jsonBytes, err := json.Marshal(listIncidentResult{
+		listResult: listResult{
+			TotalCount: results.TotalCount,
+			PageCount:  results.PageCount,
+			HasMore:    results.HasMore,
+		},
+		Items: results.Items,
+	})
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -322,19 +388,15 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.CheckHasPermissionsToIncidentChannel(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
-			return
-		}
+	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
-	if err != nil {
-		HandleError(w, err)
+	if !h.hasPermissionsToOrPublic(incidentToGet.PrimaryChannelID, userID) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
 	}
 
@@ -401,6 +463,21 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	err := h.incidentService.EndIncident(vars["id"], userID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// restartIncident handles the /incidents/{id}/restart api endpoint.
+func (h *IncidentHandler) restartIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	err := h.incidentService.RestartIncident(vars["id"], userID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -502,8 +579,8 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	channelIds := make([]string, 0, len(incidents.Incidents))
-	for _, incident := range incidents.Incidents {
+	channelIds := make([]string, 0, len(incidents.Items))
+	for _, incident := range incidents.Items {
 		channelIds = append(channelIds, incident.PrimaryChannelID)
 	}
 
@@ -553,22 +630,63 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
-func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, check bool) {
+// getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
+func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(query.Get("channel_id"))
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	data, err := h.incidentService.GetChecklistAutocomplete(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
+}
+
+func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.ModifyCheckedState(id, userID, check, checklistNum, itemNum); err != nil {
+	var params struct {
+		NewState string `json:"new_state"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		HandleError(w, errors.Wrap(err, "failed to unmarshal"))
+		return
+	}
+
+	if !playbook.IsValidChecklistItemState(params.NewState) {
+		HandleError(w, errors.New("bad parameter new state"))
+		return
+	}
+
+	if err := h.incidentService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -577,27 +695,19 @@ func (h *IncidentHandler) checkuncheck(w http.ResponseWriter, r *http.Request, c
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
-func (h *IncidentHandler) check(w http.ResponseWriter, r *http.Request) {
-	h.checkuncheck(w, r, true)
-}
-
-func (h *IncidentHandler) uncheck(w http.ResponseWriter, r *http.Request) {
-	h.checkuncheck(w, r, false)
-}
-
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var checklistItem playbook.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to decode ChecklistItem"))
 		return
 	}
 
@@ -622,12 +732,12 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -646,25 +756,26 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		Title string `json:"title"`
+		Title   string `json:"title"`
+		Command string `json:"command"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to unmarshal edit params state"))
+		HandleError(w, errors.Wrap(err, "failed to unmarshal edit params state"))
 		return
 	}
 
-	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title); err != nil {
+	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -678,7 +789,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -688,7 +799,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 		NewLocation int `json:"new_location"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
-		HandleError(w, err)
+		HandleError(w, errors.Wrap(err, "failed to unmarshal edit params"))
 		return
 	}
 

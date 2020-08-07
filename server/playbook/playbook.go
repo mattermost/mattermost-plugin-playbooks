@@ -16,6 +16,7 @@ type Playbook struct {
 	TeamID               string      `json:"team_id"`
 	CreatePublicIncident bool        `json:"create_public_incident"`
 	Checklists           []Checklist `json:"checklists"`
+	MemberIDs            []string    `json:"member_ids"`
 }
 
 // Checklist represents a checklist in a playbook
@@ -26,10 +27,42 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	Title           string    `json:"title"`
-	Checked         bool      `json:"checked"`
-	CheckedModified time.Time `json:"checked_modified"`
-	CheckedPostID   string    `json:"checked_post_id"`
+	Title               string    `json:"title"`
+	State               string    `json:"state"`
+	StateModified       time.Time `json:"state_modified"`
+	StateModifiedPostID string    `json:"state_modified_post_id"`
+	Command             string    `json:"command"`
+}
+
+// SortField enumerates the available fields we can sort on.
+type SortField string
+
+const (
+	// Title sorts by the "title" field.
+	Title SortField = "title"
+
+	// Stages sorts by the number of checklists in a playbook.
+	Stages SortField = "stages"
+
+	// Steps sorts by the the number of steps in a playbook.
+	Steps SortField = "steps"
+)
+
+// SortDirection is the type used to specify the ascending or descending order of returned results.
+type SortDirection string
+
+const (
+	// Desc is descending order.
+	Desc SortDirection = "desc"
+
+	// Asc is ascending order.
+	Asc SortDirection = "asc"
+)
+
+// Options specifies the parameters when getting playbooks.
+type Options struct {
+	Sort      SortField
+	Direction SortDirection
 }
 
 // Service is the playbook service for managing playbooks
@@ -41,7 +74,7 @@ type Service interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(teamID string) ([]Playbook, error)
+	GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
@@ -73,4 +106,20 @@ type Telemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook)
+}
+
+const (
+	ChecklistItemStateOpen       = ""
+	ChecklistItemStateInProgress = "in_progress"
+	ChecklistItemStateClosed     = "closed"
+)
+
+func IsValidChecklistItemState(state string) bool {
+	return state == ChecklistItemStateClosed ||
+		state == ChecklistItemStateInProgress ||
+		state == ChecklistItemStateOpen
+}
+
+func (p *Playbook) IsValidChecklistItemIndex(checklist, item int) bool {
+	return p != nil && checklist >= 0 && item >= 0 && checklist < len(p.Checklists) && item < len(p.Checklists[checklist].Items)
 }

@@ -15,22 +15,22 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import {SortableColHeader} from 'src/components/backstage/incidents/incident_list/sortable_col_header';
+import {SortableColHeader} from 'src/components/sortable_col_header';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
-import ProfileSelector from 'src/components/profile_selector';
+import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/backstage/incidents/incident_list/pagination_row';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {
     fetchCommandersInTeam,
     fetchIncidents,
 } from 'src/client';
-import Profile from 'src/components/profile';
-import BackstageIncidentDetails from '../incident_details/incident_details';
+import Profile from 'src/components/profile/profile';
 import StatusBadge from '../status_badge';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import './incident_list.scss';
+import BackstageListHeader from '../../backstage_list_header';
 
 const debounceDelay = 300; // in milliseconds
 const PER_PAGE = 15;
@@ -61,7 +61,7 @@ const BackstageIncidentList: FC = () => {
     useEffect(() => {
         async function fetchIncidentsAsync() {
             const incidentsReturn = await fetchIncidents(fetchParams);
-            setIncidents(incidentsReturn.incidents);
+            setIncidents(incidentsReturn.items);
             setTotalCount(incidentsReturn.total_count);
         }
 
@@ -109,10 +109,6 @@ const BackstageIncidentList: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, `/incidents/${incident.id}`);
     }
 
-    const closeIncidentDetails = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/incidents');
-    };
-
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const ControlComponent = (ownProps: ControlProps<any>) => {
         const resetLink = fetchParams.commander_user_id && (
@@ -141,14 +137,8 @@ const BackstageIncidentList: FC = () => {
         (fetchParams.status && fetchParams.status !== 'all')
     );
 
-    const detailsComponent = (
-        <BackstageIncidentDetails
-            onClose={closeIncidentDetails}
-        />
-    );
-
     const listComponent = (
-        <div className='IncidentList'>
+        <div className='IncidentList container-medium'>
             <div className='Backstage__header'>
                 <div
                     className='title'
@@ -183,7 +173,7 @@ const BackstageIncidentList: FC = () => {
                         onChange={setStatus}
                     />
                 </div>
-                <div className='Backstage-list-header'>
+                <BackstageListHeader>
                     <div className='row'>
                         <div className='col-sm-3'>
                             <SortableColHeader
@@ -219,7 +209,7 @@ const BackstageIncidentList: FC = () => {
                         </div>
                         <div className='col-sm-3'> {'Commander'} </div>
                     </div>
-                </div>
+                </BackstageListHeader>
 
                 {
                     !incidents.length && !isFiltering &&
@@ -289,9 +279,6 @@ const BackstageIncidentList: FC = () => {
                 path={match.path}
             >
                 {listComponent}
-            </Route>
-            <Route path={`${match.path}/:incidentId`}>
-                {detailsComponent}
             </Route>
         </Switch>
     );

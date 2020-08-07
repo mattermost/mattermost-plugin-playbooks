@@ -19,7 +19,7 @@ func TestAddToIndex(t *testing.T) {
 
 		// Make KVGet return an empty value to simulate that the key is not set yet
 		pluginAPI.EXPECT().
-			KVGet(IndexKey).
+			KVGet(PlaybookIndexKey).
 			Return([]byte{}, nil).
 			Times(1)
 
@@ -34,7 +34,7 @@ func TestAddToIndex(t *testing.T) {
 			ExpireInSeconds: 0,
 		}
 		pluginAPI.EXPECT().
-			KVSetWithOptions(IndexKey, value, kvSetOptions).
+			KVSetWithOptions(PlaybookIndexKey, value, kvSetOptions).
 			Return(true, nil).
 			Times(1)
 
@@ -57,7 +57,7 @@ func TestRemoveFromIndex(t *testing.T) {
 
 		// Make KVGet return an empty value to simulate that the key is not set yet
 		pluginAPI.EXPECT().
-			KVGet(IndexKey).
+			KVGet(PlaybookIndexKey).
 			Return([]byte{}, nil).
 			Times(1)
 
@@ -69,7 +69,7 @@ func TestRemoveFromIndex(t *testing.T) {
 			ExpireInSeconds: 0,
 		}
 		pluginAPI.EXPECT().
-			KVSetWithOptions(IndexKey, nil, kvSetOptions).
+			KVSetWithOptions(PlaybookIndexKey, nil, kvSetOptions).
 			Return(true, nil).
 			Times(1)
 

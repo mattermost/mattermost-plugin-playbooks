@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useState, MutableRefObject} from 'react';
 import {useSelector} from 'react-redux';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
@@ -33,6 +33,11 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
 
     useEffect(() => {
         const fetchIncident = async () => {
+            if (!currentChannel) {
+                setState(CurrentIncidentState.NotFound);
+                return;
+            }
+
             try {
                 setIncident(await fetchIncidentByChannel(currentChannel.id));
                 setState(CurrentIncidentState.Loaded);
@@ -44,7 +49,7 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
         };
         setState(CurrentIncidentState.Loading);
         fetchIncident();
-    }, [currentChannel.id]);
+    }, [currentChannel?.id]);
 
     useEffect(() => {
         const doUpdate = (updatedIncident: Incident) => {
@@ -59,4 +64,47 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
     }, [incident]);
 
     return [incident, state];
+}
+
+/**
+ * Hook that calls handler when targetKey is pressed.
+ */
+export function useKeyPress(targetKey: string, handler: () => void) {
+    // If pressed key is our target key then set to true
+    function downHandler({key}: KeyboardEvent) {
+        if (key === targetKey) {
+            handler();
+        }
+    }
+
+    // Add event listeners
+    useEffect(() => {
+        window.addEventListener('keydown', downHandler);
+
+        // Remove event listeners on cleanup
+        return () => {
+            window.removeEventListener('keydown', downHandler);
+        };
+    }, []); // Empty array ensures that effect is only run on mount and unmount
+}
+
+/**
+ * Hook that alerts clicks outside of the passed ref.
+ */
+export function useClickOutsideRef(ref: MutableRefObject<HTMLElement | null>, handler: () => void) {
+    useEffect(() => {
+        function onMouseDown(event: MouseEvent) {
+            const target = event.target as any;
+            if (ref.current && target instanceof Node && !ref.current.contains(target)) {
+                handler();
+            }
+        }
+
+        // Bind the event listener
+        document.addEventListener('mousedown', onMouseDown);
+        return () => {
+            // Unbind the event listener on clean up
+            document.removeEventListener('mousedown', onMouseDown);
+        };
+    }, [ref]);
 }

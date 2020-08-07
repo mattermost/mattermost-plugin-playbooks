@@ -2,21 +2,26 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation} from 'react-router-dom';
+import {Redirect, useParams} from 'react-router-dom';
+import {useSelector, useDispatch} from 'react-redux';
+
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {searchProfiles} from 'mattermost-redux/actions/users';
 
 import {Team} from 'mattermost-redux/types/teams';
 
 import {teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, ChecklistItem, emptyPlaybook} from 'src/types/playbook';
+import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
-import {ChecklistDetails} from 'src/components/checklist';
+import {MultiChecklistEditor} from 'src/components/multi_checklist_editor';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Toggle from 'src/components/widgets/toggle';
-import BackIcon from 'src/components/assets/icons/back_icon';
+import {BackstageHeaderBackIcon} from 'src/components/assets/icons/back_icon';
 import Spinner from 'src/components/assets/icons/spinner';
 import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/constants';
 
 import './playbook.scss';
+import ProfileAutocomplete from 'src/components/widgets/profile_autocomplete';
 
 interface Props {
     isNew: boolean;
@@ -29,8 +34,13 @@ interface URLParams {
 }
 
 const PlaybookEdit: FC<Props> = (props: Props) => {
+    const dispatch = useDispatch();
+
+    const currentUserId = useSelector(getCurrentUserId);
+
     const [playbook, setPlaybook] = useState<Playbook>({
         ...emptyPlaybook(),
+        member_ids: [currentUserId],
         team_id: props.currentTeam.id,
     });
     const [changesMade, setChangesMade] = useState(false);
@@ -53,10 +63,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             }
 
             if (urlParams.playbookId) {
-                const fetchedPlaybook = emptyPlaybook();
-
                 try {
-                    setPlaybook(await clientFetchPlaybook(urlParams.playbookId));
+                    const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
+                    fetchedPlaybook.member_ids = fetchedPlaybook.member_ids || [currentUserId];
+                    setPlaybook(fetchedPlaybook);
                     setFetchingState(FetchingStateType.fetched);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
@@ -77,60 +87,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             checklists: newChecklist,
         });
         setChangesMade(true);
-    };
-
-    const onAddItem = (checklistItem: ChecklistItem, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, playbook.checklists[checklistIndex]);
-
-        changedChecklist.items = [...changedChecklist.items, checklistItem];
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
-    };
-
-    const onDeleteItem = (checklistItemIndex: number, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
-
-        changedChecklist.items = [
-            ...changedChecklist.items.slice(0, checklistItemIndex),
-            ...changedChecklist.items.slice(checklistItemIndex + 1, changedChecklist.items.length)];
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
-    };
-
-    const onEditItem = (checklistItemIndex: number, newTitle: string, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
-
-        changedChecklist.items[checklistItemIndex].title = newTitle;
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
-    };
-
-    const onReorderItem = (checklistItemIndex: number, newIndex: number, checklistIndex: number): void => {
-        const allChecklists = Object.assign([], playbook.checklists) as Checklist[];
-        const changedChecklist = Object.assign({}, allChecklists[checklistIndex]) as Checklist;
-
-        const itemToMove = changedChecklist.items[checklistItemIndex];
-
-        // Remove from current index
-        changedChecklist.items = [
-            ...changedChecklist.items.slice(0, checklistItemIndex),
-            ...changedChecklist.items.slice(checklistItemIndex + 1, changedChecklist.items.length)];
-
-        // Add in new index
-        changedChecklist.items = [
-            ...changedChecklist.items.slice(0, newIndex),
-            itemToMove,
-            ...changedChecklist.items.slice(newIndex, changedChecklist.items.length + 1)];
-
-        allChecklists[checklistIndex] = changedChecklist;
-
-        updateChecklist(allChecklists);
     };
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,25 +117,38 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
-    const saveDisabled = playbook.title.trim() === '' || !changesMade;
+    const handleUsersInput = (userIds: string[]) => {
+        setPlaybook({
+            ...playbook,
+            member_ids: userIds || [],
+        });
+        setChangesMade(true);
+    };
+
+    const searchUsers = (term: string) => {
+        return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
+    };
+
+    const saveDisabled = playbook.title.trim() === '' || playbook.member_ids.length === 0 || !changesMade;
 
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
             return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
-            break;
         case FetchingStateType.loading:
-            return <Spinner/>;
-            break;
+            return (
+                <div className='Playbook container-medium text-center'>
+                    <Spinner/>
+                </div>
+            );
         }
     }
 
     return (
-        <div className='Playbook'>
+        <div className='Playbook container-medium'>
             <div className='Backstage__header'>
                 <div className='title'>
-                    <BackIcon
-                        className='Backstage__header__back'
+                    <BackstageHeaderBackIcon
                         onClick={confirmOrClose}
                     />
                     {props.isNew ? 'New Playbook' : 'Edit Playbook' }
@@ -192,6 +161,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         {'Cancel'}
                     </button>
                     <button
+                        data-testid='save_playbook'
                         className='btn btn-primary'
                         disabled={saveDisabled}
                         onClick={onSave}
@@ -212,38 +182,28 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     onChange={handleTitleChange}
                 />
                 <div className='public-item'>
-                    <div
-                        className='checkbox-container'
-                    >
-                        <Toggle
-                            toggled={playbook.create_public_incident}
-                            onToggle={handlePublicChange}
-                        />
-                        <label>
-                            {'Create Public Incident'}
-                        </label>
-                    </div>
+                    <Toggle
+                        toggled={playbook.create_public_incident}
+                        onToggle={handlePublicChange}
+                    />
+                    <label>
+                        {'Create Public Incident'}
+                    </label>
                 </div>
-                <div className='checklist-container'>
-                    {playbook.checklists?.map((checklist: Checklist, checklistIndex: number) => (
-                        <ChecklistDetails
-                            checklist={checklist}
-                            enableEdit={true}
-                            key={checklist.title + checklistIndex}
-                            addItem={(checklistItem: ChecklistItem) => {
-                                onAddItem(checklistItem, checklistIndex);
-                            }}
-                            removeItem={(chceklistItemIndex: number) => {
-                                onDeleteItem(chceklistItemIndex, checklistIndex);
-                            }}
-                            editItem={(checklistItemIndex: number, newTitle: string) => {
-                                onEditItem(checklistItemIndex, newTitle, checklistIndex);
-                            }}
-                            reorderItems={(checklistItemIndex: number, newPosition: number) => {
-                                onReorderItem(checklistItemIndex, newPosition, checklistIndex);
-                            }}
-                        />
-                    ))}
+                <div className='inner-container'>
+                    <div className='title'>{'Members'}</div>
+                    <ProfileAutocomplete
+                        placeholder={'Invite members...'}
+                        onChange={handleUsersInput}
+                        userIds={playbook.member_ids}
+                        searchProfiles={searchUsers}
+                    />
+                </div>
+                <div className='multi-checklist-editor-container'>
+                    <MultiChecklistEditor
+                        checklist={playbook.checklists}
+                        onChange={updateChecklist}
+                    />
                 </div>
             </div>
             <ConfirmModal
