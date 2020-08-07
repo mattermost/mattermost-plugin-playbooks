@@ -36,8 +36,8 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
 });
 
 /**
-* Delete an incident directly via API
- * @param {String} workflowId
+ * Delete an incident directly via API
+ * @param {String} incidentId
  * All parameters required
  */
 Cypress.Commands.add('apiDeleteIncident', (incidentId) => {

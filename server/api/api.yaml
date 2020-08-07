@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
-  version: 0.5.0
-  title: Workflows API
+  version: 0.6.0
+  title: Incident Response API
   contact:
     name: Mattermost
     url: https://mattermost.com/
