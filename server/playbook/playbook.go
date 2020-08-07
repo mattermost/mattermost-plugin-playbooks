@@ -61,6 +61,9 @@ const (
 
 // Options specifies the parameters when getting playbooks.
 type Options struct {
+	Page    int
+	PerPage int
+
 	Sort      SortField
 	Direction SortDirection
 }

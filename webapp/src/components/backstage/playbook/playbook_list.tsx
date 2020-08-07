@@ -24,21 +24,26 @@ import BackstageListHeader from '../backstage_list_header';
 import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
+import {PaginationRow} from 'src/components/pagination_row';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 const DeleteBannerTimeout = 5000;
 
 const PlaybookList: FC = () => {
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
+    const [totalCount, setTotalCount] = useState(0);
     const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
-    const [fetchParams, setFetchParams] = useState<{sort: string, direction: string}>(
+    const [fetchParams, setFetchParams] = useState<{sort: string, direction: string, page: number, per_page: number}>(
         {
             sort: 'title',
             direction: 'asc',
+            page: 0,
+            per_page: BACKSTAGE_LIST_PER_PAGE,
         },
     );
 
@@ -53,10 +58,15 @@ const PlaybookList: FC = () => {
         setFetchParams({...fetchParams, sort: colName, direction: 'asc'});
     }
 
+    function setPage(page: number) {
+        setFetchParams({...fetchParams, page});
+    }
+
     useEffect(() => {
         const fetchPlaybooks = async () => {
             const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
             setPlaybooks(result.items);
+            setTotalCount(result.total_count);
         };
         fetchPlaybooks();
     }, [currentTeam.id, fetchParams]);
@@ -221,6 +231,12 @@ const PlaybookList: FC = () => {
                             </div>
                         </BackstageListHeader>
                         {body}
+                        <PaginationRow
+                            page={fetchParams.page}
+                            perPage={fetchParams.per_page}
+                            totalCount={totalCount}
+                            setPage={setPage}
+                        />
                     </div>
                     <ConfirmModal
                         show={showConfirmation}

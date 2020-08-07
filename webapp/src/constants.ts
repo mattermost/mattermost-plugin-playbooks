@@ -10,3 +10,5 @@ export enum ErrorPageTypes {
     PLAYBOOKS = 'playbooks',
     DEFAULT = 'default',
 }
+
+export const BACKSTAGE_LIST_PER_PAGE = 15;
