@@ -19,7 +19,6 @@ func (s *service) Create(subscription Subscription) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	subscription.ID = newID
 
 	return newID, nil
 }
