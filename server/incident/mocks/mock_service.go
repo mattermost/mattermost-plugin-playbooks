@@ -322,3 +322,31 @@ func (mr *MockServiceMockRecorder) RestartIncident(arg0, arg1 interface{}) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestartIncident", reflect.TypeOf((*MockService)(nil).RestartIncident), arg0, arg1)
 }
+
+// SetAssignee mocks base method
+func (m *MockService) SetAssignee(arg0, arg1, arg2 string, arg3, arg4 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAssignee", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAssignee indicates an expected call of SetAssignee
+func (mr *MockServiceMockRecorder) SetAssignee(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAssignee", reflect.TypeOf((*MockService)(nil).SetAssignee), arg0, arg1, arg2, arg3, arg4)
+}
+
+// ToggleCheckedState mocks base method
+func (m *MockService) ToggleCheckedState(arg0, arg1 string, arg2, arg3 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToggleCheckedState", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ToggleCheckedState indicates an expected call of ToggleCheckedState
+func (mr *MockServiceMockRecorder) ToggleCheckedState(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleCheckedState", reflect.TypeOf((*MockService)(nil).ToggleCheckedState), arg0, arg1, arg2, arg3)
+}

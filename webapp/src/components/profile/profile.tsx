@@ -19,6 +19,7 @@ interface Props {
     userId: string;
     classNames?: Record<string, boolean>;
     extra?: JSX.Element;
+    withoutProfilePic?: boolean;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
 }
 
@@ -46,10 +47,15 @@ const Profile: FC<Props> = (props: Props) => {
 
     return (
         <div className={classNames('IncidentProfile', props.classNames)}>
-            <img
-                className='image'
-                src={profileUri || ''}
-            />
+            {
+                !props.withoutProfilePic &&
+                <div className='mr-2'>
+                    <img
+                        className='image'
+                        src={profileUri || ''}
+                    />
+                </div>
+            }
             <div className='name'>{name}</div>
             {props.extra}
         </div>

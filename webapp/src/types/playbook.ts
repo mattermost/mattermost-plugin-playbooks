@@ -38,6 +38,9 @@ export interface ChecklistItem {
     state: ChecklistItemState;
     state_modified?: string;
     state_modified_post_id?: string;
+    assignee_id?: string;
+    assignee_modified?: string;
+    assignee_modified_post_id?: string;
     command: string;
 }
 

@@ -9,6 +9,8 @@ import Profile from 'src/components/profile/profile';
 interface Props {
     userId?: string;
     enableEdit: boolean;
+    withoutProfilePic?: boolean;
+    profileButtonClass?: string;
     onClick: () => void;
 }
 
@@ -26,13 +28,14 @@ export default function ProfileButton(props: Props) {
     return (
         <button
             onClick={props.onClick}
-            className={'IncidentProfileButton'}
+            className={props.profileButtonClass || 'IncidentProfileButton'}
         >
             <Profile
                 userId={props.userId || ''}
                 classNames={{active: props.enableEdit}}
                 extra={downChevron}
                 nameFormatter={formatName}
+                withoutProfilePic={props.withoutProfilePic}
             />
         </button>
     );

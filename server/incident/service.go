@@ -22,6 +22,7 @@ const (
 	// IncidentCreatedWSEvent is for incident creation.
 	IncidentCreatedWSEvent = "incident_created"
 	incidentUpdatedWSEvent = "incident_updated"
+	noAssigneeName         = "No Assignee"
 )
 
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
@@ -350,8 +351,8 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	return nil
 }
 
-// ModifyCheckedState checks or unchecks the specified checklist item
-// Indeponant, will not perform any actions if the checklist item is already in the given checked state
+// ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
+// any action if the checklist item is already in the given checked state
 func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
@@ -367,24 +368,15 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return nil
 	}
 
-	hasCommand := itemToCheck.Command != ""
-
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf(" \"%v\"", itemToCheck.Title)
-	if newState == playbook.ChecklistItemStateInProgress {
-		modifyMessage = fmt.Sprintf("started progress on \"%v\"", itemToCheck.Title)
-	} else if newState == playbook.ChecklistItemStateClosed {
-		if hasCommand {
-			modifyMessage = fmt.Sprintf("ran \"%v\"", itemToCheck.Title)
-		} else {
-			modifyMessage = fmt.Sprintf("finished \"%v\"", itemToCheck.Title)
-		}
+	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
+	if newState == playbook.ChecklistItemStateOpen {
+		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
 	}
-
 	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
@@ -399,23 +391,87 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(mainChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
+
+	return nil
+}
+
+// ToggleCheckedState checks or unchecks the specified checklist item
+func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get main channel")
+		return err
 	}
 
-	if itemToCheck.State == playbook.ChecklistItemStateClosed && hasCommand {
-		_, err := s.pluginAPI.SlashCommand.ExecuteSlashCommand(&model.CommandArgs{
-			UserId:    userID,
-			ChannelId: mainChannelID,
-			TeamId:    channel.TeamId,
-			Command:   itemToCheck.Command,
-		})
-		if err != nil {
-			return err
+	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	isOpen := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber].State == playbook.ChecklistItemStateOpen
+	newState := playbook.ChecklistItemStateOpen
+	if isOpen {
+		newState = playbook.ChecklistItemStateClosed
+	}
+
+	return s.ModifyCheckedState(incidentID, userID, newState, checklistNumber, itemNumber)
+}
+
+// SetAssignee sets the assignee for the specified checklist item
+// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
+func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error {
+	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	itemToCheck := incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber]
+	if assigneeID == itemToCheck.AssigneeID {
+		return nil
+	}
+
+	newAssigneeUsername := noAssigneeName
+	if assigneeID != "" {
+		newUser, err2 := s.pluginAPI.User.Get(assigneeID)
+		if err2 != nil {
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
+		newAssigneeUsername = "@" + newUser.Username
 	}
 
+	oldAssigneeUsername := noAssigneeName
+	if itemToCheck.AssigneeID != "" {
+		oldUser, err2 := s.pluginAPI.User.Get(itemToCheck.AssigneeID)
+		if err2 != nil {
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
+		}
+		oldAssigneeUsername = oldUser.Username
+	}
+
+	mainChannelID := incidentToModify.PrimaryChannelID
+	modifyMessage := fmt.Sprintf("changed assignee of checklist item \"%s\" from \"%s\" to %s",
+		itemToCheck.Title, oldAssigneeUsername, newAssigneeUsername)
+
+	// Send modification message before the actual modification because we need the postID
+	// from the notification message.
+	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
+	if err != nil {
+		return err
+	}
+
+	itemToCheck.AssigneeID = assigneeID
+	itemToCheck.AssigneeModified = time.Now()
+	itemToCheck.AssigneeModifiedPostID = postID
+	incidentToModify.Playbook.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return errors.Wrapf(err, "failed to update incident; it is now in an inconsistent state")
+	}
+
+	s.telemetry.SetAssignee(incidentID, userID)
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	return nil

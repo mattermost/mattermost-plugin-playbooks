@@ -21,7 +21,7 @@ import (
 const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
-	"* `/incident advance [list #] [item #]` - Advance an item to the next state. \n" +
+	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/incident announce ~[channels]` - Announce the currrent incident in other channels. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
@@ -43,7 +43,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, restart, advance, announce",
+		AutoCompleteDesc: "Available commands: start, end, restart, check, announce",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
@@ -61,8 +61,11 @@ func getAutocompleteData() *model.AutocompleteData {
 	restart := model.NewAutocompleteData("restart", "", "Restarts the incident associated with the current channel")
 	slashIncident.AddCommand(restart)
 
-	checklist := model.NewAutocompleteData("advance", "[list #] [item #]", "Check or uncheck a checklist item.")
-	checklist.AddDynamicListArgument("List of checklist items is downloading from your incident response plugin", "api/v1/incidents/checklist-autocomplete", true)
+	checklist := model.NewAutocompleteData("check", "[checklist item]",
+		"Checks or unchecks a checklist item.")
+	checklist.AddDynamicListArgument(
+		"List of checklist items is downloading from your incident response plugin",
+		"api/v1/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
 	announce := model.NewAutocompleteData("announce", "~[channels]", "Announce the current incident in other channels.")
@@ -131,7 +134,7 @@ func (r *Runner) actionStart(args []string) {
 	}
 }
 
-func (r *Runner) actionAdvance(args []string) {
+func (r *Runner) actionCheck(args []string) {
 	if len(args) != 2 {
 		r.postCommandResponse(helpText)
 		return
@@ -152,44 +155,16 @@ func (r *Runner) actionAdvance(args []string) {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
 		if errors.Is(err, incident.ErrNotFound) {
-			r.postCommandResponse("You can only advance an item from within the incident's channel.")
+			r.postCommandResponse("You can only check/uncheck an item from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident id: %v", err))
-		return
-	}
-
-	incidentToModify, err := r.incidentService.GetIncident(incidentID)
-	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
 		return
 	}
 
-	if !incidentToModify.Playbook.IsValidChecklistItemIndex(checklist, item) {
-		r.postCommandResponse("Invalid checklist item indices.")
-		return
-	}
-
-	itemToModify := incidentToModify.Playbook.Checklists[checklist].Items[item]
-	newState := ""
-	switch itemToModify.State {
-	case playbook.ChecklistItemStateInProgress:
-		newState = playbook.ChecklistItemStateClosed
-	case playbook.ChecklistItemStateOpen:
-		if itemToModify.Command != "" {
-			newState = playbook.ChecklistItemStateClosed
-		} else {
-			newState = playbook.ChecklistItemStateInProgress
-		}
-	default:
-		r.postCommandResponse("Not in a state with a next step.")
-		return
-	}
-
-	err = r.incidentService.ModifyCheckedState(incidentID, r.args.UserId, newState, checklist, item)
+	err = r.incidentService.ToggleCheckedState(incidentID, r.args.UserId, checklist, item)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error modifying checklist item state: %v", err))
-		return
+		r.postCommandResponse(fmt.Sprintf("Error checking/unchecking item: %v", err))
 	}
 }
 
@@ -569,8 +544,8 @@ func (r *Runner) Execute() error {
 		r.actionStart(parameters)
 	case "end":
 		r.actionEnd()
-	case "advance":
-		r.actionAdvance(parameters)
+	case "check":
+		r.actionCheck(parameters)
 	case "restart":
 		r.actionRestart()
 	case "announce":
