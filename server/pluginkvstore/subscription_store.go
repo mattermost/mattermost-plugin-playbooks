@@ -14,14 +14,20 @@ const (
 	indexKey        = keyVersionPrefix + "subscriptionindex"
 )
 
+type subscriptionIndexID struct {
+	SubscriptionID string
+	PlaybookID     string
+}
+
 type subscriptionIndex struct {
-	SubscriptionIDs []string `json:"subscription_ids"`
+	SubscriptionIDs []subscriptionIndexID `json:"subscription_ids"`
 }
 
 func (i *subscriptionIndex) clone() subscriptionIndex {
-	newIndex := *i
-	newIndex.SubscriptionIDs = append([]string(nil), i.SubscriptionIDs...)
-	return newIndex
+	newIDs := make([]subscriptionIndexID, len(i.SubscriptionIDs))
+	copy(i.SubscriptionIDs, newIDs)
+
+	return subscriptionIndex{newIDs}
 }
 
 // SubscriptionStore is KVStore backend for a subscription service.
@@ -37,7 +43,7 @@ func NewSubscriptionStore(kvAPI KVAPI) *SubscriptionStore {
 	}
 }
 
-func (s *SubscriptionStore) addToIndex(subscriptionID string) error {
+func (s *SubscriptionStore) addToIndex(subscriptionID, playbookID string) error {
 	addID := func(oldValue []byte) (interface{}, error) {
 		var index subscriptionIndex
 		if err := json.Unmarshal(oldValue, &index); err != nil {
@@ -45,7 +51,7 @@ func (s *SubscriptionStore) addToIndex(subscriptionID string) error {
 		}
 
 		newIndex := index.clone()
-		newIndex.SubscriptionIDs = append(newIndex.SubscriptionIDs, subscriptionID)
+		newIndex.SubscriptionIDs = append(newIndex.SubscriptionIDs, subscriptionIndexID{subscriptionID, playbookID})
 
 		return newIndex, nil
 	}
@@ -70,7 +76,7 @@ func (s *SubscriptionStore) Create(subs subscription.Subscription) (string, erro
 		return "", errors.New("unable to save subscription to KV store, KV Set didn't save")
 	}
 
-	err = s.addToIndex(subs.ID)
+	err = s.addToIndex(subs.ID, subs.PlaybookID)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to add the new subscription to the index")
 	}
