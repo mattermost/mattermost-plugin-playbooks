@@ -71,6 +71,7 @@ issues:
       linters:
         - goconst
         - scopelint # https://github.com/kyoh86/scopelint/issues/4
+        - unparam
     - linters:
       - golint
       - gocritic
