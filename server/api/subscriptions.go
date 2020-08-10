@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
-	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -36,9 +35,24 @@ func NewSubscriptionHandler(router *mux.Router, subscriptionService subscription
 	return handler
 }
 
-func (h *SubscriptionHandler) hasPermissionsToPlaybook(userID string, pbook playbook.Playbook) bool {
-	// TODO: Use playbook members when those are ready
-	return h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM)
+func (h *SubscriptionHandler) hasPermissionsToPlaybook(userID, subscriberID string, pbook playbook.Playbook) bool {
+	userInPlaybook := false
+	subscriberInPlaybook := false
+
+	for _, memberID := range pbook.MemberIDs {
+		if userID == memberID {
+			userInPlaybook = true
+		}
+		if subscriberID == memberID {
+			subscriberInPlaybook = true
+		}
+
+		if userInPlaybook && subscriberInPlaybook {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (h *SubscriptionHandler) postSubscription(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +68,8 @@ func (h *SubscriptionHandler) postSubscription(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if !h.hasPermissionsToPlaybook(newSubscription.UserID, pbook) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	if !h.hasPermissionsToPlaybook(userID, newSubscription.UserID, pbook) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

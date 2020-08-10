@@ -48,7 +48,7 @@ func TestCreateSubscription(t *testing.T) {
 		pluginAPI.EXPECT().
 			HasPermissionToTeam(gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true).
-			AnyTimes()
+			Times(1)
 
 		client := pluginapi.NewClient(pluginAPI)
 
@@ -73,10 +73,12 @@ func TestCreateSubscription(t *testing.T) {
 				TeamID:               "teamid",
 				CreatePublicIncident: true,
 				Checklists:           []playbook.Checklist{},
+				MemberIDs:            []string{"testuserid", "subscriberID"},
 			},
 			subsc: subscription.Subscription{
 				URL:        url.URL{},
 				PlaybookID: "pbookID",
+				UserID:     "subscriberID",
 			},
 		},
 	}
@@ -85,7 +87,7 @@ func TestCreateSubscription(t *testing.T) {
 		kvAPI, handler := setup(t)
 
 		kvAPI.EXPECT().
-			Get(pluginkvstore.IndexKey, gomock.Any()).
+			Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).
 			Return(nil).
 			SetArg(1, []string{test.pbook.ID})
 
