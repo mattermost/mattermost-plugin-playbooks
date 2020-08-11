@@ -312,6 +312,26 @@ func (r *Runner) actionSelftest(args []string) {
 		return
 	}
 
+	shortDescription := "A short description."
+	longDescription := `A very long description describing the item in a very descriptive way. Now with Markdown syntax! We have *italics* and **bold**. We have [external](http://example.com) and [internal links](/ad-1/com.mattermost.plugin-incident-response/playbooks). We have even links to channels: ~town-square. And links to users: @sysadmin, @user-1. We do have the usual headings and lists, of course:
+## Unordered List
+- One
+- Two
+- Three
+
+### Ordered List
+1. One
+2. Two
+3. Three
+
+We also have images:
+
+![Mattermost logo](/static/icon_152x152.png)
+
+And... yes, of course, we have emojis
+
+:muscle: :sunglasses: :tada: :confetti_ball: :balloon: :cowboy_hat_face: :nail_care:`
+
 	testPlaybook := playbook.Playbook{
 		Title:  "testing playbook",
 		TeamID: r.args.TeamId,
@@ -320,14 +340,16 @@ func (r *Runner) actionSelftest(args []string) {
 				Title: "Identification",
 				Items: []playbook.ChecklistItem{
 					{
-						Title: "Create Jira ticket",
+						Title:       "Create Jira ticket",
+						Description: longDescription,
 					},
 					{
 						Title: "Add on-call team members",
 						State: playbook.ChecklistItemStateClosed,
 					},
 					{
-						Title: "Identify blast radius",
+						Title:       "Identify blast radius",
+						Description: shortDescription,
 					},
 					{
 						Title: "Identify impacted services",

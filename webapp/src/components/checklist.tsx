@@ -186,6 +186,7 @@ export const ChecklistDetails = ({checklist, checklistNum, onChange, onRedirect,
                             title: newValue,
                             state: ChecklistItemState.Open,
                             command: '',
+                            description: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);

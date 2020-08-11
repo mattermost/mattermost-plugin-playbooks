@@ -42,6 +42,7 @@ export interface ChecklistItem {
     assignee_modified?: string;
     assignee_modified_post_id?: string;
     command: string;
+    description: string;
 }
 
 export function emptyPlaybook(): Playbook {
