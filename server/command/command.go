@@ -233,7 +233,7 @@ func (r *Runner) actionEnd() {
 		return
 	}
 
-	if err = permissions.HasPermissionsToEditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -265,7 +265,7 @@ func (r *Runner) actionRestart() {
 		return
 	}
 
-	if err = permissions.HasPermissionsToEditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return

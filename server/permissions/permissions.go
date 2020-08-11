@@ -13,7 +13,8 @@ import (
 // ErrNoPermissions if the error is caused by the user not having permissions
 var ErrNoPermissions = errors.New("does not have permissions")
 
-func HasPermissionsToViewIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
+// ViewIncident returns nil if the userID has permissions to view incidentID
+func ViewIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -39,7 +40,9 @@ func HasPermissionsToViewIncident(userID, incidentID string, pluginAPI *pluginap
 	return ErrNoPermissions
 }
 
-func HasPermissionsToViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
+// ViewIncidentFromChannelID returns nil if the userID has permissions to view the incident
+// associated with channelID
+func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -60,7 +63,8 @@ func HasPermissionsToViewIncidentFromChannelID(userID, channelID string, pluginA
 	return ErrNoPermissions
 }
 
-func HasPermissionsToEditIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
+// EditIncident returns nil if the userID has permissions to edit incidentID
+func EditIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -77,7 +81,8 @@ func HasPermissionsToEditIncident(userID, incidentID string, pluginAPI *pluginap
 	return ErrNoPermissions
 }
 
-func HasPermissionsToViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) error {
+// ViewTeam returns nil if the userID has permissions to view teamID
+func ViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
 		return nil
 	}
