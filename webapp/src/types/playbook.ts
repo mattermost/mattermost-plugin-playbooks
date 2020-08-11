@@ -62,8 +62,9 @@ export function emptyChecklist(): Checklist {
     };
 }
 
-export const newChecklistItem = (title = '', command = '', state = ChecklistItemState.Open): ChecklistItem => ({
+export const newChecklistItem = (title = '', description = '', command = '', state = ChecklistItemState.Open): ChecklistItem => ({
     title,
+    description,
     command,
     state,
 });
