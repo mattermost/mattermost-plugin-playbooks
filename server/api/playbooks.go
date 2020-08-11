@@ -216,10 +216,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	totalCount := len(allowedPlaybooks)
 	// Note: ignoring overflow for now
 	pageCount := int(math.Ceil((float64(totalCount) / float64(perPage))))
-	hasMore := page != pageCount-1
-	if totalCount == 0 || page >= pageCount {
-		hasMore = false
-	}
+	hasMore := page+1 < pageCount
 
 	jsonBytes, err := json.Marshal(listPlaybookResult{
 		listResult: listResult{
@@ -269,28 +266,28 @@ func parseGetPlaybooksOptions(u *url.URL) (opts playbook.Options, page, perPage 
 		sortDirection = playbook.Asc
 	}
 
-	param := params.Get("page")
-	if param == "" {
-		param = "0"
+	pageParam := params.Get("page")
+	if pageParam == "" {
+		pageParam = "0"
 	}
-	page, err = strconv.Atoi(param)
+	page, err = strconv.Atoi(pageParam)
 	if err != nil {
-		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'page'")
+		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'page': it should be a number")
 	}
 	if page < 0 {
-		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'page'")
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'page': it should be a positive number")
 	}
 
-	param = params.Get("per_page")
-	if param == "" || param == "0" {
-		param = "1000"
+	perPageParam := params.Get("per_page")
+	if perPageParam == "" || perPageParam == "0" {
+		perPageParam = "1000"
 	}
-	perPage, err = strconv.Atoi(param)
+	perPage, err = strconv.Atoi(perPageParam)
 	if err != nil {
-		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'per_page'")
+		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
 	}
 	if perPage < 0 {
-		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'per_page'")
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'per_page': it should be a positive number")
 	}
 
 	return playbook.Options{

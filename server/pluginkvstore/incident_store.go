@@ -102,10 +102,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 
 	// Note: ignoring overflow for now
 	pageCount := int(math.Ceil((float64(totalCount) / float64(options.PerPage))))
-	hasMore := options.Page != pageCount-1
-	if totalCount == 0 || options.Page >= pageCount {
-		hasMore = false
-	}
+	hasMore := options.Page+1 < pageCount
 
 	return &incident.GetIncidentsResults{
 		TotalCount: totalCount,
