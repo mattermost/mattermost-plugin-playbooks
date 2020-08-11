@@ -331,8 +331,7 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	err := permissions.HasPermissionsToViewIncident(userID, incidentID, h.pluginAPI, h.incidentService)
-	if err != nil {
+	if err := permissions.HasPermissionsToViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
@@ -362,8 +361,7 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	err := permissions.HasPermissionsToViewIncident(userID, incidentID, h.pluginAPI, h.incidentService)
-	if err != nil {
+	if err := permissions.HasPermissionsToViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
@@ -394,8 +392,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	err := permissions.HasPermissionsToViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
-	if err != nil {
+	if err := permissions.HasPermissionsToViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService); err != nil {
 		h.log.Warnf("User %s does not have permissions to get incident for channel %s", userID, channelID)
 		HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 			errors.Errorf("incident for channel id %s not found", channelID))
