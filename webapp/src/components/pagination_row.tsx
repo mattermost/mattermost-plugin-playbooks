@@ -7,10 +7,6 @@ import styled from 'styled-components';
 const PaginationRowDiv = styled.div`
     margin: 10px 0 20px;
     font-size: 14px;
-
-    button {
-        font-weight: bold;
-    }
 `;
 
 const CountDiv = styled.div`
