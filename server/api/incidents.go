@@ -79,6 +79,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
 	checklistItem.HandleFunc("", handler.itemRename).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 
 	return handler
 }
@@ -687,6 +688,38 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.incidentService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		AssigneeID string `json:"assignee_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		HandleError(w, errors.Wrap(err, "failed to unmarshal"))
+		return
+	}
+
+	if err := h.incidentService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
 		HandleError(w, err)
 		return
 	}

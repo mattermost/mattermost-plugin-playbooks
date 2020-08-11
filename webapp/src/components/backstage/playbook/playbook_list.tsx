@@ -4,6 +4,7 @@
 import React, {FC, useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
+import qs from 'qs';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -17,6 +18,7 @@ import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import TemplateSelector, {PresetTemplate} from 'src/components/backstage/playbook/template_selector';
 
 import NoContentPlaybookSvg from '../../assets/no_content_playbooks_svg';
 
@@ -25,7 +27,7 @@ import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
-import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 const DeleteBannerTimeout = 5000;
 
@@ -76,8 +78,9 @@ const PlaybookList: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}`);
     };
 
-    const newPlaybook = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new');
+    const newPlaybook = (templateTitle?: string|undefined) => {
+        const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
+        navigateToTeamPluginUrl(currentTeam.name, `/playbooks/new${queryParams}`);
     };
 
     const hideConfirmModal = () => {
@@ -170,6 +173,11 @@ const PlaybookList: FC = () => {
     return (
         <div className='Playbook'>
             { deleteSuccessfulBanner }
+            <TemplateSelector
+                onSelect={(template: PresetTemplate) => {
+                    newPlaybook(template.title);
+                }}
+            />
             {
                 (playbooks?.length === 0) &&
                 <>
@@ -184,7 +192,7 @@ const PlaybookList: FC = () => {
                         <div className='Backstage__header'>
                             <div
                                 data-testid='titlePlaybook'
-                                className='title'
+                                className='title list-title'
                             >
                                 {'Playbooks'}
                                 <div className='light'>

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams} from 'react-router-dom';
+import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -18,10 +18,11 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Toggle from 'src/components/widgets/toggle';
 import {BackstageHeaderBackIcon} from 'src/components/assets/icons/back_icon';
 import Spinner from 'src/components/assets/icons/spinner';
-import {MAX_NAME_LENGTH, ErrorPageTypes} from 'src/constants';
+import {MAX_NAME_LENGTH, ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
+import ProfileAutocomplete from 'src/components/widgets/profile_autocomplete';
+import {PresetTemplates} from 'src/components/backstage/playbook/template_selector';
 
 import './playbook.scss';
-import ProfileAutocomplete from 'src/components/widgets/profile_autocomplete';
 
 interface Props {
     isNew: boolean;
@@ -40,13 +41,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const [playbook, setPlaybook] = useState<Playbook>({
         ...emptyPlaybook(),
-        member_ids: [currentUserId],
         team_id: props.currentTeam.id,
+        member_ids: [currentUserId],
     });
     const [changesMade, setChangesMade] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     const urlParams = useParams<URLParams>();
+    const location = useLocation();
 
     const FetchingStateType = {
         loading: 'loading',
@@ -59,6 +61,24 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         const fetchData = async () => {
             // No need to fetch anything if we're adding a new playbook
             if (props.isNew) {
+                // Use preset template if specified
+                const searchParams = new URLSearchParams(location.search);
+                const templateTitle = searchParams.get(TEMPLATE_TITLE_KEY);
+                if (templateTitle) {
+                    const template = PresetTemplates.find((t) => t.title === templateTitle);
+                    if (!template) {
+                        // eslint-disable-next-line no-console
+                        console.error('Failed to find template using template key =', templateTitle);
+                        return;
+                    }
+
+                    setPlaybook({
+                        ...template.template,
+                        team_id: props.currentTeam.id,
+                        member_ids: [currentUserId],
+                    });
+                    setChangesMade(true);
+                }
                 return;
             }
 

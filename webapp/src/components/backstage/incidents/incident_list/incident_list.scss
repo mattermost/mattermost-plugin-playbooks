@@ -1,12 +1,5 @@
 $font-family: Open Sans;
 
-.IncidentProfileButton {
-    font-weight: 600;
-    height: 40px;
-    padding: 0 4px 0 12px;
-    border-radius: 4px;
-}
-
 .IncidentList {
     font-family: $font-family;
     color: var(--center-channel-color-90);
@@ -63,8 +56,7 @@ $font-family: Open Sans;
 
 .Backstage__header {
     display: flex;
-    font-size: 2.8rem;
-    line-height: 3.6rem;
+    align-items: center;
     padding: 4rem 0 3.2rem;
     flex-direction: row;
     width: 100%;
@@ -82,6 +74,8 @@ $font-family: Open Sans;
 
     .title {
         display: flex;
+        font-size: 2.8rem;
+        line-height: 3.6rem;
         align-items: center;
         flex: 1 1 auto;
         height: 4rem;

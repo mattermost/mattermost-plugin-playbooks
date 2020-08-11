@@ -1,4 +1,4 @@
-import {useEffect, useState, MutableRefObject} from 'react';
+import {useEffect, useState, MutableRefObject, useRef} from 'react';
 import {useSelector} from 'react-redux';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
@@ -107,4 +107,38 @@ export function useClickOutsideRef(ref: MutableRefObject<HTMLElement | null>, ha
             document.removeEventListener('mousedown', onMouseDown);
         };
     }, [ref]);
+}
+
+/**
+ * Hook that sets a timeout and will cleanup after itself. Adapted from Dan Abramov's code:
+ * https://overreacted.io/making-setinterval-declarative-with-react-hooks/
+ */
+export function useTimeout(callback: () => void, delay: number | null) {
+    const timeoutRef = useRef<number>();
+    const callbackRef = useRef(callback);
+
+    // Remember the latest callback:
+    //
+    // Without this, if you change the callback, when setTimeout kicks in, it
+    // will still call your old callback.
+    //
+    // If you add `callback` to useEffect's deps, it will work fine but the
+    // timeout will be reset.
+    useEffect(() => {
+        callbackRef.current = callback;
+    }, [callback]);
+
+    // Set up the timeout:
+    useEffect(() => {
+        if (typeof delay === 'number') {
+            timeoutRef.current = window.setTimeout(() => callbackRef.current(), delay);
+
+            // Clear timeout if the component is unmounted or the delay changes:
+            return () => window.clearTimeout(timeoutRef.current);
+        }
+        return () => false;
+    }, [delay]);
+
+    // In case you want to manually clear the timeout from the consuming component...:
+    return timeoutRef;
 }
