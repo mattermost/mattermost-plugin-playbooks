@@ -58,6 +58,12 @@ export function emptyChecklist(): Checklist {
     };
 }
 
+export const newChecklistItem = (title = '', command = '', state = ChecklistItemState.Open): ChecklistItem => ({
+    title,
+    command,
+    state,
+});
+
 // eslint-disable-next-line
 export function isPlaybook(arg: any): arg is Playbook {
     return arg &&

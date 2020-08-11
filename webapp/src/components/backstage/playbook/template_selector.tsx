@@ -4,7 +4,7 @@
 import React, {FC} from 'react';
 import styled from 'styled-components';
 
-import {Playbook, ChecklistItemState, emptyPlaybook} from 'src/types/playbook';
+import {Playbook, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import SirenIcon from 'src/components/assets/icons/siren_icon';
 
@@ -30,116 +30,36 @@ export const PresetTemplates: PresetTemplate[] = [
                 {
                     title: 'Triage',
                     items: [
-                        {
-                            title: 'Announce incident type and resources',
-                            command: '/echo ""',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Acknowledge alert',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Get alert info',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Invite escalators',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Determine priority',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Update alert priority',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Create a JIRA ticket',
-                            command: '/jira create',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Find out who’s on call',
-                            command: '/genie whoisoncall',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Announce incident',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Invite on-call lead',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
+                        newChecklistItem('Announce incident type and resources', '/echo ""'),
+                        newChecklistItem('Acknowledge alert'),
+                        newChecklistItem('Get alert info'),
+                        newChecklistItem('Invite escalators'),
+                        newChecklistItem('Determine priority'),
+                        newChecklistItem('Update alert priority'),
+                        newChecklistItem('Create a JIRA ticket', '/jira create'),
+                        newChecklistItem('Find out who’s on call', '/genie whoisoncall'),
+                        newChecklistItem('Announce incident'),
+                        newChecklistItem('Invite on-call lead'),
                     ],
                 },
                 {
                     title: 'Investigation',
                     items: [
-                        {
-                            title: 'Perform initial investigation',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Escalate to other on-call members (optional)',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Escalate to other engineering teams (optional)',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
+                        newChecklistItem('Perform initial investigation'),
+                        newChecklistItem('Escalate to other on-call members (optional)'),
+                        newChecklistItem('Escalate to other engineering teams (optional)'),
                     ],
                 },
                 {
                     title: 'Resolution',
                     items: [
-                        {
-                            title: 'Close alert',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'End the incident',
-                            command: '/incident end',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Schedule a post-mortem',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Record post-mortem action items',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Update playbook with learnings',
-                            command: '',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Export channel message history',
-                            command: '/export',
-                            state: ChecklistItemState.Open,
-                        },
-                        {
-                            title: 'Archive this channel',
-                            command: '/incident archive',
-                            state: ChecklistItemState.Open,
-                        },
+                        newChecklistItem('Close alert'),
+                        newChecklistItem('End the incident', '/incident end'),
+                        newChecklistItem('Schedule a post-mortem'),
+                        newChecklistItem('Record post-mortem action items'),
+                        newChecklistItem('Update playbook with learnings'),
+                        newChecklistItem('Export channel message history', '/export'),
+                        newChecklistItem('Archive this channel', '/incident archive'),
                     ],
                 },
             ],
