@@ -64,12 +64,12 @@ const PlaybookList: FC = () => {
         setFetchParams({...fetchParams, page});
     }
 
+    const fetchPlaybooks = async () => {
+        const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
+        setPlaybooks(result.items);
+        setTotalCount(result.total_count);
+    };
     useEffect(() => {
-        const fetchPlaybooks = async () => {
-            const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
-            setPlaybooks(result.items);
-            setTotalCount(result.total_count);
-        };
         fetchPlaybooks();
     }, [currentTeam.id, fetchParams]);
 
@@ -95,8 +95,15 @@ const PlaybookList: FC = () => {
     const onDelete = async () => {
         if (selectedPlaybook) {
             await deletePlaybook(selectedPlaybook);
+            let page = fetchParams.page;
+
+            // Fetch latest count
             const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
-            setPlaybooks(result.items);
+
+            // Go back to previous page if the last item on this page was just deleted
+            page = Math.max(Math.min(result.page_count - 1, page), 0);
+            setPage(page);
+
             hideConfirmModal();
             setShowBanner(true);
 
