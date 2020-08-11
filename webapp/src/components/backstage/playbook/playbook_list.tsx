@@ -164,13 +164,11 @@ const PlaybookList: FC = () => {
     return (
         <div className='Playbook'>
             { deleteSuccessfulBanner }
-            {
-                <TemplateSelector
-                    onSelect={(template: PresetTemplate) => {
-                        newPlaybook(template.title);
-                    }}
-                />
-            }
+            <TemplateSelector
+                onSelect={(template: PresetTemplate) => {
+                    newPlaybook(template.title);
+                }}
+            />
             {
                 (playbooks?.length === 0) &&
                 <>

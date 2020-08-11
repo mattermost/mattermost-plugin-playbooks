@@ -151,9 +151,7 @@ const RootContainer = styled.div`
     display: flex;
     flex-direction: column;
     overflow-x: auto;
-    padding: 32px 0;
-    padding-right: 20px;
-    padding-left: 20px;
+    padding: 32px 20px;
     background: rgba(var(--center-channel-color-rgb), 0.03);
 `;
 
