@@ -178,6 +178,32 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			},
 		},
 		{
+			name: "no options, page 4 by 2",
+			options: incident.HeaderFilterOptions{
+				Page:    4,
+				PerPage: 2,
+			},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  4,
+				HasMore:    false,
+				Items:      nil,
+			},
+		},
+		{
+			name: "no options, page 999 by 2",
+			options: incident.HeaderFilterOptions{
+				Page:    999,
+				PerPage: 2,
+			},
+			want: incident.GetIncidentsResults{
+				TotalCount: 7,
+				PageCount:  4,
+				HasMore:    false,
+				Items:      nil,
+			},
+		},
+		{
 			name: "no options, page 1 by 2",
 			options: incident.HeaderFilterOptions{
 				Page:    1,

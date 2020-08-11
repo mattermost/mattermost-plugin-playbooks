@@ -12,3 +12,5 @@ export enum ErrorPageTypes {
 }
 
 export const TEMPLATE_TITLE_KEY = 'template_title';
+
+export const BACKSTAGE_LIST_PER_PAGE = 15;

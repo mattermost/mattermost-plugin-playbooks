@@ -19,7 +19,7 @@ import {SortableColHeader} from 'src/components/sortable_col_header';
 import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {PaginationRow} from 'src/components/backstage/incidents/incident_list/pagination_row';
+import {PaginationRow} from 'src/components/pagination_row';
 import {FetchIncidentsParams, Incident} from 'src/types/incident';
 import {
     fetchCommandersInTeam,
@@ -31,9 +31,9 @@ import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import './incident_list.scss';
 import BackstageListHeader from '../../backstage_list_header';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 const debounceDelay = 300; // in milliseconds
-const PER_PAGE = 15;
 
 const BackstageIncidentList: FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -46,7 +46,7 @@ const BackstageIncidentList: FC = () => {
         {
             team_id: currentTeam.id,
             page: 0,
-            per_page: PER_PAGE,
+            per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'created_at',
             order: 'desc',
         },
@@ -265,7 +265,7 @@ const BackstageIncidentList: FC = () => {
                 }
                 <PaginationRow
                     page={fetchParams.page ? fetchParams.page : 0}
-                    perPage={fetchParams.per_page ? fetchParams.per_page : PER_PAGE}
+                    perPage={fetchParams.per_page ? fetchParams.per_page : BACKSTAGE_LIST_PER_PAGE}
                     totalCount={totalCount}
                     setPage={setPage}
                 />
