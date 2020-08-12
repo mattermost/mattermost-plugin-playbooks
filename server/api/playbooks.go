@@ -193,7 +193,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := permissions.ViewTeam(userID, teamID, h.pluginAPI); err != nil {
+	if err2 := permissions.ViewTeam(userID, teamID, h.pluginAPI); err2 != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
 			userID,
