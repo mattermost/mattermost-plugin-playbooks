@@ -6,7 +6,6 @@ import {useDispatch} from 'react-redux';
 
 import {setRHSOpen, startIncident} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
-import RHSHeader from 'src/components/rhs/rhs_header';
 import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
 
 import IncidentRHSIcon from '../assets/icons/incident_rhs_icon';
@@ -70,7 +69,6 @@ const RightHandSidebar: FC<Props> = (props: Props) => {
 
     return (
         <div className='incident-rhs'>
-            <RHSHeader/>
             <div className='incident-rhs__content'>
                 <RHSIncidentDetails
                     incident={incident}
