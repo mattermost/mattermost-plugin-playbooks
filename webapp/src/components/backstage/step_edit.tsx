@@ -7,6 +7,7 @@ import {ChecklistItem} from 'src/types/playbook';
 export interface StepEditProps {
     step: ChecklistItem;
     onUpdate: (updatedStep: ChecklistItem) => void
+    autocompleteOnBottom: boolean;
 }
 
 const Container = styled.div`
@@ -148,7 +149,7 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
                                 setStepCommand(input.value);
                             }
                         }}
-                        suggestionListStyle={'top'}
+                        suggestionListStyle={props.autocompleteOnBottom ? 'bottom' : 'top'}
                         type='text'
                         value={stepCommand}
                         onBlur={submit}

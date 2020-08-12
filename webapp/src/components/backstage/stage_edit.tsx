@@ -97,6 +97,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                                         onDelete={() => onRemoveChecklistItem(idx)}
                                     >
                                         <StepEdit
+                                            autocompleteOnBottom={props.checklistIndex === 0 && idx === 0}
                                             step={checklistItem}
                                             onUpdate={(updatedStep: ChecklistItem) => {
                                                 onChangeChecklistItem(idx, updatedStep);
