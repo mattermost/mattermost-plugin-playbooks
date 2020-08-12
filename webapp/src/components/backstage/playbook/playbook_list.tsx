@@ -103,7 +103,7 @@ const PlaybookList: FC = () => {
             // Go back to previous page if the last item on this page was just deleted
             page = Math.max(Math.min(result.page_count - 1, page), 0);
 
-            // Setting the page here results in fetching the playbooks using the effect above
+            // Setting the page here results in fetching playbooks through the fetchParams dependency of the effect above
             setPage(page);
 
             hideConfirmModal();
