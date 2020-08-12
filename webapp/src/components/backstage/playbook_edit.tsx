@@ -336,7 +336,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         <StagesAndStepsIcon/>
                         <EditHeaderTextContainer>
                             <EditHeaderText>{'Stages and Steps'}</EditHeaderText>
-                            <EditHeaderHelpText>{'Stages allow you to group your tasks. Steps are meant to be completed by members of the workflow channel.'}</EditHeaderHelpText>
+                            <EditHeaderHelpText>{'Stages allow you to group your tasks. Steps are meant to be completed by members of the incident channel.'}</EditHeaderHelpText>
                         </EditHeaderTextContainer>
                     </EditHeader>
                     <EditContent>
