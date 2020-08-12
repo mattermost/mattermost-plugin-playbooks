@@ -47,6 +47,7 @@ const EditHeader = styled.div`
     height: 56px;
     padding: 8px 32px;
     box-shadow: 0px 1px 0px #E5E5E5, 0px 0px 0px #E5E5E5;
+    white-space: nowrap;
 `;
 
 const EditHeaderTextContainer = styled.span`
