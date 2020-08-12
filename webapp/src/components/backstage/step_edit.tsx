@@ -1,6 +1,6 @@
-import React, {FC, useState} from 'react';
+import React, {FC, useState, useRef} from 'react';
 
-import styled from 'styled-components';
+import styled, {createGlobalStyle} from 'styled-components';
 
 import {ChecklistItem} from 'src/types/playbook';
 
@@ -33,6 +33,11 @@ const StepInput = styled.input`
     flex-grow: 1;
 `;
 
+const AutocompleteWrapper = styled.div`
+    flex-grow: 1;
+    height: 40px;
+`;
+
 const Description = styled.textarea`
     background-color: rgb(var(--center-channel-bg-rgb));
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
@@ -53,7 +58,23 @@ const AddDescription = styled.button`
     text-align: left;
 `;
 
+const OverrideWebappStyle = createGlobalStyle`
+    .custom-textarea.custom-textarea {
+        height: 40px;
+        min-height: 40px;
+    }
+
+    .custom-textarea.custom-textarea:focus {
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        padding: 0 16px;
+    }
+`;
+
+// @ts-ignore
+const AutocompleteTextbox = window.Components.Textbox;
+
 const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
+    const commandInputRef = useRef(null);
     const [stepTitle, setStepTitle] = useState(props.step.title);
     const [stepCommand, setStepCommand] = useState(props.step.command);
     const [stepDescription, setStepDescription] = useState(props.step.description);
@@ -107,18 +128,36 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
                         }
                     }}
                 />
-                <StepInput
-                    placeholder={'Slash Command'}
-                    type='text'
-                    value={stepCommand}
-                    onChange={(e) => setStepCommand(e.target.value)}
-                    onBlur={submit}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === 'Escape') {
-                            submit();
-                        }
-                    }}
-                />
+                <OverrideWebappStyle/>
+                <AutocompleteWrapper>
+                    <AutocompleteTextbox
+                        ref={commandInputRef}
+                        inputComponent={StepInput}
+                        createMessage={'Slash Command'}
+                        onKeyDown={(e: KeyboardEvent) => {
+                            if (e.key === 'Enter' || e.key === 'Escape') {
+                                if (commandInputRef.current) {
+                                // @ts-ignore
+                                    commandInputRef.current!.blur();
+                                }
+                            }
+                        }}
+                        onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                            if (e.target) {
+                                const input = e.target as HTMLInputElement;
+                                setStepCommand(input.value);
+                            }
+                        }}
+                        suggestionListStyle={'top'}
+                        type='text'
+                        value={stepCommand}
+                        onBlur={submit}
+
+                        // the following are required props but aren't used
+                        characterLimit={256}
+                        onKeyPress={() => true}
+                    />
+                </AutocompleteWrapper>
             </StepLine>
             {description}
         </Container>
