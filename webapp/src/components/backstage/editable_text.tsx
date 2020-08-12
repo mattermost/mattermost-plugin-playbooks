@@ -32,6 +32,11 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
     const [editMode, setEditMode] = useState(false);
     const [text, setText] = useState(props.text);
 
+    const submit = () => {
+        setEditMode(false);
+        props.onChange(text);
+    };
+
     if (editMode) {
         return (
             <Container>
@@ -42,19 +47,16 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
                         setText(e.target.value);
                     }}
                     autoFocus={true}
+                    onBlur={submit}
                     onKeyPress={(e) => {
                         if (e.key === 'Enter') {
-                            setEditMode(false);
-                            props.onChange(text);
+                            submit();
                         }
                     }}
                 />
                 <ClickableI
                     className='icon-check'
-                    onClick={() => {
-                        setEditMode(false);
-                        props.onChange(text);
-                    }}
+                    onClick={submit}
                 />
             </Container>
         );
