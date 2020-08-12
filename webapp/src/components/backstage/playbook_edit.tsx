@@ -242,7 +242,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     }, [urlParams.playbookId, props.isNew]);
 
     const onSave = async () => {
-        await savePlaybook(playbook);
+        const filterEmptyItems = {...playbook, checklists: playbook.checklists.map((checklist) => ({...checklist, items: checklist.items.filter((item) => item.title || item.command)}))};
+        const filterEmptyChecklists = {...filterEmptyItems, checklists: filterEmptyItems.checklists.filter((checklist) => !checklist.items || checklist.items.length > 0)};
+
+        await savePlaybook(filterEmptyChecklists);
         props.onClose();
     };
 
