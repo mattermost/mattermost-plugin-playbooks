@@ -46,7 +46,7 @@ const EditView = styled.div`
 const EditHeader = styled.div`
     height: 56px;
     padding: 8px 32px;
-    box-shadow: 0px 1px 0px #E5E5E5, 0px 0px 0px #E5E5E5;
+    box-shadow: 0px 1px 0px var(--center-channel-color-16), 0px 0px 0px var(--center-channel-color-16);
     white-space: nowrap;
 `;
 
@@ -81,7 +81,7 @@ const Sidebar = styled.div`
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    box-shadow: 1px 0px 0px #E5E5E5, -1px 0px 0px #E5E5E5;
+    box-shadow: 1px 0px 0px var(--center-channel-color-16), -1px 0px 0px var(--center-channel-color-16);
 `;
 
 const SidebarHeader = styled.div`
@@ -90,7 +90,7 @@ const SidebarHeader = styled.div`
     font-weight: 600;
     font-size: 16px;
     line-height: 24px;
-    box-shadow: 0px 1px 0px #E5E5E5, 0px 0px 0px #E5E5E5;
+    box-shadow: 0px 1px 0px var(--center-channel-color-16), 0px 0px 0px var(--center-channel-color-16);
 `;
 
 const SidebarHeaderText = styled.div`
