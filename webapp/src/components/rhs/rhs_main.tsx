@@ -14,7 +14,6 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {setRHSOpen, startIncident} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
-import RHSHeader from 'src/components/rhs/rhs_header';
 import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
 
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
@@ -34,6 +33,7 @@ const RHSContainer = styled.div`
     height: calc(100vh - 120px);
     display: flex;
     flex-direction: column;
+    position: relative;
 `;
 
 const RHSContent = styled.div`
@@ -120,7 +120,6 @@ const RightHandSidebar: FC<Props> = (props: Props) => {
 
     return (
         <RHSContainer>
-            <RHSHeader/>
             <RHSContent>
                 <RHSIncidentDetails
                     incident={incident}
