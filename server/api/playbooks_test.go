@@ -990,7 +990,7 @@ func TestPagingPlaybooks(t *testing.T) {
 			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbooktest1)
 			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid2", gomock.Any()).Return(nil).SetArg(1, playbooktest2)
 			mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid3", gomock.Any()).Return(nil).SetArg(1, playbooktest3)
-			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
 			handler.ServeHTTP(testrecorder, testreq, "testpluginid")
