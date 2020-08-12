@@ -22,6 +22,14 @@ const Input = styled.input`
     border: none;
     font: inherit;
     border-bottom: 1px solid;
+    width: 500px;
+`;
+
+const Text = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 500px;
+    white-space: nowrap;
 `;
 
 export const ClickableI = styled.i`
@@ -63,7 +71,9 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
     }
     return (
         <Container>
-            {text}
+            <Text>
+                {text}
+            </Text>
             <ClickableI
                 className='icon-pencil-outline'
                 onClick={() => setEditMode(true)}
