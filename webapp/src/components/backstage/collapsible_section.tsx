@@ -3,7 +3,7 @@ import React, {FC, useState} from 'react';
 import styled from 'styled-components';
 
 import HorizontalBar from './horizontal_bar';
-import EditableText, {ClickableI} from './editable_text';
+import EditableText from './editable_text';
 
 export interface CollapsibleSectionProps {
     title: string
@@ -16,6 +16,10 @@ const Container = styled.span`
     font-weight: 600;
     line-height: 24px;
     color: var(--center-channel-color);
+`;
+
+const ClickableI = styled.i`
+    cursor: pointer;
 `;
 
 const CollapsibleSection: FC<CollapsibleSectionProps> = (props: CollapsibleSectionProps) => {

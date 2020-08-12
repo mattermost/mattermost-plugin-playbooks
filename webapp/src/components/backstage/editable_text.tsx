@@ -32,7 +32,7 @@ const Text = styled.span`
     white-space: nowrap;
 `;
 
-export const ClickableI = styled.i`
+const ClickableI = styled.i`
     cursor: pointer;
 `;
 

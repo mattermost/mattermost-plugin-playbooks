@@ -8,6 +8,10 @@ const HandleContainer = styled.div`
     margin-top: 12px;
 `;
 
+const ClickableI = styled.i`
+    cursor: pointer;
+`;
+
 interface HandleProps {
     show: boolean;
 }
@@ -51,7 +55,7 @@ const DragHandle: FC<DragHandleProps> = (props: DragHandleProps) => {
                 show={hover}
                 onClick={props.onDelete}
             >
-                <i
+                <ClickableI
                     className='icon icon-trash-can-outline'
                 />
             </Handle>
