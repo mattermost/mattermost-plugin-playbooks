@@ -28,7 +28,7 @@ const Input = styled.input`
 const Text = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 500px;
+    max-width: 450px;
     white-space: nowrap;
 `;
 
