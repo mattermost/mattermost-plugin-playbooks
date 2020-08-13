@@ -11,10 +11,11 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
+import PlaybookList from 'src/components/backstage/playbook_list';
+import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
 import BackstageIncidentDetails from 'src/components/backstage/incidents/incident_details/incident_details';
-import PlaybookList from 'src/components/backstage/playbook/playbook_list';
-import PlaybookEdit from 'src/components/backstage/playbook/playbook_edit';
+
 import {ErrorPageTypes} from 'src/constants';
 
 import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
@@ -53,7 +54,7 @@ const BackstageContainer = styled.div`
     height: 100%;
 `;
 
-const Icon = styled.i`
+export const BackstageNavbarBackIcon = styled.i`
     font-size: 18px;
     cursor: pointer;
 
@@ -64,7 +65,7 @@ const Icon = styled.i`
     }
 `;
 
-const BackstageNavbar = styled.div`
+export const BackstageNavbar = styled.div`
     display: flex;
     align-items: center;
     height: 80px;
@@ -136,30 +137,35 @@ const Backstage: FC = () => {
 
     return (
         <BackstageContainer>
-            <BackstageNavbar>
-                <Icon
-                    className='icon-arrow-back-ios back-icon'
-                    onClick={goToMattermost}
-                />
-                <BackstageTitlebarItem
-                    to={`${match.url}/incidents`}
-                    activeClassName={'active'}
-                    data-testid='incidentsLHSButton'
-                >
-                    <IncidentIcon/>
-                    <i className='mr-2'/>
-                    {'Incidents'}
-                </BackstageTitlebarItem>
-                <BackstageTitlebarItem
-                    to={`${match.url}/playbooks`}
-                    activeClassName={'active'}
-                    data-testid='playbooksLHSButton'
-                >
-                    <PlaybookIcon/>
-                    <i className='mr-2'/>
-                    {'Playbooks'}
-                </BackstageTitlebarItem>
-            </BackstageNavbar>
+            <Switch>
+                <Route path={`${match.url}/playbooks/*`}/>
+                <Route>
+                    <BackstageNavbar>
+                        <BackstageNavbarBackIcon
+                            className='icon-arrow-back-ios back-icon'
+                            onClick={goToMattermost}
+                        />
+                        <BackstageTitlebarItem
+                            to={`${match.url}/incidents`}
+                            activeClassName={'active'}
+                            data-testid='incidentsLHSButton'
+                        >
+                            <IncidentIcon/>
+                            <i className='mr-2'/>
+                            {'Incidents'}
+                        </BackstageTitlebarItem>
+                        <BackstageTitlebarItem
+                            to={`${match.url}/playbooks`}
+                            activeClassName={'active'}
+                            data-testid='playbooksLHSButton'
+                        >
+                            <PlaybookIcon/>
+                            <i className='mr-2'/>
+                            {'Playbooks'}
+                        </BackstageTitlebarItem>
+                    </BackstageNavbar>
+                </Route>
+            </Switch>
             <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>

@@ -10,6 +10,8 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
+import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
+
 import {Playbook, FetchPlaybooksReturn} from 'src/types/playbook';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
@@ -18,11 +20,9 @@ import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import TemplateSelector, {PresetTemplate} from 'src/components/backstage/playbook/template_selector';
+import TemplateSelector, {PresetTemplate} from 'src/components/backstage/template_selector';
 
-import NoContentPlaybookSvg from '../../assets/no_content_playbooks_svg';
-
-import BackstageListHeader from '../backstage_list_header';
+import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';

@@ -18,7 +18,6 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
-import './checklist.scss';
 
 interface Props {
     checklist: Checklist;
