@@ -196,7 +196,7 @@
     "max-nested-callbacks": [
       2,
       {
-        "max": 2
+        "max": 8
       }
     ],
     "max-statements-per-line": [

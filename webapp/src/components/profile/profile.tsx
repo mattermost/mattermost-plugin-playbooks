@@ -18,6 +18,7 @@ import './profile.scss';
 interface Props {
     userId: string;
     classNames?: Record<string, boolean>;
+    className?: string;
     extra?: JSX.Element;
     withoutProfilePic?: boolean;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
@@ -46,7 +47,7 @@ const Profile: FC<Props> = (props: Props) => {
     }
 
     return (
-        <div className={classNames('IncidentProfile', props.classNames)}>
+        <div className={classNames('IncidentProfile', props.classNames, props.className)}>
             {
                 !props.withoutProfilePic &&
                 <div className='mr-2'>
