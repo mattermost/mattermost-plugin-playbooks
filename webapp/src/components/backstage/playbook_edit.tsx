@@ -21,13 +21,12 @@ import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
-import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
-import Profile from 'src/components/profile/profile';
 
 import './playbook.scss';
 import StagesAndStepsIcon from './stages_and_steps_icon';
 import {BackstageNavbar, BackstageNavbarBackIcon} from './backstage';
 import EditableText from './editable_text';
+import SharePlaybook from './share_playbook';
 
 const Container = styled.div`
     display: flex;
@@ -168,30 +167,6 @@ const OuterContainer = styled.div`
     display: flex;
     flex-direction: column;
     height: 100%;
-`;
-
-const ProfileAutocompleteContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
-
-const UserLine = styled.div`
-    display: flex;
-    flex-direction: row;
-    margin: 10px 0;
-`;
-
-const RemoveLink = styled.a`
-    flex-shrink: 0;
-    font-weight: normal;
-    font-size: 14px;
-    line-height: 20px;
-    color: rgba(var(--center-channel-color), 0.56);
-`;
-
-const SharePlaybookProfile = styled(Profile)`
-    flex-grow: 1;
-    overflow: hidden;
 `;
 
 interface Props {
@@ -416,19 +391,12 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         <SidebarHeaderText>
                             {'Share Playbook'}
                         </SidebarHeaderText>
-                        <ProfileAutocompleteContainer>
-                            <ProfileAutocomplete
-                                onAddUser={handleUsersInput}
-                                userIds={playbook.member_ids}
-                                searchProfiles={searchUsers}
-                            />
-                            {playbook.member_ids.map((userId) => (
-                                <UserLine key={userId}>
-                                    <SharePlaybookProfile userId={userId}/>
-                                    <RemoveLink onClick={() => handleRemoveUser(userId)} >{'Remove'}</RemoveLink>
-                                </UserLine>
-                            ))}
-                        </ProfileAutocompleteContainer>
+                        <SharePlaybook
+                            onAddUser={handleUsersInput}
+                            onRemoveUser={handleRemoveUser}
+                            searchProfiles={searchUsers}
+                            playbook={playbook}
+                        />
                     </SidebarContent>
                 </Sidebar>
             </Container>
