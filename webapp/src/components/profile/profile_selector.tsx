@@ -2,25 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-
+import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import {css} from '@emotion/core';
 
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-
-interface Props {
-    commanderId?: string;
-    enableEdit: boolean;
-    isClearable?: boolean;
-    customControl?: (props: ControlProps<any>) => React.ReactElement;
-    controlledOpenToggle?: boolean;
-    getUsers: () => Promise<UserProfile[]>;
-    onSelectedChange: (userId?: string) => void;
-}
 
 interface Option {
     value: string;
@@ -32,31 +24,25 @@ interface ActionObj {
     action: ActionTypes;
 }
 
-export const getFullName = (firstName: string, lastName: string): string => {
-    if (firstName && lastName) {
-        return firstName + ' ' + lastName;
-    } else if (firstName) {
-        return firstName;
-    } else if (lastName) {
-        return lastName;
-    }
-
-    return '';
-};
-
-export const getUserDescription = (firstName: string, lastName: string, nickName: string): string => {
-    if ((firstName || lastName) && nickName) {
-        return ` ${getFullName(firstName, lastName)} (${nickName})`;
-    } else if (nickName) {
-        return ` (${nickName})`;
-    } else if (firstName || lastName) {
-        return ` ${getFullName(firstName, lastName)}`;
-    }
-
-    return '';
-};
+interface Props {
+    selectedUserId?: string;
+    placeholder: string;
+    placeholderButtonClass?: string;
+    profileButtonClass?: string;
+    enableEdit: boolean;
+    isClearable?: boolean;
+    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    controlledOpenToggle?: boolean;
+    withoutProfilePic?: boolean;
+    defaultValue?: string;
+    selfIsFirstOption?: boolean;
+    getUsers: () => Promise<UserProfile[]>;
+    onSelectedChange: (userId?: string) => void;
+}
 
 export default function ProfileSelector(props: Props) {
+    const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         if (!isOpen) {
@@ -78,19 +64,25 @@ export default function ProfileSelector(props: Props) {
     const [userOptions, setUserOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
-        const formatName = (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-            const name = '@' + userName;
-            const description = getUserDescription(firstName, lastName, nickName);
-            return (
-                <>
-                    <span>{name}</span>
-                    {description && <span className={'description'}>{description}</span>}
-                </>
-            );
+        const formatName = (descriptionSuffix: string) => {
+            return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
+                const name = '@' + userName;
+                const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
+                return (
+                    <>
+                        <span>{name}</span>
+                        {description && <span className={'description'}>{description}</span>}
+                    </>
+                );
+            };
         };
 
         const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
             return '@' + userName + getUserDescription(firstName, lastName, nickName);
+        };
+
+        const needsSuffix = (userId: string) => {
+            return props.selfIsFirstOption && userId === currentUserId;
         };
 
         const users = await props.getUsers();
@@ -100,12 +92,21 @@ export default function ProfileSelector(props: Props) {
                 label: (
                     <Profile
                         userId={user.id}
-                        nameFormatter={formatName}
+                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
                     />
                 ),
                 userId: user.id,
             });
         });
+
+        if (props.selfIsFirstOption) {
+            const idx = optionList.findIndex((elem) => elem.userId === currentUserId);
+            if (idx > 0) {
+                const currentUser = optionList.splice(idx, 1);
+                optionList.unshift(currentUser[0]);
+            }
+        }
+
         setUserOptions(optionList);
     }
 
@@ -116,20 +117,20 @@ export default function ProfileSelector(props: Props) {
 
     const [selected, setSelected] = useState<Option | null>(null);
 
-    // Whenever the commanderId changes we have to set the selected, but we can only do this once we
+    // Whenever the selectedUserId changes we have to set the selected, but we can only do this once we
     // have userOptions
     useEffect(() => {
         if (userOptions === []) {
             return;
         }
 
-        const commander = userOptions.find((option: Option) => option.userId === props.commanderId);
-        if (commander) {
-            setSelected(commander);
+        const user = userOptions.find((option: Option) => option.userId === props.selectedUserId);
+        if (user) {
+            setSelected(user);
         } else {
             setSelected(null);
         }
-    }, [userOptions, props.commanderId]);
+    }, [userOptions, props.selectedUserId]);
 
     const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
@@ -143,11 +144,13 @@ export default function ProfileSelector(props: Props) {
     };
 
     let target;
-    if (props.commanderId) {
+    if (props.selectedUserId) {
         target = (
             <ProfileButton
                 enableEdit={props.enableEdit}
-                userId={props.commanderId}
+                userId={props.selectedUserId}
+                withoutProfilePic={props.withoutProfilePic}
+                profileButtonClass={props.profileButtonClass}
                 onClick={props.enableEdit ? toggleOpen : () => null}
             />
         );
@@ -155,9 +158,9 @@ export default function ProfileSelector(props: Props) {
         target = (
             <button
                 onClick={toggleOpen}
-                className={'IncidentFilter-button'}
+                className={props.placeholderButtonClass || 'IncidentFilter-button'}
             >
-                {'Commander'}
+                {props.placeholder}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
             </button>
         );
@@ -165,7 +168,10 @@ export default function ProfileSelector(props: Props) {
 
     // The following is awkward, but makes TS happy.
     const baseComponents = {DropdownIndicator: null, IndicatorSeparator: null};
-    const components = props.customControl ? {...baseComponents, Control: props.customControl} : baseComponents;
+    const components = props.customControl ? {
+        ...baseComponents,
+        Control: props.customControl,
+    } : baseComponents;
 
     return (
         <Dropdown
@@ -250,3 +256,18 @@ const Blanket = (props: Record<string, any>) => (
     />
 );
 
+const getFullName = (firstName: string, lastName: string): string => {
+    return (firstName + ' ' + lastName).trim();
+};
+
+const getUserDescription = (firstName: string, lastName: string, nickName: string): string => {
+    if ((firstName || lastName) && nickName) {
+        return ` ${getFullName(firstName, lastName)} (${nickName})`;
+    } else if (nickName) {
+        return ` (${nickName})`;
+    } else if (firstName || lastName) {
+        return ` ${getFullName(firstName, lastName)}`;
+    }
+
+    return '';
+};

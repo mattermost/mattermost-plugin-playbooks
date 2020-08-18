@@ -11,7 +11,7 @@ const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 
 export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;
 
-export const workflowsRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
+export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 

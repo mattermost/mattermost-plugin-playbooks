@@ -87,7 +87,7 @@ func TestIncidents(t *testing.T) {
 		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
@@ -135,7 +135,7 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
@@ -193,7 +193,7 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
@@ -233,7 +233,7 @@ func TestIncidents(t *testing.T) {
 		}
 
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbook.Playbook{})
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -272,7 +272,7 @@ func TestIncidents(t *testing.T) {
 		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
 
 		incidentJSON, err := json.Marshal(testIncident)
@@ -310,7 +310,7 @@ func TestIncidents(t *testing.T) {
 		retI.PrimaryChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
 
 		incidentJSON, err := json.Marshal(testIncident)
@@ -344,7 +344,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 
 		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
@@ -455,6 +455,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
 		reset()
+		userID := "testuserid"
 
 		testIncidentHeader := incident.Header{
 			ID:               "incidentID",
@@ -469,10 +470,11 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
 		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("", incident.ErrNotFound)
+		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncidentHeader.PrimaryChannelID)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.PrimaryChannelID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		testreq.Header.Add("Mattermost-User-ID", userID)
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
@@ -495,6 +497,8 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncidentHeader.PrimaryChannelID).Return(testIncidentHeader.ID, nil)
+		incidentService.EXPECT().GetIncident(testIncidentHeader.ID).Return(&incident.Incident{Header: testIncidentHeader}, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
@@ -572,7 +576,7 @@ func TestIncidents(t *testing.T) {
 
 		incidentService.EXPECT().
 			GetIncident("incidentID").
-			Return(&testIncident, nil)
+			Return(&testIncident, nil).Times(2)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
@@ -657,7 +661,7 @@ func TestIncidents(t *testing.T) {
 
 		incidentService.EXPECT().
 			GetIncident("incidentID").
-			Return(&testIncident, nil)
+			Return(&testIncident, nil).Times(2)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
@@ -700,7 +704,7 @@ func TestIncidents(t *testing.T) {
 
 		incidentService.EXPECT().
 			GetIncident("incidentID").
-			Return(&testIncident, nil)
+			Return(&testIncident, nil).Times(2)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
@@ -733,15 +737,6 @@ func TestIncidents(t *testing.T) {
 			Playbook: nil,
 		}
 
-		testIncidentDetails := incident.Details{
-			Incident:           testIncident,
-			ChannelName:        "theChannelName",
-			ChannelDisplayName: "theChannelDisplayName",
-			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
-			TotalPosts:         42,
-		}
-
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -751,8 +746,8 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
 		incidentService.EXPECT().
-			GetIncidentWithDetails("incidentID").
-			Return(&testIncidentDetails, nil)
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/details", nil)
@@ -798,6 +793,10 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
 		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
+
+		incidentService.EXPECT().
 			GetIncidentWithDetails("incidentID").
 			Return(&testIncidentDetails, nil)
 
@@ -832,15 +831,6 @@ func TestIncidents(t *testing.T) {
 			Playbook: nil,
 		}
 
-		testIncidentDetails := incident.Details{
-			Incident:           testIncident,
-			ChannelName:        "theChannelName",
-			ChannelDisplayName: "theChannelDisplayName",
-			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
-			TotalPosts:         42,
-		}
-
 		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -852,8 +842,8 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
 		incidentService.EXPECT().
-			GetIncidentWithDetails("incidentID").
-			Return(&testIncidentDetails, nil)
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/details", nil)
@@ -899,6 +889,10 @@ func TestIncidents(t *testing.T) {
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
 
 		incidentService.EXPECT().
 			GetIncidentWithDetails("incidentID").
@@ -950,6 +944,10 @@ func TestIncidents(t *testing.T) {
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		incidentService.EXPECT().
+			GetIncident("incidentID").
+			Return(&testIncident, nil)
 
 		incidentService.EXPECT().
 			GetIncidentWithDetails("incidentID").

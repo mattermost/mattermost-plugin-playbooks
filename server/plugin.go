@@ -61,7 +61,7 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to ensure workflow bot")
+		return errors.Wrapf(err, "failed to ensure incident bot")
 	}
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
@@ -148,7 +148,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("workflowplugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("IncidentResponsePlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil

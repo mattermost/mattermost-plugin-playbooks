@@ -38,12 +38,16 @@ export interface ChecklistItem {
     state: ChecklistItemState;
     state_modified?: string;
     state_modified_post_id?: string;
+    assignee_id?: string;
+    assignee_modified?: string;
+    assignee_modified_post_id?: string;
     command: string;
+    description: string;
 }
 
 export function emptyPlaybook(): Playbook {
     return {
-        title: '',
+        title: 'Untitled Playbook',
         team_id: '',
         create_public_incident: false,
         checklists: [emptyChecklist()],
@@ -54,9 +58,25 @@ export function emptyPlaybook(): Playbook {
 export function emptyChecklist(): Checklist {
     return {
         title: 'Default Stage',
-        items: [],
+        items: [emptyChecklistItem()],
     };
 }
+
+export function emptyChecklistItem(): ChecklistItem {
+    return {
+        title: '',
+        state: ChecklistItemState.Open,
+        command: '',
+        description: '',
+    };
+}
+
+export const newChecklistItem = (title = '', description = '', command = '', state = ChecklistItemState.Open): ChecklistItem => ({
+    title,
+    description,
+    command,
+    state,
+});
 
 // eslint-disable-next-line
 export function isPlaybook(arg: any): arg is Playbook {

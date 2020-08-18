@@ -4,10 +4,13 @@
 import React, {FC, useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
+import qs from 'qs';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+
+import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
 
 import {Playbook, FetchPlaybooksReturn} from 'src/types/playbook';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
@@ -17,28 +20,32 @@ import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import TemplateSelector, {PresetTemplate} from 'src/components/backstage/template_selector';
 
-import NoContentPlaybookSvg from '../../assets/no_content_playbooks_svg';
-
-import BackstageListHeader from '../backstage_list_header';
+import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
+import {PaginationRow} from 'src/components/pagination_row';
+import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 const DeleteBannerTimeout = 5000;
 
 const PlaybookList: FC = () => {
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
+    const [totalCount, setTotalCount] = useState(0);
     const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
-    const [fetchParams, setFetchParams] = useState<{sort: string, direction: string}>(
+    const [fetchParams, setFetchParams] = useState<{sort: string, direction: string, page: number, per_page: number}>(
         {
             sort: 'title',
             direction: 'asc',
+            page: 0,
+            per_page: BACKSTAGE_LIST_PER_PAGE,
         },
     );
 
@@ -53,11 +60,16 @@ const PlaybookList: FC = () => {
         setFetchParams({...fetchParams, sort: colName, direction: 'asc'});
     }
 
+    function setPage(page: number) {
+        setFetchParams({...fetchParams, page});
+    }
+
+    const fetchPlaybooks = async () => {
+        const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
+        setPlaybooks(result.items);
+        setTotalCount(result.total_count);
+    };
     useEffect(() => {
-        const fetchPlaybooks = async () => {
-            const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
-            setPlaybooks(result.items);
-        };
         fetchPlaybooks();
     }, [currentTeam.id, fetchParams]);
 
@@ -66,8 +78,9 @@ const PlaybookList: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}`);
     };
 
-    const newPlaybook = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new');
+    const newPlaybook = (templateTitle?: string|undefined) => {
+        const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
+        navigateToTeamPluginUrl(currentTeam.name, `/playbooks/new${queryParams}`);
     };
 
     const hideConfirmModal = () => {
@@ -82,8 +95,17 @@ const PlaybookList: FC = () => {
     const onDelete = async () => {
         if (selectedPlaybook) {
             await deletePlaybook(selectedPlaybook);
+            let page = fetchParams.page;
+
+            // Fetch latest count
             const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
-            setPlaybooks(result.items);
+
+            // Go back to previous page if the last item on this page was just deleted
+            page = Math.max(Math.min(result.page_count - 1, page), 0);
+
+            // Setting the page here results in fetching playbooks through the fetchParams dependency of the effect above
+            setPage(page);
+
             hideConfirmModal();
             setShowBanner(true);
 
@@ -160,6 +182,11 @@ const PlaybookList: FC = () => {
     return (
         <div className='Playbook'>
             { deleteSuccessfulBanner }
+            <TemplateSelector
+                onSelect={(template: PresetTemplate) => {
+                    newPlaybook(template.title);
+                }}
+            />
             {
                 (playbooks?.length === 0) &&
                 <>
@@ -174,7 +201,7 @@ const PlaybookList: FC = () => {
                         <div className='Backstage__header'>
                             <div
                                 data-testid='titlePlaybook'
-                                className='title'
+                                className='title list-title'
                             >
                                 {'Playbooks'}
                                 <div className='light'>
@@ -221,6 +248,12 @@ const PlaybookList: FC = () => {
                             </div>
                         </BackstageListHeader>
                         {body}
+                        <PaginationRow
+                            page={fetchParams.page}
+                            perPage={fetchParams.per_page}
+                            totalCount={totalCount}
+                            setPage={setPage}
+                        />
                     </div>
                     <ConfirmModal
                         show={showConfirmation}
@@ -296,7 +329,7 @@ const NoContentPage = (props: {onNewPlaybook: () => void}) => {
     return (
         <Container>
             <Title>{'What are Playbooks?'}</Title>
-            <Description>{'A playbook is a workflow template. It is created ahead of time during planning and defines the stages and steps a workflow will have, along with who can start a workflow with the playbook.'}</Description>
+            <Description>{'A playbook is an incident template. It is created ahead of time during planning and defines the stages and steps an incident will have, along with who can start an incident with the playbook.'}</Description>
             <Button
                 className='mt-6'
                 onClick={() => props.onNewPlaybook()}

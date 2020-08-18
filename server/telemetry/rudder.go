@@ -31,6 +31,7 @@ const (
 	eventRenameChecklistItem      = "RenameChecklistItem"
 	eventModifyStateChecklistItem = "ModifyStateChecklistItem"
 	eventMoveChecklistItem        = "MoveChecklistItem"
+	eventSetAssignee              = "SetAssignee"
 	eventCreatePlaybook           = "CreatePlaybook"
 	eventUpdatePlaybook           = "UpdatePlaybook"
 	eventDeletePlaybook           = "DeletePlaybook"
@@ -151,6 +152,12 @@ func (t *RudderTelemetry) RenameChecklistItem(incidentID, userID string) {
 // identified by userID in the incident identified by incidentID.
 func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID, newState string) {
 	t.track(eventModifyStateChecklistItem, checklistItemProperties(incidentID, userID))
+}
+
+// SetAssignee tracks the changing of an assignee on an item by the user
+// identified by userID in the incident identified by incidentID.
+func (t *RudderTelemetry) SetAssignee(incidentID, userID string) {
+	t.track(eventSetAssignee, checklistItemProperties(incidentID, userID))
 }
 
 // MoveChecklistItem tracks the movement of checklist items by the user

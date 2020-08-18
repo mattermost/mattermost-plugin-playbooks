@@ -18,10 +18,10 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {ChecklistItemDetails, ChecklistItemDetailsEdit} from './checklist_item';
-import './checklist.scss';
 
 interface Props {
     checklist: Checklist;
+    checklistNum: number;
     onChange?: (itemNum: number, checked: boolean) => void;
     onRedirect?: (itemNum: number) => void;
     addItem: (checklistItem: ChecklistItem) => void;
@@ -30,7 +30,7 @@ interface Props {
     reorderItems: (itemNum: number, newPosition: number) => void;
 }
 
-export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
+export const ChecklistDetails = ({checklist, checklistNum, onChange, onRedirect, addItem, removeItem, editItem, reorderItems}: Props): React.ReactElement => {
     const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const [newValue, setNewValue] = useState('');
     const [inputExpanded, setInputExpanded] = useState(false);
@@ -75,7 +75,7 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
             className='checklist-inner-container'
         >
             <div className='title'>
-                {'Checklist'}
+                {'Tasks'}
                 <a
                     className='checkbox-title__edit'
                     onClick={() => {
@@ -157,6 +157,9 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                                     <ChecklistItemDetails
                                         key={checklistItem.title + index}
                                         checklistItem={checklistItem}
+                                        checklistNum={checklistNum}
+                                        itemNum={index}
+                                        primaryChannelId={channelId}
                                         onRedirect={() => {
                                             if (onRedirect) {
                                                 onRedirect(index);
@@ -182,6 +185,7 @@ export const ChecklistDetails = ({checklist, onChange, onRedirect, addItem, remo
                             title: newValue,
                             state: ChecklistItemState.Open,
                             command: '',
+                            description: '',
                         });
                         setNewValue('');
                         setInputExpanded(false);

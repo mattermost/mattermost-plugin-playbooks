@@ -2,11 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -60,7 +63,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+	if err := permissions.ViewTeam(userID, pbook.TeamID, h.pluginAPI); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to create playbook on teamID %s",
 			userID,
@@ -179,14 +182,18 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
-	opts := parseGetPlaybooksOptions(r.URL)
+	opts, page, perPage, err := parseGetPlaybooksOptions(r.URL)
+	if err != nil {
+		HandleError(w, errors.Wrap(err, "failed to parse playbook options"))
+		return
+	}
 
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
 		return
 	}
 
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM) {
+	if err2 := permissions.ViewTeam(userID, teamID, h.pluginAPI); err2 != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
 			userID,
@@ -207,14 +214,18 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 			allowedPlaybooks = append(allowedPlaybooks, pb)
 		}
 	}
+	totalCount := len(allowedPlaybooks)
+	// Note: ignoring overflow for now
+	pageCount := int(math.Ceil((float64(totalCount) / float64(perPage))))
+	hasMore := page+1 < pageCount
 
 	jsonBytes, err := json.Marshal(listPlaybookResult{
 		listResult: listResult{
-			TotalCount: len(allowedPlaybooks),
-			PageCount:  1,
-			HasMore:    false,
+			TotalCount: totalCount,
+			PageCount:  pageCount,
+			HasMore:    hasMore,
 		},
-		Items: allowedPlaybooks,
+		Items: pagePlaybooks(allowedPlaybooks, page, perPage),
 	})
 	if err != nil {
 		HandleError(w, err)
@@ -229,7 +240,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, thePlaybook.TeamID, model.PERMISSION_VIEW_TEAM) {
+	if err := permissions.ViewTeam(userID, thePlaybook.TeamID, h.pluginAPI); err != nil {
 		return false
 	}
 
@@ -243,7 +254,7 @@ func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook
 	return h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
 }
 
-func parseGetPlaybooksOptions(u *url.URL) playbook.Options {
+func parseGetPlaybooksOptions(u *url.URL) (opts playbook.Options, page, perPage int, err error) {
 	params := u.Query()
 
 	sortField := playbook.SortField(params.Get("sort"))
@@ -256,8 +267,46 @@ func parseGetPlaybooksOptions(u *url.URL) playbook.Options {
 		sortDirection = playbook.Asc
 	}
 
+	pageParam := params.Get("page")
+	if pageParam == "" {
+		pageParam = "0"
+	}
+	page, err = strconv.Atoi(pageParam)
+	if err != nil {
+		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'page': it should be a number")
+	}
+	if page < 0 {
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'page': it should be a positive number")
+	}
+
+	perPageParam := params.Get("per_page")
+	if perPageParam == "" || perPageParam == "0" {
+		perPageParam = "1000"
+	}
+	perPage, err = strconv.Atoi(perPageParam)
+	if err != nil {
+		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
+	}
+	if perPage < 0 {
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'per_page': it should be a positive number")
+	}
+
 	return playbook.Options{
 		Sort:      sortField,
 		Direction: sortDirection,
+	}, page, perPage, nil
+}
+
+func pagePlaybooks(playbooks []playbook.Playbook, page, perPage int) []playbook.Playbook {
+	// Note: ignoring overflow for now
+	start := min(page*perPage, len(playbooks))
+	end := min(start+perPage, len(playbooks))
+	return playbooks[start:end]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
 	}
+	return b
 }
