@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/Masterminds/squirrel v1.4.0
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/golang/mock v1.4.3
 	github.com/google/go-querystring v1.0.0
 	github.com/gorilla/mux v1.7.4
