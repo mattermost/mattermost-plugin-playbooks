@@ -132,6 +132,10 @@ const SaveButton = styled.button`
         background: rgba(var(--button-bg-rgb), 0.8);
     }
 
+    &:disabled {
+        background: rgba(var(--button-bg-rgb), 0.4);
+    }
+
     i {
         font-size: 24px;
     }
@@ -179,6 +183,12 @@ interface URLParams {
     playbookId?: string;
 }
 
+const FetchingStateType = {
+    loading: 'loading',
+    fetched: 'fetched',
+    notFound: 'notfound',
+};
+
 const PlaybookEdit: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -195,11 +205,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     const urlParams = useParams<URLParams>();
     const location = useLocation();
 
-    const FetchingStateType = {
-        loading: 'loading',
-        fetched: 'fetched',
-        notFound: 'notfound',
-    };
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     useEffect(() => {
@@ -241,9 +246,21 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
+    const saveDisabled = playbook.title.trim() === '' || playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
+
     const onSave = async () => {
+        if (saveDisabled) {
+            return;
+        }
+
         const filterEmptyItems = {...playbook, checklists: playbook.checklists.map((checklist) => ({...checklist, items: checklist.items.filter((item) => item.title || item.command)}))};
         const filterEmptyChecklists = {...filterEmptyItems, checklists: filterEmptyItems.checklists.filter((checklist) => !checklist.items || checklist.items.length > 0)};
+
+        // It's possible there was actually nothing there.
+        if (filterEmptyChecklists.checklists.length === 0) {
+            updateChecklist(filterEmptyChecklists.checklists);
+            return;
+        }
 
         await savePlaybook(filterEmptyChecklists);
         props.onClose();
@@ -296,8 +313,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
-
-    const saveDisabled = playbook.title.trim() === '' || playbook.member_ids.length === 0 || !changesMade;
 
     if (!props.isNew) {
         switch (fetchingState) {

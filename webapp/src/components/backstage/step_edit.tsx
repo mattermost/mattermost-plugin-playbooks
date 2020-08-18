@@ -82,12 +82,16 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
     const [stepDescriptionPressed, setStepDescriptionPressed] = useState(false);
 
     const submit = () => {
-        props.onUpdate({
-            ...props.step,
-            title: stepTitle,
-            command: stepCommand,
-            description: stepDescription,
-        });
+        if (stepTitle !== props.step.title ||
+            stepCommand !== props.step.command ||
+                stepDescription !== props.step.description) {
+            props.onUpdate({
+                ...props.step,
+                title: stepTitle,
+                command: stepCommand,
+                description: stepDescription,
+            });
+        }
     };
 
     let description = (
