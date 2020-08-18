@@ -85,23 +85,15 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
     };
 
     const getOptionValue = (user: UserProfile) => {
-        if (user.id) {
-            return user.id;
-        }
-
-        return user;
+        return user.id;
     };
 
     const formatOptionLabel = (option: UserProfile) => {
-        if (option.username) {
-            return (
-                <React.Fragment>
-                    { `@${option.username}`}
-                </React.Fragment>
-            );
-        }
-
-        return option;
+        return (
+            <React.Fragment>
+                { `@${option.username}`}
+            </React.Fragment>
+        );
     };
 
     const debouncedSearchProfiles = debounce((term: string, callback: (options: OptionsType<UserProfile>) => void) => {
