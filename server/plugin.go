@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -17,7 +18,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	sq "github.com/Masterminds/squirrel"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -130,7 +133,43 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
+	mutex, err := cluster.NewMutex(p.API, manifest.Id+"dbMutex")
+	if err != nil {
+		return errors.Wrapf(err, "failed creating cluster mutex")
+	}
+
+	// Cluster lock: only one plugin will perform the migration when needed
+	p.DBMigration(pluginAPIClient, mutex)
+
 	p.API.LogDebug("Incident response plugin Activated")
+	return nil
+}
+
+func (p *Plugin) DBMigration(pluginAPIClient *pluginapi.Client, mutex *cluster.Mutex) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	db, err := pluginAPIClient.Store.GetMasterDB()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get main database")
+	}
+
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+	if pluginAPIClient.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		builder = builder.PlaceholderFormat(sq.Dollar)
+	}
+
+	currentSchemaVersion, err := sqlstore.GetCurrentVersion(builder, db)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get the current schema version")
+	}
+
+	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
+		if err := sqlstore.Migrate(builder, db, currentSchemaVersion); err != nil {
+			return errors.Wrapf(err, "failed to complete migrations")
+		}
+	}
+
 	return nil
 }
 
