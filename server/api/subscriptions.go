@@ -35,19 +35,9 @@ func NewSubscriptionHandler(router *mux.Router, subscriptionService subscription
 	return handler
 }
 
-func (h *SubscriptionHandler) hasPermissionsToPlaybook(userID, subscriberID string, pbook playbook.Playbook) bool {
-	userInPlaybook := false
-	subscriberInPlaybook := false
-
+func (h *SubscriptionHandler) hasPermissionsToPlaybook(subscriberID string, pbook playbook.Playbook) bool {
 	for _, memberID := range pbook.MemberIDs {
-		if userID == memberID {
-			userInPlaybook = true
-		}
 		if subscriberID == memberID {
-			subscriberInPlaybook = true
-		}
-
-		if userInPlaybook && subscriberInPlaybook {
 			return true
 		}
 	}
@@ -69,7 +59,12 @@ func (h *SubscriptionHandler) postSubscription(w http.ResponseWriter, r *http.Re
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !h.hasPermissionsToPlaybook(userID, newSubscription.UserID, pbook) {
+	if userID != newSubscription.UserID {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: the subscriber must equal the authenticated user", nil)
+		return
+	}
+
+	if !h.hasPermissionsToPlaybook(newSubscription.UserID, pbook) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
