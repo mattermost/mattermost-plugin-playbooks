@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
@@ -32,11 +33,12 @@ var (
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	handler         *api.Handler
-	config          *config.ServiceImpl
-	incidentService incident.Service
-	playbookService playbook.Service
-	bot             *bot.Bot
+	handler             *api.Handler
+	config              *config.ServiceImpl
+	incidentService     incident.Service
+	playbookService     playbook.Service
+	subscriptionService subscription.Service
+	bot                 *bot.Bot
 }
 
 // ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
@@ -118,8 +120,11 @@ func (p *Plugin) OnActivate() error {
 	)
 
 	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
+	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
+
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot)
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
+	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 
 	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrapf(err, "failed register commands")
