@@ -58,59 +58,103 @@ func TestCreateSubscription(t *testing.T) {
 		return kvAPI, handler
 	}
 
-	recorder := httptest.NewRecorder()
-
+	testUserID := "testuserid"
 	fixtureData := []struct {
-		testName string
-		pbook    playbook.Playbook
-		subsc    subscription.Subscription
+		testName       string
+		pbook          playbook.Playbook
+		subsc          subscription.Subscription
+		requestUser    string
+		expectedStatus int
 	}{
 		{
-			testName: "valid playbook",
+			testName: "valid subscription",
 			pbook: playbook.Playbook{
 				ID:                   "pbookID",
 				Title:                "My Playbook",
 				TeamID:               "teamid",
 				CreatePublicIncident: true,
 				Checklists:           []playbook.Checklist{},
-				MemberIDs:            []string{"testuserid", "subscriberID"},
+				MemberIDs:            []string{testUserID},
 			},
 			subsc: subscription.Subscription{
 				URL:        url.URL{},
 				PlaybookID: "pbookID",
-				UserID:     "subscriberID",
+				UserID:     testUserID,
 			},
+			requestUser:    testUserID,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			testName: "different user and subscriber",
+			pbook: playbook.Playbook{
+				ID:                   "pbookID",
+				Title:                "My Playbook",
+				TeamID:               "teamid",
+				CreatePublicIncident: true,
+				Checklists:           []playbook.Checklist{},
+				MemberIDs:            []string{testUserID},
+			},
+			subsc: subscription.Subscription{
+				URL:        url.URL{},
+				PlaybookID: "pbookID",
+				UserID:     "otheruserid",
+			},
+			requestUser:    testUserID,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			testName: "user not in playbook",
+			pbook: playbook.Playbook{
+				ID:                   "pbookID",
+				Title:                "My Playbook",
+				TeamID:               "teamid",
+				CreatePublicIncident: true,
+				Checklists:           []playbook.Checklist{},
+				MemberIDs:            []string{"otheruserid"},
+			},
+			subsc: subscription.Subscription{
+				URL:        url.URL{},
+				PlaybookID: "pbookID",
+				UserID:     testUserID,
+			},
+			requestUser:    testUserID,
+			expectedStatus: http.StatusUnauthorized,
 		},
 	}
 
 	for _, test := range fixtureData {
-		kvAPI, handler := setup(t)
+		t.Run(test.testName, func(t *testing.T) {
+			kvAPI, handler := setup(t)
 
-		kvAPI.EXPECT().
-			Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).
-			Return(nil).
-			SetArg(1, []string{test.pbook.ID})
+			kvAPI.EXPECT().
+				Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).
+				Return(nil).
+				SetArg(1, []string{test.pbook.ID})
 
-		kvAPI.EXPECT().
-			Get(pluginkvstore.PlaybookKey+test.pbook.ID, gomock.Any()).
-			Return(nil).SetArg(1, test.pbook)
+			kvAPI.EXPECT().
+				Get(pluginkvstore.PlaybookKey+test.pbook.ID, gomock.Any()).
+				Return(nil).SetArg(1, test.pbook)
 
-		subscriptionJSON, err := json.Marshal(test.subsc)
-		require.NoError(t, err)
+			subscriptionJSON, err := json.Marshal(test.subsc)
+			require.NoError(t, err)
 
-		request, err := http.NewRequest("POST", "/api/v1/eventsubscriptions", bytes.NewBuffer(subscriptionJSON))
-		require.NoError(t, err)
-		request.Header.Add("Mattermost-User-ID", "testuserid")
+			request, err := http.NewRequest("POST", "/api/v1/eventsubscriptions", bytes.NewBuffer(subscriptionJSON))
+			require.NoError(t, err)
+			request.Header.Add("Mattermost-User-ID", test.requestUser)
 
-		handler.ServeHTTP(recorder, request, "testpluginid")
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, request, "testpluginid")
 
-		resp := recorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+			resp := recorder.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, test.expectedStatus, resp.StatusCode)
 
-		var resultSubscription subscription.Subscription
-		err = json.NewDecoder(resp.Body).Decode(&resultSubscription)
-		require.NoError(t, err)
-		assert.NotEmpty(t, resultSubscription.ID)
+			if test.expectedStatus == http.StatusCreated {
+				var resultSubscription subscription.Subscription
+				err = json.NewDecoder(resp.Body).Decode(&resultSubscription)
+				require.NoError(t, err)
+				assert.NotEmpty(t, resultSubscription.ID)
+			}
+		})
 	}
 }
