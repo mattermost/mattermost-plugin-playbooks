@@ -18,17 +18,7 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.1.0"),
 		migrationFunc: func(db *sql.DB) error {
 			_, err := db.Exec(`
-				CREATE TABLE System (
-					Key VARCHAR(64) PRIMARY KEY,
-					Value VARCHAR(1024) NULL
-				);
-			`)
-			if err != nil {
-				return err
-			}
-
-			_, err = db.Exec(`
-				CREATE TABLE Incident (
+				CREATE TABLE IR_Incident (
 					ID VARCHAR(26) PRIMARY KEY,
 					Name VARCHAR(26) NOT NULL,
 					IsActive BOOLEAN NOT NULL,

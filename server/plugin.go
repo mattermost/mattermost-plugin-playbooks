@@ -133,13 +133,15 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
-	mutex, err := cluster.NewMutex(p.API, manifest.Id+"dbMutex")
+	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
 	if err != nil {
 		return errors.Wrapf(err, "failed creating cluster mutex")
 	}
 
 	// Cluster lock: only one plugin will perform the migration when needed
-	p.DBMigration(pluginAPIClient, mutex)
+	if err := p.DBMigration(pluginAPIClient, mutex); err != nil {
+		return errors.Wrapf(err, "failed to run migrations")
+	}
 
 	p.API.LogDebug("Incident response plugin Activated")
 	return nil
@@ -159,13 +161,13 @@ func (p *Plugin) DBMigration(pluginAPIClient *pluginapi.Client, mutex *cluster.M
 		builder = builder.PlaceholderFormat(sq.Dollar)
 	}
 
-	currentSchemaVersion, err := sqlstore.GetCurrentVersion(builder, db)
+	currentSchemaVersion, err := sqlstore.GetCurrentVersion(pluginAPIClient)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get the current schema version")
 	}
 
 	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
-		if err := sqlstore.Migrate(builder, db, currentSchemaVersion); err != nil {
+		if err := sqlstore.Migrate(db, currentSchemaVersion, pluginAPIClient); err != nil {
 			return errors.Wrapf(err, "failed to complete migrations")
 		}
 	}

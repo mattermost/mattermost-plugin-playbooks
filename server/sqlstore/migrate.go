@@ -3,12 +3,12 @@ package sqlstore
 import (
 	"database/sql"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/pkg/errors"
 )
 
-func Migrate(builder squirrel.StatementBuilderType, db *sql.DB, currentSchemaVersion semver.Version) error {
+func Migrate(db *sql.DB, currentSchemaVersion semver.Version, pluginAPIClient *pluginapi.Client) error {
 	for _, migration := range migrations {
 		if !currentSchemaVersion.EQ(migration.fromVersion) {
 			continue
@@ -19,7 +19,7 @@ func Migrate(builder squirrel.StatementBuilderType, db *sql.DB, currentSchemaVer
 		}
 
 		currentSchemaVersion = migration.toVersion
-		if err := SetCurrentVersion(builder, db, currentSchemaVersion); err != nil {
+		if err := SetCurrentVersion(pluginAPIClient, currentSchemaVersion); err != nil {
 			return errors.Wrapf(err, "migration succeeded, but failed to set the current version to %s. Database is now in an inconsistent state", currentSchemaVersion.String())
 		}
 	}
