@@ -340,6 +340,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
+	s.telemetry.ChangeCommander(incidentToModify)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
@@ -370,7 +371,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
-	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
+	s.telemetry.ModifyCheckedState(incidentID, userID, newState, incidentToModify.CommanderUserID == userID, itemToCheck.AssigneeID == userID)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
 	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
@@ -543,6 +544,7 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
+	s.telemetry.ChangeStage(incidentToModify)
 
 	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
 		incidentToModify.Playbook.Checklists[oldActiveStage].Title,

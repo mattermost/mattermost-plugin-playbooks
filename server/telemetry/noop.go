@@ -43,7 +43,7 @@ func (t *NoopTelemetry) RenameChecklistItem(string, string) {
 }
 
 // ModifyCheckedState does nothing.
-func (t *NoopTelemetry) ModifyCheckedState(string, string, string) {
+func (t *NoopTelemetry) ModifyCheckedState(string, string, string, bool, bool) {
 }
 
 // SetAssignee does nothing.
@@ -64,4 +64,12 @@ func (t *NoopTelemetry) UpdatePlaybook(playbook.Playbook) {
 
 // DeletePlaybook does nothing.
 func (t *NoopTelemetry) DeletePlaybook(playbook.Playbook) {
+}
+
+// ChangeCommander does nothing
+func (t *NoopTelemetry) ChangeCommander(*incident.Incident) {
+}
+
+// ChangeStage does nothing
+func (t *NoopTelemetry) ChangeStage(*incident.Incident) {
 }

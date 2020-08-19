@@ -35,6 +35,8 @@ const (
 	eventCreatePlaybook           = "CreatePlaybook"
 	eventUpdatePlaybook           = "UpdatePlaybook"
 	eventDeletePlaybook           = "DeletePlaybook"
+	eventChangeCommander          = "ChangeCommander"
+	eventChangeStage              = "ChangeStage"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -89,20 +91,15 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 }
 
 func incidentProperties(incdnt *incident.Incident) map[string]interface{} {
-	totalChecklistItems := 0
-	for _, checklist := range incdnt.Playbook.Checklists {
-		totalChecklistItems += len(checklist.Items)
-	}
-
 	return map[string]interface{}{
-		"IncidentID":          incdnt.ID,
-		"IsActive":            incdnt.IsActive,
-		"CommanderUserID":     incdnt.CommanderUserID,
-		"TeamID":              incdnt.TeamID,
-		"CreatedAt":           incdnt.CreatedAt,
-		"PostID":              incdnt.PostID,
-		"NumChecklists":       len(incdnt.Playbook.Checklists),
-		"TotalChecklistItems": totalChecklistItems,
+		"IncidentID":      incdnt.ID,
+		"PlaybookID":      incdnt.Playbook.ID,
+		"IsActive":        incdnt.IsActive,
+		"CommanderUserID": incdnt.CommanderUserID,
+		"TeamID":          incdnt.TeamID,
+		"CreatedAt":       incdnt.CreatedAt,
+		"PostID":          incdnt.PostID,
+		"ActiveStage":     incdnt.ActiveStage,
 	}
 }
 
@@ -150,8 +147,12 @@ func (t *RudderTelemetry) RenameChecklistItem(incidentID, userID string) {
 
 // ModifyCheckedState tracks the checking and unchecking of items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID, newState string) {
-	t.track(eventModifyStateChecklistItem, checklistItemProperties(incidentID, userID))
+func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool) {
+	properties := checklistItemProperties(incidentID, userID)
+	properties["NewState"] = newState
+	properties["WasCommander"] = wasCommander
+	properties["WasAssignee"] = wasAssignee
+	t.track(eventModifyStateChecklistItem, properties)
 }
 
 // SetAssignee tracks the changing of an assignee on an item by the user
@@ -168,8 +169,14 @@ func (t *RudderTelemetry) MoveChecklistItem(incidentID, userID string) {
 
 func playbookProperties(pbook playbook.Playbook) map[string]interface{} {
 	totalChecklistItems := 0
+	totalChecklistItemsWithCommands := 0
 	for _, checklist := range pbook.Checklists {
 		totalChecklistItems += len(checklist.Items)
+		for _, item := range checklist.Items {
+			if item.Command != "" {
+				totalChecklistItemsWithCommands++
+			}
+		}
 	}
 
 	return map[string]interface{}{
@@ -177,6 +184,9 @@ func playbookProperties(pbook playbook.Playbook) map[string]interface{} {
 		"TeamID":              pbook.TeamID,
 		"NumChecklists":       len(pbook.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
+		"IsPublic":            pbook.CreatePublicIncident,
+		"NumMembers":          len(pbook.MemberIDs),
+		"NumSlashCommands":    totalChecklistItemsWithCommands,
 	}
 }
 
@@ -193,6 +203,16 @@ func (t *RudderTelemetry) UpdatePlaybook(pbook playbook.Playbook) {
 // DeletePlaybook tracks the deletion of a playbook.
 func (t *RudderTelemetry) DeletePlaybook(pbook playbook.Playbook) {
 	t.track(eventDeletePlaybook, playbookProperties(pbook))
+}
+
+// ChangeCommander tracks changes in commander
+func (t *RudderTelemetry) ChangeCommander(effectedIncident *incident.Incident) {
+	t.track(eventChangeCommander, incidentProperties(effectedIncident))
+}
+
+// ChangeStage tracks changes in stage
+func (t *RudderTelemetry) ChangeStage(effectedIncident *incident.Incident) {
+	t.track(eventChangeStage, incidentProperties(effectedIncident))
 }
 
 // Enable creates a new client to track all future events. It does nothing if

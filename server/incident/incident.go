@@ -191,7 +191,7 @@ type Telemetry interface {
 
 	// ModifyCheckedState tracks the checking and unchecking of items by the user
 	// identified by userID in the incident identified by incidentID.
-	ModifyCheckedState(incidentID, userID, newState string)
+	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
 
 	// SetAssignee tracks the changing of an assignee on an item by the user
 	// identified by userID in the incident identified by incidentID.
@@ -212,4 +212,10 @@ type Telemetry interface {
 	// MoveChecklistItem tracks the uncheking of checked item by the user
 	// identified by userID in the incident identified by incidentID.
 	MoveChecklistItem(incidentID, userID string)
+
+	// ChangeCommander tracks changes in commander by the user
+	ChangeCommander(incident *Incident)
+
+	// ChangeCommander tracks changes in stage
+	ChangeStage(incident *Incident)
 }
