@@ -342,7 +342,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
+	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
 		oldCommander.Username, newCommander.Username)
 	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
 		return err
@@ -373,9 +373,9 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
+	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", itemToCheck.Title)
 	if newState == playbook.ChecklistItemStateOpen {
-		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
+		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", itemToCheck.Title)
 	}
 	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
@@ -452,7 +452,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("changed assignee of checklist item \"%s\" from \"%s\" to %s",
+	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
 		itemToCheck.Title, oldAssigneeUsername, newAssigneeUsername)
 
 	// Send modification message before the actual modification because we need the postID
