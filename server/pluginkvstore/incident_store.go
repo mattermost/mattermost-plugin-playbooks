@@ -288,29 +288,29 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	return nil
 }
 
-func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {
+func sortHeaders(headers []incident.Header, sortField, order string) {
 	// order by descending, unless we're told otherwise
 	var orderFn = func(b bool) bool { return b }
-	if order == incident.Asc {
+	if order == "ASC" {
 		orderFn = func(b bool) bool { return !b }
 	}
 
 	// sort by CreateAt, unless we're told otherwise
 	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreateAt > headers[j].CreateAt) }
 	switch sortField {
-	case incident.ID:
+	case "ID":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
-	case incident.Name:
+	case "Name":
 		sortFn = func(i, j int) bool {
 			return orderFn(strings.ToLower(headers[i].Name) > strings.ToLower(headers[j].Name))
 		}
-	case incident.CommanderUserID:
+	case "CommanderUserID":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
-	case incident.TeamID:
+	case "TeamID":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
-	case incident.EndAt:
+	case "EndAt":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].EndAt > headers[j].EndAt) }
-	case incident.ByStatus:
+	case "IsActive":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].IsActive && !headers[j].IsActive) }
 	}
 

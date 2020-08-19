@@ -15,15 +15,25 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
+const (
+	team1id      = "012345678901234567890123t1"
+	team2id      = "012345678901234567890123t2"
+	commander1id = "012345678901234567890123c1"
+	commander2id = "012345678901234567890123c2"
+	commander3id = "012345678901234567890123c3"
+	commander4id = "012345678901234567890123c4"
+	commander5id = "012345678901234567890123c5"
+)
+
 var id1 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id1",
 		Name:            "incident 1 - wheel cat aliens wheelbarrow",
 		IsActive:        true,
-		CommanderUserID: "commander1",
-		TeamID:          "team1",
-		CreateAt:        123,
-		EndAt:           440,
+		CommanderUserID: commander1id,
+		TeamID:          team1id,
+		CreateAt:       123,
+		EndAt:         440,
 	},
 }
 
@@ -32,10 +42,10 @@ var id2 = incident.Incident{
 		ID:              "id2",
 		Name:            "incdnt 2 - horse staple battery shotgun mouse shotputmouse",
 		IsActive:        true,
-		CommanderUserID: "commander2",
-		TeamID:          "team1",
-		CreateAt:        145,
-		EndAt:           555,
+		CommanderUserID: commander2id,
+		TeamID:          team1id,
+		CreatedAt:       145,
+		EndedAt:         555,
 	},
 }
 
@@ -44,10 +54,10 @@ var id3 = incident.Incident{
 		ID:              "id3",
 		Name:            "incident 3 - Horse stapler battery shotgun mouse shotputmouse",
 		IsActive:        false,
-		CommanderUserID: "commander1",
-		TeamID:          "team1",
-		CreateAt:        222,
-		EndAt:           666,
+		CommanderUserID: commander1id,
+		TeamID:          team1id,
+		CreatedAt:       222,
+		EndedAt:         666,
 	},
 }
 
@@ -56,10 +66,10 @@ var id4 = incident.Incident{
 		ID:              "id4",
 		Name:            "incident 4 - titanic terminator aliens",
 		IsActive:        false,
-		CommanderUserID: "commander3",
-		TeamID:          "team2",
-		CreateAt:        333,
-		EndAt:           444,
+		CommanderUserID: commander3id,
+		TeamID:          team2id,
+		CreatedAt:       333,
+		EndedAt:         444,
 	},
 }
 
@@ -68,10 +78,10 @@ var id5 = incident.Incident{
 		ID:              "id5",
 		Name:            "incident 5 - ubik high castle electric sheep",
 		IsActive:        true,
-		CommanderUserID: "commander3",
-		TeamID:          "team2",
-		CreateAt:        223,
-		EndAt:           550,
+		CommanderUserID: commander3id,
+		TeamID:          team2id,
+		CreatedAt:       223,
+		EndedAt:         550,
 	},
 }
 
@@ -80,7 +90,7 @@ var id6 = incident.Incident{
 		ID:              "id6",
 		Name:            "incident 6 - ziggurat!",
 		IsActive:        true,
-		CommanderUserID: "commander5",
+		CommanderUserID: commander5id,
 		TeamID:          "team3",
 		CreateAt:        555,
 		EndAt:           777,
@@ -92,7 +102,7 @@ var id7 = incident.Incident{
 		ID:              "id7",
 		Name:            "incident 7 - Ziggürat!",
 		IsActive:        true,
-		CommanderUserID: "commander5",
+		CommanderUserID: commander5id,
 		TeamID:          "team3",
 		CreateAt:        556,
 		EndAt:           778,
@@ -129,8 +139,8 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "team1 only, ascending",
 			options: incident.HeaderFilterOptions{
-				TeamID: "team1",
-				Order:  incident.Asc,
+				TeamID: team1id,
+				Order:  "asc",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 3,
@@ -142,7 +152,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "sort by end_at",
 			options: incident.HeaderFilterOptions{
-				Sort: incident.EndAt,
+				Sort: "end_at",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 7,
@@ -245,8 +255,8 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "sorted by ended, ascending, page 1 by 2",
 			options: incident.HeaderFilterOptions{
-				Sort:    incident.EndAt,
-				Order:   incident.Asc,
+				Sort:    "end_at",
+				Order:   "asc",
 				Page:    1,
 				PerPage: 2,
 			},
@@ -275,8 +285,8 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			name: "active, commander3, asc",
 			options: incident.HeaderFilterOptions{
 				Status:      incident.Ongoing,
-				CommanderID: "commander3",
-				Order:       incident.Asc,
+				CommanderID: commander3id,
+				Order:       "asc",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 1,
@@ -288,9 +298,9 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "commander1, asc, by end_at",
 			options: incident.HeaderFilterOptions{
-				CommanderID: "commander1",
-				Order:       incident.Asc,
-				Sort:        incident.EndAt,
+				CommanderID: commander1id,
+				Order:       "asc",
+				Sort:        "end_at",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 2,
@@ -314,7 +324,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "search for aliens & commander3",
 			options: incident.HeaderFilterOptions{
-				CommanderID: "commander3",
+				CommanderID: commander3id,
 				SearchTerm:  "aliens",
 			},
 			want: incident.GetIncidentsResults{
@@ -395,6 +405,11 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 					KV: kvAPI,
 				},
 			}
+			if err := incident.ValidateOptions(&tt.options); err != nil {
+				t.Errorf("ValidateOptions() error = %v\n", err)
+				return
+			}
+
 			got, err := s.GetIncidents(tt.options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetIncidents() error = %v\nwantErr = %v", err, tt.wantErr)
