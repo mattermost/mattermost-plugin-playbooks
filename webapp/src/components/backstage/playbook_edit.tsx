@@ -253,16 +253,23 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             return;
         }
 
-        const filterEmptyItems = {...playbook, checklists: playbook.checklists.map((checklist) => ({...checklist, items: checklist.items.filter((item) => item.title || item.command)}))};
-        const filterEmptyChecklists = {...filterEmptyItems, checklists: filterEmptyItems.checklists.filter((checklist) => !checklist.items || checklist.items.length > 0)};
+        const playbookExcludingEmpty = {
+            ...playbook,
+            checklists: playbook.checklists.map((checklist) => (
+                {
+                    ...checklist,
+                    items: checklist.items.filter((item) => item.title || item.command),
+                }
+            )).filter((checklist) => !checklist.items || checklist.items.length > 0),
+        };
 
         // It's possible there was actually nothing there.
-        if (filterEmptyChecklists.checklists.length === 0) {
-            updateChecklist(filterEmptyChecklists.checklists);
+        if (playbookExcludingEmpty.checklists.length === 0) {
+            updateChecklist(playbookExcludingEmpty.checklists);
             return;
         }
 
-        await savePlaybook(filterEmptyChecklists);
+        await savePlaybook(playbookExcludingEmpty);
         props.onClose();
     };
 
