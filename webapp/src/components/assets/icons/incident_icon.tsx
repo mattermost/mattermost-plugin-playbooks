@@ -3,13 +3,9 @@
 
 import React from 'react';
 
-// Props should just be an empty object, since the component requires none, but using `null` breaks
-// the compiler accepting a `ref` at all.
-type Props = {optional?: string}
-
 export type Ref = SVGSVGElement;
 
-const IncidentIcon = React.forwardRef<Ref, Props>((_, forwardedRef) => (
+const IncidentIcon = React.forwardRef<Ref>((_, forwardedRef) => (
     <svg
         ref={forwardedRef}
         width='14'
