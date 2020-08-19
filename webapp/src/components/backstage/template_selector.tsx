@@ -59,7 +59,7 @@ export const PresetTemplates: PresetTemplate[] = [
                         newChecklistItem('Record post-mortem action items'),
                         newChecklistItem('Update playbook with learnings'),
                         newChecklistItem('Export channel message history', '', '/export'),
-                        newChecklistItem('Archive this channel', '', '/incident archive'),
+                        newChecklistItem('Archive this channel', '', ''),
                     ],
                 },
             ],

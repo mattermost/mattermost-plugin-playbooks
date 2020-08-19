@@ -15,7 +15,7 @@ const manifestStr = `
   "id": "com.mattermost.plugin-incident-response",
   "name": "Incident Response",
   "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
-  "version": "0.6.0-alpha.2",
+  "version": "0.6.0-alpha.3",
   "min_server_version": "5.28.0",
   "server": {
     "executables": {

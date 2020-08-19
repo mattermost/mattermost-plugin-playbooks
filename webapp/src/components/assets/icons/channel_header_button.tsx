@@ -6,10 +6,10 @@ import {useSelector} from 'react-redux';
 
 import {isIncidentRHSOpen} from 'src/selectors';
 
-import IncidentIcon from './incident_icon';
+import IncidentIcon, {Ref as IncidentIconRef} from './incident_icon';
 
 const ChannelHeaderButton: FC = () => {
-    const myRef = useRef<HTMLElement>(null);
+    const myRef = useRef<IncidentIconRef>(null);
     const isRHSOpen = useSelector(isIncidentRHSOpen);
 
     // If it has been mounted, we know our parent is always a button.
@@ -22,7 +22,7 @@ const ChannelHeaderButton: FC = () => {
         }
     }
 
-    return <IncidentIcon/>;
+    return <IncidentIcon ref={myRef}/>;
 };
 
 export default ChannelHeaderButton;

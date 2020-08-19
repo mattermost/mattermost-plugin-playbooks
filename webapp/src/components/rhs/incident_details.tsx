@@ -243,7 +243,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             />
                         </div>
                         <div className='first-title'>
-                            {'Duration: '}
+                            {'Duration'}
                             <div className='time'>{durationString}</div>
                         </div>
                     </div>

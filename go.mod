@@ -14,5 +14,6 @@ require (
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
+	github.com/writeas/go-strip-markdown v2.0.1+incompatible
 	golang.org/x/text v0.3.3
 )

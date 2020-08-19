@@ -1,10 +1,13 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 
-const IncidentIcon: FC = () => (
+export type Ref = SVGSVGElement;
+
+const IncidentIcon = React.forwardRef<Ref>((_, forwardedRef) => (
     <svg
+        ref={forwardedRef}
         width='14'
         height='17'
         viewBox='0 0 14 17'
@@ -15,6 +18,6 @@ const IncidentIcon: FC = () => (
             fill='currentColor'
         />
     </svg>
-);
+));
 
 export default IncidentIcon;

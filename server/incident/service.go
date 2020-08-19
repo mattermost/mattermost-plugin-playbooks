@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	stripmd "github.com/writeas/go-strip-markdown"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
@@ -232,7 +233,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 	dialog := model.Dialog{
 		Title:            "Confirm End Incident",
 		SubmitLabel:      "Confirm",
-		IntroductionText: "The incident will become inactive and will be removed from the list. Incident history and post-mortem features are coming soon.",
+		IntroductionText: "Ending the incident stops the duration timer and notifies the channel that the incident has ended. It remains possible to change stages and complete steps, or even restart the incident.",
 		NotifyOnCancel:   false,
 		State:            incidentID,
 	}
@@ -342,7 +343,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.PrimaryChannelID)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("changed the incident commander from @%s to @%s.",
+	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
 		oldCommander.Username, newCommander.Username)
 	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
 		return err
@@ -373,9 +374,9 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("checked off checklist item \"%v\"", itemToCheck.Title)
+	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	if newState == playbook.ChecklistItemStateOpen {
-		modifyMessage = fmt.Sprintf("unchecked checklist item \"%v\"", itemToCheck.Title)
+		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
@@ -452,8 +453,8 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	mainChannelID := incidentToModify.PrimaryChannelID
-	modifyMessage := fmt.Sprintf("changed assignee of checklist item \"%s\" from \"%s\" to %s",
-		itemToCheck.Title, oldAssigneeUsername, newAssigneeUsername)
+	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
+		stripmd.Strip(itemToCheck.Title), oldAssigneeUsername, newAssigneeUsername)
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
@@ -622,7 +623,7 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
 				Item:     fmt.Sprintf("%d %d", i, j),
-				Hint:     fmt.Sprintf("\"%s\"", item.Title),
+				Hint:     fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
 				HelpText: "Check/uncheck this item",
 			})
 		}
