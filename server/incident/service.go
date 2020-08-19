@@ -232,7 +232,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 	dialog := model.Dialog{
 		Title:            "Confirm End Incident",
 		SubmitLabel:      "Confirm",
-		IntroductionText: "The incident will become inactive and will be removed from the list. Incident history and post-mortem features are coming soon.",
+		IntroductionText: "Ending the incident stops the duration timer and notifies the channel that the incident has ended. It remains possible to change stages and complete steps, or even restart the incident.",
 		NotifyOnCancel:   false,
 		State:            incidentID,
 	}
