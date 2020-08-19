@@ -76,38 +76,42 @@ const AutocompleteTextbox = window.Components.Textbox;
 
 const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
     const commandInputRef = useRef(null);
-    const [stepTitle, setStepTitle] = useState(props.step.title);
-    const [stepCommand, setStepCommand] = useState(props.step.command);
-    const [stepDescription, setStepDescription] = useState(props.step.description);
-    const [stepDescriptionPressed, setStepDescriptionPressed] = useState(false);
+    const [title, setTitle] = useState(props.step.title);
+    const [command, setCommand] = useState(props.step.command);
+    const [description, setDescription] = useState(props.step.description);
+    const [descriptionPressed, setDescriptionPressed] = useState(false);
 
     const submit = () => {
-        props.onUpdate({
-            ...props.step,
-            title: stepTitle,
-            command: stepCommand,
-            description: stepDescription,
-        });
+        if (title !== props.step.title ||
+            command !== props.step.command ||
+                description !== props.step.description) {
+            props.onUpdate({
+                ...props.step,
+                title,
+                command,
+                description,
+            });
+        }
     };
 
-    let description = (
+    let descriptionBox = (
         <AddDescription
-            onClick={() => setStepDescriptionPressed(true)}
+            onClick={() => setDescriptionPressed(true)}
         >
             <i className='icon-plus'/>
             {'Add Optional Description'}
         </AddDescription>
     );
 
-    if (stepDescription || stepDescriptionPressed) {
-        description = (
+    if (description || descriptionPressed) {
+        descriptionBox = (
             <Description
-                value={stepDescription}
+                value={description}
                 onBlur={submit}
-                autoFocus={stepDescriptionPressed}
+                autoFocus={descriptionPressed}
                 placeholder={'Description'}
                 onChange={(e) => {
-                    setStepDescription(e.target.value);
+                    setDescription(e.target.value);
                 }}
             />
         );
@@ -119,10 +123,10 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
                 <StepInput
                     placeholder={'Step Name'}
                     type='text'
-                    value={stepTitle}
-                    onChange={(e) => setStepTitle(e.target.value)}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     onBlur={submit}
-                    autoFocus={!stepTitle}
+                    autoFocus={!title}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === 'Escape') {
                             submit();
@@ -146,12 +150,12 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
                         onChange={(e: React.FormEvent<HTMLInputElement>) => {
                             if (e.target) {
                                 const input = e.target as HTMLInputElement;
-                                setStepCommand(input.value);
+                                setCommand(input.value);
                             }
                         }}
                         suggestionListStyle={props.autocompleteOnBottom ? 'bottom' : 'top'}
                         type='text'
-                        value={stepCommand}
+                        value={command}
                         onBlur={submit}
 
                         // the following are required props but aren't used
@@ -160,7 +164,7 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
                     />
                 </AutocompleteWrapper>
             </StepLine>
-            {description}
+            {descriptionBox}
         </Container>
     );
 };
