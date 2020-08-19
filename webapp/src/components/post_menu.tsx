@@ -15,7 +15,6 @@ import {startIncident} from 'src/actions';
 
 interface Props {
     postId: string;
-    theme: Record<string, string>;
 }
 
 const StartIncidentPostMenu: FC<Props> = (props: Props) => {
@@ -42,7 +41,7 @@ const StartIncidentPostMenu: FC<Props> = (props: Props) => {
                     role='presentation'
                     onClick={handleClick}
                 >
-                    <IncidentPostMenuIcon theme={props.theme}/>
+                    <IncidentPostMenuIcon/>
                     {'Start incident'}
                 </button>
             </li>
