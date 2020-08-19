@@ -44,7 +44,7 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc) {
         const currentTeam = getCurrentTeam(getState());
 
         // Navigate to the newly created channel
-        const url = `/${currentTeam.name}/channels/${incident.primary_channel_id}`;
+        const url = `/${currentTeam.name}/channels/${incident.channel_id}`;
         navigateToUrl(url);
     };
 }

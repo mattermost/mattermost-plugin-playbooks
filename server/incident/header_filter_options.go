@@ -29,8 +29,8 @@ const (
 type SortField int
 
 const (
-	// CreatedAt sorts by the "created_at" field. It is the default.
-	CreatedAt SortField = iota
+	// CreateAt sorts by the "create_at" field. It is the default.
+	CreateAt SortField = iota
 
 	// ID sorts by the "id" field.
 	ID
@@ -44,8 +44,8 @@ const (
 	// TeamID sorts by the "team_id" field.
 	TeamID
 
-	// EndedAt sorts by the "ended_at" field.
-	EndedAt
+	// EndAt sorts by the "end_at" field.
+	EndAt
 
 	// ByStatus sorts by the "status" field.
 	ByStatus
@@ -60,8 +60,8 @@ type HeaderFilterOptions struct {
 	Page    int
 	PerPage int
 
-	// Sort sorts by this header field in json format (eg, "created_at", "ended_at", "name", etc.);
-	// defaults to "created_at".
+	// Sort sorts by this header field in json format (eg, "create_at", "end_at", "name", etc.);
+	// defaults to "create_at".
 	Sort SortField
 
 	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.

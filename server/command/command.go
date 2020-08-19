@@ -196,7 +196,7 @@ func (r *Runner) actionAnnounce(args []string) {
 		return
 	}
 
-	incidentChannel, err := r.pluginAPI.Channel.Get(currentIncident.PrimaryChannelID)
+	incidentChannel, err := r.pluginAPI.Channel.Get(currentIncident.ChannelID)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error retrieving incident channel: %v", err))
 		return
@@ -458,7 +458,8 @@ And... yes, of course, we have emojis
 			TeamID:          r.args.TeamId,
 			CommanderUserID: r.args.UserId,
 		},
-		Playbook: &gotplaybook,
+		PlaybookID: gotplaybook.ID,
+		Checklists: gotplaybook.Checklists,
 	}, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())

@@ -185,8 +185,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			TeamID:          request.TeamId,
 			Name:            name,
 		},
-		PostID:   state.PostID,
-		Playbook: &playbook.Playbook{ID: playbookID},
+		PostID:     state.PostID,
+		PlaybookID: playbookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
@@ -231,15 +231,15 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.New("incident already has an id")
 	}
 
-	if newIncident.PrimaryChannelID != "" {
+	if newIncident.ChannelID != "" {
 		return nil, errors.New("incident channel already has an id")
 	}
 
-	if newIncident.CreatedAt != 0 {
+	if newIncident.CreateAt != 0 {
 		return nil, errors.New("incident channel already has created at date")
 	}
 
-	if newIncident.EndedAt != 0 {
+	if newIncident.EndAt != 0 {
 		return nil, errors.New("incident channel already has ended at date")
 	}
 
@@ -257,14 +257,14 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	public := true
-	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" {
-		pb, err := h.playbookService.Get(newIncident.Playbook.ID)
+	if newIncident.PlaybookID != "" {
+		pb, err := h.playbookService.Get(newIncident.PlaybookID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
 
-		newIncident.Playbook = &pb
-		public = newIncident.Playbook.CreatePublicIncident
+		newIncident.Checklists = pb.Checklists
+		public = pb.CreatePublicIncident
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -554,7 +554,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	channelIds := make([]string, 0, len(incidents.Items))
 	for _, incident := range incidents.Items {
-		channelIds = append(channelIds, incident.PrimaryChannelID)
+		channelIds = append(channelIds, incident.ChannelID)
 	}
 
 	jsonBytes, err := json.Marshal(channelIds)
@@ -818,7 +818,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(incdnt.PrimaryChannelID)
+	channel, err := h.pluginAPI.Channel.Get(incdnt.ChannelID)
 	if err != nil {
 		return err
 	}
@@ -865,10 +865,10 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, erro
 		sort = incident.CommanderUserID
 	case "team_id":
 		sort = incident.TeamID
-	case "created_at", "": // default
-		sort = incident.CreatedAt
-	case "ended_at":
-		sort = incident.EndedAt
+	case "create_at", "": // default
+		sort = incident.CreateAt
+	case "end_at":
+		sort = incident.EndAt
 	case "status":
 		sort = incident.ByStatus
 	default:

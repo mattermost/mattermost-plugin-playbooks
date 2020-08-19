@@ -181,14 +181,14 @@ const BackstageIncidentDetails: FC = () => {
 };
 
 const duration = (incident: Incident) => {
-    if (!incident.is_active && moment.unix(incident.ended_at).isSameOrBefore('2020-01-01')) {
+    if (!incident.is_active && moment.unix(incident.end_at).isSameOrBefore('2020-01-01')) {
         // No end datetime available to calculate duration
         return '--';
     }
 
-    const endTime = incident.is_active ? moment() : moment.unix(incident.ended_at);
+    const endTime = incident.is_active ? moment() : moment.unix(incident.end_at);
 
-    const timeSinceCreation = moment.duration(endTime.diff(moment.unix(incident.created_at)));
+    const timeSinceCreation = moment.duration(endTime.diff(moment.unix(incident.create_at)));
 
     if (timeSinceCreation.days()) {
         return `${timeSinceCreation.days()} days ${timeSinceCreation.hours()} h`;
@@ -206,7 +206,7 @@ const duration = (incident: Incident) => {
 };
 
 const timeFrameText = (incident: Incident) => {
-    const mom = moment.unix(incident.ended_at);
+    const mom = moment.unix(incident.end_at);
 
     let endedText = 'Ongoing';
 
@@ -214,7 +214,7 @@ const timeFrameText = (incident: Incident) => {
         endedText = mom.isSameOrAfter('2020-01-01') ? mom.format('DD MMM h:mmA') : '--';
     }
 
-    const startedText = moment.unix(incident.created_at).format('DD MMM h:mmA');
+    const startedText = moment.unix(incident.create_at).format('DD MMM h:mmA');
 
     return (`${startedText} - ${endedText}`);
 };

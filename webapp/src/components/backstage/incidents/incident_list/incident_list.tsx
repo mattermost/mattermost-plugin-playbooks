@@ -47,7 +47,7 @@ const BackstageIncidentList: FC = () => {
             team_id: currentTeam.id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
-            sort: 'created_at',
+            sort: 'create_at',
             order: 'desc',
         },
     );
@@ -196,16 +196,16 @@ const BackstageIncidentList: FC = () => {
                             <SortableColHeader
                                 name={'Start Time'}
                                 order={fetchParams.order ? fetchParams.order : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'created_at' : false}
-                                onClick={() => colHeaderClicked('created_at')}
+                                active={fetchParams.sort ? fetchParams.sort === 'create_at' : false}
+                                onClick={() => colHeaderClicked('create_at')}
                             />
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
                                 name={'End Time'}
                                 order={fetchParams.order ? fetchParams.order : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'ended_at' : false}
-                                onClick={() => colHeaderClicked('ended_at')}
+                                active={fetchParams.sort ? fetchParams.sort === 'end_at' : false}
+                                onClick={() => colHeaderClicked('end_at')}
                             />
                         </div>
                         <div className='col-sm-3'> {'Commander'} </div>
@@ -249,12 +249,12 @@ const BackstageIncidentList: FC = () => {
                                 className='col-sm-2'
                             >
                                 {
-                                    moment.unix(incident.created_at).format('MMM DD LT')
+                                    moment.unix(incident.create_at).format('MMM DD LT')
                                 }
                             </div>
                             <div className='col-sm-2'>
                                 {
-                                    endedAt(incident.is_active, incident.ended_at)
+                                    endedAt(incident.is_active, incident.end_at)
                                 }
                             </div>
                             <div className='col-sm-3'>

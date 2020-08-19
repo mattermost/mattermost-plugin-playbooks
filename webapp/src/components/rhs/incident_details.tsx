@@ -136,7 +136,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
     const fetchUsers = async () => {
-        return fetchUsersInChannel(props.incident.primary_channel_id);
+        return fetchUsersInChannel(props.incident.channel_id);
     };
 
     const onSelectedProfileChange = async (userId?: string) => {
@@ -152,7 +152,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
 
     const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(props.incident.active_stage);
 
-    const checklists = props.incident.playbook.checklists || [];
+    const checklists = props.incident.checklists || [];
     const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
 
     const onStageSelected = (option: Option, action: ActionMeta<OptionTypeBase>) => {
@@ -199,8 +199,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         };
     }, []);
 
-    const start = moment.unix(props.incident.created_at);
-    const end = (props.incident.ended_at && moment.unix(props.incident.ended_at)) || now;
+    const start = moment.unix(props.incident.create_at);
+    const end = (props.incident.end_at && moment.unix(props.incident.end_at)) || now;
 
     const duration = moment.duration(end.diff(start));
     let durationString = '';
@@ -269,7 +269,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                     checklistItem={checklistItem}
                                     checklistNum={selectedChecklistIndex}
                                     itemNum={index}
-                                    primaryChannelId={props.incident.primary_channel_id}
+                                    channelId={props.incident.channel_id}
                                     incidentId={props.incident.id}
                                     onChange={(newState: ChecklistItemState) => {
                                         setChecklistItemState(props.incident.id, selectedChecklistIndex, index, newState);
