@@ -21,12 +21,12 @@ import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
-import ProfileAutocomplete from 'src/components/widgets/profile_autocomplete';
 
 import './playbook.scss';
 import StagesAndStepsIcon from './stages_and_steps_icon';
 import {BackstageNavbar, BackstageNavbarBackIcon} from './backstage';
 import EditableText from './editable_text';
+import SharePlaybook from './share_playbook';
 
 const Container = styled.div`
     display: flex;
@@ -285,10 +285,19 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleUsersInput = (userIds: string[]) => {
+    const handleUsersInput = (userId: string) => {
         setPlaybook({
             ...playbook,
-            member_ids: userIds || [],
+            member_ids: [...playbook.member_ids, userId],
+        });
+        setChangesMade(true);
+    };
+
+    const handleRemoveUser = (userId: string) => {
+        const idx = playbook.member_ids.indexOf(userId);
+        setPlaybook({
+            ...playbook,
+            member_ids: [...playbook.member_ids.slice(0, idx), ...playbook.member_ids.slice(idx + 1)],
         });
         setChangesMade(true);
     };
@@ -382,11 +391,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         <SidebarHeaderText>
                             {'Share Playbook'}
                         </SidebarHeaderText>
-                        <ProfileAutocomplete
-                            placeholder={'Invite members...'}
-                            onChange={handleUsersInput}
-                            userIds={playbook.member_ids}
+                        <SharePlaybook
+                            onAddUser={handleUsersInput}
+                            onRemoveUser={handleRemoveUser}
                             searchProfiles={searchUsers}
+                            playbook={playbook}
                         />
                     </SidebarContent>
                 </Sidebar>
