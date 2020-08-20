@@ -302,13 +302,13 @@ func TestIncidentProperties(t *testing.T) {
 
 	expectedProperties := map[string]interface{}{
 		"IncidentID":      dummyIncident.ID,
-		"PlaybookID":      dummyIncident.Playbook.ID,
 		"IsActive":        dummyIncident.IsActive,
 		"CommanderUserID": dummyIncident.CommanderUserID,
 		"TeamID":          dummyIncident.TeamID,
 		"CreatedAt":       dummyIncident.CreatedAt,
 		"PostID":          dummyIncident.PostID,
 		"ActiveStage":     dummyIncident.ActiveStage,
+		"Playbook":        playbookProperties(*dummyIncident.Playbook),
 	}
 
 	require.Equal(t, expectedProperties, properties)

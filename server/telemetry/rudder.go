@@ -93,13 +93,13 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 func incidentProperties(incdnt *incident.Incident) map[string]interface{} {
 	return map[string]interface{}{
 		"IncidentID":      incdnt.ID,
-		"PlaybookID":      incdnt.Playbook.ID,
 		"IsActive":        incdnt.IsActive,
 		"CommanderUserID": incdnt.CommanderUserID,
 		"TeamID":          incdnt.TeamID,
 		"CreatedAt":       incdnt.CreatedAt,
 		"PostID":          incdnt.PostID,
 		"ActiveStage":     incdnt.ActiveStage,
+		"Playbook":        playbookProperties(*incdnt.Playbook),
 	}
 }
 
