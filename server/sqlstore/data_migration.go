@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
@@ -58,7 +60,7 @@ type oldPlaybookIndex struct {
 	PlaybookIDs []string `json:"playbook_ids"`
 }
 
-func DataMigration(kvAPI pluginkvstore.KVAPI, db *sql.DB) error {
+func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderType, db *sql.DB) error {
 	// Get old playbooks
 	var playbookIndex oldPlaybookIndex
 	if err := kvAPI.Get("v2_playbookindex", &playbookIndex); err != nil {
@@ -114,18 +116,231 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, db *sql.DB) error {
 		return &incdnt, nil
 	}
 
-	var allIncidents []oldIncident
+	var incidents []oldIncident
 	for _, header := range headers {
 		i, err := getIncident(header.ID)
 		if err != nil {
 			// odds are this should not happen, so default to failing fast
 			return errors.Wrapf(err, "failed to get incident id '%s'", header.ID)
 		}
-		allIncidents = append(allIncidents, *i)
+		incidents = append(incidents, *i)
 	}
 
-	// INSERT ALL INCIDENTS TO DB
-	// INSERT ALL PLAYBOOKS TO DB
+	// CREATE TABLE Playbook (
+	//    ID VARCHAR(26) PRIMARY KEY,
+	//    Title VARCHAR(65535) NOT NULL,
+	//    TeamID VARCHAR(26) NOT NULL,
+	//    CreatePublicIncident BOOLEAN NOT NULL,
+	//    CreateAt BIGINT NOT NULL,
+	//    DeleteAt BIGINT NOT NULL DEFAULT 0,
+	//    InBackstage BOOLEAN NOT NULL DEFAULT FALSE
+	// );
+	playbookInsert := builder.
+		Insert("Playbook").
+		Columns(
+			"ID",
+			"Title",
+			"TeamID",
+			"CreatePublicIncident",
+			"CreateAt",
+		)
+
+	// CREATE TABLE PlaybookMember (
+	//    PlaybookID VARCHAR(26) NOT NULL REFERENCES Playbook(ID)
+	//    MemberID VARCHAR(26) NOT NULL,
+	// );
+	playbookMemberInsert := builder.
+		Insert("PlaybookMember").
+		Columns(
+			"PlaybookID",
+			"MemberID",
+		)
+
+	// CREATE TABLE Checklist (
+	//    ID VARCHAR(26) PRIMARY KEY,
+	//    Title VARCHAR(65535) NOT NULL,
+	//    Sequence BIGINT NOT NULL,
+	//    PlaybookID VARCHAR(26) NOT NULL REFERENCES Playbook(ID)
+	// );
+	checklistInsert := builder.
+		Insert("Checklist").
+		Columns(
+			"ID",
+			"Title",
+			"Sequence",
+			"PlaybookID",
+		)
+	// CREATE TABLE ChecklistItem (
+	//    ID VARCHAR(26) PRIMARY KEY,
+	//    Title VARCHAR(65535) NOT NULL,
+	//    State VARCHAR(32) NOT NULL DEFAULT '',
+	//    StateModified BIGINT NOT NULL DEFAULT 0, --  should change the field type at the same time
+	//    StateModifiedPostID VARCHAR(26) NOT NULL DEFAULT '',
+	//    AssigneeID VARCHAR(26) NOT NULL DEFAULT '',
+	//    AssigneeModified BIGINT NOT NULL DEFAULT 0, --  should change the field type at the same time
+	//    AssigneeModifiedPostID VARCHAR(26) NOT NULL DEFAULT '',
+	//    Command VARCHAR(65535) NOT NULL,
+	//    DeleteAt BIGINT NOT NULL DEFAULT 0,
+	//    Sequence BIGINT NOT NULL,
+	//    ChecklistID VARCHAR(26) NOT NULL REFERENCES Checklist(ID)
+	// );
+	checklistItemInsert := builder.
+		Insert("ChecklistItem").
+		Columns(
+			"ID",
+			"Title",
+			"State",
+			"StateModified",
+			"StateModifiedPostID",
+			"AssigneeID",
+			"AssigneeModified",
+			"AssigneeModifiedPostID",
+			"Command",
+			"DeleteAt",
+			"Sequence",
+			"ChecklistID",
+		)
+
+	for _, playbook := range playbooks {
+		playbookInsert = playbookInsert.Values(
+			playbook.ID,
+			playbook.Title,
+			playbook.TeamID,
+			playbook.CreatePublicIncident,
+			0,
+		)
+
+		for _, memberID := range playbook.MemberIDs {
+			playbookMemberInsert = playbookMemberInsert.Values(
+				playbook.ID,
+				memberID,
+			)
+		}
+
+		for checklistSeq, checklist := range playbook.Checklists {
+			checklistID := model.NewId()
+			checklistInsert = checklistInsert.
+				Values(
+					checklistID,
+					checklist.Title,
+					checklistSeq,
+					playbook.ID,
+				)
+
+			for itemSeq, item := range checklist.Items {
+				checklistItemInsert = checklistItemInsert.
+					Values(
+						model.NewId(),
+						item.Title,
+						item.State,
+						item.StateModified.Unix(),
+						item.StateModifiedPostID,
+						item.AssigneeID,
+						item.AssigneeModified.Unix(),
+						item.AssigneeModifiedPostID,
+						item.Command,
+						0,
+						itemSeq,
+						checklistID,
+					)
+			}
+		}
+	}
+
+	playbookInsertQuery, playbookInsertArgs, err := playbookInsert.ToSql()
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert playbookInsert into SQL")
+	}
+
+	if _, err := db.Exec(playbookInsertQuery, playbookInsertArgs); err != nil {
+		return errors.Wrapf(err, "failed to insert data into Playbook table")
+	}
+
+	playbookMemberInsertQuery, playbookMemberInsertArgs, err := playbookMemberInsert.ToSql()
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert playbookMemberInsert into SQL")
+	}
+
+	if _, err := db.Exec(playbookMemberInsertQuery, playbookMemberInsertArgs); err != nil {
+		return errors.Wrapf(err, "failed to insert data into PlaybookMember table")
+	}
+
+	checklistInsertQuery, checklistInsertArgs, err := checklistInsert.ToSql()
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert checklistInsert into SQL")
+	}
+
+	if _, err := db.Exec(checklistInsertQuery, checklistInsertArgs); err != nil {
+		return errors.Wrapf(err, "failed to insert data into Checklist table")
+	}
+
+	checklistItemInsertQuery, checklistItemInsertArgs, err := checklistItemInsert.ToSql()
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert checklistItemInsert into SQL")
+
+	}
+
+	if _, err := db.Exec(checklistItemInsertQuery, checklistItemInsertArgs); err != nil {
+		return errors.Wrapf(err, "failed to insert data into ChecklistItem table")
+	}
+
+	// CREATE TABLE Incident (
+	//    ID VARCHAR(26) PRIMARY KEY,
+	//    Name VARCHAR(26) NOT NULL,
+	//    IsActive BOOLEAN NOT NULL,
+	//    CommanderUserID VARCHAR(26) NOT NULL,
+	//    TeamID VARCHAR(26) NOT NULL,
+	//    ChannelID VARCHAR(26) NOT NULL UNIQUE, -- should change the field name at the same time
+	//    CreateAt BIGINT NOT NULL, -- should change the field name at the same time
+	//    EndedAt BIGINT NOT NULL DEFAULT 0,
+	//    DeleteAt BIGINT NOT NULL DEFAULT 0,
+	//    ActiveStage BIGINT NOT NULL,
+	//    PostID VARCHAR(26) NOT NULL DEFAULT '',
+	//    PlaybookID VARCHAR(26) NOT NULL REFERENCES Playbook(ID)
+	// );
+	incidentInsert := builder.
+		Insert("Incident").
+		Columns(
+			"ID",
+			"Name",
+			"IsActive",
+			"CommanderUserID",
+			"TeamID",
+			"ChannelID",
+			"CreateAt",
+			"EndedAt",
+			"DeleteAt",
+			"ActiveStage",
+			"PostID",
+			"PlaybookID",
+		)
+
+	for _, incident := range incidents {
+		incidentInsert = incidentInsert.Values(
+			incident.ID,
+			incident.Name,
+			incident.IsActive,
+			incident.CommanderUserID,
+			incident.TeamID,
+			incident.PrimaryChannelID,
+			incident.CreatedAt,
+			incident.EndedAt,
+			0,
+			incident.ActiveStage,
+			incident.PostID,
+			incident.Playbook.ID,
+		)
+	}
+
+	incidentInsertQuery, incidentInsertArgs, err := incidentInsert.ToSql()
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert incidentInsert into SQL")
+
+	}
+
+	if _, err := db.Exec(incidentInsertQuery, incidentInsertArgs); err != nil {
+		return errors.Wrapf(err, "failed to insert data into Incident table")
+	}
 
 	return nil
 }

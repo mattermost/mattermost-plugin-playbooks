@@ -167,7 +167,7 @@ func (p *Plugin) DBMigration(pluginAPIClient *pluginapi.Client, mutex *cluster.M
 	}
 
 	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
-		if err := sqlstore.Migrate(db, currentSchemaVersion, pluginAPIClient); err != nil {
+		if err := sqlstore.Migrate(db, currentSchemaVersion, pluginAPIClient, builder); err != nil {
 			return errors.Wrapf(err, "failed to complete migrations")
 		}
 	}
