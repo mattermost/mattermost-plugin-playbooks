@@ -17,11 +17,11 @@ type SQLStore struct {
 func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	var db *sqlx.DB
 
-	origDb, err := pluginAPI.Store.GetMasterDB()
+	origDB, err := pluginAPI.Store.GetMasterDB()
 	if err != nil {
 		return nil, err
 	}
-	db = sqlx.NewDb(origDb, pluginAPI.Store.DriverName())
+	db = sqlx.NewDb(origDB, pluginAPI.Store.DriverName())
 
 	// TODO: Leave the default mapper as strings.ToLower?
 
