@@ -57,7 +57,7 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 		options.PerPage = perPageDefault
 	}
 
-	if len(options.TeamID) > 0 && !model.IsValidId(options.TeamID) {
+	if options.TeamID != "" && !model.IsValidId(options.TeamID) {
 		return errors.New("bad parameter 'team_id': must be 26 characters or blank")
 	}
 
@@ -91,7 +91,7 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 		return errors.New("bad parameter 'order_by'")
 	}
 
-	if len(options.CommanderID) > 0 && !model.IsValidId(options.CommanderID) {
+	if options.CommanderID != "" && !model.IsValidId(options.CommanderID) {
 		return errors.New("bad parameter 'commander_id': must be 26 characters or blank")
 	}
 
