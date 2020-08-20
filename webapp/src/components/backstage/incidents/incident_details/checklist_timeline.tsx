@@ -176,7 +176,7 @@ function tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
         return '';
     }
 
-    const timeUpdated = moment.unix(data.checklistItems[tooltipItem.index].state_modified);
+    const timeUpdated = moment(data.checklistItems[tooltipItem.index].state_modified);
     return timeUpdated.format('MMM DD LT');
 }
 
@@ -239,11 +239,11 @@ function initData(theme: Record<string, string>, incident: Incident) {
 
     // Add points to the graph for checked items
     chartData.checklistItems = checklistItems.filter((item: ChecklistItem) => (
-        item.state === ChecklistItemState.Closed && item.state_modified && moment.unix(item.state_modified).isSameOrAfter('2020-01-01')
+        item.state === ChecklistItemState.Closed && item.state_modified && moment(item.state_modified).isSameOrAfter('2020-01-01')
     )).map((item: ChecklistItem) => {
         if (item.state_modified) {
-            const checkedTime = moment.unix(item.state_modified);
-            const duration = moment.duration(checkedTime.diff(moment.unix(incident.create_at)));
+            const checkedTime = moment(item.state_modified);
+            const duration = moment.duration(checkedTime.diff(moment(incident.create_at)));
 
             chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
         }

@@ -199,8 +199,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         };
     }, []);
 
-    const start = moment.unix(props.incident.create_at);
-    const end = (props.incident.end_at && moment.unix(props.incident.end_at)) || now;
+    const start = moment(props.incident.create_at);
+    const end = (props.incident.end_at && moment(props.incident.end_at)) || now;
 
     const duration = moment.duration(end.diff(start));
     let durationString = '';

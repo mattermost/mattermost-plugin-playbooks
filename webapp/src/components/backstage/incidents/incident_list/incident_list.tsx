@@ -249,7 +249,7 @@ const BackstageIncidentList: FC = () => {
                                 className='col-sm-2'
                             >
                                 {
-                                    moment.unix(incident.create_at).format('MMM DD LT')
+                                    moment(incident.create_at).format('MMM DD LT')
                                 }
                             </div>
                             <div className='col-sm-2'>
@@ -290,7 +290,7 @@ const endedAt = (isActive: boolean, time: number) => {
         return '--';
     }
 
-    const mom = moment.unix(time);
+    const mom = moment(time);
     if (mom.isSameOrAfter('2020-01-01')) {
         return mom.format('MMM DD LT');
     }

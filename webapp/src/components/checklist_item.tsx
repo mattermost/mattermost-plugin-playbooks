@@ -201,7 +201,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const title = props.checklistItem.title;
 
     if (props.checklistItem.state === ChecklistItemState.Closed && props.checklistItem.state_modified) {
-        const stateModified = moment.unix(props.checklistItem.state_modified);
+        const stateModified = moment(props.checklistItem.state_modified);
 
         // Avoid times before 2020 since those are errors
         if (stateModified.isSameOrAfter('2020-01-01')) {
