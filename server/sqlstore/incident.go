@@ -75,7 +75,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 	}
 
 	if options.Sort != "" {
-		builder = builder.OrderBy(options.Sort + " " + options.Order)
+		builder = builder.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
 	}
 
 	var rawIncidents []sqlIncident
