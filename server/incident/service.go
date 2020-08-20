@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/misc"
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
@@ -75,7 +75,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 	// New incidents are always active
 	incdnt.IsActive = true
 	incdnt.ChannelID = channel.Id
-	incdnt.CreateAt = misc.GetMillis()
+	incdnt.CreateAt = GetMillis()
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
@@ -159,7 +159,7 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 
 	// Close the incident
 	incdnt.IsActive = false
-	incdnt.EndAt = misc.GetMillis()
+	incdnt.EndAt = GetMillis()
 
 	if err = s.store.UpdateIncident(incdnt); err != nil {
 		return errors.Wrapf(err, "failed to end incident")
@@ -388,7 +388,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	}
 
 	itemToCheck.State = newState
-	itemToCheck.StateModified = misc.GetMillis()
+	itemToCheck.StateModified = GetMillis()
 	itemToCheck.StateModifiedPostID = postID
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
@@ -468,7 +468,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	itemToCheck.AssigneeID = assigneeID
-	itemToCheck.AssigneeModified = misc.GetMillis()
+	itemToCheck.AssigneeModified = GetMillis()
 	itemToCheck.AssigneeModifiedPostID = postID
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
@@ -877,4 +877,9 @@ func canStartIncidentWithPlaybook(userID string, pb playbook.Playbook) bool {
 	}
 
 	return false
+}
+
+// GetMillis is a convenience method to get milliseconds since epoch.
+func GetMillis() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
