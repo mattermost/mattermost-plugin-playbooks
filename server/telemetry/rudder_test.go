@@ -92,6 +92,7 @@ var dummyIncident = &incident.Incident{
 	},
 	PostID: "post_id",
 	Playbook: &playbook.Playbook{
+		ID:    "pid",
 		Title: "test",
 		Checklists: []playbook.Checklist{
 			{
@@ -115,8 +116,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 		require.Contains(t, properties, "CommanderUserID")
 		require.Contains(t, properties, "TeamID")
 		require.Contains(t, properties, "CreatedAt")
-		require.Contains(t, properties, "NumChecklists")
-		require.Contains(t, properties, "TotalChecklistItems")
+		require.Contains(t, properties, "ActiveStage")
 
 		return &incident.Incident{
 			Header: incident.Header{
@@ -182,7 +182,7 @@ func TestRudderTelemetry(t *testing.T) {
 			rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID)
 		}},
 		"modify checked checklist item": {eventModifyStateChecklistItem, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen)
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen, true, false)
 		}},
 		"move checklist item": {eventMoveChecklistItem, func() {
 			rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID)
@@ -301,14 +301,14 @@ func TestIncidentProperties(t *testing.T) {
 	require.NotContains(t, properties, "ID")
 
 	expectedProperties := map[string]interface{}{
-		"IncidentID":          dummyIncident.ID,
-		"IsActive":            dummyIncident.IsActive,
-		"CommanderUserID":     dummyIncident.CommanderUserID,
-		"TeamID":              dummyIncident.TeamID,
-		"CreatedAt":           dummyIncident.CreatedAt,
-		"PostID":              dummyIncident.PostID,
-		"NumChecklists":       1,
-		"TotalChecklistItems": 1,
+		"IncidentID":      dummyIncident.ID,
+		"IsActive":        dummyIncident.IsActive,
+		"CommanderUserID": dummyIncident.CommanderUserID,
+		"TeamID":          dummyIncident.TeamID,
+		"CreatedAt":       dummyIncident.CreatedAt,
+		"PostID":          dummyIncident.PostID,
+		"ActiveStage":     dummyIncident.ActiveStage,
+		"Playbook":        playbookProperties(*dummyIncident.Playbook),
 	}
 
 	require.Equal(t, expectedProperties, properties)
