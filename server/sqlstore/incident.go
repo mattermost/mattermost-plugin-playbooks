@@ -79,7 +79,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 	}
 
 	var rawIncidents []sqlIncident
-	if err := s.store.selectBuilder(s.store.db, &rawIncidents, builder); err != nil {
+	if err := s.store.selectBuilder(&rawIncidents, builder); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
 	}
 
@@ -87,7 +87,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 	for _, j := range rawIncidents {
 		// TODO: move to permission-checking in the sql call (MM-28008)
 		if options.HasPermissionsTo == nil || options.HasPermissionsTo(j.ChannelID) {
-			k, err := toIncident(&j)
+			k, err := toIncident(j)
 			if err != nil {
 				return nil, err
 			}
@@ -123,7 +123,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 		return nil, err
 	}
 
-	_, err = s.store.execBuilder(s.store.db, sq.
+	err = s.store.execBuilder(sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
 			"ID":              rawIncident.ID,
@@ -161,7 +161,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.store.execBuilder(s.store.db, sq.
+	err = s.store.execBuilder(sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"Name":            rawIncident.Name,
@@ -184,14 +184,14 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 // GetIncident gets an incident by ID.
 func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
 	var rawIncident sqlIncident
-	err := s.store.getBuilder(s.store.db, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
+	err := s.store.getBuilder(&rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
 	}
 
-	return toIncident(&rawIncident)
+	return toIncident(rawIncident)
 }
 
 // GetIncidentByChannel gets an incident associated with the given channel id.
@@ -202,7 +202,7 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 		Where(sq.Eq{"ChannelID": channelID})
 
 	var id string
-	err := s.store.getBuilder(s.store.db, &id, query)
+	err := s.store.getBuilder(&id, query)
 	if err == sql.ErrNoRows {
 		return "", errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have an incident", channelID)
 	} else if err != nil {
@@ -222,7 +222,7 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 		Where(sq.Expr("u.UserId NOT IN (SELECT UserId FROM Bots)"))
 
 	var numMembers int64
-	err := s.store.getBuilder(s.store.db, &numMembers, query)
+	err := s.store.getBuilder(&numMembers, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to query database")
 	}
@@ -231,12 +231,18 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 }
 
 // NukeDB removes all incident related data.
-func (s *incidentStore) NukeDB() error {
+func (s *incidentStore) NukeDB() (err error) {
 	tx, err := s.store.db.Beginx()
 	if err != nil {
 		return errors.Wrap(err, "could not remove tables")
 	}
-	defer tx.Rollback()
+
+	defer func() {
+		cerr := tx.Rollback()
+		if err == nil {
+			err = cerr
+		}
+	}()
 
 	if _, err := tx.Exec("DROP TABLE IR_Incident"); err != nil {
 		return errors.Wrap(err, "could not drop IR_Incident")
@@ -274,7 +280,6 @@ func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
 	checklistJSON, err := json.Marshal(origIncident.Checklists)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal checklist json for incident id: '%s'", origIncident.ID)
-
 	}
 	return &sqlIncident{
 		Incident:      *origIncident,
@@ -282,7 +287,7 @@ func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
 	}, nil
 }
 
-func toIncident(rawIncident *sqlIncident) (*incident.Incident, error) {
+func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	i := rawIncident.Incident
 	// TODO: Alejandro, this should work, but I wouldn't be surprised if I'm missing something.
 	if err := json.Unmarshal(rawIncident.ChecklistJSON, &i.Checklists); err != nil {
