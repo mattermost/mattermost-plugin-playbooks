@@ -32,7 +32,6 @@ interface Props {
     checklist: Checklist;
     checklistIndex: number;
     onChange: (checklist: Checklist) => void;
-    onRemove: () => void;
 }
 
 export const StageEditor = (props: Props): React.ReactElement => {
