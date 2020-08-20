@@ -58,7 +58,9 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 
 // GetIncidents returns filtered incidents and the total count before paging.
 func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error) {
-	ValidateOptions(&options)
+	if err := ValidateOptions(&options); err != nil {
+		return nil, err
+	}
 	return s.store.GetIncidents(options)
 }
 
@@ -278,7 +280,9 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 
 // GetCommanders returns all the commanders of the incidents selected by options
 func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error) {
-	ValidateOptions(&options)
+	if err := ValidateOptions(&options); err != nil {
+		return nil, err
+	}
 	results, err := s.store.GetIncidents(options)
 	if err != nil {
 		return nil, err

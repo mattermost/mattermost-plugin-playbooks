@@ -73,8 +73,8 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 		options.Sort = "CommanderUserID"
 	case "team_id", "teamid":
 		options.Sort = "TeamID"
-	case "end_at", "endedat":
-		options.Sort = "EndedAt"
+	case "end_at", "endat":
+		options.Sort = "EndAt"
 	case "status":
 		options.Sort = "IsActive"
 	default:

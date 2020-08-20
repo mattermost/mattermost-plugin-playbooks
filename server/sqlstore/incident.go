@@ -27,7 +27,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 	incidentSelect := builder.
 		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndedAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
 		From("Incident")
 
 	newStore := &incidentStore{

@@ -142,13 +142,18 @@ func TestCreateIncident(t *testing.T) {
 	})
 }
 
+const (
+	team1id = "012345678901234567890123t1"
+	team2id = "012345678901234567890123t2"
+)
+
 var id1 = incident.Incident{
 	Header: incident.Header{
 		ID:              "id1",
 		Name:            "incident one",
 		IsActive:        false,
 		CommanderUserID: "c1",
-		TeamID:          "team1",
+		TeamID:          team1id,
 	},
 }
 
@@ -158,7 +163,7 @@ var id2 = incident.Incident{
 		Name:            "incident two",
 		IsActive:        true,
 		CommanderUserID: "c2",
-		TeamID:          "team1",
+		TeamID:          team1id,
 	},
 }
 
@@ -168,7 +173,7 @@ var id3 = incident.Incident{
 		Name:            "incident three",
 		IsActive:        true,
 		CommanderUserID: "c2",
-		TeamID:          "team1",
+		TeamID:          team1id,
 	},
 }
 
@@ -178,7 +183,7 @@ var id4 = incident.Incident{
 		Name:            "incident four",
 		IsActive:        false,
 		CommanderUserID: "c2",
-		TeamID:          "team1",
+		TeamID:          team1id,
 	},
 }
 
@@ -188,7 +193,7 @@ var id5 = incident.Incident{
 		Name:            "incident five",
 		IsActive:        true,
 		CommanderUserID: "c1",
-		TeamID:          "team2",
+		TeamID:          team2id,
 	},
 }
 
@@ -198,7 +203,7 @@ var id6 = incident.Incident{
 		Name:            "incident six",
 		IsActive:        false,
 		CommanderUserID: "c1",
-		TeamID:          "team2",
+		TeamID:          team2id,
 	},
 }
 
@@ -233,7 +238,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 		},
 		{
 			name: "get commanders on team2",
-			args: args{teamID: "team2"},
+			args: args{teamID: team2id},
 			prepStore: func(store *mock_incident.MockStore) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).
@@ -250,7 +255,7 @@ func TestServiceImpl_GetCommanders(t *testing.T) {
 		},
 		{
 			name: "get commanders on team1",
-			args: args{teamID: "team1"},
+			args: args{teamID: team1id},
 			prepStore: func(store *mock_incident.MockStore) {
 				store.EXPECT().
 					GetIncidents(gomock.Any()).

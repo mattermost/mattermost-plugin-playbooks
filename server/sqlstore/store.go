@@ -60,14 +60,14 @@ type builder interface {
 // Use this to simplify querying for a single row or column. Dest may be a pointer to a simple
 // type, or a struct with fields to be populated from the returned columns.
 func (sqlStore *SQLStore) getBuilder(q sqlx.Queryer, dest interface{}, b builder) error {
-	sql, args, err := b.ToSql()
+	sqlString, args, err := b.ToSql()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sql")
 	}
 
-	sql = sqlStore.db.Rebind(sql)
+	sqlString = sqlStore.db.Rebind(sqlString)
 
-	err = sqlx.Get(q, dest, sql, args...)
+	err = sqlx.Get(q, dest, sqlString, args...)
 	if err != nil {
 		return err
 	}
@@ -80,14 +80,14 @@ func (sqlStore *SQLStore) getBuilder(q sqlx.Queryer, dest interface{}, b builder
 // Use this to simplify querying for multiple rows (and possibly columns). Dest may be a slice of
 // a simple, or a slice of a struct with fields to be populated from the returned columns.
 func (sqlStore *SQLStore) selectBuilder(q sqlx.Queryer, dest interface{}, b builder) error {
-	sql, args, err := b.ToSql()
+	sqlString, args, err := b.ToSql()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sql")
 	}
 
-	sql = sqlStore.db.Rebind(sql)
+	sqlString = sqlStore.db.Rebind(sqlString)
 
-	err = sqlx.Select(q, dest, sql, args...)
+	err = sqlx.Select(q, dest, sqlString, args...)
 	if err != nil {
 		return err
 	}
@@ -104,17 +104,17 @@ type execer interface {
 }
 
 // exec executes the given query using positional arguments, automatically rebinding for the db.
-func (sqlStore *SQLStore) exec(e execer, sql string, args ...interface{}) (sql.Result, error) {
-	sql = sqlStore.db.Rebind(sql)
-	return e.Exec(sql, args...)
+func (sqlStore *SQLStore) exec(e execer, sqlString string, args ...interface{}) (sql.Result, error) {
+	sqlString = sqlStore.db.Rebind(sqlString)
+	return e.Exec(sqlString, args...)
 }
 
 // exec executes the given query, building the necessary sql.
 func (sqlStore *SQLStore) execBuilder(e execer, b builder) (sql.Result, error) {
-	sql, args, err := b.ToSql()
+	sqlString, args, err := b.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build sql")
 	}
 
-	return sqlStore.exec(e, sql, args...)
+	return sqlStore.exec(e, sqlString, args...)
 }

@@ -18,10 +18,10 @@ import (
 const (
 	team1id      = "012345678901234567890123t1"
 	team2id      = "012345678901234567890123t2"
+	team3id      = "012345678901234567890123t3"
 	commander1id = "012345678901234567890123c1"
 	commander2id = "012345678901234567890123c2"
 	commander3id = "012345678901234567890123c3"
-	commander4id = "012345678901234567890123c4"
 	commander5id = "012345678901234567890123c5"
 )
 
@@ -32,8 +32,8 @@ var id1 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: commander1id,
 		TeamID:          team1id,
-		CreateAt:       123,
-		EndAt:         440,
+		CreateAt:        123,
+		EndAt:           440,
 	},
 }
 
@@ -44,8 +44,8 @@ var id2 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: commander2id,
 		TeamID:          team1id,
-		CreatedAt:       145,
-		EndedAt:         555,
+		CreateAt:        145,
+		EndAt:           555,
 	},
 }
 
@@ -56,8 +56,8 @@ var id3 = incident.Incident{
 		IsActive:        false,
 		CommanderUserID: commander1id,
 		TeamID:          team1id,
-		CreatedAt:       222,
-		EndedAt:         666,
+		CreateAt:        222,
+		EndAt:           666,
 	},
 }
 
@@ -68,8 +68,8 @@ var id4 = incident.Incident{
 		IsActive:        false,
 		CommanderUserID: commander3id,
 		TeamID:          team2id,
-		CreatedAt:       333,
-		EndedAt:         444,
+		CreateAt:        333,
+		EndAt:           444,
 	},
 }
 
@@ -80,8 +80,8 @@ var id5 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: commander3id,
 		TeamID:          team2id,
-		CreatedAt:       223,
-		EndedAt:         550,
+		CreateAt:        223,
+		EndAt:           550,
 	},
 }
 
@@ -91,7 +91,7 @@ var id6 = incident.Incident{
 		Name:            "incident 6 - ziggurat!",
 		IsActive:        true,
 		CommanderUserID: commander5id,
-		TeamID:          "team3",
+		TeamID:          team3id,
 		CreateAt:        555,
 		EndAt:           777,
 	},
@@ -103,7 +103,7 @@ var id7 = incident.Incident{
 		Name:            "incident 7 - Ziggürat!",
 		IsActive:        true,
 		CommanderUserID: commander5id,
-		TeamID:          "team3",
+		TeamID:          team3id,
 		CreateAt:        556,
 		EndAt:           778,
 	},
