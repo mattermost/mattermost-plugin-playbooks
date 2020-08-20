@@ -81,10 +81,11 @@ func TestIncidents(t *testing.T) {
 				TeamID:          dialogRequest.TeamId,
 				Name:            "incidentName",
 			},
-			Playbook: &withid,
+			PlaybookID: withid.ID,
+			Checklists: withid.Checklists,
 		}
 		retI := i
-		retI.PrimaryChannelID = "channelID"
+		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
@@ -130,10 +131,11 @@ func TestIncidents(t *testing.T) {
 				TeamID:          dialogRequest.TeamId,
 				Name:            "incidentName",
 			},
-			Playbook: &withid,
+			PlaybookID: withid.ID,
+			Checklists: withid.Checklists,
 		}
 		retI := i
-		retI.PrimaryChannelID = "channelID"
+		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
@@ -188,10 +190,11 @@ func TestIncidents(t *testing.T) {
 				TeamID:          dialogRequest.TeamId,
 				Name:            "incidentName",
 			},
-			Playbook: &withid,
+			PlaybookID: withid.ID,
+			Checklists: withid.Checklists,
 		}
 		retI := i
-		retI.PrimaryChannelID = "channelID"
+		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
@@ -262,14 +265,15 @@ func TestIncidents(t *testing.T) {
 				TeamID:          "testTeamID",
 				Name:            "incidentName",
 			},
-			Playbook: &withid,
+			PlaybookID: withid.ID,
+			Checklists: withid.Checklists,
 		}
 
 		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
 
 		retI := testIncident
 		retI.ID = "incidentID"
-		retI.PrimaryChannelID = "channelID"
+		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
@@ -307,7 +311,7 @@ func TestIncidents(t *testing.T) {
 
 		retI := testIncident
 		retI.ID = "incidentID"
-		retI.PrimaryChannelID = "channelID"
+		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
@@ -392,9 +396,9 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				TeamID:    "testTeamID",
+				Name:      "incidentName",
+				ChannelID: "channelID",
 			},
 		}
 
@@ -419,11 +423,11 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncidentHeader := incident.Header{
-			ID:               "incidentID",
-			CommanderUserID:  "testUserID",
-			TeamID:           "testTeamID",
-			Name:             "incidentName",
-			PrimaryChannelID: "channelID",
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
 		}
 
 		testIncident := incident.Incident{
@@ -438,7 +442,7 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().GetIncident("incidentID").Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.PrimaryChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -458,11 +462,11 @@ func TestIncidents(t *testing.T) {
 		userID := "testuserid"
 
 		testIncidentHeader := incident.Header{
-			ID:               "incidentID",
-			CommanderUserID:  "testUserID",
-			TeamID:           "testTeamID",
-			Name:             "incidentName",
-			PrimaryChannelID: "channelID",
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -470,10 +474,10 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
 		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("", incident.ErrNotFound)
-		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncidentHeader.PrimaryChannelID)
+		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncidentHeader.ChannelID)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.PrimaryChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", userID)
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -487,23 +491,23 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncidentHeader := incident.Header{
-			ID:               "incidentID",
-			CommanderUserID:  "testUserID",
-			TeamID:           "testTeamID",
-			Name:             "incidentName",
-			PrimaryChannelID: "channelID",
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		incidentService.EXPECT().GetIncidentIDForChannel(testIncidentHeader.PrimaryChannelID).Return(testIncidentHeader.ID, nil)
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncidentHeader.ChannelID).Return(testIncidentHeader.ID, nil)
 		incidentService.EXPECT().GetIncident(testIncidentHeader.ID).Return(&incident.Incident{Header: testIncidentHeader}, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.PrimaryChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -518,20 +522,21 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -556,20 +561,21 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -599,20 +605,21 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
 			Return(false)
@@ -639,20 +646,21 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
 			Return(true)
@@ -684,20 +692,21 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -727,20 +736,21 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -765,14 +775,15 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
 		testIncidentDetails := incident.Details{
@@ -784,10 +795,10 @@ func TestIncidents(t *testing.T) {
 			TotalPosts:         42,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -821,20 +832,21 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
 			Return(false)
@@ -861,14 +873,15 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
 		testIncidentDetails := incident.Details{
@@ -880,10 +893,10 @@ func TestIncidents(t *testing.T) {
 			TotalPosts:         42,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", testIncident.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
 			Return(true)
@@ -918,14 +931,15 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID",
-				CommanderUserID:  "testUserID",
-				TeamID:           "testTeamID",
-				Name:             "incidentName",
-				PrimaryChannelID: "channelID",
+				ID:              "incidentID",
+				CommanderUserID: "testUserID",
+				TeamID:          "testTeamID",
+				Name:            "incidentName",
+				ChannelID:       "channelID",
 			},
-			PostID:   "",
-			Playbook: nil,
+			PostID:     "",
+			PlaybookID: "",
+			Checklists: nil,
 		}
 
 		testIncidentDetails := incident.Details{
@@ -937,10 +951,10 @@ func TestIncidents(t *testing.T) {
 			TotalPosts:         42,
 		}
 
-		pluginAPI.On("GetChannel", testIncident.PrimaryChannelID).
+		pluginAPI.On("GetChannel", testIncident.ChannelID).
 			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testIncident.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.PrimaryChannelID, model.PERMISSION_READ_CHANNEL).
+		pluginAPI.On("HasPermissionToChannel", "testuserid", testIncident.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -974,11 +988,11 @@ func TestIncidents(t *testing.T) {
 
 		incident1 := incident.Incident{
 			Header: incident.Header{
-				ID:               "incidentID1",
-				CommanderUserID:  "testUserID1",
-				TeamID:           "testTeamID1",
-				Name:             "incidentName1",
-				PrimaryChannelID: "channelID1",
+				ID:              "incidentID1",
+				CommanderUserID: "testUserID1",
+				TeamID:          "testTeamID1",
+				Name:            "incidentName1",
+				ChannelID:       "channelID1",
 			},
 		}
 
@@ -1118,8 +1132,9 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to a valid active stage",
 			oldIncident: incident.Incident{
-				Header:   header,
-				Playbook: playbookWithChecklists(2),
+				Header:     header,
+				PlaybookID: playbookWithChecklists(2).ID,
+				Checklists: playbookWithChecklists(2).Checklists,
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(1)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1132,8 +1147,9 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to the same active stage",
 			oldIncident: incident.Incident{
-				Header:   header,
-				Playbook: playbookWithChecklists(2),
+				Header:     header,
+				PlaybookID: playbookWithChecklists(2).ID,
+				Checklists: playbookWithChecklists(2).Checklists,
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(0)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1145,8 +1161,9 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to an invalid stage",
 			oldIncident: incident.Incident{
-				Header:   header,
-				Playbook: playbookWithChecklists(1),
+				Header:     header,
+				PlaybookID: playbookWithChecklists(1).ID,
+				Checklists: playbookWithChecklists(1).Checklists,
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(10)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1158,8 +1175,9 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change with nil update value",
 			oldIncident: incident.Incident{
-				Header:   header,
-				Playbook: playbookWithChecklists(1),
+				Header:     header,
+				PlaybookID: playbookWithChecklists(1).ID,
+				Checklists: playbookWithChecklists(1).Checklists,
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: nil},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {

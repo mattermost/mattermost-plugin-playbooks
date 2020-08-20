@@ -36,10 +36,10 @@ export enum ChecklistItemState {
 export interface ChecklistItem {
     title: string;
     state: ChecklistItemState;
-    state_modified?: string;
+    state_modified?: number;
     state_modified_post_id?: string;
     assignee_id?: string;
-    assignee_modified?: string;
+    assignee_modified?: number;
     assignee_modified_post_id?: string;
     command: string;
     description: string;
@@ -99,8 +99,11 @@ export function isChecklist(arg: any): arg is Checklist {
 export function isChecklistItem(arg: any): arg is ChecklistItem {
     return arg &&
         typeof arg.title === 'string' &&
-        typeof arg.state_modified === 'string' &&
+        typeof arg.state_modified === 'number' &&
         typeof arg.state_modified_post_id === 'string' &&
+        typeof arg.assignee_id === 'string' &&
+        typeof arg.assignee_modified === 'number' &&
+        typeof arg.assignee_modified_post_id === 'string' &&
         typeof arg.state === 'string' &&
         typeof arg.command === 'string';
 }

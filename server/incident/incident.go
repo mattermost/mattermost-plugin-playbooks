@@ -10,21 +10,22 @@ import (
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	PostID   string             `json:"post_id"`
-	Playbook *playbook.Playbook `json:"playbook"`
+	PostID     string               `json:"post_id"`
+	PlaybookID string               `json:"playbook_id"`
+	Checklists []playbook.Checklist `json:"checklists"`
 }
 
 // Header holds the summary information of an incident.
 type Header struct {
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	IsActive         bool   `json:"is_active"`
-	CommanderUserID  string `json:"commander_user_id"`
-	TeamID           string `json:"team_id"`
-	PrimaryChannelID string `json:"primary_channel_id"`
-	CreatedAt        int64  `json:"created_at"`
-	EndedAt          int64  `json:"ended_at"`
-	ActiveStage      int    `json:"active_stage"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	IsActive        bool   `json:"is_active"`
+	CommanderUserID string `json:"commander_user_id"`
+	TeamID          string `json:"team_id"`
+	ChannelID       string `json:"channel_id"`
+	CreateAt        int64  `json:"create_at"`
+	EndAt           int64  `json:"end_at"`
+	ActiveStage     int    `json:"active_stage"`
 }
 
 type UpdateOptions struct {

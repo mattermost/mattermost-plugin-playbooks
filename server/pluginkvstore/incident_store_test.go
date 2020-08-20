@@ -22,8 +22,8 @@ var id1 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: "commander1",
 		TeamID:          "team1",
-		CreatedAt:       123,
-		EndedAt:         440,
+		CreateAt:        123,
+		EndAt:           440,
 	},
 }
 
@@ -34,8 +34,8 @@ var id2 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: "commander2",
 		TeamID:          "team1",
-		CreatedAt:       145,
-		EndedAt:         555,
+		CreateAt:        145,
+		EndAt:           555,
 	},
 }
 
@@ -46,8 +46,8 @@ var id3 = incident.Incident{
 		IsActive:        false,
 		CommanderUserID: "commander1",
 		TeamID:          "team1",
-		CreatedAt:       222,
-		EndedAt:         666,
+		CreateAt:        222,
+		EndAt:           666,
 	},
 }
 
@@ -58,8 +58,8 @@ var id4 = incident.Incident{
 		IsActive:        false,
 		CommanderUserID: "commander3",
 		TeamID:          "team2",
-		CreatedAt:       333,
-		EndedAt:         444,
+		CreateAt:        333,
+		EndAt:           444,
 	},
 }
 
@@ -70,8 +70,8 @@ var id5 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: "commander3",
 		TeamID:          "team2",
-		CreatedAt:       223,
-		EndedAt:         550,
+		CreateAt:        223,
+		EndAt:           550,
 	},
 }
 
@@ -82,8 +82,8 @@ var id6 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: "commander5",
 		TeamID:          "team3",
-		CreatedAt:       555,
-		EndedAt:         777,
+		CreateAt:        555,
+		EndAt:           777,
 	},
 }
 
@@ -94,8 +94,8 @@ var id7 = incident.Incident{
 		IsActive:        true,
 		CommanderUserID: "commander5",
 		TeamID:          "team3",
-		CreatedAt:       556,
-		EndedAt:         778,
+		CreateAt:        556,
+		EndAt:           778,
 	},
 }
 
@@ -140,9 +140,9 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			},
 		},
 		{
-			name: "sort by ended_at",
+			name: "sort by end_at",
 			options: incident.HeaderFilterOptions{
-				Sort: incident.EndedAt,
+				Sort: incident.EndAt,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 7,
@@ -245,7 +245,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "sorted by ended, ascending, page 1 by 2",
 			options: incident.HeaderFilterOptions{
-				Sort:    incident.EndedAt,
+				Sort:    incident.EndAt,
 				Order:   incident.Asc,
 				Page:    1,
 				PerPage: 2,
@@ -286,11 +286,11 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			},
 		},
 		{
-			name: "commander1, asc, by ended_at",
+			name: "commander1, asc, by end_at",
 			options: incident.HeaderFilterOptions{
 				CommanderID: "commander1",
 				Order:       incident.Asc,
-				Sort:        incident.EndedAt,
+				Sort:        incident.EndAt,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 2,

@@ -50,7 +50,7 @@ const ChecklistTimeline: FC<Props> = (props: Props) => {
 
     let content;
 
-    const checklistItems = props.incident.playbook.checklists?.[0]?.items || [];
+    const checklistItems = props.incident.checklists?.[0]?.items || [];
     if (checklistItems.length === 0) {
         content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
             <div>
@@ -176,7 +176,7 @@ function tooltipLabel(tooltipItem: ChartTooltipItem, data: any) {
         return '';
     }
 
-    const timeUpdated = moment(data.checklistItems[tooltipItem.index].state_modified);
+    const timeUpdated = moment.unix(data.checklistItems[tooltipItem.index].state_modified);
     return timeUpdated.format('MMM DD LT');
 }
 
@@ -232,19 +232,21 @@ function initData(theme: Record<string, string>, incident: Incident) {
     };
 
     // Flatten steps into one list
-    const checklistItems = incident.playbook.checklists?.reduce(
+    const checklistItems = incident.checklists?.reduce(
         (prevValue: ChecklistItem[], currValue: Checklist) => ([...prevValue, ...currValue.items]),
         [] as ChecklistItem[],
     );
 
     // Add points to the graph for checked items
     chartData.checklistItems = checklistItems.filter((item: ChecklistItem) => (
-        item.state === ChecklistItemState.Closed && moment(item.state_modified).isSameOrAfter('2020-01-01')
+        item.state === ChecklistItemState.Closed && item.state_modified && moment.unix(item.state_modified).isSameOrAfter('2020-01-01')
     )).map((item: ChecklistItem) => {
-        const checkedTime = moment(item.state_modified);
-        const duration = moment.duration(checkedTime.diff(moment.unix(incident.created_at)));
+        if (item.state_modified) {
+            const checkedTime = moment.unix(item.state_modified);
+            const duration = moment.duration(checkedTime.diff(moment.unix(incident.create_at)));
 
-        chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
+            chartData.datasets[0].data.push({x: duration.asMilliseconds(), y: item.title});
+        }
         return item;
     });
 

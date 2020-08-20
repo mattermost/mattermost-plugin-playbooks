@@ -320,15 +320,15 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
 				testIncident := incident.Incident{
 					Header: incident.Header{
-						ID:               "incidentID",
-						CommanderUserID:  "testUserID",
-						TeamID:           "testTeamID",
-						Name:             "incidentName",
-						PrimaryChannelID: "channelID",
-						IsActive:         false,
+						ID:              "incidentID",
+						CommanderUserID: "testUserID",
+						TeamID:          "testTeamID",
+						Name:            "incidentName",
+						ChannelID:       "channelID",
+						IsActive:        false,
 					},
-					PostID:   "",
-					Playbook: nil,
+					PostID:     "",
+					Checklists: nil,
 				}
 
 				store.EXPECT().
@@ -337,7 +337,7 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 
 				testIncident2 := testIncident
 				testIncident2.IsActive = true
-				testIncident2.EndedAt = 0
+				testIncident2.EndAt = 0
 
 				store.EXPECT().
 					UpdateIncident(&testIncident2).
@@ -366,15 +366,15 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
 				testIncident := incident.Incident{
 					Header: incident.Header{
-						ID:               "incidentID",
-						CommanderUserID:  "testUserID",
-						TeamID:           "testTeamID",
-						Name:             "incidentName",
-						PrimaryChannelID: "channelID",
-						IsActive:         true,
+						ID:              "incidentID",
+						CommanderUserID: "testUserID",
+						TeamID:          "testTeamID",
+						Name:            "incidentName",
+						ChannelID:       "channelID",
+						IsActive:        true,
 					},
-					PostID:   "",
-					Playbook: nil,
+					PostID:     "",
+					Checklists: nil,
 				}
 
 				store.EXPECT().

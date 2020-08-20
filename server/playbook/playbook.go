@@ -1,8 +1,6 @@
 package playbook
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 )
 
@@ -27,15 +25,15 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	Title                  string    `json:"title"`
-	State                  string    `json:"state"`
-	StateModified          time.Time `json:"state_modified"`
-	StateModifiedPostID    string    `json:"state_modified_post_id"`
-	AssigneeID             string    `json:"assignee_id"`
-	AssigneeModified       time.Time `json:"assignee_modified"`
-	AssigneeModifiedPostID string    `json:"assignee_modified_post_id"`
-	Command                string    `json:"command"`
-	Description            string    `json:"description"`
+	Title                  string `json:"title"`
+	State                  string `json:"state"`
+	StateModified          int64  `json:"state_modified"`
+	StateModifiedPostID    string `json:"state_modified_post_id"`
+	AssigneeID             string `json:"assignee_id"`
+	AssigneeModified       int64  `json:"assignee_modified"`
+	AssigneeModifiedPostID string `json:"assignee_modified_post_id"`
+	Command                string `json:"command"`
+	Description            string `json:"description"`
 }
 
 // SortField enumerates the available fields we can sort on.
@@ -124,6 +122,6 @@ func IsValidChecklistItemState(state string) bool {
 		state == ChecklistItemStateOpen
 }
 
-func (p *Playbook) IsValidChecklistItemIndex(checklist, item int) bool {
-	return p != nil && checklist >= 0 && item >= 0 && checklist < len(p.Checklists) && item < len(p.Checklists[checklist].Items)
+func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {
+	return checklists != nil && checklistNum >= 0 && itemNum >= 0 && checklistNum < len(checklists) && itemNum < len(checklists[checklistNum].Items)
 }

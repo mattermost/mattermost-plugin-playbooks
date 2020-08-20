@@ -193,7 +193,7 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 
 	// Search for which incident has the given channel associated
 	for _, header := range headers {
-		if header.PrimaryChannelID == channelID {
+		if header.ChannelID == channelID {
 			return header.ID, nil
 		}
 	}
@@ -295,8 +295,8 @@ func sortHeaders(headers []incident.Header, sortField incident.SortField, order 
 		orderFn = func(b bool) bool { return !b }
 	}
 
-	// sort by CreatedAt, unless we're told otherwise
-	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreatedAt > headers[j].CreatedAt) }
+	// sort by CreateAt, unless we're told otherwise
+	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreateAt > headers[j].CreateAt) }
 	switch sortField {
 	case incident.ID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
@@ -308,8 +308,8 @@ func sortHeaders(headers []incident.Header, sortField incident.SortField, order 
 		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
 	case incident.TeamID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
-	case incident.EndedAt:
-		sortFn = func(i, j int) bool { return orderFn(headers[i].EndedAt > headers[j].EndedAt) }
+	case incident.EndAt:
+		sortFn = func(i, j int) bool { return orderFn(headers[i].EndAt > headers[j].EndAt) }
 	case incident.ByStatus:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].IsActive && !headers[j].IsActive) }
 	}
@@ -347,7 +347,7 @@ func headerMatchesFilters(header incident.Header, options incident.HeaderFilterO
 		return false
 	}
 
-	if options.HasPermissionsTo != nil && !options.HasPermissionsTo(header.PrimaryChannelID) {
+	if options.HasPermissionsTo != nil && !options.HasPermissionsTo(header.ChannelID) {
 		return false
 	}
 
