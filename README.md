@@ -2,6 +2,10 @@
 
 This plugin allows you to coordinate and manage incidents within Mattermost.
 
+## License
+
+This repository is licensed under the [Mattermost Source Available License](LICENSE) and requires a valid Enterprise E20 license. See [Mattermost Source Available License](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
+
 ##### Running E2E Tests:
 
 _To run the Cypress E2E tests in your local environment, do the following:_
