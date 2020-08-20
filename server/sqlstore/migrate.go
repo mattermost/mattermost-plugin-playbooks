@@ -22,6 +22,11 @@ func Migrate(db *sql.DB, currentSchemaVersion semver.Version, pluginAPIClient *p
 		if err := SetCurrentVersion(pluginAPIClient, currentSchemaVersion); err != nil {
 			return errors.Wrapf(err, "migration succeeded, but failed to set the current version to %s. Database is now in an inconsistent state", currentSchemaVersion.String())
 		}
+
+		// TODO: Remove when all customers are in 0.1.0
+		if currentSchemaVersion.EQ(semver.MustParse("0.1.0")) {
+			DataMigration(&pluginAPIClient.KV, db)
+		}
 	}
 
 	return nil
