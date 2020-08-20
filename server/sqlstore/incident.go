@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -148,28 +149,110 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 }
 
 // UpdateIncident updates an incident.
-func (s *incidentStore) UpdateIncident(incdnt *incident.Incident) error {
+func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
+	if newIncident == nil {
+		return errors.New("incident is nil")
+	}
+	if newIncident.ID != "" {
+		return errors.New("ID should not be set")
+	}
+
+	rawIncident, err := toSQLIncident(newIncident)
+	if err != nil {
+		return err
+	}
+	_, err = s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"Name":            rawIncident.Name,
+			"IsActive":        rawIncident.IsActive,
+			"CommanderUserID": rawIncident.CommanderUserID,
+			"EndAt":           rawIncident.EndAt,
+			"DeleteAt":        rawIncident.DeleteAt,
+			"ActiveStage":     rawIncident.ActiveStage,
+			"ChecklistsJSON":  rawIncident.ChecklistJSON,
+		}).
+		Where(sq.Eq{"ID": rawIncident.ID}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update incident with id '%s'", rawIncident.ID)
+	}
+
 	return nil
 }
 
 // GetIncident gets an incident by ID.
 func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
-	return nil, nil
+	var rawIncident sqlIncident
+	err := s.store.getBuilder(s.store.db, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
+	}
+
+	return toIncident(&rawIncident)
 }
 
 // GetIncidentByChannel gets an incident associated with the given channel id.
 func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error) {
-	return "", nil
+	query := s.queryBuilder.
+		Select("ID").
+		From("IR_Incident").
+		Where(sq.Eq{"ChannelID": channelID})
+
+	var id string
+	err := s.store.getBuilder(s.store.db, &id, query)
+	if err == sql.ErrNoRows {
+		return "", errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have an incident", channelID)
+	} else if err != nil {
+		return "", errors.Wrapf(err, "failed to get incident by channelID '%s'", channelID)
+	}
+
+	return id, nil
 }
 
 // GetAllIncidentMembersCount returns the count of all members of an incident since the
 // beginning of the incident, excluding bots.
 func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, error) {
-	return 0, nil
+	query := s.queryBuilder.
+		Select("COUNT(DISTINCT UserId)").
+		From("ChannelMemberHistory AS u").
+		Where(sq.Eq{"ChannelId": incidentID}).
+		Where(sq.Expr("u.UserId NOT IN (SELECT UserId FROM Bots)"))
+
+	var numMembers int64
+	err := s.store.getBuilder(s.store.db, &numMembers, query)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to query database")
+	}
+
+	return numMembers, nil
 }
 
 // NukeDB removes all incident related data.
 func (s *incidentStore) NukeDB() error {
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "could not remove tables")
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec("DROP TABLE IR_Incident"); err != nil {
+		return errors.Wrap(err, "could not drop IR_Incident")
+	}
+
+	if _, err := tx.Exec("DROP TABLE IR_Playbook"); err != nil {
+		return errors.Wrap(err, "could not drop IR_Playbook")
+	}
+	if _, err := tx.Exec("DROP TABLE IR_PlaybookMember"); err != nil {
+		return errors.Wrap(err, "could not drop IR_Playbook")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "could not remove tables")
+	}
+
 	return nil
 }
 
