@@ -2,8 +2,9 @@ package sqlstore
 
 import (
 	"github.com/blang/semver"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/pkg/errors"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 func LatestVersion() semver.Version {

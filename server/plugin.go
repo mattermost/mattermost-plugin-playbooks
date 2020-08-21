@@ -19,6 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	sq "github.com/Masterminds/squirrel"
+
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
@@ -98,13 +99,13 @@ func (p *Plugin) OnActivate() error {
 		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
 
 		if telemetryEnabled {
-			if err := telemetryClient.Enable(); err != nil {
+			if err = telemetryClient.Enable(); err != nil {
 				pluginAPIClient.Log.Warn("Telemetry could not be enabled", "Error", err)
 			}
 			return
 		}
 
-		if err := telemetryClient.Disable(); err != nil {
+		if err = telemetryClient.Disable(); err != nil {
 			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
 		}
 	}
@@ -129,7 +130,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 
-	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
+	if err = command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
