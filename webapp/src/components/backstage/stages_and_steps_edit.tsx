@@ -38,7 +38,7 @@ interface Props {
 }
 
 export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
-    const [confirmRemoveChecklist, setConfirmRemoveChecklist] = useState({open: false, stage: 0});
+    const [confirmRemoveChecklistNum, setConfirmRemoveChecklistNum] = useState(-1);
 
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) {
@@ -134,7 +134,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
         if (filteredChecklistItems.length === 0) {
             onRemoveChecklist(checklistIndex);
         } else {
-            setConfirmRemoveChecklist({open: true, stage: checklistIndex});
+            setConfirmRemoveChecklistNum(checklistIndex);
         }
     };
 
@@ -187,15 +187,15 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                 </HorizontalBar>
             </NewStageContainer>
             <ConfirmModal
-                show={confirmRemoveChecklist.open}
+                show={confirmRemoveChecklistNum >= 0}
                 title={'Remove Stage'}
                 message={'Are you sere you want to remove the stage? All steps will be removed.'}
                 confirmButtonText={'Remove Stage'}
                 onConfirm={() => {
-                    onRemoveChecklist(confirmRemoveChecklist.stage);
-                    setConfirmRemoveChecklist({open: false, stage: 0});
+                    onRemoveChecklist(confirmRemoveChecklistNum);
+                    setConfirmRemoveChecklistNum(-1);
                 }}
-                onCancel={() => setConfirmRemoveChecklist({open: false, stage: 0})}
+                onCancel={() => setConfirmRemoveChecklistNum(-1)}
             />
         </DragDropContext>
     );
