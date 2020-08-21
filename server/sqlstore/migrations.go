@@ -32,7 +32,7 @@ var migrations = []Migration{
 						ActiveStage BIGINT NOT NULL,
 						PostID VARCHAR(26) NOT NULL DEFAULT '',
 						PlaybookID VARCHAR(26) NOT NULL DEFAULT '',
-						ChecklistsJSON VARCHAR(65535) NOT NULL,
+						ChecklistsJSON VARCHAR(60000) NOT NULL,
 						INDEX IR_Incident_TeamID (TeamID),
 						INDEX IR_Incident_TeamID_CommanderUserID (TeamID, CommanderUserID),
 						INDEX IR_Incident_ChannelID (ChannelID)
@@ -44,14 +44,14 @@ var migrations = []Migration{
 				if _, err := sqlStore.db.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Playbook (
 						ID VARCHAR(26) PRIMARY KEY,
-						Title VARCHAR(65535) NOT NULL,
+						Title VARCHAR(1024) NOT NULL,
 						TeamID VARCHAR(26) NOT NULL,
 						CreatePublicIncident BOOLEAN NOT NULL,
 						CreateAt BIGINT NOT NULL,
 						DeleteAt BIGINT NOT NULL DEFAULT 0,
-						Checklists VARCHAR(65535) NOT NULL,
+						Checklists VARCHAR(60000) NOT NULL,
 						INDEX IR_Playbook_TeamID (TeamID),
-						INDEX IR_PlaybookMember_PlaybookID (PlaybookID)
+						INDEX IR_PlaybookMember_PlaybookID (ID)
 					);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Playbook")
