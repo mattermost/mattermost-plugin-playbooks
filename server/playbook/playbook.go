@@ -19,12 +19,14 @@ type Playbook struct {
 
 // Checklist represents a checklist in a playbook
 type Checklist struct {
+	ID    string          `json:"id"`
 	Title string          `json:"title"`
 	Items []ChecklistItem `json:"items"`
 }
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
+	ID                     string `json:"id"`
 	Title                  string `json:"title"`
 	State                  string `json:"state"`
 	StateModified          int64  `json:"state_modified"`
