@@ -1,11 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState} from 'react';
+import React, {FC, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import ReactSelect, {ActionMeta, OptionTypeBase, StylesConfig} from 'react-select';
 import Scrollbars from 'react-custom-scrollbars';
-import moment from 'moment';
 
 import {
     fetchUsersInChannel,
@@ -21,8 +20,10 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 
 import {isMobile} from 'src/mobile';
 import {toggleRHS, endIncident, restartIncident} from 'src/actions';
+
 import 'src/components/checklist.scss';
 import './incident_details.scss';
+import Duration from './duration';
 
 interface Props {
     incident: Incident;
@@ -186,35 +187,6 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
         );
     }
 
-    const [now, setNow] = useState(moment());
-    useEffect(() => {
-        const tick = () => {
-            setNow(moment());
-        };
-        const quarterSecond = 250;
-        const timerId = setInterval(tick, quarterSecond);
-
-        return () => {
-            clearInterval(timerId);
-        };
-    }, []);
-
-    const start = moment.unix(props.incident.created_at);
-    const end = (props.incident.ended_at && moment.unix(props.incident.ended_at)) || now;
-
-    const duration = moment.duration(end.diff(start));
-    let durationString = '';
-    if (duration.days() > 0) {
-        durationString += duration.days() + 'd ';
-    }
-    if (duration.hours() > 0) {
-        durationString += duration.hours() + 'h ';
-    }
-    if (duration.minutes() > 0) {
-        durationString += duration.minutes() + 'm ';
-    }
-    durationString += duration.seconds() + 's';
-
     return (
         <React.Fragment>
             <Scrollbars
@@ -242,10 +214,10 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                 selfIsFirstOption={true}
                             />
                         </div>
-                        <div className='first-title'>
-                            {'Duration'}
-                            <div className='time'>{durationString}</div>
-                        </div>
+                        <Duration
+                            created_at={props.incident.created_at}
+                            ended_at={props.incident.ended_at}
+                        />
                     </div>
                     <div className='inner-container'>
                         <StageSelector
