@@ -282,7 +282,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 
 // getIncidents handles the GET /incidents endpoint.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	filterOptions, err := parseIncidentsFilterOption(r.URL)
+	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
@@ -829,8 +829,8 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 	return nil
 }
 
-func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, error) {
-	// NOTE: this is only for parsing. Put validation logic in service.validateOptions
+// parseIncidentsFilterOptions is only for parsing. Put validation logic in service.validateOptions.
+func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
 
 	pageParam := u.Query().Get("page")
@@ -854,9 +854,9 @@ func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, erro
 	sort := u.Query().Get("sort")
 	order := u.Query().Get("order")
 
-	sortParam := strings.ToLower(u.Query().Get("status"))
+	statusParam := strings.ToLower(u.Query().Get("status"))
 	var status incident.Status
-	switch sortParam {
+	switch statusParam {
 	case "all", "": // default
 		status = incident.All
 	case "active":

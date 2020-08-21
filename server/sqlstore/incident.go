@@ -15,7 +15,7 @@ import (
 
 type sqlIncident struct {
 	incident.Incident
-	ChecklistJSON []byte // TODO: Alejandro, not sure if this is good, or if we should use string
+	ChecklistsJSON []byte // TODO: Alejandro, not sure if this is good, or if we should use string
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -71,7 +71,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		builder = builder.Where(sq.Like{"Name": fmt.Sprint("%", options.TeamID, "%")})
+		builder = builder.Where(sq.Like{"Name": fmt.Sprint("%", options.SearchTerm, "%")})
 	}
 
 	if options.Sort != "" {
@@ -138,7 +138,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 			"ActiveStage":     rawIncident.ActiveStage,
 			"PostID":          rawIncident.PostID,
 			"PlaybookID":      rawIncident.PlaybookID,
-			"ChecklistsJSON":  rawIncident.ChecklistJSON,
+			"ChecklistsJSON":  rawIncident.ChecklistsJSON,
 		}))
 
 	if err != nil {
@@ -170,7 +170,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"EndAt":           rawIncident.EndAt,
 			"DeleteAt":        rawIncident.DeleteAt,
 			"ActiveStage":     rawIncident.ActiveStage,
-			"ChecklistsJSON":  rawIncident.ChecklistJSON,
+			"ChecklistsJSON":  rawIncident.ChecklistsJSON,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -186,7 +186,7 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 	var rawIncident sqlIncident
 	err := s.store.getBuilder(&rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id (%s) does not exist", incidentID)
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
 	}
@@ -194,7 +194,7 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 	return toIncident(rawIncident)
 }
 
-// GetIncidentByChannel gets an incident associated with the given channel id.
+// GetIncidentIDForChannel gets the incidentID associated with the given channelID.
 func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error) {
 	query := s.queryBuilder.
 		Select("ID").
@@ -234,7 +234,7 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 func (s *incidentStore) NukeDB() (err error) {
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return errors.Wrap(err, "could not remove tables")
+		return errors.Wrap(err, "could not begin transaction")
 	}
 
 	defer func() {
@@ -277,21 +277,21 @@ func min(a, b int) int {
 }
 
 func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
-	checklistJSON, err := json.Marshal(origIncident.Checklists)
+	checklistsJSON, err := json.Marshal(origIncident.Checklists)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal checklist json for incident id: '%s'", origIncident.ID)
 	}
 	return &sqlIncident{
-		Incident:      *origIncident,
-		ChecklistJSON: checklistJSON,
+		Incident:       *origIncident,
+		ChecklistsJSON: checklistsJSON,
 	}, nil
 }
 
 func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	i := rawIncident.Incident
 	// TODO: Alejandro, this should work, but I wouldn't be surprised if I'm missing something.
-	if err := json.Unmarshal(rawIncident.ChecklistJSON, &i.Checklists); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal checklist json for incident id: '%s'", rawIncident.ID)
+	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
 	return &i, nil
 }

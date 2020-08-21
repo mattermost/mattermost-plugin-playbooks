@@ -50,12 +50,7 @@ func (sqlStore *SQLStore) getBuilder(dest interface{}, b builder) error {
 
 	sqlString = sqlStore.db.Rebind(sqlString)
 
-	err = sqlx.Get(sqlStore.db, dest, sqlString, args...)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return sqlx.Get(sqlStore.db, dest, sqlString, args...)
 }
 
 // selectBuilder queries for one or more rows, building the sql, and writing the result into dest.
@@ -70,12 +65,7 @@ func (sqlStore *SQLStore) selectBuilder(dest interface{}, b builder) error {
 
 	sqlString = sqlStore.db.Rebind(sqlString)
 
-	err = sqlx.Select(sqlStore.db, dest, sqlString, args...)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return sqlx.Select(sqlStore.db, dest, sqlString, args...)
 }
 
 // exec executes the given query using positional arguments, automatically rebinding for the db.
