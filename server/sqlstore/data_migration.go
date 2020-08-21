@@ -1,11 +1,10 @@
 package sqlstore
 
 import (
-	"database/sql"
 	"encoding/json"
 	"time"
 
-	"github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
@@ -61,7 +60,7 @@ type oldPlaybookIndex struct {
 	PlaybookIDs []string `json:"playbook_ids"`
 }
 
-func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderType, db *sql.DB) error {
+func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 	// Get old playbooks
 	var playbookIndex oldPlaybookIndex
 	if err := kvAPI.Get("v2_playbookindex", &playbookIndex); err != nil {
@@ -127,15 +126,8 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 		incidents = append(incidents, *i)
 	}
 
-	// CREATE TABLE IR_Playbook (
-	//    ID TEXT/VARCHAR(26) PRIMARY KEY,
-	//    Title TEXT/VARCHAR(65535) NOT NULL,
-	//    TeamID TEXT/VARCHAR(26) NOT NULL,
-	//    CreatePublicIncident BOOLEAN NOT NULL,
-	//    CreateAt BIGINT NOT NULL,
-	//    DeleteAt BIGINT NOT NULL DEFAULT 0,
-	//    Checklists JSON/VARCHAR(65535) NOT NULL
-	// );
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+
 	playbookInsert := builder.
 		Insert("IR_Playbook").
 		Columns(
@@ -148,10 +140,6 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 			"Checklists",
 		)
 
-	// CREATE TABLE IR_PlaybookMember (
-	//    PlaybookID TEXT/VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID)
-	//    MemberID TEXT/VARCHAR(26) NOT NULL,
-	// );
 	playbookMemberInsert := builder.
 		Insert("IR_PlaybookMember").
 		Columns(
@@ -183,39 +171,14 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 		}
 	}
 
-	playbookInsertQuery, playbookInsertArgs, err := playbookInsert.ToSql()
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert playbookInsert into SQL")
+	if err := store.execBuilder(playbookInsert); err != nil {
+		return errors.Wrapf(err, "failed inserting data into Playbook table")
 	}
 
-	if _, err := db.Exec(playbookInsertQuery, playbookInsertArgs); err != nil {
-		return errors.Wrapf(err, "failed to insert data into Playbook table")
+	if err := store.execBuilder(playbookMemberInsert); err != nil {
+		return errors.Wrapf(err, "failed inserting data into PlaybookMember table")
 	}
 
-	playbookMemberInsertQuery, playbookMemberInsertArgs, err := playbookMemberInsert.ToSql()
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert playbookMemberInsert into SQL")
-	}
-
-	if _, err := db.Exec(playbookMemberInsertQuery, playbookMemberInsertArgs); err != nil {
-		return errors.Wrapf(err, "failed to insert data into PlaybookMember table")
-	}
-
-	// CREATE TABLE IR_Incident (
-	//     ID TEXT/VARCHAR(26) PRIMARY KEY,
-	//     Name TEXT/VARCHAR(26) NOT NULL,
-	//     IsActive BOOLEAN NOT NULL,
-	//     CommanderUserID TEXT/VARCHAR(26) NOT NULL,
-	//     TeamID TEXT/VARCHAR(26) NOT NULL,
-	//     ChannelID TEXT/VARCHAR(26) NOT NULL UNIQUE,
-	//     CreateAt BIGINT NOT NULL,
-	//     EndAt BIGINT NOT NULL DEFAULT 0,
-	//     DeleteAt BIGINT NOT NULL DEFAULT 0,
-	//     ActiveStage BIGINT NOT NULL,
-	//     PostID TEXT/VARCHAR(26) NOT NULL DEFAULT '',
-	//     PlaybookID TEXT/VARCHAR(26) NOT NULL DEFAULT '',
-	//     ChecklistsJSON JSON/VARCHAR(65535) NOT NULL
-	// );
 	incidentInsert := builder.
 		Insert("Incident").
 		Columns(
@@ -256,13 +219,8 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 		)
 	}
 
-	incidentInsertQuery, incidentInsertArgs, err := incidentInsert.ToSql()
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert incidentInsert into SQL")
-	}
-
-	if _, err := db.Exec(incidentInsertQuery, incidentInsertArgs); err != nil {
-		return errors.Wrapf(err, "failed to insert data into Incident table")
+	if err := store.execBuilder(incidentInsert); err != nil {
+		return errors.Wrapf(err, "failed inserting data into Incident table")
 	}
 
 	return nil
@@ -278,10 +236,10 @@ func checklistsToJSON(oldChecklists []oldChecklist) ([]byte, error) {
 				ID:                     model.NewId(),
 				Title:                  oldItem.Title,
 				State:                  oldItem.State,
-				StateModified:          oldItem.StateModified,
+				StateModified:          model.GetMillisForTime(oldItem.StateModified),
 				StateModifiedPostID:    oldItem.StateModifiedPostID,
 				AssigneeID:             oldItem.AssigneeID,
-				AssigneeModified:       oldItem.AssigneeModified,
+				AssigneeModified:       model.GetMillisForTime(oldItem.AssigneeModified),
 				AssigneeModifiedPostID: oldItem.AssigneeModifiedPostID,
 				Command:                oldItem.Command,
 				Description:            oldItem.Description,
