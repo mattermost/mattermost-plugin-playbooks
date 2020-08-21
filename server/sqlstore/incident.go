@@ -16,7 +16,7 @@ import (
 
 type sqlIncident struct {
 	incident.Incident
-	ChecklistsJSON []byte // TODO: Alejandro, not sure if this is good, or if we should use string
+	ChecklistsJSON json.RawMessage // TODO: Alejandro, not sure if this is good, or if we should use string
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -282,7 +282,7 @@ func (s *incidentStore) NukeDB() (err error) {
 
 	defer func() {
 		cerr := tx.Rollback()
-		if err == nil {
+		if err == nil && cerr != sql.ErrTxDone {
 			err = cerr
 		}
 	}()
