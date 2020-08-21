@@ -1,22 +1,19 @@
 package sqlstore
 
 import (
-	"database/sql"
-
-	"github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-func Migrate(db *sql.DB, currentSchemaVersion semver.Version, pluginAPIClient *pluginapi.Client, builder squirrel.StatementBuilderType) error {
+func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, currentSchemaVersion semver.Version) error {
 	for _, migration := range migrations {
 		if !currentSchemaVersion.EQ(migration.fromVersion) {
 			continue
 		}
 
-		if err := migration.migrationFunc(db); err != nil {
+		if err := migration.migrationFunc(sqlStore); err != nil {
 			return errors.Wrapf(err, "error executing migration from version %s to version %s", migration.fromVersion.String(), migration.toVersion.String())
 		}
 
@@ -27,7 +24,7 @@ func Migrate(db *sql.DB, currentSchemaVersion semver.Version, pluginAPIClient *p
 
 		// TODO: Remove when all customers are in 0.1.0
 		if currentSchemaVersion.EQ(semver.MustParse("0.1.0")) {
-			if err := DataMigration(&pluginAPIClient.KV, builder, db); err != nil {
+			if err := DataMigration(sqlStore, &pluginAPIClient.KV); err != nil {
 				return errors.Wrapf(err, "failed to migrate the data from the KV store to the SQL database")
 			}
 		}

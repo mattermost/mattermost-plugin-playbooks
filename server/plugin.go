@@ -18,8 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	sq "github.com/Masterminds/squirrel"
-
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
@@ -134,13 +132,18 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
+	sqlStore, err := sqlstore.New(sqlstore.NewClient(pluginAPIClient), p.bot)
+	if err != nil {
+		return errors.Wrapf(err, "failed creating the SQL store")
+	}
+
 	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
 	if err != nil {
 		return errors.Wrapf(err, "failed creating cluster mutex")
 	}
 
 	// Cluster lock: only one plugin will perform the migration when needed
-	if err := p.DBMigration(pluginAPIClient, mutex); err != nil {
+	if err := p.DBMigration(sqlStore, pluginAPIClient, mutex); err != nil {
 		return errors.Wrapf(err, "failed to run migrations")
 	}
 
@@ -148,19 +151,9 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p *Plugin) DBMigration(pluginAPIClient *pluginapi.Client, mutex *cluster.Mutex) error {
+func (p *Plugin) DBMigration(sqlStore *sqlstore.SQLStore, pluginAPIClient *pluginapi.Client, mutex *cluster.Mutex) error {
 	mutex.Lock()
 	defer mutex.Unlock()
-
-	db, err := pluginAPIClient.Store.GetMasterDB()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get main database")
-	}
-
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-	if pluginAPIClient.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-		builder = builder.PlaceholderFormat(sq.Dollar)
-	}
 
 	currentSchemaVersion, err := sqlstore.GetCurrentVersion(pluginAPIClient)
 	if err != nil {
@@ -168,7 +161,7 @@ func (p *Plugin) DBMigration(pluginAPIClient *pluginapi.Client, mutex *cluster.M
 	}
 
 	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
-		if err := sqlstore.Migrate(db, currentSchemaVersion, pluginAPIClient, builder); err != nil {
+		if err := sqlStore.Migrate(pluginAPIClient, currentSchemaVersion); err != nil {
 			return errors.Wrapf(err, "failed to complete migrations")
 		}
 	}
