@@ -96,7 +96,7 @@ export default function ProfileSelector(props: Props) {
                     />
                 ),
                 userId: user.id,
-            });
+            } as Option);
         });
 
         if (props.selfIsFirstOption) {
