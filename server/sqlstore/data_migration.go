@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -126,88 +127,52 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 		incidents = append(incidents, *i)
 	}
 
-	// CREATE TABLE Playbook (
-	//    ID VARCHAR(26) PRIMARY KEY,
-	//    Title VARCHAR(65535) NOT NULL,
-	//    TeamID VARCHAR(26) NOT NULL,
+	// CREATE TABLE IR_Playbook (
+	//    ID TEXT/VARCHAR(26) PRIMARY KEY,
+	//    Title TEXT/VARCHAR(65535) NOT NULL,
+	//    TeamID TEXT/VARCHAR(26) NOT NULL,
 	//    CreatePublicIncident BOOLEAN NOT NULL,
 	//    CreateAt BIGINT NOT NULL,
 	//    DeleteAt BIGINT NOT NULL DEFAULT 0,
-	//    InBackstage BOOLEAN NOT NULL DEFAULT FALSE
+	//    Checklists JSON/VARCHAR(65535) NOT NULL
 	// );
 	playbookInsert := builder.
-		Insert("Playbook").
+		Insert("IR_Playbook").
 		Columns(
 			"ID",
 			"Title",
 			"TeamID",
 			"CreatePublicIncident",
 			"CreateAt",
+			"DeleteAt",
+			"Checklists",
 		)
 
-	// CREATE TABLE PlaybookMember (
-	//    PlaybookID VARCHAR(26) NOT NULL REFERENCES Playbook(ID)
-	//    MemberID VARCHAR(26) NOT NULL,
+	// CREATE TABLE IR_PlaybookMember (
+	//    PlaybookID TEXT/VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID)
+	//    MemberID TEXT/VARCHAR(26) NOT NULL,
 	// );
 	playbookMemberInsert := builder.
-		Insert("PlaybookMember").
+		Insert("IR_PlaybookMember").
 		Columns(
 			"PlaybookID",
 			"MemberID",
 		)
 
-	// CREATE TABLE Checklist (
-	//    ID VARCHAR(26) PRIMARY KEY,
-	//    Title VARCHAR(65535) NOT NULL,
-	//    Sequence BIGINT NOT NULL,
-	//    PlaybookID VARCHAR(26) NOT NULL REFERENCES Playbook(ID)
-	// );
-	checklistInsert := builder.
-		Insert("Checklist").
-		Columns(
-			"ID",
-			"Title",
-			"Sequence",
-			"PlaybookID",
-		)
-	// CREATE TABLE ChecklistItem (
-	//    ID VARCHAR(26) PRIMARY KEY,
-	//    Title VARCHAR(65535) NOT NULL,
-	//    State VARCHAR(32) NOT NULL DEFAULT '',
-	//    StateModified BIGINT NOT NULL DEFAULT 0, --  should change the field type at the same time
-	//    StateModifiedPostID VARCHAR(26) NOT NULL DEFAULT '',
-	//    AssigneeID VARCHAR(26) NOT NULL DEFAULT '',
-	//    AssigneeModified BIGINT NOT NULL DEFAULT 0, --  should change the field type at the same time
-	//    AssigneeModifiedPostID VARCHAR(26) NOT NULL DEFAULT '',
-	//    Command VARCHAR(65535) NOT NULL,
-	//    DeleteAt BIGINT NOT NULL DEFAULT 0,
-	//    Sequence BIGINT NOT NULL,
-	//    ChecklistID VARCHAR(26) NOT NULL REFERENCES Checklist(ID)
-	// );
-	checklistItemInsert := builder.
-		Insert("ChecklistItem").
-		Columns(
-			"ID",
-			"Title",
-			"State",
-			"StateModified",
-			"StateModifiedPostID",
-			"AssigneeID",
-			"AssigneeModified",
-			"AssigneeModifiedPostID",
-			"Command",
-			"DeleteAt",
-			"Sequence",
-			"ChecklistID",
-		)
-
 	for _, playbook := range playbooks {
+		checklistsJSON, err := checklistsToJSON(playbook.Checklists)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert checklists from playbook '%s' to JSON", playbook.ID)
+		}
+
 		playbookInsert = playbookInsert.Values(
 			playbook.ID,
 			playbook.Title,
 			playbook.TeamID,
 			playbook.CreatePublicIncident,
+			model.GetMillis(), // Creation date is set to now
 			0,
+			checklistsJSON,
 		)
 
 		for _, memberID := range playbook.MemberIDs {
@@ -217,34 +182,6 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 			)
 		}
 
-		for checklistSeq, checklist := range playbook.Checklists {
-			checklistID := model.NewId()
-			checklistInsert = checklistInsert.
-				Values(
-					checklistID,
-					checklist.Title,
-					checklistSeq,
-					playbook.ID,
-				)
-
-			for itemSeq, item := range checklist.Items {
-				checklistItemInsert = checklistItemInsert.
-					Values(
-						model.NewId(),
-						item.Title,
-						item.State,
-						item.StateModified.Unix(),
-						item.StateModifiedPostID,
-						item.AssigneeID,
-						item.AssigneeModified.Unix(),
-						item.AssigneeModifiedPostID,
-						item.Command,
-						0,
-						itemSeq,
-						checklistID,
-					)
-			}
-		}
 	}
 
 	playbookInsertQuery, playbookInsertArgs, err := playbookInsert.ToSql()
@@ -265,38 +202,20 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 		return errors.Wrapf(err, "failed to insert data into PlaybookMember table")
 	}
 
-	checklistInsertQuery, checklistInsertArgs, err := checklistInsert.ToSql()
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert checklistInsert into SQL")
-	}
-
-	if _, err := db.Exec(checklistInsertQuery, checklistInsertArgs); err != nil {
-		return errors.Wrapf(err, "failed to insert data into Checklist table")
-	}
-
-	checklistItemInsertQuery, checklistItemInsertArgs, err := checklistItemInsert.ToSql()
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert checklistItemInsert into SQL")
-
-	}
-
-	if _, err := db.Exec(checklistItemInsertQuery, checklistItemInsertArgs); err != nil {
-		return errors.Wrapf(err, "failed to insert data into ChecklistItem table")
-	}
-
-	// CREATE TABLE Incident (
-	//    ID VARCHAR(26) PRIMARY KEY,
-	//    Name VARCHAR(26) NOT NULL,
-	//    IsActive BOOLEAN NOT NULL,
-	//    CommanderUserID VARCHAR(26) NOT NULL,
-	//    TeamID VARCHAR(26) NOT NULL,
-	//    ChannelID VARCHAR(26) NOT NULL UNIQUE, -- should change the field name at the same time
-	//    CreateAt BIGINT NOT NULL, -- should change the field name at the same time
-	//    EndedAt BIGINT NOT NULL DEFAULT 0,
-	//    DeleteAt BIGINT NOT NULL DEFAULT 0,
-	//    ActiveStage BIGINT NOT NULL,
-	//    PostID VARCHAR(26) NOT NULL DEFAULT '',
-	//    PlaybookID VARCHAR(26) NOT NULL REFERENCES Playbook(ID)
+	// CREATE TABLE IR_Incident (
+	//     ID TEXT/VARCHAR(26) PRIMARY KEY,
+	//     Name TEXT/VARCHAR(26) NOT NULL,
+	//     IsActive BOOLEAN NOT NULL,
+	//     CommanderUserID TEXT/VARCHAR(26) NOT NULL,
+	//     TeamID TEXT/VARCHAR(26) NOT NULL,
+	//     ChannelID TEXT/VARCHAR(26) NOT NULL UNIQUE,
+	//     CreateAt BIGINT NOT NULL,
+	//     EndAt BIGINT NOT NULL DEFAULT 0,
+	//     DeleteAt BIGINT NOT NULL DEFAULT 0,
+	//     ActiveStage BIGINT NOT NULL,
+	//     PostID TEXT/VARCHAR(26) NOT NULL DEFAULT '',
+	//     PlaybookID TEXT/VARCHAR(26) NOT NULL DEFAULT '',
+	//     ChecklistsJSON JSON/VARCHAR(65535) NOT NULL
 	// );
 	incidentInsert := builder.
 		Insert("Incident").
@@ -308,14 +227,19 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 			"TeamID",
 			"ChannelID",
 			"CreateAt",
-			"EndedAt",
+			"EndAt",
 			"DeleteAt",
 			"ActiveStage",
 			"PostID",
 			"PlaybookID",
+			"ChecklistsJSON",
 		)
 
 	for _, incident := range incidents {
+		checklistsJSON, err := checklistsToJSON(incident.Playbook.Checklists)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert checklists from incident '%s' to JSON", incident.ID)
+		}
 		incidentInsert = incidentInsert.Values(
 			incident.ID,
 			incident.Name,
@@ -329,6 +253,7 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 			incident.ActiveStage,
 			incident.PostID,
 			incident.Playbook.ID,
+			checklistsJSON,
 		)
 	}
 
@@ -343,4 +268,34 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 	}
 
 	return nil
+}
+
+func checklistsToJSON(oldChecklists []oldChecklist) ([]byte, error) {
+	newChecklists := make([]playbook.Checklist, len(oldChecklists))
+	for i, oldChecklist := range oldChecklists {
+		newItems := make([]playbook.ChecklistItem, len(oldChecklist.Items))
+
+		for j, oldItem := range oldChecklist.Items {
+			newItems[j] = playbook.ChecklistItem{
+				ID:                     model.NewId(),
+				Title:                  oldItem.Title,
+				State:                  oldItem.State,
+				StateModified:          oldItem.StateModified,
+				StateModifiedPostID:    oldItem.StateModifiedPostID,
+				AssigneeID:             oldItem.AssigneeID,
+				AssigneeModified:       oldItem.AssigneeModified,
+				AssigneeModifiedPostID: oldItem.AssigneeModifiedPostID,
+				Command:                oldItem.Command,
+				Description:            oldItem.Description,
+			}
+		}
+
+		newChecklists[i] = playbook.Checklist{
+			ID:    model.NewId(),
+			Title: oldChecklist.Title,
+			Items: newItems,
+		}
+	}
+
+	return json.Marshal(newChecklists)
 }
