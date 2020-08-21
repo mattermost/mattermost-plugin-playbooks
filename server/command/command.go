@@ -50,15 +50,18 @@ func getCommand() *model.Command {
 }
 
 func getAutocompleteData() *model.AutocompleteData {
-	slashIncident := model.NewAutocompleteData("incident", "[command]", "Available commands: start, end, restart, advance, announce")
+	slashIncident := model.NewAutocompleteData("incident", "[command]",
+		"Available commands: start, end, restart, check, announce")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
 
-	end := model.NewAutocompleteData("end", "", "Ends the incident associated with the current channel")
+	end := model.NewAutocompleteData("end", "",
+		"Ends the incident associated with the current channel")
 	slashIncident.AddCommand(end)
 
-	restart := model.NewAutocompleteData("restart", "", "Restarts the incident associated with the current channel")
+	restart := model.NewAutocompleteData("restart", "",
+		"Restarts the incident associated with the current channel")
 	slashIncident.AddCommand(restart)
 
 	checklist := model.NewAutocompleteData("check", "[checklist item]",
@@ -68,8 +71,10 @@ func getAutocompleteData() *model.AutocompleteData {
 		"api/v1/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
-	announce := model.NewAutocompleteData("announce", "~[channels]", "Announce the current incident in other channels.")
-	announce.AddNamedTextArgument("channel", "Channel to announce incident in", "~[channel]", "", true)
+	announce := model.NewAutocompleteData("announce", "~[channels]",
+		"Announce the current incident in other channels.")
+	announce.AddNamedTextArgument("channel",
+		"Channel to announce incident in", "~[channel]", "", true)
 	slashIncident.AddCommand(announce)
 
 	return slashIncident
