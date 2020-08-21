@@ -6,13 +6,16 @@ import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
 import {Switch, Route, useRouteMatch} from 'react-router-dom';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector, useStore} from 'react-redux';
 
+import {getMissingProfilesByIds} from 'mattermost-redux/actions/users';
+import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
-import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {Client4} from 'mattermost-redux/client';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
@@ -39,8 +42,33 @@ const BackstageIncidentList: FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const dispatch = useDispatch() as DispatchFunc;
+    const store = useStore();
     const match = useRouteMatch();
+
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
+    const getUserProfiles = async (ids: string[]) => {
+        const found: UserProfile[] = [];
+        const notFound: string[] = [];
+        getMissingProfilesByIds(ids)(dispatch, store.getState);
+
+        ids.forEach((id) => {
+            const profile = selectUser(id);
+            if (profile) {
+                found.push(profile);
+            } else {
+                //profile = await Client4.getUser(id);
+                notFound.push(id);
+            }
+        });
+
+        if (notFound.length > 0) {
+            const profiles = await Client4.getProfilesByIds(notFound);
+            found.push(...profiles);
+        }
+
+        return found;
+    };
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
@@ -98,7 +126,8 @@ const BackstageIncidentList: FC = () => {
 
     async function fetchCommanders() {
         const commanders = await fetchCommandersInTeam(currentTeam.id);
-        return commanders.map((c) => selectUser(c.user_id));
+        const ids = commanders.map((c) => c.user_id);
+        return getUserProfiles(ids);
     }
 
     function setCommanderId(userId?: string) {
