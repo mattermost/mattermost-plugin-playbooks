@@ -171,12 +171,14 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 		}
 	}
 
-	if err := store.execBuilder(playbookInsert); err != nil {
-		return errors.Wrapf(err, "failed inserting data into Playbook table")
-	}
+	if len(playbooks) > 0 {
+		if err := store.execBuilder(playbookInsert); err != nil {
+			return errors.Wrapf(err, "failed inserting data into Playbook table")
+		}
 
-	if err := store.execBuilder(playbookMemberInsert); err != nil {
-		return errors.Wrapf(err, "failed inserting data into PlaybookMember table")
+		if err := store.execBuilder(playbookMemberInsert); err != nil {
+			return errors.Wrapf(err, "failed inserting data into PlaybookMember table")
+		}
 	}
 
 	incidentInsert := builder.
@@ -219,8 +221,10 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 		)
 	}
 
-	if err := store.execBuilder(incidentInsert); err != nil {
-		return errors.Wrapf(err, "failed inserting data into Incident table")
+	if len(incidents) > 0 {
+		if err := store.execBuilder(incidentInsert); err != nil {
+			return errors.Wrapf(err, "failed inserting data into Incident table")
+		}
 	}
 
 	return nil
