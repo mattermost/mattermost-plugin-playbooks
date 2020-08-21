@@ -6,10 +6,8 @@ import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
 import {Switch, Route, useRouteMatch} from 'react-router-dom';
-import {useDispatch, useSelector, useStore} from 'react-redux';
+import {useSelector} from 'react-redux';
 
-import {getMissingProfilesByIds} from 'mattermost-redux/actions/users';
-import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -42,15 +40,12 @@ const BackstageIncidentList: FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    const dispatch = useDispatch() as DispatchFunc;
-    const store = useStore();
     const match = useRouteMatch();
 
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
     const getUserProfiles = async (ids: string[]) => {
         const found: UserProfile[] = [];
         const notFound: string[] = [];
-        getMissingProfilesByIds(ids)(dispatch, store.getState);
 
         ids.forEach((id) => {
             const profile = selectUser(id);
