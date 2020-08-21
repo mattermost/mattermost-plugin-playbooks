@@ -1,4 +1,4 @@
-package incident
+package apioptions
 
 import (
 	"strings"
@@ -6,6 +6,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
+
+const PerPageDefault = 1000
 
 // Status is the type used to specify the activity status of the incident.
 type Status int
@@ -54,7 +56,7 @@ type HeaderFilterOptions struct {
 
 func ValidateOptions(options *HeaderFilterOptions) error {
 	if options.PerPage == 0 {
-		options.PerPage = perPageDefault
+		options.PerPage = PerPageDefault
 	}
 
 	if options.TeamID != "" && !model.IsValidId(options.TeamID) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -496,7 +497,7 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	options := incident.HeaderFilterOptions{
+	options := apioptions.HeaderFilterOptions{
 		TeamID: teamID,
 		HasPermissionsTo: func(channelID string) bool {
 			err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
@@ -538,9 +539,9 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	options := incident.HeaderFilterOptions{
+	options := apioptions.HeaderFilterOptions{
 		TeamID: teamID,
-		Status: incident.Ongoing,
+		Status: apioptions.Ongoing,
 		HasPermissionsTo: func(channelID string) bool {
 			err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
 			return err == nil
@@ -830,7 +831,7 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 }
 
 // parseIncidentsFilterOptions is only for parsing. Put validation logic in service.validateOptions.
-func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
+func parseIncidentsFilterOptions(u *url.URL) (*apioptions.HeaderFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
 
 	pageParam := u.Query().Get("page")
@@ -855,14 +856,14 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	order := u.Query().Get("order")
 
 	statusParam := strings.ToLower(u.Query().Get("status"))
-	var status incident.Status
+	var status apioptions.Status
 	switch statusParam {
 	case "all", "": // default
-		status = incident.All
+		status = apioptions.All
 	case "active":
-		status = incident.Ongoing
+		status = apioptions.Ongoing
 	case "ended":
-		status = incident.Ended
+		status = apioptions.Ended
 	default:
 		return nil, errors.New("bad parameter 'status'")
 	}
@@ -870,7 +871,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
-	return &incident.HeaderFilterOptions{
+	return &apioptions.HeaderFilterOptions{
 		TeamID:      teamID,
 		Page:        page,
 		PerPage:     perPage,

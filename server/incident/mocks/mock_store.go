@@ -6,6 +6,7 @@ package mock_incident
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	apioptions "github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	reflect "reflect"
 )
@@ -63,6 +64,21 @@ func (mr *MockStoreMockRecorder) GetAllIncidentMembersCount(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllIncidentMembersCount", reflect.TypeOf((*MockStore)(nil).GetAllIncidentMembersCount), arg0)
 }
 
+// GetCommanders mocks base method
+func (m *MockStore) GetCommanders(arg0 apioptions.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommanders", arg0)
+	ret0, _ := ret[0].([]incident.CommanderInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommanders indicates an expected call of GetCommanders
+func (mr *MockStoreMockRecorder) GetCommanders(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommanders", reflect.TypeOf((*MockStore)(nil).GetCommanders), arg0)
+}
+
 // GetIncident mocks base method
 func (m *MockStore) GetIncident(arg0 string) (*incident.Incident, error) {
 	m.ctrl.T.Helper()
@@ -94,7 +110,7 @@ func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomo
 }
 
 // GetIncidents mocks base method
-func (m *MockStore) GetIncidents(arg0 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockStore) GetIncidents(arg0 apioptions.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)

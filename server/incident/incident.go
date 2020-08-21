@@ -1,6 +1,7 @@
 package incident
 
 import (
+	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -83,7 +84,7 @@ var ErrIncidentActive = errors.New("incident active")
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(options apioptions.HeaderFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
@@ -112,7 +113,7 @@ type Service interface {
 	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetCommanders returns all the commanders of incidents selected
-	GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error)
+	GetCommanders(options apioptions.HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
@@ -158,7 +159,7 @@ type Service interface {
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(options apioptions.HeaderFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
@@ -175,6 +176,9 @@ type Store interface {
 	// GetAllIncidentMembersCount returns the count of all members of an incident since the
 	// beginning of the incident, excluding bots.
 	GetAllIncidentMembersCount(incidentID string) (int64, error)
+
+	// GetCommanders returns the commanders of the incidents selected by options
+	GetCommanders(options apioptions.HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

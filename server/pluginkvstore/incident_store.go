@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -61,7 +62,10 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger) incident.Store 
 }
 
 // GetIncidents gets all the incidents, abiding by the filter options, and the total count before paging.
-func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+	if err := apioptions.ValidateOptions(&options); err != nil {
+		return nil, err
+	}
 	if options.PerPage == 0 {
 		options.PerPage = perPageDefault
 	}
@@ -228,6 +232,37 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 	return numMembers, nil
 }
 
+// GetCommanders returns the commanders of the incidents selected by options
+func (s *incidentStore) GetCommanders(options apioptions.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if err := apioptions.ValidateOptions(&options); err != nil {
+		return nil, err
+	}
+	results, err := s.GetIncidents(options)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set of commander ids
+	commanders := make(map[string]bool)
+	for _, h := range results.Items {
+		if _, ok := commanders[h.CommanderUserID]; !ok {
+			commanders[h.CommanderUserID] = true
+		}
+	}
+
+	var result []incident.CommanderInfo
+	for id := range commanders {
+		c, err := s.pluginAPI.User.Get(id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve commander id '%s'", id)
+		}
+		result = append(result, incident.CommanderInfo{UserID: id, Username: c.Username})
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Username < result[j].Username })
+
+	return result, nil
+}
+
 // NukeDB removes all incident related data.
 func (s *incidentStore) NukeDB() error {
 	return s.pluginAPI.KV.DeleteAll()
@@ -331,15 +366,15 @@ func min(a, b int) int {
 	return b
 }
 
-func headerMatchesFilters(header incident.Header, options incident.HeaderFilterOptions) bool {
+func headerMatchesFilters(header incident.Header, options apioptions.HeaderFilterOptions) bool {
 	if options.TeamID != "" && header.TeamID != options.TeamID {
 		return false
 	}
-	if options.Status != incident.All {
-		if options.Status == incident.Ongoing && !header.IsActive {
+	if options.Status != apioptions.All {
+		if options.Status == apioptions.Ongoing && !header.IsActive {
 			return false
 		}
-		if options.Status == incident.Ended && header.IsActive {
+		if options.Status == apioptions.Ended && header.IsActive {
 			return false
 		}
 	}

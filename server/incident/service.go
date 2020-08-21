@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
@@ -23,7 +23,6 @@ const (
 	IncidentCreatedWSEvent = "incident_created"
 	incidentUpdatedWSEvent = "incident_updated"
 	noAssigneeName         = "No Assignee"
-	perPageDefault         = 1000
 )
 
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
@@ -56,10 +55,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error) {
-	if err := ValidateOptions(&options); err != nil {
-		return nil, err
-	}
+func (s *ServiceImpl) GetIncidents(options apioptions.HeaderFilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(options)
 }
 
@@ -278,34 +274,8 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 }
 
 // GetCommanders returns all the commanders of the incidents selected by options
-func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error) {
-	if err := ValidateOptions(&options); err != nil {
-		return nil, err
-	}
-	results, err := s.store.GetIncidents(options)
-	if err != nil {
-		return nil, err
-	}
-
-	// Set of commander ids
-	commanders := make(map[string]bool)
-	for _, h := range results.Items {
-		if _, ok := commanders[h.CommanderUserID]; !ok {
-			commanders[h.CommanderUserID] = true
-		}
-	}
-
-	var result []CommanderInfo
-	for id := range commanders {
-		c, err := s.pluginAPI.User.Get(id)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to retrieve commander id '%s'", id)
-		}
-		result = append(result, CommanderInfo{UserID: id, Username: c.Username})
-	}
-	sort.Slice(result, func(i, j int) bool { return result[i].Username < result[j].Username })
-
-	return result, nil
+func (s *ServiceImpl) GetCommanders(options apioptions.HeaderFilterOptions) ([]CommanderInfo, error) {
+	return s.store.GetCommanders(options)
 }
 
 // IsCommander returns true if the userID is the commander for incidentID.

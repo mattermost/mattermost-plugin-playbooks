@@ -7,6 +7,7 @@ import (
 	"math"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -50,17 +51,21 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+	if err := apioptions.ValidateOptions(&options); err != nil {
+		return nil, err
+	}
+
 	builder := s.incidentSelect
 
 	if options.TeamID != "" {
 		builder = builder.
 			Where(sq.Eq{"TeamID": options.TeamID})
 	}
-	if options.Status == incident.Ongoing {
+	if options.Status == apioptions.Ongoing {
 		builder = builder.
 			Where(sq.Eq{"IsActive": true})
-	} else if options.Status == incident.Ended {
+	} else if options.Status == apioptions.Ended {
 		builder = builder.
 			Where(sq.Eq{"IsActive": false})
 	}
@@ -228,6 +233,44 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 	}
 
 	return numMembers, nil
+}
+
+// GetCommanders returns the commanders of the incidents selected by options
+func (s *incidentStore) GetCommanders(options apioptions.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if err := apioptions.ValidateOptions(&options); err != nil {
+		return nil, err
+	}
+
+	// At the moment, the options only includes teamID and the HasPermissionsTo
+	// TODO: Alejandro, this is off the top of my head, I haven't been able to test it :)
+	query := s.queryBuilder.
+		Select("CommanderUserID", "ChannelID", "Username").
+		From("IR_Incident AS i").
+		Join("Users AS u ON i.CommanderUserID = u.Id").
+		Where(sq.Eq{"TeamID": options.TeamID})
+
+	var commanders []struct {
+		CommanderUserID string
+		ChannelID       string
+		Username        string
+	}
+	err := s.store.selectBuilder(&commanders, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query database")
+	}
+
+	var ret []incident.CommanderInfo
+	for _, c := range commanders {
+		// TODO: move to permission-checking in the sql call (MM-28008)
+		if options.HasPermissionsTo(c.ChannelID) {
+			ret = append(ret, incident.CommanderInfo{
+				UserID:   c.CommanderUserID,
+				Username: c.Username,
+			})
+		}
+	}
+
+	return ret, nil
 }
 
 // NukeDB removes all incident related data.
