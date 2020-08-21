@@ -121,8 +121,7 @@ const StageSelector: FC<StageSelectorProps> = (props: StageSelectorProps) => {
             <ReactSelect
                 components={{IndicatorSeparator: null}}
                 options={props.stages.map((_, idx) => toOption(idx))}
-                value={toOption(props.selectedStage)}
-                defaultValue={toOption(props.selectedStage)}
+                value={props.stages.length === 0 ? null : toOption(props.selectedStage)}
                 onChange={(option, action) => props.onStageSelected(option as Option, action as ActionMeta<OptionTypeBase>)}
                 className={'incident-stage-select'}
                 classNamePrefix={'incident-stage-select'}
@@ -153,7 +152,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(props.incident.active_stage);
 
     const checklists = props.incident.playbook.checklists || [];
-    const selectedChecklist = checklists[selectedChecklistIndex] || emptyChecklist();
+    const selectedChecklist = checklists[selectedChecklistIndex] || {title: '', items: []};
 
     const onStageSelected = (option: Option, action: ActionMeta<OptionTypeBase>) => {
         if (action.action === 'clear') {
