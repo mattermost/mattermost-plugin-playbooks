@@ -58,7 +58,7 @@ var migrations = []Migration{
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE TABLE IR_PlaybookMember (
+					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID),
 						MemberID VARCHAR(26) NOT NULL
 					);

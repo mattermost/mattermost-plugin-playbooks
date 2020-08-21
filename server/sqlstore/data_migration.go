@@ -182,7 +182,7 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 	}
 
 	incidentInsert := builder.
-		Insert("Incident").
+		Insert("IR_Incident").
 		Columns(
 			"ID",
 			"Name",
