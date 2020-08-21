@@ -265,7 +265,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
         // It's possible there was actually nothing there.
         if (playbookExcludingEmpty.checklists.length === 0) {
-            updateChecklist(playbookExcludingEmpty.checklists);
             return;
         }
 
