@@ -8,7 +8,7 @@ This repository is licensed under the [Mattermost Source Available License](LICE
 
 ## Community Contributions
 
-While using this plugin in production requires a valid, Mattermost Enterprise E20 License, the license allows free-of-charge and unrestricted use of the source code in development and testing environments. As such, we welcome community contributions to this plugin.
+A valid Mattermost Enterprise E20 license is required if using this plugin in production. However, the license allows free-of-charge and unrestricted use of the source code in development and testing environments. As such, we welcome community contributions to this plugin.
 
 On startup, the plugin checks for a valid, Mattermost Enterprise E20 License. If you are running the Enterprise Edition of the Mattermost server and do not already have a valid license, you may obtain a trial license from the system console. If you are running the Team Edition of the Mattermost server, including when you run the server directly from source, you may instead configure your server to enable both testing (`ServiceSettings.EnableTesting`) and developer mode (`ServiceSettings.EnableDeveloper`). These settings are not recommended in production environments.
 
