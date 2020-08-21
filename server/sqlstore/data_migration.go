@@ -181,7 +181,6 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 				memberID,
 			)
 		}
-
 	}
 
 	playbookInsertQuery, playbookInsertArgs, err := playbookInsert.ToSql()
@@ -260,7 +259,6 @@ func DataMigration(kvAPI pluginkvstore.KVAPI, builder squirrel.StatementBuilderT
 	incidentInsertQuery, incidentInsertArgs, err := incidentInsert.ToSql()
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert incidentInsert into SQL")
-
 	}
 
 	if _, err := db.Exec(incidentInsertQuery, incidentInsertArgs); err != nil {
