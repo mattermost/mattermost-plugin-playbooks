@@ -39,7 +39,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 	playbookSelect := builder.
 		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "ChecklistJSON").
+			"DeleteAt", "ChecklistJSON", "Stages", "Steps").
 		From("IR_Playbook")
 
 	memberIDsSelect := builder.
@@ -88,6 +88,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"CreateAt":             model.GetMillis(),
 			"DeleteAt":             0,
 			"ChecklistsJSON":       checklistsJSON,
+			"Stages":               len(pbook.Checklists),
+			"Steps":                getSteps(pbook),
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -264,6 +266,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"CreatePublicIncident": updated.CreatePublicIncident,
 			"DeleteAt":             updated.DeleteAt,
 			"ChecklistsJSON":       checklistsJSON,
+			"Stages":               len(updated.Checklists),
+			"Steps":                getSteps(updated),
 		}).
 		Where(sq.Eq{"ID": updated.ID}))
 
@@ -335,4 +339,12 @@ func addMembersToPlaybooks(memberIDs playbookMembers, out []playbook.Playbook) {
 	for _, p := range out {
 		p.MemberIDs = pToM[p.ID]
 	}
+}
+
+func getSteps(pbook playbook.Playbook) int {
+	steps := 0
+	for _, p := range pbook.Checklists {
+		steps += len(p.Items)
+	}
+	return steps
 }
