@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -257,14 +258,28 @@ func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook
 func parseGetPlaybooksOptions(u *url.URL) (opts playbook.Options, page, perPage int, err error) {
 	params := u.Query()
 
-	sortField := playbook.SortField(params.Get("sort"))
-	if sortField == "" {
+	var sortField playbook.SortField
+	param := strings.ToLower(params.Get("sort"))
+	switch param {
+	case "title", "":
 		sortField = playbook.Title
+	case "stages":
+		sortField = playbook.Stages
+	case "steps":
+		sortField = playbook.Steps
+	default:
+		sortField = playbook.SortField(param)
 	}
 
-	sortDirection := playbook.SortDirection(params.Get("direction"))
-	if sortDirection == "" {
+	var sortDirection playbook.SortDirection
+	param = strings.ToLower(params.Get("direction"))
+	switch param {
+	case "asc", "":
 		sortDirection = playbook.Asc
+	case "desc":
+		sortDirection = playbook.Desc
+	default:
+		sortDirection = playbook.SortDirection(param)
 	}
 
 	pageParam := params.Get("page")

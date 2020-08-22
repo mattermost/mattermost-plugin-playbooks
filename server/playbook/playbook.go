@@ -13,18 +13,22 @@ type Playbook struct {
 	Title                string      `json:"title"`
 	TeamID               string      `json:"team_id"`
 	CreatePublicIncident bool        `json:"create_public_incident"`
+	CreateAt             int64       `json:"create_at"`
+	DeleteAt             int64       `json:"delete_at"`
 	Checklists           []Checklist `json:"checklists"`
 	MemberIDs            []string    `json:"member_ids"`
 }
 
 // Checklist represents a checklist in a playbook
 type Checklist struct {
+	ID    string          `json:"id"`
 	Title string          `json:"title"`
 	Items []ChecklistItem `json:"items"`
 }
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
+	ID                     string `json:"id"`
 	Title                  string `json:"title"`
 	State                  string `json:"state"`
 	StateModified          int64  `json:"state_modified"`
@@ -40,14 +44,14 @@ type ChecklistItem struct {
 type SortField string
 
 const (
-	// Title sorts by the "title" field.
-	Title SortField = "title"
+	// Title sorts by the "Title" field.
+	Title SortField = "Title"
 
 	// Stages sorts by the number of checklists in a playbook.
-	Stages SortField = "stages"
+	Stages SortField = "Stages"
 
 	// Steps sorts by the the number of steps in a playbook.
-	Steps SortField = "steps"
+	Steps SortField = "Steps"
 )
 
 // SortDirection is the type used to specify the ascending or descending order of returned results.
@@ -55,10 +59,10 @@ type SortDirection string
 
 const (
 	// Desc is descending order.
-	Desc SortDirection = "desc"
+	Desc SortDirection = "DESC"
 
 	// Asc is ascending order.
-	Asc SortDirection = "asc"
+	Asc SortDirection = "ASC"
 )
 
 // Options specifies the parameters when getting playbooks.
@@ -75,7 +79,7 @@ type Service interface {
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
-	// GetPlaybooksForTeam retrieves all playbooks on the specified team
+	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
@@ -91,6 +95,8 @@ type Store interface {
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
+	// GetPlaybooksForTeam retrieves all playbooks on the specified team
+	GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
