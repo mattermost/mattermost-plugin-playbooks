@@ -39,7 +39,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 	playbookSelect := builder.
 		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "ChecklistJSON", "Stages", "Steps").
+			"DeleteAt", "ChecklistJSON").
 		From("IR_Playbook")
 
 	memberIDsSelect := builder.
