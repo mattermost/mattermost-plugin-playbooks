@@ -85,13 +85,7 @@ func IsValidSortBy(sortBy string) bool {
 }
 
 func IsValidOrderBy(orderBy string) bool {
-	switch orderBy {
-	case OrderAsc,
-		OrderDesc:
-		return true
-	}
-
-	return false
+	return orderBy == OrderAsc || orderBy == OrderDesc
 }
 
 func ValidateOptions(options *HeaderFilterOptions) error {
