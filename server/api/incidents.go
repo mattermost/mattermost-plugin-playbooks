@@ -843,11 +843,11 @@ func parseIncidentsFilterOptions(u *url.URL) (*apioptions.HeaderFilterOptions, e
 		return nil, errors.Wrapf(err, "bad parameter 'page'")
 	}
 
-	perpageParam := u.Query().Get("per_page")
-	if perpageParam == "" {
-		perpageParam = "0"
+	perPageParam := u.Query().Get("per_page")
+	if perPageParam == "" {
+		perPageParam = "0"
 	}
-	perPage, err := strconv.Atoi(perpageParam)
+	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bad parameter 'per_page'")
 	}
