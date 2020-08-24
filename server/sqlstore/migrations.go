@@ -62,7 +62,9 @@ var migrations = []Migration{
 				if _, err := sqlStore.db.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID),
-						MemberID VARCHAR(26) NOT NULL
+						MemberID VARCHAR(26) NOT NULL,
+						INDEX IR_PlaybookMember_PlaybookID (PlaybookID),
+						INDEX IR_PlaybookMember_MemberID (MemberID)
 					);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
@@ -141,6 +143,12 @@ var migrations = []Migration{
 					CREATE INDEX IF NOT EXISTS IR_PlaybookMember_PlaybookID ON IR_PlaybookMember(PlaybookID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_PlaybookID")
+				}
+
+				if _, err := sqlStore.db.Exec(`
+					CREATE INDEX IF NOT EXISTS IR_PlaybookMember_MemberID ON IR_PlaybookMember(MemberID);
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_MemberID ")
 				}
 			}
 
