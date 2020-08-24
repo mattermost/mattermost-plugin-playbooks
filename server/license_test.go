@@ -46,7 +46,7 @@ func TestIsLicensed(t *testing.T) {
 		))
 	})
 
-	t.Run("no license, only developer mode", func(t *testing.T) {
+	t.Run("no license, only testing mode", func(t *testing.T) {
 		assert.False(t, isLicensed(
 			&model.Config{ServiceSettings: model.ServiceSettings{EnableDeveloper: bToP(false), EnableTesting: bToP(true)}},
 			nil,
