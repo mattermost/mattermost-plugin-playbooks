@@ -128,7 +128,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             <DragPlaceholderText
                                 onClick={handleAddChecklistItem}
                             >
-                                {'Drag step here or click for new.'}
+                                {'Drag and drop an existing step or click to create a new step.'}
                             </DragPlaceholderText>
                         )}
                         {droppableProvided.placeholder}
