@@ -865,7 +865,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*apioptions.HeaderFilterOptions, e
 	case "ended":
 		status = apioptions.Ended
 	default:
- 		return nil, errors.Errorf("bad status parameter '%s'", statusParam) 
+		return nil, errors.Errorf("bad status parameter '%s'", statusParam)
 	}
 
 	commanderID := u.Query().Get("commander_user_id")

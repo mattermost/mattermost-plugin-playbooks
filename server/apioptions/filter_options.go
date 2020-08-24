@@ -32,8 +32,8 @@ type HeaderFilterOptions struct {
 	Page    int
 	PerPage int
 
-	// Sort sorts by this header field in json format (eg, "created_at", "ended_at", "name", etc.);
-	// defaults to "created_at".
+	// Sort sorts by this header field in json format (eg, "create_at", "end_at", "name", etc.);
+	// defaults to "create_at".
 	Sort string
 
 	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
@@ -54,6 +54,20 @@ type HeaderFilterOptions struct {
 	HasPermissionsTo func(channelID string) bool
 }
 
+const (
+	SortByCreateAt        = "create_at"
+	SortByID              = "id"
+	SortByName            = "name"
+	SortByCommanderUserID = "commander_user_id"
+	SortByTeamID          = "team_id"
+	SortByEndAt           = "end_at"
+	SortByStatus          = "status"
+	SortByIsActive        = "is_active"
+
+	OrderAsc  = "asc"
+	OrderDesc = "desc"
+)
+
 func ValidateOptions(options *HeaderFilterOptions) error {
 	if options.PerPage == 0 {
 		options.PerPage = PerPageDefault
@@ -65,30 +79,32 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 
 	sort := strings.ToLower(options.Sort)
 	switch sort {
-	case "create_at", "createat", "": // default
-		options.Sort = "CreateAt"
-	case "id":
-		options.Sort = "ID"
-	case "name":
-		options.Sort = "Name"
-	case "commander_user_id", "commanderuserid":
-		options.Sort = "CommanderUserID"
-	case "team_id", "teamid":
-		options.Sort = "TeamID"
-	case "end_at", "endat":
-		options.Sort = "EndAt"
-	case "status":
-		options.Sort = "IsActive"
+	case SortByCreateAt, "": // default
+		options.Sort = SortByCreateAt
+	case SortByID:
+		options.Sort = SortByID
+	case SortByName:
+		options.Sort = SortByName
+	case SortByCommanderUserID:
+		options.Sort = SortByCommanderUserID
+	case SortByTeamID:
+		options.Sort = SortByTeamID
+	case SortByEndAt:
+		options.Sort = SortByEndAt
+	case SortByStatus:
+		options.Sort = SortByStatus
+	case SortByIsActive:
+		options.Sort = SortByIsActive
 	default:
 		return errors.New("bad parameter 'sort'")
 	}
 
 	order := strings.ToLower(options.Order)
 	switch order {
-	case "desc", "": // default
-		options.Order = "DESC"
-	case "asc":
-		options.Order = "ASC"
+	case OrderDesc, "": // default
+		options.Order = OrderDesc
+	case OrderAsc:
+		options.Order = OrderAsc
 	default:
 		return errors.New("bad parameter 'order_by'")
 	}
