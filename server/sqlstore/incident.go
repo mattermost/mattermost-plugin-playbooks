@@ -40,14 +40,13 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
 		From("IR_Incident")
 
-	newStore := &incidentStore{
+	return &incidentStore{
 		pluginAPI:      pluginAPI,
 		log:            log,
 		store:          sqlStore,
 		queryBuilder:   builder,
 		incidentSelect: incidentSelect,
 	}
-	return newStore
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
@@ -59,19 +58,17 @@ func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*i
 	builder := s.incidentSelect
 
 	if options.TeamID != "" {
-		builder = builder.
-			Where(sq.Eq{"TeamID": options.TeamID})
+		builder = builder.Where(sq.Eq{"TeamID": options.TeamID})
 	}
+
 	if options.Status == apioptions.Ongoing {
-		builder = builder.
-			Where(sq.Eq{"IsActive": true})
+		builder = builder.Where(sq.Eq{"IsActive": true})
 	} else if options.Status == apioptions.Ended {
-		builder = builder.
-			Where(sq.Eq{"IsActive": false})
+		builder = builder.Where(sq.Eq{"IsActive": false})
 	}
+
 	if options.CommanderID != "" {
-		builder = builder.
-			Where(sq.Eq{"CommanderID": options.CommanderID})
+		builder = builder.Where(sq.Eq{"CommanderID": options.CommanderID})
 	}
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
@@ -191,7 +188,7 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 	var rawIncident sqlIncident
 	err := s.store.getBuilder(&rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
-		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id (%s) does not exist", incidentID)
+		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
 	}
