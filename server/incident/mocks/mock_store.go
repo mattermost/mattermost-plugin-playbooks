@@ -6,7 +6,6 @@ package mock_incident
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	apioptions "github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	reflect "reflect"
 )
@@ -65,7 +64,7 @@ func (mr *MockStoreMockRecorder) GetAllIncidentMembersCount(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockStore) GetCommanders(arg0 apioptions.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockStore) GetCommanders(arg0 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -110,7 +109,7 @@ func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomo
 }
 
 // GetIncidents mocks base method
-func (m *MockStore) GetIncidents(arg0 apioptions.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockStore) GetIncidents(arg0 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)

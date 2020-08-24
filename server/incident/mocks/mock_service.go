@@ -6,7 +6,6 @@ package mock_incident
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	apioptions "github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
@@ -124,7 +123,7 @@ func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockService) GetCommanders(arg0 apioptions.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockService) GetCommanders(arg0 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -184,7 +183,7 @@ func (mr *MockServiceMockRecorder) GetIncidentWithDetails(arg0 interface{}) *gom
 }
 
 // GetIncidents mocks base method
-func (m *MockService) GetIncidents(arg0 apioptions.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockService) GetIncidents(arg0 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)
