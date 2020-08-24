@@ -28,6 +28,15 @@ const NewStep = styled.button`
     margin-left: 25px;
 `;
 
+const DragPlaceholderText = styled.div`
+    border: 2px dashed rgb(var(--button-bg-rgb));
+    border-radius: 5px;
+    padding: 30px;
+    margin: 5px 50px;
+    text-align: center;
+    color: rgb(var(--button-bg-rgb));
+`;
+
 interface Props {
     checklist: Checklist;
     checklistIndex: number;
@@ -71,6 +80,15 @@ export const StageEditor = (props: Props): React.ReactElement => {
         props.onChange(newChecklist);
     };
 
+    const handleAddChecklistItem = () => {
+        onAddChecklistItem({
+            title: '',
+            state: ChecklistItemState.Open,
+            command: '',
+            description: '',
+        });
+    };
+
     return (
         <CollapsibleSection
             title={props.checklist.title}
@@ -85,7 +103,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                         ref={droppableProvided.innerRef}
                         {...droppableProvided.droppableProps}
                     >
-                        {props.checklist.items.map((checklistItem: ChecklistItem, idx: number) => (
+                        {props.checklist.items.length > 0 ? props.checklist.items.map((checklistItem: ChecklistItem, idx: number) => (
                             <Draggable
                                 index={idx}
                                 key={props.checklistIndex + checklistItem.title + idx}
@@ -106,20 +124,19 @@ export const StageEditor = (props: Props): React.ReactElement => {
                                     </DragHandle>
                                 )}
                             </Draggable>
-                        ))}
+                        )) : (
+                            <DragPlaceholderText
+                                onClick={handleAddChecklistItem}
+                            >
+                                {'Drag and drop an existing step or click to create a new step.'}
+                            </DragPlaceholderText>
+                        )}
                         {droppableProvided.placeholder}
                     </div>
                 )}
             </Droppable>
             <NewStep
-                onClick={() => {
-                    onAddChecklistItem({
-                        title: '',
-                        state: ChecklistItemState.Open,
-                        command: '',
-                        description: '',
-                    });
-                }}
+                onClick={handleAddChecklistItem}
             >
                 <i className='icon-plus'/>
                 {'New Step'}
