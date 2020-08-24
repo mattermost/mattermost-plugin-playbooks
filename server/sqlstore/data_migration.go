@@ -137,7 +137,9 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 			"CreatePublicIncident",
 			"CreateAt",
 			"DeleteAt",
-			"Checklists",
+			"ChecklistsJSON",
+			"Stages",
+			"Steps",
 		)
 
 	playbookMemberInsert := builder.
@@ -161,6 +163,8 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 			model.GetMillis(), // Creation date is set to now
 			0,
 			checklistsJSON,
+			len(playbook.Checklists),
+			numSteps(playbook.Checklists),
 		)
 
 		for _, memberID := range playbook.MemberIDs {
@@ -258,4 +262,12 @@ func checklistsToJSON(oldChecklists []oldChecklist) ([]byte, error) {
 	}
 
 	return json.Marshal(newChecklists)
+}
+
+func numSteps(checklists []oldChecklist) int {
+	steps := 0
+	for _, p := range checklists {
+		steps += len(p.Items)
+	}
+	return steps
 }
