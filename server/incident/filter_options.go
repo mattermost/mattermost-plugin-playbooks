@@ -1,4 +1,4 @@
-package apioptions
+package incident
 
 import (
 	"strings"

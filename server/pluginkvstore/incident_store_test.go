@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
 	mock_plugin "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks/serverpluginapi"
@@ -123,13 +122,13 @@ var dbHeaderMap = idHeaderMap{
 func Test_incidentStore_GetIncidents(t *testing.T) {
 	tests := []struct {
 		name    string
-		options apioptions.HeaderFilterOptions
+		options incident.HeaderFilterOptions
 		want    incident.GetIncidentsResults
 		wantErr bool
 	}{
 		{
 			name:    "simple getHeaders, no options",
-			options: apioptions.HeaderFilterOptions{},
+			options: incident.HeaderFilterOptions{},
 			want: incident.GetIncidentsResults{
 				TotalCount: 7,
 				PageCount:  1,
@@ -139,7 +138,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "team1 only, ascending",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 				Order:  "asc",
 			},
@@ -152,7 +151,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "sort by end_at",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Sort: "end_at",
 			},
 			want: incident.GetIncidentsResults{
@@ -164,7 +163,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, paged by 1",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    0,
 				PerPage: 1,
 			},
@@ -177,7 +176,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, paged by 3",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    0,
 				PerPage: 3,
 			},
@@ -190,7 +189,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 4 by 2",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    4,
 				PerPage: 2,
 			},
@@ -203,7 +202,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 999 by 2",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    999,
 				PerPage: 2,
 			},
@@ -216,7 +215,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 1 by 2",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 2,
 			},
@@ -229,7 +228,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 1 by 3",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 3,
 			},
@@ -242,7 +241,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "no options, page 1 by 5",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 5,
 			},
@@ -255,7 +254,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "sorted by ended, ascending, page 1 by 2",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Sort:    "end_at",
 				Order:   "asc",
 				Page:    1,
@@ -270,10 +269,10 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "only active, page 1 by 2",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				Page:    1,
 				PerPage: 2,
-				Status:  apioptions.Ongoing,
+				Status:  incident.Ongoing,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 5,
@@ -284,8 +283,8 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "active, commander3, asc",
-			options: apioptions.HeaderFilterOptions{
-				Status:      apioptions.Ongoing,
+			options: incident.HeaderFilterOptions{
+				Status:      incident.Ongoing,
 				CommanderID: commander3id,
 				Order:       "asc",
 			},
@@ -298,7 +297,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "commander1, asc, by end_at",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				CommanderID: commander1id,
 				Order:       "asc",
 				Sort:        "end_at",
@@ -312,7 +311,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "search for horse",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				SearchTerm: "horse",
 			},
 			want: incident.GetIncidentsResults{
@@ -324,7 +323,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "search for aliens & commander3",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				CommanderID: commander3id,
 				SearchTerm:  "aliens",
 			},
@@ -337,7 +336,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "fuzzy search using starting characters -- not implemented",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				SearchTerm: "sbsm",
 			},
 			want: incident.GetIncidentsResults{
@@ -349,9 +348,9 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "fuzzy search using starting characters, active -- not implemented",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				SearchTerm: "sbsm",
-				Status:     apioptions.Ongoing,
+				Status:     incident.Ongoing,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 0,
@@ -362,7 +361,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "case-insensitive and unicode-normalized",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				SearchTerm: "ziggurat",
 			},
 			want: incident.GetIncidentsResults{
@@ -374,7 +373,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		},
 		{
 			name: "case-insensitive and unicode-normalized with unicode search term",
-			options: apioptions.HeaderFilterOptions{
+			options: incident.HeaderFilterOptions{
 				SearchTerm: "ziggūràt",
 			},
 			want: incident.GetIncidentsResults{
@@ -486,7 +485,7 @@ func Test_incidentStore__GetCommanders(t *testing.T) {
 				},
 			}
 
-			options := apioptions.HeaderFilterOptions{
+			options := incident.HeaderFilterOptions{
 				TeamID: tt.teamID,
 				HasPermissionsTo: func(channelID string) bool {
 					return true

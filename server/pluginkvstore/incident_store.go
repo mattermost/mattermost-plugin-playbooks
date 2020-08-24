@@ -8,7 +8,6 @@ import (
 	"unicode"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -62,8 +61,8 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger) incident.Store 
 }
 
 // GetIncidents gets all the incidents, abiding by the filter options, and the total count before paging.
-func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
-	if err := apioptions.ValidateOptions(&options); err != nil {
+func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
 	if options.PerPage == 0 {
@@ -233,8 +232,8 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 }
 
 // GetCommanders returns the commanders of the incidents selected by options
-func (s *incidentStore) GetCommanders(options apioptions.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
-	if err := apioptions.ValidateOptions(&options); err != nil {
+func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
 	results, err := s.GetIncidents(options)
@@ -326,26 +325,26 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 func sortHeaders(headers []incident.Header, sortField, order string) {
 	// order by descending, unless we're told otherwise
 	var orderFn = func(b bool) bool { return b }
-	if order == apioptions.OrderAsc {
+	if order == incident.OrderAsc {
 		orderFn = func(b bool) bool { return !b }
 	}
 
 	// sort by CreateAt, unless we're told otherwise
 	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreateAt > headers[j].CreateAt) }
 	switch sortField {
-	case apioptions.SortByID:
+	case incident.SortByID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
-	case apioptions.SortByName:
+	case incident.SortByName:
 		sortFn = func(i, j int) bool {
 			return orderFn(strings.ToLower(headers[i].Name) > strings.ToLower(headers[j].Name))
 		}
-	case apioptions.SortByCommanderUserID:
+	case incident.SortByCommanderUserID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
-	case apioptions.SortByTeamID:
+	case incident.SortByTeamID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
-	case apioptions.SortByEndAt:
+	case incident.SortByEndAt:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].EndAt > headers[j].EndAt) }
-	case apioptions.SortByIsActive:
+	case incident.SortByIsActive:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].IsActive && !headers[j].IsActive) }
 	}
 
@@ -366,15 +365,15 @@ func min(a, b int) int {
 	return b
 }
 
-func headerMatchesFilters(header incident.Header, options apioptions.HeaderFilterOptions) bool {
+func headerMatchesFilters(header incident.Header, options incident.HeaderFilterOptions) bool {
 	if options.TeamID != "" && header.TeamID != options.TeamID {
 		return false
 	}
-	if options.Status != apioptions.All {
-		if options.Status == apioptions.Ongoing && !header.IsActive {
+	if options.Status != incident.All {
+		if options.Status == incident.Ongoing && !header.IsActive {
 			return false
 		}
-		if options.Status == apioptions.Ended && header.IsActive {
+		if options.Status == incident.Ended && header.IsActive {
 			return false
 		}
 	}

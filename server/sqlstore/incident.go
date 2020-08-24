@@ -7,7 +7,6 @@ import (
 	"math"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -50,8 +49,8 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
-	if err := apioptions.ValidateOptions(&options); err != nil {
+func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
 
@@ -61,9 +60,9 @@ func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*i
 		builder = builder.Where(sq.Eq{"TeamID": options.TeamID})
 	}
 
-	if options.Status == apioptions.Ongoing {
+	if options.Status == incident.Ongoing {
 		builder = builder.Where(sq.Eq{"IsActive": true})
-	} else if options.Status == apioptions.Ended {
+	} else if options.Status == incident.Ended {
 		builder = builder.Where(sq.Eq{"IsActive": false})
 	}
 
@@ -76,11 +75,11 @@ func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*i
 		builder = builder.Where(sq.Like{"Name": fmt.Sprint("%", options.SearchTerm, "%")})
 	}
 
-	if apioptions.IsValidSortBy(options.Sort) {
+	if incident.IsValidSortBy(options.Sort) {
 		builder = builder.OrderBy(options.Sort)
 	}
 
-	if apioptions.IsValidOrderBy(options.Order) {
+	if incident.IsValidOrderBy(options.Order) {
 		builder = builder.OrderBy(options.Order)
 	}
 
@@ -237,8 +236,8 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 }
 
 // GetCommanders returns the commanders of the incidents selected by options
-func (s *incidentStore) GetCommanders(options apioptions.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
-	if err := apioptions.ValidateOptions(&options); err != nil {
+func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
 

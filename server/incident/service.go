@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/apioptions"
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
@@ -55,7 +54,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(options apioptions.HeaderFilterOptions) (*GetIncidentsResults, error) {
+func (s *ServiceImpl) GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(options)
 }
 
@@ -274,7 +273,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 }
 
 // GetCommanders returns all the commanders of the incidents selected by options
-func (s *ServiceImpl) GetCommanders(options apioptions.HeaderFilterOptions) ([]CommanderInfo, error) {
+func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error) {
 	return s.store.GetCommanders(options)
 }
 
