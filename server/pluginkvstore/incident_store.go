@@ -62,6 +62,9 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger) incident.Store 
 
 // GetIncidents gets all the incidents, abiding by the filter options, and the total count before paging.
 func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
+		return nil, err
+	}
 	if options.PerPage == 0 {
 		options.PerPage = perPageDefault
 	}
@@ -228,6 +231,37 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 	return numMembers, nil
 }
 
+// GetCommanders returns the commanders of the incidents selected by options
+func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
+		return nil, err
+	}
+	results, err := s.GetIncidents(options)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set of commander ids
+	commanders := make(map[string]bool)
+	for _, h := range results.Items {
+		if _, ok := commanders[h.CommanderUserID]; !ok {
+			commanders[h.CommanderUserID] = true
+		}
+	}
+
+	var result []incident.CommanderInfo
+	for id := range commanders {
+		c, err := s.pluginAPI.User.Get(id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve commander id '%s'", id)
+		}
+		result = append(result, incident.CommanderInfo{UserID: id, Username: c.Username})
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Username < result[j].Username })
+
+	return result, nil
+}
+
 // NukeDB removes all incident related data.
 func (s *incidentStore) NukeDB() error {
 	return s.pluginAPI.KV.DeleteAll()
@@ -288,29 +322,29 @@ func (s *incidentStore) updateHeader(incdnt *incident.Incident) error {
 	return nil
 }
 
-func sortHeaders(headers []incident.Header, sortField incident.SortField, order incident.SortDirection) {
+func sortHeaders(headers []incident.Header, sortField, order string) {
 	// order by descending, unless we're told otherwise
 	var orderFn = func(b bool) bool { return b }
-	if order == incident.Asc {
+	if order == incident.OrderAsc {
 		orderFn = func(b bool) bool { return !b }
 	}
 
 	// sort by CreateAt, unless we're told otherwise
 	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreateAt > headers[j].CreateAt) }
 	switch sortField {
-	case incident.ID:
+	case incident.SortByID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
-	case incident.Name:
+	case incident.SortByName:
 		sortFn = func(i, j int) bool {
 			return orderFn(strings.ToLower(headers[i].Name) > strings.ToLower(headers[j].Name))
 		}
-	case incident.CommanderUserID:
+	case incident.SortByCommanderUserID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
-	case incident.TeamID:
+	case incident.SortByTeamID:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
-	case incident.EndAt:
+	case incident.SortByEndAt:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].EndAt > headers[j].EndAt) }
-	case incident.ByStatus:
+	case incident.SortByIsActive:
 		sortFn = func(i, j int) bool { return orderFn(headers[i].IsActive && !headers[j].IsActive) }
 	}
 

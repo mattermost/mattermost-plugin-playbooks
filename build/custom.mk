@@ -12,6 +12,7 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/incident/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-response/server/incident Store
 	mockgen -destination server/pluginkvstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore KVAPI
 	mockgen -destination server/pluginkvstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore StoreAPI
+	mockgen -destination server/pluginkvstore/mocks/mock_userapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore UserAPI
 	mockgen -destination server/pluginkvstore/mocks/serverpluginapi/mock_plugin.go github.com/mattermost/mattermost-server/v5/plugin API
 endif
 

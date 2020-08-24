@@ -25,6 +25,7 @@ type Header struct {
 	ChannelID       string `json:"channel_id"`
 	CreateAt        int64  `json:"create_at"`
 	EndAt           int64  `json:"end_at"`
+	DeleteAt        int64  `json:"delete_at"`
 	ActiveStage     int    `json:"active_stage"`
 }
 
@@ -171,9 +172,13 @@ type Store interface {
 	// GetIncidentByChannel gets an incident associated with the given channel id.
 	GetIncidentIDForChannel(channelID string) (string, error)
 
-	// GetAllIncidentMembersCount returns the count of all members of an incident since the
-	// beginning of the incident, excluding bots.
-	GetAllIncidentMembersCount(incidentID string) (int64, error)
+	// GetAllIncidentMembersCount returns the count of all members of the
+	// incident associated with the given channel id since the beginning of the
+	// incident, excluding bots.
+	GetAllIncidentMembersCount(channelID string) (int64, error)
+
+	// GetCommanders returns the commanders of the incidents selected by options
+	GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

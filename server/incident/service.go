@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
@@ -71,7 +69,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 	// New incidents are always active
 	incdnt.IsActive = true
 	incdnt.ChannelID = channel.Id
-	incdnt.CreateAt = time.Now().Unix()
+	incdnt.CreateAt = model.GetMillis()
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
@@ -155,7 +153,7 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 
 	// Close the incident
 	incdnt.IsActive = false
-	incdnt.EndAt = time.Now().Unix()
+	incdnt.EndAt = model.GetMillis()
 
 	if err = s.store.UpdateIncident(incdnt); err != nil {
 		return errors.Wrapf(err, "failed to end incident")
@@ -276,30 +274,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 
 // GetCommanders returns all the commanders of the incidents selected by options
 func (s *ServiceImpl) GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error) {
-	results, err := s.store.GetIncidents(options)
-	if err != nil {
-		return nil, err
-	}
-
-	// Set of commander ids
-	commanders := make(map[string]bool)
-	for _, h := range results.Items {
-		if _, ok := commanders[h.CommanderUserID]; !ok {
-			commanders[h.CommanderUserID] = true
-		}
-	}
-
-	var result []CommanderInfo
-	for id := range commanders {
-		c, err := s.pluginAPI.User.Get(id)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to retrieve commander id '%s'", id)
-		}
-		result = append(result, CommanderInfo{UserID: id, Username: c.Username})
-	}
-	sort.Slice(result, func(i, j int) bool { return result[i].Username < result[j].Username })
-
-	return result, nil
+	return s.store.GetCommanders(options)
 }
 
 // IsCommander returns true if the userID is the commander for incidentID.
@@ -381,7 +356,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	}
 
 	itemToCheck.State = newState
-	itemToCheck.StateModified = time.Now().Unix()
+	itemToCheck.StateModified = model.GetMillis()
 	itemToCheck.StateModifiedPostID = postID
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
@@ -461,7 +436,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	itemToCheck.AssigneeID = assigneeID
-	itemToCheck.AssigneeModified = time.Now().Unix()
+	itemToCheck.AssigneeModified = model.GetMillis()
 	itemToCheck.AssigneeModifiedPostID = postID
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 

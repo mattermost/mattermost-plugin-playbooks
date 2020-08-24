@@ -1,14 +1,10 @@
-package pluginkvstore
+package sqlstore
 
 import (
 	"database/sql"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
-	"github.com/mattermost/mattermost-server/v5/model"
 )
-
-const keyVersionPrefix = "v2_"
 
 // KVAPI is the key value store interface for the pluginkv stores.
 // It is implemented by mattermost-plugin-api/Client.KV, or by the mock KVAPI.
@@ -26,18 +22,11 @@ type StoreAPI interface {
 	DriverName() string
 }
 
-// UserAPI is the interface exposing the user methods, provided by pluginapi
-// It is implemented by mattermost-plugin-api/Client.User, or by the mock UserAPI.
-type UserAPI interface {
-	Get(userID string) (*model.User, error)
-}
-
 // PluginAPIClient is the struct combining the interfaces defined above, which is everything
 // from pluginapi that the store currently uses.
 type PluginAPIClient struct {
 	KV    KVAPI
 	Store StoreAPI
-	User  UserAPI
 }
 
 // NewClient receives a pluginapi.Client and returns the PluginAPIClient, which is what the

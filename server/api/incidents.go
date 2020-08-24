@@ -282,7 +282,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 
 // getIncidents handles the GET /incidents endpoint.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	filterOptions, err := parseIncidentsFilterOption(r.URL)
+	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
@@ -829,69 +829,42 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 	return nil
 }
 
-func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, error) {
-	// NOTE: we are failing early instead of turning bad parameters into the default
+// parseIncidentsFilterOptions is only for parsing. Put validation logic in service.validateOptions.
+func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
-	if teamID != "" && !model.IsValidId(teamID) {
-		return nil, errors.New("bad parameter 'team_id': must be 26 characters or blank")
-	}
 
-	param := u.Query().Get("page")
-	if param == "" {
-		param = "0"
+	pageParam := u.Query().Get("page")
+	if pageParam == "" {
+		pageParam = "0"
 	}
-	page, err := strconv.Atoi(param)
+	page, err := strconv.Atoi(pageParam)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bad parameter 'page'")
 	}
 
-	param = u.Query().Get("per_page")
-	if param == "" {
-		param = "0"
+	perPageParam := u.Query().Get("per_page")
+	if perPageParam == "" {
+		perPageParam = "0"
 	}
-	perPage, err := strconv.Atoi(param)
+	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bad parameter 'per_page'")
 	}
 
-	param = u.Query().Get("sort")
-	var sort incident.SortField
-	switch param {
-	case "id":
-		sort = incident.ID
-	case "name":
-		sort = incident.Name
-	case "commander_user_id":
-		sort = incident.CommanderUserID
-	case "team_id":
-		sort = incident.TeamID
-	case "create_at", "": // default
-		sort = incident.CreateAt
-	case "end_at":
-		sort = incident.EndAt
-	case "status":
-		sort = incident.ByStatus
-	default:
-		return nil, errors.New("bad parameter 'sort'")
-	}
+	sort := u.Query().Get("sort")
+	order := u.Query().Get("order")
 
-	param = u.Query().Get("order")
-	var order incident.SortDirection
-	switch param {
-	case "asc":
-		order = incident.Asc
-	case "desc", "":
-		order = incident.Desc
-	default:
-		return nil, errors.Wrapf(err, "bad parameter 'order_by'")
-	}
-
-	param = u.Query().Get("status")
-	status := incident.All
-	if param == "active" {
+	statusParam := strings.ToLower(u.Query().Get("status"))
+	var status incident.Status
+	switch statusParam {
+	case "all", "": // default
+		status = incident.All
+	case "active":
 		status = incident.Ongoing
-	} else if param == "ended" {
+	case "ended":
 		status = incident.Ended
+	default:
+		return nil, errors.Errorf("bad status parameter '%s'", statusParam)
 	}
 
 	commanderID := u.Query().Get("commander_user_id")
