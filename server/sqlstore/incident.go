@@ -288,19 +288,19 @@ func (s *incidentStore) NukeDB() (err error) {
 		}
 	}()
 
-	if _, err := tx.Exec("DROP TABLE IR_Incident"); err != nil {
-		return errors.Wrap(err, "could not drop IR_Incident")
+	if _, err := tx.Exec("DELETE FROM IR_Incident"); err != nil {
+		return errors.Wrap(err, "could not delete IR_Incident")
 	}
 
-	if _, err := tx.Exec("DROP TABLE IR_Playbook"); err != nil {
-		return errors.Wrap(err, "could not drop IR_Playbook")
+	if _, err := tx.Exec("DELETE FROM IR_Playbook"); err != nil {
+		return errors.Wrap(err, "could not delete IR_Playbook")
 	}
-	if _, err := tx.Exec("DROP TABLE IR_PlaybookMember"); err != nil {
-		return errors.Wrap(err, "could not drop IR_Playbook")
+	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
+		return errors.Wrap(err, "could not delete IR_Playbook")
 	}
 
 	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not remove tables")
+		return errors.Wrap(err, "could not delete all rows")
 	}
 
 	return nil
