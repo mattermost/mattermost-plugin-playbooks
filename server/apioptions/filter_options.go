@@ -68,6 +68,32 @@ const (
 	OrderDesc = "desc"
 )
 
+func IsValidSortBy(sortBy string) bool {
+	switch sortBy {
+	case SortByCreateAt,
+		SortByID,
+		SortByName,
+		SortByCommanderUserID,
+		SortByTeamID,
+		SortByEndAt,
+		SortByStatus,
+		SortByIsActive:
+		return true
+	}
+
+	return false
+}
+
+func IsValidOrderBy(orderBy string) bool {
+	switch orderBy {
+	case OrderAsc,
+		OrderDesc:
+		return true
+	}
+
+	return false
+}
+
 func ValidateOptions(options *HeaderFilterOptions) error {
 	if options.PerPage == 0 {
 		options.PerPage = PerPageDefault

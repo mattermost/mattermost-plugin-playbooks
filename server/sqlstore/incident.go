@@ -76,8 +76,12 @@ func (s *incidentStore) GetIncidents(options apioptions.HeaderFilterOptions) (*i
 		builder = builder.Where(sq.Like{"Name": fmt.Sprint("%", options.SearchTerm, "%")})
 	}
 
-	if options.Sort != "" {
-		builder = builder.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
+	if apioptions.IsValidSortBy(options.Sort) {
+		builder = builder.OrderBy(options.Sort)
+	}
+
+	if apioptions.IsValidOrderBy(options.Order) {
+		builder = builder.OrderBy(options.Order)
 	}
 
 	var rawIncidents []sqlIncident
