@@ -159,8 +159,8 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if newIncident == nil {
 		return errors.New("incident is nil")
 	}
-	if newIncident.ID != "" {
-		return errors.New("ID should not be set")
+	if newIncident.ID == "" {
+		return errors.New("ID should not be empty")
 	}
 
 	rawIncident, err := toSQLIncident(newIncident)
