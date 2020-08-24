@@ -220,11 +220,11 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 
 // GetAllIncidentMembersCount returns the count of all members of an incident since the
 // beginning of the incident, excluding bots.
-func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, error) {
+func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, error) {
 	query := s.queryBuilder.
 		Select("COUNT(DISTINCT UserId)").
 		From("ChannelMemberHistory AS u").
-		Where(sq.Eq{"ChannelId": incidentID}).
+		Where(sq.Eq{"ChannelId": channelID}).
 		Where(sq.Expr("u.UserId NOT IN (SELECT UserId FROM Bots)"))
 
 	var numMembers int64
