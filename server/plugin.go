@@ -52,6 +52,10 @@ func (p *Plugin) OnActivate() error {
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
+	if !isLicensed(pluginAPIClient.Configuration.GetConfig(), pluginAPIClient.System.GetLicense()) {
+		return errors.New("a valid Mattermost Enterprise E20 license is required to use this plugin")
+	}
+
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
 		DisplayName: "Incident Bot",
