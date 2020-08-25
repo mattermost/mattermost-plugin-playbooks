@@ -107,7 +107,7 @@ var migrations = []Migration{
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE TABLE IR_PlaybookMember (
+					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
 						MemberID TEXT NOT NULL
 					);
@@ -116,37 +116,37 @@ var migrations = []Migration{
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE INDEX IF NOT EXISTS IR_Incident_TeamID ON IR_Incident (TeamID);
+					CREATE INDEX IR_Incident_TeamID ON IR_Incident (TeamID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID")
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE INDEX IF NOT EXISTS IR_Incident_TeamID_CommanderUserID ON IR_Incident (TeamID, CommanderUserID);
+					CREATE INDEX IR_Incident_TeamID_CommanderUserID ON IR_Incident (TeamID, CommanderUserID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID_CommanderUserID")
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE INDEX IF NOT EXISTS IR_Incident_ChannelID ON IR_Incident (ChannelID);
+					CREATE INDEX IR_Incident_ChannelID ON IR_Incident (ChannelID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_ChannelID")
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE INDEX IF NOT EXISTS IR_Playbook_TeamID ON IR_Playbook(TeamID);
+					CREATE INDEX IR_Playbook_TeamID ON IR_Playbook(TeamID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Playbook_TeamID")
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE INDEX IF NOT EXISTS IR_PlaybookMember_PlaybookID ON IR_PlaybookMember(PlaybookID);
+					CREATE INDEX IR_PlaybookMember_PlaybookID ON IR_PlaybookMember(PlaybookID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_PlaybookID")
 				}
 
 				if _, err := sqlStore.db.Exec(`
-					CREATE INDEX IF NOT EXISTS IR_PlaybookMember_MemberID ON IR_PlaybookMember(MemberID);
+					CREATE INDEX IR_PlaybookMember_MemberID ON IR_PlaybookMember(MemberID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_MemberID ")
 				}
