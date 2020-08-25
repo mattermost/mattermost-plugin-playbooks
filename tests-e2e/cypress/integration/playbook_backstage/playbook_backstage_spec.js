@@ -10,34 +10,45 @@
  * This test spec includes tests for playbooks backstage.
  */
 
-import users from '../../fixtures/users.json';
-
 describe('Playbook List View in Backstage', () => {
-	beforeEach(() => {
-		// # Login as non-admin user
-		cy.apiLogin('user-1');
+    const dummyPlaybookName = 'Dummy playbook' + Date.now();
 
-		// # Go to the team's town-square channel
-		cy.visit('/ad-1/channels/town-square');
-	});
+    beforeEach(() => {
+        // # Login as non-admin user
+        cy.apiLogin('user-1');
 
-	it('Has "Playbooks" and team name in heading', () => {
-		// # Launch incident backstage
-		cy.openIncidentBackstage();
+        // # Go to the team's town-square channel
+        cy.visit('/ad-1/channels/town-square');
 
-		// # Switch to Playbooks backstage
-		cy.findByTestId('playbooksLHSButton').click();
+        // # Create a dummy playbook as non-admin user
+        cy.apiGetTeamByName('ad-1').then((team) => {
+            cy.apiGetCurrentUser().then((user) => {
+                cy.apiCreateTestPlaybook({
+                    teamId: team.id,
+                    title: dummyPlaybookName,
+                    userId: user.id,
+                });
+            });
+        });
+    });
 
-		// * Verify that the heading has "Playbooks" and the team's name -- eligendi
-		cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
-		cy.findByTestId('titlePlaybook').contains('eligendi');
-	});
+    it('Has "Playbooks" and team name in heading', () => {
+        // # Launch incident backstage
+        cy.openIncidentBackstage();
 
-	it('Redirects to /error if the playbook is unknown', () => {
-		// # Visit the URL of a non-existing playbook
-		cy.visit('/ad-1/com.mattermost.plugin-incident-response/playbooks/an_unknown_id');
+        // # Switch to Playbooks backstage
+        cy.findByTestId('playbooksLHSButton').click();
 
-		// * Verify that the user has been redirect to /error with type=playbooks
-		cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-response/error?type=playbooks');
-	});
+        // * Verify that the heading has "Playbooks" and the team's name -- eligendi
+        cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
+        cy.findByTestId('titlePlaybook').contains('eligendi');
+    });
+
+    it('Redirects to /error if the playbook is unknown', () => {
+        // # Visit the URL of a non-existing playbook
+        cy.visit('/ad-1/com.mattermost.plugin-incident-response/playbooks/an_unknown_id');
+
+        // * Verify that the user has been redirect to /error with type=playbooks
+        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-response/error?type=playbooks');
+    });
 });

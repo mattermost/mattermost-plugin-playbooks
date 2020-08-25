@@ -5,8 +5,13 @@ import React from 'react';
 
 export type Ref = SVGSVGElement;
 
-const IncidentIcon = React.forwardRef<Ref>((_, forwardedRef) => (
+interface Props {
+    id?: string;
+}
+
+const IncidentIcon = React.forwardRef<Ref, Props>((props, forwardedRef) => (
     <svg
+        id={props?.id}
         ref={forwardedRef}
         width='14'
         height='17'

@@ -13,103 +13,115 @@ import users from '../fixtures/users.json';
 import * as TIMEOUTS from '../fixtures/timeouts';
 
 function closeIncidentDialog() {
-	cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-		cy.get('#interactiveDialogCancel').click();
-	});
+    cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+        cy.get('#interactiveDialogCancel').click();
+    });
 }
 
 describe('Incident Creation Modal', () => {
-	const dummyPlaybookName = 'Dummy playbook' + Date.now();
+    const dummyPlaybookName = 'Dummy playbook' + Date.now();
 
-	before(() => {
-		// # Create a dummy playbook as non-admin user
-		cy.apiLogin('user-1');
-		cy.createPlaybook('ad-1', dummyPlaybookName);
-	})
+    before(() => {
+        // # Login as non-admin user
+        cy.apiLogin('user-1');
+        cy.visit('/');
 
-	beforeEach(() => {
-		// # Login as non-admin user
-		cy.apiLogin('user-1');
-		cy.visit('/');
-		cy.openIncidentDialogFromSlashCommand();
-	});
+        // # Create a dummy playbook as non-admin user
+        cy.apiGetTeamByName('ad-1').then((team) => {
+            cy.apiGetCurrentUser().then((user) => {
+                cy.apiCreateTestPlaybook({
+                    teamId: team.id,
+                    title: dummyPlaybookName,
+                    userId: user.id,
+                });
+            });
+        });
+    });
 
-	it('Cannot create without filling required fields', () => {
-		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.findByText("Incident Details").should('be.visible');
+    beforeEach(() => {
+        // # Login as non-admin user
+        cy.apiLogin('user-1');
+        cy.visit('/');
+        cy.openIncidentDialogFromSlashCommand();
+    });
 
-			// # Attempt to submit
-			cy.get('#interactiveDialogSubmit').click();
-		});
+    it('Cannot create without filling required fields', () => {
+        cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+            cy.findByText('Incident Details').should('be.visible');
 
-		// * Verify it didn't submit
-		cy.get('#interactiveDialogModal').should('be.visible');
+            // # Attempt to submit
+            cy.get('#interactiveDialogSubmit').click();
+        });
 
-		// * Verify required fields
-		cy.findByTestId('autoCompleteSelector').contains('Playbook');
-		cy.findByTestId('autoCompleteSelector').contains('This field is required.');
-		cy.findByTestId('incidentName').contains('This field is required.');
-	});
+        // * Verify it didn't submit
+        cy.get('#interactiveDialogModal').should('be.visible');
 
-	it('Shows "Incident Details" heading', () => {
-		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.findByText("Incident Details").should('be.visible');
-		});
-		closeIncidentDialog();
-	});
+        // * Verify required fields
+        cy.findByTestId('autoCompleteSelector').contains('Playbook');
+        cy.findByTestId('autoCompleteSelector').contains('This field is required.');
+        cy.findByTestId('incidentName').contains('This field is required.');
+    });
 
-	it('Shows create playbook markdown', () => {
-		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.findByText("Incident Details").should('be.visible');
-		});
+    it('Shows "Incident Details" heading', () => {
+        cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+            cy.findByText('Incident Details').should('be.visible');
+        });
+        closeIncidentDialog();
+    });
 
-		cy.get('#interactiveDialogModalIntroductionText').find('a')
-		.invoke('attr', 'href')
-		.then((href) => {
-			cy.visit(href);
+    it('Shows create playbook markdown', () => {
+        cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+            cy.findByText('Incident Details').should('be.visible');
+        });
 
-			// * Verify it's the new playbook page
-			cy.get('.Backstage__header').contains('New Playbook').should('be.visible');
-		});
-	});
+        cy.get('#interactiveDialogModalIntroductionText').find('a').
+            invoke('attr', 'href').
+            then((href) => {
+                cy.visit(href);
 
-	it('Shows Commander', () => {
-		cy.get('#interactiveDialogModalIntroductionText').contains('Commander');
-	});
+                // * Verify it's the new playbook page
+                cy.findByTestId('save_playbook').should('be.visible');
+            });
+    });
 
-	it('Contains channel name', () => {
-		// * Verify channel name is there
-		cy.findByTestId('incidentName').should('be.visible');
-		cy.findByText("Channel Name");
-		closeIncidentDialog();
-	});
+    it('Shows Commander', () => {
+        cy.get('#interactiveDialogModalIntroductionText').contains('Commander');
+    });
 
-	it ('Contains playbook dropdown', () => {
-		// * Verify playbook dropdown is there
-		cy.findByTestId('autoCompleteSelector').should('be.visible');
-		cy.findByText("Playbook").should('be.visible');
-		closeIncidentDialog();
-	});
+    it('Contains channel name', () => {
+        // * Verify channel name is there
+        cy.findByTestId('incidentName').should('be.visible');
+        cy.findByText('Channel Name');
+        closeIncidentDialog();
+    });
 
-	it('Is canceled when Cancel is clicked on Incident Response modal', () => {
-		closeIncidentDialog();
-		cy.get('#interactiveDialogModal').should('not.be.visible');
+    it('Contains playbook dropdown', () => {
+        // * Verify playbook dropdown is there
+        cy.findByTestId('autoCompleteSelector').should('be.visible');
+        cy.findByText('Playbook').should('be.visible');
+        closeIncidentDialog();
+    });
 
-		// # Fill the interactive dialog and click Cancel
-		cy.openIncidentDialogFromSlashCommand();
-		const newIncident = "New Incident" + Date.now();
-		cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-			cy.findByTestId('incidentNameinput').type(newIncident, {force: true});
-			cy.get('#interactiveDialogCancel').click();
-		});
-		// * Verify it's canceled
-		cy.get('#interactiveDialogModal').should('not.be.visible');
+    it('Is canceled when Cancel is clicked on Incident Response modal', () => {
+        closeIncidentDialog();
+        cy.get('#interactiveDialogModal').should('not.be.visible');
 
-		// * Verify that the incident did not get created
-		cy.apiGetAllIncidents().then((response) => {
-			const allIncidents = JSON.parse(response.body);
-			const incidentFound = allIncidents.incidents.find((inc) => inc.name === newIncident);
-			assert.equal(incidentFound, undefined);
-		});
-	});
+        // # Fill the interactive dialog and click Cancel
+        cy.openIncidentDialogFromSlashCommand();
+        const newIncident = 'New Incident' + Date.now();
+        cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+            cy.findByTestId('incidentNameinput').type(newIncident, {force: true});
+            cy.get('#interactiveDialogCancel').click();
+        });
+
+        // * Verify it's canceled
+        cy.get('#interactiveDialogModal').should('not.be.visible');
+
+        // * Verify that the incident did not get created
+        cy.apiGetAllIncidents().then((response) => {
+            const allIncidents = JSON.parse(response.body);
+            const incidentFound = allIncidents.items.find((inc) => inc.name === newIncident);
+            assert.equal(incidentFound, undefined);
+        });
+    });
 });

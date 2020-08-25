@@ -51,14 +51,14 @@ Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
     });
 });
 
- // Verify incident is created
+// Verify incident is created
 Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
     //Login as sysadmin to check that incident got created
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
         const incidentFound = allIncidents.items.find((inc) => inc.name === incidentID);
         assert.notEqual(incidentFound, undefined);
-        assert.equal(incidentFound.is_active, true)
+        assert.equal(incidentFound.is_active, true);
     });
 });
 
@@ -69,8 +69,43 @@ Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
         const allIncidents = JSON.parse(response.body);
         const incidentFound = allIncidents.items.find((inc) => inc.name === incidentID);
         assert.notEqual(incidentFound, undefined);
-        assert.equal(incidentFound.is_active, false)
+        assert.equal(incidentFound.is_active, false);
     });
 });
 
+// Create a playbook programmatically.
+Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs}) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks',
+        method: 'POST',
+        body: {
+            title,
+            team_id: teamId,
+            create_public_incident: createPublicIncident,
+            checklists,
+            member_ids: memberIDs,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
 
+// Create a test playbook programmatically.
+Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId}) => (
+    cy.apiCreatePlaybook({
+        teamId,
+        title,
+        checklists: [{
+            title: 'Stage 1',
+            items: [
+                {title: 'Step 1'},
+                {title: 'Step 2'},
+            ],
+        }],
+        memberIDs: [
+            userId,
+        ],
+    })
+));

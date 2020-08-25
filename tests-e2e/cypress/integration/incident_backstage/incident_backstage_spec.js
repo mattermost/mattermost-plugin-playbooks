@@ -10,23 +10,21 @@
  * This test spec includes tests for the incident list view in incident backstage
  */
 
-import users from '../../fixtures/users.json';
-
 describe('Incident List View in Backstage', () => {
-	before(() => {
-		// # Login as non-admin user
-		cy.apiLogin('user-1');
+    before(() => {
+        // # Login as non-admin user
+        cy.apiLogin('user-1');
 
-		// # Go to eligendi's town-square channel
-		cy.visit('/ad-1/channels/town-square');
+        // # Go to eligendi's town-square channel
+        cy.visit('/ad-1/channels/town-square');
 
-		// # Launch Incident backstage
-		cy.openIncidentBackstage();
-	});
+        // # Launch Incident backstage
+        cy.openIncidentBackstage();
+    });
 
-	it('Has "Incidents" and team name in heading', () => {
-		// * In the backstage, verify the header contains the team name -- eligendi
-		cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
-		cy.findByTestId('titleIncident').contains('eligendi');
-	});
+    it('Has "Incidents" and team name in heading', () => {
+        // * In the backstage, verify the header contains the team name -- eligendi
+        cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
+        cy.findByTestId('titleIncident').contains('eligendi');
+    });
 });

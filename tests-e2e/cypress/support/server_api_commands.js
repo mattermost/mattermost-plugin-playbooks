@@ -185,10 +185,37 @@ Cypress.Commands.add('apiCreateGroupChannel', (userList = [], teamName) => {
         const userIds = res.body.map((user) => user.id);
         cy.apiCreateGroup(userIds).then((resp) => {
             cy.apiGetTeams().then((response) => {
-                const teamNameUrl = teamName ? teamName : response.body[0].name;
+                const teamNameUrl = teamName || response.body[0].name;
                 cy.visit(`/${teamNameUrl}/messages/${resp.body.name}`);
             });
         });
     });
 });
 
+/**
+ * Gets the current user.
+ */
+Cypress.Commands.add('apiGetCurrentUser', () => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/users/me',
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap(response.body);
+    });
+});
+
+/**
+ * Gets the team matching the given name;
+ */
+Cypress.Commands.add('apiGetTeamByName', (name) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/teams/name/' + name,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap(response.body);
+    });
+});

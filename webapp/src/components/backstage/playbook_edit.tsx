@@ -351,12 +351,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                 />
                 <EditableTextContainer>
                     <EditableText
+                        id='playbook-name'
                         text={playbook.title}
                         onChange={handleTitleChange}
                     />
                 </EditableTextContainer>
                 <NavbarPadding/>
                 <SaveButton
+                    data-testid='save_playbook'
                     onClick={onSave}
                     disabled={saveDisabled}
                 >

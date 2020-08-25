@@ -2,6 +2,7 @@ import React, {FC, useState} from 'react';
 import styled from 'styled-components';
 
 export interface EditableTextProps {
+    id?: string
     text: string
     onChange: (newText: string) => void
 }
@@ -47,9 +48,10 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
 
     if (editMode) {
         return (
-            <Container>
+            <Container id={props.id}>
                 <Input
                     type='text'
+                    className='editable-input'
                     value={text}
                     onChange={(e) => {
                         setText(e.target.value);
@@ -63,19 +65,19 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
                     }}
                 />
                 <ClickableI
-                    className='icon-check'
+                    className='editable-trigger icon-check'
                     onClick={submit}
                 />
             </Container>
         );
     }
     return (
-        <Container>
+        <Container id={props.id}>
             <Text>
                 {text}
             </Text>
             <ClickableI
-                className='icon-pencil-outline'
+                className='editable-trigger icon-pencil-outline'
                 onClick={() => setEditMode(true)}
             />
         </Container>
