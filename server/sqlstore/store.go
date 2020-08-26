@@ -5,6 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
@@ -24,6 +25,9 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	db = sqlx.NewDb(origDB, pluginAPI.Store.DriverName())
 
 	// TODO: Leave the default mapper as strings.ToLower?
+	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		db.MapperFunc(func(s string) string { return s })
+	}
 
 	return &SQLStore{
 		log,
