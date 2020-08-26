@@ -7,7 +7,8 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, currentSchemaVersion semver.Version) error {
+func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, originalSchemaVersion semver.Version) error {
+	currentSchemaVersion := originalSchemaVersion
 	for _, migration := range migrations {
 		if !currentSchemaVersion.EQ(migration.fromVersion) {
 			continue
@@ -17,17 +18,18 @@ func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, currentSche
 			return errors.Wrapf(err, "error executing migration from version %s to version %s", migration.fromVersion.String(), migration.toVersion.String())
 		}
 
-		currentSchemaVersion = migration.toVersion
-		if err := SetCurrentVersion(pluginAPIClient, currentSchemaVersion); err != nil {
-			return errors.Wrapf(err, "migration succeeded, but failed to set the current version to %s. Database is now in an inconsistent state", currentSchemaVersion.String())
+		if err := SetCurrentVersion(pluginAPIClient, migration.toVersion); err != nil {
+			return errors.Wrapf(err, "migration succeeded, but failed to set the current version to %s. Database is now in an inconsistent state", migration.toVersion.String())
 		}
 
 		// TODO: Remove when all customers are in 0.1.0
-		if currentSchemaVersion.EQ(semver.MustParse("0.1.0")) {
+		if migration.toVersion.EQ(semver.MustParse("0.1.0")) {
 			if err := DataMigration(sqlStore, &pluginAPIClient.KV); err != nil {
 				return errors.Wrapf(err, "failed to migrate the data from the KV store to the SQL database")
 			}
 		}
+
+		currentSchemaVersion = migration.toVersion
 	}
 
 	return nil
