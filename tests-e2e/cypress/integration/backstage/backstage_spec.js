@@ -6,50 +6,63 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-/*
- * This test spec includes tests for the Incidents & Playbooks backstage
- */
+describe('backstage', () => {
+    const playbookName = 'Playbook (' + Date.now() + ')';
 
-describe('Backstage', () => {
-    const dummyPlaybookName = 'Dummy playbook' + Date.now();
-
-    beforeEach(() => {
-        // # Login as non-admin user
+    before(() => {
+        // # Login as user-1
         cy.apiLogin('user-1');
-        cy.visit('/');
 
-        // # Create a dummy playbook as non-admin user
+        // # Create a playbook
         cy.apiGetTeamByName('ad-1').then((team) => {
             cy.apiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
-                    title: dummyPlaybookName,
+                    title: playbookName,
                     userId: user.id,
                 });
             });
         });
-
-        cy.openIncidentBackstage();
     });
 
-    it('Opens incident backstage by default with "Incidents & Playbooks" button in main menu', () => {
+    beforeEach(() => {
+        // # Login as user-1
+        cy.apiLogin('user-1');
+
+        // # Navigate to the application
+        cy.visit('/');
+    });
+
+    it('opens incidents list view by default', () => {
+        // # Open the backstage
+        cy.openBackstage();
+
         // * Verify that when backstage loads, the heading is visible and contains "Incident"
         cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
     });
 
-    it('Opens playbooks backstage with "Playbooks" LHS button', () => {
+    it('switches to playbooks list view via header button', () => {
+        // # Open backstage
+        cy.openBackstage();
+
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // * Verify that the heading is visible and contains "Playbooks"
+        // * Verify that playbooks are shown
         cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
     });
 
-    it('Opens incidents backstage with "Incidents" LHS button', () => {
+    it('switches to incidents list view via header button', () => {
+        // # Open backstage
+        cy.openBackstage();
+
+        // # Switch to playbooks backstage
+        cy.findByTestId('playbooksLHSButton').click();
+
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
 
-        // * Verify again that the switch was successful by verifying the heading is visible and has "Incidents"
+        // * Verify that incidents are shown
         cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
     });
 });

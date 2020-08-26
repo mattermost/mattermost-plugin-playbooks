@@ -26,14 +26,13 @@ Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
 
     // Using esc to make sure we exit out of slash command autocomplete
     cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 100}).type('{enter}');
-
-    cy.get('#interactiveDialogModalLabel');
 });
 
 // Starts incident with the `/incident start` slash command
 // function startIncidentWithSlashCommand(incidentID) {
 Cypress.Commands.add('startIncidentWithSlashCommand', (playbookName, incidentID) => {
     cy.openIncidentDialogFromSlashCommand();
+
     cy.startIncident(playbookName, incidentID);
 });
 
@@ -65,8 +64,8 @@ Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentID) => 
     cy.startIncident(playbookName, incidentID);
 });
 
-// Open Incidents backstage
-Cypress.Commands.add('openIncidentBackstage', () => {
+// Open backstage
+Cypress.Commands.add('openBackstage', () => {
     cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('be.visible').within(() => {
         // # Click hamburger main menu
         cy.get('#sidebarHeaderDropdownButton').click();

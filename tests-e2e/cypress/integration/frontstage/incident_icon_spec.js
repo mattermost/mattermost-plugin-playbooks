@@ -6,31 +6,35 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-/*
- * This test spec contains tests for incident icon in channel header
- */
-
-describe('Incident Icon', () => {
+describe('incident icon in channel header', () => {
     beforeEach(() => {
-        // # Login as non-admin user
+        // # Login as user-1
         cy.apiLogin('user-1');
     });
 
-    // Test Plan v0.1 #44 - Clicking the Incident Response plugin icon on header toggles the RHS open and close
-    it('#44 - Toggles the incident RHS open and close', () => {
+    it('toggles the incident RHS', () => {
+        // # Size the viewport to show plugin icons even when RHS is open
+        cy.viewport('macbook-13');
+
+        // # Navigate to the application
         cy.visit('/');
+
+        // # Click the incident icon
         cy.get('#channel-header').within(() => {
             cy.get('#incidentIcon').should('be.visible').click();
         });
+
+        // * Verify the incident RHS is open.
         cy.get('#rhsContainer').should('be.visible').within(() => {
             cy.findByText('Incident').should('be.visible');
         });
 
-        /**
-		* TODO:
-		* add test for: clicking on the incident icon again closes the RHS
-		* right now, the full channel header can't be seen during Cypress test when RHS is open.
-		* need to find a work around for that.
-		*/
+        // # Click the incident icon again
+        cy.get('#channel-header').within(() => {
+            cy.get('#incidentIcon').should('be.visible').click();
+        });
+
+        // * Verify the incident RHS is no longer open.
+        cy.get('#rhsContainer').should('not.be.visible');
     });
 });
