@@ -4,7 +4,6 @@
 import React, {FC} from 'react';
 import styled from 'styled-components';
 
-
 export const PrimaryButton = styled.button`
     display: inline-flex;
     align-items: center;

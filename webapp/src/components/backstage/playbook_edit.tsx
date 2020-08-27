@@ -17,7 +17,7 @@ import styled from 'styled-components';
 
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 
-import {teamPluginErrorUrl} from 'src/browser_routing';
+import {teamPluginErrorUrl, navigateToUrl} from 'src/browser_routing';
 import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
@@ -25,8 +25,6 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
-
-import {navigateToUrl} from 'src/browser_routing';
 
 import './playbook.scss';
 import StagesAndStepsIcon from './stages_and_steps_icon';

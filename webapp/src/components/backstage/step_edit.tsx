@@ -135,7 +135,7 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
         </AddDescription>
     );
 
-    let removeDescriptionBox = (
+    const removeDescriptionBox = (
         <AddDescription
             onClick={() => setDescriptionPressed(false)}
         >

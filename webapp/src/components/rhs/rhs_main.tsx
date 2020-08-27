@@ -99,7 +99,7 @@ const RightHandSidebar: FC<Props> = (props: Props) => {
                             {'Start taking action now with Incident Response.'}
                         </h1>
                         <p className='mt-3 mb-8 light'>
-                            You do not have any incidents created yet. Create an incident now.
+                            {'You do not have any incidents created yet. Create an incident now.'}
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton

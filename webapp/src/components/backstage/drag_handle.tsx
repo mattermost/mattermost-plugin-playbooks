@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 
 interface HandleProps {
-    task: boolean;
     show: boolean;
 }
 
@@ -45,7 +44,7 @@ const Content = styled.div`
 `;
 
 export interface DragHandleProps {
-    task: Boolean;
+    task: boolean;
     children: React.ReactNode;
     draggableProvided: DraggableProvided;
     onDelete: () => void
@@ -53,8 +52,6 @@ export interface DragHandleProps {
 
 const DragHandle: FC<DragHandleProps> = (props: DragHandleProps) => {
     const [hover, setHover] = useState(false);
-
-    console.log(props.task);
 
     return (
         <HandleContainer
