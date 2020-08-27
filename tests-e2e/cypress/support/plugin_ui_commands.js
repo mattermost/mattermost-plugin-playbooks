@@ -73,8 +73,8 @@ Cypress.Commands.add('openIncidentBackstage', () => {
 
         // * Dropdown menu should be visible
         cy.get('.dropdown-menu').should('be.visible').within(() => {
-            // 'Incidents & Playbooks' button should be visible, then click
-            cy.findByText('Incidents & Playbooks').should('be.visible').click();
+            // 'Playbooks & Incidents' button should be visible, then click
+            cy.findByText('Playbooks & Incidents').should('be.visible').click();
         });
     });
 });
