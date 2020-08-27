@@ -121,7 +121,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             <DragPlaceholderText
                                 onClick={handleAddChecklistItem}
                             >
-                                {'Drag and drop an existing step or click to create a new step.'}
+                                {'Drag and drop an existing task or click to create a new task.'}
                             </DragPlaceholderText>
                         )}
                         {droppableProvided.placeholder}
@@ -133,7 +133,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                 onClick={handleAddChecklistItem}
             >
                 <i className='icon-plus'/>
-                {'New Step'}
+                {'New Task'}
             </TertiaryButton>
         </CollapsibleSection>
     );

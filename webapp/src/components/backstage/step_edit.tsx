@@ -165,7 +165,7 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
         <Container>
             <StepLine>
                 <StepInput
-                    placeholder={'Step Name'}
+                    placeholder={'Task Name'}
                     type='text'
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
