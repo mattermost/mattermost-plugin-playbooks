@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect} from 'react';
+import React, {FC, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
 import styled from 'styled-components';
@@ -15,6 +15,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {setRHSOpen, startIncident} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
 import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
+import {clientHasPlaybooks} from 'src/client';
 
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -24,11 +25,7 @@ import NoContentPlaybookSvgRhs from '../assets/no_content_playbooks_rhs_svg';
 import RHSIncidentDetails from './incident_details';
 
 // @ts-ignore
-const {formatText, messageHtmlToComponent} = window.PostUtils;
-
-interface Props {
-    theme: Record<string, string>;
-}
+/* const {formatText, messageHtmlToComponent} = window.PostUtils; */
 
 const RHSContainer = styled.div`
     height: calc(100vh - 120px);
@@ -66,17 +63,25 @@ const NoIncidentsItem = styled.div`
     margin-bottom: 24px;
 `;
 
-const RightHandSidebar: FC<Props> = (props: Props) => {
+const RightHandSidebar: FC<null> = () => {
     const dispatch = useDispatch();
     const [incident, incidentState] = useCurrentIncident();
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const [hasPlaybooks, setHasPlaybooks] = useState<boolean>(false);
 
     useEffect(() => {
         dispatch(setRHSOpen(true));
         return () => {
             dispatch(setRHSOpen(false));
         };
-    }, []);
+    }, [dispatch]);
+    useEffect(() => {
+        const fetchData = async () => {
+            const result = await clientHasPlaybooks(currentTeam.id) as boolean;
+            setHasPlaybooks(result);
+        };
+        fetchData();
+    }, [currentTeam.id]);
 
     if (incidentState === CurrentIncidentState.Loading) {
         return (
@@ -90,32 +95,57 @@ const RightHandSidebar: FC<Props> = (props: Props) => {
             </RHSContainer>
         );
     } else if (incident === null || incidentState === CurrentIncidentState.NotFound) {
+        if (hasPlaybooks) {
+            return (
+                <RHSContainer>
+                    <NoIncidentsContainer>
+                        <NoContentPlaybookSvgRhs/>
+                        <NoIncidentsItem>
+                            <h1>
+                                {'Start taking action now with Incident Response.'}
+                            </h1>
+                            <p className='mt-3 mb-8 light'>
+                                {'You do not have any incidents created yet. Create an incident now.'}
+                            </p>
+                            <div className='header-button-div mb-4'>
+                                <PrimaryButton
+                                    onClick={() => dispatch(startIncident())}
+                                >
+                                    <span>
+                                        <i className='icon-plus icon--no-spacing mr-2'/>
+                                        {'Start Incident'}
+                                    </span>
+                                </PrimaryButton>
+                            </div>
+                            <TertiaryButton
+                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new')}
+                            >
+                                {'Create Playbook'}
+                            </TertiaryButton>
+                        </NoIncidentsItem>
+                    </NoIncidentsContainer>
+                </RHSContainer>
+            );
+        }
+
         return (
             <RHSContainer>
                 <NoIncidentsContainer>
                     <NoContentPlaybookSvgRhs/>
                     <NoIncidentsItem>
                         <h1>
-                            {'Start taking action now with Incident Response.'}
+                            {'Simplify your processes with Incident Response'}
                         </h1>
                         <p className='mt-3 mb-8 light'>
-                            {'You do not have any incidents created yet. Create an incident now.'}
+                            {'To get started, create your incident playbook to define your incident response workflow. We’ve included an incident response playbook template as a starting point.'}
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton
-                                onClick={() => dispatch(startIncident())}
+                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new')}
                             >
-                                <span>
-                                    <i className='icon-plus icon--no-spacing mr-2'/>
-                                    {'Start Incident'}
-                                </span>
+                                {'Create Playbook'}
                             </PrimaryButton>
                         </div>
-                        <TertiaryButton
-                            onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new')}
-                        >
-                            {'Create Playbook'}
-                        </TertiaryButton>
                     </NoIncidentsItem>
                 </NoIncidentsContainer>
             </RHSContainer>

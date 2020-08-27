@@ -14,7 +14,7 @@ import {ClientError} from 'mattermost-redux/client/client4';
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
 import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
-import {Playbook, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {Playbook, ChecklistItem, ChecklistItemState, FetchPlaybooksReturn} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
@@ -72,6 +72,17 @@ export function clientFetchPlaybooks(teamID: string, params: FetchIncidentsParam
     }, {addQueryPrefix: true});
     return doGet(`${apiUrl}/playbooks${queryParams}`);
 }
+
+const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
+    const result = await clientFetchPlaybooks(teamID, {
+        page: 0,
+        per_page: 1,
+    }) as FetchPlaybooksReturn;
+
+    return result.items?.length > 0;
+};
+
+export {clientHasPlaybooks};
 
 export function clientFetchPlaybook(playbookID: string) {
     return doGet(`${apiUrl}/playbooks/${playbookID}`);
