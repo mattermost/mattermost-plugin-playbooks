@@ -3,7 +3,6 @@ package sqlstore
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -59,6 +58,10 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 // Create creates a new playbook
 func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
+	if pbook.ID != "" {
+		return "", errors.New("ID should be empty")
+	}
+
 	pbook.ID = model.NewId()
 
 	checklistsJSON, err := checklistsToJSON(pbook)
@@ -200,8 +203,15 @@ func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options
 
 	query := p.playbookSelect.
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"TeamID": teamID}).
-		OrderBy(fmt.Sprintf("%s %s", opts.Sort, opts.Direction))
+		Where(sq.Eq{"TeamID": teamID})
+
+	if playbook.IsValidSortBy(opts.Sort) {
+		query = query.OrderBy(string(opts.Sort))
+	}
+
+	if playbook.IsValidOrderBy(opts.Direction) {
+		query = query.OrderBy(string(opts.Direction))
+	}
 
 	err = p.store.selectBuilder(tx, &out, query)
 	if err == sql.ErrNoRows {
