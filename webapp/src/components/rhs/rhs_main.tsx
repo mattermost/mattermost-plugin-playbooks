@@ -118,7 +118,7 @@ const RightHandSidebar: FC<null> = () => {
                                 </PrimaryButton>
                             </div>
                             <TertiaryButton
-                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new')}
+                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/')}
                             >
                                 {'Create Playbook'}
                             </TertiaryButton>
@@ -141,7 +141,7 @@ const RightHandSidebar: FC<null> = () => {
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton
-                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new')}
+                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/')}
                             >
                                 {'Create Playbook'}
                             </PrimaryButton>
