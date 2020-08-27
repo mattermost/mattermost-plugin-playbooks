@@ -40,37 +40,6 @@ type ChecklistItem struct {
 	Description            string `json:"description"`
 }
 
-// SortField enumerates the available fields we can sort on.
-type SortField string
-
-const (
-	// Title sorts by the "Title" field.
-	Title SortField = "Title"
-
-	// Stages sorts by the number of checklists in a playbook.
-	Stages SortField = "Stages"
-
-	// Steps sorts by the the number of steps in a playbook.
-	Steps SortField = "Steps"
-)
-
-// SortDirection is the type used to specify the ascending or descending order of returned results.
-type SortDirection string
-
-const (
-	// Desc is descending order.
-	Desc SortDirection = "DESC"
-
-	// Asc is ascending order.
-	Asc SortDirection = "ASC"
-)
-
-// Options specifies the parameters when getting playbooks.
-type Options struct {
-	Sort      SortField
-	Direction SortDirection
-}
-
 // Service is the playbook service for managing playbooks
 type Service interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.

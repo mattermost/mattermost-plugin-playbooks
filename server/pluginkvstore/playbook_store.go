@@ -220,9 +220,9 @@ func (p *PlaybookStore) Delete(id string) error {
 func sortPlaybooks(playbooks []playbook.Playbook, opts playbook.Options) error {
 	var sortDirectionFn func(b bool) bool
 	switch opts.Direction {
-	case playbook.Asc:
+	case playbook.OrderAsc:
 		sortDirectionFn = func(b bool) bool { return !b }
-	case playbook.Desc:
+	case playbook.OrderDesc:
 		sortDirectionFn = func(b bool) bool { return b }
 	default:
 		return errors.Errorf("invalid sort direction %s", opts.Direction)
@@ -230,15 +230,15 @@ func sortPlaybooks(playbooks []playbook.Playbook, opts playbook.Options) error {
 
 	var sortFn func(i, j int) bool
 	switch opts.Sort {
-	case playbook.Title:
+	case playbook.SortByTitle:
 		sortFn = func(i, j int) bool {
 			return sortDirectionFn(playbooks[i].Title > playbooks[j].Title)
 		}
-	case playbook.Stages:
+	case playbook.SortByStages:
 		sortFn = func(i, j int) bool {
 			return sortDirectionFn(len(playbooks[i].Checklists) > len(playbooks[j].Checklists))
 		}
-	case playbook.Steps:
+	case playbook.SortBySteps:
 		sortFn = func(i, j int) bool {
 			stepsI := getSteps(playbooks[i])
 			stepsJ := getSteps(playbooks[j])

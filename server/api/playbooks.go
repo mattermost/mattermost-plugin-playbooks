@@ -185,7 +185,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	opts, page, perPage, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse playbook options"))
+		HandleError(w, err)
 		return
 	}
 
@@ -262,24 +262,24 @@ func parseGetPlaybooksOptions(u *url.URL) (opts playbook.Options, page, perPage 
 	param := strings.ToLower(params.Get("sort"))
 	switch param {
 	case "title", "":
-		sortField = playbook.Title
+		sortField = playbook.SortByTitle
 	case "stages":
-		sortField = playbook.Stages
+		sortField = playbook.SortByStages
 	case "steps":
-		sortField = playbook.Steps
+		sortField = playbook.SortBySteps
 	default:
-		sortField = playbook.SortField(param)
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
 	}
 
 	var sortDirection playbook.SortDirection
 	param = strings.ToLower(params.Get("direction"))
 	switch param {
 	case "asc", "":
-		sortDirection = playbook.Asc
+		sortDirection = playbook.OrderAsc
 	case "desc":
-		sortDirection = playbook.Desc
+		sortDirection = playbook.OrderDesc
 	default:
-		sortDirection = playbook.SortDirection(param)
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
 	}
 
 	pageParam := params.Get("page")
