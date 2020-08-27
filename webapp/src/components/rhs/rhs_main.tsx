@@ -17,8 +17,9 @@ import Spinner from 'src/components/assets/icons/spinner';
 import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
 
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
-import NoContentPlaybookSvg from '../assets/no_content_playbooks_svg';
+import NoContentPlaybookSvgRhs from '../assets/no_content_playbooks_rhs_svg';
 
 import RHSIncidentDetails from './incident_details';
 
@@ -47,23 +48,22 @@ const SpinnerContainer = styled.div`
 `;
 
 const NoIncidentsContainer = styled.div`
-    margin: 65px 50px;
-    display: flex;
+    margin: 48px 40px 0;
+    display: block;
     flex-direction: column;
     align-items: center;
+
+    h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: left;
+        line-height: 32px;
+    }
 `;
 
 const NoIncidentsItem = styled.div`
     margin-bottom: 24px;
-    text-align: center;
-`;
-
-const CreatePlaybookButton = styled.button`
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--button-bg);
-    border: none;
-    background: none;
 `;
 
 const RightHandSidebar: FC<Props> = (props: Props) => {
@@ -93,26 +93,30 @@ const RightHandSidebar: FC<Props> = (props: Props) => {
         return (
             <RHSContainer>
                 <NoIncidentsContainer>
-                    <NoIncidentsItem>{'There is no active incident in this channel.'}</NoIncidentsItem>
+                    <NoContentPlaybookSvgRhs/>
                     <NoIncidentsItem>
-                        <div className='header-button-div'>
-                            <button
-                                className='btn btn-primary'
+                        <h1>
+                            {'Start taking action now with Incident Response.'}
+                        </h1>
+                        <p className='mt-3 mb-8 light'>
+                            You do not have any incidents created yet. Create an incident now.
+                        </p>
+                        <div className='header-button-div mb-4'>
+                            <PrimaryButton
                                 onClick={() => dispatch(startIncident())}
                             >
-                                <i className='icon-plus mr-2'/>
-                                {'Start Incident'}
-                            </button>
+                                <span>
+                                    <i className='icon-plus icon--no-spacing mr-2'/>
+                                    {'Start Incident'}
+                                </span>
+                            </PrimaryButton>
                         </div>
-                    </NoIncidentsItem>
-                    <NoIncidentsItem>
-                        <CreatePlaybookButton
+                        <TertiaryButton
                             onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks/new')}
                         >
                             {'Create Playbook'}
-                        </CreatePlaybookButton>
+                        </TertiaryButton>
                     </NoIncidentsItem>
-                    <NoContentPlaybookSvg/>
                 </NoIncidentsContainer>
             </RHSContainer>
         );

@@ -13,9 +13,9 @@ export interface StepEditProps {
 const Container = styled.div`
     display: flex;
     flex-direction: column;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
     border-radius: 4px;
-    background-color: rgba(var(--center-channel-bg-rgb), 0.08);
+    background-color: var(--center-channel-bg);
     padding: 20px;
 `;
 
@@ -25,27 +25,52 @@ const StepLine = styled.div`
 `;
 
 const StepInput = styled.input`
+    -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     background-color: rgb(var(--center-channel-bg-rgb));
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border: none;
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 4px;
     margin-right: 20px;
     height: 40px;
+    line-height: 40px;
     padding: 0 16px;
     flex-grow: 1;
+    font-size: 14px;
+
+    &:focus {
+        box-shadow: inset 0 0 0 2px var(--button-bg);
+    }
 `;
 
 const AutocompleteWrapper = styled.div`
     flex-grow: 1;
     height: 40px;
+    line-height: 40px;
+`;
+
+const DescriptionContainer = styled.div`
+    padding: 0 20px 0 0;
+    width: 50%;
 `;
 
 const Description = styled.textarea`
+    -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+    width: 100%;
+    resize: none;
+    height: 100px;
     background-color: rgb(var(--center-channel-bg-rgb));
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border: none;
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 4px;
-    margin-right: 20px;
-    margin-top: 24px;
+    margin: 16px 0 0 0;
     padding: 10px 16px;
+    font-size: 14px;
+
+    &:focus {
+        box-shadow: inset 0 0 0 2px var(--button-bg);
+    }
 `;
 
 const AddDescription = styled.button`
@@ -57,16 +82,23 @@ const AddDescription = styled.button`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     margin-top: 8px;
     text-align: left;
+
+    &:hover {
+        color: rgba(var(--center-channel-color-rgb));
+    }
 `;
 
 const OverrideWebappStyle = createGlobalStyle`
     .custom-textarea.custom-textarea {
+        border: none;
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         height: 40px;
         min-height: 40px;
     }
 
     .custom-textarea.custom-textarea:focus {
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border: none;
+        box-shadow: inset 0 0 0 2px var(--button-bg);
         padding: 0 16px;
     }
 `;
@@ -98,22 +130,34 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
         <AddDescription
             onClick={() => setDescriptionPressed(true)}
         >
-            <i className='icon-plus'/>
+            <i className='icon-plus icon-12 icon--no-spacing mr-1'/>
             {'Add Optional Description'}
+        </AddDescription>
+    );
+
+    let removeDescriptionBox = (
+        <AddDescription
+            onClick={() => setDescriptionPressed(false)}
+        >
+            <i className='icon-trash-can-outline icon-12 icon--no-spacing mr-1'/>
+            {'Remove Optional Description'}
         </AddDescription>
     );
 
     if (description || descriptionPressed) {
         descriptionBox = (
-            <Description
-                value={description}
-                onBlur={submit}
-                autoFocus={descriptionPressed}
-                placeholder={'Description'}
-                onChange={(e) => {
-                    setDescription(e.target.value);
-                }}
-            />
+            <React.Fragment>
+                <Description
+                    value={description}
+                    onBlur={submit}
+                    autoFocus={descriptionPressed}
+                    placeholder={'Description'}
+                    onChange={(e) => {
+                        setDescription(e.target.value);
+                    }}
+                />
+                {removeDescriptionBox}
+            </React.Fragment>
         );
     }
 
@@ -164,7 +208,9 @@ const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
                     />
                 </AutocompleteWrapper>
             </StepLine>
-            {descriptionBox}
+            <DescriptionContainer>
+                {descriptionBox}
+            </DescriptionContainer>
         </Container>
     );
 };

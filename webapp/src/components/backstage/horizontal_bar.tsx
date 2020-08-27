@@ -22,7 +22,8 @@ export const Line = styled.hr`
 
 const Children = styled.div`
     flex-shrink: 0;
-    margin-right: 10px;
+    display: flex;
+    align-items: center;
 `;
 
 const HorizontalBar: FC<HorizontalBarProps> = (props: HorizontalBarProps) => {

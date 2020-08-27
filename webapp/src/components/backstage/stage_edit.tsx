@@ -15,18 +15,11 @@ import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import {ChecklistItemDetailsEdit} from 'src/components/checklist_item';
 
+import {TertiaryButton} from 'src/components/assets/buttons';
+
 import CollapsibleSection from './collapsible_section';
 import StepEdit from './step_edit';
 import DragHandle from './drag_handle';
-
-const NewStep = styled.button`
-    display: block;
-    border: none;
-    background: none;
-    color: rgb(var(--button-bg-rgb));
-    margin-top: 8px;
-    margin-left: 25px;
-`;
 
 const DragPlaceholderText = styled.div`
     border: 2px dashed rgb(var(--button-bg-rgb));
@@ -110,6 +103,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             >
                                 {(draggableProvided: DraggableProvided) => (
                                     <DragHandle
+                                        task={true}
                                         draggableProvided={draggableProvided}
                                         onDelete={() => onRemoveChecklistItem(idx)}
                                     >
@@ -134,12 +128,13 @@ export const StageEditor = (props: Props): React.ReactElement => {
                     </div>
                 )}
             </Droppable>
-            <NewStep
+            <TertiaryButton
+                className='mt-3'
                 onClick={handleAddChecklistItem}
             >
                 <i className='icon-plus'/>
                 {'New Step'}
-            </NewStep>
+            </TertiaryButton>
         </CollapsibleSection>
     );
 };

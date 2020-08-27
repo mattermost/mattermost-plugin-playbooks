@@ -258,9 +258,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             {
                 props.checklistItem.command !== '' &&
                 <div className={'checklist-command-container'}>
-                    <div className={'command'}>
-                        {props.checklistItem.command}
-                    </div>
                     <div
                         className={classNames('run', {running})}
                         onClick={() => {
@@ -271,6 +268,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         }}
                     >
                         {'(Run)'}
+                    </div>
+                    <div className={'command'}>
+                        {props.checklistItem.command}
                     </div>
                     {running && <Spinner/>}
                 </div>
@@ -284,7 +284,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     enableEdit={true}
                     getUsers={fetchUsers}
                     onSelectedChange={onAssigneeChange}
-                    withoutProfilePic={true}
                     selfIsFirstOption={true}
                     customControl={ControlComponent}
                     controlledOpenToggle={profileSelectorToggle}

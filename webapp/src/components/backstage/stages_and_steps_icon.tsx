@@ -1,22 +1,23 @@
 import React, {FC} from 'react';
 import styled from 'styled-components';
 
-const BlueBox = styled.div`
-    background-color: rgb(var(--button-bg-rgb));
-    width: 32px;
-    height: 32px;
+const StagesAndStepsBox = styled.div`
+    width: 40px;
+    height: 40px;
     border-radius: 4px;
-    display: inline-block;
-    color: rgb(var(--sidebar-text-rgb));
-    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--button-bg);
+    background: transparent;
+    margin: 0 8px 0 0;
     text-align: center;
-    padding-top: 4px;
 `;
 
 const StagesAndStepsIcon: FC = () => (
-    <BlueBox>
-        <i className='fa fa-location-arrow'/>
-    </BlueBox>
+    <StagesAndStepsBox>
+        <i className='icon-20 icon-check-circle-outline'/>
+    </StagesAndStepsBox>
 );
 
 export default StagesAndStepsIcon;
