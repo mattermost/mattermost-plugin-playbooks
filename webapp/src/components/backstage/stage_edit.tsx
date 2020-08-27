@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import {
     Draggable,
     Droppable,
@@ -12,8 +12,6 @@ import {
 import styled from 'styled-components';
 
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-
-import {ChecklistItemDetailsEdit} from 'src/components/checklist_item';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 
