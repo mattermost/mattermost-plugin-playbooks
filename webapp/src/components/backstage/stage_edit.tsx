@@ -103,7 +103,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             >
                                 {(draggableProvided: DraggableProvided) => (
                                     <DragHandle
-                                        task={true}
+                                        step={true}
                                         draggableProvided={draggableProvided}
                                         onDelete={() => onRemoveChecklistItem(idx)}
                                     >

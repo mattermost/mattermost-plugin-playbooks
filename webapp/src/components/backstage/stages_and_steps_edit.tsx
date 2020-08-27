@@ -164,7 +164,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                             >
                                 {(draggableProvided: DraggableProvided) => (
                                     <DragHandle
-                                        task={false}
+                                        step={false}
                                         draggableProvided={draggableProvided}
                                         onDelete={() => handleDeletePressed(checklistIndex)}
                                     >

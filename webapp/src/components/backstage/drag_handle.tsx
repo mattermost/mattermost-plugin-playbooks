@@ -11,7 +11,7 @@ const HandleContainer = styled.div`
     align-items: flex-start;
     margin: 24px 0 0;
 
-    &.HandleContainer--Task {
+    &.HandleContainer--Step {
         margin: 16px -32px 0;
     }
 `;
@@ -44,7 +44,7 @@ const Content = styled.div`
 `;
 
 export interface DragHandleProps {
-    task: boolean;
+    step: boolean;
     children: React.ReactNode;
     draggableProvided: DraggableProvided;
     onDelete: () => void
@@ -55,7 +55,7 @@ const DragHandle: FC<DragHandleProps> = (props: DragHandleProps) => {
 
     return (
         <HandleContainer
-            className={props.task ? 'HandleContainer--Task' : ''}
+            className={props.step ? 'HandleContainer--Step' : ''}
             ref={props.draggableProvided.innerRef}
             {...props.draggableProvided.draggableProps}
             onMouseOver={() => setHover(true)}
