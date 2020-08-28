@@ -1,6 +1,8 @@
 package sqlstore
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -124,39 +126,42 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 
-				if _, err := e.Exec(`
-					CREATE INDEX IR_Incident_TeamID ON IR_Incident (TeamID);
-				`); err != nil {
+				// 'IF NOT EXISTS' syntax is not supported in 9.4, so we need
+				// this workaround to make the migration idempotent
+				createIndex := func(indexName, tableName, columns string) string {
+					return fmt.Sprintf(`
+						DO
+						$$
+						BEGIN
+							IF to_regclass('%s') IS NULL THEN
+								CREATE INDEX %s ON %s (%s);
+							END IF;
+						END
+						$$;
+					`, indexName, indexName, tableName, columns)
+				}
+
+				if _, err := e.Exec(createIndex("IR_Incident_TeamID", "IR_Incident", "TeamID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID")
 				}
 
-				if _, err := e.Exec(`
-					CREATE INDEX IR_Incident_TeamID_CommanderUserID ON IR_Incident (TeamID, CommanderUserID);
-				`); err != nil {
+				if _, err := e.Exec(createIndex("IR_Incident_TeamID_CommanderUserID", "IR_Incident", "TeamID, CommanderUserID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID_CommanderUserID")
 				}
 
-				if _, err := e.Exec(`
-					CREATE INDEX IR_Incident_ChannelID ON IR_Incident (ChannelID);
-				`); err != nil {
+				if _, err := e.Exec(createIndex("IR_Incident_ChannelID", "IR_Incident", "ChannelID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_ChannelID")
 				}
 
-				if _, err := e.Exec(`
-					CREATE INDEX IR_Playbook_TeamID ON IR_Playbook(TeamID);
-				`); err != nil {
+				if _, err := e.Exec(createIndex("IR_Playbook_TeamID", "IR_Playbook", "TeamID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Playbook_TeamID")
 				}
 
-				if _, err := e.Exec(`
-					CREATE INDEX IR_PlaybookMember_PlaybookID ON IR_PlaybookMember(PlaybookID);
-				`); err != nil {
+				if _, err := e.Exec(createIndex("IR_PlaybookMember_PlaybookID", "IR_PlaybookMember", "PlaybookID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_PlaybookID")
 				}
 
-				if _, err := e.Exec(`
-					CREATE INDEX IR_PlaybookMember_MemberID ON IR_PlaybookMember(MemberID);
-				`); err != nil {
+				if _, err := e.Exec(createIndex("IR_PlaybookMember_MemberID", "IR_PlaybookMember", "MemberID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_MemberID ")
 				}
 			}
