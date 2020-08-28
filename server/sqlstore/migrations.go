@@ -18,9 +18,9 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.1.0"),
 		migrationFunc: func(e execer) error {
 			if _, err := e.Exec(`
-				CREATE TABLE IR_System (
-					Key VARCHAR(64) PRIMARY KEY,
-					Value VARCHAR(1024) NULL
+				CREATE TABLE IF NOT EXISTS IR_System (
+					SKey VARCHAR(64) PRIMARY KEY,
+					SValue VARCHAR(1024) NULL
 				);
 			`); err != nil {
 				return errors.Wrapf(err, "failed creating table IR_System")

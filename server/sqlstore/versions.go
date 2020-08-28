@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
@@ -31,9 +32,9 @@ func (sqlStore *SQLStore) GetCurrentVersion() (semver.Version, error) {
 	}
 
 	versionSelect := builder.
-		Select("Value").
+		Select("SValue").
 		From("IR_System").
-		Where(sq.Eq{"Key": "DatabaseVersion"})
+		Where(sq.Eq{"SKey": "DatabaseVersion"})
 
 	var versionString string
 	err = sqlStore.getBuilder(sqlStore.db, &versionString, versionSelect)
@@ -62,11 +63,33 @@ func (sqlStore *SQLStore) SetCurrentVersion(tx *sqlx.Tx, currentVersion semver.V
 
 	versionUpdate := builder.
 		Update("IR_System").
-		Set("Value", currentVersion.String()).
-		Where(sq.Eq{"Key": "DatabaseVersion"})
+		Set("SValue", currentVersion.String()).
+		Where(sq.Eq{"SKey": "DatabaseVersion"})
 
-	if err := sqlStore.execBuilder(tx, versionUpdate); err != nil {
+	fmt.Println(versionUpdate.ToSql())
+
+	sqlString, args, err := versionUpdate.ToSql()
+	if err != nil {
+		return errors.Wrap(err, "failed to build sql")
+	}
+
+	result, err := sqlStore.exec(tx, sqlString, args...)
+	if err != nil {
 		return errors.Wrap(err, "failed to execute the Update query")
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected > 0 {
+		return nil
+	}
+
+	versionInsert := builder.
+		Insert("IR_System").
+		Columns("SKey", "SValue").
+		Values("DatabaseVersion", currentVersion.String())
+
+	if err := sqlStore.execBuilder(tx, versionInsert); err != nil {
+		return errors.Wrap(err, "failed to execute the Insert query")
 	}
 
 	return nil
