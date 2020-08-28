@@ -1,11 +1,11 @@
 package sqlstore
 
 import (
-	"database/sql"
 	"encoding/json"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
@@ -61,7 +61,7 @@ type oldPlaybookIndex struct {
 	PlaybookIDs []string `json:"playbook_ids"`
 }
 
-func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
+func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI pluginkvstore.KVAPI) error {
 	// Get old playbooks
 	var playbookIndex oldPlaybookIndex
 	if err := kvAPI.Get("v2_playbookindex", &playbookIndex); err != nil {
@@ -216,18 +216,6 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 		)
 	}
 
-	tx, err := store.db.Beginx()
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
-	}
-
-	defer func() {
-		cerr := tx.Rollback()
-		if err == nil && cerr != sql.ErrTxDone {
-			err = cerr
-		}
-	}()
-
 	if len(playbooks) > 0 {
 		if err := store.execBuilder(tx, playbookInsert); err != nil {
 			return errors.Wrapf(err, "failed inserting data into Playbook table")
@@ -243,11 +231,6 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 			return errors.Wrapf(err, "failed inserting data into Incident table")
 		}
 	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrapf(err, "could not commit transaction")
-	}
-
 	return nil
 }
 
