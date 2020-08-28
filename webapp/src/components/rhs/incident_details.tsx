@@ -209,7 +209,6 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                 enableEdit={true}
                                 getUsers={fetchUsers}
                                 onSelectedChange={onSelectedProfileChange}
-                                withoutProfilePic={true}
                                 selfIsFirstOption={true}
                             />
                         </div>

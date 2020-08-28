@@ -54,14 +54,24 @@ const BackstageContainer = styled.div`
     height: 100%;
 `;
 
-export const BackstageNavbarBackIcon = styled.i`
-    font-size: 18px;
+export const BackstageNavbarIcon = styled.button`
+    border: none;
+    outline: none;
+    background: transparent;
+    border-radius: 4px;
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    color: var(--center-channel-color-56);
 
     &:hover {
+        background: var(--button-bg-08);
         text-decoration: unset;
         color: var(--button-bg);
-        fill: var(--button-bg);
     }
 `;
 
@@ -69,7 +79,7 @@ export const BackstageNavbar = styled.div`
     display: flex;
     align-items: center;
     height: 80px;
-    padding: 24px 30px 24px 30px;
+    padding: 20px 32px;
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
     font-family: 'compass-icons';
@@ -82,6 +92,7 @@ export const BackstageNavbar = styled.div`
 
 const BackstageTitlebarItem = styled(NavLink)`
     && {
+        font-size: 16px;
         cursor: pointer;
         color: var(--center-channel-color);
         fill: var(--center-channel-color);
@@ -140,29 +151,37 @@ const Backstage: FC = () => {
             <Switch>
                 <Route path={`${match.url}/playbooks/*`}/>
                 <Route>
-                    <BackstageNavbar>
-                        <BackstageNavbarBackIcon
-                            className='icon-arrow-back-ios back-icon'
+                    <BackstageNavbar className='flex justify-content-between'>
+                        <div className='d-flex items-center'>
+                            <BackstageNavbarIcon
+                                className='icon-arrow-left back-icon'
+                                onClick={goToMattermost}
+                            />
+                            <BackstageTitlebarItem
+                                to={`${match.url}/playbooks`}
+                                activeClassName={'active'}
+                                data-testid='playbooksLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <PlaybookIcon/>
+                                </span>
+                                {'Playbooks'}
+                            </BackstageTitlebarItem>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/incidents`}
+                                activeClassName={'active'}
+                                data-testid='incidentsLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <IncidentIcon/>
+                                </span>
+                                {'Incidents'}
+                            </BackstageTitlebarItem>
+                        </div>
+                        <BackstageNavbarIcon
+                            className='icon-close close-icon'
                             onClick={goToMattermost}
                         />
-                        <BackstageTitlebarItem
-                            to={`${match.url}/incidents`}
-                            activeClassName={'active'}
-                            data-testid='incidentsLHSButton'
-                        >
-                            <IncidentIcon/>
-                            <i className='mr-2'/>
-                            {'Incidents'}
-                        </BackstageTitlebarItem>
-                        <BackstageTitlebarItem
-                            to={`${match.url}/playbooks`}
-                            activeClassName={'active'}
-                            data-testid='playbooksLHSButton'
-                        >
-                            <PlaybookIcon/>
-                            <i className='mr-2'/>
-                            {'Playbooks'}
-                        </BackstageTitlebarItem>
                     </BackstageNavbar>
                 </Route>
             </Switch>

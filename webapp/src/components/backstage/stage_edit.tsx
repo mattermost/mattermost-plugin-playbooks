@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import {
     Draggable,
     Droppable,
@@ -13,20 +13,11 @@ import styled from 'styled-components';
 
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
-import {ChecklistItemDetailsEdit} from 'src/components/checklist_item';
+import {TertiaryButton} from 'src/components/assets/buttons';
 
 import CollapsibleSection from './collapsible_section';
 import StepEdit from './step_edit';
 import DragHandle from './drag_handle';
-
-const NewStep = styled.button`
-    display: block;
-    border: none;
-    background: none;
-    color: rgb(var(--button-bg-rgb));
-    margin-top: 8px;
-    margin-left: 25px;
-`;
 
 const DragPlaceholderText = styled.div`
     border: 2px dashed rgb(var(--button-bg-rgb));
@@ -110,6 +101,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             >
                                 {(draggableProvided: DraggableProvided) => (
                                     <DragHandle
+                                        step={true}
                                         draggableProvided={draggableProvided}
                                         onDelete={() => onRemoveChecklistItem(idx)}
                                     >
@@ -127,19 +119,20 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             <DragPlaceholderText
                                 onClick={handleAddChecklistItem}
                             >
-                                {'Drag and drop an existing step or click to create a new step.'}
+                                {'Drag and drop an existing task or click to create a new task.'}
                             </DragPlaceholderText>
                         )}
                         {droppableProvided.placeholder}
                     </div>
                 )}
             </Droppable>
-            <NewStep
+            <TertiaryButton
+                className='mt-3'
                 onClick={handleAddChecklistItem}
             >
                 <i className='icon-plus'/>
-                {'New Step'}
-            </NewStep>
+                {'New Task'}
+            </TertiaryButton>
         </CollapsibleSection>
     );
 };

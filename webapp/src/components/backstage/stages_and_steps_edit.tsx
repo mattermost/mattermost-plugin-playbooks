@@ -26,10 +26,16 @@ const NewStage = styled.button`
     border: none;
     background: none;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    padding: 12px 20px;
+    margin: 0 0 0 20px;
+
+    &:hover {
+        color: var(--center-channel-color);
+    }
 `;
 
 const NewStageContainer = styled.div`
-    margin: 20px 0;
+    margin: 12px 32px 0 0;
 `;
 
 interface Props {
@@ -158,6 +164,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                             >
                                 {(draggableProvided: DraggableProvided) => (
                                     <DragHandle
+                                        step={false}
                                         draggableProvided={draggableProvided}
                                         onDelete={() => handleDeletePressed(checklistIndex)}
                                     >
@@ -181,7 +188,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                     <NewStage
                         onClick={onAddChecklist}
                     >
-                        <i className='icon-plus'/>
+                        <i className='icon-plus icon-16'/>
                         {'New Stage'}
                     </NewStage>
                 </HorizontalBar>

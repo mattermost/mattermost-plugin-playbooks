@@ -7,7 +7,7 @@
 // ***************************************************************
 
 /*
- * This test spec includes tests for the Incidents & Playbooks backstage
+ * This test spec includes tests for the Playbooks & Incidents backstage
  */
 
 describe('Backstage', () => {
@@ -32,9 +32,9 @@ describe('Backstage', () => {
         cy.openIncidentBackstage();
     });
 
-    it('Opens incident backstage by default with "Incidents & Playbooks" button in main menu', () => {
+    it('Opens playbook backstage by default with "Playbooks & Incidents" button in main menu', () => {
         // * Verify that when backstage loads, the heading is visible and contains "Incident"
-        cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
+        cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
     });
 
     it('Opens playbooks backstage with "Playbooks" LHS button', () => {
