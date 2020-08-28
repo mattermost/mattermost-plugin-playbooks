@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -115,10 +116,13 @@ func (sqlStore *SQLStore) doesTableExist(tableName string) (bool, error) {
 			Where(sq.Eq{"TABLE_NAME": tableName})
 
 	case model.DATABASE_DRIVER_POSTGRES:
+		// In postgres, table names are automatically lowercased in queries
+		// (if not wrapped between double quotes), but we're treating the table
+		// name as a value here, so we need to explicitly lower case it
 		query = builder.PlaceholderFormat(sq.Dollar).
 			Select("count(relname)").
 			From("pg_class").
-			Where(sq.Eq{"relname": tableName})
+			Where(sq.Eq{"relname": strings.ToLower(tableName)})
 	default:
 		return false, errors.Errorf("driver %s not supported", sqlStore.db.DriverName())
 	}
