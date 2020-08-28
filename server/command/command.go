@@ -122,7 +122,7 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	playbooks, err := r.playbookService.GetPlaybooksForTeam(r.args.TeamId, playbook.Options{Sort: playbook.Title, Direction: playbook.Asc})
+	playbooks, err := r.playbookService.GetPlaybooksForTeam(r.args.TeamId, playbook.Options{Sort: playbook.SortByTitle, Direction: playbook.OrderAsc})
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return

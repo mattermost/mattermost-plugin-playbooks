@@ -42,7 +42,7 @@ type builder interface {
 //
 // Use this to simplify querying for a single row or column. Dest may be a pointer to a simple
 // type, or a struct with fields to be populated from the returned columns.
-func (sqlStore *SQLStore) getBuilder(dest interface{}, b builder) error {
+func (sqlStore *SQLStore) getBuilder(q sqlx.Queryer, dest interface{}, b builder) error {
 	sqlString, args, err := b.ToSql()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sql")
@@ -50,14 +50,14 @@ func (sqlStore *SQLStore) getBuilder(dest interface{}, b builder) error {
 
 	sqlString = sqlStore.db.Rebind(sqlString)
 
-	return sqlx.Get(sqlStore.db, dest, sqlString, args...)
+	return sqlx.Get(q, dest, sqlString, args...)
 }
 
 // selectBuilder queries for one or more rows, building the sql, and writing the result into dest.
 //
 // Use this to simplify querying for multiple rows (and possibly columns). Dest may be a slice of
 // a simple, or a slice of a struct with fields to be populated from the returned columns.
-func (sqlStore *SQLStore) selectBuilder(dest interface{}, b builder) error {
+func (sqlStore *SQLStore) selectBuilder(q sqlx.Queryer, dest interface{}, b builder) error {
 	sqlString, args, err := b.ToSql()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sql")
@@ -65,17 +65,25 @@ func (sqlStore *SQLStore) selectBuilder(dest interface{}, b builder) error {
 
 	sqlString = sqlStore.db.Rebind(sqlString)
 
-	return sqlx.Select(sqlStore.db, dest, sqlString, args...)
+	return sqlx.Select(q, dest, sqlString, args...)
+}
+
+// execer is an interface describing a resource that can execute write queries.
+//
+// It allows the use of *sqlx.Db and *sqlx.Tx.
+type execer interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	DriverName() string
 }
 
 // exec executes the given query using positional arguments, automatically rebinding for the db.
-func (sqlStore *SQLStore) exec(sqlString string, args ...interface{}) (sql.Result, error) {
+func (sqlStore *SQLStore) exec(e execer, sqlString string, args ...interface{}) (sql.Result, error) {
 	sqlString = sqlStore.db.Rebind(sqlString)
-	return sqlStore.db.Exec(sqlString, args...)
+	return e.Exec(sqlString, args...)
 }
 
 // exec executes the given query, building the necessary sql.
-func (sqlStore *SQLStore) execBuilder(b builder) error {
+func (sqlStore *SQLStore) execBuilder(e execer, b builder) error {
 	sqlString, args, err := b.ToSql()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sql")
@@ -83,7 +91,7 @@ func (sqlStore *SQLStore) execBuilder(b builder) error {
 
 	// The linter was complaining that we never used the sql.Result. So doing this for now.
 	// Return the (sql.Result, error) if we ever end up using it.
-	_, err = sqlStore.exec(sqlString, args...)
+	_, err = sqlStore.exec(e, sqlString, args...)
 
 	return err
 }

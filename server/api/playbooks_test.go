@@ -659,14 +659,14 @@ func TestSortingPlaybooks(t *testing.T) {
 			sortField:     "test",
 			sortDirection: "",
 			expectedList:  nil,
-			expectedErr:   errors.New("invalid sort field test"),
+			expectedErr:   errors.New("bad parameter 'sort' (test)"),
 		},
 		{
 			testName:      "get playbooks with invalid sort direction",
 			sortField:     "",
 			sortDirection: "test",
 			expectedList:  nil,
-			expectedErr:   errors.New("invalid sort direction test"),
+			expectedErr:   errors.New("bad parameter 'direction' (test)"),
 		},
 		{
 			testName:      "get playbooks with no sort fields",
