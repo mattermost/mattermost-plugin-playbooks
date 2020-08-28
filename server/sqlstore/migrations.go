@@ -9,16 +9,25 @@ import (
 type Migration struct {
 	fromVersion   semver.Version
 	toVersion     semver.Version
-	migrationFunc func(*SQLStore) error
+	migrationFunc func(execer) error
 }
 
 var migrations = []Migration{
 	{
 		fromVersion: semver.MustParse("0.0.0"),
 		toVersion:   semver.MustParse("0.1.0"),
-		migrationFunc: func(sqlStore *SQLStore) error {
-			if sqlStore.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if _, err := sqlStore.db.Exec(`
+		migrationFunc: func(e execer) error {
+			if _, err := e.Exec(`
+				CREATE TABLE IR_System (
+					Key VARCHAR(64) PRIMARY KEY,
+					Value VARCHAR(1024) NULL
+				);
+			`); err != nil {
+				return errors.Wrapf(err, "failed creating table IR_System")
+			}
+
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID VARCHAR(26) PRIMARY KEY,
 						Name VARCHAR(26) NOT NULL,
@@ -41,7 +50,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_Incident")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Playbook (
 						ID VARCHAR(26) PRIMARY KEY,
 						Title VARCHAR(1024) NOT NULL,
@@ -59,7 +68,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_Playbook")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID),
 						MemberID VARCHAR(26) NOT NULL,
@@ -70,7 +79,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 			} else {
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID TEXT PRIMARY KEY,
 						Name TEXT NOT NULL,
@@ -90,7 +99,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_Incident")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Playbook (
 						ID TEXT PRIMARY KEY,
 						Title TEXT NOT NULL,
@@ -106,7 +115,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_Playbook")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
 						MemberID TEXT NOT NULL
@@ -115,37 +124,37 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE INDEX IR_Incident_TeamID ON IR_Incident (TeamID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE INDEX IR_Incident_TeamID_CommanderUserID ON IR_Incident (TeamID, CommanderUserID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID_CommanderUserID")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE INDEX IR_Incident_ChannelID ON IR_Incident (ChannelID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_ChannelID")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE INDEX IR_Playbook_TeamID ON IR_Playbook(TeamID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Playbook_TeamID")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE INDEX IR_PlaybookMember_PlaybookID ON IR_PlaybookMember(PlaybookID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_PlaybookID")
 				}
 
-				if _, err := sqlStore.db.Exec(`
+				if _, err := e.Exec(`
 					CREATE INDEX IR_PlaybookMember_MemberID ON IR_PlaybookMember(MemberID);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_MemberID ")

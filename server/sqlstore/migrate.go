@@ -18,7 +18,7 @@ func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, originalSch
 			return errors.Wrapf(err, "error executing migration from version %s to version %s", migration.fromVersion.String(), migration.toVersion.String())
 		}
 
-		if err := SetCurrentVersion(pluginAPIClient, migration.toVersion); err != nil {
+		if err := sqlStore.SetCurrentVersion(tx, migration.toVersion); err != nil {
 			return errors.Wrapf(err, "migration succeeded, but failed to set the current version to %s. Database is now in an inconsistent state", migration.toVersion.String())
 		}
 
