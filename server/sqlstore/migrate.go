@@ -1,6 +1,8 @@
 package sqlstore
 
 import (
+	"database/sql"
+
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 
@@ -14,7 +16,18 @@ func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, originalSch
 			continue
 		}
 
-		if err := migration.migrationFunc(sqlStore); err != nil {
+		tx, err := sqlStore.db.Beginx()
+		if err != nil {
+			return errors.Wrap(err, "could not begin transaction")
+		}
+		defer func() {
+			cerr := tx.Rollback()
+			if err == nil && cerr != sql.ErrTxDone {
+				err = cerr
+			}
+		}()
+
+		if err := migration.migrationFunc(tx); err != nil {
 			return errors.Wrapf(err, "error executing migration from version %s to version %s", migration.fromVersion.String(), migration.toVersion.String())
 		}
 
@@ -24,9 +37,13 @@ func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, originalSch
 
 		// TODO: Remove when all customers are in 0.1.0
 		if migration.toVersion.EQ(semver.MustParse("0.1.0")) {
-			if err := DataMigration(sqlStore, &pluginAPIClient.KV); err != nil {
-				return errors.Wrapf(err, "failed to migrate the data from the KV store to the SQL database")
+			if err := DataMigration(sqlStore, tx, &pluginAPIClient.KV); err != nil {
+				return errors.Wrap(err, "failed to migrate the data from the KV store to the SQL database")
 			}
+		}
+
+		if err := tx.Commit(); err != nil {
+			return errors.Wrap(err, "could not commit transaction")
 		}
 
 		currentSchemaVersion = migration.toVersion
