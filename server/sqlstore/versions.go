@@ -16,6 +16,15 @@ func LatestVersion() semver.Version {
 }
 
 func (sqlStore *SQLStore) GetCurrentVersion() (semver.Version, error) {
+	tableExists, err := sqlStore.doesTableExist("IR_System")
+	if err != nil {
+		return semver.Version{}, errors.Wrap(err, "could not check if table IR_System exists")
+	}
+
+	if !tableExists {
+		return semver.MustParse("0.0.0"), nil
+	}
+
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
 	if sqlStore.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
 		builder = builder.PlaceholderFormat(sq.Dollar)
@@ -27,7 +36,7 @@ func (sqlStore *SQLStore) GetCurrentVersion() (semver.Version, error) {
 		Where(sq.Eq{"Key": "DatabaseVersion"})
 
 	var versionString string
-	err := sqlStore.getBuilder(sqlStore.db, &versionString, versionSelect)
+	err = sqlStore.getBuilder(sqlStore.db, &versionString, versionSelect)
 
 	if err == sql.ErrNoRows {
 		return semver.MustParse("0.0.0"), nil
