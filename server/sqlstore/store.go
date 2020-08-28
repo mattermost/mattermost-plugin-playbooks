@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -98,4 +99,35 @@ func (sqlStore *SQLStore) execBuilder(e execer, b builder) error {
 	_, err = sqlStore.exec(e, sqlString, args...)
 
 	return err
+}
+
+func (sqlStore *SQLStore) doesTableExist(tableName string) (bool, error) {
+	var query sq.SelectBuilder
+
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+
+	switch sqlStore.db.DriverName() {
+	case model.DATABASE_DRIVER_MYSQL:
+		query = builder.
+			Select("count(0)").
+			From("information_Schema.TABLES").
+			Where(sq.Eq{
+				"TABLE_SCHEMA": "DATABASE()",
+				"TABLE_NAME":   tableName,
+			})
+	case model.DATABASE_DRIVER_POSTGRES:
+		query = builder.PlaceholderFormat(sq.Dollar).
+			Select("count(relname)").
+			From("pg_class").
+			Where(sq.Eq{"relname": tableName})
+	default:
+		return false, errors.Errorf("driver %s not supported", sqlStore.db.DriverName())
+	}
+
+	var count int
+	if err := sqlStore.getBuilder(sqlStore.db, &count, query); err != nil {
+		return false, errors.Wrap(err, "failed to check if table exists")
+	}
+
+	return count > 0, nil
 }
