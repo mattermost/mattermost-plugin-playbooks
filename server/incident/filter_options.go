@@ -76,7 +76,6 @@ func IsValidSortBy(sortBy string) bool {
 		SortByCommanderUserID,
 		SortByTeamID,
 		SortByEndAt,
-		SortByStatus,
 		SortByIsActive:
 		return true
 	}
@@ -100,19 +99,17 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 	sort := strings.ToLower(options.Sort)
 	switch sort {
 	case SortByCreateAt, "": // default
-		options.Sort = SortByCreateAt
+		options.Sort = "CreateAt"
 	case SortByID:
-		options.Sort = SortByID
+		options.Sort = "ID"
 	case SortByName:
-		options.Sort = SortByName
+		options.Sort = "Name"
 	case SortByCommanderUserID:
-		options.Sort = SortByCommanderUserID
+		options.Sort = "CommanderUserID"
 	case SortByTeamID:
-		options.Sort = SortByTeamID
+		options.Sort = "TeamID"
 	case SortByEndAt:
-		options.Sort = SortByEndAt
-	case SortByStatus:
-		options.Sort = SortByStatus
+		options.Sort = "EndAt"
 	case SortByIsActive:
 		options.Sort = SortByIsActive
 	default:

@@ -79,13 +79,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 		builder = builder.Where(sq.Like{"Name": fmt.Sprint("%", options.SearchTerm, "%")})
 	}
 
-	if incident.IsValidSortBy(options.Sort) {
-		builder = builder.OrderBy(options.Sort)
-	}
-
-	if incident.IsValidOrderBy(options.Order) {
-		builder = builder.OrderBy(options.Order)
-	}
+	builder = builder.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
 
 	var rawIncidents []sqlIncident
 	if err := s.store.selectBuilder(s.store.db, &rawIncidents, builder); err != nil {
