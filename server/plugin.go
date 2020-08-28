@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
@@ -156,6 +157,7 @@ func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, pluginAPIClient *p
 	defer mutex.Unlock()
 
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+	fmt.Println("VERSION: ", currentSchemaVersion)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get the current schema version")
 	}

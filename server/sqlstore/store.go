@@ -110,11 +110,10 @@ func (sqlStore *SQLStore) doesTableExist(tableName string) (bool, error) {
 	case model.DATABASE_DRIVER_MYSQL:
 		query = builder.
 			Select("count(0)").
-			From("information_Schema.TABLES").
-			Where(sq.Eq{
-				"TABLE_SCHEMA": "DATABASE()",
-				"TABLE_NAME":   tableName,
-			})
+			From("information_schema.TABLES").
+			Where("TABLE_SCHEMA = DATABASE()").
+			Where(sq.Eq{"TABLE_NAME": tableName})
+
 	case model.DATABASE_DRIVER_POSTGRES:
 		query = builder.PlaceholderFormat(sq.Dollar).
 			Select("count(relname)").
