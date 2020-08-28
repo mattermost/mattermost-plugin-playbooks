@@ -41,7 +41,7 @@ describe('incident creation dialog', () => {
         });
     });
 
-    it('cannot create without filling required fields', () => {
+    it('cannot create an incident without filling required fields', () => {
         cy.get('#interactiveDialogModal').within(() => {
             cy.findByText('Incident Details').should('be.visible');
 
