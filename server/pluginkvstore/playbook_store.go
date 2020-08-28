@@ -2,6 +2,7 @@ package pluginkvstore
 
 import (
 	"encoding/json"
+	"sort"
 
 	"github.com/pkg/errors"
 
@@ -162,6 +163,27 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	return playbooks, nil
 }
 
+// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
+func (p *PlaybookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options) ([]playbook.Playbook, error) {
+	playbooks, err := p.GetPlaybooks()
+	if err != nil {
+		return nil, err
+	}
+
+	teamPlaybooks := make([]playbook.Playbook, 0, len(playbooks))
+	for _, playbook := range playbooks {
+		if playbook.TeamID == teamID {
+			teamPlaybooks = append(teamPlaybooks, playbook)
+		}
+	}
+
+	if err := sortPlaybooks(teamPlaybooks, opts); err != nil {
+		return nil, err
+	}
+
+	return teamPlaybooks, nil
+}
+
 // Update updates a playbook
 func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 	if updated.ID == "" {
@@ -193,4 +215,47 @@ func (p *PlaybookStore) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func sortPlaybooks(playbooks []playbook.Playbook, opts playbook.Options) error {
+	var sortDirectionFn func(b bool) bool
+	switch opts.Direction {
+	case playbook.OrderAsc:
+		sortDirectionFn = func(b bool) bool { return !b }
+	case playbook.OrderDesc:
+		sortDirectionFn = func(b bool) bool { return b }
+	default:
+		return errors.Errorf("invalid sort direction %s", opts.Direction)
+	}
+
+	var sortFn func(i, j int) bool
+	switch opts.Sort {
+	case playbook.SortByTitle:
+		sortFn = func(i, j int) bool {
+			return sortDirectionFn(playbooks[i].Title > playbooks[j].Title)
+		}
+	case playbook.SortByStages:
+		sortFn = func(i, j int) bool {
+			return sortDirectionFn(len(playbooks[i].Checklists) > len(playbooks[j].Checklists))
+		}
+	case playbook.SortBySteps:
+		sortFn = func(i, j int) bool {
+			stepsI := getSteps(playbooks[i])
+			stepsJ := getSteps(playbooks[j])
+			return sortDirectionFn(stepsI > stepsJ)
+		}
+	default:
+		return errors.Errorf("invalid sort field %s", opts.Sort)
+	}
+
+	sort.Slice(playbooks, sortFn)
+	return nil
+}
+
+func getSteps(pbook playbook.Playbook) int {
+	steps := 0
+	for _, p := range pbook.Checklists {
+		steps += len(p.Items)
+	}
+	return steps
 }

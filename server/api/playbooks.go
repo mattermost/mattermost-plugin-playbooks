@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -184,7 +185,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	opts, page, perPage, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse playbook options"))
+		HandleError(w, err)
 		return
 	}
 
@@ -257,14 +258,28 @@ func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook
 func parseGetPlaybooksOptions(u *url.URL) (opts playbook.Options, page, perPage int, err error) {
 	params := u.Query()
 
-	sortField := playbook.SortField(params.Get("sort"))
-	if sortField == "" {
-		sortField = playbook.Title
+	var sortField playbook.SortField
+	param := strings.ToLower(params.Get("sort"))
+	switch param {
+	case "title", "":
+		sortField = playbook.SortByTitle
+	case "stages":
+		sortField = playbook.SortByStages
+	case "steps":
+		sortField = playbook.SortBySteps
+	default:
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
 	}
 
-	sortDirection := playbook.SortDirection(params.Get("direction"))
-	if sortDirection == "" {
-		sortDirection = playbook.Asc
+	var sortDirection playbook.SortDirection
+	param = strings.ToLower(params.Get("direction"))
+	switch param {
+	case "asc", "":
+		sortDirection = playbook.OrderAsc
+	case "desc":
+		sortDirection = playbook.OrderDesc
+	default:
+		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
 	}
 
 	pageParam := params.Get("page")

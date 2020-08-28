@@ -829,7 +829,7 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 	return nil
 }
 
-// parseIncidentsFilterOptions is only for parsing. Put validation logic in service.validateOptions.
+// parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.
 func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
 
