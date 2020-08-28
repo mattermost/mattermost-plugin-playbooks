@@ -1,24 +1,40 @@
 package sqlstore
 
 import (
+	"database/sql"
+
+	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 func LatestVersion() semver.Version {
 	return migrations[len(migrations)-1].toVersion
 }
 
-func GetCurrentVersion(pluginAPIClient *pluginapi.Client) (semver.Version, error) {
-	var versionString string
-	if err := pluginAPIClient.KV.Get("DatabaseVersion", &versionString); err != nil {
-		return semver.Version{}, errors.Wrapf(err, "failed retrieveing the DatabaseVersion key from the KVStore")
+func (sqlStore *SQLStore) GetCurrentVersion() (semver.Version, error) {
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+	if sqlStore.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		builder = builder.PlaceholderFormat(sq.Dollar)
 	}
 
-	if versionString == "" {
+	versionSelect := builder.
+		Select("Value").
+		From("IR_System").
+		Where(sq.Eq{"Key": "DatabaseVersion"})
+
+	var versionString string
+	err := sqlStore.getBuilder(sqlStore.db, &versionString, versionSelect)
+
+	if err == sql.ErrNoRows {
 		return semver.MustParse("0.0.0"), nil
+	}
+
+	if err != nil {
+		return semver.Version{}, errors.Wrapf(err, "failed retrieving the DatabaseVersion key from the IR_System table")
 	}
 
 	currentSchemaVersion, err := semver.Parse(versionString)
@@ -29,14 +45,19 @@ func GetCurrentVersion(pluginAPIClient *pluginapi.Client) (semver.Version, error
 	return currentSchemaVersion, nil
 }
 
-func SetCurrentVersion(pluginAPIClient *pluginapi.Client, currentVersion semver.Version) error {
-	wasSet, err := pluginAPIClient.KV.Set("DatabaseVersion", currentVersion.String())
-	if err != nil {
-		return err
+func (sqlStore *SQLStore) SetCurrentVersion(tx *sqlx.Tx, currentVersion semver.Version) error {
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+	if sqlStore.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		builder = builder.PlaceholderFormat(sq.Dollar)
 	}
 
-	if !wasSet {
-		return errors.New("failed to set the current schema version")
+	versionUpdate := builder.
+		Update("IR_System").
+		Set("Value", currentVersion.String()).
+		Where(sq.Eq{"Key": "DatabaseVersion"})
+
+	if err := sqlStore.execBuilder(tx, versionUpdate); err != nil {
+		return errors.Wrap(err, "failed to execute the Update query")
 	}
 
 	return nil

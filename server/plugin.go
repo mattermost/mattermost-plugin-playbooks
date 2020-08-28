@@ -155,7 +155,7 @@ func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, pluginAPIClient *p
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	currentSchemaVersion, err := sqlstore.GetCurrentVersion(pluginAPIClient)
+	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	if err != nil {
 		return errors.Wrapf(err, "failed to get the current schema version")
 	}
