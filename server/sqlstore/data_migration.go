@@ -150,7 +150,7 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 		)
 
 	for _, playbook := range playbooks {
-		checklistsJSON, err := checklistsToJSON(playbook.Checklists)
+		checklistsJSON, err := oldChecklistsToJSON(playbook.Checklists)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert checklists from playbook '%s' to JSON", playbook.ID)
 		}
@@ -204,7 +204,7 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 		)
 
 	for _, incident := range incidents {
-		checklistsJSON, err := checklistsToJSON(incident.Playbook.Checklists)
+		checklistsJSON, err := oldChecklistsToJSON(incident.Playbook.Checklists)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert checklists from incident '%s' to JSON", incident.ID)
 		}
@@ -234,7 +234,7 @@ func DataMigration(store *SQLStore, kvAPI pluginkvstore.KVAPI) error {
 	return nil
 }
 
-func checklistsToJSON(oldChecklists []oldChecklist) ([]byte, error) {
+func oldChecklistsToJSON(oldChecklists []oldChecklist) ([]byte, error) {
 	newChecklists := make([]playbook.Checklist, len(oldChecklists))
 	for i, oldChecklist := range oldChecklists {
 		newItems := make([]playbook.ChecklistItem, len(oldChecklist.Items))
