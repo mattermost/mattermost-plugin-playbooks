@@ -71,7 +71,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 	}
 
 	if options.CommanderID != "" {
-		builder = builder.Where(sq.Eq{"CommanderID": options.CommanderID})
+		builder = builder.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 	}
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
