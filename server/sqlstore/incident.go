@@ -253,6 +253,10 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 
 // GetCommanders returns the commanders of the incidents selected by options
 func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if options.TeamID == "" {
+		return nil, errors.New("team ID should not be empty")
+	}
+
 	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
