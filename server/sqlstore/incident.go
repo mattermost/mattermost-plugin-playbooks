@@ -279,13 +279,15 @@ func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]i
 	}
 
 	var ret []incident.CommanderInfo
+	added := make(map[string]bool)
 	for _, c := range commanders {
 		// TODO: move to permission-checking in the sql call (MM-28008)
-		if options.HasPermissionsTo(c.ChannelID) {
+		if !added[c.CommanderUserID] && options.HasPermissionsTo != nil && options.HasPermissionsTo(c.ChannelID) {
 			ret = append(ret, incident.CommanderInfo{
 				UserID:   c.CommanderUserID,
 				Username: c.Username,
 			})
+			added[c.CommanderUserID] = true
 		}
 	}
 
