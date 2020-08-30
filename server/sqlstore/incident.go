@@ -336,6 +336,12 @@ func min(a, b int) int {
 }
 
 func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
+	for _, checklist := range origIncident.Checklists {
+		if len(checklist.Items) == 0 {
+			return nil, errors.New("checklists with no items are not allowed")
+		}
+	}
+
 	checklistsJSON, err := json.Marshal(origIncident.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
