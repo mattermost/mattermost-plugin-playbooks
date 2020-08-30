@@ -497,47 +497,103 @@ func TestGetIncidents(t *testing.T) {
 }
 
 func TestCreateIncident(t *testing.T) {
-	tRun(t, "Create valid incident", func(t *testing.T, driverName string) {
-		validIncidents := []*incident.Incident{
-			{},
-			NewBuilder().ToIncident(),
-			NewBuilder().WithName("unicode en español").ToIncident(),
-			NewBuilder().WithCreateAt(0).ToIncident(),
-			NewBuilder().WithDeleteAt(model.GetMillis()).ToIncident(),
-			NewBuilder().WithEmptyChecklists(10).ToIncident(),
-			NewBuilder().WithNonEmptyChecklists([]int{10}).ToIncident(),
-			NewBuilder().WithNonEmptyChecklists([]int{1, 2, 3, 4, 5}).ToIncident(),
-		}
-
+	for _, driverName := range driverNames {
 		incidentStore := setupIncidentStore(t, driverName)
 
-		for _, incident := range validIncidents {
-			expectedIncident := *incident
-
-			actualIncident, err := incidentStore.CreateIncident(incident)
-			require.NoError(t, err)
-			require.NotEqual(t, "", actualIncident.ID)
-
-			expectedIncident.ID = actualIncident.ID
-
-			require.Equal(t, &expectedIncident, actualIncident)
+		validIncidents := []struct {
+			Name        string
+			Incident    *incident.Incident
+			ExpectedErr error
+		}{
+			{
+				Name:        "Empty values",
+				Incident:    &incident.Incident{},
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Base incident",
+				Incident:    NewBuilder().ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Name with unicode characters",
+				Incident:    NewBuilder().WithName("valid unicode: ñäåö").ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Created at 0",
+				Incident:    NewBuilder().WithCreateAt(0).ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Deleted incident",
+				Incident:    NewBuilder().WithDeleteAt(model.GetMillis()).ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Ended incident",
+				Incident:    NewBuilder().WithEndAt(model.GetMillis()).ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Inactive incident",
+				Incident:    NewBuilder().WithIsActive(false).ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Incident with one checklist and 10 items",
+				Incident:    NewBuilder().WithChecklists([]int{10}).ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Incident with five checklists with different number of items",
+				Incident:    NewBuilder().WithChecklists([]int{1, 2, 3, 4, 5}).ToIncident(),
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "Incident should not be nil",
+				Incident:    nil,
+				ExpectedErr: errors.New("incident is nil"),
+			},
+			{
+				Name:        "Incident should not have ID set",
+				Incident:    NewBuilder().WithID().ToIncident(),
+				ExpectedErr: errors.New("ID should not be set"),
+			},
+			{
+				Name:        "Incident should not contain checklists with no items",
+				Incident:    NewBuilder().WithChecklists([]int{0}).ToIncident(),
+				ExpectedErr: errors.New("checklists with no items are not allowed"),
+			},
 		}
-	})
 
-	tRun(t, "Create invalid incident", func(t *testing.T, driverName string) {
-		invalidIncidents := []*incident.Incident{
-			nil,
-			NewBuilder().WithID().ToIncident(),
+		for _, test := range validIncidents {
+			t.Run(test.Name, func(t *testing.T) {
+				var expectedIncident incident.Incident
+				if test.Incident != nil {
+					expectedIncident = *test.Incident
+				}
+
+				actualIncident, err := incidentStore.CreateIncident(test.Incident)
+
+				if test.ExpectedErr != nil {
+					require.Error(t, err)
+					require.Equal(t, test.ExpectedErr.Error(), err.Error())
+					require.Nil(t, actualIncident)
+					return
+				}
+
+				require.NoError(t, err)
+				require.True(t, model.IsValidId(actualIncident.ID))
+
+				expectedIncident.ID = actualIncident.ID
+
+				require.Equal(t, &expectedIncident, actualIncident)
+			})
 		}
 
-		incidentStore := setupIncidentStore(t, driverName)
+	}
 
-		for _, incident := range invalidIncidents {
-			createdIncident, err := incidentStore.CreateIncident(incident)
-			require.Nil(t, createdIncident)
-			require.Error(t, err)
-		}
-	})
 }
 
 func TestUpdateIncident(t *testing.T)             {}
@@ -601,12 +657,6 @@ func setupIncidentStore(t *testing.T, driverName string) incident.Store {
 	return NewIncidentStore(NewClient(client), logger, setupSQLStore(t, driverName, logger))
 }
 
-func tRun(t *testing.T, testName string, test func(t *testing.T, driverName string)) {
-	for _, driverName := range driverNames {
-		t.Run(driverName+" - "+testName, func(t *testing.T) { test(t, driverName) })
-	}
-}
-
 ///////////////////////////////////////////////////////
 
 type IncidentBuilder struct {
@@ -668,16 +718,7 @@ func (t *IncidentBuilder) WithDeleteAt(deleteAt int64) *IncidentBuilder {
 	return t
 }
 
-func (t *IncidentBuilder) WithEmptyChecklists(num int) *IncidentBuilder {
-	t.Checklists = make([]playbook.Checklist, num)
-	for i := 0; i < num; i++ {
-		t.Checklists[i] = playbook.Checklist{}
-	}
-
-	return t
-}
-
-func (t *IncidentBuilder) WithNonEmptyChecklists(itemsPerChecklist []int) *IncidentBuilder {
+func (t *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuilder {
 	t.Checklists = make([]playbook.Checklist, len(itemsPerChecklist))
 
 	for i, numItems := range itemsPerChecklist {
