@@ -3,12 +3,12 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
@@ -16,22 +16,48 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/pkg/errors"
+
+	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	team1id      = model.NewId()
-	team2id      = model.NewId()
-	team3id      = model.NewId()
-	commander1id = model.NewId()
-	commander2id = model.NewId()
-	commander3id = model.NewId()
-	commander5id = model.NewId()
+	team1id = model.NewId()
+	team2id = model.NewId()
+	team3id = model.NewId()
+
+	commander1 = incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 1",
+	}
+	commander2 = incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 2",
+	}
+	commander3 = incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 3",
+	}
+	commander4 = incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 4",
+	}
+
+	commanders = []incident.CommanderInfo{commander1, commander2, commander3, commander4}
+
+	channelID01 = model.NewId()
+	channelID02 = model.NewId()
+	channelID03 = model.NewId()
+	channelID04 = model.NewId()
+	channelID05 = model.NewId()
+	channelID06 = model.NewId()
+	channelID07 = model.NewId()
 
 	inc01 = *NewBuilder().
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
+		WithChannelID(channelID01).
 		WithIsActive(true).
-		WithCommanderUserID(commander1id).
+		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithEndAt(440).
@@ -39,8 +65,9 @@ var (
 
 	inc02 = *NewBuilder().
 		WithName("incident 2 - horse staple battery shotgun mouse shotputmouse").
+		WithChannelID(channelID02).
 		WithIsActive(true).
-		WithCommanderUserID(commander2id).
+		WithCommanderUserID(commander2.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(145).
 		WithEndAt(555).
@@ -48,8 +75,9 @@ var (
 
 	inc03 = *NewBuilder().
 		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
+		WithChannelID(channelID03).
 		WithIsActive(false).
-		WithCommanderUserID(commander1id).
+		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithEndAt(666).
@@ -57,8 +85,9 @@ var (
 
 	inc04 = *NewBuilder().
 		WithName("incident 4 - titanic terminator aliens").
+		WithChannelID(channelID04).
 		WithIsActive(false).
-		WithCommanderUserID(commander3id).
+		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(333).
 		WithEndAt(444).
@@ -66,8 +95,9 @@ var (
 
 	inc05 = *NewBuilder().
 		WithName("incident 5 - ubik high castle electric sheep").
+		WithChannelID(channelID05).
 		WithIsActive(true).
-		WithCommanderUserID(commander3id).
+		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(223).
 		WithEndAt(550).
@@ -75,8 +105,9 @@ var (
 
 	inc06 = *NewBuilder().
 		WithName("incident 6 - ziggurat!").
+		WithChannelID(channelID06).
 		WithIsActive(true).
-		WithCommanderUserID(commander5id).
+		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(555).
 		WithEndAt(777).
@@ -84,8 +115,9 @@ var (
 
 	inc07 = *NewBuilder().
 		WithName("incident 7 - Ziggürat!").
+		WithChannelID(channelID07).
 		WithIsActive(true).
-		WithCommanderUserID(commander5id).
+		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(556).
 		WithEndAt(778).
@@ -312,7 +344,7 @@ func TestGetIncidents(t *testing.T) {
 			Name: "active, commander3, asc",
 			Options: incident.HeaderFilterOptions{
 				Status:      incident.Ongoing,
-				CommanderID: commander3id,
+				CommanderID: commander3.UserID,
 				Order:       "asc",
 			},
 			Want: incident.GetIncidentsResults{
@@ -326,7 +358,7 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "commander1, asc, by end_at",
 			Options: incident.HeaderFilterOptions{
-				CommanderID: commander1id,
+				CommanderID: commander1.UserID,
 				Order:       "asc",
 				Sort:        "end_at",
 			},
@@ -354,7 +386,7 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "search for aliens & commander3",
 			Options: incident.HeaderFilterOptions{
-				CommanderID: commander3id,
+				CommanderID: commander3.UserID,
 				SearchTerm:  "aliens",
 			},
 			Want: incident.GetIncidentsResults{
@@ -453,7 +485,8 @@ func TestGetIncidents(t *testing.T) {
 	}
 
 	for _, driverName := range driverNames {
-		incidentStore := setupIncidentStore(t, driverName)
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
 
 		t.Run("zero incidents", func(t *testing.T) {
 			result, err := incidentStore.GetIncidents(incident.HeaderFilterOptions{
@@ -477,7 +510,6 @@ func TestGetIncidents(t *testing.T) {
 				if test.ExpectedErr != nil {
 					require.Nil(t, result)
 					require.Error(t, err)
-					fmt.Println(err)
 					require.Equal(t, test.ExpectedErr.Error(), err.Error())
 
 					return
@@ -498,7 +530,8 @@ func TestGetIncidents(t *testing.T) {
 
 func TestCreateIncident(t *testing.T) {
 	for _, driverName := range driverNames {
-		incidentStore := setupIncidentStore(t, driverName)
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
 
 		validIncidents := []struct {
 			Name        string
@@ -600,8 +633,167 @@ func TestUpdateIncident(t *testing.T)             {}
 func TestGetIncident(t *testing.T)                {}
 func TestGetIncidentIDForChannel(t *testing.T)    {}
 func TestGetAllIncidentMembersCount(t *testing.T) {}
-func TestGetCommanders(t *testing.T)              {}
-func TestNukeDB(t *testing.T)                     {}
+
+func TestGetCommanders(t *testing.T) {
+	alwaysTrue := func(s string) bool { return true }
+	alwaysFalse := func(s string) bool { return false }
+
+	sortCommanders := func(commanders []incident.CommanderInfo) {
+		sort.Slice(commanders, func(i, j int) bool { return commanders[i].Username < commanders[j].Username })
+	}
+
+	cases := []struct {
+		Name        string
+		Options     incident.HeaderFilterOptions
+		Expected    []incident.CommanderInfo
+		ExpectedErr error
+	}{
+		{
+			Name: "permissions to all - team 1",
+			Options: incident.HeaderFilterOptions{
+				TeamID:           team1id,
+				HasPermissionsTo: alwaysTrue,
+			},
+			Expected:    []incident.CommanderInfo{commander1, commander2},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "permissions to all - team 2",
+			Options: incident.HeaderFilterOptions{
+				TeamID:           team2id,
+				HasPermissionsTo: alwaysTrue,
+			},
+			Expected:    []incident.CommanderInfo{commander3},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "permissions to all - team 3",
+			Options: incident.HeaderFilterOptions{
+				TeamID:           team3id,
+				HasPermissionsTo: alwaysTrue,
+			},
+			Expected:    []incident.CommanderInfo{commander4},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "permissions to none - team 1",
+			Options: incident.HeaderFilterOptions{
+				TeamID:           team1id,
+				HasPermissionsTo: alwaysFalse,
+			},
+			Expected:    nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "permissions to none - team 2",
+			Options: incident.HeaderFilterOptions{
+				TeamID:           team2id,
+				HasPermissionsTo: alwaysFalse,
+			},
+			Expected:    nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "permissions to none - team 3",
+			Options: incident.HeaderFilterOptions{
+				TeamID:           team3id,
+				HasPermissionsTo: alwaysFalse,
+			},
+			Expected:    nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "nil permissions - team 1",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team1id,
+			},
+			Expected:    nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "nil permissions - team 2",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team2id,
+			},
+			Expected:    nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "nil permissions - team 3",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team3id,
+			},
+			Expected:    nil,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "permissions to some - team 1",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team1id,
+				HasPermissionsTo: func(channelID string) bool {
+					return channelID == channelID01
+				},
+			},
+			Expected:    []incident.CommanderInfo{commander1},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "no team",
+			Options:     incident.HeaderFilterOptions{},
+			Expected:    nil,
+			ExpectedErr: errors.New("team ID should not be empty"),
+		},
+	}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		setupServerSchema(t, db)
+
+		incidentStore := setupIncidentStore(t, db)
+
+		queryBuilder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+		if driverName == model.DATABASE_DRIVER_POSTGRES {
+			queryBuilder = queryBuilder.PlaceholderFormat(sq.Dollar)
+		}
+
+		insertCommander := queryBuilder.Insert("Users").Columns("ID", "Username")
+		for _, commander := range commanders {
+			insertCommander = insertCommander.Values(commander.UserID, commander.Username)
+		}
+		query, args, err := insertCommander.ToSql()
+		require.NoError(t, err)
+		_, err = db.Exec(query, args...)
+		require.NoError(t, err)
+
+		for _, inc := range incidents {
+			_, err := incidentStore.CreateIncident(&inc)
+			require.NoError(t, err)
+		}
+
+		for _, test := range cases {
+			t.Run(test.Name, func(t *testing.T) {
+				actual, err := incidentStore.GetCommanders(test.Options)
+
+				if test.ExpectedErr != nil {
+					require.NotNil(t, err)
+					require.Equal(t, test.ExpectedErr.Error(), err.Error())
+					require.Nil(t, actual)
+					return
+				}
+
+				require.NoError(t, err)
+
+				sortCommanders(test.Expected)
+				sortCommanders(actual)
+				require.Equal(t, test.Expected, actual)
+			})
+		}
+		require.NoError(t, err)
+	}
+
+}
+
+func TestNukeDB(t *testing.T) {}
 
 ///////////////////////////////////////////////////////
 
@@ -629,32 +821,132 @@ func setupTestDB(t *testing.T, driverName string) *sqlx.DB {
 	return db
 }
 
-func setupSQLStore(t *testing.T, driverName string, logger bot.Logger) *SQLStore {
+func setupServerSchema(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
-	sqlStore := &SQLStore{
-		logger,
-		setupTestDB(t, driverName),
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.users (
+				id character varying(26) NOT NULL,
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				username character varying(64),
+				password character varying(128),
+				authdata character varying(128),
+				authservice character varying(32),
+				email character varying(128),
+				emailverified boolean,
+				nickname character varying(64),
+				firstname character varying(64),
+				lastname character varying(64),
+				"position" character varying(128),
+				roles character varying(256),
+				allowmarketing boolean,
+				props character varying(4000),
+				notifyprops character varying(2000),
+				lastpasswordupdate bigint,
+				lastpictureupdate bigint,
+				failedattempts integer,
+				locale character varying(5),
+				timezone character varying(256),
+				mfaactive boolean,
+				mfasecret character varying(128)
+			);
+		`)
+		require.NoError(t, err)
+
+		_, err = db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
+				channelid character varying(26) NOT NULL,
+				userid character varying(26) NOT NULL,
+				jointime bigint NOT NULL,
+				leavetime bigint
+			);
+		`)
+		require.NoError(t, err)
+
+		return
 	}
 
-	err := migrations[0].migrationFunc(sqlStore.db)
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Users (
+				Id varchar(26) NOT NULL,
+				CreateAt bigint(20) DEFAULT NULL,
+				UpdateAt bigint(20) DEFAULT NULL,
+				DeleteAt bigint(20) DEFAULT NULL,
+				Username varchar(64) DEFAULT NULL,
+				Password varchar(128) DEFAULT NULL,
+				AuthData varchar(128) DEFAULT NULL,
+				AuthService varchar(32) DEFAULT NULL,
+				Email varchar(128) DEFAULT NULL,
+				EmailVerified tinyint(1) DEFAULT NULL,
+				Nickname varchar(64) DEFAULT NULL,
+				FirstName varchar(64) DEFAULT NULL,
+				LastName varchar(64) DEFAULT NULL,
+				Position varchar(128) DEFAULT NULL,
+				Roles text,
+				AllowMarketing tinyint(1) DEFAULT NULL,
+				Props text,
+				NotifyProps text,
+				LastPasswordUpdate bigint(20) DEFAULT NULL,
+				LastPictureUpdate bigint(20) DEFAULT NULL,
+				FailedAttempts int(11) DEFAULT NULL,
+				Locale varchar(5) DEFAULT NULL,
+				Timezone text,
+				MfaActive tinyint(1) DEFAULT NULL,
+				MfaSecret varchar(128) DEFAULT NULL,
+				PRIMARY KEY (Id),
+				UNIQUE KEY Username (Username),
+				UNIQUE KEY AuthData (AuthData),
+				UNIQUE KEY Email (Email),
+				KEY idx_users_email (Email),
+				KEY idx_users_update_at (UpdateAt),
+				KEY idx_users_create_at (CreateAt),
+				KEY idx_users_delete_at (DeleteAt),
+				FULLTEXT KEY idx_users_all_txt (Username,FirstName,LastName,Nickname,Email),
+				FULLTEXT KEY idx_users_all_no_full_name_txt (Username,Nickname,Email),
+				FULLTEXT KEY idx_users_names_txt (Username,FirstName,LastName,Nickname),
+				FULLTEXT KEY idx_users_names_no_full_name_txt (Username,Nickname)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
 	require.NoError(t, err)
 
-	return sqlStore
+	_, err = db.Exec(`
+			CREATE TABLE IF NOT EXISTS ChannelMemberHistory (
+				ChannelId varchar(26) NOT NULL,
+				UserId varchar(26) NOT NULL,
+				JoinTime bigint(20) NOT NULL,
+				LeaveTime bigint(20) DEFAULT NULL,
+				PRIMARY KEY (ChannelId,UserId,JoinTime)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
 }
 
-func setupIncidentStore(t *testing.T, driverName string) incident.Store {
+func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
 	mockCtrl := gomock.NewController(t)
 
 	logger := mock_bot.NewMockLogger(mockCtrl)
 
 	pluginAPI := &plugintest.API{}
 	client := pluginapi.NewClient(pluginAPI)
+	driverName := db.DriverName()
 	pluginAPI.On("GetConfig").Return(&model.Config{
 		SqlSettings: model.SqlSettings{DriverName: &driverName},
 	})
 
-	return NewIncidentStore(NewClient(client), logger, setupSQLStore(t, driverName, logger))
+	sqlStore := &SQLStore{
+		logger,
+		db,
+	}
+
+	err := migrations[0].migrationFunc(db)
+	require.NoError(t, err)
+
+	return NewIncidentStore(NewClient(client), logger, sqlStore)
 }
 
 ///////////////////////////////////////////////////////
@@ -754,6 +1046,12 @@ func (t *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
 
 func (t *IncidentBuilder) WithIsActive(isActive bool) *IncidentBuilder {
 	t.IsActive = isActive
+
+	return t
+}
+
+func (t *IncidentBuilder) WithChannelID(id string) *IncidentBuilder {
+	t.ChannelID = id
 
 	return t
 }
