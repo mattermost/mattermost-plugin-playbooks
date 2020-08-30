@@ -20,7 +20,7 @@ import (
 
 type sqlIncident struct {
 	incident.Incident
-	ChecklistsJSON json.RawMessage // TODO: Alejandro, not sure if this is good, or if we should use string
+	ChecklistsJSON json.RawMessage
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -258,7 +258,6 @@ func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]i
 	}
 
 	// At the moment, the options only includes teamID and the HasPermissionsTo
-	// TODO: Alejandro, this is off the top of my head, I haven't been able to test it :)
 	query := s.queryBuilder.
 		Select("CommanderUserID", "ChannelID", "Username").
 		From("IR_Incident AS i").
@@ -354,7 +353,6 @@ func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
 
 func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	i := rawIncident.Incident
-	// TODO: Alejandro, this should work, but I wouldn't be surprised if I'm missing something.
 	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
