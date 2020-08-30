@@ -233,9 +233,6 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 
 // GetCommanders returns the commanders of the incidents selected by options
 func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
-	if err := incident.ValidateOptions(&options); err != nil {
-		return nil, err
-	}
 	results, err := s.GetIncidents(options)
 	if err != nil {
 		return nil, err
@@ -332,19 +329,19 @@ func sortHeaders(headers []incident.Header, sortField, order string) {
 	// sort by CreateAt, unless we're told otherwise
 	var sortFn = func(i, j int) bool { return orderFn(headers[i].CreateAt > headers[j].CreateAt) }
 	switch sortField {
-	case incident.SortByID:
+	case "ID":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].ID > headers[j].ID) }
-	case incident.SortByName:
+	case "Name":
 		sortFn = func(i, j int) bool {
 			return orderFn(strings.ToLower(headers[i].Name) > strings.ToLower(headers[j].Name))
 		}
-	case incident.SortByCommanderUserID:
+	case "CommanderUserID":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].CommanderUserID > headers[j].CommanderUserID) }
-	case incident.SortByTeamID:
+	case "TeamID":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].TeamID > headers[j].TeamID) }
-	case incident.SortByEndAt:
+	case "EndAt":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].EndAt > headers[j].EndAt) }
-	case incident.SortByIsActive:
+	case "IsActive":
 		sortFn = func(i, j int) bool { return orderFn(headers[i].IsActive && !headers[j].IsActive) }
 	}
 
