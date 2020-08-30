@@ -111,7 +111,7 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 	case SortByEndAt:
 		options.Sort = "EndAt"
 	case SortByIsActive:
-		options.Sort = SortByIsActive
+		options.Sort = "IsActive"
 	default:
 		return errors.New("bad parameter 'sort'")
 	}
