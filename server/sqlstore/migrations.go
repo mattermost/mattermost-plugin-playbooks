@@ -34,7 +34,7 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID VARCHAR(26) PRIMARY KEY,
-						Name VARCHAR(26) NOT NULL,
+						Name VARCHAR(1024) NOT NULL,
 						IsActive BOOLEAN NOT NULL,
 						CommanderUserID VARCHAR(26) NOT NULL,
 						TeamID VARCHAR(26) NOT NULL,
