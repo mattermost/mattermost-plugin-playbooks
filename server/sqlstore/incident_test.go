@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
@@ -16,6 +15,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/pkg/errors"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/require"
@@ -132,8 +133,8 @@ func TestGetIncidents(t *testing.T) {
 
 		createdIncidents := make([]incident.Incident, len(incidents))
 
-		for i, incident := range incidents {
-			createdIncident, err := store.CreateIncident(&incident)
+		for i := range incidents {
+			createdIncident, err := store.CreateIncident(&incidents[i])
 			require.NoError(t, err)
 
 			createdIncidents[i] = *createdIncident
@@ -624,9 +625,7 @@ func TestCreateIncident(t *testing.T) {
 				require.Equal(t, &expectedIncident, actualIncident)
 			})
 		}
-
 	}
-
 }
 
 func TestUpdateIncident(t *testing.T)             {}
@@ -760,42 +759,39 @@ func TestGetCommanders(t *testing.T) {
 		for _, commander := range commanders {
 			insertCommander = insertCommander.Values(commander.UserID, commander.Username)
 		}
+
 		query, args, err := insertCommander.ToSql()
 		require.NoError(t, err)
 		_, err = db.Exec(query, args...)
 		require.NoError(t, err)
 
-		for _, inc := range incidents {
-			_, err := incidentStore.CreateIncident(&inc)
+		for i := range incidents {
+			_, err := incidentStore.CreateIncident(&incidents[i])
 			require.NoError(t, err)
 		}
 
 		for _, test := range cases {
 			t.Run(test.Name, func(t *testing.T) {
-				actual, err := incidentStore.GetCommanders(test.Options)
+				actual, actualErr := incidentStore.GetCommanders(test.Options)
 
 				if test.ExpectedErr != nil {
-					require.NotNil(t, err)
-					require.Equal(t, test.ExpectedErr.Error(), err.Error())
+					require.NotNil(t, actualErr)
+					require.Equal(t, test.ExpectedErr.Error(), actualErr.Error())
 					require.Nil(t, actual)
 					return
 				}
 
-				require.NoError(t, err)
+				require.NoError(t, actualErr)
 
 				sortCommanders(test.Expected)
 				sortCommanders(actual)
 				require.Equal(t, test.Expected, actual)
 			})
 		}
-		require.NoError(t, err)
 	}
-
 }
 
 func TestNukeDB(t *testing.T) {}
-
-///////////////////////////////////////////////////////
 
 var driverNames = []string{model.DATABASE_DRIVER_POSTGRES, model.DATABASE_DRIVER_MYSQL}
 
@@ -949,8 +945,9 @@ func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
 	return NewIncidentStore(NewClient(client), logger, sqlStore)
 }
 
-///////////////////////////////////////////////////////
-
+// IncidentBuilder is a utility to build incidents with a default base.
+// Use it as:
+// NewBuilder.WithName("name").WithXYZ(xyz)....ToIncident()
 type IncidentBuilder struct {
 	*incident.Incident
 }
