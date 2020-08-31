@@ -31,17 +31,12 @@ type playbookMembers []struct {
 
 // NewPlaybookStore creates a new store for playbook service.
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-		builder = builder.PlaceholderFormat(sq.Dollar)
-	}
-
-	playbookSelect := builder.
+	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt",
 			"DeleteAt", "ChecklistJSON").
 		From("IR_Playbook")
 
-	memberIDsSelect := builder.
+	memberIDsSelect := sqlStore.builder.
 		Select("PlaybookID", "MemberID").
 		From("IR_PlaybookMember")
 
@@ -49,7 +44,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		pluginAPI:       pluginAPI,
 		log:             log,
 		store:           sqlStore,
-		queryBuilder:    builder,
+		queryBuilder:    sqlStore.builder,
 		playbookSelect:  playbookSelect,
 		memberIDsSelect: memberIDsSelect,
 	}
@@ -81,7 +76,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 		}
 	}()
 
-	err = p.store.execBuilder(tx, sq.
+	_, err = p.store.execBuilder(tx, sq.
 		Insert("IR_Playbook").
 		SetMap(map[string]interface{}{
 			"ID":                   pbook.ID,
@@ -268,7 +263,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 		}
 	}()
 
-	err = p.store.execBuilder(tx, sq.
+	_, err = p.store.execBuilder(tx, sq.
 		Update("IR_Playbook").
 		SetMap(map[string]interface{}{
 			"Title":                updated.Title,
@@ -338,7 +333,8 @@ func (p *playbookStore) replacePlaybookMembers(e execer, pbook playbook.Playbook
 		builder.Values(pbook.ID, m)
 	}
 
-	return p.store.execBuilder(e, builder)
+	_, err := p.store.execBuilder(e, builder)
+	return err
 }
 
 func addMembersToPlaybooks(memberIDs playbookMembers, out []playbook.Playbook) {
