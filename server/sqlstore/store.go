@@ -3,14 +3,17 @@ package sqlstore
 import (
 	"database/sql"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
 type SQLStore struct {
-	log bot.Logger
-	db  *sqlx.DB
+	log     bot.Logger
+	db      *sqlx.DB
+	builder sq.StatementBuilderType
 }
 
 // New constructs a new instance of SQLStore.
@@ -23,12 +26,25 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	}
 	db = sqlx.NewDb(origDB, pluginAPI.Store.DriverName())
 
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		builder = builder.PlaceholderFormat(sq.Dollar)
+	}
+
 	// TODO: Leave the default mapper as strings.ToLower?
 
 	return &SQLStore{
 		log,
 		db,
+		builder,
 	}, nil
+}
+
+// queryer is an interface describing a resource that can query.
+//
+// It exactly matches sqlx.Queryer, existing simply to constrain sqlx usage to this file.
+type queryer interface {
+	sqlx.Queryer
 }
 
 // builder is an interface describing a resource that can construct SQL and arguments.
@@ -83,15 +99,11 @@ func (sqlStore *SQLStore) exec(e execer, sqlString string, args ...interface{}) 
 }
 
 // exec executes the given query, building the necessary sql.
-func (sqlStore *SQLStore) execBuilder(e execer, b builder) error {
+func (sqlStore *SQLStore) execBuilder(e execer, b builder) (sql.Result, error) {
 	sqlString, args, err := b.ToSql()
 	if err != nil {
-		return errors.Wrap(err, "failed to build sql")
+		return nil, errors.Wrap(err, "failed to build sql")
 	}
 
-	// The linter was complaining that we never used the sql.Result. So doing this for now.
-	// Return the (sql.Result, error) if we ever end up using it.
-	_, err = sqlStore.exec(e, sqlString, args...)
-
-	return err
+	return sqlStore.exec(e, sqlString, args...)
 }

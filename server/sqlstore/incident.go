@@ -32,12 +32,7 @@ var _ incident.Store = (*incidentStore)(nil)
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-		builder = builder.PlaceholderFormat(sq.Dollar)
-	}
-
-	incidentSelect := builder.
+	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
 		From("IR_Incident")
@@ -46,7 +41,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		pluginAPI:      pluginAPI,
 		log:            log,
 		store:          sqlStore,
-		queryBuilder:   builder,
+		queryBuilder:   sqlStore.builder,
 		incidentSelect: incidentSelect,
 	}
 }
@@ -132,7 +127,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 		return nil, err
 	}
 
-	err = s.store.execBuilder(s.store.db, sq.
+	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
 			"ID":              rawIncident.ID,
@@ -170,7 +165,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if err != nil {
 		return err
 	}
-	err = s.store.execBuilder(s.store.db, sq.
+	_, err = s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"Name":            rawIncident.Name,

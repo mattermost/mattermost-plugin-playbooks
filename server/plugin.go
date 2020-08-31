@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -18,6 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -95,13 +97,13 @@ func (p *Plugin) OnActivate() error {
 		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
 
 		if telemetryEnabled {
-			if err := telemetryClient.Enable(); err != nil {
+			if err = telemetryClient.Enable(); err != nil {
 				pluginAPIClient.Log.Warn("Telemetry could not be enabled", "Error", err)
 			}
 			return
 		}
 
-		if err := telemetryClient.Disable(); err != nil {
+		if err = telemetryClient.Disable(); err != nil {
 			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
 		}
 	}
@@ -126,11 +128,44 @@ func (p *Plugin) OnActivate() error {
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 
-	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
+	if err = command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
+	sqlStore, err := sqlstore.New(sqlstore.NewClient(pluginAPIClient), p.bot)
+	if err != nil {
+		return errors.Wrapf(err, "failed creating the SQL store")
+	}
+
+	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
+	if err != nil {
+		return errors.Wrapf(err, "failed creating cluster mutex")
+	}
+
+	// Cluster lock: only one plugin will perform the migration when needed
+	if err := p.UpgradeDatabase(sqlStore, pluginAPIClient, mutex); err != nil {
+		return errors.Wrapf(err, "failed to run migrations")
+	}
+
 	p.API.LogDebug("Incident response plugin Activated")
+	return nil
+}
+
+func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, pluginAPIClient *pluginapi.Client, mutex *cluster.Mutex) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get the current schema version")
+	}
+
+	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
+		if err := sqlStore.Migrate(pluginAPIClient, currentSchemaVersion); err != nil {
+			return errors.Wrapf(err, "failed to complete migrations")
+		}
+	}
+
 	return nil
 }
 
