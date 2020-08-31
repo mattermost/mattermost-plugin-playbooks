@@ -45,10 +45,10 @@ export default class Plugin {
                 mainMenuActionId = null;
             } else if (!mainMenuActionId && !isMobile()) {
                 mainMenuActionId = registry.registerMainMenuAction(
-                    'Incidents & Playbooks',
+                    'Playbooks & Incidents',
                     () => {
                         const team = getCurrentTeam(store.getState());
-                        navigateToTeamPluginUrl(team.name, '/incidents');
+                        navigateToTeamPluginUrl(team.name, '/playbooks');
                     },
                 );
             }

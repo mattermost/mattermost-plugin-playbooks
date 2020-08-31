@@ -13,7 +13,7 @@ const Icon = styled.svg`
     pointer-events: none;
 `;
 
-const RightDots: FC = () => (
+const LeftDots: FC = () => (
     <Icon
         width='160'
         height='241'
@@ -178,4 +178,4 @@ const RightDots: FC = () => (
     </Icon>
 );
 
-export default RightDots;
+export default LeftDots;

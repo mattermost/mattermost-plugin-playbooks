@@ -11,19 +11,31 @@ const Container = styled.span`
     display: inline-flex;
     flex-shrink: 0;
     flex-direction: row;
-    align-items: baseline;
+    align-items: center;
 
     i {
-        padding: 0 5px;
+        padding: 0 8px;
+        color: var(--center-channel-color-56);
+
+        &.icon-check {
+            padding: 0 8px 0 0;
+        }
+
+        &:hover {
+            color: var(--center-channel-color);
+        }
     }
 `;
 
 const Input = styled.input`
     background: none;
-    border: none;
     font: inherit;
-    border-bottom: 1px solid;
-    width: 500px;
+    padding: 0 0 2px;
+    box-shadow: 0 2px 0 var(--button-bg);
+    border: none;
+    margin-top: -2px;
+    width: 320px;
+    padding: 0 0 2px;
 `;
 
 const Text = styled.span`
@@ -72,13 +84,15 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
         );
     }
     return (
-        <Container id={props.id}>
+        <Container
+            id={props.id}
+            onClick={() => setEditMode(true)}
+        >
             <Text>
                 {text}
             </Text>
             <ClickableI
                 className='editable-trigger icon-pencil-outline'
-                onClick={() => setEditMode(true)}
             />
         </Container>
     );

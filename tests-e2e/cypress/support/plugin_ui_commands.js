@@ -5,14 +5,14 @@ import * as TIMEOUTS from '../fixtures/timeouts';
 
 const incidentStartCommand = '/incident start';
 
-// function startIncident(incidentID) {
-Cypress.Commands.add('startIncident', (playbookName, incidentID) => {
+// function startIncident(incidentName) {
+Cypress.Commands.add('startIncident', (playbookName, incidentName) => {
     cy.get('#interactiveDialogModal').should('be.visible').within(() => {
         // # Select playbook
         cy.selectPlaybookFromDropdown(playbookName);
 
         // # Type channel name
-        cy.findByTestId('incidentNameinput').type(incidentID, {force: true});
+        cy.findByTestId('incidentNameinput').type(incidentName, {force: true});
 
         // # Submit
         cy.get('#interactiveDialogSubmit').click();
@@ -29,39 +29,39 @@ Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
 });
 
 // Starts incident with the `/incident start` slash command
-// function startIncidentWithSlashCommand(incidentID) {
-Cypress.Commands.add('startIncidentWithSlashCommand', (playbookName, incidentID) => {
+// function startIncidentWithSlashCommand(incidentName) {
+Cypress.Commands.add('startIncidentWithSlashCommand', (playbookName, incidentName) => {
     cy.openIncidentDialogFromSlashCommand();
 
-    cy.startIncident(playbookName, incidentID);
+    cy.startIncident(playbookName, incidentName);
 });
 
 // Starts incident from the incident RHS
-// function startIncidentFromRHS(incidentID) {
-Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentID) => {
-    // reload the page so that if the RHS is already open, it's closed
-    cy.reload();
-
-    //open the incident RHS
+// function startIncidentFromRHS(playbookName, incidentName) {
+Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentName) => {
     cy.get('#channel-header').within(() => {
+        // open flagged posts to ensure incident RHS is closed
+        cy.get('#channelHeaderFlagButton').click();
+
+        // open the incident RHS
         cy.get('#incidentIcon').click();
     });
+
     cy.get('#rhsContainer').should('be.visible').within(() => {
-        // cy.findByText('Incident List').should('be.visible');
-        // cy.get('#incidentRHSIconPlus').click();
         cy.findByText('Start Incident').click();
     });
-    cy.startIncident(playbookName, incidentID);
+
+    cy.startIncident(playbookName, incidentName);
 });
 
-//Starts incident from the post menu
-// function startIncidentFromPostMenu(incidentID) {
-Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentID) => {
+// Starts incident from the post menu
+// function startIncidentFromPostMenu(incidentName) {
+Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) => {
     //post a message as user to avoid system message
     cy.findByTestId('post_textbox').clear().type('new message here{enter}');
     cy.clickPostDotMenu();
     cy.findByTestId('incidentPostMenuIcon').click();
-    cy.startIncident(playbookName, incidentID);
+    cy.startIncident(playbookName, incidentName);
 });
 
 // Open backstage
@@ -72,8 +72,8 @@ Cypress.Commands.add('openBackstage', () => {
 
         // * Dropdown menu should be visible
         cy.get('.dropdown-menu').should('be.visible').within(() => {
-            // 'Incidents & Playbooks' button should be visible, then click
-            cy.findByText('Incidents & Playbooks').should('be.visible').click();
+            // 'Playbooks & Incidents' button should be visible, then click
+            cy.findByText('Playbooks & Incidents').should('be.visible').click();
         });
     });
 });

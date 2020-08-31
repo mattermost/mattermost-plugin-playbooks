@@ -60,12 +60,6 @@ describe('incident creation dialog', () => {
 
     it('shows create playbook link', () => {
         cy.get('#interactiveDialogModal').within(() => {
-            // * Verify link is configured to open in a new window (for Desktop compatibility)
-            cy.findByText('Create a playbook.').invoke('attr', 'target').should('equal', '_blank');
-
-            // # Strip target attribute to enable Cypress testing.
-            cy.findByText('Create a playbook.').invoke('removeAttr', 'target');
-
             // # Follow link
             cy.findByText('Create a playbook.').click();
 

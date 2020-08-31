@@ -33,12 +33,12 @@ describe('backstage', () => {
         cy.visit('/');
     });
 
-    it('opens incidents list view by default', () => {
+    it('opens playbooks list view by default', () => {
         // # Open the backstage
         cy.openBackstage();
 
         // * Verify that when backstage loads, the heading is visible and contains "Incident"
-        cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
+        cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
     });
 
     it('switches to playbooks list view via header button', () => {

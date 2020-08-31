@@ -39,6 +39,9 @@ describe('incidents can be started', () => {
     });
 
     beforeEach(() => {
+        // # Size the viewport to show plugin icons even when RHS is open
+        cy.viewport('macbook-13');
+
         // # Login as user-1
         cy.apiLogin('user-1');
 

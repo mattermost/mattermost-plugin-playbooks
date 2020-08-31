@@ -38,7 +38,7 @@
     border: none;
     padding: 4px;
     margin-top: 4px;
-    border-radius: 4px;
+    border-radius: 100px;
     color: var(--center-channel-color-64);
     cursor: pointer;
     font-weight: normal;
@@ -46,7 +46,6 @@
     line-height: 16px;
 
     -webkit-transition: all 0.15s ease;
-    -webkit-transition-delay: 0s;
     -moz-transition: all 0.15s ease;
     -o-transition: all 0.15s ease;
     transition: all 0.15s ease;

@@ -37,6 +37,9 @@ describe('backstage incident list', () => {
         // # Open backstage
         cy.openBackstage();
 
+        // # Switch to incidents backstage
+        cy.findByTestId('incidentsLHSButton').click();
+
         // * Assert contents of heading.
         cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
         cy.findByTestId('titleIncident').contains('eligendi');
@@ -50,6 +53,9 @@ describe('backstage incident list', () => {
 
         // # Open backstage
         cy.openBackstage();
+
+        // # Switch to incidents backstage
+        cy.findByTestId('incidentsLHSButton').click();
 
         // # Find the incident `incident_backstage_1` and click to open details view
         cy.get('#incidentList').within(() => {

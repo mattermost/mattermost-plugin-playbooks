@@ -238,7 +238,7 @@ const PlaybookList: FC = () => {
                                 </div>
                                 <div className='col-sm-2'>
                                     <SortableColHeader
-                                        name={'Steps'}
+                                        name={'Tasks'}
                                         order={fetchParams.direction}
                                         active={fetchParams.sort === 'steps'}
                                         onClick={() => colHeaderClicked('steps')}
@@ -329,7 +329,7 @@ const NoContentPage = (props: {onNewPlaybook: () => void}) => {
     return (
         <Container>
             <Title>{'What are Playbooks?'}</Title>
-            <Description>{'A playbook is an incident template. It is created ahead of time during planning and defines the stages and steps an incident will have, along with who can start an incident with the playbook.'}</Description>
+            <Description>{'A playbook is an incident template. It is created ahead of time during planning and defines the stages and tasks an incident will have, along with who can start an incident with the playbook.'}</Description>
             <Button
                 className='mt-6'
                 onClick={() => props.onNewPlaybook()}
