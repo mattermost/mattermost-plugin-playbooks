@@ -127,7 +127,7 @@ describe('incidents can be started', () => {
             cy.startGroupMessage(['anne.stone', 'diana.wells']);
 
             // * Verify that incident can be started from incident RHS
-            const incidentName = 'Public - ' + Date.now();
+            const incidentName = 'GM - ' + Date.now();
             cy.startIncidentFromRHS(playbookName, incidentName);
             cy.verifyIncidentCreated(incidentName);
         });
