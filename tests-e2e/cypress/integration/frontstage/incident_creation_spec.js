@@ -137,17 +137,17 @@ describe('incidents can be started', () => {
             cy.startDirectMessage('douglas.daniels');
 
             // * Verify that incident can be started from incident RHS
-            const incidentName = 'Public - ' + Date.now();
+            const incidentName = 'DM - ' + Date.now();
             cy.startIncidentFromRHS(playbookName, incidentName);
             cy.verifyIncidentCreated(incidentName);
         });
 
         it('while viewing a direct message channel with self', () => {
-            // # Create a DM channel and visit channel
+            // # Create a DM with the test user himself and visit channel
             cy.startDirectMessage('Victor Welch', true, 'user-1');
 
             // * Verify that incident can be started with slash command
-            const incidentName = 'Public ' + Date.now();
+            const incidentName = 'Self DM ' + Date.now();
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
             cy.verifyIncidentCreated(incidentName);
         });
@@ -179,7 +179,7 @@ describe('incidents can be started', () => {
             cy.startGroupMessage(['anne.stone', 'diana.wells']);
 
             // * Verify that incident can be started from post menu
-            const incidentName = 'Public - ' + Date.now();
+            const incidentName = 'GM - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
             cy.verifyIncidentCreated(incidentName);
         });
@@ -189,17 +189,17 @@ describe('incidents can be started', () => {
             cy.startDirectMessage('douglas.daniels');
 
             // * Verify that incident can be started from post menu
-            const incidentName = 'Public - ' + Date.now();
+            const incidentName = 'DM - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
             cy.verifyIncidentCreated(incidentName);
         });
 
         it('while viewing a direct message channel with self', () => {
-            // # Create a DM channel and visit channel
+            // # Create a DM with the test user himself and visit channel
             cy.startDirectMessage('Victor Welch', true, 'user-1');
 
             // * Verify that incident can be started from post menu
-            const incidentName = 'Public - ' + Date.now();
+            const incidentName = 'Self DM - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
             cy.verifyIncidentCreated(incidentName);
         });
