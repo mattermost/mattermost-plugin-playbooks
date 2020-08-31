@@ -46,10 +46,10 @@ describe('backstage incident list', () => {
     });
 
     it('loads incident details page when clicking on an incident', () => {
-        const incidentBackstage1 = 'Incident' + Date.now();
+        const incidentName = 'Incident' + Date.now();
 
         // # Start an incident with slash command
-        cy.startIncidentWithSlashCommand(playbookName, incidentBackstage1);
+        cy.startIncidentWithSlashCommand(playbookName, incidentName);
 
         // # Open backstage
         cy.openBackstage();
@@ -59,10 +59,10 @@ describe('backstage incident list', () => {
 
         // # Find the incident `incident_backstage_1` and click to open details view
         cy.get('#incidentList').within(() => {
-            cy.findByText(incidentBackstage1).click();
+            cy.findByText(incidentName).click();
         });
 
         // * Verify that the header contains the incident name
-        cy.get('.details-header').contains(incidentBackstage1);
+        cy.get('.details-header').contains(incidentName);
     });
 });
