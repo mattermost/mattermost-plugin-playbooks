@@ -127,9 +127,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI pluginkvstore.KVAPI) erro
 		incidents = append(incidents, *i)
 	}
 
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-
-	playbookInsert := builder.
+	playbookInsert := store.builder.
 		Insert("IR_Playbook").
 		Columns(
 			"ID",
@@ -143,7 +141,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI pluginkvstore.KVAPI) erro
 			"Steps",
 		)
 
-	playbookMemberInsert := builder.
+	playbookMemberInsert := store.builder.
 		Insert("IR_PlaybookMember").
 		Columns(
 			"PlaybookID",
@@ -176,7 +174,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI pluginkvstore.KVAPI) erro
 		}
 	}
 
-	incidentInsert := builder.
+	incidentInsert := store.builder.
 		Insert("IR_Incident").
 		Columns(
 			"ID",
@@ -217,17 +215,17 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI pluginkvstore.KVAPI) erro
 	}
 
 	if len(playbooks) > 0 {
-		if err := store.execBuilder(tx, playbookInsert); err != nil {
+		if _, err := store.execBuilder(tx, playbookInsert); err != nil {
 			return errors.Wrapf(err, "failed inserting data into Playbook table")
 		}
 
-		if err := store.execBuilder(tx, playbookMemberInsert); err != nil {
+		if _, err := store.execBuilder(tx, playbookMemberInsert); err != nil {
 			return errors.Wrapf(err, "failed inserting data into PlaybookMember table")
 		}
 	}
 
 	if len(incidents) > 0 {
-		if err := store.execBuilder(tx, incidentInsert); err != nil {
+		if _, err := store.execBuilder(tx, incidentInsert); err != nil {
 			return errors.Wrapf(err, "failed inserting data into Incident table")
 		}
 	}
