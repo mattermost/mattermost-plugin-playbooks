@@ -130,9 +130,10 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	if newIncident.ID != "" {
 		return nil, errors.New("ID should not be set")
 	}
-	newIncident.ID = model.NewId()
+	incidentCopy := *newIncident
+	incidentCopy.ID = model.NewId()
 
-	rawIncident, err := toSQLIncident(newIncident)
+	rawIncident, err := toSQLIncident(&incidentCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 		return nil, errors.Wrapf(err, "failed to store new incident")
 	}
 
-	return newIncident, nil
+	return &incidentCopy, nil
 }
 
 // UpdateIncident updates an incident.
