@@ -45,7 +45,7 @@ var migrations = []Migration{
 						ActiveStage BIGINT NOT NULL,
 						PostID VARCHAR(26) NOT NULL DEFAULT '',
 						PlaybookID VARCHAR(26) NOT NULL DEFAULT '',
-						ChecklistsJSON VARCHAR(60000) NOT NULL,
+						ChecklistsJSON TEXT NOT NULL,
 						INDEX IR_Incident_TeamID (TeamID),
 						INDEX IR_Incident_TeamID_CommanderUserID (TeamID, CommanderUserID),
 						INDEX IR_Incident_ChannelID (ChannelID)
@@ -62,7 +62,7 @@ var migrations = []Migration{
 						CreatePublicIncident BOOLEAN NOT NULL,
 						CreateAt BIGINT NOT NULL,
 						DeleteAt BIGINT NOT NULL DEFAULT 0,
-						ChecklistsJSON VARCHAR(60000) NOT NULL,
+						ChecklistsJSON TEXT NOT NULL,
 						Stages BIGINT NOT NULL DEFAULT 0,
 						Steps BIGINT NOT NULL DEFAULT 0,
 						INDEX IR_Playbook_TeamID (TeamID),

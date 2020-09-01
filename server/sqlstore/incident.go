@@ -11,6 +11,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 	"golang.org/x/text/runes"
@@ -39,7 +40,7 @@ var _ incident.Store = (*incidentStore)(nil)
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
 		From("IR_Incident")
 
 	return &incidentStore{
@@ -91,7 +92,7 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 
 	builder = builder.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
 
-	var rawIncidents []sqlIncident
+	var rawIncidents []incident.Incident
 	if err := s.store.selectBuilder(s.store.db, &rawIncidents, builder); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
 	}
@@ -100,11 +101,8 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 	for _, j := range rawIncidents {
 		// TODO: move to permission-checking in the sql call (MM-28008)
 		if options.HasPermissionsTo == nil || options.HasPermissionsTo(j.ChannelID) {
-			k, err := toIncident(j)
-			if err != nil {
-				return nil, err
-			}
-			incidents = append(incidents, *k)
+			j.Checklists = []playbook.Checklist{}
+			incidents = append(incidents, j)
 		}
 	}
 
@@ -199,8 +197,13 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 
 // GetIncident gets an incident by ID.
 func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
+	withChecklistsSelect := s.store.builder.
+		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
+		From("IR_Incident")
+
 	var rawIncident sqlIncident
-	err := s.store.getBuilder(s.store.db, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
+	err := s.store.getBuilder(s.store.db, &rawIncident, withChecklistsSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {

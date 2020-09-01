@@ -281,6 +281,8 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 }
 
 // getIncidents handles the GET /incidents endpoint.
+// NOTE: The incidents will NOT have the Checklists slice. Checklists will only be included
+// in a call to getIncident.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
