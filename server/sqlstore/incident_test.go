@@ -934,9 +934,15 @@ func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
 		SqlSettings: model.SqlSettings{DriverName: &driverName},
 	})
 
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+	if driverName == model.DATABASE_DRIVER_POSTGRES {
+		builder = builder.PlaceholderFormat(sq.Dollar)
+	}
+
 	sqlStore := &SQLStore{
 		logger,
 		db,
+		builder,
 	}
 
 	err := migrations[0].migrationFunc(db)
