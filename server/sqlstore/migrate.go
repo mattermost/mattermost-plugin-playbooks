@@ -5,11 +5,9 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, originalSchemaVersion semver.Version) error {
+func (sqlStore *SQLStore) Migrate(pluginAPI PluginAPIClient, originalSchemaVersion semver.Version) error {
 	currentSchemaVersion := originalSchemaVersion
 	for _, migration := range migrations {
 		if !currentSchemaVersion.EQ(migration.fromVersion) {
@@ -37,7 +35,7 @@ func (sqlStore *SQLStore) Migrate(pluginAPIClient *pluginapi.Client, originalSch
 
 		// TODO: Remove when all customers are in 0.1.0
 		if migration.toVersion.EQ(semver.MustParse("0.1.0")) {
-			if err := DataMigration(sqlStore, tx, &pluginAPIClient.KV); err != nil {
+			if err := DataMigration(sqlStore, tx, pluginAPI.KV); err != nil {
 				return errors.Wrap(err, "failed to migrate the data from the KV store to the SQL database")
 			}
 		}

@@ -143,7 +143,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	// Cluster lock: only one plugin will perform the migration when needed
-	if err := p.UpgradeDatabase(sqlStore, pluginAPIClient, mutex); err != nil {
+	if err := p.UpgradeDatabase(sqlStore, sqlstore.NewClient(pluginAPIClient), mutex); err != nil {
 		return errors.Wrapf(err, "failed to run migrations")
 	}
 
@@ -151,7 +151,7 @@ func (p *Plugin) OnActivate() error {
 	return nil
 }
 
-func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, pluginAPIClient *pluginapi.Client, mutex *cluster.Mutex) error {
+func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, pluginAPI sqlstore.PluginAPIClient, mutex *cluster.Mutex) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -161,7 +161,7 @@ func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, pluginAPIClient *p
 	}
 
 	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
-		if err := sqlStore.Migrate(pluginAPIClient, currentSchemaVersion); err != nil {
+		if err := sqlStore.Migrate(pluginAPI, currentSchemaVersion); err != nil {
 			return errors.Wrapf(err, "failed to complete migrations")
 		}
 	}
