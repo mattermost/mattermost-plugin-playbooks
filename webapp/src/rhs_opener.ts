@@ -8,13 +8,13 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {fetchIncidentChannels} from 'src/client';
 
-import {isIncidentRHSOpen} from 'src/selectors';
-import {toggleRHS} from 'src/actions';
+import {isIncidentRHSOpen, isIncidentChannel} from 'src/selectors';
+import {toggleRHS, receivedTeamIncidentChannels} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';
     let currentChannelId = '';
-    let currentTeamIncidentChannels = new Set<string>();
+    let currentChannelIsIncident = false;
 
     return async () => {
         const state = store.getState();
@@ -24,33 +24,41 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         //@ts-ignore Views not in global state
         const mmRhsOpen = state.views.rhs.isSidebarOpen;
 
-        const incidentRHSOpen = isIncidentRHSOpen(state);
-        if (
-            !currentChannel ||
-            !currentTeam ||
-            (currentChannel.id === currentChannelId && currentTeamId === currentTeam.id) || // Don't do anything unless the channel has changed.
-            (mmRhsOpen && !incidentRHSOpen) // Don't navigate away from an alternate sidebar that is open
-        ) {
-            // Not updating the current channel when we fail here means that we will retry if conditions improve.
-            // So if the RHS is closed or the incident button is pressed the correct RHS will open.
+        // Wait for a valid team and channel before doing anything.
+        if (!currentChannel || !currentTeam) {
             return;
         }
 
+        // Update the known set of incident channels whenever the team changes.
         if (currentTeamId !== currentTeam.id) {
             currentTeamId = currentTeam.id;
-            currentTeamIncidentChannels = new Set<string>(await fetchIncidentChannels(currentTeam.id));
+            store.dispatch(receivedTeamIncidentChannels(await fetchIncidentChannels(currentTeam.id)));
         }
 
-        // Setting this only when everything else is done bcause once we set this
-        // we won't try again to open the RHS
+        // Only consider opening the RHS if the channel has changed and wasn't already seen as
+        // an incident.
+        if (currentChannel.id === currentChannelId && currentChannelIsIncident) {
+            return;
+        }
         currentChannelId = currentChannel.id;
+        currentChannelIsIncident = isIncidentChannel(state, currentChannelId);
 
-        // Check if current channel is and incident channel.
-        if (currentTeamIncidentChannels.has(currentChannelId)) {
-            if (!incidentRHSOpen) {
-                //@ts-ignore thunk
-                store.dispatch(toggleRHS());
-            }
+        // Don't do anything if the incident RHS is already open.
+        if (isIncidentRHSOpen(state)) {
+            return;
         }
+
+        // Don't navigate away from an alternate sidebar that is open.
+        if (mmRhsOpen) {
+            return;
+        }
+
+        // Don't do anything unless we're in an incident channel.
+        if (!currentChannelIsIncident) {
+            return;
+        }
+
+        //@ts-ignore thunk
+        store.dispatch(toggleRHS());
     };
 }

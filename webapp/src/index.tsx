@@ -69,9 +69,9 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdate());
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreate(store.getState));
+        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreate(store.getState, store.dispatch));
 
-        // Listen for channel changes and open the RHS when approperate.
+        // Listen for channel changes and open the RHS when appropriate.
         store.subscribe(makeRHSOpener(store));
 
         registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
