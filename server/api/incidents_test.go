@@ -275,6 +275,10 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
 
+		// Verify that the websocket event is published
+		poster.EXPECT().
+			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
+
 		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
 
@@ -312,6 +316,10 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
+
+		// Verify that the websocket event is published
+		poster.EXPECT().
+			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 
 		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
