@@ -117,6 +117,10 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
+	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{
+		"incident": newIncident,
+	}, userID)
+
 	ReturnJSON(w, &newIncident)
 }
 
