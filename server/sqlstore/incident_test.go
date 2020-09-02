@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
@@ -770,8 +771,36 @@ func TestUpdateIncident(t *testing.T) {
 	}
 }
 
-func TestGetIncidentIDForChannel(t *testing.T)    {}
-func TestGetAllIncidentMembersCount(t *testing.T) {}
+func TestGetIncidentIDForChannel(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
+
+		t.Run("retrieve existing incidentID", func(t *testing.T) {
+			incident1 := NewBuilder().ToIncident()
+			incident2 := NewBuilder().ToIncident()
+
+			returned1, err := incidentStore.CreateIncident(incident1)
+			require.NoError(t, err)
+			returned2, err := incidentStore.CreateIncident(incident2)
+			require.NoError(t, err)
+
+			id1, err := incidentStore.GetIncidentIDForChannel(incident1.ChannelID)
+			require.NoError(t, err)
+			require.Equal(t, returned1.ID, id1)
+			id2, err := incidentStore.GetIncidentIDForChannel(incident2.ChannelID)
+			require.NoError(t, err)
+			require.Equal(t, returned2.ID, id2)
+		})
+		t.Run("fail to retrieve non-existing incidentID", func(t *testing.T) {
+			id1, err := incidentStore.GetIncidentIDForChannel("nonexistingid")
+			require.Error(t, err)
+			require.Equal(t, "", id1)
+			require.True(t, strings.HasPrefix(err.Error(),
+				"channel with id (nonexistingid) does not have an incident"))
+		})
+	}
+}
 
 func TestGetCommanders(t *testing.T) {
 	alwaysTrue := func(s string) bool { return true }
@@ -925,7 +954,34 @@ func TestGetCommanders(t *testing.T) {
 	}
 }
 
-func TestNukeDB(t *testing.T) {}
+func TestNukeDB(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
+
+		t.Run("nuke db with a few incidents in it", func(t *testing.T) {
+			for i := 0; i < 10; i++ {
+				newIncident := NewBuilder().ToIncident()
+				_, err := incidentStore.CreateIncident(newIncident)
+				require.NoError(t, err)
+			}
+
+			var rows int64
+			err := db.Get(&rows, "SELECT COUNT(*) FROM IR_Incident")
+			require.NoError(t, err)
+			require.Equal(t, 10, int(rows))
+
+			err = incidentStore.NukeDB()
+			require.NoError(t, err)
+
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_Incident")
+			require.NoError(t, err)
+			require.Equal(t, 0, int(rows))
+
+			// TODO: test for playbooks and playbook members
+		})
+	}
+}
 
 var driverNames = []string{model.DATABASE_DRIVER_POSTGRES, model.DATABASE_DRIVER_MYSQL}
 
