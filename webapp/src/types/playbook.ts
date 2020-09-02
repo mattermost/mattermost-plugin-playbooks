@@ -4,6 +4,7 @@
 export interface Playbook {
     id?: string;
     title: string;
+    description: string;
     team_id: string;
     create_public_incident: boolean;
     checklists: Checklist[];

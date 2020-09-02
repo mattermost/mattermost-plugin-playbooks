@@ -124,11 +124,22 @@ const NavbarPadding = styled.div`
     flex-grow: 1;
 `;
 
-const EditableTextContainer = styled.div`
+const EditableTexts = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
     padding: 15px;
+`;
+
+const EditableTitleContainer = styled.div`
     font-size: 20px;
     line-height: 28px;
-    color: var(--center-channel-color);
+`;
+
+const EditableDescriptionContainer = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const RadioContainer = styled.div`
@@ -278,6 +289,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleDescriptionChange = (description: string) => {
+        setPlaybook({
+            ...playbook,
+            description,
+        });
+        setChangesMade(true);
+    };
+
     const confirmOrClose = () => {
         if (changesMade) {
             setConfirmOpen(true);
@@ -343,13 +362,22 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     className='icon-arrow-left back-icon'
                     onClick={confirmOrClose}
                 />
-                <EditableTextContainer>
-                    <EditableText
-                        id='playbook-name'
-                        text={playbook.title}
-                        onChange={handleTitleChange}
-                    />
-                </EditableTextContainer>
+                <EditableTexts>
+                    <EditableTitleContainer>
+                        <EditableText
+                            id='playbook-name'
+                            text={playbook.title}
+                            onChange={handleTitleChange}
+                        />
+                    </EditableTitleContainer>
+                    <EditableDescriptionContainer>
+                        <EditableText
+                            id='playbook-description'
+                            text={playbook.description}
+                            onChange={handleDescriptionChange}
+                        />
+                    </EditableDescriptionContainer>
+                </EditableTexts>
                 <NavbarPadding/>
                 <PrimaryButton
                     className='mr-4'
