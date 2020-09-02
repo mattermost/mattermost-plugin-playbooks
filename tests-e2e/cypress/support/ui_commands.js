@@ -36,9 +36,7 @@ Cypress.Commands.add('clickPostDotMenu', (postId, location = 'CENTER') => {
     clickPostHeaderItem(postId, location, 'button');
 });
 
-/**
-* Start a direct message with user <username>
-*/
+// Start a direct message with user <username>
 Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') => {
     cy.get('#addDirectChannel').click();
     cy.get('#selectItems').type(username);
@@ -56,6 +54,22 @@ Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') =
             cy.findByText(username).should('be.visible');
         });
     }
+});
+
+// Start a group message with the given users.
+Cypress.Commands.add('startGroupMessage', (usernames) => {
+    cy.get('#addDirectChannel').click();
+    usernames.forEach((username) => {
+        cy.get('#selectItems').type(username);
+        cy.get('.clickable').contains(username).click({force: true});
+    });
+    cy.get('#saveItems').click();
+
+    usernames.forEach((username) => {
+        cy.get('#channel-header').within(() => {
+            cy.findByText(username, {exact: false}).should('be.visible');
+        });
+    });
 });
 
 // getCurrentTeamId fetches the current team id, assuming the main chat is being displayed.

@@ -52,24 +52,22 @@ Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
 });
 
 // Verify incident is created
-Cypress.Commands.add('verifyIncidentCreated', (incidentID) => {
-    //Login as sysadmin to check that incident got created
+Cypress.Commands.add('verifyIncidentCreated', (incidentName) => {
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
-        const incidentFound = allIncidents.items.find((inc) => inc.name === incidentID);
-        assert.notEqual(incidentFound, undefined);
-        assert.equal(incidentFound.is_active, true);
+        const incident = allIncidents.items.find((inc) => inc.name === incidentName);
+        assert.isDefined(incident);
+        assert.isTrue(incident.is_active);
     });
 });
 
 // Verify incident is not created
-Cypress.Commands.add('verifyIncidentEnded', (incidentID) => {
-    //Login as sysadmin to check that incident got created
+Cypress.Commands.add('verifyIncidentEnded', (incidentName) => {
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
-        const incidentFound = allIncidents.items.find((inc) => inc.name === incidentID);
-        assert.notEqual(incidentFound, undefined);
-        assert.equal(incidentFound.is_active, false);
+        const incident = allIncidents.items.find((inc) => inc.name === incidentName);
+        assert.isDefined(incident);
+        assert.isFalse(incident.is_active);
     });
 });
 
