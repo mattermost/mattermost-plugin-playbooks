@@ -9,12 +9,20 @@ import {Dispatch} from 'redux';
 
 import {navigateToUrl} from 'src/browser_routing';
 
-import {incidentCreated} from 'src/actions';
+import {incidentCreated, receivedTeamIncidentChannels} from 'src/actions';
+import {fetchIncidentChannels} from 'src/client';
 
 import {clientId} from './selectors';
 import {isIncident, Incident} from './types/incident';
 
 export const websocketSubscribers = new Set<(incident: Incident) => void>();
+
+export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
+    return async (): Promise<void> => {
+        const currentTeam = getCurrentTeam(getState());
+        dispatch(receivedTeamIncidentChannels(await fetchIncidentChannels(currentTeam.id)));
+    };
+}
 
 export function handleWebsocketIncidentUpdate() {
     return (msg: WebSocketMessage): void => {
