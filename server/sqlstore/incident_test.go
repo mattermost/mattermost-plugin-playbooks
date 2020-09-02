@@ -630,7 +630,7 @@ func TestCreateAndGetIncident(t *testing.T) {
 				require.True(t, model.IsValidId(returned.ID))
 				expectedIncident.ID = returned.ID
 
-				actualIncident, err := incidentStore.GetIncident(returned.ID)
+				actualIncident, err := incidentStore.GetIncident(expectedIncident.ID)
 				require.NoError(t, err)
 
 				require.Equal(t, &expectedIncident, actualIncident)
@@ -639,6 +639,8 @@ func TestCreateAndGetIncident(t *testing.T) {
 	}
 }
 
+// TestGetIncident only tests getting a non-existent incident, since getting existing incidents
+// is tested in TestCreateAndGetIncident above.
 func TestGetIncident(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
@@ -646,101 +648,128 @@ func TestGetIncident(t *testing.T) {
 
 		validIncidents := []struct {
 			Name        string
-			Incident    *incident.Incident
+			ID          string
 			ExpectedErr error
 		}{
 			{
-				Name:        "Empty values",
-				Incident:    &incident.Incident{},
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Base incident",
-				Incident:    NewBuilder().ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Name with unicode characters",
-				Incident:    NewBuilder().WithName("valid unicode: ñäåö").ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Created at 0",
-				Incident:    NewBuilder().WithCreateAt(0).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Deleted incident",
-				Incident:    NewBuilder().WithDeleteAt(model.GetMillis()).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Ended incident",
-				Incident:    NewBuilder().WithEndAt(model.GetMillis()).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Inactive incident",
-				Incident:    NewBuilder().WithIsActive(false).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Incident with one checklist and 10 items",
-				Incident:    NewBuilder().WithChecklists([]int{10}).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Incident with five checklists with different number of items",
-				Incident:    NewBuilder().WithChecklists([]int{1, 2, 3, 4, 5}).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Incident should not be nil",
-				Incident:    nil,
-				ExpectedErr: errors.New("incident is nil"),
-			},
-			{
-				Name:        "Incident should not have ID set",
-				Incident:    NewBuilder().WithID().ToIncident(),
-				ExpectedErr: errors.New("ID should not be set"),
-			},
-			{
-				Name:        "Incident should not contain checklists with no items",
-				Incident:    NewBuilder().WithChecklists([]int{0}).ToIncident(),
-				ExpectedErr: errors.New("checklists with no items are not allowed"),
+				Name:        "Get a non-existing incident",
+				ID:          "nonexisting",
+				ExpectedErr: errors.New("incident with id 'nonexisting' does not exist: not found"),
 			},
 		}
 
 		for _, test := range validIncidents {
 			t.Run(test.Name, func(t *testing.T) {
-				var expectedIncident incident.Incident
-				if test.Incident != nil {
-					expectedIncident = *test.Incident
-				}
+				returned, err := incidentStore.GetIncident(test.ID)
 
-				returned, err := incidentStore.CreateIncident(test.Incident)
-
-				if test.ExpectedErr != nil {
-					require.Error(t, err)
-					require.Equal(t, test.ExpectedErr.Error(), err.Error())
-					require.Nil(t, returned)
-					return
-				}
-
-				require.NoError(t, err)
-				require.True(t, model.IsValidId(returned.ID))
-				expectedIncident.ID = returned.ID
-
-				actualIncident, err := incidentStore.GetIncident(returned.ID)
-				require.NoError(t, err)
-
-				require.Equal(t, &expectedIncident, actualIncident)
+				require.Error(t, err)
+				require.Equal(t, test.ExpectedErr.Error(), err.Error())
+				require.Nil(t, returned)
 			})
 		}
 	}
 }
 
-func TestUpdateIncident(t *testing.T)             {}
+func TestUpdateIncident(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
+
+		validIncidents := []struct {
+			Name        string
+			Incident    *incident.Incident
+			Update      func(incident.Incident) *incident.Incident
+			ExpectedErr error
+		}{
+			{
+				Name:     "nil incident",
+				Incident: NewBuilder().ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					return nil
+				},
+				ExpectedErr: errors.New("incident is nil"),
+			},
+			{
+				Name:     "id should not be empty",
+				Incident: NewBuilder().ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.ID = ""
+					return &old
+				},
+				ExpectedErr: errors.New("ID should not be empty"),
+			},
+			{
+				Name:     "Incident should not contain checklists with no items",
+				Incident: NewBuilder().WithChecklists([]int{1}).ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.Checklists[0].Items = []playbook.ChecklistItem{}
+					return &old
+				},
+				ExpectedErr: errors.New("checklists with no items are not allowed"),
+			},
+			{
+				Name:     "Not active",
+				Incident: NewBuilder().ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.IsActive = false
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
+				Name:     "deleted",
+				Incident: NewBuilder().ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.DeleteAt = model.GetMillis()
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
+				Name:     "ended",
+				Incident: NewBuilder().ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.EndAt = model.GetMillis()
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
+				Name:     "Incident with 2 checklists, update the checklists a bit",
+				Incident: NewBuilder().WithChecklists([]int{1, 1}).ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.Checklists[0].Items[0].State = playbook.ChecklistItemStateClosed
+					old.Checklists[1].Items[0].Title = "new title"
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+		}
+
+		for _, test := range validIncidents {
+			t.Run(test.Name, func(t *testing.T) {
+				returned, err := incidentStore.CreateIncident(test.Incident)
+				require.NoError(t, err)
+				expected := test.Update(*returned)
+
+				err = incidentStore.UpdateIncident(expected)
+
+				if test.ExpectedErr != nil {
+					require.Error(t, err)
+					require.Equal(t, test.ExpectedErr.Error(), err.Error())
+					return
+				}
+
+				require.NoError(t, err)
+
+				actual, err := incidentStore.GetIncident(expected.ID)
+				require.NoError(t, err)
+				require.Equal(t, expected, actual)
+			})
+		}
+	}
+}
+
 func TestGetIncidentIDForChannel(t *testing.T)    {}
 func TestGetAllIncidentMembersCount(t *testing.T) {}
 

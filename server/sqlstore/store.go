@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"database/sql"
-	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -110,37 +109,4 @@ func (sqlStore *SQLStore) execBuilder(e execer, b builder) (sql.Result, error) {
 	}
 
 	return sqlStore.exec(e, sqlString, args...)
-}
-
-func (sqlStore *SQLStore) doesTableExist(tableName string) (bool, error) {
-	var query sq.SelectBuilder
-
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-
-	switch sqlStore.db.DriverName() {
-	case model.DATABASE_DRIVER_MYSQL:
-		query = builder.
-			Select("count(0)").
-			From("information_schema.TABLES").
-			Where("TABLE_SCHEMA = DATABASE()").
-			Where(sq.Eq{"TABLE_NAME": tableName})
-
-	case model.DATABASE_DRIVER_POSTGRES:
-		// In postgres, table names are automatically lowercased in queries
-		// (if not wrapped between double quotes), but we're treating the table
-		// name as a value here, so we need to explicitly lower case it
-		query = builder.PlaceholderFormat(sq.Dollar).
-			Select("count(relname)").
-			From("pg_class").
-			Where(sq.Eq{"relname": strings.ToLower(tableName)})
-	default:
-		return false, errors.Errorf("driver %s not supported", sqlStore.db.DriverName())
-	}
-
-	var count int
-	if err := sqlStore.getBuilder(sqlStore.db, &count, query); err != nil {
-		return false, errors.Wrap(err, "failed to check if table exists")
-	}
-
-	return count > 0, nil
 }
