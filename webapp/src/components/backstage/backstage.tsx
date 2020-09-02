@@ -150,13 +150,10 @@ const Backstage: FC = () => {
         <BackstageContainer>
             <Switch>
                 <Route path={`${match.url}/playbooks/*`}/>
+                <Route path={`${match.url}/incidents/*`}/>
                 <Route>
                     <BackstageNavbar className='flex justify-content-between'>
                         <div className='d-flex items-center'>
-                            <BackstageNavbarIcon
-                                className='icon-arrow-left back-icon'
-                                onClick={goToMattermost}
-                            />
                             <BackstageTitlebarItem
                                 to={`${match.url}/playbooks`}
                                 activeClassName={'active'}
