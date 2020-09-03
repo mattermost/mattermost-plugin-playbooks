@@ -18,6 +18,7 @@ type Incident struct {
 type Header struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
+	Description      string `json:"description"`
 	IsActive         bool   `json:"is_active"`
 	CommanderUserID  string `json:"commander_user_id"`
 	TeamID           string `json:"team_id"`

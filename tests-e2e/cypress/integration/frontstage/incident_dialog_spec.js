@@ -56,6 +56,7 @@ describe('incident creation dialog', () => {
         cy.findByTestId('autoCompleteSelector').contains('Playbook');
         cy.findByTestId('autoCompleteSelector').contains('This field is required.');
         cy.findByTestId('incidentName').contains('This field is required.');
+        cy.findByTestId('incidentDescription').contains('This field is required.').should('not.exist');
     });
 
     it('shows create playbook link', () => {
@@ -76,8 +77,11 @@ describe('incident creation dialog', () => {
             // * Verify playbook dropdown prompt
             cy.findByText('Playbook').should('be.visible');
 
-            // * Verify channel name prompt
-            cy.findByText('Channel Name').should('be.visible');
+            // * Verify incident name prompt
+            cy.findByText('Incident Name').should('be.visible');
+
+            // * Verify incident description prompt
+            cy.findByText('Incident Description').should('be.visible');
         });
     });
 
