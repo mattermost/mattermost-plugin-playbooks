@@ -29,9 +29,7 @@ type Checklist struct {
 func (c Checklist) Clone() Checklist {
 	newChecklist := c
 	var newItems []ChecklistItem
-	for _, i := range c.Items {
-		newItems = append(newItems, i)
-	}
+	newItems = append(newItems, c.Items...)
 	newChecklist.Items = newItems
 	return newChecklist
 }
