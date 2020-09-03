@@ -3,8 +3,13 @@ version: 2.1
 orbs:
   plugin-ci: mattermost/plugin-ci@0.1
 
+executors:
+  default:
+    docker:
+      - image: circleci/golang:1.14.6
+
 jobs:
-  plugin-ci/coverage:
+  test-db:
     docker:
       - image: circleci/golang:1.14.6
         environment:
@@ -40,14 +45,18 @@ workflows:
   version: 2
   ci:
     jobs:
+      - test-db:
+          filters:
+            tags:
+              only: /^v.*/
       - plugin-ci/lint:
           filters:
             tags:
               only: /^v.*/
-      - plugin-ci/coverage:
-          filters:
-            tags:
-              only: /^v.*/
+      #      - plugin-ci/coverage:
+      #          filters:
+      #            tags:
+      #              only: /^v.*/
       - plugin-ci/build:
           filters:
             tags:
@@ -59,7 +68,7 @@ workflows:
           context: plugin-ci
           requires:
             - plugin-ci/lint
-            - plugin-ci/coverage
+            - test-db
             - plugin-ci/build
       - plugin-ci/deploy-release:
           filters:
@@ -70,7 +79,7 @@ workflows:
           context: plugin-ci
           requires:
             - plugin-ci/lint
-            - plugin-ci/coverage
+            - test-db
             - plugin-ci/build
       - plugin-ci/deploy-release-github:
           filters:
@@ -81,5 +90,5 @@ workflows:
           context: matterbuild-github-token
           requires:
             - plugin-ci/lint
-            - plugin-ci/coverage
+            - test-db
             - plugin-ci/build
