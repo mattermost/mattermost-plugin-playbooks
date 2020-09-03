@@ -3,6 +3,16 @@ version: 2.1
 orbs:
   plugin-ci: mattermost/plugin-ci@0.1
 
+aliases:
+  - &restore_cache
+    restore_cache:
+      key: go-mod-v1-{{ checksum "go.sum" }}
+  - &save_cache
+    save_cache:
+      key: go-mod-v1-{{ checksum "go.sum" }}
+      paths:
+        - "/go/pkg/mod"
+
 jobs:
   coverage-with-db:
     docker:
@@ -30,11 +40,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *plugin-ci/restore_cache
+      - *restore_cache
       - run:
           name: Generating Coverage Results
           command: make coverage
-      - *plugin-ci/save_cache
+      - *save_cache
       - codecov/upload:
         file: server/coverage.txt
 
