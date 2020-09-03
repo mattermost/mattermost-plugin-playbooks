@@ -39,7 +39,7 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - run: make coverage
+      - run: make test
 
 workflows:
   version: 2
