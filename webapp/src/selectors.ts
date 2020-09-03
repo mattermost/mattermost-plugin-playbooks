@@ -15,6 +15,8 @@ export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(st
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
+export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => pluginState(state).myIncidentChannelIds.has(channelId);
+
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);
 

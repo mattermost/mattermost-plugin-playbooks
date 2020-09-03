@@ -8,6 +8,9 @@
 
 describe('backstage incident list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
+    let teamId;
+    let userId;
+    let playbookId;
 
     before(() => {
         // # Login as user-1
@@ -15,11 +18,16 @@ describe('backstage incident list', () => {
 
         // # Create a playbook
         cy.apiGetTeamByName('ad-1').then((team) => {
+            teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
+                userId = user.id;
+
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
                     userId: user.id,
+                }).then((playbook) => {
+                    playbookId = playbook.id;
                 });
             });
         });
@@ -46,10 +54,15 @@ describe('backstage incident list', () => {
     });
 
     it('loads incident details page when clicking on an incident', () => {
-        const incidentName = 'Incident' + Date.now();
-
-        // # Start an incident with slash command
-        cy.startIncidentWithSlashCommand(playbookName, incidentName);
+        // # Start the incident
+        const now = Date.now();
+        const incidentName = 'Incident (' + now + ')';
+        cy.apiStartIncident({
+            teamId,
+            playbookId,
+            incidentName,
+            commanderUserId: userId,
+        });
 
         // # Open backstage
         cy.openBackstage();

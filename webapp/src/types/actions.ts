@@ -4,10 +4,13 @@
 import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {pluginId} from 'src/manifest';
+import {Incident} from 'src/types/incident';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
 export const SET_CLIENT_ID = pluginId + '_set_client_id';
+export const INCIDENT_CREATED = pluginId + '_incident_created';
+export const RECEIVED_TEAM_INCIDENT_CHANNELS = pluginId + '_received_team_incident_channels';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -27,4 +30,14 @@ export interface SetTriggerId {
 export interface SetClientId {
     type: typeof SET_CLIENT_ID;
     clientId: string;
+}
+
+export interface IncidentCreated {
+    type: typeof INCIDENT_CREATED;
+    incident: Incident;
+}
+
+export interface ReceivedTeamIncidentChannels {
+    type: typeof RECEIVED_TEAM_INCIDENT_CHANNELS;
+    channelIds: string[];
 }
