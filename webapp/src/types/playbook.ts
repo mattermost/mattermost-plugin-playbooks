@@ -36,6 +36,7 @@ export enum ChecklistItemState {
 
 export interface ChecklistItem {
     title: string;
+    description: string;
     state: ChecklistItemState;
     state_modified?: string;
     state_modified_post_id?: string;
@@ -43,12 +44,12 @@ export interface ChecklistItem {
     assignee_modified?: string;
     assignee_modified_post_id?: string;
     command: string;
-    description: string;
 }
 
 export function emptyPlaybook(): Playbook {
     return {
-        title: 'Untitled Playbook',
+        title: '',
+        description: '',
         team_id: '',
         create_public_incident: false,
         checklists: [emptyChecklist()],

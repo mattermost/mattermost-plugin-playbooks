@@ -246,7 +246,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const saveDisabled = playbook.title.trim() === '' || playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
+    const saveDisabled = playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const onSave = async () => {
@@ -267,6 +267,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         // It's possible there was actually nothing there.
         if (playbookExcludingEmpty.checklists.length === 0) {
             return;
+        }
+
+        if (playbookExcludingEmpty.title.trim().length === 0) {
+            playbookExcludingEmpty.title = 'Untitled Playbook';
         }
 
         await savePlaybook(playbookExcludingEmpty);
@@ -368,6 +372,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             id='playbook-name'
                             text={playbook.title}
                             onChange={handleTitleChange}
+                            placeholder={'Untitled Playbook'}
                         />
                     </EditableTitleContainer>
                     <EditableDescriptionContainer>
@@ -375,6 +380,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             id='playbook-description'
                             text={playbook.description}
                             onChange={handleDescriptionChange}
+                            placeholder={'Playbook description'}
                         />
                     </EditableDescriptionContainer>
                 </EditableTexts>

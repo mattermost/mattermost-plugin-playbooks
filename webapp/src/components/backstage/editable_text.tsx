@@ -5,6 +5,7 @@ export interface EditableTextProps {
     id?: string
     text: string
     onChange: (newText: string) => void
+    placeholder?: string
 }
 
 const Container = styled.span`
@@ -97,9 +98,16 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
             id={props.id}
             onClick={enterEditMode}
         >
-            <Text ref={textElement}>
-                {text}
-            </Text>
+            {text && text.trim().length > 0 &&
+                <Text ref={textElement}>
+                    {text}
+                </Text>
+            }
+            {(!text || text.length === 0) && props.placeholder && props.placeholder.length > 0 &&
+                <Text>
+                    {props.placeholder}
+                </Text>
+            }
             <ClickableI
                 className='editable-trigger icon-pencil-outline'
             />
