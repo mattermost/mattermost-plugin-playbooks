@@ -3,15 +3,10 @@ version: 2.1
 orbs:
   plugin-ci: mattermost/plugin-ci@0.1
 
-executors:
-  default:
-    docker:
-      - image: circleci/golang:1.14.6
-
 jobs:
   test-db:
     docker:
-      - image: circleci/golang:1.14.6
+      - image: circleci/golang:1.14.1-node
         environment:
           TEST_DATABASE_POSTGRESQL_DSN=postgres://test_db@localhost:5432/test_db?sslmode=disable
           TEST_DATABASE_MYSQL_DSN=testuser:testpass@tcp(localhost:3306)/test_db?charset=utf8mb4,utf8
@@ -26,7 +21,7 @@ jobs:
           MYSQL_USER: testuser
           MYSQL_PASSWORD: testpass
     executor:
-      name: default
+      name: plugin-ci/default
     steps:
       - run:
           name: Waiting for Postgres and MySQL to be ready
@@ -39,7 +34,7 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - run: make test
+      - run: make coverage
 
 workflows:
   version: 2
