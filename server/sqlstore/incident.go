@@ -108,9 +108,6 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 
 	totalCount := len(incidents)
 	incidents = pageIncidents(incidents, options.Page, options.PerPage)
-	if len(incidents) == 0 {
-		incidents = nil
-	}
 	pageCount := int(math.Ceil(float64(totalCount) / float64(options.PerPage)))
 	hasMore := options.Page+1 < pageCount
 
@@ -130,10 +127,10 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	if newIncident.ID != "" {
 		return nil, errors.New("ID should not be set")
 	}
-	incidentCopy := *newIncident
+	incidentCopy := newIncident.Clone()
 	incidentCopy.ID = model.NewId()
 
-	rawIncident, err := toSQLIncident(&incidentCopy)
+	rawIncident, err := toSQLIncident(incidentCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +157,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 		return nil, errors.Wrapf(err, "failed to store new incident")
 	}
 
-	return &incidentCopy, nil
+	return incidentCopy, nil
 }
 
 // UpdateIncident updates an incident.

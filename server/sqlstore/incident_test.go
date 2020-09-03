@@ -254,7 +254,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 7,
 				PageCount:  4,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -268,7 +268,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 7,
 				PageCount:  4,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -1187,7 +1187,7 @@ func NewBuilder() *IncidentBuilder {
 			},
 			PostID:     model.NewId(),
 			PlaybookID: model.NewId(),
-			Checklists: []playbook.Checklist{},
+			Checklists: []playbook.Checklist(nil),
 		},
 	}
 }

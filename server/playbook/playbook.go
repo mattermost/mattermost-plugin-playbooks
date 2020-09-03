@@ -26,6 +26,16 @@ type Checklist struct {
 	Items []ChecklistItem `json:"items"`
 }
 
+func (c Checklist) Clone() Checklist {
+	newChecklist := c
+	var newItems []ChecklistItem
+	for _, i := range c.Items {
+		newItems = append(newItems, i)
+	}
+	newChecklist.Items = newItems
+	return newChecklist
+}
+
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
 	ID                     string `json:"id"`

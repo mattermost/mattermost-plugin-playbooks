@@ -15,6 +15,16 @@ type Incident struct {
 	Checklists []playbook.Checklist `json:"checklists"`
 }
 
+func (i *Incident) Clone() *Incident {
+	newIncident := *i
+	var newChecklists []playbook.Checklist
+	for _, c := range i.Checklists {
+		newChecklists = append(newChecklists, c.Clone())
+	}
+	newIncident.Checklists = newChecklists
+	return &newIncident
+}
+
 // Header holds the summary information of an incident.
 type Header struct {
 	ID              string `json:"id"`
