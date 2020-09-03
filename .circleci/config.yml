@@ -8,8 +8,9 @@ jobs:
     docker:
       - image: circleci/golang:1.14.1-node
         environment:
-          TEST_DATABASE_POSTGRESQL_DSN=postgres://test_db@localhost:5432/test_db?sslmode=disable
+          TEST_DATABASE_POSTGRESQL_DSN=postgres://test_db:test_db@localhost:5432/test_db?sslmode=disable
           TEST_DATABASE_MYSQL_DSN=testuser:testpass@tcp(localhost:3306)/test_db?charset=utf8mb4,utf8
+          TEST_DATABASE_MYSQL_ROOT_PASSWD=rootpw
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: test_db
