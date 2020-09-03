@@ -52,12 +52,19 @@ Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
 });
 
 // Verify incident is created
-Cypress.Commands.add('verifyIncidentCreated', (incidentName) => {
+Cypress.Commands.add('verifyIncidentCreated', (incidentName, incidentDescription) => {
     cy.apiGetAllIncidents().then((response) => {
         const allIncidents = JSON.parse(response.body);
         const incident = allIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
         assert.isTrue(incident.is_active);
+        assert.equal(incident.name, incidentName);
+
+        // Only check the description if provided. The server may supply a default depending
+        // on how the incident was started.
+        if (incidentDescription) {
+            assert.equal(incident.description, incidentDescription);
+        }
     });
 });
 

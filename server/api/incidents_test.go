@@ -69,8 +69,8 @@ func TestIncidents(t *testing.T) {
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldNameKey:       "incidentName",
 				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -80,6 +80,57 @@ func TestIncidents(t *testing.T) {
 				CommanderUserID: dialogRequest.UserId,
 				TeamID:          dialogRequest.TeamId,
 				Name:            "incidentName",
+			},
+			Playbook: &withid,
+		}
+		retI := i
+		retI.PrimaryChannelID = "channelID"
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
+		poster.EXPECT().Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("create valid incident from dialog with description", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testteamid",
+			CreatePublicIncident: true,
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldPlaybookIDKey:  "playbookid1",
+				incident.DialogFieldNameKey:        "incidentName",
+				incident.DialogFieldDescriptionKey: "description",
+			},
+		}
+
+		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		i := incident.Incident{
+			Header: incident.Header{
+				CommanderUserID: dialogRequest.UserId,
+				TeamID:          dialogRequest.TeamId,
+				Name:            "incidentName",
+				Description:     "description",
 			},
 			Playbook: &withid,
 		}
@@ -118,8 +169,8 @@ func TestIncidents(t *testing.T) {
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldNameKey:       "incidentName",
 				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -176,8 +227,8 @@ func TestIncidents(t *testing.T) {
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldNameKey:       "incidentName",
 				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -227,8 +278,8 @@ func TestIncidents(t *testing.T) {
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldNameKey:       "incidentName",
 				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
