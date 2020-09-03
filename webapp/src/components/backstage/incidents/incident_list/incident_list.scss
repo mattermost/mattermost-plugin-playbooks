@@ -18,18 +18,6 @@ $font-family: Open Sans;
                 background: var(--center-channel-color-04);
             }
 
-            .badge {
-                display: inline-flex;
-                border-radius: 4px;
-                padding: 12px 8px 12px 8px;
-                color: var(--button-color);
-                background: var(--center-channel-color-56);
-
-                &.ongoing {
-                    background-color: var(--button-bg);
-                }
-            }
-
             &__title {
                 display: flex;
 

@@ -17,7 +17,7 @@ import styled from 'styled-components';
 
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 
-import {teamPluginErrorUrl, navigateToUrl} from 'src/browser_routing';
+import {teamPluginErrorUrl} from 'src/browser_routing';
 import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
@@ -25,10 +25,10 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
+import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 
 import './playbook.scss';
 import StagesAndStepsIcon from './stages_and_steps_icon';
-import {BackstageNavbar, BackstageNavbarIcon} from './backstage';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 
@@ -319,10 +319,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
 
-    const goToMattermost = () => {
-        navigateToUrl(`/${currentTeam.name}`);
-    };
-
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
@@ -361,10 +357,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         {'Save'}
                     </span>
                 </PrimaryButton>
-                <BackstageNavbarIcon
-                    className='icon-close close-icon'
-                    onClick={goToMattermost}
-                />
             </BackstageNavbar>
             <Container>
                 <EditView>
