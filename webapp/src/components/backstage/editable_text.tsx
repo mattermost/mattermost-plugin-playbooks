@@ -46,6 +46,14 @@ const Text = styled.span`
     white-space: nowrap;
 `;
 
+const Placeholder = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 450px;
+    white-space: nowrap;
+    font-style: italic;
+`;
+
 const ClickableI = styled.i`
     cursor: pointer;
 `;
@@ -108,9 +116,9 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
                 </Text>
             }
             {(!props.text || props.text.length === 0) && props.placeholder && props.placeholder.length > 0 &&
-                <Text>
+                <Placeholder>
                     {props.placeholder}
-                </Text>
+                </Placeholder>
             }
             <ClickableI
                 className='editable-trigger icon-pencil-outline'
