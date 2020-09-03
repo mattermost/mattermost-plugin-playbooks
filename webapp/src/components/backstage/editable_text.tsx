@@ -1,10 +1,11 @@
-import React, {FC, useState} from 'react';
+import React, {FC, useState, useRef} from 'react';
 import styled from 'styled-components';
 
 export interface EditableTextProps {
     id?: string
     text: string
     onChange: (newText: string) => void
+    placeholder?: string
 }
 
 const Container = styled.span`
@@ -18,7 +19,7 @@ const Container = styled.span`
         color: var(--center-channel-color-56);
 
         &.icon-check {
-            padding: 0 8px 0 0;
+            padding: 0 8px;
         }
 
         &:hover {
@@ -34,7 +35,7 @@ const Input = styled.input`
     box-shadow: 0 2px 0 var(--button-bg);
     border: none;
     margin-top: -2px;
-    width: 320px;
+    max-width: 450px;
     padding: 0 0 2px;
 `;
 
@@ -52,10 +53,18 @@ const ClickableI = styled.i`
 const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
     const [editMode, setEditMode] = useState(false);
     const [text, setText] = useState(props.text);
+    const textElement = useRef<HTMLInputElement>(null);
+    const [inputWidth, setInputWidth] = useState(0);
 
     const submit = () => {
         setEditMode(false);
         props.onChange(text);
+    };
+
+    const enterEditMode = () => {
+        // Start the input size at least as wide as the span, itself with a max width.
+        setInputWidth(textElement.current?.offsetWidth || 0);
+        setEditMode(true);
     };
 
     if (editMode) {
@@ -64,6 +73,7 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
                 <Input
                     type='text'
                     className='editable-input'
+                    style={{minWidth: inputWidth}}
                     value={text}
                     onChange={(e) => {
                         setText(e.target.value);
@@ -86,11 +96,18 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
     return (
         <Container
             id={props.id}
-            onClick={() => setEditMode(true)}
+            onClick={enterEditMode}
         >
-            <Text>
-                {text}
-            </Text>
+            {text && text.trim().length > 0 &&
+                <Text ref={textElement}>
+                    {text}
+                </Text>
+            }
+            {(!text || text.length === 0) && props.placeholder && props.placeholder.length > 0 &&
+                <Text>
+                    {props.placeholder}
+                </Text>
+            }
             <ClickableI
                 className='editable-trigger icon-pencil-outline'
             />

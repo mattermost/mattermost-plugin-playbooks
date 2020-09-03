@@ -124,11 +124,22 @@ const NavbarPadding = styled.div`
     flex-grow: 1;
 `;
 
-const EditableTextContainer = styled.div`
+const EditableTexts = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
     padding: 15px;
+`;
+
+const EditableTitleContainer = styled.div`
     font-size: 20px;
     line-height: 28px;
-    color: var(--center-channel-color);
+`;
+
+const EditableDescriptionContainer = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const RadioContainer = styled.div`
@@ -235,7 +246,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const saveDisabled = playbook.title.trim() === '' || playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
+    const saveDisabled = playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const onSave = async () => {
@@ -258,6 +269,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             return;
         }
 
+        if (playbookExcludingEmpty.title.trim().length === 0) {
+            playbookExcludingEmpty.title = 'Untitled Playbook';
+        }
+
         await savePlaybook(playbookExcludingEmpty);
         props.onClose();
     };
@@ -274,6 +289,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setPlaybook({
             ...playbook,
             title,
+        });
+        setChangesMade(true);
+    };
+
+    const handleDescriptionChange = (description: string) => {
+        setPlaybook({
+            ...playbook,
+            description,
         });
         setChangesMade(true);
     };
@@ -339,13 +362,24 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     className='icon-arrow-left back-icon'
                     onClick={confirmOrClose}
                 />
-                <EditableTextContainer>
-                    <EditableText
-                        id='playbook-name'
-                        text={playbook.title}
-                        onChange={handleTitleChange}
-                    />
-                </EditableTextContainer>
+                <EditableTexts>
+                    <EditableTitleContainer>
+                        <EditableText
+                            id='playbook-name'
+                            text={playbook.title}
+                            onChange={handleTitleChange}
+                            placeholder={'Untitled Playbook'}
+                        />
+                    </EditableTitleContainer>
+                    <EditableDescriptionContainer>
+                        <EditableText
+                            id='playbook-description'
+                            text={playbook.description}
+                            onChange={handleDescriptionChange}
+                            placeholder={'Playbook description'}
+                        />
+                    </EditableDescriptionContainer>
+                </EditableTexts>
                 <NavbarPadding/>
                 <PrimaryButton
                     className='mr-4'
