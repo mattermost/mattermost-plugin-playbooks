@@ -44,9 +44,6 @@ describe('incidents can be started', () => {
 
         // # Login as user-1
         cy.apiLogin('user-1');
-
-        // # Navigate to the application
-        cy.visit('/');
     });
 
     describe('via slash command', () => {
@@ -71,6 +68,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a group message channel', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a GM channel and visit channel
             cy.startGroupMessage(['anne.stone', 'diana.wells']);
 
@@ -81,6 +81,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a direct message channel with another user', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a DM channel and visit channel
             cy.startDirectMessage('douglas.daniels');
 
@@ -91,6 +94,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a direct message channel with self', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a DM channel and visit channel
             cy.startDirectMessage('Victor Welch', true, 'user-1');
 
@@ -123,6 +129,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a group message channel', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a GM channel and visit channel
             cy.startGroupMessage(['anne.stone', 'diana.wells']);
 
@@ -133,6 +142,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a direct message channel with another user', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a DM channel and visit channel
             cy.startDirectMessage('douglas.daniels');
 
@@ -143,6 +155,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a direct message channel with self', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a DM with the test user himself and visit channel
             cy.startDirectMessage('Victor Welch', true, 'user-1');
 
@@ -175,6 +190,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a group message channel', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a GM channel and visit channel
             cy.startGroupMessage(['anne.stone', 'diana.wells']);
 
@@ -185,6 +203,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a direct message channel with another user', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a DM channel and visit channel
             cy.startDirectMessage('douglas.daniels');
 
@@ -195,6 +216,9 @@ describe('incidents can be started', () => {
         });
 
         it('while viewing a direct message channel with self', () => {
+            // # Navigate to the application
+            cy.visit('/');
+
             // # Create a DM with the test user himself and visit channel
             cy.startDirectMessage('Victor Welch', true, 'user-1');
 

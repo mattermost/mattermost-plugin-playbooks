@@ -117,6 +117,10 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
+	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{
+		"incident": newIncident,
+	}, userID)
+
 	ReturnJSON(w, &newIncident)
 }
 
@@ -526,6 +530,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -540,7 +545,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	options := incident.HeaderFilterOptions{
 		TeamID: teamID,
-		Status: incident.Ongoing,
+		Status: incident.All,
 		HasPermissionsTo: func(channelID string) bool {
 			err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
 			return err == nil

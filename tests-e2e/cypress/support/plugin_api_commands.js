@@ -36,6 +36,28 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
 });
 
 /**
+ * Start an incident directly via API.
+ */
+Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId}) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: incidentsEndpoint,
+        method: 'POST',
+        body: {
+            name: incidentName,
+            commander_user_id: commanderUserId,
+            team_id: teamId,
+            playbook: {
+                id: playbookId,
+            },
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
+/**
  * Delete an incident directly via API
  * @param {String} incidentId
  * All parameters required
@@ -86,7 +108,7 @@ Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
-        cy.wrap(response);
+        cy.wrap(response.body);
     });
 });
 
