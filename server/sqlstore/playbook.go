@@ -253,11 +253,10 @@ func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options
 // Update updates a playbook
 func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	if updated.ID == "" {
-		return errors.New("updating playbook without ID")
+		return errors.New("ID should not be empty")
 	}
 
-	// TODO: to sqlPlaybook
-	checklistsJSON, err := checklistsToJSON(updated.Checklists)
+	rawPlaybook, err := toSQLPlaybook(updated)
 	if err != nil {
 		return err
 	}
@@ -277,22 +276,22 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Update("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"Title":                updated.Title,
-			"TeamID":               updated.TeamID,
-			"CreatePublicIncident": updated.CreatePublicIncident,
-			"DeleteAt":             updated.DeleteAt,
-			"ChecklistsJSON":       checklistsJSON,
-			"Stages":               len(updated.Checklists),
-			"Steps":                getSteps(updated),
+			"Title":                rawPlaybook.Title,
+			"TeamID":               rawPlaybook.TeamID,
+			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
+			"DeleteAt":             rawPlaybook.DeleteAt,
+			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
+			"Stages":               len(rawPlaybook.Checklists),
+			"Steps":                getSteps(rawPlaybook.Playbook),
 		}).
-		Where(sq.Eq{"ID": updated.ID}))
+		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update playbook with id '%s'", updated.ID)
+		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
 
-	if err = p.replacePlaybookMembers(tx, updated); err != nil {
-		return errors.Wrapf(err, "failed to replace playbook members for playbook with id '%s'", updated.ID)
+	if err = p.replacePlaybookMembers(tx, rawPlaybook.Playbook); err != nil {
+		return errors.Wrapf(err, "failed to replace playbook members for playbook with id '%s'", rawPlaybook.ID)
 	}
 
 	if err = tx.Commit(); err != nil {

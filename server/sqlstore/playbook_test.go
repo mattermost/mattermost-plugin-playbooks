@@ -78,6 +78,59 @@ var (
 	pb = []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
 )
 
+func TestGetPlaybook(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+
+		t.Run(driverName+" - id empty", func(t *testing.T) {
+			actual, err := playbookStore.Get("")
+			require.Error(t, err)
+			require.EqualError(t, err, "ID cannot be empty")
+			require.Equal(t, playbook.Playbook{}, actual)
+		})
+
+		t.Run(driverName+" - create and retrieve playbook", func(t *testing.T) {
+			id, err := playbookStore.Create(pb02)
+			require.NoError(t, err)
+			expected := pb02.Clone()
+			expected.ID = id
+
+			actual, err := playbookStore.Get(id)
+			require.NoError(t, err)
+			require.Equal(t, expected, actual)
+		})
+
+		t.Run(driverName+" - create but retrieve non-existing playbook", func(t *testing.T) {
+			id, err := playbookStore.Create(pb02)
+			require.NoError(t, err)
+			expected := pb02.Clone()
+			expected.ID = id
+
+			actual, err := playbookStore.Get("nonexisting")
+			require.Error(t, err)
+			require.EqualError(t, err, "playbook does not exist for id 'nonexisting': not found")
+			require.Equal(t, playbook.Playbook{}, actual)
+		})
+
+		t.Run(driverName+" - set and retrieve playbook with no members and no checklists", func(t *testing.T) {
+			pb10 := NewPBBuilder().
+				WithTitle("playbook 10").
+				WithTeamID(team1id).
+				WithCreateAt(800).
+				ToPlaybook()
+			id, err := playbookStore.Create(pb10)
+			require.NoError(t, err)
+			expected := pb10.Clone()
+			expected.ID = id
+
+			actual, err := playbookStore.Get(id)
+			require.NoError(t, err)
+			require.Equal(t, expected, actual)
+		})
+	}
+}
+
 func TestGetPlaybooks(t *testing.T) {
 	createPlaybooks := func(store playbook.Store) {
 		t.Helper()
@@ -281,56 +334,124 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestUpdatePlaybook(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookStore := setupPlaybookStore(t, db)
 
-		t.Run(driverName+" - id empty", func(t *testing.T) {
-			actual, err := playbookStore.Get("")
-			require.Error(t, err)
-			require.EqualError(t, err, "ID cannot be empty")
-			require.Equal(t, playbook.Playbook{}, actual)
-		})
+		tests := []struct {
+			name        string
+			playbook    playbook.Playbook
+			update      func(playbook.Playbook) playbook.Playbook
+			expectedErr error
+		}{
+			{
+				name:     "id should not be empty",
+				playbook: NewPBBuilder().ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					return playbook.Playbook{}
+				},
+				expectedErr: errors.New("ID should not be empty"),
+			},
+			{
+				name:     "Incident should not contain checklists with no items",
+				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.Checklists[0].Items = []playbook.ChecklistItem{}
+					return old
+				},
+				expectedErr: errors.New("checklists with no items are not allowed"),
+			},
+			{
+				name:     "playbook now public",
+				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.CreatePublicIncident = true
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name:     "playbook new title",
+				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.Title = "new title"
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name:     "delete playbook",
+				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.DeleteAt = model.GetMillis()
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name:     "Incident with 2 checklists, update the checklists a bit",
+				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.Checklists[0].Items[0].State = playbook.ChecklistItemStateClosed
+					old.Checklists[1].Items[1].Title = "new title"
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name:     "Incident with 3 checklists, update the 0",
+				playbook: NewPBBuilder().WithChecklists([]int{1, 2, 5}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.Checklists = []playbook.Checklist{}
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name: "Incident with 2 members, go to 1",
+				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
+					WithMembers([]string{"Jon", "Andrew"}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.MemberIDs = []string{"Jon"}
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name: "Incident with 5 members, go to 0",
+				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
+					WithMembers([]string{"Jon", "Andrew", "j1", "j2", "j3"}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.MemberIDs = nil
+					return old
+				},
+				expectedErr: nil,
+			},
+		}
 
-		t.Run(driverName+" - create and retrieve playbook", func(t *testing.T) {
-			id, err := playbookStore.Create(pb02)
-			require.NoError(t, err)
-			expected := pb02.Clone()
-			expected.ID = id
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				returned, err := playbookStore.Create(tt.playbook)
+				tt.playbook.ID = returned
+				require.NoError(t, err)
+				expected := tt.update(tt.playbook)
 
-			actual, err := playbookStore.Get(id)
-			require.NoError(t, err)
-			require.Equal(t, expected, actual)
-		})
+				err = playbookStore.Update(expected)
 
-		t.Run(driverName+" - create but retrieve non-existing playbook", func(t *testing.T) {
-			id, err := playbookStore.Create(pb02)
-			require.NoError(t, err)
-			expected := pb02.Clone()
-			expected.ID = id
+				if tt.expectedErr != nil {
+					require.Error(t, err)
+					require.EqualError(t, err, tt.expectedErr.Error())
+					return
+				}
 
-			actual, err := playbookStore.Get("nonexisting")
-			require.Error(t, err)
-			require.EqualError(t, err, "playbook does not exist for id 'nonexisting': not found")
-			require.Equal(t, playbook.Playbook{}, actual)
-		})
+				require.NoError(t, err)
 
-		t.Run(driverName+" - set and retrieve playbook with no members and no checklists", func(t *testing.T) {
-			pb10 := NewPBBuilder().
-				WithTitle("playbook 10").
-				WithTeamID(team1id).
-				WithCreateAt(800).
-				ToPlaybook()
-			id, err := playbookStore.Create(pb10)
-			require.NoError(t, err)
-			expected := pb10.Clone()
-			expected.ID = id
-
-			actual, err := playbookStore.Get(id)
-			require.NoError(t, err)
-			require.Equal(t, expected, actual)
-		})
+				actual, err := playbookStore.Get(expected.ID)
+				require.NoError(t, err)
+				require.Equal(t, expected, actual)
+			})
+		}
 	}
 }
 
