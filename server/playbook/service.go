@@ -1,6 +1,7 @@
 package playbook
 
 import (
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -22,6 +23,8 @@ func NewService(store Store, poster bot.Poster, telemetry Telemetry) Service {
 }
 
 func (s *service) Create(playbook Playbook) (string, error) {
+	playbook.CreateAt = model.GetMillis()
+
 	newID, err := s.store.Create(playbook)
 	if err != nil {
 		return "", err

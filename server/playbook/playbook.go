@@ -19,6 +19,18 @@ type Playbook struct {
 	MemberIDs            []string    `json:"member_ids"`
 }
 
+func (p Playbook) Clone() Playbook {
+	newPlaybook := p
+	var newChecklists []Checklist
+	for _, c := range p.Checklists {
+		newChecklists = append(newChecklists, c.Clone())
+	}
+	newPlaybook.Checklists = newChecklists
+	var newMemberIDs []string
+	newMemberIDs = append(newMemberIDs, p.MemberIDs...)
+	return newPlaybook
+}
+
 // Checklist represents a checklist in a playbook
 type Checklist struct {
 	ID    string          `json:"id"`

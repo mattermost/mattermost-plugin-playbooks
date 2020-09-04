@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -32,8 +33,7 @@ type playbookMembers []struct {
 // NewPlaybookStore creates a new store for playbook service.
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
-		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "ChecklistJSON").
+		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt", "DeleteAt").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -83,7 +83,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"Title":                pbook.Title,
 			"TeamID":               pbook.TeamID,
 			"CreatePublicIncident": pbook.CreatePublicIncident,
-			"CreateAt":             model.GetMillis(),
+			"CreateAt":             pbook.CreateAt,
 			"DeleteAt":             0,
 			"ChecklistsJSON":       checklistsJSON,
 			"Stages":               len(pbook.Checklists),
@@ -146,7 +146,7 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 	return out, nil
 }
 
-// GetPlaybooks retrieves all playbooks that are not deleted.
+// GetPlaybooks retrieves all playbooks that are not deleted. Does not return Checklists
 func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 	// Beginning a transaction because we're doing multiple selects and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
@@ -200,16 +200,14 @@ func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID})
 
-	if playbook.IsValidSortBy(opts.Sort) {
+	if playbook.IsValidSortBy(opts.Sort) && playbook.IsValidOrderBy(opts.Direction) {
+		query = query.OrderBy(fmt.Sprintf("%s %s", opts.Sort, opts.Direction))
+	} else if playbook.IsValidSortBy(opts.Sort) {
 		query = query.OrderBy(string(opts.Sort))
 	}
 
-	if playbook.IsValidOrderBy(opts.Direction) {
-		query = query.OrderBy(string(opts.Direction))
-	}
-
 	err = p.store.selectBuilder(tx, &out, query)
-	if err == sql.ErrNoRows {
+	if err == sql.ErrNoRows || len(out) == 0 {
 		return out, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
 	} else if err != nil {
 		return out, errors.Wrap(err, "failed to get playbooks")
@@ -221,8 +219,6 @@ func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID})
 
-	// TODO: Alejandro, this should work, but I'm eyeballing it:
-	// And this is why SQL is awesome
 	query = p.memberIDsSelect.Where(nestedQuery.Prefix("PlaybookID IN (").Suffix(")"))
 
 	var memberIDs playbookMembers
@@ -324,16 +320,26 @@ func checklistsToJSON(pbook playbook.Playbook) (json.RawMessage, error) {
 	return checklistsJSON, nil
 }
 
-// replacePlaybookMembers replaces (updates or inserts) the members of a playbook
+// replacePlaybookMembers replaces the members of a playbook
 func (p *playbookStore) replacePlaybookMembers(e execer, pbook playbook.Playbook) error {
-	builder := sq.Replace("IR_PlaybookMember").
+	delBuilder := sq.Delete("IR_PlaybookMember").
+		Where(sq.Eq{"PlaybookID": pbook.ID})
+	if _, err := p.store.execBuilder(e, delBuilder); err != nil {
+		return err
+	}
+
+	if len(pbook.MemberIDs) == 0 {
+		return nil
+	}
+
+	insBuilder := sq.Insert("IR_PlaybookMember").
 		Columns("PlaybookID", "MemberID")
 
 	for _, m := range pbook.MemberIDs {
-		builder.Values(pbook.ID, m)
+		insBuilder = insBuilder.Values(pbook.ID, m)
 	}
 
-	_, err := p.store.execBuilder(e, builder)
+	_, err := p.store.execBuilder(e, insBuilder)
 	return err
 }
 
@@ -342,8 +348,8 @@ func addMembersToPlaybooks(memberIDs playbookMembers, out []playbook.Playbook) {
 	for _, m := range memberIDs {
 		pToM[m.PlaybookID] = append(pToM[m.PlaybookID], m.MemberID)
 	}
-	for _, p := range out {
-		p.MemberIDs = pToM[p.ID]
+	for i, p := range out {
+		out[i].MemberIDs = pToM[p.ID]
 	}
 }
 
