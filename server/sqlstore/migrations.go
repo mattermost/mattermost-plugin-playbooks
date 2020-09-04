@@ -29,10 +29,12 @@ var migrations = []Migration{
 			}
 
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				charset := "DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
+
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID VARCHAR(26) PRIMARY KEY,
-						Name VARCHAR(26) NOT NULL,
+						Name VARCHAR(1024) NOT NULL,
 						IsActive BOOLEAN NOT NULL,
 						CommanderUserID VARCHAR(26) NOT NULL,
 						TeamID VARCHAR(26) NOT NULL,
@@ -43,12 +45,12 @@ var migrations = []Migration{
 						ActiveStage BIGINT NOT NULL,
 						PostID VARCHAR(26) NOT NULL DEFAULT '',
 						PlaybookID VARCHAR(26) NOT NULL DEFAULT '',
-						ChecklistsJSON VARCHAR(60000) NOT NULL,
+						ChecklistsJSON TEXT NOT NULL,
 						INDEX IR_Incident_TeamID (TeamID),
 						INDEX IR_Incident_TeamID_CommanderUserID (TeamID, CommanderUserID),
 						INDEX IR_Incident_ChannelID (ChannelID)
-					);
-				`); err != nil {
+					)
+				` + charset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Incident")
 				}
 
@@ -60,13 +62,13 @@ var migrations = []Migration{
 						CreatePublicIncident BOOLEAN NOT NULL,
 						CreateAt BIGINT NOT NULL,
 						DeleteAt BIGINT NOT NULL DEFAULT 0,
-						ChecklistsJSON VARCHAR(60000) NOT NULL,
+						ChecklistsJSON TEXT NOT NULL,
 						Stages BIGINT NOT NULL DEFAULT 0,
 						Steps BIGINT NOT NULL DEFAULT 0,
 						INDEX IR_Playbook_TeamID (TeamID),
 						INDEX IR_PlaybookMember_PlaybookID (ID)
-					);
-				`); err != nil {
+					)
+				` + charset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Playbook")
 				}
 
@@ -76,11 +78,17 @@ var migrations = []Migration{
 						MemberID VARCHAR(26) NOT NULL,
 						INDEX IR_PlaybookMember_PlaybookID (PlaybookID),
 						INDEX IR_PlaybookMember_MemberID (MemberID)
-					);
-				`); err != nil {
+					)
+				` + charset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 			} else {
+				if _, err := e.Exec(`
+					CREATE EXTENSION IF NOT EXISTS unaccent;
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating extension unaccent")
+				}
+
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID TEXT PRIMARY KEY,

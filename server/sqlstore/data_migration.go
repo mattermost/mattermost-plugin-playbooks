@@ -7,7 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -60,7 +59,7 @@ type oldPlaybookIndex struct {
 	PlaybookIDs []string `json:"playbook_ids"`
 }
 
-func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI pluginkvstore.KVAPI) error {
+func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 	// Get old playbooks
 	var playbookIndex oldPlaybookIndex
 	if err := kvAPI.Get("v2_playbookindex", &playbookIndex); err != nil {

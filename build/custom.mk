@@ -14,6 +14,9 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/pluginkvstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore StoreAPI
 	mockgen -destination server/pluginkvstore/mocks/mock_userapi.go github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore UserAPI
 	mockgen -destination server/pluginkvstore/mocks/serverpluginapi/mock_plugin.go github.com/mattermost/mattermost-server/v5/plugin API
+	mockgen -destination server/sqlstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore KVAPI
+	mockgen -destination server/sqlstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore StoreAPI
+	mockgen -destination server/sqlstore/mocks/mock_configurationapi.go github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore ConfigurationAPI
 endif
 
 ## Runs the redocly server.

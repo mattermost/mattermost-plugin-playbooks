@@ -32,6 +32,9 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	}
 
 	// TODO: Leave the default mapper as strings.ToLower?
+	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		db.MapperFunc(func(s string) string { return s })
+	}
 
 	return &SQLStore{
 		log,

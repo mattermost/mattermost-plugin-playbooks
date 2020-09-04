@@ -46,5 +46,6 @@ func NewClient(api *pluginapi.Client) PluginAPIClient {
 	return PluginAPIClient{
 		KV:    &api.KV,
 		Store: api.Store,
+		User:  &api.User,
 	}
 }

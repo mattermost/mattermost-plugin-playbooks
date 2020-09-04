@@ -5,17 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
+	"unicode"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 type sqlIncident struct {
 	incident.Incident
-	ChecklistsJSON json.RawMessage // TODO: Alejandro, not sure if this is good, or if we should use string
+	ChecklistsJSON json.RawMessage
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -34,7 +40,7 @@ var _ incident.Store = (*incidentStore)(nil)
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
 		From("IR_Incident")
 
 	return &incidentStore{
@@ -66,23 +72,27 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 	}
 
 	if options.CommanderID != "" {
-		builder = builder.Where(sq.Eq{"CommanderID": options.CommanderID})
+		builder = builder.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 	}
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		builder = builder.Where(sq.Like{"Name": fmt.Sprint("%", options.SearchTerm, "%")})
+		column := "Name"
+		searchString := options.SearchTerm
+
+		// Postgres performs a case-sensitive search, so we need to lowercase
+		// both the column contents and the search string
+		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+			column = "LOWER(UNACCENT(Name))"
+			searchString = normalize(options.SearchTerm)
+		}
+
+		builder = builder.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
-	if incident.IsValidSortBy(options.Sort) {
-		builder = builder.OrderBy(options.Sort)
-	}
+	builder = builder.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
 
-	if incident.IsValidOrderBy(options.Order) {
-		builder = builder.OrderBy(options.Order)
-	}
-
-	var rawIncidents []sqlIncident
+	var rawIncidents []incident.Incident
 	if err := s.store.selectBuilder(s.store.db, &rawIncidents, builder); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
 	}
@@ -91,11 +101,8 @@ func (s *incidentStore) GetIncidents(options incident.HeaderFilterOptions) (*inc
 	for _, j := range rawIncidents {
 		// TODO: move to permission-checking in the sql call (MM-28008)
 		if options.HasPermissionsTo == nil || options.HasPermissionsTo(j.ChannelID) {
-			k, err := toIncident(j)
-			if err != nil {
-				return nil, err
-			}
-			incidents = append(incidents, *k)
+			j.Checklists = []playbook.Checklist{}
+			incidents = append(incidents, j)
 		}
 	}
 
@@ -120,9 +127,10 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	if newIncident.ID != "" {
 		return nil, errors.New("ID should not be set")
 	}
-	newIncident.ID = model.NewId()
+	incidentCopy := newIncident.Clone()
+	incidentCopy.ID = model.NewId()
 
-	rawIncident, err := toSQLIncident(newIncident)
+	rawIncident, err := toSQLIncident(incidentCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +157,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 		return nil, errors.Wrapf(err, "failed to store new incident")
 	}
 
-	return newIncident, nil
+	return incidentCopy, nil
 }
 
 // UpdateIncident updates an incident.
@@ -187,8 +195,13 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 
 // GetIncident gets an incident by ID.
 func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
+	withChecklistsSelect := s.store.builder.
+		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
+		From("IR_Incident")
+
 	var rawIncident sqlIncident
-	err := s.store.getBuilder(s.store.db, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
+	err := s.store.getBuilder(s.store.db, &rawIncident, withChecklistsSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {
@@ -236,12 +249,15 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 
 // GetCommanders returns the commanders of the incidents selected by options
 func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if options.TeamID == "" {
+		return nil, errors.New("team ID should not be empty")
+	}
+
 	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
 
 	// At the moment, the options only includes teamID and the HasPermissionsTo
-	// TODO: Alejandro, this is off the top of my head, I haven't been able to test it :)
 	query := s.queryBuilder.
 		Select("CommanderUserID", "ChannelID", "Username").
 		From("IR_Incident AS i").
@@ -259,13 +275,15 @@ func (s *incidentStore) GetCommanders(options incident.HeaderFilterOptions) ([]i
 	}
 
 	var ret []incident.CommanderInfo
+	added := make(map[string]bool)
 	for _, c := range commanders {
 		// TODO: move to permission-checking in the sql call (MM-28008)
-		if options.HasPermissionsTo(c.ChannelID) {
+		if !added[c.CommanderUserID] && options.HasPermissionsTo != nil && options.HasPermissionsTo(c.ChannelID) {
 			ret = append(ret, incident.CommanderInfo{
 				UserID:   c.CommanderUserID,
 				Username: c.Username,
 			})
+			added[c.CommanderUserID] = true
 		}
 	}
 
@@ -319,6 +337,12 @@ func min(a, b int) int {
 }
 
 func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
+	for _, checklist := range origIncident.Checklists {
+		if len(checklist.Items) == 0 {
+			return nil, errors.New("checklists with no items are not allowed")
+		}
+	}
+
 	checklistsJSON, err := json.Marshal(origIncident.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
@@ -331,9 +355,16 @@ func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
 
 func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	i := rawIncident.Incident
-	// TODO: Alejandro, this should work, but I wouldn't be surprised if I'm missing something.
 	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
 	return &i, nil
+}
+
+// normalize removes unicode marks and lowercases text
+func normalize(s string) string {
+	// create a transformer, from NFC to NFD, removes non-spacing unicode marks, then back to NFC
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	normed, _, _ := transform.String(t, strings.ToLower(s))
+	return normed
 }

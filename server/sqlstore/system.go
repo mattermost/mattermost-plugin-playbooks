@@ -12,9 +12,9 @@ func (sqlStore *SQLStore) getSystemValue(q queryer, key string) (string, error) 
 	var value string
 
 	err := sqlStore.getBuilder(q, &value,
-		sq.Select("Value").
+		sq.Select("SValue").
 			From("IR_System").
-			Where(sq.Eq{"Key": key}),
+			Where(sq.Eq{"SKey": key}),
 	)
 	if err == sql.ErrNoRows {
 		return "", nil
@@ -29,8 +29,8 @@ func (sqlStore *SQLStore) getSystemValue(q queryer, key string) (string, error) 
 func (sqlStore *SQLStore) setSystemValue(e execer, key, value string) error {
 	result, err := sqlStore.execBuilder(e,
 		sq.Update("IR_System").
-			Set("Value", value).
-			Where(sq.Eq{"Key": key}),
+			Set("SValue", value).
+			Where(sq.Eq{"SKey": key}),
 	)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update system key %s", key)
@@ -43,7 +43,7 @@ func (sqlStore *SQLStore) setSystemValue(e execer, key, value string) error {
 
 	_, err = sqlStore.execBuilder(e,
 		sq.Insert("IR_System").
-			Columns("Key", "Value").
+			Columns("SKey", "SValue").
 			Values(key, value),
 	)
 	if err != nil {

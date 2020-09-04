@@ -140,7 +140,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			name: "team1 only, ascending",
 			options: incident.HeaderFilterOptions{
 				TeamID: team1id,
-				Order:  "asc",
+				Order:  incident.OrderAsc,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 3,
@@ -152,7 +152,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "sort by end_at",
 			options: incident.HeaderFilterOptions{
-				Sort: "end_at",
+				Sort: incident.SortByEndAt,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 7,
@@ -255,8 +255,8 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "sorted by ended, ascending, page 1 by 2",
 			options: incident.HeaderFilterOptions{
-				Sort:    "end_at",
-				Order:   "asc",
+				Sort:    incident.SortByEndAt,
+				Order:   incident.OrderAsc,
 				Page:    1,
 				PerPage: 2,
 			},
@@ -286,7 +286,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			options: incident.HeaderFilterOptions{
 				Status:      incident.Ongoing,
 				CommanderID: commander3id,
-				Order:       "asc",
+				Order:       incident.OrderAsc,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 1,
@@ -299,8 +299,8 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			name: "commander1, asc, by end_at",
 			options: incident.HeaderFilterOptions{
 				CommanderID: commander1id,
-				Order:       "asc",
-				Sort:        "end_at",
+				Order:       incident.OrderAsc,
+				Sort:        incident.SortByEndAt,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 2,
