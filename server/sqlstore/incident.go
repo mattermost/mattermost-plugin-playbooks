@@ -173,6 +173,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
@@ -195,6 +196,10 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 
 // GetIncident gets an incident by ID.
 func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
+	if incidentID == "" {
+		return nil, errors.New("ID cannot be empty")
+	}
+
 	withChecklistsSelect := s.store.builder.
 		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
@@ -343,7 +348,7 @@ func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
 		}
 	}
 
-	checklistsJSON, err := json.Marshal(origIncident.Checklists)
+	checklistsJSON, err := checklistsToJSON(origIncident.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
 	}
@@ -351,6 +356,27 @@ func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
 		Incident:       *origIncident,
 		ChecklistsJSON: checklistsJSON,
 	}, nil
+}
+
+// An incident needs to assign unique ids to its checklist items
+func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) {
+	for i, c := range checklists {
+		if c.ID == "" {
+			checklists[i].ID = model.NewId()
+		}
+		for j, item := range c.Items {
+			if item.ID == "" {
+				checklists[i].Items[j].ID = model.NewId()
+			}
+		}
+	}
+
+	checklistsJSON, err := json.Marshal(checklists)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal checklist json")
+	}
+
+	return checklistsJSON, nil
 }
 
 func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {

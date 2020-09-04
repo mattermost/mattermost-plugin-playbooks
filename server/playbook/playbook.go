@@ -26,8 +26,7 @@ func (p Playbook) Clone() Playbook {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybook.Checklists = newChecklists
-	var newMemberIDs []string
-	newMemberIDs = append(newMemberIDs, p.MemberIDs...)
+	newPlaybook.MemberIDs = append([]string(nil), p.MemberIDs...)
 	return newPlaybook
 }
 
@@ -40,9 +39,7 @@ type Checklist struct {
 
 func (c Checklist) Clone() Checklist {
 	newChecklist := c
-	var newItems []ChecklistItem
-	newItems = append(newItems, c.Items...)
-	newChecklist.Items = newItems
+	newChecklist.Items = append([]ChecklistItem(nil), c.Items...)
 	return newChecklist
 }
 

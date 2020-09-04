@@ -12,6 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+type sqlPlaybook struct {
+	playbook.Playbook
+	ChecklistsJSON json.RawMessage
+}
+
 // playbookStore is a sql store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
 type playbookStore struct {
 	pluginAPI       PluginAPIClient
@@ -56,10 +61,9 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 	if pbook.ID != "" {
 		return "", errors.New("ID should be empty")
 	}
-
 	pbook.ID = model.NewId()
 
-	checklistsJSON, err := checklistsToJSON(pbook)
+	rawPlaybook, err := toSQLPlaybook(pbook)
 	if err != nil {
 		return "", err
 	}
@@ -79,21 +83,21 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Insert("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"ID":                   pbook.ID,
-			"Title":                pbook.Title,
-			"TeamID":               pbook.TeamID,
-			"CreatePublicIncident": pbook.CreatePublicIncident,
-			"CreateAt":             pbook.CreateAt,
-			"DeleteAt":             0,
-			"ChecklistsJSON":       checklistsJSON,
-			"Stages":               len(pbook.Checklists),
-			"Steps":                getSteps(pbook),
+			"ID":                   rawPlaybook.ID,
+			"Title":                rawPlaybook.Title,
+			"TeamID":               rawPlaybook.TeamID,
+			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
+			"CreateAt":             rawPlaybook.CreateAt,
+			"DeleteAt":             rawPlaybook.DeleteAt,
+			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
+			"Stages":               len(rawPlaybook.Checklists),
+			"Steps":                getSteps(rawPlaybook.Playbook),
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
 
-	if err = p.replacePlaybookMembers(tx, pbook); err != nil {
+	if err = p.replacePlaybookMembers(tx, rawPlaybook.Playbook); err != nil {
 		return "", errors.Wrap(err, "failed to replace playbook members")
 	}
 
@@ -101,7 +105,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 		return "", errors.Wrap(err, "could not commit transaction")
 	}
 
-	return pbook.ID, nil
+	return rawPlaybook.ID, nil
 }
 
 // Get retrieves a playbook
@@ -122,11 +126,21 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 		}
 	}()
 
-	err = p.store.getBuilder(tx, &out, p.playbookSelect.Where(sq.Eq{"ID": id}))
+	withChecklistsSelect := p.store.builder.
+		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt", "DeleteAt",
+			"ChecklistsJSON").
+		From("IR_Playbook")
+
+	var rawPlaybook sqlPlaybook
+	err = p.store.getBuilder(tx, &rawPlaybook, withChecklistsSelect.Where(sq.Eq{"ID": id}))
 	if err == sql.ErrNoRows {
-		return out, errors.Wrapf(playbook.ErrNotFound, "playbook with does not exist for id '%s'", id)
+		return out, errors.Wrapf(playbook.ErrNotFound, "playbook does not exist for id '%s'", id)
 	} else if err != nil {
 		return out, errors.Wrapf(err, "failed to get playbook by id '%s'", id)
+	}
+
+	if out, err = toPlaybook(rawPlaybook); err != nil {
+		return out, err
 	}
 
 	var memberIDs playbookMembers
@@ -242,7 +256,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 		return errors.New("updating playbook without ID")
 	}
 
-	checklistsJSON, err := checklistsToJSON(updated)
+	// TODO: to sqlPlaybook
+	checklistsJSON, err := checklistsToJSON(updated.Checklists)
 	if err != nil {
 		return err
 	}
@@ -288,7 +303,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 }
 
 // Delete deletes a playbook.
-// TODO: is this what we want to do now? (Never delete, just set deleteAt?)
+// TODO: is this what we expected to do now? (Never delete, just set deleteAt?)
 func (p *playbookStore) Delete(id string) error {
 	pbook, err := p.Get(id)
 	if err != nil {
@@ -298,26 +313,6 @@ func (p *playbookStore) Delete(id string) error {
 	pbook.DeleteAt = model.GetMillis()
 
 	return p.Update(pbook)
-}
-
-func checklistsToJSON(pbook playbook.Playbook) (json.RawMessage, error) {
-	for _, c := range pbook.Checklists {
-		if c.ID == "" {
-			c.ID = model.NewId()
-		}
-		for _, i := range c.Items {
-			if i.ID == "" {
-				i.ID = model.NewId()
-			}
-		}
-	}
-
-	checklistsJSON, err := json.Marshal(pbook.Checklists)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", pbook.ID)
-	}
-
-	return checklistsJSON, nil
 }
 
 // replacePlaybookMembers replaces the members of a playbook
@@ -340,6 +335,7 @@ func (p *playbookStore) replacePlaybookMembers(e execer, pbook playbook.Playbook
 	}
 
 	_, err := p.store.execBuilder(e, insBuilder)
+
 	return err
 }
 
@@ -358,5 +354,33 @@ func getSteps(pbook playbook.Playbook) int {
 	for _, p := range pbook.Checklists {
 		steps += len(p.Items)
 	}
+
 	return steps
+}
+
+func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
+	for _, checklist := range origPlaybook.Checklists {
+		if len(checklist.Items) == 0 {
+			return nil, errors.New("checklists with no items are not allowed")
+		}
+	}
+
+	checklistsJSON, err := json.Marshal(origPlaybook.Checklists)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)
+	}
+
+	return &sqlPlaybook{
+		Playbook:       origPlaybook,
+		ChecklistsJSON: checklistsJSON,
+	}, nil
+}
+
+func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
+	p := rawPlaybook.Playbook
+	if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
+		return playbook.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+	}
+
+	return p, nil
 }

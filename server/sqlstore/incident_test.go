@@ -652,6 +652,11 @@ func TestGetIncident(t *testing.T) {
 				ID:          "nonexisting",
 				ExpectedErr: errors.New("incident with id 'nonexisting' does not exist: not found"),
 			},
+			{
+				Name:        "Get without ID",
+				ID:          "",
+				ExpectedErr: errors.New("ID cannot be empty"),
+			},
 		}
 
 		for _, tt := range validIncidents {
