@@ -455,6 +455,42 @@ func TestUpdatePlaybook(t *testing.T) {
 	}
 }
 
+func TestDeletePlaybook(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+
+		t.Run(driverName+" - id empty", func(t *testing.T) {
+			err := playbookStore.Delete("")
+			require.Error(t, err)
+			require.EqualError(t, err, "ID cannot be empty")
+		})
+
+		t.Run(driverName+" - create and delete playbook", func(t *testing.T) {
+			before := model.GetMillis()
+
+			id, err := playbookStore.Create(pb02)
+			require.NoError(t, err)
+			expected := pb02.Clone()
+			expected.ID = id
+
+			actual, err := playbookStore.Get(id)
+			require.NoError(t, err)
+			require.Equal(t, expected, actual)
+
+			err = playbookStore.Delete(id)
+			require.NoError(t, err)
+
+			actual, err = playbookStore.Get(id)
+			require.NoError(t, err)
+			require.Greater(t, actual.DeleteAt, before)
+
+			expected.DeleteAt = actual.DeleteAt
+			require.Equal(t, expected, actual)
+		})
+	}
+}
+
 // PlaybookBuilder is a utility to build playbooks with a default base.
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToPlaybook()

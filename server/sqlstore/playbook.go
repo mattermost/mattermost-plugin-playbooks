@@ -302,7 +302,6 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 }
 
 // Delete deletes a playbook.
-// TODO: is this what we expected to do now? (Never delete, just set deleteAt?)
 func (p *playbookStore) Delete(id string) error {
 	pbook, err := p.Get(id)
 	if err != nil {
