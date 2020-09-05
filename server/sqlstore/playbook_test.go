@@ -247,10 +247,20 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:   "team1 steps",
+			name:   "team1 steps default is ASC",
 			teamID: team1id,
 			options: playbook.Options{
 				Sort: playbook.SortBySteps,
+			},
+			expected:    []playbook.Playbook{pb08, pb01, pb02, pb06, pb04},
+			expectedErr: nil,
+		},
+		{
+			name:   "team1 steps, specify ASC",
+			teamID: team1id,
+			options: playbook.Options{
+				Sort:      playbook.SortBySteps,
+				Direction: playbook.OrderAsc,
 			},
 			expected:    []playbook.Playbook{pb08, pb01, pb02, pb06, pb04},
 			expectedErr: nil,
