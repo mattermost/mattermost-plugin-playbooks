@@ -303,9 +303,11 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 
 	defer func() {
-		cerr := tx.Rollback()
-		if err == nil && cerr != sql.ErrTxDone {
-			err = cerr
+		if err != nil {
+			cerr := tx.Rollback()
+			if cerr != nil && cerr != sql.ErrTxDone {
+				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
+			}
 		}
 	}()
 

@@ -1,6 +1,8 @@
 package sqlstore
 
 import (
+	"database/sql"
+
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 )
@@ -30,7 +32,7 @@ func (sqlStore *SQLStore) migrate(pluginAPI PluginAPIClient, migration Migration
 	defer func() {
 		if err != nil {
 			cerr := tx.Rollback()
-			if cerr != nil {
+			if cerr != nil && cerr != sql.ErrTxDone {
 				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
 			}
 		}

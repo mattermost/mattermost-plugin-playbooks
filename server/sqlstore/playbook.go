@@ -74,9 +74,11 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 		return "", errors.Wrap(err, "could not begin transaction")
 	}
 	defer func() {
-		cerr := tx.Rollback()
-		if err == nil && cerr != sql.ErrTxDone {
-			err = cerr
+		if err != nil {
+			cerr := tx.Rollback()
+			if cerr != nil && cerr != sql.ErrTxDone {
+				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
+			}
 		}
 	}()
 
@@ -120,9 +122,11 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 		return out, errors.Wrap(err, "could not begin transaction")
 	}
 	defer func() {
-		cerr := tx.Rollback()
-		if err == nil && cerr != sql.ErrTxDone {
-			err = cerr
+		if err != nil {
+			cerr := tx.Rollback()
+			if cerr != nil && cerr != sql.ErrTxDone {
+				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
+			}
 		}
 	}()
 
@@ -168,9 +172,11 @@ func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 		return out, errors.Wrap(err, "could not begin transaction")
 	}
 	defer func() {
-		cerr := tx.Rollback()
-		if err == nil && cerr != sql.ErrTxDone {
-			err = cerr
+		if err != nil {
+			cerr := tx.Rollback()
+			if cerr != nil && cerr != sql.ErrTxDone {
+				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
+			}
 		}
 	}()
 
@@ -204,9 +210,11 @@ func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options
 		return out, errors.Wrap(err, "could not begin transaction")
 	}
 	defer func() {
-		cerr := tx.Rollback()
-		if err == nil && cerr != sql.ErrTxDone {
-			err = cerr
+		if err != nil {
+			cerr := tx.Rollback()
+			if cerr != nil && cerr != sql.ErrTxDone {
+				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
+			}
 		}
 	}()
 
@@ -267,9 +275,11 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 		return errors.Wrap(err, "could not begin transaction")
 	}
 	defer func() {
-		cerr := tx.Rollback()
-		if err == nil && cerr != sql.ErrTxDone {
-			err = cerr
+		if err != nil {
+			cerr := tx.Rollback()
+			if cerr != nil && cerr != sql.ErrTxDone {
+				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
+			}
 		}
 	}()
 
