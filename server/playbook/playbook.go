@@ -11,6 +11,7 @@ var ErrNotFound = errors.New("not found")
 type Playbook struct {
 	ID                   string      `json:"id"`
 	Title                string      `json:"title"`
+	Description          string      `json:"description"`
 	TeamID               string      `json:"team_id"`
 	CreatePublicIncident bool        `json:"create_public_incident"`
 	CreateAt             int64       `json:"create_at"`

@@ -20,6 +20,7 @@ type oldIncident struct {
 type oldHeader struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
+	Description      string `json:"description"`
 	IsActive         bool   `json:"is_active"`
 	CommanderUserID  string `json:"commander_user_id"`
 	TeamID           string `json:"team_id"`
@@ -32,6 +33,7 @@ type oldHeader struct {
 type oldPlaybook struct {
 	ID                   string         `json:"id"`
 	Title                string         `json:"title"`
+	Description          string         `json:"description"`
 	TeamID               string         `json:"team_id"`
 	CreatePublicIncident bool           `json:"create_public_incident"`
 	Checklists           []oldChecklist `json:"checklists"`
@@ -130,6 +132,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 		Columns(
 			"ID",
 			"Title",
+			"Description",
 			"TeamID",
 			"CreatePublicIncident",
 			"CreateAt",
@@ -155,6 +158,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 		playbookInsert = playbookInsert.Values(
 			playbook.ID,
 			playbook.Title,
+			playbook.Description,
 			playbook.TeamID,
 			playbook.CreatePublicIncident,
 			model.GetMillis(), // Creation date is set to now
@@ -177,6 +181,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 		Columns(
 			"ID",
 			"Name",
+			"Description",
 			"IsActive",
 			"CommanderUserID",
 			"TeamID",
@@ -198,6 +203,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 		incidentInsert = incidentInsert.Values(
 			incident.ID,
 			incident.Name,
+			incident.Description,
 			incident.IsActive,
 			incident.CommanderUserID,
 			incident.TeamID,

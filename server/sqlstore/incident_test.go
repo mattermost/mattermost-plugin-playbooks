@@ -48,6 +48,7 @@ var (
 
 	inc01 = *NewBuilder().
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
+		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithChannelID(channelID01).
 		WithIsActive(true).
 		WithCommanderUserID(commander1.UserID).
@@ -718,6 +719,15 @@ func TestUpdateIncident(t *testing.T) {
 				ExpectedErr: nil,
 			},
 			{
+				Name:     "new description",
+				Incident: NewBuilder().WithDescription("old description").ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.Description = "new description"
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
 				Name:     "deleted",
 				Incident: NewBuilder().ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
@@ -1122,6 +1132,12 @@ func NewBuilder() *IncidentBuilder {
 
 func (t *IncidentBuilder) WithName(name string) *IncidentBuilder {
 	t.Name = name
+
+	return t
+}
+
+func (t *IncidentBuilder) WithDescription(desc string) *IncidentBuilder {
+	t.Description = desc
 
 	return t
 }

@@ -35,6 +35,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID VARCHAR(26) PRIMARY KEY,
 						Name VARCHAR(1024) NOT NULL,
+						Description VARCHAR(4096) NOT NULL,
 						IsActive BOOLEAN NOT NULL,
 						CommanderUserID VARCHAR(26) NOT NULL,
 						TeamID VARCHAR(26) NOT NULL,
@@ -58,6 +59,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_Playbook (
 						ID VARCHAR(26) PRIMARY KEY,
 						Title VARCHAR(1024) NOT NULL,
+						Description VARCHAR(4096) NOT NULL,
 						TeamID VARCHAR(26) NOT NULL,
 						CreatePublicIncident BOOLEAN NOT NULL,
 						CreateAt BIGINT NOT NULL,
@@ -93,6 +95,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID TEXT PRIMARY KEY,
 						Name TEXT NOT NULL,
+						Description TEXT NOT NULL,
 						IsActive BOOLEAN NOT NULL,
 						CommanderUserID TEXT NOT NULL,
 						TeamID TEXT NOT NULL,
@@ -113,6 +116,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_Playbook (
 						ID TEXT PRIMARY KEY,
 						Title TEXT NOT NULL,
+						Description TEXT NOT NULL,
 						TeamID TEXT NOT NULL,
 						CreatePublicIncident BOOLEAN NOT NULL,
 						CreateAt BIGINT NOT NULL,

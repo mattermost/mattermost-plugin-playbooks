@@ -39,7 +39,7 @@ var _ incident.Store = (*incidentStore)(nil)
 // NewIncidentStore creates a new store for incident ServiceImpl.
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	incidentSelect := sqlStore.builder.
-		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
+		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
 		From("IR_Incident")
 
@@ -140,6 +140,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 		SetMap(map[string]interface{}{
 			"ID":              rawIncident.ID,
 			"Name":            rawIncident.Name,
+			"Description":     rawIncident.Description,
 			"IsActive":        rawIncident.IsActive,
 			"CommanderUserID": rawIncident.CommanderUserID,
 			"TeamID":          rawIncident.TeamID,
@@ -178,6 +179,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"Name":            rawIncident.Name,
+			"Description":     rawIncident.Description,
 			"IsActive":        rawIncident.IsActive,
 			"CommanderUserID": rawIncident.CommanderUserID,
 			"EndAt":           rawIncident.EndAt,
@@ -200,9 +202,8 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 		return nil, errors.New("ID cannot be empty")
 	}
 
-	withChecklistsSelect := s.store.builder.
-		Select("ID", "Name", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
+	withChecklistsSelect := s.incidentSelect.
+		Columns("ChecklistsJSON").
 		From("IR_Incident")
 
 	var rawIncident sqlIncident

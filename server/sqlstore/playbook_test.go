@@ -14,6 +14,7 @@ import (
 var (
 	pb01 = NewPBBuilder().
 		WithTitle("playbook 1").
+		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(500).
 		WithChecklists([]int{1, 2}).
@@ -39,6 +40,7 @@ var (
 
 	pb04 = NewPBBuilder().
 		WithTitle("playbook 4").
+		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(800).
 		WithChecklists([]int{1, 2, 40}).
@@ -391,6 +393,16 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
+				name: "playbook new description",
+				playbook: NewPBBuilder().WithDescription("original description").
+					WithChecklists([]int{1}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.Description = "new description"
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
 				name:     "delete playbook",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
@@ -530,6 +542,12 @@ func (p *PlaybookBuilder) WithID() *PlaybookBuilder {
 
 func (p *PlaybookBuilder) WithTitle(title string) *PlaybookBuilder {
 	p.Title = title
+
+	return p
+}
+
+func (p *PlaybookBuilder) WithDescription(desc string) *PlaybookBuilder {
+	p.Description = desc
 
 	return p
 }

@@ -38,7 +38,8 @@ type playbookMembers []struct {
 // NewPlaybookStore creates a new store for playbook service.
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
-		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt", "DeleteAt").
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+			"DeleteAt").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -87,6 +88,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 		SetMap(map[string]interface{}{
 			"ID":                   rawPlaybook.ID,
 			"Title":                rawPlaybook.Title,
+			"Description":          rawPlaybook.Description,
 			"TeamID":               rawPlaybook.TeamID,
 			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
 			"CreateAt":             rawPlaybook.CreateAt,
@@ -130,9 +132,8 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 		}
 	}()
 
-	withChecklistsSelect := p.store.builder.
-		Select("ID", "Title", "TeamID", "CreatePublicIncident", "CreateAt", "DeleteAt",
-			"ChecklistsJSON").
+	withChecklistsSelect := p.playbookSelect.
+		Columns("ChecklistsJSON").
 		From("IR_Playbook")
 
 	var rawPlaybook sqlPlaybook
@@ -287,6 +288,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 		Update("IR_Playbook").
 		SetMap(map[string]interface{}{
 			"Title":                rawPlaybook.Title,
+			"Description":          rawPlaybook.Description,
 			"TeamID":               rawPlaybook.TeamID,
 			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
 			"DeleteAt":             rawPlaybook.DeleteAt,
