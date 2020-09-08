@@ -9,10 +9,10 @@ import {Switch, Route, useRouteMatch} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
-import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
@@ -98,7 +98,7 @@ const BackstageIncidentList: FC = () => {
 
     async function fetchCommanders() {
         const commanders = await fetchCommandersInTeam(currentTeam.id);
-        return commanders.map((c) => selectUser(c.user_id));
+        return commanders.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
     }
 
     function setCommanderId(userId?: string) {

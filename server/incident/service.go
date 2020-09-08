@@ -35,11 +35,14 @@ type ServiceImpl struct {
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
 
+// DialogFieldPlaybookIDKey is the key for the playbook ID field used in OpenCreateIncidentDialog.
+const DialogFieldPlaybookIDKey = "playbookID"
+
 // DialogFieldNameKey is the key for the incident name field used in OpenCreateIncidentDialog.
 const DialogFieldNameKey = "incidentName"
 
-// DialogFieldPlaybookIDKey is the key for the playbook ID field used in OpenCreateIncidentDialog.
-const DialogFieldPlaybookIDKey = "playbookID"
+// DialogFieldDescriptionKey is the key for the incident description field used in OpenCreateIncidentDialog.
+const DialogFieldDescriptionKey = "incidentDescription"
 
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
@@ -313,6 +316,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.telemetry.ChangeCommander(incidentToModify)
 
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
@@ -343,7 +347,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
-	s.telemetry.ModifyCheckedState(incidentID, userID, newState)
+	s.telemetry.ModifyCheckedState(incidentID, userID, newState, incidentToModify.CommanderUserID == userID, itemToCheck.AssigneeID == userID)
 
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
@@ -516,6 +520,7 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.telemetry.ChangeStage(incidentToModify)
 
 	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
 		incidentToModify.Checklists[oldActiveStage].Title,
@@ -688,10 +693,8 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
 	channelHeader := "The channel was created by the Incident Response plugin."
 
-	if incdnt.PostID != "" {
-		postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incdnt.PostID)
-
-		channelHeader = fmt.Sprintf("[Original Post](%s) | %s", postURL, channelHeader)
+	if incdnt.Description != "" {
+		channelHeader = incdnt.Description
 	}
 
 	channelType := model.CHANNEL_PRIVATE
@@ -776,6 +779,14 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}
 
 	introText := fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
+
+	var descriptionDefault string
+	if postID != "" {
+		postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, postID)
+
+		descriptionDefault = fmt.Sprintf("[Original Post](%s)", postURL)
+	}
+
 	return &model.Dialog{
 		Title:            "Incident Details",
 		IntroductionText: introText,
@@ -787,11 +798,20 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 				Options:     options,
 			},
 			{
-				DisplayName: "Channel Name",
+				DisplayName: "Incident Name",
 				Name:        DialogFieldNameKey,
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
+			},
+			{
+				DisplayName: "Incident Description",
+				Name:        DialogFieldDescriptionKey,
+				Type:        "textarea",
+				Default:     descriptionDefault,
+				MinLength:   0,
+				MaxLength:   1024,
+				Optional:    true,
 			},
 		},
 		SubmitLabel:    "Start Incident",

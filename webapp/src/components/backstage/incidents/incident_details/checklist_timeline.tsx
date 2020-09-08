@@ -16,8 +16,6 @@ import {Incident} from 'src/types/incident';
 
 import EmptyChecklistImage from 'src/components/assets/empty_checklist';
 
-import './incident_details.scss';
-
 interface Props {
     incident: Incident;
 }

@@ -22,8 +22,12 @@ const ProfileAutocompleteContainer = styled.div`
 
 const UserLine = styled.div`
     display: flex;
-    flex-direction: row;
-    margin: 10px 0;
+    align-items: center;
+    margin: 12px 0;
+`;
+
+const UserList = styled.div`
+    margin: 12px 0;
 `;
 
 const RemoveLink = styled.a`
@@ -47,12 +51,14 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
                 userIds={props.playbook.member_ids}
                 searchProfiles={props.searchProfiles}
             />
-            {props.playbook.member_ids.map((userId) => (
-                <UserLine key={userId}>
-                    <SharePlaybookProfile userId={userId}/>
-                    <RemoveLink onClick={() => props.onRemoveUser(userId)} >{'Remove'}</RemoveLink>
-                </UserLine>
-            ))}
+            <UserList>
+                {props.playbook.member_ids.map((userId) => (
+                    <UserLine key={userId}>
+                        <SharePlaybookProfile userId={userId}/>
+                        <RemoveLink onClick={() => props.onRemoveUser(userId)} >{'Remove'}</RemoveLink>
+                    </UserLine>
+                ))}
+            </UserList>
         </ProfileAutocompleteContainer>
     );
 };

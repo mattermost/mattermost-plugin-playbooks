@@ -22,7 +22,12 @@ const ChannelHeaderButton: FC = () => {
         }
     }
 
-    return <IncidentIcon ref={myRef}/>;
+    return (
+        <IncidentIcon
+            id='incidentIcon'
+            ref={myRef}
+        />
+    );
 };
 
 export default ChannelHeaderButton;

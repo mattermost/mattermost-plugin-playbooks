@@ -5,6 +5,9 @@ import React, {FC, useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {searchProfiles} from 'mattermost-redux/actions/users';
 
@@ -21,10 +24,11 @@ import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
+import {PrimaryButton} from 'src/components/assets/buttons';
+import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 
 import './playbook.scss';
 import StagesAndStepsIcon from './stages_and_steps_icon';
-import {BackstageNavbar, BackstageNavbarBackIcon} from './backstage';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 
@@ -44,16 +48,17 @@ const EditView = styled.div`
 `;
 
 const EditHeader = styled.div`
-    height: 56px;
-    padding: 8px 32px;
-    box-shadow: 0px 1px 0px var(--center-channel-color-16), 0px 0px 0px var(--center-channel-color-16);
+    height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--center-channel-color-16);
     white-space: nowrap;
 `;
 
 const EditHeaderTextContainer = styled.span`
     display: inline-flex;
     flex-direction: column;
-    margin-left: 12px;
     vertical-align: middle;
 `;
 
@@ -72,80 +77,69 @@ const EditHeaderHelpText = styled.span`
 `;
 
 const EditContent = styled.div`
+    background: var(--center-channel-color-04);
     flex-grow: 1;
-    padding: 8px;
 `;
 
 const Sidebar = styled.div`
-    width: 408px;
+    width: 400px;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    box-shadow: 1px 0px 0px var(--center-channel-color-16), -1px 0px 0px var(--center-channel-color-16);
+    border-left: 1px solid var(--center-channel-color-16);
+`;
+
+const SidebarBlock = styled.div`
+    margin: 0 0 40px;
 `;
 
 const SidebarHeader = styled.div`
-    height: 56px;
-    padding: 16px;
+    display: flex;
+    align-items: center;
+    height: 72px;
+    padding: 0 24px;
     font-weight: 600;
     font-size: 16px;
-    line-height: 24px;
-    box-shadow: 0px 1px 0px var(--center-channel-color-16), 0px 0px 0px var(--center-channel-color-16);
+    border-bottom: 1px solid var(--center-channel-color-16);
 `;
 
 const SidebarHeaderText = styled.div`
     font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
-    margin: 18px 0;
+    margin: 0 0 16px;
+`;
+
+const SidebarHeaderDescription = styled.div`
+    margin: 8px 0 0;
+    font-weight: 400;
+    color: var(--center-channel-color-64);
 `;
 
 const SidebarContent = styled.div`
+    background: var(--center-channel-bg);
     flex-grow: 1;
-    padding: 6px 24px;
+    padding: 24px;
 `;
 
 const NavbarPadding = styled.div`
     flex-grow: 1;
 `;
 
-const SaveButton = styled.button`
-    display: inline-flex;
-    background: var(--button-bg);
-    color: var(--button-color);
-    border-radius: 4px;
-    border: 0px;
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 18px;
-    align-items: center;
-    padding: 12px 20px;
-    transition: all 0.15s ease-out;
-
-    &:hover {
-        opacity: 0.8;
-    }
-
-    &:active  {
-        background: rgba(var(--button-bg-rgb), 0.8);
-    }
-
-    &:disabled {
-        background: rgba(var(--button-bg-rgb), 0.4);
-    }
-
-    i {
-        font-size: 24px;
-    }
+const EditableTexts = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 15px;
 `;
 
-const EditableTextContainer = styled.div`
-    padding: 15px;
+const EditableTitleContainer = styled.div`
     font-size: 20px;
     line-height: 28px;
-    color: var(--center-channel-color);
+`;
+
+const EditableDescriptionContainer = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const RadioContainer = styled.div`
@@ -155,6 +149,9 @@ const RadioContainer = styled.div`
 
 const RadioLabel = styled.label`
     && {
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
         font-size: 14px;
         font-weight: normal;
         line-height: 20px;
@@ -163,11 +160,14 @@ const RadioLabel = styled.label`
 
 const RadioInput = styled.input`
     && {
-        margin: 0 8px;
+        width: 16px;
+        height: 16px;
+        margin: 0 8px 0 0;
     }
 `;
 
 const OuterContainer = styled.div`
+    background: var(center-channel-bg);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -246,7 +246,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const saveDisabled = playbook.title.trim() === '' || playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
+    const saveDisabled = playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const onSave = async () => {
         if (saveDisabled) {
@@ -265,8 +266,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
         // It's possible there was actually nothing there.
         if (playbookExcludingEmpty.checklists.length === 0) {
-            updateChecklist(playbookExcludingEmpty.checklists);
             return;
+        }
+
+        if (playbookExcludingEmpty.title.trim().length === 0) {
+            playbookExcludingEmpty.title = 'Untitled Playbook';
         }
 
         await savePlaybook(playbookExcludingEmpty);
@@ -285,6 +289,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setPlaybook({
             ...playbook,
             title,
+        });
+        setChangesMade(true);
+    };
+
+    const handleDescriptionChange = (description: string) => {
+        setPlaybook({
+            ...playbook,
+            description,
         });
         setChangesMade(true);
     };
@@ -346,31 +358,47 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     return (
         <OuterContainer>
             <BackstageNavbar>
-                <BackstageNavbarBackIcon
-                    className='icon-arrow-back-ios back-icon'
+                <BackstageNavbarIcon
+                    className='icon-arrow-left back-icon'
                     onClick={confirmOrClose}
                 />
-                <EditableTextContainer>
-                    <EditableText
-                        text={playbook.title}
-                        onChange={handleTitleChange}
-                    />
-                </EditableTextContainer>
+                <EditableTexts>
+                    <EditableTitleContainer>
+                        <EditableText
+                            id='playbook-name'
+                            text={playbook.title}
+                            onChange={handleTitleChange}
+                            placeholder={'Untitled Playbook'}
+                        />
+                    </EditableTitleContainer>
+                    <EditableDescriptionContainer>
+                        <EditableText
+                            id='playbook-description'
+                            text={playbook.description}
+                            onChange={handleDescriptionChange}
+                            placeholder={'Playbook description'}
+                        />
+                    </EditableDescriptionContainer>
+                </EditableTexts>
                 <NavbarPadding/>
-                <SaveButton
+                <PrimaryButton
+                    className='mr-4'
+                    data-testid='save_playbook'
                     onClick={onSave}
                     disabled={saveDisabled}
                 >
-                    {'Save'}
-                </SaveButton>
+                    <span>
+                        {'Save'}
+                    </span>
+                </PrimaryButton>
             </BackstageNavbar>
             <Container>
                 <EditView>
                     <EditHeader>
                         <StagesAndStepsIcon/>
                         <EditHeaderTextContainer>
-                            <EditHeaderText>{'Stages and Steps'}</EditHeaderText>
-                            <EditHeaderHelpText>{'Stages allow you to group your tasks. Steps are meant to be completed by members of the incident channel.'}</EditHeaderHelpText>
+                            <EditHeaderText>{'Stages and Tasks'}</EditHeaderText>
+                            <EditHeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</EditHeaderHelpText>
                         </EditHeaderTextContainer>
                     </EditHeader>
                     <EditContent>
@@ -385,40 +413,50 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         {'Settings'}
                     </SidebarHeader>
                     <SidebarContent>
-                        <SidebarHeaderText>
-                            {'Channel Type'}
-                        </SidebarHeaderText>
-                        <RadioContainer>
-                            <RadioLabel>
-                                <RadioInput
-                                    type='radio'
-                                    name='public'
-                                    value={'public'}
-                                    checked={playbook.create_public_incident}
-                                    onChange={handlePublicChange}
-                                />
-                                {'Public'}
-                            </RadioLabel>
-                            <RadioLabel>
-                                <RadioInput
-                                    type='radio'
-                                    name='public'
-                                    value={'private'}
-                                    checked={!playbook.create_public_incident}
-                                    onChange={handlePublicChange}
-                                />
-                                {'Private'}
-                            </RadioLabel>
-                        </RadioContainer>
-                        <SidebarHeaderText>
-                            {'Share Playbook'}
-                        </SidebarHeaderText>
-                        <SharePlaybook
-                            onAddUser={handleUsersInput}
-                            onRemoveUser={handleRemoveUser}
-                            searchProfiles={searchUsers}
-                            playbook={playbook}
-                        />
+                        <SidebarBlock>
+                            <SidebarHeaderText>
+                                {'Incident channel'}
+                                <SidebarHeaderDescription>
+                                    {'Determine the type of incident channel this playbook creates when starting an incident.'}
+                                </SidebarHeaderDescription>
+                            </SidebarHeaderText>
+                            <RadioContainer>
+                                <RadioLabel>
+                                    <RadioInput
+                                        type='radio'
+                                        name='public'
+                                        value={'public'}
+                                        checked={playbook.create_public_incident}
+                                        onChange={handlePublicChange}
+                                    />
+                                    {'Public'}
+                                </RadioLabel>
+                                <RadioLabel>
+                                    <RadioInput
+                                        type='radio'
+                                        name='public'
+                                        value={'private'}
+                                        checked={!playbook.create_public_incident}
+                                        onChange={handlePublicChange}
+                                    />
+                                    {'Private'}
+                                </RadioLabel>
+                            </RadioContainer>
+                        </SidebarBlock>
+                        <SidebarBlock>
+                            <SidebarHeaderText>
+                                {'Share Playbook'}
+                                <SidebarHeaderDescription>
+                                    {'Only people who you share with can create an incident from this playbook.'}
+                                </SidebarHeaderDescription>
+                            </SidebarHeaderText>
+                            <SharePlaybook
+                                onAddUser={handleUsersInput}
+                                onRemoveUser={handleRemoveUser}
+                                searchProfiles={searchUsers}
+                                playbook={playbook}
+                            />
+                        </SidebarBlock>
                     </SidebarContent>
                 </Sidebar>
             </Container>

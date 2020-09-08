@@ -115,6 +115,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string) {
 		require.Contains(t, properties, "CreateAt")
 		require.Contains(t, properties, "NumChecklists")
 		require.Contains(t, properties, "TotalChecklistItems")
+		require.Contains(t, properties, "ActiveStage")
 
 		return &incident.Incident{
 			Header: incident.Header{
@@ -181,7 +182,7 @@ func TestRudderTelemetry(t *testing.T) {
 			rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID)
 		}},
 		"modify checked checklist item": {eventModifyStateChecklistItem, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen)
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen, true, false)
 		}},
 		"move checklist item": {eventMoveChecklistItem, func() {
 			rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID)
@@ -308,6 +309,7 @@ func TestIncidentProperties(t *testing.T) {
 		"PostID":              dummyIncident.PostID,
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
+		"ActiveStage":     dummyIncident.ActiveStage,
 	}
 
 	require.Equal(t, expectedProperties, properties)

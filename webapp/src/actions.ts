@@ -9,6 +9,7 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {selectToggleRHS} from 'src/selectors';
+import {Incident} from 'src/types/incident';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -18,6 +19,10 @@ import {
     SetRHSOpen,
     SetTriggerId,
     SetClientId,
+    INCIDENT_CREATED,
+    IncidentCreated,
+    RECEIVED_TEAM_INCIDENT_CHANNELS,
+    ReceivedTeamIncidentChannels,
 } from './types/actions';
 
 import {
@@ -88,3 +93,13 @@ export function setClientId(clientId: string): SetClientId {
         clientId,
     };
 }
+
+export const incidentCreated = (incident: Incident): IncidentCreated => ({
+    type: INCIDENT_CREATED,
+    incident,
+});
+
+export const receivedTeamIncidentChannels = (channelIds: string[]): ReceivedTeamIncidentChannels => ({
+    type: RECEIVED_TEAM_INCIDENT_CHANNELS,
+    channelIds,
+});

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import {
     Draggable,
     Droppable,
@@ -13,26 +13,25 @@ import styled from 'styled-components';
 
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
-import {ChecklistItemDetailsEdit} from 'src/components/checklist_item';
+import {TertiaryButton} from 'src/components/assets/buttons';
 
 import CollapsibleSection from './collapsible_section';
 import StepEdit from './step_edit';
 import DragHandle from './drag_handle';
 
-const NewStep = styled.button`
-    display: block;
-    border: none;
-    background: none;
+const DragPlaceholderText = styled.div`
+    border: 2px dashed rgb(var(--button-bg-rgb));
+    border-radius: 5px;
+    padding: 30px;
+    margin: 5px 50px;
+    text-align: center;
     color: rgb(var(--button-bg-rgb));
-    margin-top: 8px;
-    margin-left: 25px;
 `;
 
 interface Props {
     checklist: Checklist;
     checklistIndex: number;
     onChange: (checklist: Checklist) => void;
-    onRemove: () => void;
 }
 
 export const StageEditor = (props: Props): React.ReactElement => {
@@ -71,6 +70,15 @@ export const StageEditor = (props: Props): React.ReactElement => {
         props.onChange(newChecklist);
     };
 
+    const handleAddChecklistItem = () => {
+        onAddChecklistItem({
+            title: '',
+            state: ChecklistItemState.Open,
+            command: '',
+            description: '',
+        });
+    };
+
     return (
         <CollapsibleSection
             title={props.checklist.title}
@@ -85,7 +93,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                         ref={droppableProvided.innerRef}
                         {...droppableProvided.droppableProps}
                     >
-                        {props.checklist.items.map((checklistItem: ChecklistItem, idx: number) => (
+                        {props.checklist.items.length > 0 ? props.checklist.items.map((checklistItem: ChecklistItem, idx: number) => (
                             <Draggable
                                 index={idx}
                                 key={props.checklistIndex + checklistItem.title + idx}
@@ -93,6 +101,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             >
                                 {(draggableProvided: DraggableProvided) => (
                                     <DragHandle
+                                        step={true}
                                         draggableProvided={draggableProvided}
                                         onDelete={() => onRemoveChecklistItem(idx)}
                                     >
@@ -106,24 +115,24 @@ export const StageEditor = (props: Props): React.ReactElement => {
                                     </DragHandle>
                                 )}
                             </Draggable>
-                        ))}
+                        )) : (
+                            <DragPlaceholderText
+                                onClick={handleAddChecklistItem}
+                            >
+                                {'Drag and drop an existing task or click to create a new task.'}
+                            </DragPlaceholderText>
+                        )}
                         {droppableProvided.placeholder}
                     </div>
                 )}
             </Droppable>
-            <NewStep
-                onClick={() => {
-                    onAddChecklistItem({
-                        title: '',
-                        state: ChecklistItemState.Open,
-                        command: '',
-                        description: '',
-                    });
-                }}
+            <TertiaryButton
+                className='mt-3'
+                onClick={handleAddChecklistItem}
             >
                 <i className='icon-plus'/>
-                {'New Step'}
-            </NewStep>
+                {'New Task'}
+            </TertiaryButton>
         </CollapsibleSection>
     );
 };

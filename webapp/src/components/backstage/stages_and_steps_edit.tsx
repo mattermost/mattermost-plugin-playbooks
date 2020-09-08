@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {
     DragDropContext,
     Droppable,
@@ -17,6 +17,8 @@ import {Checklist, emptyChecklist} from 'src/types/playbook';
 
 import HorizontalBar from 'src/components/backstage/horizontal_bar';
 
+import ConfirmModal from '../widgets/confirmation_modal';
+
 import {StageEditor} from './stage_edit';
 import DragHandle from './drag_handle';
 
@@ -24,10 +26,16 @@ const NewStage = styled.button`
     border: none;
     background: none;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    padding: 12px 20px;
+    margin: 0 0 0 20px;
+
+    &:hover {
+        color: var(--center-channel-color);
+    }
 `;
 
 const NewStageContainer = styled.div`
-    margin: 20px 0;
+    margin: 12px 32px 0 0;
 `;
 
 interface Props {
@@ -36,6 +44,8 @@ interface Props {
 }
 
 export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
+    const [confirmRemoveChecklistNum, setConfirmRemoveChecklistNum] = useState(-1);
+
     const onDragEnd = (result: DropResult) => {
         if (!result.destination) {
             return;
@@ -125,6 +135,15 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
         props.onChange(newChecklist);
     };
 
+    const handleDeletePressed = (checklistIndex: number) => {
+        const filteredChecklistItems = props.checklists[checklistIndex].items.filter((item) => item.title || item.command);
+        if (filteredChecklistItems.length === 0) {
+            onRemoveChecklist(checklistIndex);
+        } else {
+            setConfirmRemoveChecklistNum(checklistIndex);
+        }
+    };
+
     return (
         <DragDropContext onDragEnd={onDragEnd}>
             <Droppable
@@ -145,17 +164,15 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                             >
                                 {(draggableProvided: DraggableProvided) => (
                                     <DragHandle
+                                        step={false}
                                         draggableProvided={draggableProvided}
-                                        onDelete={() => onRemoveChecklist(checklistIndex)}
+                                        onDelete={() => handleDeletePressed(checklistIndex)}
                                     >
                                         <StageEditor
                                             checklist={checklist}
                                             checklistIndex={checklistIndex}
                                             onChange={(newChecklist: Checklist) => {
                                                 onChangeChecklist(checklistIndex, newChecklist);
-                                            }}
-                                            onRemove={() => {
-                                                onRemoveChecklist(checklistIndex);
                                             }}
                                         />
                                     </DragHandle>
@@ -171,11 +188,22 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                     <NewStage
                         onClick={onAddChecklist}
                     >
-                        <i className='icon-plus'/>
+                        <i className='icon-plus icon-16'/>
                         {'New Stage'}
                     </NewStage>
                 </HorizontalBar>
             </NewStageContainer>
+            <ConfirmModal
+                show={confirmRemoveChecklistNum >= 0}
+                title={'Remove Stage'}
+                message={'Are you sere you want to remove the stage? All steps will be removed.'}
+                confirmButtonText={'Remove Stage'}
+                onConfirm={() => {
+                    onRemoveChecklist(confirmRemoveChecklistNum);
+                    setConfirmRemoveChecklistNum(-1);
+                }}
+                onCancel={() => setConfirmRemoveChecklistNum(-1)}
+            />
         </DragDropContext>
     );
 };

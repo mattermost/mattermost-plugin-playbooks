@@ -117,6 +117,10 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
+	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{
+		"incident": newIncident,
+	}, userID)
+
 	ReturnJSON(w, &newIncident)
 }
 
@@ -176,14 +180,23 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	name := request.Submission[incident.DialogFieldNameKey].(string)
-	playbookID := request.Submission[incident.DialogFieldPlaybookIDKey].(string)
+	var playbookID, name, description string
+	if rawPlaybookID, ok := request.Submission[incident.DialogFieldPlaybookIDKey].(string); ok {
+		playbookID = rawPlaybookID
+	}
+	if rawName, ok := request.Submission[incident.DialogFieldNameKey].(string); ok {
+		name = rawName
+	}
+	if rawDescription, ok := request.Submission[incident.DialogFieldDescriptionKey].(string); ok {
+		description = rawDescription
+	}
 
 	payloadIncident := incident.Incident{
 		Header: incident.Header{
 			CommanderUserID: request.UserId,
 			TeamID:          request.TeamId,
 			Name:            name,
+			Description:     description,
 		},
 		PostID:     state.PostID,
 		PlaybookID: playbookID,
@@ -194,7 +207,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		var msg string
 
 		if errors.Is(err, incident.ErrChannelDisplayNameInvalid) {
-			msg = "The channel name is invalid or too long. Please use a valid name with fewer than 64 characters."
+			msg = "The incident name is invalid or too long. Please use a valid name with fewer than 64 characters."
 		} else if errors.Is(err, incident.ErrPermission) {
 			msg = err.Error()
 		}
@@ -528,6 +541,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -542,7 +556,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	options := incident.HeaderFilterOptions{
 		TeamID: teamID,
-		Status: incident.Ongoing,
+		Status: incident.All,
 		HasPermissionsTo: func(channelID string) bool {
 			err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
 			return err == nil

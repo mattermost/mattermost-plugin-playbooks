@@ -125,6 +125,21 @@ func (mr *MockAPIMockRecorder) CreateChannel(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateChannel", reflect.TypeOf((*MockAPI)(nil).CreateChannel), arg0)
 }
 
+// CreateCommand mocks base method
+func (m *MockAPI) CreateCommand(arg0 *model.Command) (*model.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateCommand", arg0)
+	ret0, _ := ret[0].(*model.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateCommand indicates an expected call of CreateCommand
+func (mr *MockAPIMockRecorder) CreateCommand(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCommand", reflect.TypeOf((*MockAPI)(nil).CreateCommand), arg0)
+}
+
 // CreatePost mocks base method
 func (m *MockAPI) CreatePost(arg0 *model.Post) (*model.Post, *model.AppError) {
 	m.ctrl.T.Helper()
@@ -255,6 +270,20 @@ func (m *MockAPI) DeleteChannelMember(arg0, arg1 string) *model.AppError {
 func (mr *MockAPIMockRecorder) DeleteChannelMember(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChannelMember", reflect.TypeOf((*MockAPI)(nil).DeleteChannelMember), arg0, arg1)
+}
+
+// DeleteCommand mocks base method
+func (m *MockAPI) DeleteCommand(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCommand", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCommand indicates an expected call of DeleteCommand
+func (mr *MockAPIMockRecorder) DeleteCommand(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCommand", reflect.TypeOf((*MockAPI)(nil).DeleteCommand), arg0)
 }
 
 // DeleteEphemeralPost mocks base method
@@ -575,6 +604,21 @@ func (m *MockAPI) GetChannelsForTeamForUser(arg0, arg1 string, arg2 bool) ([]*mo
 func (mr *MockAPIMockRecorder) GetChannelsForTeamForUser(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelsForTeamForUser", reflect.TypeOf((*MockAPI)(nil).GetChannelsForTeamForUser), arg0, arg1, arg2)
+}
+
+// GetCommand mocks base method
+func (m *MockAPI) GetCommand(arg0 string) (*model.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommand", arg0)
+	ret0, _ := ret[0].(*model.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommand indicates an expected call of GetCommand
+func (mr *MockAPIMockRecorder) GetCommand(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommand", reflect.TypeOf((*MockAPI)(nil).GetCommand), arg0)
 }
 
 // GetConfig mocks base method
@@ -1555,6 +1599,66 @@ func (mr *MockAPIMockRecorder) KVSetWithOptions(arg0, arg1, arg2 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "KVSetWithOptions", reflect.TypeOf((*MockAPI)(nil).KVSetWithOptions), arg0, arg1, arg2)
 }
 
+// ListBuiltInCommands mocks base method
+func (m *MockAPI) ListBuiltInCommands() ([]*model.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListBuiltInCommands")
+	ret0, _ := ret[0].([]*model.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListBuiltInCommands indicates an expected call of ListBuiltInCommands
+func (mr *MockAPIMockRecorder) ListBuiltInCommands() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBuiltInCommands", reflect.TypeOf((*MockAPI)(nil).ListBuiltInCommands))
+}
+
+// ListCommands mocks base method
+func (m *MockAPI) ListCommands(arg0 string) ([]*model.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCommands", arg0)
+	ret0, _ := ret[0].([]*model.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListCommands indicates an expected call of ListCommands
+func (mr *MockAPIMockRecorder) ListCommands(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCommands", reflect.TypeOf((*MockAPI)(nil).ListCommands), arg0)
+}
+
+// ListCustomCommands mocks base method
+func (m *MockAPI) ListCustomCommands(arg0 string) ([]*model.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCustomCommands", arg0)
+	ret0, _ := ret[0].([]*model.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListCustomCommands indicates an expected call of ListCustomCommands
+func (mr *MockAPIMockRecorder) ListCustomCommands(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCustomCommands", reflect.TypeOf((*MockAPI)(nil).ListCustomCommands), arg0)
+}
+
+// ListPluginCommands mocks base method
+func (m *MockAPI) ListPluginCommands(arg0 string) ([]*model.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPluginCommands", arg0)
+	ret0, _ := ret[0].([]*model.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPluginCommands indicates an expected call of ListPluginCommands
+func (mr *MockAPIMockRecorder) ListPluginCommands(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPluginCommands", reflect.TypeOf((*MockAPI)(nil).ListPluginCommands), arg0)
+}
+
 // LoadPluginConfiguration mocks base method
 func (m *MockAPI) LoadPluginConfiguration(arg0 interface{}) error {
 	m.ctrl.T.Helper()
@@ -2036,6 +2140,21 @@ func (m *MockAPI) UpdateChannelMemberRoles(arg0, arg1, arg2 string) (*model.Chan
 func (mr *MockAPIMockRecorder) UpdateChannelMemberRoles(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChannelMemberRoles", reflect.TypeOf((*MockAPI)(nil).UpdateChannelMemberRoles), arg0, arg1, arg2)
+}
+
+// UpdateCommand mocks base method
+func (m *MockAPI) UpdateCommand(arg0 string, arg1 *model.Command) (*model.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCommand", arg0, arg1)
+	ret0, _ := ret[0].(*model.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateCommand indicates an expected call of UpdateCommand
+func (mr *MockAPIMockRecorder) UpdateCommand(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCommand", reflect.TypeOf((*MockAPI)(nil).UpdateCommand), arg0, arg1)
 }
 
 // UpdateEphemeralPost mocks base method

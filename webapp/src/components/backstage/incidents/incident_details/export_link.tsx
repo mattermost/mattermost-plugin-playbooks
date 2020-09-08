@@ -39,7 +39,7 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
         <div className='banner'>
             <div className='banner__text'>
                 <i className='icon icon-download-outline mr-1'/>
-                {'Downloading incident channel export'}
+                {'Downloading channel log'}
             </div>
         </div>
     );
@@ -47,7 +47,7 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     const linkText = (
         <>
             <i className='icon icon-download-outline export-icon'/>
-            {'Export Incident Channel'}
+            {'Export Channel Log'}
         </>
     );
 
