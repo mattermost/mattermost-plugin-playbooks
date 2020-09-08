@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {getTestElement} from '../../support/ui_commands';
-
 describe('backstage incident list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
@@ -78,6 +76,6 @@ describe('backstage incident list', () => {
         });
 
         // * Verify that the header contains the incident name
-        getTestElement('incident-title').contains(incidentName);
+        cy.findByTestId('incident-title').contains(incidentName);
     });
 });

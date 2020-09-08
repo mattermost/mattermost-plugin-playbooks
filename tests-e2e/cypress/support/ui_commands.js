@@ -20,11 +20,6 @@ function clickPostHeaderItem(postId, location, item) {
     }
 }
 
-// getTestElement, just the function here, but it's a Cypress command in our codebase
-export function getTestElement(selector) {
-    return cy.get(`[data-testid="${selector}"]`);
-}
-
 Cypress.Commands.add('getLastPostId', () => {
     waitUntilPermanentPost();
 
