@@ -105,6 +105,7 @@ func incidentProperties(incdnt *incident.Incident) map[string]interface{} {
 		"PostID":              incdnt.PostID,
 		"NumChecklists":       len(incdnt.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
+		"ActiveStage":         incdnt.ActiveStage,
 	}
 }
 

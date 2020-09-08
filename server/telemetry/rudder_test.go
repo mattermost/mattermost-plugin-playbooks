@@ -309,7 +309,7 @@ func TestIncidentProperties(t *testing.T) {
 		"PostID":              dummyIncident.PostID,
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
-		"ActiveStage":     dummyIncident.ActiveStage,
+		"ActiveStage":         dummyIncident.ActiveStage,
 	}
 
 	require.Equal(t, expectedProperties, properties)

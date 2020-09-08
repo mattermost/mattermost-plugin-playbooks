@@ -53,7 +53,7 @@ const myIncidentChannelIds = (state: Set<string> = new Set(), action: IncidentCr
         const incident = incidentCreatedAction.incident;
         const newState = new Set(state);
 
-        newState.add(incident.primary_channel_id);
+        newState.add(incident.channel_id);
         return newState;
     }
     case RECEIVED_TEAM_INCIDENT_CHANNELS: {

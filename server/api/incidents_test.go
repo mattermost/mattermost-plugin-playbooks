@@ -81,10 +81,10 @@ func TestIncidents(t *testing.T) {
 				TeamID:          dialogRequest.TeamId,
 				Name:            "incidentName",
 			},
-			Playbook: &withid,
+			PlaybookID: "playbookid1",
 		}
 		retI := i
-		retI.PrimaryChannelID = "channelID"
+		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
