@@ -110,3 +110,11 @@ func (sqlStore *SQLStore) execBuilder(e execer, b builder) (sql.Result, error) {
 
 	return sqlStore.exec(e, sqlString, args...)
 }
+
+// finalizeTransaction ensures a transaction is closed after use, rolling back if not already committed.
+func (sqlStore *SQLStore) finalizeTransaction(tx *sqlx.Tx) {
+	// Rollback returns sql.ErrTxDone if the transaction was already closed.
+	if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+		sqlStore.log.Errorf("Failed to rollback transaction; err: %v", err)
+	}
+}

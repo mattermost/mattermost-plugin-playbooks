@@ -130,7 +130,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	incidentCopy := newIncident.Clone()
 	incidentCopy.ID = model.NewId()
 
-	rawIncident, err := toSQLIncident(incidentCopy)
+	rawIncident, err := toSQLIncident(*incidentCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 		return errors.New("ID should not be empty")
 	}
 
-	rawIncident, err := toSQLIncident(newIncident)
+	rawIncident, err := toSQLIncident(*newIncident)
 	if err != nil {
 		return err
 	}
@@ -302,15 +302,7 @@ func (s *incidentStore) NukeDB() (err error) {
 	if err != nil {
 		return errors.Wrap(err, "could not begin transaction")
 	}
-
-	defer func() {
-		if err != nil {
-			cerr := tx.Rollback()
-			if cerr != nil && cerr != sql.ErrTxDone {
-				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
-			}
-		}
-	}()
+	defer s.store.finalizeTransaction(tx)
 
 	if _, err := tx.Exec("DELETE FROM IR_Incident"); err != nil {
 		return errors.Wrap(err, "could not delete IR_Incident")
@@ -344,36 +336,49 @@ func min(a, b int) int {
 	return b
 }
 
-func toSQLIncident(origIncident *incident.Incident) (*sqlIncident, error) {
+func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
 	for _, checklist := range origIncident.Checklists {
 		if len(checklist.Items) == 0 {
 			return nil, errors.New("checklists with no items are not allowed")
 		}
 	}
 
-	checklistsJSON, err := checklistsToJSON(origIncident.Checklists)
+	newChecklists := populateChecklistIDs(origIncident.Checklists)
+	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
 	}
+
 	return &sqlIncident{
-		Incident:       *origIncident,
+		Incident:       origIncident,
 		ChecklistsJSON: checklistsJSON,
 	}, nil
 }
 
-// An incident needs to assign unique ids to its checklist items
-func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) {
+// populateChecklistIDs returns a cloned slice with ids entered for checklists and checklist items.
+func populateChecklistIDs(checklists []playbook.Checklist) []playbook.Checklist {
+	if len(checklists) == 0 {
+		return nil
+	}
+
+	newChecklists := make([]playbook.Checklist, len(checklists))
 	for i, c := range checklists {
-		if c.ID == "" {
-			checklists[i].ID = model.NewId()
+		newChecklists[i] = c.Clone()
+		if newChecklists[i].ID == "" {
+			newChecklists[i].ID = model.NewId()
 		}
-		for j, item := range c.Items {
+		for j, item := range newChecklists[i].Items {
 			if item.ID == "" {
-				checklists[i].Items[j].ID = model.NewId()
+				newChecklists[i].Items[j].ID = model.NewId()
 			}
 		}
 	}
 
+	return newChecklists
+}
+
+// An incident needs to assign unique ids to its checklist items
+func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) {
 	checklistsJSON, err := json.Marshal(checklists)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal checklist json")

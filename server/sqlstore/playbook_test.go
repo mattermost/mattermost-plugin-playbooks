@@ -167,14 +167,14 @@ func TestGetPlaybooks(t *testing.T) {
 
 		createPlaybooks(playbookStore)
 
-		for _, tt := range tests {
-			t.Run(driverName+" - "+tt.name, func(t *testing.T) {
+		for _, testCase := range tests {
+			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
 				actual, err := playbookStore.GetPlaybooks()
 
-				if tt.expectedErr != nil {
+				if testCase.expectedErr != nil {
 					require.Nil(t, actual)
 					require.Error(t, err)
-					require.Equal(t, tt.expectedErr.Error(), err.Error())
+					require.Equal(t, testCase.expectedErr.Error(), err.Error())
 
 					return
 				}
@@ -187,11 +187,11 @@ func TestGetPlaybooks(t *testing.T) {
 				}
 
 				// remove the checklists from the expected playbooks--we don't return them in getPlaybooks
-				for i := range tt.expected {
-					tt.expected[i].Checklists = []playbook.Checklist(nil)
+				for i := range testCase.expected {
+					testCase.expected[i].Checklists = []playbook.Checklist(nil)
 				}
 
-				require.ElementsMatch(t, tt.expected, actual)
+				require.ElementsMatch(t, testCase.expected, actual)
 			})
 		}
 	}
@@ -300,7 +300,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:        "none found",
 			teamID:      "not-existing",
 			expected:    []playbook.Playbook(nil),
-			expectedErr: errors.Wrap(playbook.ErrNotFound, "no playbooks found"),
+			expectedErr: nil,
 		},
 	}
 
@@ -316,14 +316,14 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 
 		createPlaybooks(playbookStore)
 
-		for _, tt := range tests {
-			t.Run(driverName+" - "+tt.name, func(t *testing.T) {
-				actual, err := playbookStore.GetPlaybooksForTeam(tt.teamID, tt.options)
+		for _, testCase := range tests {
+			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
+				actual, err := playbookStore.GetPlaybooksForTeam(testCase.teamID, testCase.options)
 
-				if tt.expectedErr != nil {
+				if testCase.expectedErr != nil {
 					require.Nil(t, actual)
 					require.Error(t, err)
-					require.Equal(t, tt.expectedErr.Error(), err.Error())
+					require.Equal(t, testCase.expectedErr.Error(), err.Error())
 
 					return
 				}
@@ -336,11 +336,11 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				}
 
 				// remove the checklists from the expected playbooks--we don't return them in getPlaybooks
-				for i := range tt.expected {
-					tt.expected[i].Checklists = []playbook.Checklist(nil)
+				for i := range testCase.expected {
+					testCase.expected[i].Checklists = []playbook.Checklist(nil)
 				}
 
-				require.Equal(t, tt.expected, actual)
+				require.Equal(t, testCase.expected, actual)
 			})
 		}
 	}
@@ -363,7 +363,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				update: func(old playbook.Playbook) playbook.Playbook {
 					return playbook.Playbook{}
 				},
-				expectedErr: errors.New("ID should not be empty"),
+				expectedErr: errors.New("id should not be empty"),
 			},
 			{
 				name:     "Incident should not contain checklists with no items",
@@ -435,7 +435,36 @@ func TestUpdatePlaybook(t *testing.T) {
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]string{"Jon", "Andrew"}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
-					old.MemberIDs = []string{"Jon"}
+					old.MemberIDs = []string{"Andrew"}
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name: "Incident with 3 members, go to 4 with different members",
+				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
+					WithMembers([]string{"Jon", "Andrew", "Bob"}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.MemberIDs = []string{"Matt", "Bill", "Alice", "Jen"}
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name: "Incident with 3 members, go to 4 with one different member",
+				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
+					WithMembers([]string{"Jon", "Andrew", "Bob"}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.MemberIDs = []string{"Jon", "Andrew", "Bob", "Alice"}
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name:     "Incident with 0 members, go to 2",
+				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
+				update: func(old playbook.Playbook) playbook.Playbook {
+					old.MemberIDs = []string{"Alice", "Jen"}
 					return old
 				},
 				expectedErr: nil,
@@ -452,18 +481,18 @@ func TestUpdatePlaybook(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				returned, err := playbookStore.Create(tt.playbook)
-				tt.playbook.ID = returned
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				returned, err := playbookStore.Create(testCase.playbook)
+				testCase.playbook.ID = returned
 				require.NoError(t, err)
-				expected := tt.update(tt.playbook)
+				expected := testCase.update(testCase.playbook)
 
 				err = playbookStore.Update(expected)
 
-				if tt.expectedErr != nil {
+				if testCase.expectedErr != nil {
 					require.Error(t, err)
-					require.EqualError(t, err, tt.expectedErr.Error())
+					require.EqualError(t, err, testCase.expectedErr.Error())
 					return
 				}
 

@@ -31,8 +31,8 @@ type Options struct {
 	Direction SortDirection
 }
 
-func IsValidSortBy(sortBy SortField) bool {
-	switch sortBy {
+func IsValidSort(sort SortField) bool {
+	switch sort {
 	case SortByTitle,
 		SortByStages,
 		SortBySteps:
@@ -42,6 +42,6 @@ func IsValidSortBy(sortBy SortField) bool {
 	return false
 }
 
-func IsValidOrderBy(orderBy SortDirection) bool {
-	return orderBy == OrderAsc || orderBy == OrderDesc
+func IsValidDirection(direction SortDirection) bool {
+	return direction == OrderAsc || direction == OrderDesc
 }

@@ -138,8 +138,8 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 			"CreateAt",
 			"DeleteAt",
 			"ChecklistsJSON",
-			"Stages",
-			"Steps",
+			"NumStages",
+			"NumSteps",
 		)
 
 	playbookMemberInsert := store.builder.

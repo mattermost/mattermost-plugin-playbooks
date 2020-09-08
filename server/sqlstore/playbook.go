@@ -74,14 +74,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 	if err != nil {
 		return "", errors.Wrap(err, "could not begin transaction")
 	}
-	defer func() {
-		if err != nil {
-			cerr := tx.Rollback()
-			if cerr != nil && cerr != sql.ErrTxDone {
-				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
-			}
-		}
-	}()
+	defer p.store.finalizeTransaction(tx)
 
 	_, err = p.store.execBuilder(tx, sq.
 		Insert("IR_Playbook").
@@ -94,14 +87,14 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"CreateAt":             rawPlaybook.CreateAt,
 			"DeleteAt":             rawPlaybook.DeleteAt,
 			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
-			"Stages":               len(rawPlaybook.Checklists),
-			"Steps":                getSteps(rawPlaybook.Playbook),
+			"NumStages":            len(rawPlaybook.Checklists),
+			"NumSteps":             getSteps(rawPlaybook.Playbook),
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
 
-	if err = p.replacePlaybookMembers(tx, rawPlaybook.Playbook); err != nil {
+	if err = p.replacePlaybookMembers(tx, tx, rawPlaybook.Playbook); err != nil {
 		return "", errors.Wrap(err, "failed to replace playbook members")
 	}
 
@@ -123,14 +116,7 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 	if err != nil {
 		return out, errors.Wrap(err, "could not begin transaction")
 	}
-	defer func() {
-		if err != nil {
-			cerr := tx.Rollback()
-			if cerr != nil && cerr != sql.ErrTxDone {
-				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
-			}
-		}
-	}()
+	defer p.store.finalizeTransaction(tx)
 
 	withChecklistsSelect := p.playbookSelect.
 		Columns("ChecklistsJSON").
@@ -165,21 +151,14 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 	return out, nil
 }
 
-// GetPlaybooks retrieves all playbooks that are not deleted. Does not return Checklists
+// GetPlaybooks retrieves all playbooks that are not deleted.
 func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 	// Beginning a transaction because we're doing multiple selects and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return out, errors.Wrap(err, "could not begin transaction")
 	}
-	defer func() {
-		if err != nil {
-			cerr := tx.Rollback()
-			if cerr != nil && cerr != sql.ErrTxDone {
-				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
-			}
-		}
-	}()
+	defer p.store.finalizeTransaction(tx)
 
 	err = p.store.selectBuilder(tx, &out, p.playbookSelect.Where(sq.Eq{"DeleteAt": 0}))
 	if err == sql.ErrNoRows {
@@ -203,34 +182,27 @@ func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 	return out, nil
 }
 
-// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
+// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
 func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options) (out []playbook.Playbook, err error) {
 	// Beginning a transaction because we're doing multiple selects and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return out, errors.Wrap(err, "could not begin transaction")
 	}
-	defer func() {
-		if err != nil {
-			cerr := tx.Rollback()
-			if cerr != nil && cerr != sql.ErrTxDone {
-				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
-			}
-		}
-	}()
+	defer p.store.finalizeTransaction(tx)
 
 	query := p.playbookSelect.
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID})
 
-	if playbook.IsValidSortBy(opts.Sort) && playbook.IsValidOrderBy(opts.Direction) {
-		query = query.OrderBy(fmt.Sprintf("%s %s", opts.Sort, opts.Direction))
-	} else if playbook.IsValidSortBy(opts.Sort) {
-		query = query.OrderBy(string(opts.Sort))
+	if playbook.IsValidSort(opts.Sort) && playbook.IsValidDirection(opts.Direction) {
+		query = query.OrderBy(fmt.Sprintf("%s %s", sortOptionToSQL(opts.Sort), directionOptionToSQL(opts.Direction)))
+	} else if playbook.IsValidSort(opts.Sort) {
+		query = query.OrderBy(sortOptionToSQL(opts.Sort))
 	}
 
 	err = p.store.selectBuilder(tx, &out, query)
-	if err == sql.ErrNoRows || len(out) == 0 {
+	if err == sql.ErrNoRows {
 		return out, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
 	} else if err != nil {
 		return out, errors.Wrap(err, "failed to get playbooks")
@@ -262,7 +234,7 @@ func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options
 // Update updates a playbook
 func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	if updated.ID == "" {
-		return errors.New("ID should not be empty")
+		return errors.New("id should not be empty")
 	}
 
 	rawPlaybook, err := toSQLPlaybook(updated)
@@ -275,14 +247,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "could not begin transaction")
 	}
-	defer func() {
-		if err != nil {
-			cerr := tx.Rollback()
-			if cerr != nil && cerr != sql.ErrTxDone {
-				err = errors.Wrap(err, "because of error, tried to rollback. Rollback returned: "+cerr.Error())
-			}
-		}
-	}()
+	defer p.store.finalizeTransaction(tx)
 
 	_, err = p.store.execBuilder(tx, sq.
 		Update("IR_Playbook").
@@ -293,8 +258,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
 			"DeleteAt":             rawPlaybook.DeleteAt,
 			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
-			"Stages":               len(rawPlaybook.Checklists),
-			"Steps":                getSteps(rawPlaybook.Playbook),
+			"NumStages":            len(rawPlaybook.Checklists),
+			"NumSteps":             getSteps(rawPlaybook.Playbook),
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -302,7 +267,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
 
-	if err = p.replacePlaybookMembers(tx, rawPlaybook.Playbook); err != nil {
+	if err = p.replacePlaybookMembers(tx, tx, rawPlaybook.Playbook); err != nil {
 		return errors.Wrapf(err, "failed to replace playbook members for playbook with id '%s'", rawPlaybook.ID)
 	}
 
@@ -326,9 +291,11 @@ func (p *playbookStore) Delete(id string) error {
 }
 
 // replacePlaybookMembers replaces the members of a playbook
-func (p *playbookStore) replacePlaybookMembers(e execer, pbook playbook.Playbook) error {
+func (p *playbookStore) replacePlaybookMembers(q queryer, e execer, pbook playbook.Playbook) error {
+	// Delete existing members who are not in the new pbook.MemberIDs list
 	delBuilder := sq.Delete("IR_PlaybookMember").
-		Where(sq.Eq{"PlaybookID": pbook.ID})
+		Where(sq.Eq{"PlaybookID": pbook.ID}).
+		Where(sq.NotEq{"MemberID": pbook.MemberIDs})
 	if _, err := p.store.execBuilder(e, delBuilder); err != nil {
 		return err
 	}
@@ -337,16 +304,39 @@ func (p *playbookStore) replacePlaybookMembers(e execer, pbook playbook.Playbook
 		return nil
 	}
 
-	insBuilder := sq.Insert("IR_PlaybookMember").
-		Columns("PlaybookID", "MemberID")
+	// Now, only add new members
+	// I would prefer to do this, but my mattemost-server is on 9.4, so it's not available
+	// insertBuilder := sq.Insert("IR_PlaybookMember").
+	//	 Columns("PlaybookID", "MemberID").
+	//	 Suffix("ON CONFLICT (PlaybookID, MemberID) DO NOTHING")
 
-	for _, m := range pbook.MemberIDs {
-		insBuilder = insBuilder.Values(pbook.ID, m)
+	// Instead, do it ourselves:
+	selBuilder := sq.Select("MemberID").
+		From("IR_PlaybookMember").
+		Where(sq.Eq{"PlaybookID": pbook.ID})
+
+	var existingMembers []string
+	if err := p.store.selectBuilder(q, &existingMembers, selBuilder); err != nil {
+		return err
 	}
 
-	_, err := p.store.execBuilder(e, insBuilder)
+	insertBuilder := sq.Insert("IR_PlaybookMember").
+		Columns("PlaybookID", "MemberID")
 
-	return err
+	runTheQuery := false
+	for _, m := range pbook.MemberIDs {
+		if !contains(existingMembers, m) {
+			insertBuilder = insertBuilder.Values(pbook.ID, m)
+			runTheQuery = true
+		}
+	}
+
+	if runTheQuery {
+		_, err := p.store.execBuilder(e, insertBuilder)
+		return err
+	}
+
+	return nil
 }
 
 func addMembersToPlaybooks(memberIDs playbookMembers, out []playbook.Playbook) {
@@ -393,4 +383,39 @@ func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
 	}
 
 	return p, nil
+}
+
+func sortOptionToSQL(sort playbook.SortField) string {
+	switch sort {
+	case playbook.SortByTitle, "":
+		return "Title"
+	case playbook.SortByStages:
+		return "NumStages"
+	case playbook.SortBySteps:
+		return "NumSteps"
+	default:
+		return ""
+	}
+}
+
+func directionOptionToSQL(direction playbook.SortDirection) string {
+	switch direction {
+	case playbook.OrderAsc, "":
+		return "ASC"
+	case playbook.OrderDesc:
+		return "DESC"
+	default:
+		return ""
+	}
+}
+
+// Yes, we should sort and binary search, but strs is not expected to be large,
+// the function is temporary, and is not on a hot path
+func contains(strs []string, target string) bool {
+	for _, s := range strs {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }

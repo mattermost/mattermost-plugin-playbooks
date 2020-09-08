@@ -504,14 +504,14 @@ func TestGetIncidents(t *testing.T) {
 
 		createIncidents(incidentStore)
 
-		for _, tt := range testData {
-			t.Run(driverName+" - "+tt.Name, func(t *testing.T) {
-				result, err := incidentStore.GetIncidents(tt.Options)
+		for _, testCase := range testData {
+			t.Run(driverName+" - "+testCase.Name, func(t *testing.T) {
+				result, err := incidentStore.GetIncidents(testCase.Options)
 
-				if tt.ExpectedErr != nil {
+				if testCase.ExpectedErr != nil {
 					require.Nil(t, result)
 					require.Error(t, err)
-					require.Equal(t, tt.ExpectedErr.Error(), err.Error())
+					require.Equal(t, testCase.ExpectedErr.Error(), err.Error())
 
 					return
 				}
@@ -525,11 +525,11 @@ func TestGetIncidents(t *testing.T) {
 				}
 
 				// remove the checklists from the expected incidents--we don't return them in getIncidents
-				for i := range tt.Want.Items {
-					tt.Want.Items[i].Checklists = []playbook.Checklist{}
+				for i := range testCase.Want.Items {
+					testCase.Want.Items[i].Checklists = []playbook.Checklist{}
 				}
 
-				require.Equal(t, tt.Want, *result)
+				require.Equal(t, testCase.Want, *result)
 			})
 		}
 	}
@@ -607,18 +607,18 @@ func TestCreateAndGetIncident(t *testing.T) {
 			},
 		}
 
-		for _, tt := range validIncidents {
-			t.Run(tt.Name, func(t *testing.T) {
+		for _, testCase := range validIncidents {
+			t.Run(testCase.Name, func(t *testing.T) {
 				var expectedIncident incident.Incident
-				if tt.Incident != nil {
-					expectedIncident = *tt.Incident
+				if testCase.Incident != nil {
+					expectedIncident = *testCase.Incident
 				}
 
-				returned, err := incidentStore.CreateIncident(tt.Incident)
+				returned, err := incidentStore.CreateIncident(testCase.Incident)
 
-				if tt.ExpectedErr != nil {
+				if testCase.ExpectedErr != nil {
 					require.Error(t, err)
-					require.Equal(t, tt.ExpectedErr.Error(), err.Error())
+					require.Equal(t, testCase.ExpectedErr.Error(), err.Error())
 					require.Nil(t, returned)
 					return
 				}
@@ -660,12 +660,12 @@ func TestGetIncident(t *testing.T) {
 			},
 		}
 
-		for _, tt := range validIncidents {
-			t.Run(tt.Name, func(t *testing.T) {
-				returned, err := incidentStore.GetIncident(tt.ID)
+		for _, testCase := range validIncidents {
+			t.Run(testCase.Name, func(t *testing.T) {
+				returned, err := incidentStore.GetIncident(testCase.ID)
 
 				require.Error(t, err)
-				require.Equal(t, tt.ExpectedErr.Error(), err.Error())
+				require.Equal(t, testCase.ExpectedErr.Error(), err.Error())
 				require.Nil(t, returned)
 			})
 		}
@@ -757,17 +757,17 @@ func TestUpdateIncident(t *testing.T) {
 			},
 		}
 
-		for _, tt := range validIncidents {
-			t.Run(tt.Name, func(t *testing.T) {
-				returned, err := incidentStore.CreateIncident(tt.Incident)
+		for _, testCase := range validIncidents {
+			t.Run(testCase.Name, func(t *testing.T) {
+				returned, err := incidentStore.CreateIncident(testCase.Incident)
 				require.NoError(t, err)
-				expected := tt.Update(*returned)
+				expected := testCase.Update(*returned)
 
 				err = incidentStore.UpdateIncident(expected)
 
-				if tt.ExpectedErr != nil {
+				if testCase.ExpectedErr != nil {
 					require.Error(t, err)
-					require.Equal(t, tt.ExpectedErr.Error(), err.Error())
+					require.Equal(t, testCase.ExpectedErr.Error(), err.Error())
 					return
 				}
 
@@ -945,20 +945,20 @@ func TestGetCommanders(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		for _, tt := range cases {
-			t.Run(tt.Name, func(t *testing.T) {
-				actual, actualErr := incidentStore.GetCommanders(tt.Options)
+		for _, testCase := range cases {
+			t.Run(testCase.Name, func(t *testing.T) {
+				actual, actualErr := incidentStore.GetCommanders(testCase.Options)
 
-				if tt.ExpectedErr != nil {
+				if testCase.ExpectedErr != nil {
 					require.NotNil(t, actualErr)
-					require.Equal(t, tt.ExpectedErr.Error(), actualErr.Error())
+					require.Equal(t, testCase.ExpectedErr.Error(), actualErr.Error())
 					require.Nil(t, actual)
 					return
 				}
 
 				require.NoError(t, actualErr)
 
-				require.ElementsMatch(t, tt.Expected, actual)
+				require.ElementsMatch(t, testCase.Expected, actual)
 			})
 		}
 	}
@@ -1125,7 +1125,7 @@ func NewBuilder() *IncidentBuilder {
 			},
 			PostID:     model.NewId(),
 			PlaybookID: model.NewId(),
-			Checklists: []playbook.Checklist(nil),
+			Checklists: nil,
 		},
 	}
 }

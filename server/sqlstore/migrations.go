@@ -65,8 +65,8 @@ var migrations = []Migration{
 						CreateAt BIGINT NOT NULL,
 						DeleteAt BIGINT NOT NULL DEFAULT 0,
 						ChecklistsJSON TEXT NOT NULL,
-						Stages BIGINT NOT NULL DEFAULT 0,
-						Steps BIGINT NOT NULL DEFAULT 0,
+						NumStages BIGINT NOT NULL DEFAULT 0,
+						NumSteps BIGINT NOT NULL DEFAULT 0,
 						INDEX IR_Playbook_TeamID (TeamID),
 						INDEX IR_PlaybookMember_PlaybookID (ID)
 					)
@@ -122,8 +122,8 @@ var migrations = []Migration{
 						CreateAt BIGINT NOT NULL,
 						DeleteAt BIGINT NOT NULL DEFAULT 0,
 						ChecklistsJSON JSON NOT NULL,
-						Stages BIGINT NOT NULL DEFAULT 0,
-						Steps BIGINT NOT NULL DEFAULT 0
+						NumStages BIGINT NOT NULL DEFAULT 0,
+						NumSteps BIGINT NOT NULL DEFAULT 0
 					);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Playbook")
@@ -132,7 +132,8 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
-						MemberID TEXT NOT NULL
+						MemberID TEXT NOT NULL,
+						UNIQUE (PlaybookID, MemberID)
 					);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
