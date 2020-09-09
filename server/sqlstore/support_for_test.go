@@ -40,6 +40,8 @@ func setupTestDB(t *testing.T, driverName string) *sqlx.DB {
 }
 
 func setupSQLStore(t *testing.T, db *sqlx.DB) (PluginAPIClient, bot.Logger, *SQLStore) {
+	t.Helper()
+
 	mockCtrl := gomock.NewController(t)
 
 	logger := mock_bot.NewMockLogger(mockCtrl)
