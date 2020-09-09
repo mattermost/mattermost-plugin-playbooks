@@ -26,6 +26,7 @@ const DragPlaceholderText = styled.div`
     margin: 5px 50px;
     text-align: center;
     color: rgb(var(--button-bg-rgb));
+    cursor: pointer;
 `;
 
 interface Props {

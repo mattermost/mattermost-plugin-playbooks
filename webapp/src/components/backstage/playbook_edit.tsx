@@ -5,9 +5,6 @@ import React, {FC, useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {searchProfiles} from 'mattermost-redux/actions/users';
 
@@ -246,34 +243,20 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const saveDisabled = playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-
     const onSave = async () => {
-        if (saveDisabled) {
-            return;
-        }
-
-        const playbookExcludingEmpty = {
+        await savePlaybook({
             ...playbook,
-            checklists: playbook.checklists.map((checklist) => (
-                {
-                    ...checklist,
-                    items: checklist.items.filter((item) => item.title || item.command),
-                }
-            )).filter((checklist) => !checklist.items || checklist.items.length > 0),
-        };
+            title: playbook.title.trim() || 'Untitled Playbook',
+            checklists: playbook.checklists.map((checklist) => ({
+                ...checklist,
+                title: checklist.title || 'Untitled Stage',
+                items: checklist.items.map((item) => ({
+                    ...item,
+                    title: item.title || 'Untitled Step',
+                })),
+            })),
+        });
 
-        // It's possible there was actually nothing there.
-        if (playbookExcludingEmpty.checklists.length === 0) {
-            return;
-        }
-
-        if (playbookExcludingEmpty.title.trim().length === 0) {
-            playbookExcludingEmpty.title = 'Untitled Playbook';
-        }
-
-        await savePlaybook(playbookExcludingEmpty);
         props.onClose();
     };
 
@@ -385,7 +368,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     className='mr-4'
                     data-testid='save_playbook'
                     onClick={onSave}
-                    disabled={saveDisabled}
                 >
                     <span>
                         {'Save'}

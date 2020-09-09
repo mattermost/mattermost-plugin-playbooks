@@ -1,8 +1,9 @@
-import React, {FC, useState, useRef} from 'react';
+import React, {FC, useState, useRef, useEffect} from 'react';
 
 import styled, {createGlobalStyle} from 'styled-components';
 
 import {ChecklistItem} from 'src/types/playbook';
+import {TertiaryButton} from 'src/components/assets/buttons';
 
 export interface StepEditProps {
     step: ChecklistItem;
@@ -35,7 +36,7 @@ const StepInput = styled.input`
     height: 40px;
     line-height: 40px;
     padding: 0 16px;
-    flex-grow: 1;
+    flex: 0.5;
     font-size: 14px;
 
     &:focus {
@@ -44,14 +45,21 @@ const StepInput = styled.input`
 `;
 
 const AutocompleteWrapper = styled.div`
+    position: relative;
     flex-grow: 1;
     height: 40px;
     line-height: 40px;
+
+    input {
+        padding-right: 30px;
+    }
 `;
 
 const DescriptionContainer = styled.div`
-    padding: 0 20px 0 0;
-    width: 50%;
+    position: relative;
+    width: 100%;
+    margin: 16px 0 0 0;
+    line-height: 40px;
 `;
 
 const Description = styled.textarea`
@@ -64,9 +72,9 @@ const Description = styled.textarea`
     border: none;
     box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
     border-radius: 4px;
-    margin: 16px 0 0 0;
-    padding: 10px 16px;
+    padding: 10px 25px 0 16px;
     font-size: 14px;
+    line-height: 20px;
 
     &:focus {
         box-shadow: inset 0 0 0 2px var(--button-bg);
@@ -80,7 +88,6 @@ const AddDescription = styled.button`
     font-weight: normal;
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
-    margin-top: 8px;
     text-align: left;
 
     &:hover {
@@ -99,118 +106,253 @@ const OverrideWebappStyle = createGlobalStyle`
     .custom-textarea.custom-textarea:focus {
         border: none;
         box-shadow: inset 0 0 0 2px var(--button-bg);
-        padding: 0 16px;
+        padding: 0 30px 0 16px;
+    }
+`;
+
+const SlashCommandContainer = styled.div`
+    flex: 0.5;
+`;
+
+interface RemoveProps {
+    show: boolean;
+}
+
+const Remove = styled.span<RemoveProps>`
+    visibility: ${(props) => (props.show ? 'visible' : 'hidden')};
+    cursor: pointer;
+    position: absolute;
+    top: 0px;
+    right: 5px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+
+    &:hover {
+        color: var(--center-channel-color);
     }
 `;
 
 // @ts-ignore
 const AutocompleteTextbox = window.Components.Textbox;
 
-const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
-    const commandInputRef = useRef(null);
-    const [title, setTitle] = useState(props.step.title);
-    const [command, setCommand] = useState(props.step.command);
-    const [description, setDescription] = useState(props.step.description);
-    const [descriptionPressed, setDescriptionPressed] = useState(false);
+interface StepTitleProps {
+    title: string;
+    setTitle: (title: string) => void;
+}
 
-    const submit = () => {
-        if (title !== props.step.title ||
-            command !== props.step.command ||
-                description !== props.step.description) {
-            props.onUpdate({
-                ...props.step,
-                title,
-                command,
-                description,
-            });
+const StepTitle: FC<StepTitleProps> = (props: StepTitleProps) => {
+    const [title, setTitle] = useState(props.title);
+
+    const save = () => props.setTitle(title);
+
+    return (
+        <StepInput
+            placeholder={'Task Name'}
+            type='text'
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={save}
+            autoFocus={!title}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                    save();
+                }
+            }}
+        />
+    );
+};
+
+interface StepDescriptionProps {
+    description: string;
+    setDescription: (description: string) => void;
+}
+
+const StepDescription: FC<StepDescriptionProps> = (props: StepDescriptionProps) => {
+    const [description, setDescription] = useState(props.description);
+    const [hasValue, setHasValue] = useState(props.description.length > 0);
+    const [hover, setHover] = useState(false);
+    const [focus, setFocus] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (focus && ref && ref.current) {
+            // @ts-ignore
+            ref.current.focus();
+            setFocus(false);
         }
+    }, [focus, setFocus]);
+
+    const save = () => {
+        props.setDescription(description);
     };
 
     let descriptionBox = (
         <AddDescription
-            onClick={() => setDescriptionPressed(true)}
+            onClick={() => {
+                setHasValue(true);
+                setFocus(true);
+            }}
         >
             <i className='icon-plus icon-12 icon--no-spacing mr-1'/>
             {'Add Optional Description'}
         </AddDescription>
     );
-
-    const removeDescriptionBox = (
-        <AddDescription
-            onClick={() => setDescriptionPressed(false)}
-        >
-            <i className='icon-trash-can-outline icon-12 icon--no-spacing mr-1'/>
-            {'Remove Optional Description'}
-        </AddDescription>
-    );
-
-    if (description || descriptionPressed) {
+    if (hasValue) {
         descriptionBox = (
-            <React.Fragment>
+            <>
                 <Description
+                    ref={ref}
                     value={description}
-                    onBlur={submit}
-                    autoFocus={descriptionPressed}
+                    onBlur={save}
                     placeholder={'Description'}
                     onChange={(e) => {
                         setDescription(e.target.value);
                     }}
                 />
-                {removeDescriptionBox}
-            </React.Fragment>
+                <Remove show={hover}>
+                    <i
+                        className='icon-trash-can-outline icon-12 icon--no-spacing mr-1'
+                        onClick={() => {
+                            setHasValue(false);
+                            setDescription('');
+                            props.setDescription('');
+                        }}
+                    />
+                </Remove>
+            </>
         );
     }
 
     return (
-        <Container>
-            <StepLine>
-                <StepInput
-                    placeholder={'Task Name'}
-                    type='text'
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onBlur={submit}
-                    autoFocus={!title}
-                    onKeyDown={(e) => {
+        <DescriptionContainer
+            onMouseOver={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+        >
+            {descriptionBox}
+        </DescriptionContainer>
+    );
+};
+
+interface StepCommandProps {
+    command: string;
+    setCommand: (command: string) => void;
+    autocompleteOnBottom: boolean;
+}
+
+const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
+    const [command, setCommand] = useState(props.command);
+    const [hasValue, setHasValue] = useState(props.command.length > 0);
+    const [focus, setFocus] = useState(false);
+    const [hover, setHover] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (focus && ref && ref.current) {
+            // @ts-ignore
+            ref.current.focus();
+            setFocus(false);
+        }
+    }, [focus, setFocus]);
+
+    const save = () => {
+        // Discard invalid slash commands.
+        if (command.trim() === '/') {
+            setCommand('');
+        }
+
+        props.setCommand(command);
+    };
+
+    let slashCommandBox = (
+        <TertiaryButton
+            onClick={() => {
+                setHasValue(true);
+                setCommand('/');
+                setFocus(true);
+            }}
+        >
+            <i className='icon-plus'/>
+            {'Add a Slash Command'}
+        </TertiaryButton>
+    );
+
+    if (hasValue) {
+        slashCommandBox = (<>
+            <OverrideWebappStyle/>
+            <AutocompleteWrapper>
+                <AutocompleteTextbox
+                    ref={ref}
+                    inputComponent={StepInput}
+                    createMessage={'Slash Command'}
+                    onKeyDown={(e: KeyboardEvent) => {
                         if (e.key === 'Enter' || e.key === 'Escape') {
-                            submit();
+                            if (ref.current) {
+                                // @ts-ignore
+                                ref.current.blur();
+                            }
                         }
                     }}
-                />
-                <OverrideWebappStyle/>
-                <AutocompleteWrapper>
-                    <AutocompleteTextbox
-                        ref={commandInputRef}
-                        inputComponent={StepInput}
-                        createMessage={'Slash Command'}
-                        onKeyDown={(e: KeyboardEvent) => {
-                            if (e.key === 'Enter' || e.key === 'Escape') {
-                                if (commandInputRef.current) {
-                                // @ts-ignore
-                                    commandInputRef.current!.blur();
-                                }
-                            }
-                        }}
-                        onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                            if (e.target) {
-                                const input = e.target as HTMLInputElement;
-                                setCommand(input.value);
-                            }
-                        }}
-                        suggestionListStyle={props.autocompleteOnBottom ? 'bottom' : 'top'}
-                        type='text'
-                        value={command}
-                        onBlur={submit}
+                    onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                        if (e.target) {
+                            const input = e.target as HTMLInputElement;
+                            setCommand(input.value);
+                        }
+                    }}
+                    suggestionListStyle={props.autocompleteOnBottom ? 'bottom' : 'top'}
+                    type='text'
+                    value={command}
+                    onBlur={save}
 
-                        // the following are required props but aren't used
-                        characterLimit={256}
-                        onKeyPress={() => true}
+                    // the following are required props but aren't used
+                    characterLimit={256}
+                    onKeyPress={() => true}
+                    openWhenEmpty={true}
+                />
+                <Remove show={hover}>
+                    <i
+                        className='icon-trash-can-outline icon-12 icon--no-spacing mr-1'
+                        onClick={() => {
+                            setHasValue(false);
+                            setCommand('');
+                            props.setCommand('');
+                        }}
                     />
-                </AutocompleteWrapper>
+                </Remove>
+            </AutocompleteWrapper>
+        </>);
+    }
+
+    return (
+        <SlashCommandContainer
+            onMouseOver={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+        >
+            {slashCommandBox}
+        </SlashCommandContainer>
+    );
+};
+
+const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
+    const submit = (step: ChecklistItem) => {
+        props.onUpdate(step);
+    };
+
+    return (
+        <Container>
+            <StepLine>
+                <StepTitle
+                    title={props.step.title}
+                    setTitle={(title) => submit({...props.step, title})}
+                />
+                <StepCommand
+                    command={props.step.command}
+                    setCommand={(command) => submit({...props.step, command})}
+                    autocompleteOnBottom={props.autocompleteOnBottom}
+                />
             </StepLine>
-            <DescriptionContainer>
-                {descriptionBox}
-            </DescriptionContainer>
+            <StepDescription
+                description={props.step.description}
+                setDescription={(description) => submit({...props.step, description})}
+            />
         </Container>
     );
 };
