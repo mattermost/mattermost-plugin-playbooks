@@ -11,11 +11,22 @@ export interface Playbook {
     member_ids: string[];
 }
 
-export interface FetchPlaybooksReturn {
+export interface PlaybookNoChecklist {
+    id?: string;
+    title: string;
+    description: string;
+    team_id: string;
+    create_public_incident: boolean;
+    num_stages: number;
+    num_steps: number;
+    member_ids: string[];
+}
+
+export interface FetchPlaybooksNoChecklistReturn {
     total_count: number;
     page_count: number;
     has_more: boolean;
-    items: Playbook[];
+    items: PlaybookNoChecklist[];
 }
 
 export interface FetchIncidentsParams {

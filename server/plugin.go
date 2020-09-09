@@ -79,6 +79,8 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed save bot to config")
 	}
 
+	p.bot = bot.New(pluginAPIClient, botID, p.config)
+
 	var telemetryClient interface {
 		incident.Telemetry
 		playbook.Telemetry

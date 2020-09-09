@@ -16,6 +16,8 @@ type Playbook struct {
 	CreatePublicIncident bool        `json:"create_public_incident"`
 	CreateAt             int64       `json:"create_at"`
 	DeleteAt             int64       `json:"delete_at"`
+	NumStages            int64       `json:"num_stages"`
+	NumSteps             int64       `json:"num_steps"`
 	Checklists           []Checklist `json:"checklists"`
 	MemberIDs            []string    `json:"member_ids"`
 }

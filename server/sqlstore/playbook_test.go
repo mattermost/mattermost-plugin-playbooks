@@ -422,10 +422,12 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name:     "Incident with 3 checklists, update the 0",
+				name:     "Incident with 3 checklists, update to 0",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2, 5}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
 					old.Checklists = []playbook.Checklist{}
+					old.NumSteps = 0
+					old.NumStages = 0
 					return old
 				},
 				expectedErr: nil,
@@ -624,7 +626,18 @@ func (p *PlaybookBuilder) WithChecklists(itemsPerChecklist []int) *PlaybookBuild
 		}
 	}
 
+	p.NumStages = int64(len(itemsPerChecklist))
+	p.NumSteps = sum(itemsPerChecklist)
+
 	return p
+}
+
+func sum(nums []int) int64 {
+	ret := 0
+	for _, n := range nums {
+		ret += n
+	}
+	return int64(ret)
 }
 
 func (p *PlaybookBuilder) WithMembers(members []string) *PlaybookBuilder {

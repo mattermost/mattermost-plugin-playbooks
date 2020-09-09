@@ -14,7 +14,13 @@ import {ClientError} from 'mattermost-redux/client/client4';
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
 import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
-import {Playbook, ChecklistItem, ChecklistItemState, FetchPlaybooksReturn} from 'src/types/playbook';
+import {
+    Playbook,
+    ChecklistItem,
+    ChecklistItemState,
+    FetchPlaybooksNoChecklistReturn,
+    PlaybookNoChecklist,
+} from 'src/types/playbook';
 
 import {pluginId} from './manifest';
 
@@ -77,7 +83,7 @@ const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
     const result = await clientFetchPlaybooks(teamID, {
         page: 0,
         per_page: 1,
-    }) as FetchPlaybooksReturn;
+    }) as FetchPlaybooksNoChecklistReturn;
 
     return result.items?.length > 0;
 };
@@ -101,7 +107,7 @@ export async function savePlaybook(playbook: Playbook) {
     return data;
 }
 
-export async function deletePlaybook(playbook: Playbook) {
+export async function deletePlaybook(playbook: PlaybookNoChecklist) {
     try {
         return await doFetchWithResponse(`${apiUrl}/playbooks/${playbook.id}`, {
             method: 'delete',

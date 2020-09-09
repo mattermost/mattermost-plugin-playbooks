@@ -39,7 +39,7 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt").
+			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
