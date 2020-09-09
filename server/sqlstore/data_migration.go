@@ -62,6 +62,8 @@ type oldPlaybookIndex struct {
 }
 
 func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
+	store.log.Debugf("Starting data migration from kvstore to sqlstore.")
+
 	// Get old playbooks
 	var playbookIndex oldPlaybookIndex
 	if err := kvAPI.Get("v2_playbookindex", &playbookIndex); err != nil {
@@ -233,6 +235,8 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 			return errors.Wrapf(err, "failed inserting data into Incident table")
 		}
 	}
+
+	store.log.Debugf("Finished data migration from kvstore to sqlstore.")
 	return nil
 }
 

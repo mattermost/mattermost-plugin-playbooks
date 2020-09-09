@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -115,17 +117,53 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
+	rawUseSql := os.Getenv("IR_USE_SQL")
+	if rawUseSql == "" {
+		rawUseSql = "false"
+	}
+	useSql, err := strconv.ParseBool(rawUseSql)
+	if err != nil {
+		return errors.Wrapf(err, "invalid environment key IR_USE_SQL; use 'true', 'false', or leave it unset")
+	}
+
+	var incidentStore incident.Store
+	var playbookStore playbook.Store
+	if useSql {
+		apiClient := sqlstore.NewClient(pluginAPIClient)
+		sqlStore, err := sqlstore.New(apiClient, p.bot)
+		if err != nil {
+			return errors.Wrapf(err, "failed creating the SQL store")
+		}
+
+		mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
+		if err != nil {
+			return errors.Wrapf(err, "failed creating cluster mutex")
+		}
+
+		// Cluster lock: only one plugin will perform the migration when needed
+		if err := p.UpgradeDatabase(sqlStore, apiClient, mutex); err != nil {
+			return errors.Wrapf(err, "failed to run migrations")
+		}
+
+		incidentStore = sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
+		playbookStore = sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
+	} else {
+		apiClient := pluginkvstore.NewClient(pluginAPIClient)
+		incidentStore = pluginkvstore.NewIncidentStore(apiClient, p.bot)
+		playbookStore = pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV)
+	}
+
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		pluginkvstore.NewIncidentStore(pluginkvstore.NewClient(pluginAPIClient), p.bot),
+		incidentStore,
 		p.bot,
 		p.config,
 		telemetryClient,
 	)
 
-	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
+	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
 
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot)
@@ -134,21 +172,6 @@ func (p *Plugin) OnActivate() error {
 
 	if err = command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrapf(err, "failed register commands")
-	}
-
-	sqlStore, err := sqlstore.New(sqlstore.NewClient(pluginAPIClient), p.bot)
-	if err != nil {
-		return errors.Wrapf(err, "failed creating the SQL store")
-	}
-
-	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
-	if err != nil {
-		return errors.Wrapf(err, "failed creating cluster mutex")
-	}
-
-	// Cluster lock: only one plugin will perform the migration when needed
-	if err := p.UpgradeDatabase(sqlStore, sqlstore.NewClient(pluginAPIClient), mutex); err != nil {
-		return errors.Wrapf(err, "failed to run migrations")
 	}
 
 	p.API.LogDebug("Incident response plugin Activated")
