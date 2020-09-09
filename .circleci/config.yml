@@ -22,7 +22,7 @@ jobs:
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:5.6
+      - image: circleci/mysql:5.7.28
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
