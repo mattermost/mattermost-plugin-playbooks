@@ -304,36 +304,19 @@ func (p *playbookStore) replacePlaybookMembers(q queryExecer, pbook playbook.Pla
 		return nil
 	}
 
-	// Now, only add new members
-	// I would prefer to do this, but my mattemost-server is on 9.4, so it's not available
-	// insertBuilder := sq.Insert("IR_PlaybookMember").
-	//	 Columns("PlaybookID", "MemberID").
-	//	 Suffix("ON CONFLICT (PlaybookID, MemberID) DO NOTHING")
-
-	// Instead, do it ourselves:
-	selBuilder := sq.Select("MemberID").
-		From("IR_PlaybookMember").
-		Where(sq.Eq{"PlaybookID": pbook.ID})
-
-	var existingMembers []string
-	if err := p.store.selectBuilder(q, &existingMembers, selBuilder); err != nil {
-		return err
-	}
-
-	insertBuilder := sq.Insert("IR_PlaybookMember").
-		Columns("PlaybookID", "MemberID")
-
-	runTheQuery := false
 	for _, m := range pbook.MemberIDs {
-		if !contains(existingMembers, m) {
-			insertBuilder = insertBuilder.Values(pbook.ID, m)
-			runTheQuery = true
-		}
-	}
+		rawInsert := sq.Expr(`
+INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
+    SELECT ?, ?
+    WHERE NOT EXISTS (
+        SELECT 1 FROM IR_PlaybookMember
+            WHERE PlaybookID = ? AND MemberID = ?
+    );`,
+			pbook.ID, m, pbook.ID, m)
 
-	if runTheQuery {
-		_, err := p.store.execBuilder(q, insertBuilder)
-		return err
+		if _, err := p.store.execBuilder(q, rawInsert); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -407,15 +390,4 @@ func directionOptionToSQL(direction playbook.SortDirection) string {
 	default:
 		return ""
 	}
-}
-
-// Yes, we should sort and binary search, but strs is not expected to be large,
-// the function is temporary, and is not on a hot path
-func contains(strs []string, target string) bool {
-	for _, s := range strs {
-		if s == target {
-			return true
-		}
-	}
-	return false
 }
