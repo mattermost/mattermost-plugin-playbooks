@@ -82,6 +82,8 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (PluginAPIClient, bot.Logger, *SQL
 		SetArg(1, map[string]oldHeader{}).
 		Times(1)
 
+	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
+
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	require.NoError(t, err)
 

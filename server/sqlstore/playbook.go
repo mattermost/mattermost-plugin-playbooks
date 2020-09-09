@@ -304,14 +304,25 @@ func (p *playbookStore) replacePlaybookMembers(q queryExecer, pbook playbook.Pla
 		return nil
 	}
 
-	for _, m := range pbook.MemberIDs {
-		rawInsert := sq.Expr(`
+	insertExpr := `
 INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
     SELECT ?, ?
     WHERE NOT EXISTS (
         SELECT 1 FROM IR_PlaybookMember
             WHERE PlaybookID = ? AND MemberID = ?
-    );`,
+    );`
+	if p.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		insertExpr = `
+INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
+    SELECT ?, ? FROM DUAL
+    WHERE NOT EXISTS (
+        SELECT 1 FROM IR_PlaybookMember
+            WHERE PlaybookID = ? AND MemberID = ?
+    );`
+	}
+
+	for _, m := range pbook.MemberIDs {
+		rawInsert := sq.Expr(insertExpr,
 			pbook.ID, m, pbook.ID, m)
 
 		if _, err := p.store.execBuilder(q, rawInsert); err != nil {

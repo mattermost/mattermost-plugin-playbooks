@@ -117,32 +117,32 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
-	rawUseSql := os.Getenv("IR_USE_SQL")
-	if rawUseSql == "" {
-		rawUseSql = "false"
+	rawUseSQL := os.Getenv("IR_USE_SQL")
+	if rawUseSQL == "" {
+		rawUseSQL = "false"
 	}
-	useSql, err := strconv.ParseBool(rawUseSql)
+	useSQL, err := strconv.ParseBool(rawUseSQL)
 	if err != nil {
 		return errors.Wrapf(err, "invalid environment key IR_USE_SQL; use 'true', 'false', or leave it unset")
 	}
 
 	var incidentStore incident.Store
 	var playbookStore playbook.Store
-	if useSql {
+	if useSQL {
 		apiClient := sqlstore.NewClient(pluginAPIClient)
-		sqlStore, err := sqlstore.New(apiClient, p.bot)
-		if err != nil {
-			return errors.Wrapf(err, "failed creating the SQL store")
+		sqlStore, err2 := sqlstore.New(apiClient, p.bot)
+		if err2 != nil {
+			return errors.Wrapf(err2, "failed creating the SQL store")
 		}
 
-		mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
-		if err != nil {
-			return errors.Wrapf(err, "failed creating cluster mutex")
+		mutex, err2 := cluster.NewMutex(p.API, "IR_dbMutex")
+		if err2 != nil {
+			return errors.Wrapf(err2, "failed creating cluster mutex")
 		}
 
 		// Cluster lock: only one plugin will perform the migration when needed
-		if err := p.UpgradeDatabase(sqlStore, apiClient, mutex); err != nil {
-			return errors.Wrapf(err, "failed to run migrations")
+		if err2 = p.UpgradeDatabase(sqlStore, apiClient, mutex); err2 != nil {
+			return errors.Wrapf(err2, "failed to run migrations")
 		}
 
 		incidentStore = sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
