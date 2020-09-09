@@ -95,6 +95,11 @@ type execer interface {
 	DriverName() string
 }
 
+type queryExecer interface {
+	queryer
+	execer
+}
+
 // exec executes the given query using positional arguments, automatically rebinding for the db.
 func (sqlStore *SQLStore) exec(e execer, sqlString string, args ...interface{}) (sql.Result, error) {
 	sqlString = sqlStore.db.Rebind(sqlString)

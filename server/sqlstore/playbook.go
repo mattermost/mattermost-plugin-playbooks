@@ -94,7 +94,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 		return "", errors.Wrap(err, "failed to store new playbook")
 	}
 
-	if err = p.replacePlaybookMembers(tx, tx, rawPlaybook.Playbook); err != nil {
+	if err = p.replacePlaybookMembers(tx, rawPlaybook.Playbook); err != nil {
 		return "", errors.Wrap(err, "failed to replace playbook members")
 	}
 
@@ -267,7 +267,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 		return errors.Wrapf(err, "failed to update playbook with id '%s'", rawPlaybook.ID)
 	}
 
-	if err = p.replacePlaybookMembers(tx, tx, rawPlaybook.Playbook); err != nil {
+	if err = p.replacePlaybookMembers(tx, rawPlaybook.Playbook); err != nil {
 		return errors.Wrapf(err, "failed to replace playbook members for playbook with id '%s'", rawPlaybook.ID)
 	}
 
@@ -291,12 +291,12 @@ func (p *playbookStore) Delete(id string) error {
 }
 
 // replacePlaybookMembers replaces the members of a playbook
-func (p *playbookStore) replacePlaybookMembers(q queryer, e execer, pbook playbook.Playbook) error {
+func (p *playbookStore) replacePlaybookMembers(q queryExecer, pbook playbook.Playbook) error {
 	// Delete existing members who are not in the new pbook.MemberIDs list
 	delBuilder := sq.Delete("IR_PlaybookMember").
 		Where(sq.Eq{"PlaybookID": pbook.ID}).
 		Where(sq.NotEq{"MemberID": pbook.MemberIDs})
-	if _, err := p.store.execBuilder(e, delBuilder); err != nil {
+	if _, err := p.store.execBuilder(q, delBuilder); err != nil {
 		return err
 	}
 
@@ -332,7 +332,7 @@ func (p *playbookStore) replacePlaybookMembers(q queryer, e execer, pbook playbo
 	}
 
 	if runTheQuery {
-		_, err := p.store.execBuilder(e, insertBuilder)
+		_, err := p.store.execBuilder(q, insertBuilder)
 		return err
 	}
 
