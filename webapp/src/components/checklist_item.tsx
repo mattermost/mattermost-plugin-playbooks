@@ -418,7 +418,7 @@ const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemB
         <input
             className='checkbox'
             type='checkbox'
-            checked={isChecked}
+            defaultChecked={isChecked}
             onClick={() => {
                 props.onChange(nextState);
             }}
