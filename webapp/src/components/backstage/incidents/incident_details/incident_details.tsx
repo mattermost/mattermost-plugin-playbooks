@@ -287,7 +287,7 @@ const BackstageIncidentDetails: FC = () => {
                     className='icon-arrow-left back-icon'
                     onClick={closeIncidentDetails}
                 />
-                <IncidentTitle>
+                <IncidentTitle data-testid='incident-title'>
                     {`Incident ${incident.name}` }
                 </IncidentTitle>
                 <StatusBadge isActive={incident.is_active}/>
