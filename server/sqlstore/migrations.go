@@ -182,4 +182,12 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.1.0"),
+		toVersion:   semver.MustParse("0.2.0"),
+		migrationFunc: func(e execer) error {
+			// migration to 0.2.0 is used to trigger the data migration from the kvstore.
+			return nil
+		},
+	},
 }

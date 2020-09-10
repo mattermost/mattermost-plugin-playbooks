@@ -198,6 +198,11 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 		)
 
 	for _, incident := range incidents {
+		// We don't support moving over incidents that don't have playbooks.
+		if incident.Playbook == nil {
+			continue
+		}
+
 		checklistsJSON, err := oldChecklistsToJSON(incident.Playbook.Checklists)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert checklists from incident '%s' to JSON", incident.ID)

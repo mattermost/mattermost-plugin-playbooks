@@ -33,16 +33,16 @@ func (sqlStore *SQLStore) migrate(pluginAPI PluginAPIClient, migration Migration
 		return errors.Wrapf(err, "error executing migration from version %s to version %s", migration.fromVersion.String(), migration.toVersion.String())
 	}
 
-	if err := sqlStore.SetCurrentVersion(tx, migration.toVersion); err != nil {
-		return errors.Wrapf(err, "failed to set the current version to %s", migration.toVersion.String())
-	}
-
-	// TODO: Remove when all customers are in 0.1.0
+	// TODO: Remove when all customers are in 0.2.0
 	// https://mattermost.atlassian.net/browse/MM-28373
-	if migration.toVersion.EQ(semver.MustParse("0.1.0")) {
+	if migration.toVersion.EQ(semver.MustParse("0.2.0")) {
 		if err := DataMigration(sqlStore, tx, pluginAPI.KV); err != nil {
 			return errors.Wrap(err, "failed to migrate the data from the KV store to the SQL database")
 		}
+	}
+
+	if err := sqlStore.SetCurrentVersion(tx, migration.toVersion); err != nil {
+		return errors.Wrapf(err, "failed to set the current version to %s", migration.toVersion.String())
 	}
 
 	if err := tx.Commit(); err != nil {
