@@ -38,6 +38,11 @@ interface Props {
 export const StageEditor = (props: Props): React.ReactElement => {
     const onTitleChange = (newTitle: string) => {
         const trimmedTitle = newTitle.trim();
+        if (trimmedTitle.length === 0) {
+            // Keep the original title from the props.
+            return;
+        }
+
         const newChecklist = {
             ...props.checklist,
             title: trimmedTitle,

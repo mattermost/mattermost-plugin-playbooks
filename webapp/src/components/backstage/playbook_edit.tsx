@@ -269,6 +269,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleTitleChange = (title: string) => {
+        if (title.trim().length === 0) {
+            // Keep the original title from the props.
+            return;
+        }
+
         setPlaybook({
             ...playbook,
             title,

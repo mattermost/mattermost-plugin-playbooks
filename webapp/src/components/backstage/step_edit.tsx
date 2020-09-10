@@ -142,7 +142,15 @@ interface StepTitleProps {
 const StepTitle: FC<StepTitleProps> = (props: StepTitleProps) => {
     const [title, setTitle] = useState(props.title);
 
-    const save = () => props.setTitle(title);
+    const save = () => {
+        if (title.trim().length === 0) {
+            // Keep the original title from the props.
+            setTitle(props.title);
+            return;
+        }
+
+        props.setTitle(title);
+    };
 
     return (
         <StepInput
