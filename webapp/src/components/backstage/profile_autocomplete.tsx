@@ -35,6 +35,7 @@ const StyledAsyncSelect = styled(AsyncSelect)`
         -moz-transition: all 0.15s ease;
         -o-transition: all 0.15s ease;
         transition: all 0.15s ease;
+        transition-delay: 0s;
         background-color: transparent;
         border-radius: 4px;
         border: none;
