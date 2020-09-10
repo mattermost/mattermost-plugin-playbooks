@@ -6,7 +6,7 @@ import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {searchProfiles} from 'mattermost-redux/actions/users';
+import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import {Team} from 'mattermost-redux/types/teams';
 
@@ -325,6 +325,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
 
+    const getUsers = () => {
+        return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
+    };
+
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
@@ -436,6 +440,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 onAddUser={handleUsersInput}
                                 onRemoveUser={handleRemoveUser}
                                 searchProfiles={searchUsers}
+                                getProfiles={getUsers}
                                 playbook={playbook}
                             />
                         </SidebarBlock>
