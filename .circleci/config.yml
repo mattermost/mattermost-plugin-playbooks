@@ -15,7 +15,7 @@ aliases:
         - "/go/pkg/mod"
 
 jobs:
-  coverage-with-db:
+  coverage-MySQL5.6-Postgres9.6:
     docker:
       - image: circleci/golang:1.14.1-node
       - image: circleci/postgres:9.6-alpine
@@ -50,6 +50,105 @@ jobs:
       - codecov/upload:
         file: server/coverage.txt
 
+  test-MySQL5.7-Postgres10:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:10.9-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:5.7.31
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: plugin-ci/default
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - *restore_cache
+      - run:
+          name: Testing
+          command: make test
+      - *save_cache
+
+  test-MySQL8-Postgres11:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:11.6-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:8.0.21
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: plugin-ci/default
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - *restore_cache
+      - run:
+          name: Testing
+          command: make test
+      - *save_cache
+
+  test-MySQL-Postgres-latest:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:latest
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:latest
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: plugin-ci/default
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - *restore_cache
+      - run:
+          name: Testing
+          command: make test
+      - *save_cache
+
 workflows:
   version: 2
   ci:
@@ -73,7 +172,10 @@ workflows:
           context: plugin-ci
           requires:
             - plugin-ci/lint
-            - coverage-with-db
+            - coverage-MySQL5.6-Postgres9.6
+            - test-MySQL5.7-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
             - plugin-ci/build
       - plugin-ci/deploy-release:
           filters:
@@ -84,7 +186,10 @@ workflows:
           context: plugin-ci
           requires:
             - plugin-ci/lint
-            - coverage-with-db
+            - coverage-MySQL5.6-Postgres9.6
+            - test-MySQL5.7-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
             - plugin-ci/build
       - plugin-ci/deploy-release-github:
           filters:
@@ -95,5 +200,8 @@ workflows:
           context: matterbuild-github-token
           requires:
             - plugin-ci/lint
-            - coverage-with-db
+            - coverage-MySQL5.6-Postgres9.6
+            - test-MySQL5.7-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
             - plugin-ci/build
