@@ -157,7 +157,19 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - coverage-with-db:
+      - coverage-MySQL56-Postgres96:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL57-Postgres10:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL8-Postgres11:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL-Postgres-latest:
           filters:
             tags:
               only: /^v.*/
