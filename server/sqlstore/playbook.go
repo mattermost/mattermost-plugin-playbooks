@@ -17,7 +17,7 @@ type sqlPlaybook struct {
 	ChecklistsJSON json.RawMessage
 }
 
-// playbookStore is a sql store for playbooks. DO NO USE DIRECTLY Use NewPlaybookStore
+// playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
 type playbookStore struct {
 	pluginAPI       PluginAPIClient
 	log             bot.Logger
@@ -69,7 +69,6 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 		return "", err
 	}
 
-	// Beginning a transaction because we're doing multiple statements and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return "", errors.Wrap(err, "could not begin transaction")
@@ -111,7 +110,6 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 		return out, errors.New("ID cannot be empty")
 	}
 
-	// Beginning a transaction because we're doing multiple selects and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return out, errors.Wrap(err, "could not begin transaction")
@@ -153,7 +151,6 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 
 // GetPlaybooks retrieves all playbooks that are not deleted.
 func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
-	// Beginning a transaction because we're doing multiple selects and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return out, errors.Wrap(err, "could not begin transaction")
@@ -184,7 +181,6 @@ func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
 func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options) (out []playbook.Playbook, err error) {
-	// Beginning a transaction because we're doing multiple selects and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return out, errors.Wrap(err, "could not begin transaction")
@@ -242,7 +238,6 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 		return err
 	}
 
-	// Beginning a transaction because we're doing multiple statements and need a consistent view of the db.
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return errors.Wrap(err, "could not begin transaction")
@@ -280,14 +275,20 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 
 // Delete deletes a playbook.
 func (p *playbookStore) Delete(id string) error {
-	pbook, err := p.Get(id)
-	if err != nil {
-		return err
+	if id == "" {
+		return errors.New("ID cannot be empty")
 	}
 
-	pbook.DeleteAt = model.GetMillis()
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("DeleteAt", model.GetMillis()).
+		Where(sq.Eq{"ID": id}))
 
-	return p.Update(pbook)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete playbook with id '%s'", id)
+	}
+
+	return nil
 }
 
 // replacePlaybookMembers replaces the members of a playbook

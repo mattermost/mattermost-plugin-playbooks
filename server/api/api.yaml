@@ -942,7 +942,7 @@ components:
         - team_id
         - channel_id
         - create_at
-        - ended_at
+        - end_at
       properties:
         id:
           type: string
@@ -962,11 +962,11 @@ components:
         channel_id:
           type: string
           example: mx3xyzdojfgyfdx8sc8of1gdme
-        created_at:
+        create_at:
           type: integer
           format: int64
           example: 1591130815
-        ended_at:
+        end_at:
           type: integer
           format: int64
           example: 1591130815
