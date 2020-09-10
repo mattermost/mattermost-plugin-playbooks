@@ -121,6 +121,7 @@ jobs:
       - image: circleci/golang:1.14.1-node
       - image: circleci/postgres:latest
         environment:
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
       - image: circleci/mysql:latest

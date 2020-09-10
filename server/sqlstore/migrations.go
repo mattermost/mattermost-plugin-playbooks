@@ -29,7 +29,7 @@ var migrations = []Migration{
 			}
 
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				charset := "DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
+				charset := "DEFAULT CHARACTER SET utf8mb4"
 
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
