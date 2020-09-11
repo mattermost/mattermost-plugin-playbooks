@@ -176,7 +176,7 @@ interface StepDescriptionProps {
 
 const StepDescription: FC<StepDescriptionProps> = (props: StepDescriptionProps) => {
     const [description, setDescription] = useState(props.description);
-    const [hasValue, setHasValue] = useState(props.description.length > 0);
+    const [descriptionOpen, setDescriptionOpen] = useState(props.description.length > 0);
     const [hover, setHover] = useState(false);
     const [focus, setFocus] = useState(false);
     const ref = useRef(null);
@@ -196,7 +196,7 @@ const StepDescription: FC<StepDescriptionProps> = (props: StepDescriptionProps) 
     let descriptionBox = (
         <AddDescription
             onClick={() => {
-                setHasValue(true);
+                setDescriptionOpen(true);
                 setFocus(true);
             }}
         >
@@ -204,7 +204,7 @@ const StepDescription: FC<StepDescriptionProps> = (props: StepDescriptionProps) 
             {'Add Optional Description'}
         </AddDescription>
     );
-    if (hasValue) {
+    if (descriptionOpen) {
         descriptionBox = (
             <>
                 <Description
@@ -220,7 +220,7 @@ const StepDescription: FC<StepDescriptionProps> = (props: StepDescriptionProps) 
                     <i
                         className='icon-trash-can-outline icon-12 icon--no-spacing mr-1'
                         onClick={() => {
-                            setHasValue(false);
+                            setDescriptionOpen(false);
                             setDescription('');
                             props.setDescription('');
                         }}
@@ -248,7 +248,7 @@ interface StepCommandProps {
 
 const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
     const [command, setCommand] = useState(props.command);
-    const [hasValue, setHasValue] = useState(props.command.length > 0);
+    const [commandOpen, setCommandOpen] = useState(props.command.length > 0);
     const [focus, setFocus] = useState(false);
     const [hover, setHover] = useState(false);
     const ref = useRef(null);
@@ -273,7 +273,7 @@ const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
     let slashCommandBox = (
         <TertiaryButton
             onClick={() => {
-                setHasValue(true);
+                setCommandOpen(true);
                 setCommand('/');
                 setFocus(true);
             }}
@@ -283,7 +283,7 @@ const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
         </TertiaryButton>
     );
 
-    if (hasValue) {
+    if (commandOpen) {
         slashCommandBox = (<>
             <OverrideWebappStyle/>
             <AutocompleteWrapper>
@@ -319,7 +319,7 @@ const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
                     <i
                         className='icon-trash-can-outline icon-12 icon--no-spacing mr-1'
                         onClick={() => {
-                            setHasValue(false);
+                            setCommandOpen(false);
                             setCommand('');
                             props.setCommand('');
                         }}
