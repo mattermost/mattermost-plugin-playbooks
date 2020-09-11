@@ -413,14 +413,18 @@ interface ChecklistItemButtonProps {
 
 const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemButtonProps) => {
     const isChecked = props.item.state === ChecklistItemState.Closed;
-    const nextState = isChecked ? ChecklistItemState.Open : ChecklistItemState.Closed;
+
     return (
         <input
             className='checkbox'
             type='checkbox'
-            defaultChecked={isChecked}
-            onClick={() => {
-                props.onChange(nextState);
+            checked={isChecked}
+            onChange={() => {
+                if (isChecked) {
+                    props.onChange(ChecklistItemState.Open);
+                } else {
+                    props.onChange(ChecklistItemState.Closed);
+                }
             }}
         />);
 };
