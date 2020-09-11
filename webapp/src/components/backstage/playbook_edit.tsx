@@ -186,6 +186,20 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
+// setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
+const setPlaybookDefaults = (playbook: Playbook) => ({
+    ...playbook,
+    title: playbook.title.trim() || 'Untitled Playbook',
+    checklists: playbook.checklists.map((checklist) => ({
+        ...checklist,
+        title: checklist.title || 'Untitled Stage',
+        items: checklist.items.map((item) => ({
+            ...item,
+            title: item.title || 'Untitled Step',
+        })),
+    })),
+});
+
 const PlaybookEdit: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -244,18 +258,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     }, [urlParams.playbookId, props.isNew]);
 
     const onSave = async () => {
-        await savePlaybook({
-            ...playbook,
-            title: playbook.title.trim() || 'Untitled Playbook',
-            checklists: playbook.checklists.map((checklist) => ({
-                ...checklist,
-                title: checklist.title || 'Untitled Stage',
-                items: checklist.items.map((item) => ({
-                    ...item,
-                    title: item.title || 'Untitled Step',
-                })),
-            })),
-        });
+        await savePlaybook(setPlaybookDefaults(playbook));
 
         props.onClose();
     };
