@@ -196,7 +196,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
             <ConfirmModal
                 show={confirmRemoveChecklistNum >= 0}
                 title={'Remove Stage'}
-                message={'Are you sere you want to remove the stage? All steps will be removed.'}
+                message={'Are you sure you want to remove the stage? All steps will be removed.'}
                 confirmButtonText={'Remove Stage'}
                 onConfirm={() => {
                     onRemoveChecklist(confirmRemoveChecklistNum);

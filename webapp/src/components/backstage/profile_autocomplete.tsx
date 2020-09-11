@@ -35,6 +35,7 @@ const StyledAsyncSelect = styled(AsyncSelect)`
         -moz-transition: all 0.15s ease;
         -o-transition: all 0.15s ease;
         transition: all 0.15s ease;
+        transition-delay: 0s;
         background-color: transparent;
         border-radius: 4px;
         border: none;
@@ -71,7 +72,8 @@ const StyledAsyncSelect = styled(AsyncSelect)`
 interface Props {
     userIds: string[];
     onAddUser: (userid: string) => void;
-    searchProfiles: (term: string) => ActionFunc
+    searchProfiles: (term: string) => ActionFunc;
+    getProfiles: () => ActionFunc;
 }
 
 const ProfileAutocomplete: FC<Props> = (props: Props) => {
@@ -92,8 +94,15 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
     };
 
     const debouncedSearchProfiles = debounce((term: string, callback: (options: OptionsType<UserProfile>) => void) => {
+        let profiles;
+        if (term.trim().length === 0) {
+            profiles = props.getProfiles();
+        } else {
+            profiles = props.searchProfiles(term);
+        }
+
         //@ts-ignore
-        props.searchProfiles(term).then(({data}) => {
+        profiles.then(({data}) => {
             const profilesWithoutAlreadyAdded = data.filter((profile: UserProfile) => !props.userIds.includes(profile.id));
             callback(profilesWithoutAlreadyAdded);
         }).catch(() => {
@@ -118,13 +127,13 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
             isMulti={false}
             controlShouldRenderValue={false}
             cacheOptions={false}
-            defaultOptions={false}
+            defaultOptions={true}
             loadOptions={usersLoader}
             onChange={onChange}
             getOptionValue={getOptionValue}
             formatOptionLabel={formatOptionLabel}
             defaultMenuIsOpen={false}
-            openMenuOnClick={false}
+            openMenuOnClick={true}
             isClearable={false}
             value={null}
             placeholder={'Add People'}

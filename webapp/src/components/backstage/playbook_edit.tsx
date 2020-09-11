@@ -5,11 +5,8 @@ import React, {FC, useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {searchProfiles} from 'mattermost-redux/actions/users';
+import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 
 import {Team} from 'mattermost-redux/types/teams';
 
@@ -189,6 +186,20 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
+// setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
+const setPlaybookDefaults = (playbook: Playbook) => ({
+    ...playbook,
+    title: playbook.title.trim() || 'Untitled Playbook',
+    checklists: playbook.checklists.map((checklist) => ({
+        ...checklist,
+        title: checklist.title || 'Untitled Stage',
+        items: checklist.items.map((item) => ({
+            ...item,
+            title: item.title || 'Untitled Step',
+        })),
+    })),
+});
+
 const PlaybookEdit: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -246,34 +257,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const saveDisabled = playbook.member_ids.length === 0 || playbook.checklists.length === 0 || !changesMade;
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-
     const onSave = async () => {
-        if (saveDisabled) {
-            return;
-        }
+        await savePlaybook(setPlaybookDefaults(playbook));
 
-        const playbookExcludingEmpty = {
-            ...playbook,
-            checklists: playbook.checklists.map((checklist) => (
-                {
-                    ...checklist,
-                    items: checklist.items.filter((item) => item.title || item.command),
-                }
-            )).filter((checklist) => !checklist.items || checklist.items.length > 0),
-        };
-
-        // It's possible there was actually nothing there.
-        if (playbookExcludingEmpty.checklists.length === 0) {
-            return;
-        }
-
-        if (playbookExcludingEmpty.title.trim().length === 0) {
-            playbookExcludingEmpty.title = 'Untitled Playbook';
-        }
-
-        await savePlaybook(playbookExcludingEmpty);
         props.onClose();
     };
 
@@ -286,6 +272,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleTitleChange = (title: string) => {
+        if (title.trim().length === 0) {
+            // Keep the original title from the props.
+            return;
+        }
+
         setPlaybook({
             ...playbook,
             title,
@@ -342,6 +333,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
 
+    const getUsers = () => {
+        return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
+    };
+
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
@@ -385,7 +380,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     className='mr-4'
                     data-testid='save_playbook'
                     onClick={onSave}
-                    disabled={saveDisabled}
                 >
                     <span>
                         {'Save'}
@@ -454,6 +448,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 onAddUser={handleUsersInput}
                                 onRemoveUser={handleRemoveUser}
                                 searchProfiles={searchUsers}
+                                getProfiles={getUsers}
                                 playbook={playbook}
                             />
                         </SidebarBlock>
