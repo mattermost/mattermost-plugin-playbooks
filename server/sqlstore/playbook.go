@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -180,51 +182,101 @@ func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
-func (p *playbookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options) (out []playbook.Playbook, err error) {
-	tx, err := p.store.db.Beginx()
-	if err != nil {
-		return out, errors.Wrap(err, "could not begin transaction")
-	}
-	defer p.store.finalizeTransaction(tx)
+func (p *playbookStore) GetPlaybooksForTeam(requesterID, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
+	getMembers := `
+			(SELECT PlaybookID, string_agg(MemberID, ' ') members
+			   FROM IR_PlaybookMember
+			   GROUP BY PlaybookID
+			) pmember
+			ON p.ID = pmember.PlaybookID
+		`
 
-	query := p.playbookSelect.
+	if p.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		getMembers = `
+				(SELECT PlaybookID, GROUP_CONCAT(MemberID SEPARATOR ' ') members
+				   FROM IR_PlaybookMember
+				   GROUP BY PlaybookID
+				) pmember
+				ON p.ID = pmember.PlaybookID
+			`
+	}
+
+	isAdminOrTeamAndPlaybookMember := sq.Expr(`
+		(
+            EXISTS(SELECT 1
+                       FROM Users AS u
+                       WHERE u.Id = ?
+                         AND u.Roles LIKE '%system_admin%')
+            OR (
+                    EXISTS(SELECT 1
+                               FROM TeamMembers AS t
+                               WHERE t.TeamId = ?
+                                 AND t.UserId = ?)
+                    AND EXISTS(SELECT 1
+                                   FROM IR_PlaybookMember AS pm
+                                   WHERE pm.PlaybookID = p.ID
+                                     AND pm.MemberID = ?)
+                )
+        )`, requesterID, teamID, requesterID, requesterID)
+
+	correctPaginationOpts(&opts)
+
+	queryForResults := p.store.builder.
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+			"DeleteAt", "NumStages", "NumSteps", "pmember.Members").
+		From("IR_Playbook AS p").
+		Join(getMembers).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"TeamID": teamID})
+		Where(sq.Eq{"TeamID": teamID}).
+		Where(isAdminOrTeamAndPlaybookMember).
+		Offset(uint64(opts.Page * opts.PerPage)).
+		Limit(uint64(opts.PerPage))
 
 	if playbook.IsValidSort(opts.Sort) && playbook.IsValidDirection(opts.Direction) {
-		query = query.OrderBy(fmt.Sprintf("%s %s", sortOptionToSQL(opts.Sort), directionOptionToSQL(opts.Direction)))
+		queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", sortOptionToSQL(opts.Sort), directionOptionToSQL(opts.Direction)))
 	} else if playbook.IsValidSort(opts.Sort) {
-		query = query.OrderBy(sortOptionToSQL(opts.Sort))
+		queryForResults = queryForResults.OrderBy(sortOptionToSQL(opts.Sort))
 	}
 
-	err = p.store.selectBuilder(tx, &out, query)
+	var playbookWithMembers []struct {
+		playbook.Playbook
+		Members string
+	}
+	err := p.store.selectBuilder(p.store.db, &playbookWithMembers, queryForResults)
 	if err == sql.ErrNoRows {
-		return out, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
+		return playbook.GetPlaybooksResults{}, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
 	} else if err != nil {
-		return out, errors.Wrap(err, "failed to get playbooks")
+		return playbook.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks")
 	}
 
-	nestedQuery := p.queryBuilder.
-		Select("ID").
-		From("IR_Playbook").
+	queryForTotal := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook AS p").
+		Join(getMembers).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"TeamID": teamID})
+		Where(sq.Eq{"TeamID": teamID}).
+		Where(isAdminOrTeamAndPlaybookMember)
 
-	query = p.memberIDsSelect.Where(nestedQuery.Prefix("PlaybookID IN (").Suffix(")"))
+	var total int
+	err = p.store.getBuilder(p.store.db, &total, queryForTotal)
+	if err != nil {
+		return playbook.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
+	}
+	pageCount := int(math.Ceil(float64(total) / float64(opts.PerPage)))
+	hasMore := opts.Page+1 < pageCount
 
-	var memberIDs playbookMembers
-	err = p.store.selectBuilder(tx, &memberIDs, query)
-	if err != nil && err != sql.ErrNoRows {
-		return out, errors.Wrapf(err, "failed to get memberIDs")
+	ret := make([]playbook.Playbook, 0, len(playbookWithMembers))
+	for _, p := range playbookWithMembers {
+		p.MemberIDs = strings.Fields(p.Members)
+		ret = append(ret, p.Playbook)
 	}
 
-	if err = tx.Commit(); err != nil {
-		return out, errors.Wrap(err, "could not commit transaction")
-	}
-
-	addMembersToPlaybooks(memberIDs, out)
-
-	return out, nil
+	return playbook.GetPlaybooksResults{
+		TotalCount: total,
+		PageCount:  pageCount,
+		HasMore:    hasMore,
+		Items:      ret,
+	}, nil
 }
 
 // Update updates a playbook
@@ -401,5 +453,14 @@ func directionOptionToSQL(direction playbook.SortDirection) string {
 		return "DESC"
 	default:
 		return ""
+	}
+}
+
+func correctPaginationOpts(opts *playbook.Options) {
+	if opts.PerPage <= 0 {
+		opts.PerPage = 1000
+	}
+	if opts.Page <= 0 {
+		opts.Page = 0
 	}
 }

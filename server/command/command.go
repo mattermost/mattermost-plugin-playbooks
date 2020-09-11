@@ -127,13 +127,17 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	playbooks, err := r.playbookService.GetPlaybooksForTeam(r.args.TeamId, playbook.Options{Sort: playbook.SortByTitle, Direction: playbook.OrderAsc})
+	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(r.args.UserId, r.args.TeamId,
+		playbook.Options{
+			Sort:      playbook.SortByTitle,
+			Direction: playbook.OrderAsc,
+		})
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}
 
-	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooks); err != nil {
+	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items); err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
 		return
 	}

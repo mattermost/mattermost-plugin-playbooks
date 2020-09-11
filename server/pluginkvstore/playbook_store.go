@@ -2,6 +2,7 @@ package pluginkvstore
 
 import (
 	"encoding/json"
+	"math"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -164,10 +165,10 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-func (p *PlaybookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options) ([]playbook.Playbook, error) {
+func (p *PlaybookStore) GetPlaybooksForTeam(requesterID, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
 	playbooks, err := p.GetPlaybooks()
 	if err != nil {
-		return nil, err
+		return playbook.GetPlaybooksResults{}, err
 	}
 
 	teamPlaybooks := make([]playbook.Playbook, 0, len(playbooks))
@@ -178,10 +179,28 @@ func (p *PlaybookStore) GetPlaybooksForTeam(teamID string, opts playbook.Options
 	}
 
 	if err := sortPlaybooks(teamPlaybooks, opts); err != nil {
-		return nil, err
+		return playbook.GetPlaybooksResults{}, err
 	}
 
-	return teamPlaybooks, nil
+	allowedPlaybooks := []playbook.Playbook{}
+	for _, pb := range teamPlaybooks {
+		if opts.HasPermissionsTo(pb, requesterID) {
+			allowedPlaybooks = append(allowedPlaybooks, pb)
+		}
+	}
+
+	totalCount := len(allowedPlaybooks)
+	// Note: ignoring overflow for now
+	pageCount := int(math.Ceil(float64(totalCount) / float64(opts.PerPage)))
+	hasMore := opts.Page+1 < pageCount
+	results := playbook.GetPlaybooksResults{
+		TotalCount: totalCount,
+		PageCount:  pageCount,
+		HasMore:    hasMore,
+		Items:      pagePlaybooks(allowedPlaybooks, opts.Page, opts.PerPage),
+	}
+
+	return results, nil
 }
 
 // Update updates a playbook
@@ -258,4 +277,10 @@ func getSteps(pbook playbook.Playbook) int {
 		steps += len(p.Items)
 	}
 	return steps
+}
+func pagePlaybooks(playbooks []playbook.Playbook, page, perPage int) []playbook.Playbook {
+	// Note: ignoring overflow for now
+	start := min(page*perPage, len(playbooks))
+	end := min(start+perPage, len(playbooks))
+	return playbooks[start:end]
 }

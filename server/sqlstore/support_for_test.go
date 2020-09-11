@@ -94,3 +94,204 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (PluginAPIClient, bot.Logger, *SQL
 
 	return pluginAPIClient, logger, sqlStore
 }
+
+func setupUsersTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.users (
+				id character varying(26) NOT NULL,
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				username character varying(64),
+				password character varying(128),
+				authdata character varying(128),
+				authservice character varying(32),
+				email character varying(128),
+				emailverified boolean,
+				nickname character varying(64),
+				firstname character varying(64),
+				lastname character varying(64),
+				"position" character varying(128),
+				roles character varying(256),
+				allowmarketing boolean,
+				props character varying(4000),
+				notifyprops character varying(2000),
+				lastpasswordupdate bigint,
+				lastpictureupdate bigint,
+				failedattempts integer,
+				locale character varying(5),
+				timezone character varying(256),
+				mfaactive boolean,
+				mfasecret character varying(128)
+			);
+		`)
+		require.NoError(t, err)
+
+		_, err = db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
+				channelid character varying(26) NOT NULL,
+				userid character varying(26) NOT NULL,
+				jointime bigint NOT NULL,
+				leavetime bigint
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Users (
+				Id varchar(26) NOT NULL,
+				CreateAt bigint(20) DEFAULT NULL,
+				UpdateAt bigint(20) DEFAULT NULL,
+				DeleteAt bigint(20) DEFAULT NULL,
+				Username varchar(64) DEFAULT NULL,
+				Password varchar(128) DEFAULT NULL,
+				AuthData varchar(128) DEFAULT NULL,
+				AuthService varchar(32) DEFAULT NULL,
+				Email varchar(128) DEFAULT NULL,
+				EmailVerified tinyint(1) DEFAULT NULL,
+				Nickname varchar(64) DEFAULT NULL,
+				FirstName varchar(64) DEFAULT NULL,
+				LastName varchar(64) DEFAULT NULL,
+				Position varchar(128) DEFAULT NULL,
+				Roles text,
+				AllowMarketing tinyint(1) DEFAULT NULL,
+				Props text,
+				NotifyProps text,
+				LastPasswordUpdate bigint(20) DEFAULT NULL,
+				LastPictureUpdate bigint(20) DEFAULT NULL,
+				FailedAttempts int(11) DEFAULT NULL,
+				Locale varchar(5) DEFAULT NULL,
+				Timezone text,
+				MfaActive tinyint(1) DEFAULT NULL,
+				MfaSecret varchar(128) DEFAULT NULL,
+				PRIMARY KEY (Id),
+				UNIQUE KEY Username (Username),
+				UNIQUE KEY AuthData (AuthData),
+				UNIQUE KEY Email (Email),
+				KEY idx_users_email (Email),
+				KEY idx_users_update_at (UpdateAt),
+				KEY idx_users_create_at (CreateAt),
+				KEY idx_users_delete_at (DeleteAt),
+				FULLTEXT KEY idx_users_all_txt (Username,FirstName,LastName,Nickname,Email),
+				FULLTEXT KEY idx_users_all_no_full_name_txt (Username,Nickname,Email),
+				FULLTEXT KEY idx_users_names_txt (Username,FirstName,LastName,Nickname),
+				FULLTEXT KEY idx_users_names_no_full_name_txt (Username,Nickname)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupChannelMemberHistoryTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
+				channelid character varying(26) NOT NULL,
+				userid character varying(26) NOT NULL,
+				jointime bigint NOT NULL,
+				leavetime bigint
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS ChannelMemberHistory (
+				ChannelId varchar(26) NOT NULL,
+				UserId varchar(26) NOT NULL,
+				JoinTime bigint(20) NOT NULL,
+				LeaveTime bigint(20) DEFAULT NULL,
+				PRIMARY KEY (ChannelId,UserId,JoinTime)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupTeamMembersTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.teammembers (
+				teamid character varying(26) NOT NULL,
+				userid character varying(26) NOT NULL,
+				roles character varying(64),
+				deleteat bigint,
+				schemeuser boolean,
+				schemeadmin boolean
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS TeamMembers (
+			  TeamId varchar(26) NOT NULL,
+			  UserId varchar(26) NOT NULL,
+			  Roles varchar(64) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  SchemeUser tinyint(4) DEFAULT NULL,
+			  SchemeAdmin tinyint(4) DEFAULT NULL,
+			  PRIMARY KEY (TeamId,UserId),
+			  KEY idx_teammembers_team_id (TeamId),
+			  KEY idx_teammembers_user_id (UserId),
+			  KEY idx_teammembers_delete_at (DeleteAt)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func addUsers(t *testing.T, store *SQLStore, userIDs []string) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("Users").Columns("ID")
+
+	for _, u := range userIDs {
+		insertBuilder = insertBuilder.Values(u)
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
+func addUsersToTeam(t *testing.T, store *SQLStore, userIDs []string, teamID string) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("TeamMembers").Columns("TeamId", "UserId")
+
+	for _, u := range userIDs {
+		insertBuilder = insertBuilder.Values(teamID, u)
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
+func makeAdmin(t *testing.T, store *SQLStore, userID string) {
+	t.Helper()
+
+	updateBuilder := store.builder.
+		Update("Users").
+		Where(sq.Eq{"Id": userID}).
+		Set("Roles", "role1 role2 system_admin role3")
+
+	_, err := store.execBuilder(store.db, updateBuilder)
+	require.NoError(t, err)
+}

@@ -20,11 +20,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
-type listIncidentResult struct {
-	listResult
-	Items []incident.Incident `json:"items"`
-}
-
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
@@ -320,14 +315,7 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		results.Items = []incident.Incident{}
 	}
 
-	jsonBytes, err := json.Marshal(listIncidentResult{
-		listResult: listResult{
-			TotalCount: results.TotalCount,
-			PageCount:  results.PageCount,
-			HasMore:    results.HasMore,
-		},
-		Items: results.Items,
-	})
+	jsonBytes, err := json.Marshal(results)
 	if err != nil {
 		HandleError(w, err)
 		return
