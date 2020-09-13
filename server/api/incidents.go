@@ -304,7 +304,7 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return err2 == nil
 	}
 
-	results, err := h.incidentService.GetIncidents(*filterOptions)
+	results, err := h.incidentService.GetIncidents(userID, *filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -506,7 +506,7 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 			return err == nil
 		},
 	}
-	commanders, err := h.incidentService.GetCommanders(options)
+	commanders, err := h.incidentService.GetCommanders(userID, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -550,7 +550,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 			return err == nil
 		},
 	}
-	incidents, err := h.incidentService.GetIncidents(options)
+	incidents, err := h.incidentService.GetIncidents(userID, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -836,6 +836,9 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 // parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.
 func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
+	if teamID == "" {
+		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
+	}
 
 	pageParam := u.Query().Get("page")
 	if pageParam == "" {

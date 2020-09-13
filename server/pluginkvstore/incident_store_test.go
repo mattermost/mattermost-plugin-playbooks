@@ -127,13 +127,15 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "simple getHeaders, no options",
-			options: incident.HeaderFilterOptions{},
+			name: "team3, simple getHeaders, no options",
+			options: incident.HeaderFilterOptions{
+				TeamID: team3id,
+			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
+				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{id7, id6, id4, id5, id3, id2, id1},
+				Items:      []incident.Incident{id6, id7},
 			},
 		},
 		{
@@ -150,140 +152,123 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			},
 		},
 		{
-			name: "sort by end_at",
+			name: "team1, sort by end_at",
 			options: incident.HeaderFilterOptions{
-				Sort: incident.SortByEndAt,
+				TeamID: team1id,
+				Sort:   incident.SortByEndAt,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
+				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{id7, id6, id3, id2, id5, id4, id1},
+				Items:      []incident.Incident{id1, id2, id3},
 			},
 		},
 		{
-			name: "no options, paged by 1",
+			name: "team2, no options, paged by 1",
 			options: incident.HeaderFilterOptions{
+				TeamID:  team2id,
 				Page:    0,
 				PerPage: 1,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  7,
+				TotalCount: 2,
+				PageCount:  2,
 				HasMore:    true,
-				Items:      []incident.Incident{id7},
+				Items:      []incident.Incident{id5},
 			},
 		},
 		{
-			name: "no options, paged by 3",
+			name: "no options, paged by 2",
 			options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    0,
-				PerPage: 3,
+				PerPage: 2,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  3,
+				TotalCount: 3,
+				PageCount:  2,
 				HasMore:    true,
-				Items:      []incident.Incident{id7, id6, id4},
+				Items:      []incident.Incident{id1, id2},
 			},
 		},
 		{
 			name: "no options, page 4 by 2",
 			options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    4,
 				PerPage: 2,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
+				TotalCount: 3,
+				PageCount:  2,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 		},
 		{
 			name: "no options, page 999 by 2",
 			options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    999,
 				PerPage: 2,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
+				TotalCount: 3,
+				PageCount:  2,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 		},
 		{
 			name: "no options, page 1 by 2",
 			options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    1,
 				PerPage: 2,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
-				HasMore:    true,
-				Items:      []incident.Incident{id4, id5},
-			},
-		},
-		{
-			name: "no options, page 1 by 3",
-			options: incident.HeaderFilterOptions{
-				Page:    1,
-				PerPage: 3,
-			},
-			want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  3,
-				HasMore:    true,
-				Items:      []incident.Incident{id5, id3, id2},
-			},
-		},
-		{
-			name: "no options, page 1 by 5",
-			options: incident.HeaderFilterOptions{
-				Page:    1,
-				PerPage: 5,
-			},
-			want: incident.GetIncidentsResults{
-				TotalCount: 7,
+				TotalCount: 3,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{id2, id1},
+				Items:      []incident.Incident{id3},
 			},
 		},
 		{
-			name: "sorted by ended, ascending, page 1 by 2",
+			name: "sorted by ended, descending, page 1 by 2",
 			options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Sort:    incident.SortByEndAt,
-				Order:   incident.OrderAsc,
+				Order:   incident.OrderDesc,
 				Page:    1,
 				PerPage: 2,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
-				HasMore:    true,
-				Items:      []incident.Incident{id5, id2},
+				TotalCount: 3,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []incident.Incident{id1},
 			},
 		},
 		{
-			name: "only active, page 1 by 2",
+			name: "only active, page 0 by 2",
 			options: incident.HeaderFilterOptions{
-				Page:    1,
+				TeamID:  team1id,
+				Page:    0,
 				PerPage: 2,
 				Status:  incident.Ongoing,
 			},
 			want: incident.GetIncidentsResults{
-				TotalCount: 5,
-				PageCount:  3,
-				HasMore:    true,
-				Items:      []incident.Incident{id5, id2},
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{id1, id2},
 			},
 		},
 		{
 			name: "active, commander3, asc",
 			options: incident.HeaderFilterOptions{
+				TeamID:      team2id,
 				Status:      incident.Ongoing,
 				CommanderID: commander3id,
 				Order:       incident.OrderAsc,
@@ -296,34 +281,37 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 			},
 		},
 		{
-			name: "commander1, asc, by end_at",
+			name: "commander1, desc, by end_at",
 			options: incident.HeaderFilterOptions{
+				TeamID:      team1id,
 				CommanderID: commander1id,
-				Order:       incident.OrderAsc,
+				Order:       incident.OrderDesc,
 				Sort:        incident.SortByEndAt,
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{id1, id3},
+				Items:      []incident.Incident{id3, id1},
 			},
 		},
 		{
 			name: "search for horse",
 			options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
 				SearchTerm: "horse",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{id3, id2},
+				Items:      []incident.Incident{id2, id3},
 			},
 		},
 		{
 			name: "search for aliens & commander3",
 			options: incident.HeaderFilterOptions{
+				TeamID:      team2id,
 				CommanderID: commander3id,
 				SearchTerm:  "aliens",
 			},
@@ -337,18 +325,20 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 		{
 			name: "fuzzy search using starting characters -- not implemented",
 			options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
 				SearchTerm: "sbsm",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 		},
 		{
 			name: "fuzzy search using starting characters, active -- not implemented",
 			options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
 				SearchTerm: "sbsm",
 				Status:     incident.Ongoing,
 			},
@@ -356,31 +346,33 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 		},
 		{
 			name: "case-insensitive and unicode-normalized",
 			options: incident.HeaderFilterOptions{
+				TeamID:     team3id,
 				SearchTerm: "ziggurat",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{id7, id6},
+				Items:      []incident.Incident{id6, id7},
 			},
 		},
 		{
 			name: "case-insensitive and unicode-normalized with unicode search term",
 			options: incident.HeaderFilterOptions{
+				TeamID:     team3id,
 				SearchTerm: "ziggūràt",
 			},
 			want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{id7, id6},
+				Items:      []incident.Incident{id6, id7},
 			},
 		},
 	}
@@ -406,7 +398,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				},
 			}
 
-			got, err := s.GetIncidents(tt.options)
+			got, err := s.GetIncidents("ignored", tt.options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetIncidents() error = %v\nwantErr = %v", err, tt.wantErr)
 				return
@@ -423,15 +415,6 @@ func Test_incidentStore__GetCommanders(t *testing.T) {
 		want    []incident.CommanderInfo
 		wantErr bool
 	}{
-		{
-			name: "get all commanders (eg, user is admin)",
-			want: []incident.CommanderInfo{
-				{UserID: commander1id, Username: "comm one"},
-				{UserID: commander2id, Username: "comm two"},
-				{UserID: commander3id, Username: "comm three"},
-				{UserID: commander5id, Username: "comm five"},
-			},
-		},
 		{
 			name:   "get commanders on team2",
 			teamID: team2id,
@@ -492,7 +475,7 @@ func Test_incidentStore__GetCommanders(t *testing.T) {
 				},
 			}
 
-			got, err := s.GetCommanders(options)
+			got, err := s.GetCommanders("ignored", options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetIncidents() error = %v\nwantErr = %v", err, tt.wantErr)
 				return

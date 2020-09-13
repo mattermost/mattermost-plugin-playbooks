@@ -45,11 +45,13 @@ var (
 	channelID05 = model.NewId()
 	channelID06 = model.NewId()
 	channelID07 = model.NewId()
+	channelID08 = model.NewId()
+	channelID09 = model.NewId()
 
 	inc01 = *NewBuilder().
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
-		WithChannelID(channelID01).
+		WithChannelID(channelID01). // public
 		WithIsActive(true).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
@@ -59,19 +61,19 @@ var (
 		ToIncident()
 
 	inc02 = *NewBuilder().
-		WithName("incident 2 - horse staple battery shotgun mouse shotputmouse").
-		WithChannelID(channelID02).
+		WithName("incident 2 - horse staple battery aliens shotgun mouse shotputmouse").
+		WithChannelID(channelID02). // public
 		WithIsActive(true).
 		WithCommanderUserID(commander2.UserID).
 		WithTeamID(team1id).
-		WithCreateAt(145).
+		WithCreateAt(199).
 		WithEndAt(555).
 		WithChecklists([]int{7}).
 		ToIncident()
 
 	inc03 = *NewBuilder().
-		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
-		WithChannelID(channelID03).
+		WithName("incident 3 - Hörse stapler battery shotgun mouse shotputmouse").
+		WithChannelID(channelID03). // public
 		WithIsActive(false).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
@@ -81,30 +83,52 @@ var (
 		ToIncident()
 
 	inc04 = *NewBuilder().
-		WithName("incident 4 - titanic terminator aliens").
-		WithChannelID(channelID04).
+		WithName("incident 4 - titanic terminatoraliens").
+		WithChannelID(channelID04). // private
 		WithIsActive(false).
 		WithCommanderUserID(commander3.UserID).
-		WithTeamID(team2id).
+		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithEndAt(444).
 		WithChecklists([]int{5}).
 		ToIncident()
 
 	inc05 = *NewBuilder().
-		WithName("incident 5 - ubik high castle electric sheep").
-		WithChannelID(channelID05).
+		WithName("incident 5 - titanic terminator aliens mouse").
+		WithChannelID(channelID05). // private
+		WithIsActive(true).
+		WithCommanderUserID(commander3.UserID).
+		WithTeamID(team1id).
+		WithCreateAt(400).
+		WithEndAt(500).
+		WithChecklists([]int{1}).
+		ToIncident()
+
+	inc06 = *NewBuilder().
+		WithName("incident 6 - ubik high castle electric sheep").
+		WithChannelID(channelID06). // public
 		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
-		WithCreateAt(223).
+		WithCreateAt(444).
 		WithEndAt(550).
 		WithChecklists([]int{4}).
 		ToIncident()
 
-	inc06 = *NewBuilder().
-		WithName("incident 6 - ziggurat!").
-		WithChannelID(channelID06).
+	inc07 = *NewBuilder().
+		WithName("incident 7 - ubik high castle electric sheep").
+		WithChannelID(channelID07). // private
+		WithIsActive(true).
+		WithCommanderUserID(commander3.UserID).
+		WithTeamID(team2id).
+		WithCreateAt(555).
+		WithEndAt(660).
+		WithChecklists([]int{4}).
+		ToIncident()
+
+	inc08 = *NewBuilder().
+		WithName("incident 8 - ziggurat!").
+		WithChannelID(channelID08). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
@@ -113,9 +137,9 @@ var (
 		WithChecklists([]int{3}).
 		ToIncident()
 
-	inc07 = *NewBuilder().
-		WithName("incident 7 - Ziggürat!").
-		WithChannelID(channelID07).
+	inc09 = *NewBuilder().
+		WithName("incident 9 - Ziggürat!").
+		WithChannelID(channelID09). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
@@ -124,7 +148,7 @@ var (
 		WithChecklists([]int{2}).
 		ToIncident()
 
-	incidents = []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07}
+	incidents = []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 )
 
 func TestGetIncidents(t *testing.T) {
@@ -143,210 +167,257 @@ func TestGetIncidents(t *testing.T) {
 
 	testData := []struct {
 		Name        string
+		RequesterID string
 		Options     incident.HeaderFilterOptions
 		Want        incident.GetIncidentsResults
 		ExpectedErr error
 	}{
 		{
-			Name:    "no options",
-			Options: incident.HeaderFilterOptions{},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc07, inc06, inc04, inc05, inc03, inc02, inc01},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 only, ascending",
+			Name:        "no options - team1 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
-				Order:  "asc",
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 3,
+				TotalCount: 5,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc01, inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},
-
-		{
-			Name: "no paging, sort by CreateAt",
-			Options: incident.HeaderFilterOptions{
-				Sort: incident.SortByCreateAt,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc07, inc06, inc04, inc05, inc03, inc02, inc01},
+				Items:      []incident.Incident{inc01, inc02, inc03, inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "no paging, sort by Name",
+			Name:        "team1 - desc - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				Sort: incident.SortByName,
+				TeamID: team1id,
+				Order:  "desc",
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
+				TotalCount: 5,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc07, inc06, inc05, inc04, inc03, inc02, inc01},
+				Items:      []incident.Incident{inc05, inc04, inc03, inc02, inc01},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "no paging, sort by EndAt",
+			Name:        "team2 - sort by CreateAt desc - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				Sort: incident.SortByEndAt,
+				TeamID: team2id,
+				Sort:   incident.SortByCreateAt,
+				Order:  incident.OrderDesc,
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
+				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc07, inc06, inc03, inc02, inc05, inc04, inc01},
+				Items:      []incident.Incident{inc07, inc06},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "no options, paged by 1",
+			Name:        "no paging, team3, sort by Name",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID: team3id,
+				Sort:   incident.SortByName,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc08, inc09},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "no paging, team2, sort by EndAt",
+			RequesterID: "Lucy",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team2id,
+				Sort:   incident.SortByEndAt,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc06, inc07},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "no options, team paged by 1, admin",
+			RequesterID: "Lucy",
+			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    0,
 				PerPage: 1,
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  7,
+				TotalCount: 5,
+				PageCount:  5,
 				HasMore:    true,
-				Items:      []incident.Incident{inc07},
+				Items:      []incident.Incident{inc01},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "no options, paged by 3",
+			Name:        "no options, team1 - paged by 3, page 0 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    0,
 				PerPage: 3,
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  3,
+				TotalCount: 5,
+				PageCount:  2,
 				HasMore:    true,
-				Items:      []incident.Incident{inc07, inc06, inc04},
+				Items:      []incident.Incident{inc01, inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "no options, page 4 by 2",
+			Name:        "no options, team1 - paged by 3, page 1 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				Page:    4,
-				PerPage: 2,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
-				HasMore:    false,
-				Items:      []incident.Incident{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, page 999 by 2",
-			Options: incident.HeaderFilterOptions{
-				Page:    999,
-				PerPage: 2,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
-				HasMore:    false,
-				Items:      []incident.Incident{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, page 1 by 2",
-			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    1,
-				PerPage: 2,
+				PerPage: 3,
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
-				HasMore:    true,
+				TotalCount: 5,
+				PageCount:  2,
+				HasMore:    false,
 				Items:      []incident.Incident{inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "no options, page 1 by 3",
+			Name:        "no options, team1 - paged by 3, page 2 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				Page:    1,
+				TeamID:  team1id,
+				Page:    2,
 				PerPage: 3,
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  3,
-				HasMore:    true,
-				Items:      []incident.Incident{inc05, inc03, inc02},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, page 1 by 5",
-			Options: incident.HeaderFilterOptions{
-				Page:    1,
-				PerPage: 5,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
+				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{inc02, inc01},
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "sorted by ended, ascending, page 1 by 2",
+			Name:        "no options, team1 - paged by 3, page 999 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				Sort:    "end_at",
-				Order:   "asc",
-				Page:    1,
+				TeamID:  team1id,
+				Page:    999,
+				PerPage: 3,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 5,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []incident.Incident{},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "no options, team1 - page 2 by 2 - admin",
+			RequesterID: "Lucy",
+			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
+				Page:    2,
 				PerPage: 2,
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 7,
-				PageCount:  4,
-				HasMore:    true,
-				Items:      []incident.Incident{inc05, inc02},
+				TotalCount: 5,
+				PageCount:  3,
+				HasMore:    false,
+				Items:      []incident.Incident{inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "only active, page 1 by 2",
+			Name:        "no options, team1 - page 1 by 2 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
 				Page:    1,
 				PerPage: 2,
-				Status:  incident.Ongoing,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  3,
 				HasMore:    true,
-				Items:      []incident.Incident{inc05, inc02},
+				Items:      []incident.Incident{inc03, inc04},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "active, commander3, asc",
+			Name:        "no options, team1 - page 1 by 4 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
+				Page:    1,
+				PerPage: 4,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 5,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []incident.Incident{inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team1 - sorted by ended, desc, page 1 by 2 - admin",
+			RequesterID: "Lucy",
+			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
+				Sort:    "end_at",
+				Order:   "desc",
+				Page:    1,
+				PerPage: 2,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 5,
+				PageCount:  3,
+				HasMore:    true,
+				Items:      []incident.Incident{inc05, inc04},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team1 - only active, page 1 by 2 - admin",
+			RequesterID: "Lucy",
+			Options: incident.HeaderFilterOptions{
+				TeamID:  team1id,
+				Page:    1,
+				PerPage: 2,
+				Status:  incident.Ongoing,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []incident.Incident{inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team1 - active, commander3, desc - admin ",
+			RequesterID: "Lucy",
+			Options: incident.HeaderFilterOptions{
+				TeamID:      team1id,
 				Status:      incident.Ongoing,
 				CommanderID: commander3.UserID,
-				Order:       "asc",
+				Order:       "desc",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 1,
@@ -357,63 +428,89 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "commander1, asc, by end_at",
+			Name:        "team1 - commander1, desc, by end_at - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:      team1id,
 				CommanderID: commander1.UserID,
-				Order:       "asc",
+				Order:       "desc",
 				Sort:        "end_at",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc01, inc03},
+				Items:      []incident.Incident{inc03, inc01},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "search for horse",
+			Name:        "team1 - search for horse - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
 				SearchTerm: "horse",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc03, inc02},
+				Items:      []incident.Incident{inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "search for aliens & commander3",
+			Name:        "team1 - search for mouse, endat - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
+				SearchTerm: "mouse",
+				Sort:       "end_at",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc05, inc02, inc03},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team1 - search for aliens & commander3 - admin",
+			RequesterID: "Lucy",
+			Options: incident.HeaderFilterOptions{
+				TeamID:      team1id,
 				CommanderID: commander3.UserID,
 				SearchTerm:  "aliens",
 			},
 			Want: incident.GetIncidentsResults{
-				TotalCount: 1,
+				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc04},
+				Items:      []incident.Incident{inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "fuzzy search using starting characters -- not implemented",
+			Name:        "fuzzy search using starting characters -- not implemented",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
 				SearchTerm: "sbsm",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "fuzzy search using starting characters, active -- not implemented",
+			Name:        "fuzzy search using starting characters, active -- not implemented",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
 				SearchTerm: "sbsm",
 				Status:     incident.Ongoing,
 			},
@@ -421,67 +518,149 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "case-insensitive and unicode-normalized",
+			Name:        "team3 - case-insensitive and unicode-normalized - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:     team3id,
 				SearchTerm: "ziggurat",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc07, inc06},
+				Items:      []incident.Incident{inc08, inc09},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "case-insensitive and unicode-normalized with unicode search term",
+			Name:        "team3 - case-insensitive and unicode-normalized with unicode search term - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:     team3id,
 				SearchTerm: "ziggūràt",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc07, inc06},
+				Items:      []incident.Incident{inc08, inc09},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "bad parameter sort",
+			Name:        "bad parameter sort",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				Sort: "unknown_field",
+				TeamID: team2id,
+				Sort:   "unknown_field",
 			},
 			Want:        incident.GetIncidentsResults{},
 			ExpectedErr: errors.New("bad parameter 'sort'"),
 		},
 		{
-			Name: "bad team id",
+			Name:        "bad team id",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
 				TeamID: "invalid ID",
 			},
 			Want:        incident.GetIncidentsResults{},
-			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters or blank"),
+			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
 		},
 		{
-			Name: "bad parameter order by",
+			Name:        "bad parameter order by",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				Order: "invalid order",
+				TeamID: team2id,
+				Order:  "invalid order",
 			},
 			Want:        incident.GetIncidentsResults{},
 			ExpectedErr: errors.New("bad parameter 'order_by'"),
 		},
 		{
-			Name: "bad commander id",
+			Name:        "bad commander id",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
+				TeamID:      team2id,
 				CommanderID: "invalid ID",
 			},
 			Want:        incident.GetIncidentsResults{},
 			ExpectedErr: errors.New("bad parameter 'commander_id': must be 26 characters or blank"),
+		},
+		{
+			Name:        "team1 - desc - Bob (in all channels)",
+			RequesterID: "Bob",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team1id,
+				Order:  "desc",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 5,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc05, inc04, inc03, inc02, inc01},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team2 -  Bob (in all channels)",
+			RequesterID: "Bob",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team2id,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc06, inc07},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team1 - Alice (in no channels but member of team, can see public incidents)",
+			RequesterID: "Alice",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team1id,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc01, inc02, inc03},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team2 - Alice (in no channels and not member of team)",
+			RequesterID: "Alice",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team2id,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      []incident.Incident{},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team2 - Charlotte (in no channels but member of team)",
+			RequesterID: "Charlotte",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team2id,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc06},
+			},
+			ExpectedErr: nil,
 		},
 	}
 
@@ -489,24 +668,39 @@ func TestGetIncidents(t *testing.T) {
 		db := setupTestDB(t, driverName)
 		incidentStore := setupIncidentStore(t, db)
 
+		_, _, store := setupSQLStore(t, db)
+		setupUsersTable(t, db)
+		setupTeamMembersTable(t, db)
+		setupChannelMembersTable(t, db)
+		setupChannelsTable(t, db)
+		addUsers(t, store, []string{"Lucy", "Bob"})
+		addUsersToTeam(t, store, []string{"Alice", "Charlotte"}, team1id)
+		addUsersToTeam(t, store, []string{"Charlotte"}, team2id)
+		addUsersToChannels(t, store, []string{"Bob"}, []string{channelID01, channelID02, channelID03, channelID04, channelID05, channelID06, channelID07, channelID08, channelID09})
+		makeChannelsPublicOrPrivate(t, store, []string{channelID01, channelID02, channelID03, channelID06}, true)
+		makeChannelsPublicOrPrivate(t, store, []string{channelID04, channelID05, channelID07, channelID08, channelID09}, false)
+		makeAdmin(t, store, "Lucy")
+
 		t.Run("zero incidents", func(t *testing.T) {
-			result, err := incidentStore.GetIncidents(incident.HeaderFilterOptions{
-				Page:    0,
-				PerPage: 10,
-			})
+			result, err := incidentStore.GetIncidents("Lucy",
+				incident.HeaderFilterOptions{
+					TeamID:  team1id,
+					Page:    0,
+					PerPage: 10,
+				})
 			require.NoError(t, err)
 
 			require.Equal(t, 0, result.TotalCount)
 			require.Equal(t, 0, result.PageCount)
 			require.False(t, result.HasMore)
-			require.Nil(t, result.Items)
+			require.Equal(t, []incident.Incident{}, result.Items)
 		})
 
 		createIncidents(incidentStore)
 
 		for _, testCase := range testData {
 			t.Run(driverName+" - "+testCase.Name, func(t *testing.T) {
-				result, err := incidentStore.GetIncidents(testCase.Options)
+				result, err := incidentStore.GetIncidents(testCase.RequesterID, testCase.Options)
 
 				if testCase.ExpectedErr != nil {
 					require.Nil(t, result)
@@ -813,118 +1007,121 @@ func TestGetIncidentIDForChannel(t *testing.T) {
 }
 
 func TestGetCommanders(t *testing.T) {
-	alwaysTrue := func(s string) bool { return true }
-	alwaysFalse := func(s string) bool { return false }
-
 	cases := []struct {
 		Name        string
+		RequesterID string
 		Options     incident.HeaderFilterOptions
 		Expected    []incident.CommanderInfo
 		ExpectedErr error
 	}{
 		{
-			Name: "permissions to all - team 1",
+			Name:        "team 1 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				TeamID:           team1id,
-				HasPermissionsTo: alwaysTrue,
+				TeamID: team1id,
 			},
-			Expected:    []incident.CommanderInfo{commander1, commander2},
+			Expected:    []incident.CommanderInfo{commander1, commander2, commander3},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "permissions to all - team 2",
+			Name:        "team 2 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				TeamID:           team2id,
-				HasPermissionsTo: alwaysTrue,
+				TeamID: team2id,
 			},
 			Expected:    []incident.CommanderInfo{commander3},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "permissions to all - team 3",
+			Name:        "team 3 - admin",
+			RequesterID: "Lucy",
 			Options: incident.HeaderFilterOptions{
-				TeamID:           team3id,
-				HasPermissionsTo: alwaysTrue,
+				TeamID: team3id,
 			},
 			Expected:    []incident.CommanderInfo{commander4},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "permissions to none - team 1",
-			Options: incident.HeaderFilterOptions{
-				TeamID:           team1id,
-				HasPermissionsTo: alwaysFalse,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "permissions to none - team 2",
-			Options: incident.HeaderFilterOptions{
-				TeamID:           team2id,
-				HasPermissionsTo: alwaysFalse,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "permissions to none - team 3",
-			Options: incident.HeaderFilterOptions{
-				TeamID:           team3id,
-				HasPermissionsTo: alwaysFalse,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "nil permissions - team 1",
+			Name:        "team 1 - non-member",
+			RequesterID: "non-existing-id",
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 			},
-			Expected:    nil,
+			Expected:    []incident.CommanderInfo{},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "nil permissions - team 2",
+			Name:        "team 2 - non-member",
+			RequesterID: "non-existing-id",
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
-			Expected:    nil,
+			Expected:    []incident.CommanderInfo{},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "nil permissions - team 3",
+			Name:        "team 3 - non-member",
+			RequesterID: "non-existing-id",
 			Options: incident.HeaderFilterOptions{
 				TeamID: team3id,
 			},
-			Expected:    nil,
+			Expected:    []incident.CommanderInfo{},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "permissions to some - team 1",
+			Name:        "team1 - Alice (in no channels but member of team, can see public incidents)",
+			RequesterID: "Alice",
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
-				HasPermissionsTo: func(channelID string) bool {
-					return channelID == channelID01
-				},
 			},
-			Expected:    []incident.CommanderInfo{commander1},
+			Expected:    []incident.CommanderInfo{commander1, commander2},
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no team",
+			Name:        "team2 - Alice (in no channels and not member of team)",
+			RequesterID: "Alice",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team2id,
+			},
+			Expected:    []incident.CommanderInfo{},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "team2 - Charlotte (in no channels but member of team)",
+			RequesterID: "Charlotte",
+			Options: incident.HeaderFilterOptions{
+				TeamID: team2id,
+			},
+			Expected:    []incident.CommanderInfo{commander3},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "no team - admin",
+			RequesterID: "Lucy",
 			Options:     incident.HeaderFilterOptions{},
 			Expected:    nil,
-			ExpectedErr: errors.New("team ID should not be empty"),
+			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
 		},
 	}
 
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
+
+		_, _, store := setupSQLStore(t, db)
 		setupUsersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
+		setupTeamMembersTable(t, db)
+		setupChannelMembersTable(t, db)
+		setupChannelsTable(t, db)
 
-		incidentStore := setupIncidentStore(t, db)
+		addUsers(t, store, []string{"Lucy"})
+		makeAdmin(t, store, "Lucy")
+		addUsersToTeam(t, store, []string{"Alice", "Charlotte"}, team1id)
+		addUsersToTeam(t, store, []string{"Charlotte"}, team2id)
+		addUsersToChannels(t, store, []string{"Bob"}, []string{channelID01, channelID02, channelID03, channelID04, channelID05, channelID06, channelID07, channelID08, channelID09})
+		makeChannelsPublicOrPrivate(t, store, []string{channelID01, channelID02, channelID03, channelID06}, true)
+		makeChannelsPublicOrPrivate(t, store, []string{channelID04, channelID05, channelID07, channelID08, channelID09}, false)
 
 		queryBuilder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
 		if driverName == model.DATABASE_DRIVER_POSTGRES {
@@ -948,7 +1145,7 @@ func TestGetCommanders(t *testing.T) {
 
 		for _, testCase := range cases {
 			t.Run(testCase.Name, func(t *testing.T) {
-				actual, actualErr := incidentStore.GetCommanders(testCase.Options)
+				actual, actualErr := incidentStore.GetCommanders(testCase.RequesterID, testCase.Options)
 
 				if testCase.ExpectedErr != nil {
 					require.NotNil(t, actualErr)

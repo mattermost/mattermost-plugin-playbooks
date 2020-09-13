@@ -201,95 +201,6 @@ func TestGetPlaybooks(t *testing.T) {
 	}
 }
 
-//{
-//	name:   "team1",
-//	teamID: team1id,
-//	options: playbook.Options{
-//		Sort: playbook.SortByTitle,
-//	},
-//	expected:    []playbook.Playbook{pb01, pb02, pb04, pb06, pb08},
-//	expectedErr: nil,
-//},
-//{
-//	name:   "team2",
-//	teamID: team2id,
-//	options: playbook.Options{
-//		Sort: playbook.SortByTitle,
-//	},
-//	expected:    []playbook.Playbook{pb03, pb05},
-//	expectedErr: nil,
-//},
-//{
-//	name:        "team3",
-//	teamID:      team3id,
-//	expected:    []playbook.Playbook{pb07},
-//	expectedErr: nil,
-//},
-//{
-//	name:   "team1 title desc",
-//	teamID: team1id,
-//	options: playbook.Options{
-//		Sort:      playbook.SortByTitle,
-//		Direction: playbook.OrderDesc,
-//	},
-//	expected:    []playbook.Playbook{pb08, pb06, pb04, pb02, pb01},
-//	expectedErr: nil,
-//},
-//{
-//	name:   "team1 steps default is ASC",
-//	teamID: team1id,
-//	options: playbook.Options{
-//		Sort: playbook.SortBySteps,
-//	},
-//	expected:    []playbook.Playbook{pb08, pb01, pb02, pb06, pb04},
-//	expectedErr: nil,
-//},
-//{
-//	name:   "team1 steps, specify ASC",
-//	teamID: team1id,
-//	options: playbook.Options{
-//		Sort:      playbook.SortBySteps,
-//		Direction: playbook.OrderAsc,
-//	},
-//	expected:    []playbook.Playbook{pb08, pb01, pb02, pb06, pb04},
-//	expectedErr: nil,
-//},
-//{
-//	name:   "team1 steps desc",
-//	teamID: team1id,
-//	options: playbook.Options{
-//		Sort:      playbook.SortBySteps,
-//		Direction: playbook.OrderDesc,
-//	},
-//	expected:    []playbook.Playbook{pb04, pb06, pb02, pb01, pb08},
-//	expectedErr: nil,
-//},
-//{
-//	name:   "team1 stages",
-//	teamID: team1id,
-//	options: playbook.Options{
-//		Sort: playbook.SortByStages,
-//	},
-//	expected:    []playbook.Playbook{pb08, pb06, pb01, pb04, pb02},
-//	expectedErr: nil,
-//},
-//{
-//	name:   "team1 stages desc",
-//	teamID: team1id,
-//	options: playbook.Options{
-//		Sort:      playbook.SortByStages,
-//		Direction: playbook.OrderDesc,
-//	},
-//	expected:    []playbook.Playbook{pb02, pb04, pb01, pb06, pb08},
-//	expectedErr: nil,
-//},
-//{
-//	name:        "none found",
-//	teamID:      "not-existing",
-//	expected:    []playbook.Playbook(nil),
-//	expectedErr: nil,
-//},
-
 func TestGetPlaybooksForTeam(t *testing.T) {
 	createPlaybooks := func(store playbook.Store) {
 		t.Helper()
@@ -335,6 +246,22 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []playbook.Playbook{pb01, pb03},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:        "team1 from jon title desc",
+			teamID:      team1id,
+			requesterID: "jon",
+			options: playbook.Options{
+				Sort:      playbook.SortByTitle,
+				Direction: playbook.OrderDesc,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb03, pb01},
 			},
 			expectedErr: nil,
 		},
@@ -386,6 +313,100 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			name:        "team1 from Admin sort by title desc",
+			teamID:      team1id,
+			requesterID: "Lucy",
+			options: playbook.Options{
+				Sort:      playbook.SortByTitle,
+				Direction: playbook.OrderDesc,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 4,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb04, pb03, pb02, pb01},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:        "team1 from Admin sort by steps, default is asc",
+			teamID:      team1id,
+			requesterID: "Lucy",
+			options: playbook.Options{
+				Sort: playbook.SortBySteps,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 4,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb01, pb03, pb02, pb04},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:        "team1 from Admin sort by steps, specify asc",
+			teamID:      team1id,
+			requesterID: "Lucy",
+			options: playbook.Options{
+				Sort:      playbook.SortBySteps,
+				Direction: playbook.OrderAsc,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 4,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb01, pb03, pb02, pb04},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:        "team1 from Admin sort by steps, desc",
+			teamID:      team1id,
+			requesterID: "Lucy",
+			options: playbook.Options{
+				Sort:      playbook.SortBySteps,
+				Direction: playbook.OrderDesc,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 4,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb04, pb02, pb03, pb01},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:        "team1 from Admin sort by stages",
+			teamID:      team1id,
+			requesterID: "Lucy",
+			options: playbook.Options{
+				Sort: playbook.SortByStages,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 4,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb04, pb01, pb03, pb02},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:        "team1 from Admin sort by stages, desc",
+			teamID:      team1id,
+			requesterID: "Lucy",
+			options: playbook.Options{
+				Sort:      playbook.SortByStages,
+				Direction: playbook.OrderDesc,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 4,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb02, pb03, pb01, pb04},
+			},
+			expectedErr: nil,
+		},
+		{
 			name:        "team2 from Matt",
 			teamID:      team2id,
 			requesterID: "Matt",
@@ -427,6 +448,17 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []playbook.Playbook{pb08},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "none found",
+			teamID: "not-existing",
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      []playbook.Playbook{},
 			},
 			expectedErr: nil,
 		},

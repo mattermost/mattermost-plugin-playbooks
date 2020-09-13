@@ -258,24 +258,23 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterID, teamID string, opts pla
 		Where(isAdminOrTeamAndPlaybookMember)
 
 	var total int
-	err = p.store.getBuilder(p.store.db, &total, queryForTotal)
-	if err != nil {
+	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {
 		return playbook.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
 	}
 	pageCount := int(math.Ceil(float64(total) / float64(opts.PerPage)))
 	hasMore := opts.Page+1 < pageCount
 
-	ret := make([]playbook.Playbook, 0, len(playbookWithMembers))
+	playbooks := make([]playbook.Playbook, 0, len(playbookWithMembers))
 	for _, p := range playbookWithMembers {
 		p.MemberIDs = strings.Fields(p.Members)
-		ret = append(ret, p.Playbook)
+		playbooks = append(playbooks, p.Playbook)
 	}
 
 	return playbook.GetPlaybooksResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		HasMore:    hasMore,
-		Items:      ret,
+		Items:      playbooks,
 	}, nil
 }
 

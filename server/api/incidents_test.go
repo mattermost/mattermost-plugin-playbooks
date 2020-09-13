@@ -1062,10 +1062,10 @@ func TestIncidents(t *testing.T) {
 			HasMore:    true,
 			Items:      []incident.Incident{incident1},
 		}
-		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents?team_id=testTeamID1", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1097,10 +1097,10 @@ func TestIncidents(t *testing.T) {
 			HasMore:    false,
 			Items:      nil,
 		}
-		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents?team_id=non-existent", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")

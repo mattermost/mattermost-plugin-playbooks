@@ -258,6 +258,111 @@ func setupTeamMembersTable(t *testing.T, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
+func setupChannelMembersTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.channelmembers (
+				channelid character varying(26) NOT NULL,
+				userid character varying(26) NOT NULL,
+				roles character varying(64),
+				lastviewedat bigint,
+				msgcount bigint,
+				mentioncount bigint,
+				notifyprops character varying(2000),
+				lastupdateat bigint,
+				schemeuser boolean,
+				schemeadmin boolean
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS ChannelMembers (
+			  ChannelId varchar(26) NOT NULL,
+			  UserId varchar(26) NOT NULL,
+			  Roles varchar(64) DEFAULT NULL,
+			  LastViewedAt bigint(20) DEFAULT NULL,
+			  MsgCount bigint(20) DEFAULT NULL,
+			  MentionCount bigint(20) DEFAULT NULL,
+			  NotifyProps text,
+			  LastUpdateAt bigint(20) DEFAULT NULL,
+			  SchemeUser tinyint(4) DEFAULT NULL,
+			  SchemeAdmin tinyint(4) DEFAULT NULL,
+			  PRIMARY KEY (ChannelId,UserId),
+			  KEY idx_channelmembers_channel_id (ChannelId),
+			  KEY idx_channelmembers_user_id (UserId)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupChannelsTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.channels (
+				id character varying(26) NOT NULL,
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				teamid character varying(26),
+				type character varying(1),
+				displayname character varying(64),
+				name character varying(64),
+				header character varying(1024),
+				purpose character varying(250),
+				lastpostat bigint,
+				totalmsgcount bigint,
+				extraupdateat bigint,
+				creatorid character varying(26),
+				schemeid character varying(26)
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE Channels (
+			  Id varchar(26) NOT NULL,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  TeamId varchar(26) DEFAULT NULL,
+			  Type varchar(1) DEFAULT NULL,
+			  DisplayName varchar(64) DEFAULT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  Header text,
+			  Purpose varchar(250) DEFAULT NULL,
+			  LastPostAt bigint(20) DEFAULT NULL,
+			  TotalMsgCount bigint(20) DEFAULT NULL,
+			  ExtraUpdateAt bigint(20) DEFAULT NULL,
+			  CreatorId varchar(26) DEFAULT NULL,
+			  SchemeId varchar(26) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name,TeamId),
+			  KEY idx_channels_team_id (TeamId),
+			  KEY idx_channels_name (Name),
+			  KEY idx_channels_update_at (UpdateAt),
+			  KEY idx_channels_create_at (CreateAt),
+			  KEY idx_channels_delete_at (DeleteAt),
+			  FULLTEXT KEY idx_channels_txt (Name,DisplayName)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
 func addUsers(t *testing.T, store *SQLStore, userIDs []string) {
 	t.Helper()
 
@@ -278,6 +383,39 @@ func addUsersToTeam(t *testing.T, store *SQLStore, userIDs []string, teamID stri
 
 	for _, u := range userIDs {
 		insertBuilder = insertBuilder.Values(teamID, u)
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
+func addUsersToChannels(t *testing.T, store *SQLStore, userIDs, channelIDs []string) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("ChannelMembers").Columns("ChannelId", "UserId")
+
+	for _, u := range userIDs {
+		for _, c := range channelIDs {
+			insertBuilder = insertBuilder.Values(c, u)
+		}
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
+func makeChannelsPublicOrPrivate(t *testing.T, store *SQLStore, channelIDs []string, makePublic bool) {
+	t.Helper()
+
+	channelType := "P"
+	if makePublic {
+		channelType = "O"
+	}
+
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "Type")
+
+	for _, c := range channelIDs {
+		insertBuilder = insertBuilder.Values(c, channelType)
 	}
 
 	_, err := store.execBuilder(store.db, insertBuilder)

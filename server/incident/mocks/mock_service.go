@@ -123,18 +123,18 @@ func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockService) GetCommanders(arg0 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockService) GetCommanders(arg0 string, arg1 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommanders", arg0)
+	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCommanders indicates an expected call of GetCommanders
-func (mr *MockServiceMockRecorder) GetCommanders(arg0 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) GetCommanders(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommanders", reflect.TypeOf((*MockService)(nil).GetCommanders), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommanders", reflect.TypeOf((*MockService)(nil).GetCommanders), arg0, arg1)
 }
 
 // GetIncident mocks base method
@@ -183,18 +183,18 @@ func (mr *MockServiceMockRecorder) GetIncidentWithDetails(arg0 interface{}) *gom
 }
 
 // GetIncidents mocks base method
-func (m *MockService) GetIncidents(arg0 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockService) GetIncidents(arg0 string, arg1 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIncidents", arg0)
+	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetIncidents indicates an expected call of GetIncidents
-func (mr *MockServiceMockRecorder) GetIncidents(arg0 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) GetIncidents(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockService)(nil).GetIncidents), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockService)(nil).GetIncidents), arg0, arg1)
 }
 
 // IsCommander mocks base method
