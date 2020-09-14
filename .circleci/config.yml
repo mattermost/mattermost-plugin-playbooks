@@ -230,8 +230,8 @@ jobs:
             sudo apt-get update
             sudo apt-get install libxss1
             sudo apt-get install postgresql-client
-#            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-#            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
             psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
 #            psql -d $TEST_DATABASE_URL -c "DELETE FROM licenses WHERE id='$EE_LICENSE_ID';"
 #            psql -d $TEST_DATABASE_URL -c "INSERT INTO licenses (id, createat, bytes) VALUES ('$EE_LICENSE_ID','1589175893083','$EE_LICENSE');"
