@@ -223,6 +223,7 @@ jobs:
             until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
       - attach_workspace:
           at: ~/mattermost-cypress-docker
+      - checkout
       - run:
           name: Set and restore Postgres DB
           command: |
@@ -233,7 +234,6 @@ jobs:
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
             psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - checkout
       - *restore_cache
       - run:
           name: Install IR plugin
