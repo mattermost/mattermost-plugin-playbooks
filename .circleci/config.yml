@@ -152,7 +152,7 @@ jobs:
 
   e2e-cypress-tests:
     docker:
-      - image: circleci/node:14.8-stretch-browsers-legacy
+      - image: circleci/golang:1.14.1-node-browsers
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: circleci/postgres:9.6.5-alpine-ram
