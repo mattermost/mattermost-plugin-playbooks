@@ -5,15 +5,33 @@ orbs:
   codecov: codecov/codecov@1.1.1
 
 aliases:
-  - &restore_cache
+  - &restore_deploy_cache
     restore_cache:
-      key: go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-  - &save_cache
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+  - &save_deploy_cache
     save_cache:
-      key: go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
       paths:
         - "/go/pkg/mod"
         - "./webapp/node_modules"
+  - &restore_test_cache
+    restore_cache:
+      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+  - &save_test_cache
+    save_cache:
+      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+      paths:
+        - "/go/pkg/mod"
+        - "./webapp/node_modules"
+  - &restore_cypress_cache
+    restore_cache:
+      key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
+  - &save_cypress_cache
+    save_cache:
+      key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
+      paths:
+        - ./tests-e2e/node_modules
+        - /home/circleci/.cache/Cypress
 
 jobs:
   coverage-MySQL56-Postgres96:
@@ -43,11 +61,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Generating Coverage Results
           command: make coverage
-      - *save_cache
+      - *save_test_cache
       - codecov/upload:
         file: server/coverage.txt
 
@@ -78,11 +96,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Testing
           command: make test
-      - *save_cache
+      - *save_test_cache
 
   test-MySQL8-Postgres11:
     docker:
@@ -111,11 +129,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Testing
           command: make test
-      - *save_cache
+      - *save_test_cache
 
   test-MySQL-Postgres-latest:
     docker:
@@ -145,11 +163,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Testing
           command: make test
-      - *save_cache
+      - *save_test_cache
 
   e2e-cypress-tests:
     docker:
@@ -221,8 +239,6 @@ jobs:
           name: Wait for Elasticsearch
           command: |
             until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - attach_workspace:
-          at: ~/mattermost-cypress-docker
       - checkout
       - run:
           name: Set and restore Postgres DB
@@ -234,13 +250,12 @@ jobs:
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
             psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - *restore_cache
+      - *restore_deploy_cache
       - run:
-          name: Install IR plugin
+          name: Install Incident Response plugin
           command: make deploy
-      - *save_cache
-      - restore_cache:
-           key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
+      - *save_deploy_cache
+      - *restore_cypress_cache
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
@@ -248,26 +263,7 @@ jobs:
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
             cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - save_cache:
-          key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
-          paths:
-            - ./tests-e2e/node_modules
-            - /home/circleci/.cache/Cypress
-#      - run:
-#          name: Save and publish reports
-#          when: always
-#          command: |
-#            export DIAGNOSTIC_USER_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM users WHERE username='sysadmin';"`
-#            export DIAGNOSTIC_TEAM_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM teams WHERE name='ad-1';"`
-#            export BRANCH=$CIRCLE_BRANCH
-#            export BUILD_ID=$CIRCLE_BUILD_NUM
-#            # This is how it should be on main org repo
-#            # export PULL_REQUEST=$CIRCLE_PULL_REQUESTS
-#            # This is how it should be on main org repo
-#            # Should match the tag in mattermost/mattermost-enterprise-edition image
-#            # export BUILD_TAG="${CIRCLE_SHA1:0:7}"
-#            export BUILD_TAG=$MM_DOCKER_IMAGE_TAG
-#            cd e2e && node save_report.js
+      - *save_cypress_cache
 
 workflows:
   version: 2
