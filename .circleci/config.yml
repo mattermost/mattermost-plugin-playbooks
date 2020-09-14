@@ -196,6 +196,8 @@ jobs:
           MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
+          MM_SERVICESETTINGS_ENABLETESTING: true
+          MM_SERVICESETTINGS_ENABLEDEVELOPER: true
     working_directory: ~/mattermost-cypress-docker
     environment:
       MM_DOCKER_IMAGE_TAG: master
@@ -228,13 +230,13 @@ jobs:
             sudo apt-get update
             sudo apt-get install libxss1
             sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
+#            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
+#            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
             psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-            psql -d $TEST_DATABASE_URL -c "DELETE FROM licenses WHERE id='$EE_LICENSE_ID';"
-            psql -d $TEST_DATABASE_URL -c "INSERT INTO licenses (id, createat, bytes) VALUES ('$EE_LICENSE_ID','1589175893083','$EE_LICENSE');"
-            psql -d $TEST_DATABASE_URL -c "DELETE FROM systems WHERE name='ActiveLicenseId';"
-            psql -d $TEST_DATABASE_URL -c "INSERT INTO systems (name, value) VALUES ('ActiveLicenseId', '$EE_LICENSE_ID');"
+#            psql -d $TEST_DATABASE_URL -c "DELETE FROM licenses WHERE id='$EE_LICENSE_ID';"
+#            psql -d $TEST_DATABASE_URL -c "INSERT INTO licenses (id, createat, bytes) VALUES ('$EE_LICENSE_ID','1589175893083','$EE_LICENSE');"
+#            psql -d $TEST_DATABASE_URL -c "DELETE FROM systems WHERE name='ActiveLicenseId';"
+#            psql -d $TEST_DATABASE_URL -c "INSERT INTO systems (name, value) VALUES ('ActiveLicenseId', '$EE_LICENSE_ID');"
 #      - run:
 #          name: Setup required files
 #          command: |
