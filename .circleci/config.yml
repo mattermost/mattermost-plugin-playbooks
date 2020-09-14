@@ -3,7 +3,6 @@ version: 2.1
 orbs:
   plugin-ci: mattermost/plugin-ci@0.1
   codecov: codecov/codecov@1.1.1
-  cypress: cypress-io/cypress@1
 
 aliases:
   - &restore_cache
@@ -314,7 +313,6 @@ workflows:
 #            tags:
 #              only: /^v.*/
       - e2e-cypress-tests:
-          context: cypress-circleci-env
           filters:
             tags:
               only: /^v.*/
