@@ -344,7 +344,7 @@ workflows:
 #            - test-MySQL57-Postgres10
 #            - test-MySQL8-Postgres11
 #            - test-MySQL-Postgres-latest
-#            - plugin-ci/build
+            - plugin-ci/build
       - plugin-ci/deploy-release-github:
           filters:
             tags:
@@ -358,4 +358,4 @@ workflows:
 #            - test-MySQL57-Postgres10
 #            - test-MySQL8-Postgres11
 #            - test-MySQL-Postgres-latest
-#            - plugin-ci/build
+            - plugin-ci/build
