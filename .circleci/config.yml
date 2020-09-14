@@ -7,12 +7,13 @@ orbs:
 aliases:
   - &restore_cache
     restore_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
   - &save_cache
     save_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
       paths:
         - "/go/pkg/mod"
+        - "./webapp/node_modules"
 
 jobs:
   coverage-MySQL56-Postgres96:
@@ -220,7 +221,6 @@ jobs:
           name: Wait for Elasticsearch
           command: |
             until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - checkout
       - attach_workspace:
           at: ~/mattermost-cypress-docker
       - run:
@@ -233,20 +233,25 @@ jobs:
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
             psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
+      - checkout
+      - *restore_cache
       - run:
           name: Install IR plugin
           command: make deploy
-#      - save_cache: # special step to save the dependency cache
-#          key: dependency-cache-{{ checksum "e2e/package-lock.json" }}
-#          paths:
-#            - ./e2e/node_modules
+      - *save_cache
+      - restore_cache:
+           key: cypress-dependency-cache-{{ checksum "tests-e2e/package-lock.json" }}
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
           command: |
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+      - save_cache:
+          key: cypress-dependency-cache-{{ checksum "tests-e2e/package-lock.json" }}
+          paths:
+            - ./tests-e2e/node_modules
 #      - run:
 #          name: Save and publish reports
 #          when: always
