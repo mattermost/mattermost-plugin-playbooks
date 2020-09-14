@@ -151,6 +151,8 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 			"MemberID",
 		)
 
+	okToInsertMembers := false
+
 	for _, playbook := range playbooks {
 		checklistsJSON, err := oldChecklistsToJSON(playbook.Checklists)
 		if err != nil {
@@ -175,6 +177,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 				playbook.ID,
 				memberID,
 			)
+			okToInsertMembers = true
 		}
 	}
 
@@ -230,8 +233,10 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 			return errors.Wrapf(err, "failed inserting data into Playbook table")
 		}
 
-		if _, err := store.execBuilder(tx, playbookMemberInsert); err != nil {
-			return errors.Wrapf(err, "failed inserting data into PlaybookMember table")
+		if okToInsertMembers {
+			if _, err := store.execBuilder(tx, playbookMemberInsert); err != nil {
+				return errors.Wrapf(err, "failed inserting data into PlaybookMember table")
+			}
 		}
 	}
 
