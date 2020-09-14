@@ -64,6 +64,7 @@ Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentName) => {
 Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) => {
     //post a message as user to avoid system message
     cy.findByTestId('post_textbox').clear().type('new message here{enter}');
+    cy.findByTestId('post_textbox').clear().type('another new message here{enter}');
     cy.clickPostDotMenu();
     cy.findByTestId('incidentPostMenuIcon').click();
     cy.startIncident(playbookName, incidentName);
