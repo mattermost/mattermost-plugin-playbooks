@@ -292,72 +292,73 @@ workflows:
   version: 2
   ci:
     jobs:
-      - plugin-ci/lint:
-          filters:
-            tags:
-              only: /^v.*/
-      - coverage-MySQL56-Postgres96:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL57-Postgres10:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL8-Postgres11:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL-Postgres-latest:
-          filters:
-            tags:
-              only: /^v.*/
+#      - plugin-ci/lint:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - coverage-MySQL56-Postgres96:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL57-Postgres10:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL8-Postgres11:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL-Postgres-latest:
+#          filters:
+#            tags:
+#              only: /^v.*/
       - e2e-cypress-tests:
+          context: cypress-circleci-env
           filters:
             tags:
               only: /^v.*/
-      - plugin-ci/build:
-          filters:
-            tags:
-              only: /^v.*/
-      - plugin-ci/deploy-ci:
-          filters:
-            branches:
-              only: master
-          context: plugin-ci
-          requires:
+#      - plugin-ci/build:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - plugin-ci/deploy-ci:
+#          filters:
+#            branches:
+#              only: master
+#          context: plugin-ci
+#          requires:
 #            - plugin-ci/lint
 #            - coverage-MySQL56-Postgres96
 #            - test-MySQL57-Postgres10
 #            - test-MySQL8-Postgres11
 #            - test-MySQL-Postgres-latest
-            - e2e-cypress-tests
-            - plugin-ci/build
-      - plugin-ci/deploy-release:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          context: plugin-ci
-          requires:
+#            - e2e-cypress-tests
+#            - plugin-ci/build
+#      - plugin-ci/deploy-release:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#          context: plugin-ci
+#          requires:
 #            - plugin-ci/lint
 #            - coverage-MySQL56-Postgres96
 #            - test-MySQL57-Postgres10
 #            - test-MySQL8-Postgres11
 #            - test-MySQL-Postgres-latest
-            - plugin-ci/build
-      - plugin-ci/deploy-release-github:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          context: matterbuild-github-token
-          requires:
+#            - plugin-ci/build
+#      - plugin-ci/deploy-release-github:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#          context: matterbuild-github-token
+#          requires:
 #            - plugin-ci/lint
 #            - coverage-MySQL56-Postgres96
 #            - test-MySQL57-Postgres10
 #            - test-MySQL8-Postgres11
 #            - test-MySQL-Postgres-latest
-            - plugin-ci/build
+#            - plugin-ci/build
