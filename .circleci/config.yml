@@ -240,7 +240,7 @@ jobs:
           command: make deploy
       - *save_cache
       - restore_cache:
-           key: cypress-dependency-cache2-{{ checksum "tests-e2e/package-lock.json" }}
+           key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
@@ -249,7 +249,7 @@ jobs:
             export RESULTS_OUTPUT="results-output.txt"
             cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
       - save_cache:
-          key: cypress-dependency-cache2-{{ checksum "tests-e2e/package-lock.json" }}
+          key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
           paths:
             - ./tests-e2e/node_modules
             - /home/circleci/.cache/Cypress

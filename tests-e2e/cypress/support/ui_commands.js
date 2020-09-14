@@ -4,7 +4,7 @@
 import * as TIMEOUTS from '../fixtures/timeouts';
 
 function waitUntilPermanentPost() {
-    cy.get('#postListContent').should('be.visible');
+    cy.wait(TIMEOUTS.TINY).get('#postListContent').should('be.visible');
     cy.waitUntil(() => cy.findAllByTestId('postView').last().then((el) => !(el[0].id.includes(':'))));
 }
 
