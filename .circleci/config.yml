@@ -339,12 +339,12 @@ workflows:
               ignore: /.*/
           context: plugin-ci
           requires:
-            - plugin-ci/lint
-            - coverage-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - plugin-ci/build
+#            - plugin-ci/lint
+#            - coverage-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - plugin-ci/build
       - plugin-ci/deploy-release-github:
           filters:
             tags:
@@ -353,9 +353,9 @@ workflows:
               ignore: /.*/
           context: matterbuild-github-token
           requires:
-            - plugin-ci/lint
-            - coverage-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - plugin-ci/build
+#            - plugin-ci/lint
+#            - coverage-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - plugin-ci/build
