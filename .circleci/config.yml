@@ -259,12 +259,11 @@ jobs:
 #            - ./e2e/node_modules
       - run:
           name: Run Cypress Tests
-          working-directory: tests-e2e
           no_output_timeout: 30m
           command: |
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
-            npm install && npm run test
+            cd tests-e2e && npm install && npm run test
 #            cd e2e && nohup node webhook_serve.js > webhook_serve.log &
 #            export CYPRESS_chromeWebSecurity=true
 #            export CYPRESS_dbClient=postgres
