@@ -3,6 +3,7 @@ version: 2.1
 orbs:
   plugin-ci: mattermost/plugin-ci@0.1
   codecov: codecov/codecov@1.1.1
+  cypress: cypress-io/cypress@1.26.0
 
 aliases:
   - &restore_cache
@@ -198,7 +199,6 @@ jobs:
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_ENABLETESTING: true
           MM_SERVICESETTINGS_ENABLEDEVELOPER: true
-    working_directory: ~/mattermost-cypress-docker
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
@@ -258,13 +258,14 @@ jobs:
 #          key: dependency-cache-{{ checksum "e2e/package-lock.json" }}
 #          paths:
 #            - ./e2e/node_modules
-      - run:
+      - cypress/run:
           name: Run Cypress Tests
+          working-directory: tests-e2e
           no_output_timeout: 30m
           command: |
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm run test
+            npm run test
 #            cd e2e && nohup node webhook_serve.js > webhook_serve.log &
 #            export CYPRESS_chromeWebSecurity=true
 #            export CYPRESS_dbClient=postgres
@@ -272,20 +273,20 @@ jobs:
 #            export CYPRESS_resetBeforeTest=true
 #            export CYPRESS_runLDAPSync=false
 #            cd e2e && node run_tests.js --stage='@prod' |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - run:
-          name: Save and publish reports
-          when: always
-          command: |
-            export DIAGNOSTIC_USER_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM users WHERE username='sysadmin';"`
-            export DIAGNOSTIC_TEAM_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM teams WHERE name='ad-1';"`
-            export BRANCH=$CIRCLE_BRANCH
-            export BUILD_ID=$CIRCLE_BUILD_NUM
-            # This is how it should be on main org repo
-            # export PULL_REQUEST=$CIRCLE_PULL_REQUESTS
-            # This is how it should be on main org repo
-            # Should match the tag in mattermost/mattermost-enterprise-edition image
-            # export BUILD_TAG="${CIRCLE_SHA1:0:7}"
-            export BUILD_TAG=$MM_DOCKER_IMAGE_TAG
+#      - run:
+#          name: Save and publish reports
+#          when: always
+#          command: |
+#            export DIAGNOSTIC_USER_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM users WHERE username='sysadmin';"`
+#            export DIAGNOSTIC_TEAM_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM teams WHERE name='ad-1';"`
+#            export BRANCH=$CIRCLE_BRANCH
+#            export BUILD_ID=$CIRCLE_BUILD_NUM
+#            # This is how it should be on main org repo
+#            # export PULL_REQUEST=$CIRCLE_PULL_REQUESTS
+#            # This is how it should be on main org repo
+#            # Should match the tag in mattermost/mattermost-enterprise-edition image
+#            # export BUILD_TAG="${CIRCLE_SHA1:0:7}"
+#            export BUILD_TAG=$MM_DOCKER_IMAGE_TAG
 #            cd e2e && node save_report.js
 
 workflows:
