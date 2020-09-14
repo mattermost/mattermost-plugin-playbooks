@@ -150,6 +150,143 @@ jobs:
           command: make test
       - *save_cache
 
+  e2e-cypress-tests:
+    docker:
+      - image: circleci/node:14.8-stretch-browsers-legacy
+        environment:
+          TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
+      - image: circleci/postgres:9.6.5-alpine-ram
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_PASSWORD: mostest
+          POSTGRES_DB: mattermost_test
+      - image: jhillyerd/inbucket:release-1.2.0
+      - image: minio/minio:RELEASE.2019-10-11T00-38-09Z
+        command: "server /data"
+        environment:
+          MINIO_ACCESS_KEY: minioaccesskey
+          MINIO_SECRET_KEY: miniosecretkey
+          MINIO_SSE_MASTER_KEY: "my-minio-key:6368616e676520746869732070617373776f726420746f206120736563726574"
+      - image: mattermost/mattermost-elasticsearch-docker:6.5.1
+        environment:
+          http.host: "0.0.0.0"
+          http.port: 9200
+          http.cors.enabled: "true"
+          http.cors.allow-origin: "http://localhost:1358,http://127.0.0.1:1358"
+          http.cors.allow-headers: "X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
+          http.cors.allow-credentials: "true"
+          transport.host: "127.0.0.1"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      - image: mattermost/mattermost-enterprise-edition:$MM_DOCKER_IMAGE_TAG
+        environment:
+          DB_HOST: localhost
+          DB_PORT_NUMBER: 5432
+          MM_DBNAME: mattermost_test
+          MM_USERNAME: mmuser
+          MM_PASSWORD: mostest
+          CI_INBUCKET_HOST: localhost
+          CI_INBUCKET_PORT: 10080
+          CI_MINIO_HOST: minio
+          IS_CI: true
+          MM_CLUSTERSETTINGS_READONLYCONFIG: false
+          MM_EMAILSETTINGS_SMTPSERVER: localhost
+          MM_EMAILSETTINGS_SMTPPORT: 10025
+          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://localhost:9200
+          MM_EXPERIMENTALSETTINGS_USENEWSAMLLIBRARY: true
+          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+          MM_SQLSETTINGS_DRIVERNAME: postgres
+          MM_PLUGINSETTINGS_ENABLEUPLOADS: true
+    working_directory: ~/mattermost-cypress-docker
+    environment:
+      MM_DOCKER_IMAGE_TAG: master
+      TYPE: NONE
+      PULL_REQUEST:
+      BROWSER: chrome
+      HEADLESS: true
+      DASHBOARD_ENABLE: false
+      FULL_REPORT: false
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Wait for Inbucket
+          command: |
+            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
+      - run:
+          name: Wait for Elasticsearch
+          command: |
+            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
+      - checkout
+      - attach_workspace:
+          at: ~/mattermost-cypress-docker
+      - run:
+          name: Set and restore Postgres DB
+          command: |
+            whoami
+            sudo apt-get update
+            sudo apt-get install libxss1
+            sudo apt-get install postgresql-client
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
+            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
+            psql -d $TEST_DATABASE_URL -c "DELETE FROM licenses WHERE id='$EE_LICENSE_ID';"
+            psql -d $TEST_DATABASE_URL -c "INSERT INTO licenses (id, createat, bytes) VALUES ('$EE_LICENSE_ID','1589175893083','$EE_LICENSE');"
+            psql -d $TEST_DATABASE_URL -c "DELETE FROM systems WHERE name='ActiveLicenseId';"
+            psql -d $TEST_DATABASE_URL -c "INSERT INTO systems (name, value) VALUES ('ActiveLicenseId', '$EE_LICENSE_ID');"
+#      - run:
+#          name: Setup required files
+#          command: |
+#            echo $EE_LICENSE > e2e/cypress/fixtures/mattermost-license.txt
+#            echo $SAML_IDP_CRT | base64 --decode > e2e/cypress/fixtures/saml-idp.crt
+#            echo $SAML_PRIVATE_KEY | base64 --decode > e2e/cypress/fixtures/saml-private.key
+#            echo $SAML_PUBLIC_CRT | base64 --decode > e2e/cypress/fixtures/saml-public.crt
+#            wget -O e2e/cypress/fixtures/com.mattermost.draw-plugin.tar.gz https://github.com/jespino/mattermost-plugin-draw/releases/download/v0.0.4/com.mattermost.draw-plugin-0.0.4.tar.gz
+#            wget -O e2e/cypress/fixtures/com.github.matterpoll.matterpoll.tar.gz https://github.com/matterpoll/matterpoll/releases/download/v1.3.0/com.github.matterpoll.matterpoll-1.3.0.tar.gz
+#            wget -O e2e/cypress/fixtures/com.mattermost.demo-plugin-0.1.0.tar.gz https://github.com/mattermost/mattermost-plugin-demo/releases/download/v0.1.0/com.mattermost.demo-plugin-0.1.0.tar.gz
+#            wget -O e2e/cypress/fixtures/com.mattermost.demo-plugin-0.2.0.tar.gz https://github.com/mattermost/mattermost-plugin-demo/releases/download/v0.2.0/com.mattermost.demo-plugin-0.2.0.tar.gz
+      - run:
+          name: Install IR plugin
+          command: |
+            export MM_SERVICE_SETTINGS_SITEURL=http://localhost:8065
+            export MM_ADMIN_USERNAME=sysadmin
+            export MM_ADMIN_PASSWORD=Sys@dmin-sample1
+            make deploy
+#      - run:
+#          name: Install npm packages
+#          command: cd e2e && npm install
+#      - save_cache: # special step to save the dependency cache
+#          key: dependency-cache-{{ checksum "e2e/package-lock.json" }}
+#          paths:
+#            - ./e2e/node_modules
+      - run:
+          name: Run Cypress Tests
+          no_output_timeout: 30m
+          command: |
+            export FAILURE_MESSAGE="At least one test has failed."
+            export RESULTS_OUTPUT="results-output.txt"
+            cd tests-e2e && npm run test
+#            cd e2e && nohup node webhook_serve.js > webhook_serve.log &
+#            export CYPRESS_chromeWebSecurity=true
+#            export CYPRESS_dbClient=postgres
+#            export CYPRESS_dbConnection="postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+#            export CYPRESS_resetBeforeTest=true
+#            export CYPRESS_runLDAPSync=false
+#            cd e2e && node run_tests.js --stage='@prod' |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+      - run:
+          name: Save and publish reports
+          when: always
+          command: |
+            export DIAGNOSTIC_USER_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM users WHERE username='sysadmin';"`
+            export DIAGNOSTIC_TEAM_ID=`psql -d $TEST_DATABASE_URL -t -c "SELECT id FROM teams WHERE name='ad-1';"`
+            export BRANCH=$CIRCLE_BRANCH
+            export BUILD_ID=$CIRCLE_BUILD_NUM
+            # This is how it should be on main org repo
+            # export PULL_REQUEST=$CIRCLE_PULL_REQUESTS
+            # This is how it should be on main org repo
+            # Should match the tag in mattermost/mattermost-enterprise-edition image
+            # export BUILD_TAG="${CIRCLE_SHA1:0:7}"
+            export BUILD_TAG=$MM_DOCKER_IMAGE_TAG
+#            cd e2e && node save_report.js
+
 workflows:
   version: 2
   ci:
@@ -174,6 +311,10 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+      - e2e-cypress-tests:
+          filters:
+            tags:
+              only: /^v.*/
       - plugin-ci/build:
           filters:
             tags:
@@ -184,11 +325,12 @@ workflows:
               only: master
           context: plugin-ci
           requires:
-            - plugin-ci/lint
-            - coverage-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
+#            - plugin-ci/lint
+#            - coverage-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+            - e2e-cypress-tests
             - plugin-ci/build
       - plugin-ci/deploy-release:
           filters:
