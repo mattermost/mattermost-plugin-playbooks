@@ -118,10 +118,10 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 
 	order := strings.ToLower(options.Order)
 	switch order {
+	case OrderAsc, "": // default
+		options.Order = OrderAsc
 	case OrderDesc:
 		options.Order = OrderDesc
-	case OrderAsc, "": // default (like in SQL)
-		options.Order = OrderAsc
 	default:
 		return errors.New("bad parameter 'order_by'")
 	}

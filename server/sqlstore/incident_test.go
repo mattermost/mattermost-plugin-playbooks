@@ -148,6 +148,17 @@ var (
 		WithChecklists([]int{2}).
 		ToIncident()
 
+	inc10 = *NewBuilder().
+		WithName("incident 10 - archived / deleted channel").
+		WithChannelID(channelID02).
+		WithIsActive(true).
+		WithCommanderUserID(commander2.UserID).
+		WithTeamID(team1id).
+		WithCreateAt(199).
+		WithEndAt(555).
+		WithChecklists([]int{7}).
+		ToIncident()
+
 	incidents = []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 )
 
@@ -166,15 +177,18 @@ func TestGetIncidents(t *testing.T) {
 	}
 
 	testData := []struct {
-		Name        string
-		RequesterID string
-		Options     incident.HeaderFilterOptions
-		Want        incident.GetIncidentsResults
-		ExpectedErr error
+		Name          string
+		RequesterInfo incident.RequesterInfo
+		Options       incident.HeaderFilterOptions
+		Want          incident.GetIncidentsResults
+		ExpectedErr   error
 	}{
 		{
-			Name:        "no options - team1 - admin",
-			RequesterID: "Lucy",
+			Name: "no options - team1 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 			},
@@ -187,8 +201,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - desc - admin",
-			RequesterID: "Lucy",
+			Name: "team1 - desc - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 				Order:  "desc",
@@ -202,8 +219,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team2 - sort by CreateAt desc - admin",
-			RequesterID: "Lucy",
+			Name: "team2 - sort by CreateAt desc - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 				Sort:   incident.SortByCreateAt,
@@ -218,8 +238,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no paging, team3, sort by Name",
-			RequesterID: "Lucy",
+			Name: "no paging, team3, sort by Name",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team3id,
 				Sort:   incident.SortByName,
@@ -233,8 +256,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no paging, team2, sort by EndAt",
-			RequesterID: "Lucy",
+			Name: "no paging, team2, sort by EndAt",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 				Sort:   incident.SortByEndAt,
@@ -248,8 +274,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team paged by 1, admin",
-			RequesterID: "Lucy",
+			Name: "no options, team paged by 1, admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    0,
@@ -264,8 +293,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team1 - paged by 3, page 0 - admin",
-			RequesterID: "Lucy",
+			Name: "no options, team1 - paged by 3, page 0 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    0,
@@ -280,8 +312,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team1 - paged by 3, page 1 - admin",
-			RequesterID: "Lucy",
+			Name: "no options, team1 - paged by 3, page 1 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    1,
@@ -296,8 +331,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team1 - paged by 3, page 2 - admin",
-			RequesterID: "Lucy",
+			Name: "no options, team1 - paged by 3, page 2 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    2,
@@ -307,13 +345,16 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      nil,
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team1 - paged by 3, page 999 - admin",
-			RequesterID: "Lucy",
+			Name: "no options, team1 - paged by 3, page 999 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    999,
@@ -323,13 +364,16 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      nil,
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team1 - page 2 by 2 - admin",
-			RequesterID: "Lucy",
+			Name: "no options, team1 - page 2 by 2 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    2,
@@ -344,8 +388,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team1 - page 1 by 2 - admin",
-			RequesterID: "Lucy",
+			Name: "no options, team1 - page 1 by 2 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    1,
@@ -360,8 +407,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no options, team1 - page 1 by 4 - admin",
-			RequesterID: "Lucy",
+			Name: "no options, team1 - page 1 by 4 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    1,
@@ -376,8 +426,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - sorted by ended, desc, page 1 by 2 - admin",
-			RequesterID: "Lucy",
+			Name: "team1 - sorted by ended, desc, page 1 by 2 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Sort:    "end_at",
@@ -394,8 +447,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - only active, page 1 by 2 - admin",
-			RequesterID: "Lucy",
+			Name: "team1 - only active, page 1 by 2 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:  team1id,
 				Page:    1,
@@ -411,8 +467,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - active, commander3, desc - admin ",
-			RequesterID: "Lucy",
+			Name: "team1 - active, commander3, desc - admin ",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:      team1id,
 				Status:      incident.Ongoing,
@@ -428,8 +487,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - commander1, desc, by end_at - admin",
-			RequesterID: "Lucy",
+			Name: "team1 - commander1, desc, by end_at - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:      team1id,
 				CommanderID: commander1.UserID,
@@ -445,8 +507,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - search for horse - admin",
-			RequesterID: "Lucy",
+			Name: "team1 - search for horse - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "horse",
@@ -460,8 +525,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - search for mouse, endat - admin",
-			RequesterID: "Lucy",
+			Name: "team1 - search for mouse, endat - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "mouse",
@@ -476,8 +544,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - search for aliens & commander3 - admin",
-			RequesterID: "Lucy",
+			Name: "team1 - search for aliens & commander3 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:      team1id,
 				CommanderID: commander3.UserID,
@@ -492,8 +563,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "fuzzy search using starting characters -- not implemented",
-			RequesterID: "Lucy",
+			Name: "fuzzy search using starting characters -- not implemented",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
@@ -502,13 +576,16 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      nil,
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "fuzzy search using starting characters, active -- not implemented",
-			RequesterID: "Lucy",
+			Name: "fuzzy search using starting characters, active -- not implemented",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
@@ -518,13 +595,16 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      nil,
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team3 - case-insensitive and unicode-normalized - admin",
-			RequesterID: "Lucy",
+			Name: "team3 - case-insensitive and unicode-normalized - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team3id,
 				SearchTerm: "ziggurat",
@@ -538,8 +618,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team3 - case-insensitive and unicode-normalized with unicode search term - admin",
-			RequesterID: "Lucy",
+			Name: "team3 - case-insensitive and unicode-normalized with unicode search term - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team3id,
 				SearchTerm: "ziggūràt",
@@ -553,8 +636,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "bad parameter sort",
-			RequesterID: "Lucy",
+			Name: "bad parameter sort",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 				Sort:   "unknown_field",
@@ -563,8 +649,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: errors.New("bad parameter 'sort'"),
 		},
 		{
-			Name:        "bad team id",
-			RequesterID: "Lucy",
+			Name: "bad team id",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: "invalid ID",
 			},
@@ -572,8 +661,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
 		},
 		{
-			Name:        "bad parameter order by",
-			RequesterID: "Lucy",
+			Name: "bad parameter order by",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 				Order:  "invalid order",
@@ -582,8 +674,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: errors.New("bad parameter 'order_by'"),
 		},
 		{
-			Name:        "bad commander id",
-			RequesterID: "Lucy",
+			Name: "bad commander id",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:      team2id,
 				CommanderID: "invalid ID",
@@ -592,8 +687,10 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: errors.New("bad parameter 'commander_id': must be 26 characters or blank"),
 		},
 		{
-			Name:        "team1 - desc - Bob (in all channels)",
-			RequesterID: "Bob",
+			Name: "team1 - desc - Bob (in all channels)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: "Bob",
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 				Order:  "desc",
@@ -607,8 +704,10 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team2 -  Bob (in all channels)",
-			RequesterID: "Bob",
+			Name: "team2 -  Bob (in all channels)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: "Bob",
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
@@ -621,8 +720,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - Alice (in no channels but member of team, can see public incidents)",
-			RequesterID: "Alice",
+			Name: "team1 - Alice (in no channels but member of team, can see public incidents)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:              "Alice",
+				CanViewTeamChannels: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 			},
@@ -635,8 +737,11 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team2 - Alice (in no channels and not member of team)",
-			RequesterID: "Alice",
+			Name: "team2 - Alice (in no channels and not member of team)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:              "Alice",
+				CanViewTeamChannels: false,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
@@ -644,13 +749,17 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      nil,
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team2 - Charlotte (in no channels but member of team)",
-			RequesterID: "Charlotte",
+			Name: "team2 - Charlotte (in no channels but member of team)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:              "Charlotte",
+				IsAdmin:             false,
+				CanViewTeamChannels: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
@@ -682,7 +791,11 @@ func TestGetIncidents(t *testing.T) {
 		makeAdmin(t, store, "Lucy")
 
 		t.Run("zero incidents", func(t *testing.T) {
-			result, err := incidentStore.GetIncidents("Lucy",
+			result, err := incidentStore.GetIncidents(incident.RequesterInfo{
+				UserID:              "Lucy",
+				IsAdmin:             true,
+				CanViewTeamChannels: false,
+			},
 				incident.HeaderFilterOptions{
 					TeamID:  team1id,
 					Page:    0,
@@ -693,14 +806,14 @@ func TestGetIncidents(t *testing.T) {
 			require.Equal(t, 0, result.TotalCount)
 			require.Equal(t, 0, result.PageCount)
 			require.False(t, result.HasMore)
-			require.Equal(t, []incident.Incident{}, result.Items)
+			require.Equal(t, []incident.Incident(nil), result.Items)
 		})
 
 		createIncidents(incidentStore)
 
 		for _, testCase := range testData {
 			t.Run(driverName+" - "+testCase.Name, func(t *testing.T) {
-				result, err := incidentStore.GetIncidents(testCase.RequesterID, testCase.Options)
+				result, err := incidentStore.GetIncidents(testCase.RequesterInfo, testCase.Options)
 
 				if testCase.ExpectedErr != nil {
 					require.Nil(t, result)
@@ -1008,15 +1121,18 @@ func TestGetIncidentIDForChannel(t *testing.T) {
 
 func TestGetCommanders(t *testing.T) {
 	cases := []struct {
-		Name        string
-		RequesterID string
-		Options     incident.HeaderFilterOptions
-		Expected    []incident.CommanderInfo
-		ExpectedErr error
+		Name          string
+		RequesterInfo incident.RequesterInfo
+		Options       incident.HeaderFilterOptions
+		Expected      []incident.CommanderInfo
+		ExpectedErr   error
 	}{
 		{
-			Name:        "team 1 - admin",
-			RequesterID: "Lucy",
+			Name: "team 1 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 			},
@@ -1024,8 +1140,11 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team 2 - admin",
-			RequesterID: "Lucy",
+			Name: "team 2 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
@@ -1033,8 +1152,11 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team 3 - admin",
-			RequesterID: "Lucy",
+			Name: "team 3 - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team3id,
 			},
@@ -1042,8 +1164,10 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team 1 - non-member",
-			RequesterID: "non-existing-id",
+			Name: "team 1 - non-member",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: "non-existing-id",
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 			},
@@ -1051,8 +1175,10 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team 2 - non-member",
-			RequesterID: "non-existing-id",
+			Name: "team 2 - non-member",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: "non-existing-id",
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
@@ -1060,8 +1186,10 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team 3 - non-member",
-			RequesterID: "non-existing-id",
+			Name: "team 3 - non-member",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: "non-existing-id",
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team3id,
 			},
@@ -1069,8 +1197,11 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team1 - Alice (in no channels but member of team, can see public incidents)",
-			RequesterID: "Alice",
+			Name: "team1 - Alice (in no channels but member of team, can see public incidents)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:              "Alice",
+				CanViewTeamChannels: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 			},
@@ -1078,8 +1209,11 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team2 - Alice (in no channels and not member of team)",
-			RequesterID: "Alice",
+			Name: "team2 - Alice (in no channels and not member of team)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:              "Alice",
+				CanViewTeamChannels: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
@@ -1087,8 +1221,11 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "team2 - Charlotte (in no channels but member of team)",
-			RequesterID: "Charlotte",
+			Name: "team2 - Charlotte (in no channels but member of team)",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:              "Charlotte",
+				CanViewTeamChannels: true,
+			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
@@ -1096,8 +1233,11 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name:        "no team - admin",
-			RequesterID: "Lucy",
+			Name: "no team - admin",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			Options:     incident.HeaderFilterOptions{},
 			Expected:    nil,
 			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
@@ -1145,7 +1285,7 @@ func TestGetCommanders(t *testing.T) {
 
 		for _, testCase := range cases {
 			t.Run(testCase.Name, func(t *testing.T) {
-				actual, actualErr := incidentStore.GetCommanders(testCase.RequesterID, testCase.Options)
+				actual, actualErr := incidentStore.GetCommanders(testCase.RequesterInfo, testCase.Options)
 
 				if testCase.ExpectedErr != nil {
 					require.NotNil(t, actualErr)

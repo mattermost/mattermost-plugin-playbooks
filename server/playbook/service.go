@@ -44,8 +44,8 @@ func (s *service) GetPlaybooks() ([]Playbook, error) {
 	return s.store.GetPlaybooks()
 }
 
-func (s *service) GetPlaybooksForTeam(requesterID, teamID string, opts Options) (GetPlaybooksResults, error) {
-	return s.store.GetPlaybooksForTeam(requesterID, teamID, opts)
+func (s *service) GetPlaybooksForTeam(requesterUserID, teamID string, opts Options) (GetPlaybooksResults, error) {
+	return s.store.GetPlaybooksForTeam(requesterUserID, teamID, opts)
 }
 
 func (s *service) Update(playbook Playbook) error {

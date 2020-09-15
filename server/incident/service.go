@@ -57,8 +57,8 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(requesterID string, options HeaderFilterOptions) (*GetIncidentsResults, error) {
-	return s.store.GetIncidents(requesterID, options)
+func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error) {
+	return s.store.GetIncidents(requesterInfo, options)
 }
 
 // CreateIncident creates a new incident.
@@ -276,8 +276,8 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 }
 
 // GetCommanders returns all the commanders of the incidents selected by options
-func (s *ServiceImpl) GetCommanders(requesterID string, options HeaderFilterOptions) ([]CommanderInfo, error) {
-	return s.store.GetCommanders(requesterID, options)
+func (s *ServiceImpl) GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error) {
+	return s.store.GetCommanders(requesterInfo, options)
 }
 
 // IsCommander returns true if the userID is the commander for incidentID.

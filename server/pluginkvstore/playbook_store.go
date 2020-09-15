@@ -165,7 +165,7 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-func (p *PlaybookStore) GetPlaybooksForTeam(requesterID, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
+func (p *PlaybookStore) GetPlaybooksForTeam(requesterUserID, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
 	playbooks, err := p.GetPlaybooks()
 	if err != nil {
 		return playbook.GetPlaybooksResults{}, err
@@ -184,7 +184,7 @@ func (p *PlaybookStore) GetPlaybooksForTeam(requesterID, teamID string, opts pla
 
 	allowedPlaybooks := []playbook.Playbook{}
 	for _, pb := range teamPlaybooks {
-		if opts.HasPermissionsTo(pb, requesterID) {
+		if opts.HasPermissionsTo(pb, requesterUserID) {
 			allowedPlaybooks = append(allowedPlaybooks, pb)
 		}
 	}

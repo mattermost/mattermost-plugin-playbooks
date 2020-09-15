@@ -61,7 +61,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger) incident.Store 
 }
 
 // GetIncidents gets all the incidents, abiding by the filter options, and the total count before paging.
-func (s *incidentStore) GetIncidents(requesterID string, options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
@@ -232,8 +232,8 @@ func (s *incidentStore) GetAllIncidentMembersCount(incidentID string) (int64, er
 }
 
 // GetCommanders returns the commanders of the incidents selected by options
-func (s *incidentStore) GetCommanders(requesterID string, options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
-	results, err := s.GetIncidents(requesterID, options)
+func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	results, err := s.GetIncidents(requesterInfo, options)
 	if err != nil {
 		return nil, err
 	}

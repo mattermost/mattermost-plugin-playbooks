@@ -76,7 +76,7 @@ type Service interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-	GetPlaybooksForTeam(requesterID, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterUserID, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
@@ -92,7 +92,7 @@ type Store interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(requesterID, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterUserID, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook

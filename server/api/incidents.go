@@ -304,7 +304,13 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return err2 == nil
 	}
 
-	results, err := h.incidentService.GetIncidents(userID, *filterOptions)
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		IsAdmin:             permissions.IsAdmin(userID, h.pluginAPI),
+		CanViewTeamChannels: permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI),
+	}
+
+	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -506,7 +512,14 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 			return err == nil
 		},
 	}
-	commanders, err := h.incidentService.GetCommanders(userID, options)
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		IsAdmin:             permissions.IsAdmin(userID, h.pluginAPI),
+		CanViewTeamChannels: permissions.CanViewTeam(userID, teamID, h.pluginAPI),
+	}
+
+	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -550,7 +563,14 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 			return err == nil
 		},
 	}
-	incidents, err := h.incidentService.GetIncidents(userID, options)
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		IsAdmin:             permissions.IsAdmin(userID, h.pluginAPI),
+		CanViewTeamChannels: permissions.CanViewTeam(userID, teamID, h.pluginAPI),
+	}
+
+	incidents, err := h.incidentService.GetIncidents(requesterInfo, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return

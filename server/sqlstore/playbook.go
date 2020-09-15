@@ -182,7 +182,7 @@ func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
-func (p *playbookStore) GetPlaybooksForTeam(requesterID, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
+func (p *playbookStore) GetPlaybooksForTeam(requesterUserID, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
 	getMembers := `
 			(SELECT PlaybookID, string_agg(MemberID, ' ') members
 			   FROM IR_PlaybookMember
@@ -217,7 +217,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterID, teamID string, opts pla
                                    WHERE pm.PlaybookID = p.ID
                                      AND pm.MemberID = ?)
                 )
-        )`, requesterID, teamID, requesterID, requesterID)
+        )`, requesterUserID, teamID, requesterUserID, requesterUserID)
 
 	correctPaginationOpts(&opts)
 

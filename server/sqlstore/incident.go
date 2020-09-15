@@ -53,12 +53,12 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *incidentStore) GetIncidents(requesterID string, opts incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, opts incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	if err := incident.ValidateOptions(&opts); err != nil {
 		return nil, err
 	}
 
-	isAdminOrMemberOrPublicChannel := buildPermissionsExpr(requesterID, opts.TeamID)
+	isAdminOrMemberOrPublicChannel := s.buildPermissionsExpr(requesterInfo)
 
 	queryForResults := s.incidentSelect.
 		Where(isAdminOrMemberOrPublicChannel).
@@ -112,9 +112,6 @@ func (s *incidentStore) GetIncidents(requesterID string, opts incident.HeaderFil
 
 	for i := range incidents {
 		incidents[i].Checklists = []playbook.Checklist{}
-	}
-	if incidents == nil {
-		incidents = []incident.Incident{}
 	}
 
 	var total int
@@ -267,12 +264,12 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 }
 
 // GetCommanders returns the commanders of the incidents selected by options
-func (s *incidentStore) GetCommanders(requesterID string, opts incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, opts incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
 	if err := incident.ValidateOptions(&opts); err != nil {
 		return nil, err
 	}
 
-	isAdminOrMemberOrPublicChannel := buildPermissionsExpr(requesterID, opts.TeamID)
+	isAdminOrMemberOrPublicChannel := s.buildPermissionsExpr(requesterInfo)
 
 	// At the moment, the opts only includes teamID
 	query := s.queryBuilder.
@@ -319,6 +316,41 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 
 	return nil
+}
+
+func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sqlizer {
+	if info.IsAdmin {
+		return nil
+	}
+
+	if !info.CanViewTeamChannels {
+		checkChannelMembership := sq.Expr(`
+			EXISTS(SELECT 1
+				 FROM ChannelMembers as cm
+				 WHERE cm.ChannelId = inc.ChannelID
+				   AND cm.UserId = ?)
+			`, info.UserID)
+
+		return checkChannelMembership
+	}
+
+	checkMembershipOrPublicChannel := sq.Expr(`
+		  (
+			  -- Check if requester is a channel member
+			  EXISTS(SELECT 1
+						 FROM ChannelMembers as cm
+						 WHERE cm.ChannelId = inc.ChannelID
+						   AND cm.UserId = ?)
+			  -- Or, since requester has permission to view team,
+			  -- check if channel is open
+			  OR EXISTS(SELECT 1
+							FROM Channels as c
+							WHERE c.Id = inc.ChannelID
+							  AND c.Type = 'O'
+							  AND c.DeleteAt = 0)
+		  )`, info.UserID)
+
+	return checkMembershipOrPublicChannel
 }
 
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
@@ -386,31 +418,4 @@ func normalize(s string) string {
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 	normed, _, _ := transform.String(t, strings.ToLower(s))
 	return normed
-}
-
-func buildPermissionsExpr(requesterID, teamID string) sq.Sqlizer {
-	isAdminOrMemberOrPublicChannelSQLText := `
-		(
-              EXISTS(SELECT 1
-                         FROM Users AS u
-                         WHERE u.Id = ?
-                           AND u.Roles LIKE '%system_admin%')
-              OR EXISTS(SELECT 1
-                            FROM ChannelMembers as cm
-                            WHERE cm.ChannelId = inc.ChannelID
-                              AND cm.UserId = ?)
-              OR (
-                      EXISTS(SELECT 1
-                                 FROM Channels as c
-                                 WHERE c.Id = inc.ChannelID
-                                   AND c.Type = 'O')
-                      AND EXISTS(SELECT 1
-                                     FROM TeamMembers AS t
-                                     WHERE t.TeamId = ?
-                                       AND t.UserId = ?)
-                  )
-        )`
-
-	return sq.Expr(isAdminOrMemberOrPublicChannelSQLText,
-		requesterID, requesterID, teamID, requesterID)
 }
