@@ -29,7 +29,7 @@ func (sqlStore *SQLStore) migrate(pluginAPI PluginAPIClient, migration Migration
 	}
 	defer sqlStore.finalizeTransaction(tx)
 
-	if err := migration.migrationFunc(tx); err != nil {
+	if err := migration.migrationFunc(tx, sqlStore.log); err != nil {
 		return errors.Wrapf(err, "error executing migration from version %s to version %s", migration.fromVersion.String(), migration.toVersion.String())
 	}
 
