@@ -131,16 +131,6 @@ func setupUsersTable(t *testing.T, db *sqlx.DB) {
 		`)
 		require.NoError(t, err)
 
-		_, err = db.Exec(`
-			CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
-				channelid character varying(26) NOT NULL,
-				userid character varying(26) NOT NULL,
-				jointime bigint NOT NULL,
-				leavetime bigint
-			);
-		`)
-		require.NoError(t, err)
-
 		return
 	}
 

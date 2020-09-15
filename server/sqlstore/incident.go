@@ -33,30 +33,6 @@ type incidentStore struct {
 	incidentSelect sq.SelectBuilder
 }
 
-const (
-	isAdminOrMemberOrPublicChannelSQLText = `
-		(
-              EXISTS(SELECT 1
-                         FROM Users AS u
-                         WHERE u.Id = ?
-                           AND u.Roles LIKE '%system_admin%')
-              OR EXISTS(SELECT 1
-                            FROM ChannelMembers as cm
-                            WHERE cm.ChannelId = inc.ChannelID
-                              AND cm.UserId = ?)
-              OR (
-                      EXISTS(SELECT 1
-                                 FROM Channels as c
-                                 WHERE c.Id = inc.ChannelID
-                                   AND c.Type = 'O')
-                      AND EXISTS(SELECT 1
-                                     FROM TeamMembers AS t
-                                     WHERE t.TeamId = ?
-                                       AND t.UserId = ?)
-                  )
-        )`
-)
-
 // Ensure playbookStore implements the playbook.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
@@ -82,8 +58,7 @@ func (s *incidentStore) GetIncidents(requesterID string, opts incident.HeaderFil
 		return nil, err
 	}
 
-	isAdminOrMemberOrPublicChannel := sq.Expr(isAdminOrMemberOrPublicChannelSQLText,
-		requesterID, requesterID, opts.TeamID, requesterID)
+	isAdminOrMemberOrPublicChannel := buildPermissionsExpr(requesterID, opts.TeamID)
 
 	queryForResults := s.incidentSelect.
 		Where(isAdminOrMemberOrPublicChannel).
@@ -297,8 +272,7 @@ func (s *incidentStore) GetCommanders(requesterID string, opts incident.HeaderFi
 		return nil, err
 	}
 
-	isAdminOrMemberOrPublicChannel := sq.Expr(isAdminOrMemberOrPublicChannelSQLText,
-		requesterID, requesterID, opts.TeamID, requesterID)
+	isAdminOrMemberOrPublicChannel := buildPermissionsExpr(requesterID, opts.TeamID)
 
 	// At the moment, the opts only includes teamID
 	query := s.queryBuilder.
@@ -412,4 +386,31 @@ func normalize(s string) string {
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 	normed, _, _ := transform.String(t, strings.ToLower(s))
 	return normed
+}
+
+func buildPermissionsExpr(requesterID, teamID string) sq.Sqlizer {
+	isAdminOrMemberOrPublicChannelSQLText := `
+		(
+              EXISTS(SELECT 1
+                         FROM Users AS u
+                         WHERE u.Id = ?
+                           AND u.Roles LIKE '%system_admin%')
+              OR EXISTS(SELECT 1
+                            FROM ChannelMembers as cm
+                            WHERE cm.ChannelId = inc.ChannelID
+                              AND cm.UserId = ?)
+              OR (
+                      EXISTS(SELECT 1
+                                 FROM Channels as c
+                                 WHERE c.Id = inc.ChannelID
+                                   AND c.Type = 'O')
+                      AND EXISTS(SELECT 1
+                                     FROM TeamMembers AS t
+                                     WHERE t.TeamId = ?
+                                       AND t.UserId = ?)
+                  )
+        )`
+
+	return sq.Expr(isAdminOrMemberOrPublicChannelSQLText,
+		requesterID, requesterID, teamID, requesterID)
 }

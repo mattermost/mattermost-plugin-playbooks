@@ -459,7 +459,7 @@ func correctPaginationOpts(opts *playbook.Options) {
 	if opts.PerPage <= 0 {
 		opts.PerPage = 1000
 	}
-	if opts.Page <= 0 {
+	if opts.Page < 0 {
 		opts.Page = 0
 	}
 }
