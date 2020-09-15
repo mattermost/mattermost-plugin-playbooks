@@ -95,8 +95,21 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-			column = "LOWER(UNACCENT(Name))"
-			searchString = normalize(options.SearchTerm)
+			var unaccentExists bool
+			err := s.store.getBuilder(s.store.db, &unaccentExists,
+				sq.Expr("SELECT EXISTS(SELECT * FROM pg_proc WHERE proname = 'unaccent')"))
+			if err != nil {
+				s.store.log.Errorf("failed to check if the unaccent function exists: %w", err)
+				unaccentExists = false
+			}
+
+			if unaccentExists {
+				column = "LOWER(UNACCENT(Name))"
+				searchString = normalize(options.SearchTerm)
+			} else {
+				column = "LOWER(Name)"
+				searchString = strings.ToLower(options.SearchTerm)
+			}
 		}
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
