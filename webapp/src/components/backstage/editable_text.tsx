@@ -46,6 +46,14 @@ const Text = styled.span`
     white-space: nowrap;
 `;
 
+const Placeholder = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 450px;
+    white-space: nowrap;
+    font-style: italic;
+`;
+
 const ClickableI = styled.i`
     cursor: pointer;
 `;
@@ -62,6 +70,9 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
     };
 
     const enterEditMode = () => {
+        // When editing, copy the props value at the instant editing starts.
+        setText(props.text);
+
         // Start the input size at least as wide as the span, itself with a max width.
         setInputWidth(textElement.current?.offsetWidth || 0);
         setEditMode(true);
@@ -93,20 +104,21 @@ const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
             </Container>
         );
     }
+
     return (
         <Container
             id={props.id}
             onClick={enterEditMode}
         >
-            {text && text.trim().length > 0 &&
+            {props.text && props.text.trim().length > 0 &&
                 <Text ref={textElement}>
-                    {text}
+                    {props.text}
                 </Text>
             }
-            {(!text || text.length === 0) && props.placeholder && props.placeholder.length > 0 &&
-                <Text>
+            {(!props.text || props.text.length === 0) && props.placeholder && props.placeholder.length > 0 &&
+                <Placeholder>
                     {props.placeholder}
-                </Text>
+                </Placeholder>
             }
             <ClickableI
                 className='editable-trigger icon-pencil-outline'

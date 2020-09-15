@@ -12,6 +12,7 @@ export interface SharePlaybookProps {
     onAddUser: (userid: string) => void;
     onRemoveUser: (userid: string) => void;
     searchProfiles: (term: string) => ActionFunc;
+    getProfiles: () => ActionFunc;
     playbook: Playbook;
 }
 
@@ -50,6 +51,7 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
                 onAddUser={props.onAddUser}
                 userIds={props.playbook.member_ids}
                 searchProfiles={props.searchProfiles}
+                getProfiles={props.getProfiles}
             />
             <UserList>
                 {props.playbook.member_ids.map((userId) => (
