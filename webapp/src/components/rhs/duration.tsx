@@ -24,8 +24,8 @@ const Duration: FC<DurationProps> = (props: DurationProps) => {
         };
     }, []);
 
-    const start = moment.unix(props.created_at);
-    const end = (props.ended_at && moment.unix(props.ended_at)) || now;
+    const start = moment(props.created_at);
+    const end = (props.ended_at && moment(props.ended_at)) || now;
 
     const duration = moment.duration(end.diff(start));
     let durationString = '';
