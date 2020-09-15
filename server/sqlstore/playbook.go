@@ -266,7 +266,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterID, teamID string, opts pla
 
 	playbooks := make([]playbook.Playbook, 0, len(playbookWithMembers))
 	for _, p := range playbookWithMembers {
-		p.MemberIDs = strings.Fields(p.Members)
+		p.Playbook.MemberIDs = strings.Fields(p.Members)
 		playbooks = append(playbooks, p.Playbook)
 	}
 
