@@ -62,8 +62,10 @@ Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentName) => {
 // Starts incident from the post menu
 // function startIncidentFromPostMenu(incidentName) {
 Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) => {
-    //post a message as user to avoid system message
+    // post a message as user to avoid system message
     cy.findByTestId('post_textbox').clear().type('new message here{enter}');
+
+    // post a second message because cypress has trouble finding latest post when there's only one message
     cy.findByTestId('post_textbox').clear().type('another new message here{enter}');
     cy.clickPostDotMenu();
     cy.findByTestId('incidentPostMenuIcon').click();
