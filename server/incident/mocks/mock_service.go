@@ -123,7 +123,7 @@ func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockService) GetCommanders(arg0 string, arg1 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockService) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -183,7 +183,7 @@ func (mr *MockServiceMockRecorder) GetIncidentWithDetails(arg0 interface{}) *gom
 }
 
 // GetIncidents mocks base method
-func (m *MockService) GetIncidents(arg0 string, arg1 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockService) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)

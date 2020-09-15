@@ -398,7 +398,7 @@ func Test_incidentStore_GetIncidents(t *testing.T) {
 				},
 			}
 
-			got, err := s.GetIncidents("ignored", tt.options)
+			got, err := s.GetIncidents(incident.RequesterInfo{}, tt.options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetIncidents() error = %v\nwantErr = %v", err, tt.wantErr)
 				return
@@ -475,7 +475,7 @@ func Test_incidentStore__GetCommanders(t *testing.T) {
 				},
 			}
 
-			got, err := s.GetCommanders("ignored", options)
+			got, err := s.GetCommanders(incident.RequesterInfo{}, options)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetIncidents() error = %v\nwantErr = %v", err, tt.wantErr)
 				return

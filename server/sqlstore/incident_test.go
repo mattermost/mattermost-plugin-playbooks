@@ -148,17 +148,6 @@ var (
 		WithChecklists([]int{2}).
 		ToIncident()
 
-	inc10 = *NewBuilder().
-		WithName("incident 10 - archived / deleted channel").
-		WithChannelID(channelID02).
-		WithIsActive(true).
-		WithCommanderUserID(commander2.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(199).
-		WithEndAt(555).
-		WithChecklists([]int{7}).
-		ToIncident()
-
 	incidents = []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 )
 
@@ -1211,8 +1200,7 @@ func TestGetCommanders(t *testing.T) {
 		{
 			Name: "team2 - Alice (in no channels and not member of team)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Alice",
-				CanViewTeamChannels: true,
+				UserID: "Alice",
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,

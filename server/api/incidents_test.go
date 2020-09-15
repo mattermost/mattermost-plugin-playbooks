@@ -1056,6 +1056,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 100,
 			PageCount:  200,
@@ -1091,6 +1092,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 0,
 			PageCount:  0,

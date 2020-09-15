@@ -64,7 +64,7 @@ func (mr *MockStoreMockRecorder) GetAllIncidentMembersCount(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockStore) GetCommanders(arg0 string, arg1 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockStore) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -109,7 +109,7 @@ func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomo
 }
 
 // GetIncidents mocks base method
-func (m *MockStore) GetIncidents(arg0 string, arg1 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockStore) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)

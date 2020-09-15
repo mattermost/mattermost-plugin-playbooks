@@ -41,7 +41,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
-		From("IR_Incident AS inc")
+		From("IR_Incident AS incident")
 
 	return &incidentStore{
 		pluginAPI:      pluginAPI,
@@ -69,7 +69,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, opts 
 
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
-		From("IR_Incident AS inc").
+		From("IR_Incident AS incident").
 		Where(isAdminOrMemberOrPublicChannel).
 		Where(sq.Eq{"TeamID": opts.TeamID}).
 		Where(sq.Eq{"DeleteAt": 0})
@@ -274,8 +274,8 @@ func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, opts
 	// At the moment, the opts only includes teamID
 	query := s.queryBuilder.
 		Select("DISTINCT CommanderUserID AS UserID", "Username").
-		From("IR_Incident AS inc").
-		Join("Users AS u ON inc.CommanderUserID = u.Id").
+		From("IR_Incident AS incident").
+		Join("Users AS u ON incident.CommanderUserID = u.Id").
 		Where(sq.Eq{"TeamID": opts.TeamID}).
 		Where(isAdminOrMemberOrPublicChannel)
 
@@ -323,34 +323,31 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 		return nil
 	}
 
-	if !info.CanViewTeamChannels {
-		checkChannelMembership := sq.Expr(`
-			EXISTS(SELECT 1
-				 FROM ChannelMembers as cm
-				 WHERE cm.ChannelId = inc.ChannelID
-				   AND cm.UserId = ?)
-			`, info.UserID)
-
-		return checkChannelMembership
-	}
-
-	checkMembershipOrPublicChannel := sq.Expr(`
+	if info.CanViewTeamChannels {
+		checkMembershipOrPublicChannel := sq.Expr(`
 		  (
-			  -- Check if requester is a channel member
+			  -- If requester is a channel member
 			  EXISTS(SELECT 1
 						 FROM ChannelMembers as cm
-						 WHERE cm.ChannelId = inc.ChannelID
+						 WHERE cm.ChannelId = incident.ChannelID
 						   AND cm.UserId = ?)
-			  -- Or, since requester has permission to view team,
-			  -- check if channel is open
+			  -- Or if channel is public
 			  OR EXISTS(SELECT 1
 							FROM Channels as c
-							WHERE c.Id = inc.ChannelID
-							  AND c.Type = 'O'
-							  AND c.DeleteAt = 0)
+							WHERE c.Id = incident.ChannelID
+							  AND c.Type = 'O')
 		  )`, info.UserID)
 
-	return checkMembershipOrPublicChannel
+		return checkMembershipOrPublicChannel
+	}
+
+	// Only has permission if member of the channel
+	return sq.Expr(`
+			EXISTS(SELECT 1
+				 FROM ChannelMembers as cm
+				 WHERE cm.ChannelId = incident.ChannelID
+				   AND cm.UserId = ?)
+			`, info.UserID)
 }
 
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
