@@ -1160,7 +1160,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
 			},
-			Expected:    []incident.CommanderInfo{},
+			Expected:    nil,
 			ExpectedErr: nil,
 		},
 		{
@@ -1171,7 +1171,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
-			Expected:    []incident.CommanderInfo{},
+			Expected:    nil,
 			ExpectedErr: nil,
 		},
 		{
@@ -1182,7 +1182,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.HeaderFilterOptions{
 				TeamID: team3id,
 			},
-			Expected:    []incident.CommanderInfo{},
+			Expected:    nil,
 			ExpectedErr: nil,
 		},
 		{
@@ -1205,7 +1205,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
 			},
-			Expected:    []incident.CommanderInfo{},
+			Expected:    nil,
 			ExpectedErr: nil,
 		},
 		{

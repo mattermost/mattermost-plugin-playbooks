@@ -530,6 +530,10 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if commanders == nil {
+		commanders = []incident.CommanderInfo{}
+	}
+
 	jsonBytes, err := json.Marshal(commanders)
 	if err != nil {
 		HandleError(w, err)

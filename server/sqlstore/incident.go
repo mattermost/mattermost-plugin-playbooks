@@ -269,7 +269,7 @@ func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, opti
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
-		Select("DISTINCT CommanderUserID AS UserID", "Username").
+		Select("DISTINCT u.Id AS UserID", "u.Username").
 		From("IR_Incident AS incident").
 		Join("Users AS u ON incident.CommanderUserID = u.Id").
 		Where(sq.Eq{"TeamID": options.TeamID}).
@@ -279,10 +279,6 @@ func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, opti
 	err := s.store.selectBuilder(s.store.db, &commanders, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query database")
-	}
-
-	if commanders == nil {
-		commanders = []incident.CommanderInfo{}
 	}
 
 	return commanders, nil
