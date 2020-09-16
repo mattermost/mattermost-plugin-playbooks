@@ -36,8 +36,8 @@ Cypress.Commands.add('requireIncidentResponsePlugin', (version) => {
 /**
  * Delete all incidents directly from API
  */
-Cypress.Commands.add('deleteAllIncidents', () => {
-    cy.apiGetAllIncidents().then((response) => {
+Cypress.Commands.add('deleteAllIncidents', (teamId) => {
+    cy.apiGetAllIncidents(teamId).then((response) => {
         const incidents = JSON.parse(response.body);
 
         incidents.forEach((incident) => {

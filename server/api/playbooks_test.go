@@ -830,7 +830,7 @@ func TestPagingPlaybooks(t *testing.T) {
 		testName       string
 		page           string
 		perPage        string
-		expectedResult *listPlaybookResult
+		expectedResult playbook.GetPlaybooksResults
 		emptyStore     bool
 		expectedErr    error
 	}{
@@ -838,27 +838,25 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName:       "get playbooks with invalid page values",
 			page:           "test",
 			perPage:        "test",
-			expectedResult: nil,
+			expectedResult: playbook.GetPlaybooksResults{},
 			expectedErr:    errors.New("bad parameter"),
 		},
 		{
 			testName:       "get playbooks with negative page values",
 			page:           "-1",
 			perPage:        "-1",
-			expectedResult: nil,
+			expectedResult: playbook.GetPlaybooksResults{},
 			expectedErr:    errors.New("bad parameter"),
 		},
 		{
 			testName: "get playbooks with page=0 per_page=0 with empty store",
 			page:     "0",
 			perPage:  "0",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 0,
-					PageCount:  0,
-					HasMore:    false,
-				},
-				Items: []playbook.Playbook{},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      []playbook.Playbook{},
 			},
 			emptyStore:  true,
 			expectedErr: nil,
@@ -867,13 +865,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=1 per_page=1 with empty store",
 			page:     "1",
 			perPage:  "1",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 0,
-					PageCount:  0,
-					HasMore:    false,
-				},
-				Items: []playbook.Playbook{},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      []playbook.Playbook{},
 			},
 			emptyStore:  true,
 			expectedErr: nil,
@@ -882,13 +878,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=0 per_page=0",
 			page:     "0",
 			perPage:  "0",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 3,
-					PageCount:  1,
-					HasMore:    false,
-				},
-				Items: []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			},
 			expectedErr: nil,
 		},
@@ -896,13 +890,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=0 per_page=3",
 			page:     "0",
 			perPage:  "3",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 3,
-					PageCount:  1,
-					HasMore:    false,
-				},
-				Items: []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			},
 			expectedErr: nil,
 		},
@@ -910,13 +902,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=0 per_page=2",
 			page:     "0",
 			perPage:  "2",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 3,
-					PageCount:  2,
-					HasMore:    true,
-				},
-				Items: []playbook.Playbook{playbooktest1, playbooktest2},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 3,
+				PageCount:  2,
+				HasMore:    true,
+				Items:      []playbook.Playbook{playbooktest1, playbooktest2},
 			},
 			expectedErr: nil,
 		},
@@ -924,13 +914,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=1 per_page=2",
 			page:     "1",
 			perPage:  "2",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 3,
-					PageCount:  2,
-					HasMore:    false,
-				},
-				Items: []playbook.Playbook{playbooktest3},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 3,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []playbook.Playbook{playbooktest3},
 			},
 			expectedErr: nil,
 		},
@@ -938,13 +926,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=2 per_page=2",
 			page:     "2",
 			perPage:  "2",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 3,
-					PageCount:  2,
-					HasMore:    false,
-				},
-				Items: []playbook.Playbook{},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 3,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []playbook.Playbook{},
 			},
 			expectedErr: nil,
 		},
@@ -952,13 +938,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=9999 per_page=2",
 			page:     "9999",
 			perPage:  "2",
-			expectedResult: &listPlaybookResult{
-				listResult: listResult{
-					TotalCount: 3,
-					PageCount:  2,
-					HasMore:    false,
-				},
-				Items: []playbook.Playbook{},
+			expectedResult: playbook.GetPlaybooksResults{
+				TotalCount: 3,
+				PageCount:  2,
+				HasMore:    false,
+				Items:      []playbook.Playbook{},
 			},
 			expectedErr: nil,
 		},
@@ -999,8 +983,8 @@ func TestPagingPlaybooks(t *testing.T) {
 
 			if data.expectedErr == nil {
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
-				actualList := &listPlaybookResult{}
-				err = json.NewDecoder(resp.Body).Decode(actualList)
+				actualList := playbook.GetPlaybooksResults{}
+				err = json.NewDecoder(resp.Body).Decode(&actualList)
 				require.NoError(t, err)
 				assert.Equal(t, data.expectedResult, actualList)
 			} else {

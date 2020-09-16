@@ -76,6 +76,6 @@ describe('backstage incident list', () => {
         });
 
         // * Verify that the header contains the incident name
-        cy.get('.details-header').contains(incidentName);
+        cy.findByTestId('incident-title').contains(incidentName);
     });
 });

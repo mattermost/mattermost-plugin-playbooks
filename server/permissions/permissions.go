@@ -89,3 +89,13 @@ func ViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) error {
 
 	return ErrNoPermissions
 }
+
+// CanViewTeam returns true if the userID has permissions to view teamID
+func CanViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) bool {
+	return pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_LIST_TEAM_CHANNELS)
+}
+
+// IsAdmin returns true if the userID is a system admin
+func IsAdmin(userID string, pluginAPI *pluginapi.Client) bool {
+	return pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+}

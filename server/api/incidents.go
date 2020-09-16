@@ -20,11 +20,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
-type listIncidentResult struct {
-	listResult
-	Items []incident.Incident `json:"items"`
-}
-
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
@@ -309,25 +304,30 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return err2 == nil
 	}
 
-	results, err := h.incidentService.GetIncidents(*filterOptions)
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		TeamID:              filterOptions.TeamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{filterOptions.TeamID: permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI)},
+	}
+
+	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	// To return an empty array as opposed to null
+	// To return an empty array instead of null
 	if results.Items == nil {
 		results.Items = []incident.Incident{}
 	}
 
-	jsonBytes, err := json.Marshal(listIncidentResult{
-		listResult: listResult{
-			TotalCount: results.TotalCount,
-			PageCount:  results.PageCount,
-			HasMore:    results.HasMore,
-		},
-		Items: results.Items,
-	})
+	// Return an empty array instead of null
+	for i := range results.Items {
+		results.Items[i].Checklists = []playbook.Checklist{}
+	}
+
+	jsonBytes, err := json.Marshal(results)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -518,10 +518,22 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 			return err == nil
 		},
 	}
-	commanders, err := h.incidentService.GetCommanders(options)
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+	}
+
+	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
+	}
+
+	if commanders == nil {
+		commanders = []incident.CommanderInfo{}
 	}
 
 	jsonBytes, err := json.Marshal(commanders)
@@ -562,7 +574,15 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 			return err == nil
 		},
 	}
-	incidents, err := h.incidentService.GetIncidents(options)
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+	}
+
+	incidents, err := h.incidentService.GetIncidents(requesterInfo, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -848,6 +868,9 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 // parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.
 func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
+	if teamID == "" {
+		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
+	}
 
 	pageParam := u.Query().Get("page")
 	if pageParam == "" {

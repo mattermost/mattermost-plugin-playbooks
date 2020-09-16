@@ -1052,20 +1052,22 @@ func TestIncidents(t *testing.T) {
 				Name:            "incidentName1",
 				ChannelID:       "channelID1",
 			},
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 100,
 			PageCount:  200,
 			HasMore:    true,
 			Items:      []incident.Incident{incident1},
 		}
-		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents?team_id=testTeamID1", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1091,16 +1093,17 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 0,
 			PageCount:  0,
 			HasMore:    false,
 			Items:      nil,
 		}
-		incidentService.EXPECT().GetIncidents(gomock.Any()).Return(result, nil)
+		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents", nil)
+		testreq, err := http.NewRequest("GET", "/api/v1/incidents?team_id=non-existent", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")

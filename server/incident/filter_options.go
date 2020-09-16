@@ -92,8 +92,8 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 		options.PerPage = PerPageDefault
 	}
 
-	if options.TeamID != "" && !model.IsValidId(options.TeamID) {
-		return errors.New("bad parameter 'team_id': must be 26 characters or blank")
+	if !model.IsValidId(options.TeamID) {
+		return errors.New("bad parameter 'team_id': must be 26 characters")
 	}
 
 	sort := strings.ToLower(options.Sort)
@@ -118,10 +118,10 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 
 	order := strings.ToLower(options.Order)
 	switch order {
-	case OrderDesc, "": // default
-		options.Order = OrderDesc
-	case OrderAsc:
+	case OrderAsc, "": // default
 		options.Order = OrderAsc
+	case OrderDesc:
+		options.Order = OrderDesc
 	default:
 		return errors.New("bad parameter 'order_by'")
 	}
@@ -129,8 +129,6 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 	if options.CommanderID != "" && !model.IsValidId(options.CommanderID) {
 		return errors.New("bad parameter 'commander_id': must be 26 characters or blank")
 	}
-
-	// Put search term cleaning here, when we need it.
 
 	return nil
 }

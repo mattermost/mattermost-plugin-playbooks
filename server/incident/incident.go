@@ -76,6 +76,15 @@ type DialogState struct {
 	ClientID string `json:"client_id"`
 }
 
+// RequesterInfo holds the userID and teamID that this request is regarding, and permissions
+// for the user making the request
+type RequesterInfo struct {
+	UserID              string
+	TeamID              string
+	UserIDtoIsAdmin     map[string]bool
+	TeamIDtoCanViewTeam map[string]bool
+}
+
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
@@ -94,7 +103,7 @@ var ErrIncidentActive = errors.New("incident active")
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
@@ -123,7 +132,7 @@ type Service interface {
 	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetCommanders returns all the commanders of incidents selected
-	GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error)
+	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
@@ -169,7 +178,7 @@ type Service interface {
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
@@ -189,7 +198,7 @@ type Store interface {
 	GetAllIncidentMembersCount(channelID string) (int64, error)
 
 	// GetCommanders returns the commanders of the incidents selected by options
-	GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error)
+	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

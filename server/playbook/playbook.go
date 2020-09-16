@@ -60,6 +60,21 @@ type ChecklistItem struct {
 	Description            string `json:"description"`
 }
 
+type GetPlaybooksResults struct {
+	TotalCount int        `json:"total_count"`
+	PageCount  int        `json:"page_count"`
+	HasMore    bool       `json:"has_more"`
+	Items      []Playbook `json:"items"`
+}
+
+// RequesterInfo holds the userID and permissions for the user making the request
+type RequesterInfo struct {
+	UserID              string
+	TeamID              string
+	UserIDtoIsAdmin     map[string]bool
+	TeamIDtoCanViewTeam map[string]bool
+}
+
 // Service is the playbook service for managing playbooks
 type Service interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.
@@ -69,7 +84,7 @@ type Service interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-	GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
@@ -85,7 +100,7 @@ type Store interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
