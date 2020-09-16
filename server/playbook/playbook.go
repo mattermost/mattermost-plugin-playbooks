@@ -1,8 +1,6 @@
 package playbook
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 )
 
@@ -16,58 +14,65 @@ type Playbook struct {
 	Description          string      `json:"description"`
 	TeamID               string      `json:"team_id"`
 	CreatePublicIncident bool        `json:"create_public_incident"`
+	CreateAt             int64       `json:"create_at"`
+	DeleteAt             int64       `json:"delete_at"`
+	NumStages            int64       `json:"num_stages"`
+	NumSteps             int64       `json:"num_steps"`
 	Checklists           []Checklist `json:"checklists"`
 	MemberIDs            []string    `json:"member_ids"`
 }
 
+func (p Playbook) Clone() Playbook {
+	newPlaybook := p
+	var newChecklists []Checklist
+	for _, c := range p.Checklists {
+		newChecklists = append(newChecklists, c.Clone())
+	}
+	newPlaybook.Checklists = newChecklists
+	newPlaybook.MemberIDs = append([]string(nil), p.MemberIDs...)
+	return newPlaybook
+}
+
 // Checklist represents a checklist in a playbook
 type Checklist struct {
+	ID    string          `json:"id"`
 	Title string          `json:"title"`
 	Items []ChecklistItem `json:"items"`
 }
 
-// ChecklistItem represents an item in a checklist
-type ChecklistItem struct {
-	Title                  string    `json:"title"`
-	State                  string    `json:"state"`
-	StateModified          time.Time `json:"state_modified"`
-	StateModifiedPostID    string    `json:"state_modified_post_id"`
-	AssigneeID             string    `json:"assignee_id"`
-	AssigneeModified       time.Time `json:"assignee_modified"`
-	AssigneeModifiedPostID string    `json:"assignee_modified_post_id"`
-	Command                string    `json:"command"`
-	Description            string    `json:"description"`
+func (c Checklist) Clone() Checklist {
+	newChecklist := c
+	newChecklist.Items = append([]ChecklistItem(nil), c.Items...)
+	return newChecklist
 }
 
-// SortField enumerates the available fields we can sort on.
-type SortField string
+// ChecklistItem represents an item in a checklist
+type ChecklistItem struct {
+	ID                     string `json:"id"`
+	Title                  string `json:"title"`
+	State                  string `json:"state"`
+	StateModified          int64  `json:"state_modified"`
+	StateModifiedPostID    string `json:"state_modified_post_id"`
+	AssigneeID             string `json:"assignee_id"`
+	AssigneeModified       int64  `json:"assignee_modified"`
+	AssigneeModifiedPostID string `json:"assignee_modified_post_id"`
+	Command                string `json:"command"`
+	Description            string `json:"description"`
+}
 
-const (
-	// Title sorts by the "title" field.
-	Title SortField = "title"
+type GetPlaybooksResults struct {
+	TotalCount int        `json:"total_count"`
+	PageCount  int        `json:"page_count"`
+	HasMore    bool       `json:"has_more"`
+	Items      []Playbook `json:"items"`
+}
 
-	// Stages sorts by the number of checklists in a playbook.
-	Stages SortField = "stages"
-
-	// Steps sorts by the the number of steps in a playbook.
-	Steps SortField = "steps"
-)
-
-// SortDirection is the type used to specify the ascending or descending order of returned results.
-type SortDirection string
-
-const (
-	// Desc is descending order.
-	Desc SortDirection = "desc"
-
-	// Asc is ascending order.
-	Asc SortDirection = "asc"
-)
-
-// Options specifies the parameters when getting playbooks.
-type Options struct {
-	Sort      SortField
-	Direction SortDirection
+// RequesterInfo holds the userID and permissions for the user making the request
+type RequesterInfo struct {
+	UserID              string
+	TeamID              string
+	UserIDtoIsAdmin     map[string]bool
+	TeamIDtoCanViewTeam map[string]bool
 }
 
 // Service is the playbook service for managing playbooks
@@ -78,8 +83,8 @@ type Service interface {
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
-	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error)
+	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
@@ -94,6 +99,8 @@ type Store interface {
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
+	// GetPlaybooksForTeam retrieves all playbooks on the specified team
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
@@ -125,6 +132,6 @@ func IsValidChecklistItemState(state string) bool {
 		state == ChecklistItemStateOpen
 }
 
-func (p *Playbook) IsValidChecklistItemIndex(checklist, item int) bool {
-	return p != nil && checklist >= 0 && item >= 0 && checklist < len(p.Checklists) && item < len(p.Checklists[checklist].Items)
+func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {
+	return checklists != nil && checklistNum >= 0 && itemNum >= 0 && checklistNum < len(checklists) && itemNum < len(checklists[checklistNum].Items)
 }

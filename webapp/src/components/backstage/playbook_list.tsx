@@ -12,7 +12,7 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
 
-import {Playbook, FetchPlaybooksReturn} from 'src/types/playbook';
+import {FetchPlaybooksNoChecklistReturn, PlaybookNoChecklist} from 'src/types/playbook';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
@@ -32,9 +32,9 @@ import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 const DeleteBannerTimeout = 5000;
 
 const PlaybookList: FC = () => {
-    const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
+    const [playbooks, setPlaybooks] = useState<PlaybookNoChecklist[] | null>(null);
     const [totalCount, setTotalCount] = useState(0);
-    const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
+    const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookNoChecklist | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
 
@@ -65,7 +65,7 @@ const PlaybookList: FC = () => {
     }
 
     const fetchPlaybooks = async () => {
-        const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
+        const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksNoChecklistReturn;
         setPlaybooks(result.items);
         setTotalCount(result.total_count);
     };
@@ -73,7 +73,7 @@ const PlaybookList: FC = () => {
         fetchPlaybooks();
     }, [currentTeam.id, fetchParams]);
 
-    const editPlaybook = (playbook: Playbook) => {
+    const editPlaybook = (playbook: PlaybookNoChecklist) => {
         setSelectedPlaybook(playbook);
         navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}`);
     };
@@ -87,7 +87,7 @@ const PlaybookList: FC = () => {
         setShowConfirmation(false);
     };
 
-    const onConfirmDelete = (playbook: Playbook) => {
+    const onConfirmDelete = (playbook: PlaybookNoChecklist) => {
         setSelectedPlaybook(playbook);
         setShowConfirmation(true);
     };
@@ -98,7 +98,7 @@ const PlaybookList: FC = () => {
             let page = fetchParams.page;
 
             // Fetch latest count
-            const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksReturn;
+            const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksNoChecklistReturn;
 
             // Go back to previous page if the last item on this page was just deleted
             page = Math.max(Math.min(result.page_count - 1, page), 0);
@@ -137,7 +137,7 @@ const PlaybookList: FC = () => {
             </div>
         );
     } else {
-        body = playbooks.map((p: Playbook) => (
+        body = playbooks.map((p: PlaybookNoChecklist) => (
             <div
                 className='row playbook-item'
                 key={p.id}
@@ -153,7 +153,7 @@ const PlaybookList: FC = () => {
                     className='col-sm-2'
                 >
                     {
-                        p.checklists.length
+                        p.num_stages
                     }
                 </div>
                 <div
@@ -162,7 +162,7 @@ const PlaybookList: FC = () => {
                     {
 
                         /* Calculate all steps for this playbook */
-                        p.checklists.reduce((acc, currValue) => (currValue.items.length + acc), 0)
+                        p.num_steps
                     }
                 </div>
                 <div className='col-sm-2'>

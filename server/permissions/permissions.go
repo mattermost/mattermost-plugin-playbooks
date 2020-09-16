@@ -24,13 +24,13 @@ func ViewIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incide
 		return errors.Wrapf(err, "could not get incident id `%s`", incidentID)
 	}
 
-	if pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.PrimaryChannelID, model.PERMISSION_READ_CHANNEL) {
+	if pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.ChannelID, model.PERMISSION_READ_CHANNEL) {
 		return nil
 	}
 
-	channel, err := pluginAPI.Channel.Get(incidentToCheck.PrimaryChannelID)
+	channel, err := pluginAPI.Channel.Get(incidentToCheck.ChannelID)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", incidentToCheck.PrimaryChannelID)
+		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", incidentToCheck.ChannelID)
 	}
 
 	if channel.Type == model.CHANNEL_OPEN && pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
@@ -74,7 +74,7 @@ func EditIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incide
 		return errors.Wrapf(err, "could not get incident id `%s`", incidentID)
 	}
 
-	if pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.PrimaryChannelID, model.PERMISSION_READ_CHANNEL) {
+	if pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.ChannelID, model.PERMISSION_READ_CHANNEL) {
 		return nil
 	}
 
@@ -88,4 +88,14 @@ func ViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) error {
 	}
 
 	return ErrNoPermissions
+}
+
+// CanViewTeam returns true if the userID has permissions to view teamID
+func CanViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) bool {
+	return pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_LIST_TEAM_CHANNELS)
+}
+
+// IsAdmin returns true if the userID is a system admin
+func IsAdmin(userID string, pluginAPI *pluginapi.Client) bool {
+	return pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
 }

@@ -159,7 +159,7 @@ export const ChecklistDetails = ({checklist, checklistNum, onChange, onRedirect,
                                         checklistItem={checklistItem}
                                         checklistNum={checklistNum}
                                         itemNum={index}
-                                        primaryChannelId={channelId}
+                                        channelId={channelId}
                                         onRedirect={() => {
                                             if (onRedirect) {
                                                 onRedirect(index);

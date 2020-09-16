@@ -18,10 +18,10 @@
     "team_id": {
       "type": "string"
     },
-    "created_at": {
+    "create_at": {
       "type": "integer"
     },
-    "ended_at": {
+    "end_at": {
       "type": "integer"
     },
     "channel_ids": {

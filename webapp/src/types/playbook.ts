@@ -11,11 +11,22 @@ export interface Playbook {
     member_ids: string[];
 }
 
-export interface FetchPlaybooksReturn {
+export interface PlaybookNoChecklist {
+    id?: string;
+    title: string;
+    description: string;
+    team_id: string;
+    create_public_incident: boolean;
+    num_stages: number;
+    num_steps: number;
+    member_ids: string[];
+}
+
+export interface FetchPlaybooksNoChecklistReturn {
     total_count: number;
     page_count: number;
     has_more: boolean;
-    items: Playbook[];
+    items: PlaybookNoChecklist[];
 }
 
 export interface FetchIncidentsParams {
@@ -38,10 +49,10 @@ export interface ChecklistItem {
     title: string;
     description: string;
     state: ChecklistItemState;
-    state_modified?: string;
+    state_modified?: number;
     state_modified_post_id?: string;
     assignee_id?: string;
-    assignee_modified?: string;
+    assignee_modified?: number;
     assignee_modified_post_id?: string;
     command: string;
 }
@@ -101,8 +112,11 @@ export function isChecklist(arg: any): arg is Checklist {
 export function isChecklistItem(arg: any): arg is ChecklistItem {
     return arg &&
         typeof arg.title === 'string' &&
-        typeof arg.state_modified === 'string' &&
+        typeof arg.state_modified === 'number' &&
         typeof arg.state_modified_post_id === 'string' &&
+        typeof arg.assignee_id === 'string' &&
+        typeof arg.assignee_modified === 'number' &&
+        typeof arg.assignee_modified_post_id === 'string' &&
         typeof arg.state === 'string' &&
         typeof arg.command === 'string';
 }

@@ -91,15 +91,21 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 }
 
 func incidentProperties(incdnt *incident.Incident) map[string]interface{} {
+	totalChecklistItems := 0
+	for _, checklist := range incdnt.Checklists {
+		totalChecklistItems += len(checklist.Items)
+	}
+
 	return map[string]interface{}{
-		"IncidentID":      incdnt.ID,
-		"IsActive":        incdnt.IsActive,
-		"CommanderUserID": incdnt.CommanderUserID,
-		"TeamID":          incdnt.TeamID,
-		"CreatedAt":       incdnt.CreatedAt,
-		"PostID":          incdnt.PostID,
-		"ActiveStage":     incdnt.ActiveStage,
-		"Playbook":        playbookProperties(*incdnt.Playbook),
+		"IncidentID":          incdnt.ID,
+		"IsActive":            incdnt.IsActive,
+		"CommanderUserID":     incdnt.CommanderUserID,
+		"TeamID":              incdnt.TeamID,
+		"CreateAt":            incdnt.CreateAt,
+		"PostID":              incdnt.PostID,
+		"NumChecklists":       len(incdnt.Checklists),
+		"TotalChecklistItems": totalChecklistItems,
+		"ActiveStage":         incdnt.ActiveStage,
 	}
 }
 

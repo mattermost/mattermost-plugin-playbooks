@@ -2,6 +2,8 @@ package pluginkvstore
 
 import (
 	"encoding/json"
+	"math"
+	"sort"
 
 	"github.com/pkg/errors"
 
@@ -162,6 +164,45 @@ func (p *PlaybookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	return playbooks, nil
 }
 
+// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
+func (p *PlaybookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
+	playbooks, err := p.GetPlaybooks()
+	if err != nil {
+		return playbook.GetPlaybooksResults{}, err
+	}
+
+	teamPlaybooks := make([]playbook.Playbook, 0, len(playbooks))
+	for _, playbook := range playbooks {
+		if playbook.TeamID == teamID {
+			teamPlaybooks = append(teamPlaybooks, playbook)
+		}
+	}
+
+	if err := sortPlaybooks(teamPlaybooks, opts); err != nil {
+		return playbook.GetPlaybooksResults{}, err
+	}
+
+	allowedPlaybooks := []playbook.Playbook{}
+	for _, pb := range teamPlaybooks {
+		if opts.HasPermissionsTo(pb, requesterInfo.UserID) {
+			allowedPlaybooks = append(allowedPlaybooks, pb)
+		}
+	}
+
+	totalCount := len(allowedPlaybooks)
+	// Note: ignoring overflow for now
+	pageCount := int(math.Ceil(float64(totalCount) / float64(opts.PerPage)))
+	hasMore := opts.Page+1 < pageCount
+	results := playbook.GetPlaybooksResults{
+		TotalCount: totalCount,
+		PageCount:  pageCount,
+		HasMore:    hasMore,
+		Items:      pagePlaybooks(allowedPlaybooks, opts.Page, opts.PerPage),
+	}
+
+	return results, nil
+}
+
 // Update updates a playbook
 func (p *PlaybookStore) Update(updated playbook.Playbook) error {
 	if updated.ID == "" {
@@ -193,4 +234,53 @@ func (p *PlaybookStore) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func sortPlaybooks(playbooks []playbook.Playbook, opts playbook.Options) error {
+	var sortDirectionFn func(b bool) bool
+	switch opts.Direction {
+	case playbook.OrderAsc:
+		sortDirectionFn = func(b bool) bool { return !b }
+	case playbook.OrderDesc:
+		sortDirectionFn = func(b bool) bool { return b }
+	default:
+		return errors.Errorf("invalid sort direction %s", opts.Direction)
+	}
+
+	var sortFn func(i, j int) bool
+	switch opts.Sort {
+	case playbook.SortByTitle:
+		sortFn = func(i, j int) bool {
+			return sortDirectionFn(playbooks[i].Title > playbooks[j].Title)
+		}
+	case playbook.SortByStages:
+		sortFn = func(i, j int) bool {
+			return sortDirectionFn(len(playbooks[i].Checklists) > len(playbooks[j].Checklists))
+		}
+	case playbook.SortBySteps:
+		sortFn = func(i, j int) bool {
+			stepsI := getSteps(playbooks[i])
+			stepsJ := getSteps(playbooks[j])
+			return sortDirectionFn(stepsI > stepsJ)
+		}
+	default:
+		return errors.Errorf("invalid sort field %s", opts.Sort)
+	}
+
+	sort.Slice(playbooks, sortFn)
+	return nil
+}
+
+func getSteps(pbook playbook.Playbook) int {
+	steps := 0
+	for _, p := range pbook.Checklists {
+		steps += len(p.Items)
+	}
+	return steps
+}
+func pagePlaybooks(playbooks []playbook.Playbook, page, perPage int) []playbook.Playbook {
+	// Note: ignoring overflow for now
+	start := min(page*perPage, len(playbooks))
+	end := min(start+perPage, len(playbooks))
+	return playbooks[start:end]
 }

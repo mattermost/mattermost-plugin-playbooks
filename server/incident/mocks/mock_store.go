@@ -63,6 +63,21 @@ func (mr *MockStoreMockRecorder) GetAllIncidentMembersCount(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllIncidentMembersCount", reflect.TypeOf((*MockStore)(nil).GetAllIncidentMembersCount), arg0)
 }
 
+// GetCommanders mocks base method
+func (m *MockStore) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
+	ret0, _ := ret[0].([]incident.CommanderInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommanders indicates an expected call of GetCommanders
+func (mr *MockStoreMockRecorder) GetCommanders(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommanders", reflect.TypeOf((*MockStore)(nil).GetCommanders), arg0, arg1)
+}
+
 // GetIncident mocks base method
 func (m *MockStore) GetIncident(arg0 string) (*incident.Incident, error) {
 	m.ctrl.T.Helper()
@@ -94,18 +109,18 @@ func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomo
 }
 
 // GetIncidents mocks base method
-func (m *MockStore) GetIncidents(arg0 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockStore) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIncidents", arg0)
+	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetIncidents indicates an expected call of GetIncidents
-func (mr *MockStoreMockRecorder) GetIncidents(arg0 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetIncidents(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockStore)(nil).GetIncidents), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockStore)(nil).GetIncidents), arg0, arg1)
 }
 
 // NukeDB mocks base method

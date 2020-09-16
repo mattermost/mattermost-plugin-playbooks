@@ -40,7 +40,7 @@ paths:
             format: int32
         - name: sort
           in: query
-          description: Defaults to created_at
+          description: Defaults to create_at
           required: false
           schema:
             type: string
@@ -940,9 +940,9 @@ components:
         - is_active
         - commander_user_id
         - team_id
-        - primary_channel_id
-        - created_at
-        - ended_at
+        - channel_id
+        - create_at
+        - end_at
       properties:
         id:
           type: string
@@ -959,14 +959,14 @@ components:
         team_id:
           type: string
           example: mx3xyzdojfgyfdx8sc8of1gdme
-        primary_channel_id:
+        channel_id:
           type: string
           example: mx3xyzdojfgyfdx8sc8of1gdme
-        created_at:
+        create_at:
           type: integer
           format: int64
           example: 1591130815
-        ended_at:
+        end_at:
           type: integer
           format: int64
           example: 1591130815

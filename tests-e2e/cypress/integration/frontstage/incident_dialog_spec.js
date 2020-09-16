@@ -8,6 +8,7 @@
 
 describe('incident creation dialog', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
+    let teamId;
 
     before(() => {
         // # Login as user-1
@@ -15,6 +16,8 @@ describe('incident creation dialog', () => {
 
         // # Create a playbook
         cy.apiGetTeamByName('ad-1').then((team) => {
+            teamId = team.id;
+
             cy.apiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
@@ -99,7 +102,7 @@ describe('incident creation dialog', () => {
         cy.get('#interactiveDialogModal').should('not.be.visible');
 
         // * Verify the incident did not get created
-        cy.apiGetAllIncidents().then((response) => {
+        cy.apiGetAllIncidents(teamId).then((response) => {
             const allIncidents = JSON.parse(response.body);
             const incident = allIncidents.items.find((inc) => inc.name === incidentName);
             expect(incident).to.be.undefined;

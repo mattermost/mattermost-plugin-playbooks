@@ -10,22 +10,34 @@ import (
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	PostID   string             `json:"post_id"`
-	Playbook *playbook.Playbook `json:"playbook"`
+	PostID     string               `json:"post_id"`
+	PlaybookID string               `json:"playbook_id"`
+	Checklists []playbook.Checklist `json:"checklists"`
+}
+
+func (i *Incident) Clone() *Incident {
+	newIncident := *i
+	var newChecklists []playbook.Checklist
+	for _, c := range i.Checklists {
+		newChecklists = append(newChecklists, c.Clone())
+	}
+	newIncident.Checklists = newChecklists
+	return &newIncident
 }
 
 // Header holds the summary information of an incident.
 type Header struct {
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	Description      string `json:"description"`
-	IsActive         bool   `json:"is_active"`
-	CommanderUserID  string `json:"commander_user_id"`
-	TeamID           string `json:"team_id"`
-	PrimaryChannelID string `json:"primary_channel_id"`
-	CreatedAt        int64  `json:"created_at"`
-	EndedAt          int64  `json:"ended_at"`
-	ActiveStage      int    `json:"active_stage"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	IsActive        bool   `json:"is_active"`
+	CommanderUserID string `json:"commander_user_id"`
+	TeamID          string `json:"team_id"`
+	ChannelID       string `json:"channel_id"`
+	CreateAt        int64  `json:"create_at"`
+	EndAt           int64  `json:"end_at"`
+	DeleteAt        int64  `json:"delete_at"`
+	ActiveStage     int    `json:"active_stage"`
 }
 
 type UpdateOptions struct {
@@ -64,6 +76,15 @@ type DialogState struct {
 	ClientID string `json:"client_id"`
 }
 
+// RequesterInfo holds the userID and teamID that this request is regarding, and permissions
+// for the user making the request
+type RequesterInfo struct {
+	UserID              string
+	TeamID              string
+	UserIDtoIsAdmin     map[string]bool
+	TeamIDtoCanViewTeam map[string]bool
+}
+
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
@@ -82,7 +103,7 @@ var ErrIncidentActive = errors.New("incident active")
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
@@ -111,7 +132,7 @@ type Service interface {
 	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetCommanders returns all the commanders of incidents selected
-	GetCommanders(options HeaderFilterOptions) ([]CommanderInfo, error)
+	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
@@ -157,7 +178,7 @@ type Service interface {
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
@@ -171,9 +192,13 @@ type Store interface {
 	// GetIncidentByChannel gets an incident associated with the given channel id.
 	GetIncidentIDForChannel(channelID string) (string, error)
 
-	// GetAllIncidentMembersCount returns the count of all members of an incident since the
-	// beginning of the incident, excluding bots.
-	GetAllIncidentMembersCount(incidentID string) (int64, error)
+	// GetAllIncidentMembersCount returns the count of all members of the
+	// incident associated with the given channel id since the beginning of the
+	// incident, excluding bots.
+	GetAllIncidentMembersCount(channelID string) (int64, error)
+
+	// GetCommanders returns the commanders of the incidents selected by options
+	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

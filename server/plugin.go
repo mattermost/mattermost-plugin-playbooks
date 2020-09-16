@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -10,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -18,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -75,6 +79,8 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed save bot to config")
 	}
 
+	p.bot = bot.New(pluginAPIClient, botID, p.config)
+
 	var telemetryClient interface {
 		incident.Telemetry
 		playbook.Telemetry
@@ -99,13 +105,13 @@ func (p *Plugin) OnActivate() error {
 		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
 
 		if telemetryEnabled {
-			if err := telemetryClient.Enable(); err != nil {
+			if err = telemetryClient.Enable(); err != nil {
 				pluginAPIClient.Log.Warn("Telemetry could not be enabled", "Error", err)
 			}
 			return
 		}
 
-		if err := telemetryClient.Disable(); err != nil {
+		if err = telemetryClient.Disable(); err != nil {
 			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
 		}
 	}
@@ -113,28 +119,82 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
+	rawUseSQL := os.Getenv("IR_USE_SQL")
+	if rawUseSQL == "" {
+		rawUseSQL = "false"
+	}
+	useSQL, err := strconv.ParseBool(rawUseSQL)
+	if err != nil {
+		return errors.Wrapf(err, "invalid environment key IR_USE_SQL; use 'true', 'false', or leave it unset")
+	}
+
+	var incidentStore incident.Store
+	var playbookStore playbook.Store
+	if useSQL {
+		apiClient := sqlstore.NewClient(pluginAPIClient)
+		sqlStore, err2 := sqlstore.New(apiClient, p.bot)
+		if err2 != nil {
+			return errors.Wrapf(err2, "failed creating the SQL store")
+		}
+
+		mutex, err2 := cluster.NewMutex(p.API, "IR_dbMutex")
+		if err2 != nil {
+			return errors.Wrapf(err2, "failed creating cluster mutex")
+		}
+
+		// Cluster lock: only one plugin will perform the migration when needed
+		if err2 = p.UpgradeDatabase(sqlStore, apiClient, mutex); err2 != nil {
+			return errors.Wrapf(err2, "failed to run migrations")
+		}
+
+		incidentStore = sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
+		playbookStore = sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
+	} else {
+		apiClient := pluginkvstore.NewClient(pluginAPIClient)
+		incidentStore = pluginkvstore.NewIncidentStore(apiClient, p.bot)
+		playbookStore = pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV)
+	}
+
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
-		pluginkvstore.NewIncidentStore(pluginkvstore.NewClient(pluginAPIClient), p.bot),
+		incidentStore,
 		p.bot,
 		p.config,
 		telemetryClient,
 	)
 
-	p.playbookService = playbook.NewService(pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV), p.bot, telemetryClient)
+	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
 
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot)
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 
-	if err := command.RegisterCommands(p.API.RegisterCommand); err != nil {
+	if err = command.RegisterCommands(p.API.RegisterCommand); err != nil {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
 	p.API.LogDebug("Incident response plugin Activated")
+	return nil
+}
+
+func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, pluginAPI sqlstore.PluginAPIClient, mutex *cluster.Mutex) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get the current schema version")
+	}
+
+	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
+		if err := sqlStore.Migrate(pluginAPI, currentSchemaVersion); err != nil {
+			return errors.Wrapf(err, "failed to complete migrations")
+		}
+	}
+
 	return nil
 }
 

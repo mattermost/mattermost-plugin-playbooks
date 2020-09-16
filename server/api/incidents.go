@@ -20,11 +20,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
-type listIncidentResult struct {
-	listResult
-	Items []incident.Incident `json:"items"`
-}
-
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	incidentService incident.Service
@@ -198,8 +193,8 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			Name:            name,
 			Description:     description,
 		},
-		PostID:   state.PostID,
-		Playbook: &playbook.Playbook{ID: playbookID},
+		PostID:     state.PostID,
+		PlaybookID: playbookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
@@ -244,15 +239,15 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.New("incident already has an id")
 	}
 
-	if newIncident.PrimaryChannelID != "" {
+	if newIncident.ChannelID != "" {
 		return nil, errors.New("incident channel already has an id")
 	}
 
-	if newIncident.CreatedAt != 0 {
+	if newIncident.CreateAt != 0 {
 		return nil, errors.New("incident channel already has created at date")
 	}
 
-	if newIncident.EndedAt != 0 {
+	if newIncident.EndAt != 0 {
 		return nil, errors.New("incident channel already has ended at date")
 	}
 
@@ -270,14 +265,14 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	public := true
-	if newIncident.Playbook != nil && newIncident.Playbook.ID != "" {
-		pb, err := h.playbookService.Get(newIncident.Playbook.ID)
+	if newIncident.PlaybookID != "" {
+		pb, err := h.playbookService.Get(newIncident.PlaybookID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
 
-		newIncident.Playbook = &pb
-		public = newIncident.Playbook.CreatePublicIncident
+		newIncident.Checklists = pb.Checklists
+		public = pb.CreatePublicIncident
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -294,8 +289,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 }
 
 // getIncidents handles the GET /incidents endpoint.
+// NOTE: The incidents will NOT have the Checklists slice. Checklists will only be included
+// in a call to getIncident.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
-	filterOptions, err := parseIncidentsFilterOption(r.URL)
+	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
@@ -307,25 +304,30 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return err2 == nil
 	}
 
-	results, err := h.incidentService.GetIncidents(*filterOptions)
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		TeamID:              filterOptions.TeamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{filterOptions.TeamID: permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI)},
+	}
+
+	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	// To return an empty array as opposed to null
+	// To return an empty array instead of null
 	if results.Items == nil {
 		results.Items = []incident.Incident{}
 	}
 
-	jsonBytes, err := json.Marshal(listIncidentResult{
-		listResult: listResult{
-			TotalCount: results.TotalCount,
-			PageCount:  results.PageCount,
-			HasMore:    results.HasMore,
-		},
-		Items: results.Items,
-	})
+	// Return an empty array instead of null
+	for i := range results.Items {
+		results.Items[i].Checklists = []playbook.Checklist{}
+	}
+
+	jsonBytes, err := json.Marshal(results)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -516,10 +518,22 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 			return err == nil
 		},
 	}
-	commanders, err := h.incidentService.GetCommanders(options)
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+	}
+
+	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
+	}
+
+	if commanders == nil {
+		commanders = []incident.CommanderInfo{}
 	}
 
 	jsonBytes, err := json.Marshal(commanders)
@@ -560,7 +574,15 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 			return err == nil
 		},
 	}
-	incidents, err := h.incidentService.GetIncidents(options)
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:              userID,
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+	}
+
+	incidents, err := h.incidentService.GetIncidents(requesterInfo, options)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -568,7 +590,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	channelIds := make([]string, 0, len(incidents.Items))
 	for _, incident := range incidents.Items {
-		channelIds = append(channelIds, incident.PrimaryChannelID)
+		channelIds = append(channelIds, incident.ChannelID)
 	}
 
 	jsonBytes, err := json.Marshal(channelIds)
@@ -832,7 +854,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(incdnt.PrimaryChannelID)
+	channel, err := h.pluginAPI.Channel.Get(incdnt.ChannelID)
 	if err != nil {
 		return err
 	}
@@ -843,69 +865,45 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 	return nil
 }
 
-func parseIncidentsFilterOption(u *url.URL) (*incident.HeaderFilterOptions, error) {
-	// NOTE: we are failing early instead of turning bad parameters into the default
+// parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.
+func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
-	if teamID != "" && !model.IsValidId(teamID) {
-		return nil, errors.New("bad parameter 'team_id': must be 26 characters or blank")
+	if teamID == "" {
+		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
 	}
 
-	param := u.Query().Get("page")
-	if param == "" {
-		param = "0"
+	pageParam := u.Query().Get("page")
+	if pageParam == "" {
+		pageParam = "0"
 	}
-	page, err := strconv.Atoi(param)
+	page, err := strconv.Atoi(pageParam)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bad parameter 'page'")
 	}
 
-	param = u.Query().Get("per_page")
-	if param == "" {
-		param = "0"
+	perPageParam := u.Query().Get("per_page")
+	if perPageParam == "" {
+		perPageParam = "0"
 	}
-	perPage, err := strconv.Atoi(param)
+	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bad parameter 'per_page'")
 	}
 
-	param = u.Query().Get("sort")
-	var sort incident.SortField
-	switch param {
-	case "id":
-		sort = incident.ID
-	case "name":
-		sort = incident.Name
-	case "commander_user_id":
-		sort = incident.CommanderUserID
-	case "team_id":
-		sort = incident.TeamID
-	case "created_at", "": // default
-		sort = incident.CreatedAt
-	case "ended_at":
-		sort = incident.EndedAt
-	case "status":
-		sort = incident.ByStatus
-	default:
-		return nil, errors.New("bad parameter 'sort'")
-	}
+	sort := u.Query().Get("sort")
+	order := u.Query().Get("order")
 
-	param = u.Query().Get("order")
-	var order incident.SortDirection
-	switch param {
-	case "asc":
-		order = incident.Asc
-	case "desc", "":
-		order = incident.Desc
-	default:
-		return nil, errors.Wrapf(err, "bad parameter 'order_by'")
-	}
-
-	param = u.Query().Get("status")
-	status := incident.All
-	if param == "active" {
+	statusParam := strings.ToLower(u.Query().Get("status"))
+	var status incident.Status
+	switch statusParam {
+	case "all", "": // default
+		status = incident.All
+	case "active":
 		status = incident.Ongoing
-	} else if param == "ended" {
+	case "ended":
 		status = incident.Ended
+	default:
+		return nil, errors.Errorf("bad status parameter '%s'", statusParam)
 	}
 
 	commanderID := u.Query().Get("commander_user_id")

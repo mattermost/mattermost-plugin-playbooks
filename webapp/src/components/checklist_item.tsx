@@ -27,7 +27,7 @@ interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
     checklistNum: number;
     itemNum: number;
-    primaryChannelId: string;
+    channelId: string;
     incidentId?: string;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
@@ -160,7 +160,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
 
     const fetchUsers = async () => {
-        return fetchUsersInChannel(props.primaryChannelId);
+        return fetchUsersInChannel(props.channelId);
     };
 
     const onAssigneeChange = async (userId?: string) => {
@@ -200,7 +200,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     let timestamp = '';
     const title = props.checklistItem.title;
 
-    if (props.checklistItem.state === ChecklistItemState.Closed) {
+    if (props.checklistItem.state === ChecklistItemState.Closed && props.checklistItem.state_modified) {
         const stateModified = moment(props.checklistItem.state_modified);
 
         // Avoid times before 2020 since those are errors

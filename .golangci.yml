@@ -24,7 +24,6 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - misspell
     - scopelint
     - staticcheck

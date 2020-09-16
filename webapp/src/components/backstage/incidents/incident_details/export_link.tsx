@@ -54,7 +54,7 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     let link = (
         <a
             className={'export-link'}
-            href={exportChannelUrl(props.incident.primary_channel_id)}
+            href={exportChannelUrl(props.incident.channel_id)}
             target={'_new'}
             onClick={onExportClick}
         >

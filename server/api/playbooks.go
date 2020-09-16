@@ -2,10 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"math"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -16,11 +16,6 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
-
-type listPlaybookResult struct {
-	listResult
-	Items []playbook.Playbook `json:"items"`
-}
 
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
@@ -182,11 +177,13 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	teamID := params.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
-	opts, page, perPage, err := parseGetPlaybooksOptions(r.URL)
+	opts, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse playbook options"))
+		HandleError(w, err)
 		return
 	}
+
+	opts.HasPermissionsTo = h.hasPermissionsToPlaybook
 
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
@@ -202,31 +199,20 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playbooks, err := h.playbookService.GetPlaybooksForTeam(teamID, opts)
+	requesterInfo := playbook.RequesterInfo{
+		UserID:              userID,
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+	}
+
+	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	allowedPlaybooks := []playbook.Playbook{}
-	for _, pb := range playbooks {
-		if h.hasPermissionsToPlaybook(pb, userID) {
-			allowedPlaybooks = append(allowedPlaybooks, pb)
-		}
-	}
-	totalCount := len(allowedPlaybooks)
-	// Note: ignoring overflow for now
-	pageCount := int(math.Ceil((float64(totalCount) / float64(perPage))))
-	hasMore := page+1 < pageCount
-
-	jsonBytes, err := json.Marshal(listPlaybookResult{
-		listResult: listResult{
-			TotalCount: totalCount,
-			PageCount:  pageCount,
-			HasMore:    hasMore,
-		},
-		Items: pagePlaybooks(allowedPlaybooks, page, perPage),
-	})
+	jsonBytes, err := json.Marshal(playbookResults)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -254,59 +240,61 @@ func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook
 	return h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
 }
 
-func parseGetPlaybooksOptions(u *url.URL) (opts playbook.Options, page, perPage int, err error) {
+func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
 	params := u.Query()
 
-	sortField := playbook.SortField(params.Get("sort"))
-	if sortField == "" {
-		sortField = playbook.Title
+	var sortField playbook.SortField
+	param := strings.ToLower(params.Get("sort"))
+	switch param {
+	case "title", "":
+		sortField = playbook.SortByTitle
+	case "stages":
+		sortField = playbook.SortByStages
+	case "steps":
+		sortField = playbook.SortBySteps
+	default:
+		return playbook.Options{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
 	}
 
-	sortDirection := playbook.SortDirection(params.Get("direction"))
-	if sortDirection == "" {
-		sortDirection = playbook.Asc
+	var sortDirection playbook.SortDirection
+	param = strings.ToLower(params.Get("direction"))
+	switch param {
+	case "asc", "":
+		sortDirection = playbook.OrderAsc
+	case "desc":
+		sortDirection = playbook.OrderDesc
+	default:
+		return playbook.Options{}, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
 	}
 
 	pageParam := params.Get("page")
 	if pageParam == "" {
 		pageParam = "0"
 	}
-	page, err = strconv.Atoi(pageParam)
+	page, err := strconv.Atoi(pageParam)
 	if err != nil {
-		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'page': it should be a number")
+		return playbook.Options{}, errors.Wrapf(err, "bad parameter 'page': it should be a number")
 	}
 	if page < 0 {
-		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'page': it should be a positive number")
+		return playbook.Options{}, errors.Errorf("bad parameter 'page': it should be a positive number")
 	}
 
 	perPageParam := params.Get("per_page")
 	if perPageParam == "" || perPageParam == "0" {
 		perPageParam = "1000"
 	}
-	perPage, err = strconv.Atoi(perPageParam)
+	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
-		return playbook.Options{}, 0, 0, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
+		return playbook.Options{}, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
 	}
 	if perPage < 0 {
-		return playbook.Options{}, 0, 0, errors.Errorf("bad parameter 'per_page': it should be a positive number")
+		return playbook.Options{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
 	}
 
 	return playbook.Options{
 		Sort:      sortField,
 		Direction: sortDirection,
-	}, page, perPage, nil
-}
-
-func pagePlaybooks(playbooks []playbook.Playbook, page, perPage int) []playbook.Playbook {
-	// Note: ignoring overflow for now
-	start := min(page*perPage, len(playbooks))
-	end := min(start+perPage, len(playbooks))
-	return playbooks[start:end]
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+		Page:      page,
+		PerPage:   perPage,
+	}, nil
 }

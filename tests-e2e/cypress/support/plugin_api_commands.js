@@ -8,10 +8,10 @@ const incidentsEndpoint = endpoints.incidents;
 /**
 * Get all incidents directly via API
 */
-Cypress.Commands.add('apiGetAllIncidents', () => {
+Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-response/api/v1/incidents',
+        url: `/plugins/com.mattermost.plugin-incident-response/api/v1/incidents?team_id=${teamId}`,
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -27,7 +27,7 @@ Cypress.Commands.add('apiGetAllIncidents', () => {
 Cypress.Commands.add('apiGetIncident', (incidentId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: incidentsEndpoint + '/${incidentId}',
+        url: `${incidentsEndpoint}/${incidentId}`,
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -47,9 +47,7 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
             name: incidentName,
             commander_user_id: commanderUserId,
             team_id: teamId,
-            playbook: {
-                id: playbookId,
-            },
+            playbook_id: playbookId,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -74,8 +72,8 @@ Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
 });
 
 // Verify incident is created
-Cypress.Commands.add('verifyIncidentCreated', (incidentName, incidentDescription) => {
-    cy.apiGetAllIncidents().then((response) => {
+Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDescription) => {
+    cy.apiGetAllIncidents(teamId).then((response) => {
         const allIncidents = JSON.parse(response.body);
         const incident = allIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
@@ -91,8 +89,8 @@ Cypress.Commands.add('verifyIncidentCreated', (incidentName, incidentDescription
 });
 
 // Verify incident is not created
-Cypress.Commands.add('verifyIncidentEnded', (incidentName) => {
-    cy.apiGetAllIncidents().then((response) => {
+Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
+    cy.apiGetAllIncidents(teamId).then((response) => {
         const allIncidents = JSON.parse(response.body);
         const incident = allIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);

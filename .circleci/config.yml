@@ -2,6 +2,153 @@ version: 2.1
 
 orbs:
   plugin-ci: mattermost/plugin-ci@0.1
+  codecov: codecov/codecov@1.1.1
+
+aliases:
+  - &restore_cache
+    restore_cache:
+      key: go-mod-v1-{{ checksum "go.sum" }}
+  - &save_cache
+    save_cache:
+      key: go-mod-v1-{{ checksum "go.sum" }}
+      paths:
+        - "/go/pkg/mod"
+
+jobs:
+  coverage-MySQL56-Postgres96:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:9.6-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:5.6.49
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: plugin-ci/default
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - *restore_cache
+      - run:
+          name: Generating Coverage Results
+          command: make coverage
+      - *save_cache
+      - codecov/upload:
+        file: server/coverage.txt
+
+  test-MySQL57-Postgres10:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:10.9-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:5.7.31
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: plugin-ci/default
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - *restore_cache
+      - run:
+          name: Testing
+          command: make test
+      - *save_cache
+
+  test-MySQL8-Postgres11:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:11.6-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:8.0.21
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: plugin-ci/default
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - *restore_cache
+      - run:
+          name: Testing
+          command: make test
+      - *save_cache
+
+  test-MySQL-Postgres-latest:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:latest
+        environment:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:latest
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: plugin-ci/default
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - *restore_cache
+      - run:
+          name: Testing
+          command: make test
+      - *save_cache
 
 workflows:
   version: 2
@@ -11,7 +158,19 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - plugin-ci/coverage:
+      - coverage-MySQL56-Postgres96:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL57-Postgres10:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL8-Postgres11:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL-Postgres-latest:
           filters:
             tags:
               only: /^v.*/
@@ -26,7 +185,10 @@ workflows:
           context: plugin-ci
           requires:
             - plugin-ci/lint
-            - plugin-ci/coverage
+            - coverage-MySQL56-Postgres96
+            - test-MySQL57-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
             - plugin-ci/build
       - plugin-ci/deploy-release:
           filters:
@@ -37,7 +199,10 @@ workflows:
           context: plugin-ci
           requires:
             - plugin-ci/lint
-            - plugin-ci/coverage
+            - coverage-MySQL56-Postgres96
+            - test-MySQL57-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
             - plugin-ci/build
       - plugin-ci/deploy-release-github:
           filters:
@@ -48,5 +213,8 @@ workflows:
           context: matterbuild-github-token
           requires:
             - plugin-ci/lint
-            - plugin-ci/coverage
+            - coverage-MySQL56-Postgres96
+            - test-MySQL57-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
             - plugin-ci/build

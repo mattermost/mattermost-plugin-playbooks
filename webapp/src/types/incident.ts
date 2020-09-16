@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Playbook, isPlaybook} from './playbook';
+import {Checklist, isChecklist} from './playbook';
 
 export interface Incident {
     id: string;
@@ -9,11 +9,12 @@ export interface Incident {
     is_active: boolean;
     commander_user_id: string;
     team_id: string;
-    primary_channel_id: string;
-    created_at: number;
-    ended_at: number;
+    channel_id: string;
+    create_at: number;
+    end_at: number;
     post_id?: string;
-    playbook: Playbook;
+    playbook_id: string;
+    checklists: Checklist[];
     channel_name: string;
     channel_display_name: string;
     team_name: string;
@@ -38,11 +39,12 @@ export function isIncident(arg: any): arg is Incident {
         typeof arg.is_active === 'boolean' &&
         arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
-        typeof arg.primary_channel_id === 'string' &&
-        typeof arg.ended_at === 'number' &&
-        typeof arg.created_at === 'number' &&
+        typeof arg.channel_id === 'string' &&
+        typeof arg.end_at === 'number' &&
+        typeof arg.create_at === 'number' &&
         optional &&
-        arg.playbook && isPlaybook(arg.playbook);
+        arg.playbook_id && typeof arg.playbook_id === 'string' &&
+        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
 }
 
 export interface FetchIncidentsParams {

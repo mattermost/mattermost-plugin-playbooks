@@ -136,7 +136,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
     const fetchUsers = async () => {
-        return fetchUsersInChannel(props.incident.primary_channel_id);
+        return fetchUsersInChannel(props.incident.channel_id);
     };
 
     const onSelectedProfileChange = async (userId?: string) => {
@@ -152,7 +152,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
 
     const [selectedChecklistIndex, setSelectedChecklistIndex] = useState(props.incident.active_stage);
 
-    const checklists = props.incident.playbook.checklists || [];
+    const checklists = props.incident.checklists || [];
     const selectedChecklist = checklists[selectedChecklistIndex] || {title: '', items: []};
 
     const onStageSelected = (option: Option, action: ActionMeta<OptionTypeBase>) => {
@@ -213,8 +213,8 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             />
                         </div>
                         <Duration
-                            created_at={props.incident.created_at}
-                            ended_at={props.incident.ended_at}
+                            created_at={props.incident.create_at}
+                            ended_at={props.incident.end_at}
                         />
                     </div>
                     <div className='inner-container'>
@@ -239,7 +239,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                     checklistItem={checklistItem}
                                     checklistNum={selectedChecklistIndex}
                                     itemNum={index}
-                                    primaryChannelId={props.incident.primary_channel_id}
+                                    channelId={props.incident.channel_id}
                                     incidentId={props.incident.id}
                                     onChange={(newState: ChecklistItemState) => {
                                         setChecklistItemState(props.incident.id, selectedChecklistIndex, index, newState);

@@ -1,8 +1,7 @@
 package playbook
 
 import (
-	"sort"
-
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -24,6 +23,8 @@ func NewService(store Store, poster bot.Poster, telemetry Telemetry) Service {
 }
 
 func (s *service) Create(playbook Playbook) (string, error) {
+	playbook.CreateAt = model.GetMillis()
+
 	newID, err := s.store.Create(playbook)
 	if err != nil {
 		return "", err
@@ -43,24 +44,8 @@ func (s *service) GetPlaybooks() ([]Playbook, error) {
 	return s.store.GetPlaybooks()
 }
 
-func (s *service) GetPlaybooksForTeam(teamID string, opts Options) ([]Playbook, error) {
-	playbooks, err := s.store.GetPlaybooks()
-	if err != nil {
-		return nil, err
-	}
-
-	teamPlaybooks := make([]Playbook, 0, len(playbooks))
-	for _, playbook := range playbooks {
-		if playbook.TeamID == teamID {
-			teamPlaybooks = append(teamPlaybooks, playbook)
-		}
-	}
-
-	if err := sortPlaybooks(teamPlaybooks, opts); err != nil {
-		return nil, err
-	}
-
-	return teamPlaybooks, nil
+func (s *service) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error) {
+	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 }
 
 func (s *service) Update(playbook Playbook) error {
@@ -85,47 +70,4 @@ func (s *service) Delete(playbook Playbook) error {
 	s.telemetry.DeletePlaybook(playbook)
 
 	return nil
-}
-
-func sortPlaybooks(playbooks []Playbook, opts Options) error {
-	var sortDirectionFn func(b bool) bool
-	switch opts.Direction {
-	case Asc:
-		sortDirectionFn = func(b bool) bool { return !b }
-	case Desc:
-		sortDirectionFn = func(b bool) bool { return b }
-	default:
-		return errors.Errorf("invalid sort direction %s", opts.Direction)
-	}
-
-	var sortFn func(i, j int) bool
-	switch opts.Sort {
-	case Title:
-		sortFn = func(i, j int) bool {
-			return sortDirectionFn(playbooks[i].Title > playbooks[j].Title)
-		}
-	case Stages:
-		sortFn = func(i, j int) bool {
-			return sortDirectionFn(len(playbooks[i].Checklists) > len(playbooks[j].Checklists))
-		}
-	case Steps:
-		sortFn = func(i, j int) bool {
-			stepsI := getSteps(playbooks[i])
-			stepsJ := getSteps(playbooks[j])
-			return sortDirectionFn(stepsI > stepsJ)
-		}
-	default:
-		return errors.Errorf("invalid sort field %s", opts.Sort)
-	}
-
-	sort.Slice(playbooks, sortFn)
-	return nil
-}
-
-func getSteps(playbook Playbook) int {
-	steps := 0
-	for _, p := range playbook.Checklists {
-		steps += len(p.Items)
-	}
-	return steps
 }

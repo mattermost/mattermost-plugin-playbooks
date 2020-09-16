@@ -15,14 +15,14 @@ import (
 
 // Incident represents an incident.
 type Incident struct {
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	IsActive         bool   `json:"is_active"`
-	CommanderUserID  string `json:"commander_user_id"`
-	TeamID           string `json:"team_id"`
-	PrimaryChannelID string `json:"primary_channel_id"`
-	CreatedAt        int64  `json:"created_at"`
-	EndedAt          int64  `json:"ended_at"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	IsActive        bool   `json:"is_active"`
+	CommanderUserID string `json:"commander_user_id"`
+	TeamID          string `json:"team_id"`
+	ChannelID       string `json:"channel_id"`
+	CreateAt        int64  `json:"create_at"`
+	EndAt           int64  `json:"end_at"`
 }
 
 // IncidentCreateOptions specifies the parameters for IncidentsService.Create method.
@@ -52,8 +52,8 @@ type IncidentListOptions struct {
 type IncidentSort string
 
 const (
-	// CreatedAt sorts by the "created_at" field. It is the default.
-	CreatedAt IncidentSort = "created_at"
+	// CreateAt sorts by the "create_at" field. It is the default.
+	CreateAt IncidentSort = "create_at"
 
 	// ID sorts by the "id" field.
 	ID IncidentSort = "id"
@@ -67,8 +67,8 @@ const (
 	// TeamID sorts by the "team_id" field.
 	TeamID IncidentSort = "team_id"
 
-	// EndedAt sorts by the "ended_at" field.
-	EndedAt IncidentSort = "ended_at"
+	// EndAt sorts by the "end_at" field.
+	EndAt IncidentSort = "end_at"
 
 	// ByStatus sorts by the "status" field.
 	ByStatus IncidentSort = "by_status"
