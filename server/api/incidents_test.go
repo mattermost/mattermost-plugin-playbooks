@@ -22,32 +22,25 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
-	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook/mocks"
 )
 
 func TestIncidents(t *testing.T) {
 	var mockCtrl *gomock.Controller
-	var mockkvapi *mock_pluginkvstore.MockKVAPI
 	var handler *Handler
-	var store *pluginkvstore.PlaybookStore
 	var poster *mock_poster.MockPoster
 	var logger *mock_poster.MockLogger
-	var playbookService playbook.Service
+	var playbookService *mock_playbook.MockService
 	var incidentService *mock_incident.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
-		mockkvapi = mock_pluginkvstore.NewMockKVAPI(mockCtrl)
 		handler = NewHandler()
-		store = pluginkvstore.NewPlaybookStore(mockkvapi)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		telemetry := &telemetry.NoopTelemetry{}
-		playbookService = playbook.NewService(store, poster, telemetry)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
@@ -74,7 +67,11 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
 		i := incident.Incident{
 			Header: incident.Header{
 				CommanderUserID: dialogRequest.UserId,
@@ -124,7 +121,11 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
 		i := incident.Incident{
 			Header: incident.Header{
 				CommanderUserID: dialogRequest.UserId,
@@ -175,7 +176,11 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
 		i := incident.Incident{
 			Header: incident.Header{
 				CommanderUserID: dialogRequest.UserId,
@@ -234,7 +239,11 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
 		i := incident.Incident{
 			Header: incident.Header{
 				CommanderUserID: dialogRequest.UserId,
@@ -286,7 +295,14 @@ func TestIncidents(t *testing.T) {
 			},
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, playbook.Playbook{})
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(
+				playbook.Playbook{},
+				errors.Wrap(playbook.ErrNotFound, "playbook does not exist for id 'playbookid1'"),
+			).
+			Times(1)
+
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 
 		testrecorder := httptest.NewRecorder()
@@ -320,7 +336,10 @@ func TestIncidents(t *testing.T) {
 			Checklists: withid.Checklists,
 		}
 
-		mockkvapi.EXPECT().Get(pluginkvstore.PlaybookKey+"playbookid1", gomock.Any()).Return(nil).SetArg(1, withid)
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
 
 		retI := testIncident
 		retI.ID = "incidentID"
@@ -984,6 +1003,7 @@ func TestIncidents(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, resultIncident, testIncident)
 	})
+
 	t.Run("get public incident details - part of channel", func(t *testing.T) {
 		reset()
 
@@ -1127,25 +1147,20 @@ func TestIncidents(t *testing.T) {
 
 func TestChangeActiveStage(t *testing.T) {
 	var mockCtrl *gomock.Controller
-	var mockkvapi *mock_pluginkvstore.MockKVAPI
 	var handler *Handler
-	var store *pluginkvstore.PlaybookStore
 	var poster *mock_poster.MockPoster
 	var logger *mock_poster.MockLogger
-	var playbookService playbook.Service
+	var playbookService *mock_playbook.MockService
 	var incidentService *mock_incident.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
-		mockkvapi = mock_pluginkvstore.NewMockKVAPI(mockCtrl)
 		handler = NewHandler()
-		store = pluginkvstore.NewPlaybookStore(mockkvapi)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		telemetry := &telemetry.NoopTelemetry{}
-		playbookService = playbook.NewService(store, poster, telemetry)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
@@ -1252,19 +1267,6 @@ func TestChangeActiveStage(t *testing.T) {
 	for _, data := range testData {
 		t.Run(data.testName, func(t *testing.T) {
 			reset()
-
-			// Mock retrieval of all incident headers and of the specific incident
-			var allHeaders = map[string]incident.Header{
-				data.oldIncident.ID: data.oldIncident.Header,
-			}
-			mockkvapi.EXPECT().
-				Get(pluginkvstore.IncidentHeadersKey, gomock.Any()).
-				Return(nil).
-				SetArg(1, allHeaders)
-			mockkvapi.EXPECT().
-				Get(pluginkvstore.IncidentKey+data.oldIncident.ID, gomock.Any()).
-				Return(nil).
-				SetArg(1, data.oldIncident)
 
 			// Mock underlying plugin API calls, granting all permissions
 			pluginAPI.On("GetChannel", mock.Anything).

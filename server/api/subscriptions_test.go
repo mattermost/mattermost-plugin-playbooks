@@ -9,13 +9,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
 	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
 	mock_plugin "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks/serverpluginapi"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -23,7 +22,7 @@ import (
 )
 
 func TestCreateSubscription(t *testing.T) {
-	setup := func(t *testing.T) (*mock_pluginkvstore.MockKVAPI, *Handler) {
+	setup := func(t *testing.T) (*mock_playbook.MockService, *Handler) {
 		t.Helper()
 
 		mockCtrl := gomock.NewController(t)
@@ -39,10 +38,9 @@ func TestCreateSubscription(t *testing.T) {
 			Return(nil)
 
 		subscriptionStore := pluginkvstore.NewSubscriptionStore(kvAPI)
-		playbookStore := pluginkvstore.NewPlaybookStore(kvAPI)
-
 		subscriptionService := subscription.NewService(subscriptionStore)
-		playbookService := playbook.NewService(playbookStore, mock_poster.NewMockPoster(mockCtrl), &telemetry.NoopTelemetry{})
+
+		playbookService := mock_playbook.NewMockService(mockCtrl)
 
 		pluginAPI := mock_plugin.NewMockAPI(mockCtrl)
 		pluginAPI.EXPECT().
@@ -55,7 +53,7 @@ func TestCreateSubscription(t *testing.T) {
 		handler := NewHandler()
 		NewSubscriptionHandler(handler.APIRouter, subscriptionService, playbookService, client)
 
-		return kvAPI, handler
+		return playbookService, handler
 	}
 
 	testUserID := "testuserid"
@@ -124,16 +122,12 @@ func TestCreateSubscription(t *testing.T) {
 
 	for _, test := range fixtureData {
 		t.Run(test.testName, func(t *testing.T) {
-			kvAPI, handler := setup(t)
+			playbookService, handler := setup(t)
 
-			kvAPI.EXPECT().
-				Get(pluginkvstore.PlaybookIndexKey, gomock.Any()).
-				Return(nil).
-				SetArg(1, []string{test.pbook.ID})
-
-			kvAPI.EXPECT().
-				Get(pluginkvstore.PlaybookKey+test.pbook.ID, gomock.Any()).
-				Return(nil).SetArg(1, test.pbook)
+			playbookService.EXPECT().
+				Get(test.pbook.ID).
+				Return(test.pbook, nil).
+				Times(1)
 
 			subscriptionJSON, err := json.Marshal(test.subsc)
 			require.NoError(t, err)
