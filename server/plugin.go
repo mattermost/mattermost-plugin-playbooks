@@ -2,8 +2,6 @@ package main
 
 import (
 	"net/http"
-	"os"
-	"strconv"
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -119,41 +117,24 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
-	rawUseSQL := os.Getenv("IR_USE_SQL")
-	if rawUseSQL == "" {
-		rawUseSQL = "true"
-	}
-	useSQL, err := strconv.ParseBool(rawUseSQL)
+	apiClient := sqlstore.NewClient(pluginAPIClient)
+	sqlStore, err := sqlstore.New(apiClient, p.bot)
 	if err != nil {
-		return errors.Wrapf(err, "invalid environment key IR_USE_SQL; use 'true', 'false', or leave it unset")
+		return errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	var incidentStore incident.Store
-	var playbookStore playbook.Store
-	if useSQL {
-		apiClient := sqlstore.NewClient(pluginAPIClient)
-		sqlStore, err2 := sqlstore.New(apiClient, p.bot)
-		if err2 != nil {
-			return errors.Wrapf(err2, "failed creating the SQL store")
-		}
-
-		mutex, err2 := cluster.NewMutex(p.API, "IR_dbMutex")
-		if err2 != nil {
-			return errors.Wrapf(err2, "failed creating cluster mutex")
-		}
-
-		// Cluster lock: only one plugin will perform the migration when needed
-		if err2 = p.UpgradeDatabase(sqlStore, apiClient, mutex); err2 != nil {
-			return errors.Wrapf(err2, "failed to run migrations")
-		}
-
-		incidentStore = sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
-		playbookStore = sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
-	} else {
-		apiClient := pluginkvstore.NewClient(pluginAPIClient)
-		incidentStore = pluginkvstore.NewIncidentStore(apiClient, p.bot)
-		playbookStore = pluginkvstore.NewPlaybookStore(&pluginAPIClient.KV)
+	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
+	if err != nil {
+		return errors.Wrapf(err, "failed creating cluster mutex")
 	}
+
+	// Cluster lock: only one plugin will perform the migration when needed
+	if err = p.UpgradeDatabase(sqlStore, apiClient, mutex); err != nil {
+		return errors.Wrapf(err, "failed to run migrations")
+	}
+
+	incidentStore := sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
+	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
