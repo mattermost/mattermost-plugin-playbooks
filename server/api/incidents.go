@@ -316,9 +316,14 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// To return an empty array as opposed to null
+	// To return an empty array instead of null
 	if results.Items == nil {
 		results.Items = []incident.Incident{}
+	}
+
+	// Return an empty array instead of null
+	for i := range results.Items {
+		results.Items[i].Checklists = []playbook.Checklist{}
 	}
 
 	jsonBytes, err := json.Marshal(results)

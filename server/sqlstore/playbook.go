@@ -182,7 +182,7 @@ func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
-func (p *playbookStore) GetPlaybooksForTeam(requesterUserID, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
+func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
 	getMembers := `
 			(SELECT PlaybookID, string_agg(MemberID, ' ') members
 			   FROM IR_PlaybookMember
@@ -201,23 +201,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterUserID, teamID string, opts
 			`
 	}
 
-	isAdminOrTeamAndPlaybookMember := sq.Expr(`
-		(
-            EXISTS(SELECT 1
-                       FROM Users AS u
-                       WHERE u.Id = ?
-                         AND u.Roles LIKE '%system_admin%')
-            OR (
-                    EXISTS(SELECT 1
-                               FROM TeamMembers AS t
-                               WHERE t.TeamId = ?
-                                 AND t.UserId = ?)
-                    AND EXISTS(SELECT 1
-                                   FROM IR_PlaybookMember AS pm
-                                   WHERE pm.PlaybookID = p.ID
-                                     AND pm.MemberID = ?)
-                )
-        )`, requesterUserID, teamID, requesterUserID, requesterUserID)
+	permissionsExpr := p.buildPermissionsExpr(requesterInfo)
 
 	correctPaginationOpts(&opts)
 
@@ -228,7 +212,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterUserID, teamID string, opts
 		Join(getMembers).
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID}).
-		Where(isAdminOrTeamAndPlaybookMember).
+		Where(permissionsExpr).
 		Offset(uint64(opts.Page * opts.PerPage)).
 		Limit(uint64(opts.PerPage))
 
@@ -255,7 +239,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterUserID, teamID string, opts
 		Join(getMembers).
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID}).
-		Where(isAdminOrTeamAndPlaybookMember)
+		Where(permissionsExpr)
 
 	var total int
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {
@@ -276,6 +260,24 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterUserID, teamID string, opts
 		HasMore:    hasMore,
 		Items:      playbooks,
 	}, nil
+}
+
+func (p *playbookStore) buildPermissionsExpr(info playbook.RequesterInfo) sq.Sqlizer {
+	if info.IsAdmin {
+		return nil
+	}
+
+	isPlaybookMember := p.store.builder.
+		Select("1").
+		Prefix("EXISTS(").
+		From("IR_PlaybookMember as pm").
+		Where("pm.PlaybookID = p.ID").
+		Where(sq.Eq{"pm.MemberID": info.UserID}).
+		Suffix(")")
+
+	// For now, whether you can view team channels or not, if you are a playbook member
+	// then you can view the playbook.
+	return isPlaybookMember
 }
 
 // Update updates a playbook

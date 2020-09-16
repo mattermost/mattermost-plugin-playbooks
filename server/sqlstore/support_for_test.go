@@ -99,6 +99,9 @@ func setupUsersTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	// NOTE: for this and the other tables below, this is a now out-of-date schema, which doesn't
+	//       reflect any of the changes past v5.0. If the test code requires a new column, you will
+	//       need to update these tables accordingly.
 	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.users (

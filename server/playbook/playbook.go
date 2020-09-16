@@ -67,6 +67,13 @@ type GetPlaybooksResults struct {
 	Items      []Playbook `json:"items"`
 }
 
+// RequesterInfo holds the userID and permissions for the user making the request
+type RequesterInfo struct {
+	UserID              string
+	IsAdmin             bool
+	CanViewTeamChannels bool
+}
+
 // Service is the playbook service for managing playbooks
 type Service interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.
@@ -76,7 +83,7 @@ type Service interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-	GetPlaybooksForTeam(requesterUserID, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook
@@ -92,7 +99,7 @@ type Store interface {
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(requesterUserID, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
 	Update(playbook Playbook) error
 	// Delete deletes a playbook

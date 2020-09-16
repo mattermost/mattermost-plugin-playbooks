@@ -53,73 +53,69 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, opts incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
-	if err := incident.ValidateOptions(&opts); err != nil {
+func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, options incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
 
-	isAdminOrMemberOrPublicChannel := s.buildPermissionsExpr(requesterInfo)
+	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
 
 	queryForResults := s.incidentSelect.
-		Where(isAdminOrMemberOrPublicChannel).
-		Where(sq.Eq{"TeamID": opts.TeamID}).
+		Where(permissionsExpr).
+		Where(sq.Eq{"TeamID": options.TeamID}).
 		Where(sq.Eq{"DeleteAt": 0}).
-		Offset(uint64(opts.Page * opts.PerPage)).
-		Limit(uint64(opts.PerPage))
+		Offset(uint64(options.Page * options.PerPage)).
+		Limit(uint64(options.PerPage))
 
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident AS incident").
-		Where(isAdminOrMemberOrPublicChannel).
-		Where(sq.Eq{"TeamID": opts.TeamID}).
+		Where(permissionsExpr).
+		Where(sq.Eq{"TeamID": options.TeamID}).
 		Where(sq.Eq{"DeleteAt": 0})
 
-	if opts.Status == incident.Ongoing {
+	if options.Status == incident.Ongoing {
 		queryForResults = queryForResults.Where(sq.Eq{"IsActive": true})
 		queryForTotal = queryForTotal.Where(sq.Eq{"IsActive": true})
-	} else if opts.Status == incident.Ended {
+	} else if options.Status == incident.Ended {
 		queryForResults = queryForResults.Where(sq.Eq{"IsActive": false})
 		queryForTotal = queryForTotal.Where(sq.Eq{"IsActive": false})
 	}
 
-	if opts.CommanderID != "" {
-		queryForResults = queryForResults.Where(sq.Eq{"CommanderUserID": opts.CommanderID})
-		queryForTotal = queryForTotal.Where(sq.Eq{"CommanderUserID": opts.CommanderID})
+	if options.CommanderID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"CommanderUserID": options.CommanderID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 	}
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
-	if opts.SearchTerm != "" {
+	if options.SearchTerm != "" {
 		column := "Name"
-		searchString := opts.SearchTerm
+		searchString := options.SearchTerm
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
 			column = "LOWER(UNACCENT(Name))"
-			searchString = normalize(opts.SearchTerm)
+			searchString = normalize(options.SearchTerm)
 		}
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
-	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", opts.Sort, opts.Order))
+	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
 
 	var incidents []incident.Incident
 	if err := s.store.selectBuilder(s.store.db, &incidents, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
 	}
 
-	for i := range incidents {
-		incidents[i].Checklists = []playbook.Checklist{}
-	}
-
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, queryForTotal); err != nil {
 		return nil, errors.Wrap(err, "failed to get total count")
 	}
-	pageCount := int(math.Ceil(float64(total) / float64(opts.PerPage)))
-	hasMore := opts.Page+1 < pageCount
+	pageCount := int(math.Ceil(float64(total) / float64(options.PerPage)))
+	hasMore := options.Page+1 < pageCount
 
 	return &incident.GetIncidentsResults{
 		TotalCount: total,
@@ -264,20 +260,20 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 }
 
 // GetCommanders returns the commanders of the incidents selected by options
-func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, opts incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
-	if err := incident.ValidateOptions(&opts); err != nil {
+func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, options incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
 
-	isAdminOrMemberOrPublicChannel := s.buildPermissionsExpr(requesterInfo)
+	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
 
-	// At the moment, the opts only includes teamID
+	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
 		Select("DISTINCT CommanderUserID AS UserID", "Username").
 		From("IR_Incident AS incident").
 		Join("Users AS u ON incident.CommanderUserID = u.Id").
-		Where(sq.Eq{"TeamID": opts.TeamID}).
-		Where(isAdminOrMemberOrPublicChannel)
+		Where(sq.Eq{"TeamID": options.TeamID}).
+		Where(permissionsExpr)
 
 	var commanders []incident.CommanderInfo
 	err := s.store.selectBuilder(s.store.db, &commanders, query)
@@ -341,13 +337,13 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 		return checkMembershipOrPublicChannel
 	}
 
-	// Only has permission if member of the channel
-	return sq.Expr(`
-			EXISTS(SELECT 1
-				 FROM ChannelMembers as cm
-				 WHERE cm.ChannelId = incident.ChannelID
-				   AND cm.UserId = ?)
-			`, info.UserID)
+	return s.store.builder.
+		Select("1").
+		Prefix("EXISTS(").
+		From("ChannelMembers AS cm").
+		Where("cm.ChannelId = incident.ChannelID").
+		Where(sq.Eq{"cm.UserId": info.UserID}).
+		Suffix(")")
 }
 
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {

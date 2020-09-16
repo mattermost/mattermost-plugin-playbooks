@@ -199,7 +199,13 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playbookResults, err := h.playbookService.GetPlaybooksForTeam(userID, teamID, opts)
+	requesterInfo := playbook.RequesterInfo{
+		UserID:              userID,
+		IsAdmin:             permissions.CanViewTeam(userID, teamID, h.pluginAPI),
+		CanViewTeamChannels: permissions.CanViewTeam(userID, teamID, h.pluginAPI),
+	}
+
+	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 	if err != nil {
 		HandleError(w, err)
 		return

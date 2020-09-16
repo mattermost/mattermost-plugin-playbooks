@@ -1052,6 +1052,7 @@ func TestIncidents(t *testing.T) {
 				Name:            "incidentName1",
 				ChannelID:       "channelID1",
 			},
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)

@@ -822,7 +822,7 @@ func TestGetIncidents(t *testing.T) {
 
 				// remove the checklists from the expected incidents--we don't return them in getIncidents
 				for i := range testCase.Want.Items {
-					testCase.Want.Items[i].Checklists = []playbook.Checklist{}
+					testCase.Want.Items[i].Checklists = nil
 				}
 
 				require.Equal(t, testCase.Want, *result)

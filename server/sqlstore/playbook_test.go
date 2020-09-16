@@ -212,17 +212,20 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		teamID      string
-		requesterID string
-		options     playbook.Options
-		expected    playbook.GetPlaybooksResults
-		expectedErr error
+		name          string
+		teamID        string
+		requesterInfo playbook.RequesterInfo
+		options       playbook.Options
+		expected      playbook.GetPlaybooksResults
+		expectedErr   error
 	}{
 		{
-			name:        "team1 from Andrew",
-			teamID:      team1id,
-			requesterID: "Andrew",
+			name:   "team1 from Andrew",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:              "Andrew",
+				CanViewTeamChannels: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
 			},
@@ -235,9 +238,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from jon",
-			teamID:      team1id,
-			requesterID: "jon",
+			name:   "team1 from jon",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:              "jon",
+				CanViewTeamChannels: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
 			},
@@ -250,9 +256,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from jon title desc",
-			teamID:      team1id,
-			requesterID: "jon",
+			name:   "team1 from jon title desc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:              "jon",
+				CanViewTeamChannels: true,
+			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
 				Direction: playbook.OrderDesc,
@@ -266,9 +275,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from jon sort by stages desc",
-			teamID:      team1id,
-			requesterID: "jon",
+			name:   "team1 from jon sort by stages desc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:              "jon",
+				CanViewTeamChannels: true,
+			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
 				Direction: playbook.OrderDesc,
@@ -282,9 +294,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
 			},
@@ -297,9 +312,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin sort by steps desc",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin sort by steps desc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
 				Direction: playbook.OrderDesc,
@@ -313,9 +331,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin sort by title desc",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin sort by title desc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
 				Direction: playbook.OrderDesc,
@@ -329,9 +350,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin sort by steps, default is asc",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin sort by steps, default is asc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortBySteps,
 			},
@@ -344,9 +368,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin sort by steps, specify asc",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin sort by steps, specify asc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
 				Direction: playbook.OrderAsc,
@@ -360,9 +387,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin sort by steps, desc",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin sort by steps, desc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
 				Direction: playbook.OrderDesc,
@@ -376,9 +406,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin sort by stages",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin sort by stages",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortByStages,
 			},
@@ -391,9 +424,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team1 from Admin sort by stages, desc",
-			teamID:      team1id,
-			requesterID: "Lucy",
+			name:   "team1 from Admin sort by stages, desc",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
 				Direction: playbook.OrderDesc,
@@ -407,9 +443,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team2 from Matt",
-			teamID:      team2id,
-			requesterID: "Matt",
+			name:   "team2 from Matt",
+			teamID: team2id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:              "Matt",
+				CanViewTeamChannels: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
 			},
@@ -422,24 +461,30 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "team3 from Andrew (not on team)",
-			teamID:      team3id,
-			requesterID: "Andrew",
+			name:   "team3 from Andrew (not on team)",
+			teamID: team3id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:              "Andrew",
+				CanViewTeamChannels: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
 			},
 			expected: playbook.GetPlaybooksResults{
-				TotalCount: 0,
-				PageCount:  0,
+				TotalCount: 1,
+				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{},
+				Items:      []playbook.Playbook{pb08},
 			},
 			expectedErr: nil,
 		},
 		{
-			name:        "team3 from Admin",
-			teamID:      team3id,
-			requesterID: "Lucy",
+			name:   "team3 from Admin",
+			teamID: team3id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:  "Lucy",
+				IsAdmin: true,
+			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
 			},
@@ -486,7 +531,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
-				actual, err := playbookStore.GetPlaybooksForTeam(testCase.requesterID, testCase.teamID, testCase.options)
+				actual, err := playbookStore.GetPlaybooksForTeam(testCase.requesterInfo, testCase.teamID, testCase.options)
 
 				if testCase.expectedErr != nil {
 					require.Nil(t, actual)

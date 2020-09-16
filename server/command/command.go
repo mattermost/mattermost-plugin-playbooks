@@ -127,7 +127,13 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(r.args.UserId, r.args.TeamId,
+	requesterInfo := playbook.RequesterInfo{
+		UserID:              r.args.UserId,
+		IsAdmin:             permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI),
+		CanViewTeamChannels: permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI),
+	}
+
+	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
 		playbook.Options{
 			Sort:      playbook.SortByTitle,
 			Direction: playbook.OrderAsc,
