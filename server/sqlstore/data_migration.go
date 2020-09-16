@@ -200,6 +200,8 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 			"ChecklistsJSON",
 		)
 
+	okToInsertIncidents := false
+
 	for _, incident := range incidents {
 		// We don't support moving over incidents that don't have playbooks.
 		if incident.Playbook == nil {
@@ -226,6 +228,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 			incident.Playbook.ID,
 			checklistsJSON,
 		)
+		okToInsertIncidents = true
 	}
 
 	if len(playbooks) > 0 {
@@ -240,7 +243,7 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 		}
 	}
 
-	if len(incidents) > 0 {
+	if okToInsertIncidents {
 		if _, err := store.execBuilder(tx, incidentInsert); err != nil {
 			return errors.Wrapf(err, "failed inserting data into Incident table")
 		}
