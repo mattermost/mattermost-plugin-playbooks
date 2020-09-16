@@ -311,11 +311,11 @@ func (s *incidentStore) NukeDB() (err error) {
 }
 
 func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sqlizer {
-	if info.IsAdmin {
+	if info.UserIDtoIsAdmin[info.UserID] {
 		return nil
 	}
 
-	if info.CanViewTeamChannels {
+	if info.TeamIDtoCanViewTeam[info.TeamID] {
 		checkMembershipOrPublicChannel := sq.Expr(`
 		  (
 			  -- If requester is a channel member

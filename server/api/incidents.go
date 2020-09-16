@@ -306,8 +306,9 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:              userID,
-		IsAdmin:             permissions.IsAdmin(userID, h.pluginAPI),
-		CanViewTeamChannels: permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI),
+		TeamID:              filterOptions.TeamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{filterOptions.TeamID: permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI)},
 	}
 
 	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
@@ -520,8 +521,9 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:              userID,
-		IsAdmin:             permissions.IsAdmin(userID, h.pluginAPI),
-		CanViewTeamChannels: permissions.CanViewTeam(userID, teamID, h.pluginAPI),
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
 	}
 
 	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
@@ -575,8 +577,9 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:              userID,
-		IsAdmin:             permissions.IsAdmin(userID, h.pluginAPI),
-		CanViewTeamChannels: permissions.CanViewTeam(userID, teamID, h.pluginAPI),
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
 	}
 
 	incidents, err := h.incidentService.GetIncidents(requesterInfo, options)

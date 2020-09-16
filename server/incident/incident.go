@@ -76,11 +76,13 @@ type DialogState struct {
 	ClientID string `json:"client_id"`
 }
 
-// RequesterInfo holds the userID and permissions for the user making the request
+// RequesterInfo holds the userID and teamID that this request is regarding, and permissions
+// for the user making the request
 type RequesterInfo struct {
 	UserID              string
-	IsAdmin             bool
-	CanViewTeamChannels bool
+	TeamID              string
+	UserIDtoIsAdmin     map[string]bool
+	TeamIDtoCanViewTeam map[string]bool
 }
 
 // ErrNotFound used to indicate entity not found.

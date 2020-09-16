@@ -129,8 +129,9 @@ func (r *Runner) actionStart(args []string) {
 
 	requesterInfo := playbook.RequesterInfo{
 		UserID:              r.args.UserId,
-		IsAdmin:             permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI),
-		CanViewTeamChannels: permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI),
+		TeamID:              r.args.TeamId,
+		UserIDtoIsAdmin:     map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{r.args.TeamId: permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI)},
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,

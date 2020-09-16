@@ -224,7 +224,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
 				UserID:              "Andrew",
-				CanViewTeamChannels: true,
+				TeamID:              team1id,
+				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -242,7 +243,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
 				UserID:              "jon",
-				CanViewTeamChannels: true,
+				TeamID:              team1id,
+				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -260,7 +262,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
 				UserID:              "jon",
-				CanViewTeamChannels: true,
+				TeamID:              team1id,
+				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
@@ -279,7 +282,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
 				UserID:              "jon",
-				CanViewTeamChannels: true,
+				TeamID:              team1id,
+				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
@@ -297,8 +301,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -315,8 +319,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
@@ -334,8 +338,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by title desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
@@ -353,8 +357,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps, default is asc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortBySteps,
@@ -371,8 +375,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps, specify asc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
@@ -390,8 +394,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps, desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
@@ -409,8 +413,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by stages",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByStages,
@@ -427,8 +431,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by stages, desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
@@ -447,7 +451,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			teamID: team2id,
 			requesterInfo: playbook.RequesterInfo{
 				UserID:              "Matt",
-				CanViewTeamChannels: true,
+				TeamID:              team2id,
+				TeamIDtoCanViewTeam: map[string]bool{team2id: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -465,7 +470,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			teamID: team3id,
 			requesterInfo: playbook.RequesterInfo{
 				UserID:              "Andrew",
-				CanViewTeamChannels: true,
+				TeamID:              team3id,
+				TeamIDtoCanViewTeam: map[string]bool{team3id: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -482,8 +488,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team3 from Admin",
 			teamID: team3id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:  "Lucy",
-				IsAdmin: true,
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,

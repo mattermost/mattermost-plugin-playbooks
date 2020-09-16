@@ -263,7 +263,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 }
 
 func (p *playbookStore) buildPermissionsExpr(info playbook.RequesterInfo) sq.Sqlizer {
-	if info.IsAdmin {
+	if info.UserIDtoIsAdmin[info.UserID] {
 		return nil
 	}
 

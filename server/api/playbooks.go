@@ -201,8 +201,9 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo := playbook.RequesterInfo{
 		UserID:              userID,
-		IsAdmin:             permissions.CanViewTeam(userID, teamID, h.pluginAPI),
-		CanViewTeamChannels: permissions.CanViewTeam(userID, teamID, h.pluginAPI),
+		TeamID:              teamID,
+		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
