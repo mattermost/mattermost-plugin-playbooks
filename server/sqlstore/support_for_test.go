@@ -70,6 +70,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (PluginAPIClient, bot.Logger, *SQL
 		logger,
 		db,
 		builder,
+		nil,
 	}
 
 	kvAPI.EXPECT().
