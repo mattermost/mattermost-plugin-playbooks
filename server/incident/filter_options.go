@@ -49,9 +49,6 @@ type HeaderFilterOptions struct {
 	// The search term acts as a filter and respects the Sort and Order fields (i.e., results are
 	// not returned in relevance order).
 	SearchTerm string
-
-	// Permissions Check
-	HasPermissionsTo func(channelID string) bool
 }
 
 const (

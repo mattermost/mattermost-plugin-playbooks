@@ -33,9 +33,6 @@ type Options struct {
 	// Pagination options.
 	Page    int
 	PerPage int
-
-	// Permissions Check
-	HasPermissionsTo func(pb Playbook, userID string) bool
 }
 
 func IsValidSort(sort SortField) bool {

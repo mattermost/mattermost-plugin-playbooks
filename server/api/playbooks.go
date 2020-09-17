@@ -183,8 +183,6 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts.HasPermissionsTo = h.hasPermissionsToPlaybook
-
 	if teamID == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
 		return

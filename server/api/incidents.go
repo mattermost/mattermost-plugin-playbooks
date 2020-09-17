@@ -299,10 +299,6 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	filterOptions.HasPermissionsTo = func(channelID string) bool {
-		err2 := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
-		return err2 == nil
-	}
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:              userID,
@@ -513,10 +509,6 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 
 	options := incident.HeaderFilterOptions{
 		TeamID: teamID,
-		HasPermissionsTo: func(channelID string) bool {
-			err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
-			return err == nil
-		},
 	}
 
 	requesterInfo := incident.RequesterInfo{
@@ -569,10 +561,6 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	options := incident.HeaderFilterOptions{
 		TeamID: teamID,
 		Status: incident.All,
-		HasPermissionsTo: func(channelID string) bool {
-			err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService)
-			return err == nil
-		},
 	}
 
 	requesterInfo := incident.RequesterInfo{
