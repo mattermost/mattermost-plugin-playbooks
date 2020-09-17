@@ -121,7 +121,7 @@ func (p *Plugin) OnActivate() error {
 
 	rawUseSQL := os.Getenv("IR_USE_SQL")
 	if rawUseSQL == "" {
-		rawUseSQL = "false"
+		rawUseSQL = "true"
 	}
 	useSQL, err := strconv.ParseBool(rawUseSQL)
 	if err != nil {

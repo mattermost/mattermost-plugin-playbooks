@@ -5,14 +5,33 @@ orbs:
   codecov: codecov/codecov@1.1.1
 
 aliases:
-  - &restore_cache
+  - &restore_deploy_cache
     restore_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
-  - &save_cache
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+  - &save_deploy_cache
     save_cache:
-      key: go-mod-v1-{{ checksum "go.sum" }}
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
       paths:
         - "/go/pkg/mod"
+        - "./webapp/node_modules"
+  - &restore_test_cache
+    restore_cache:
+      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+  - &save_test_cache
+    save_cache:
+      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+      paths:
+        - "/go/pkg/mod"
+        - "./webapp/node_modules"
+  - &restore_cypress_cache
+    restore_cache:
+      key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
+  - &save_cypress_cache
+    save_cache:
+      key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
+      paths:
+        - ./tests-e2e/node_modules
+        - /home/circleci/.cache/Cypress
 
 jobs:
   coverage-MySQL56-Postgres96:
@@ -34,7 +53,7 @@ jobs:
       - run:
           name: Waiting for Postgres and MySQL to be ready
           command: |
-            for i in `seq 1 10`;
+            for i in `seq 1 20`;
             do
               nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
               echo -n .
@@ -42,11 +61,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Generating Coverage Results
           command: make coverage
-      - *save_cache
+      - *save_test_cache
       - codecov/upload:
         file: server/coverage.txt
 
@@ -69,7 +88,7 @@ jobs:
       - run:
           name: Waiting for Postgres and MySQL to be ready
           command: |
-            for i in `seq 1 10`;
+            for i in `seq 1 20`;
             do
               nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
               echo -n .
@@ -77,11 +96,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Testing
           command: make test
-      - *save_cache
+      - *save_test_cache
 
   test-MySQL8-Postgres11:
     docker:
@@ -102,7 +121,7 @@ jobs:
       - run:
           name: Waiting for Postgres and MySQL to be ready
           command: |
-            for i in `seq 1 10`;
+            for i in `seq 1 20`;
             do
               nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
               echo -n .
@@ -110,11 +129,11 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Testing
           command: make test
-      - *save_cache
+      - *save_test_cache
 
   test-MySQL-Postgres-latest:
     docker:
@@ -136,7 +155,7 @@ jobs:
       - run:
           name: Waiting for Postgres and MySQL to be ready
           command: |
-            for i in `seq 1 10`;
+            for i in `seq 1 20`;
             do
               nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
               echo -n .
@@ -144,11 +163,106 @@ jobs:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_cache
+      - *restore_test_cache
       - run:
           name: Testing
           command: make test
-      - *save_cache
+      - *save_test_cache
+
+  e2e-cypress-tests:
+    docker:
+      - image: circleci/golang:1.14.1-node-browsers
+        environment:
+          TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
+      - image: circleci/postgres:9.6.5-alpine-ram
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_PASSWORD: mostest
+          POSTGRES_DB: mattermost_test
+      - image: jhillyerd/inbucket:release-1.2.0
+      - image: minio/minio:RELEASE.2019-10-11T00-38-09Z
+        command: "server /data"
+        environment:
+          MINIO_ACCESS_KEY: minioaccesskey
+          MINIO_SECRET_KEY: miniosecretkey
+          MINIO_SSE_MASTER_KEY: "my-minio-key:6368616e676520746869732070617373776f726420746f206120736563726574"
+      - image: mattermost/mattermost-elasticsearch-docker:6.5.1
+        environment:
+          http.host: "0.0.0.0"
+          http.port: 9200
+          http.cors.enabled: "true"
+          http.cors.allow-origin: "http://localhost:1358,http://127.0.0.1:1358"
+          http.cors.allow-headers: "X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
+          http.cors.allow-credentials: "true"
+          transport.host: "127.0.0.1"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      - image: mattermost/mattermost-enterprise-edition:$MM_DOCKER_IMAGE_TAG
+        environment:
+          DB_HOST: localhost
+          DB_PORT_NUMBER: 5432
+          MM_DBNAME: mattermost_test
+          MM_USERNAME: mmuser
+          MM_PASSWORD: mostest
+          CI_INBUCKET_HOST: localhost
+          CI_INBUCKET_PORT: 10080
+          CI_MINIO_HOST: minio
+          IS_CI: true
+          MM_CLUSTERSETTINGS_READONLYCONFIG: false
+          MM_EMAILSETTINGS_SMTPSERVER: localhost
+          MM_EMAILSETTINGS_SMTPPORT: 10025
+          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://localhost:9200
+          MM_EXPERIMENTALSETTINGS_USENEWSAMLLIBRARY: true
+          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+          MM_SQLSETTINGS_DRIVERNAME: postgres
+          MM_PLUGINSETTINGS_ENABLEUPLOADS: true
+          MM_SERVICESETTINGS_ENABLETESTING: true
+          MM_SERVICESETTINGS_ENABLEDEVELOPER: true
+    environment:
+      MM_DOCKER_IMAGE_TAG: master
+      TYPE: NONE
+      PULL_REQUEST:
+      BROWSER: chrome
+      HEADLESS: true
+      DASHBOARD_ENABLE: false
+      FULL_REPORT: false
+      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+      MM_ADMIN_USERNAME: sysadmin
+      MM_ADMIN_PASSWORD: Sys@dmin-sample1
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Wait for Inbucket
+          command: |
+            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
+      - run:
+          name: Wait for Elasticsearch
+          command: |
+            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
+      - checkout
+      - run:
+          name: Set and restore Postgres DB
+          command: |
+            whoami
+            sudo apt-get update
+            sudo apt-get install libxss1
+            sudo apt-get install postgresql-client
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
+            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
+      - *restore_deploy_cache
+      - run:
+          name: Install Incident Response plugin
+          command: make deploy
+      - *save_deploy_cache
+      - *restore_cypress_cache
+      - run:
+          name: Run Cypress Tests
+          no_output_timeout: 30m
+          command: |
+            export FAILURE_MESSAGE="At least one test has failed."
+            export RESULTS_OUTPUT="results-output.txt"
+            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+      - *save_cypress_cache
 
 workflows:
   version: 2
@@ -174,6 +288,10 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+      - e2e-cypress-tests:
+          filters:
+            tags:
+              only: /^v.*/
       - plugin-ci/build:
           filters:
             tags:
@@ -189,6 +307,7 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
+            - e2e-cypress-tests
             - plugin-ci/build
       - plugin-ci/deploy-release:
           filters:
@@ -203,6 +322,7 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
+            - e2e-cypress-tests
             - plugin-ci/build
       - plugin-ci/deploy-release-github:
           filters:
@@ -217,4 +337,5 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
+            - e2e-cypress-tests
             - plugin-ci/build
