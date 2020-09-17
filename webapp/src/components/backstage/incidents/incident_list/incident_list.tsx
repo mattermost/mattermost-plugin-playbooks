@@ -69,11 +69,11 @@ const BackstageIncidentList: FC = () => {
     }, [fetchParams]);
 
     function setSearchTerm(term: string) {
-        setFetchParams({...fetchParams, search_term: term});
+        setFetchParams({...fetchParams, search_term: term, page: 0});
     }
 
     function setStatus(status: string) {
-        setFetchParams({...fetchParams, status});
+        setFetchParams({...fetchParams, status, page: 0});
     }
 
     function setPage(page: number) {
@@ -102,7 +102,7 @@ const BackstageIncidentList: FC = () => {
     }
 
     function setCommanderId(userId?: string) {
-        setFetchParams({...fetchParams, commander_user_id: userId});
+        setFetchParams({...fetchParams, commander_user_id: userId, page: 0});
     }
 
     function openIncidentDetails(incident: Incident) {
