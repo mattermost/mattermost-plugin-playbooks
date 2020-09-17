@@ -168,11 +168,17 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
-			GetPlaybooksForTeam("testteamid", playbook.Options{
-				Sort:      playbook.SortByTitle,
-				Direction: playbook.OrderAsc,
-			}).
-			Return([]playbook.Playbook{playbooktest, playbooktest}, nil).
+			GetPlaybooksForTeam(
+				playbook.RequesterInfo{
+					UserID:              "testuserid",
+					TeamID:              "testteamid",
+					UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
+					TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+				},
+				"testteamid",
+				gomock.Any(),
+			).
+			Return(playbookResult, nil).
 			Times(1)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
@@ -559,11 +565,17 @@ func TestPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
-			GetPlaybooksForTeam("testteamid", playbook.Options{
-				Sort:      playbook.SortByTitle,
-				Direction: playbook.OrderAsc,
-			}).
-			Return([]playbook.Playbook{playbooktest, withMember}, nil).
+			GetPlaybooksForTeam(
+				playbook.RequesterInfo{
+					UserID:              "testuserid",
+					TeamID:              "testteamid",
+					UserIDtoIsAdmin:     map[string]bool{"testuserid": false},
+					TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+				},
+				"testteamid",
+				gomock.Any(),
+			).
+			Return(playbookResult, nil).
 			Times(1)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
@@ -785,8 +797,17 @@ func TestSortingPlaybooks(t *testing.T) {
 			require.NoError(t, err)
 
 			playbookService.EXPECT().
-				GetPlaybooksForTeam("testteamid", gomock.Any()).
-				Return(data.expectedList, nil).
+				GetPlaybooksForTeam(
+					playbook.RequesterInfo{
+						UserID:              "testuserid",
+						TeamID:              "testteamid",
+						UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
+						TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+					},
+					"testteamid",
+					gomock.Any(),
+				).
+				Return(playbookResult, nil).
 				Times(1)
 
 			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
@@ -986,23 +1007,19 @@ func TestPagingPlaybooks(t *testing.T) {
 			testreq.Header.Add("Mattermost-User-ID", "testuserid")
 			require.NoError(t, err)
 
-			if data.emptyStore {
-				playbookService.EXPECT().
-					GetPlaybooksForTeam("testteamid", playbook.Options{
-						Sort:      playbook.SortByTitle,
-						Direction: playbook.OrderAsc,
-					}).
-					Return([]playbook.Playbook{}, nil).
-					Times(1)
-			} else {
-				playbookService.EXPECT().
-					GetPlaybooksForTeam("testteamid", playbook.Options{
-						Sort:      playbook.SortByTitle,
-						Direction: playbook.OrderAsc,
-					}).
-					Return([]playbook.Playbook{playbooktest1, playbooktest2, playbooktest3}, nil).
-					Times(1)
-			}
+			playbookService.EXPECT().
+				GetPlaybooksForTeam(
+					playbook.RequesterInfo{
+						UserID:              "testuserid",
+						TeamID:              "testteamid",
+						UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
+						TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+					},
+					"testteamid",
+					gomock.Any(),
+				).
+				Return(data.expectedResult, nil).
+				Times(1)
 
 			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
