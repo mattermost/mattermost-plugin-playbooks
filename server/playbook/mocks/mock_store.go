@@ -93,18 +93,18 @@ func (mr *MockStoreMockRecorder) GetPlaybooks() *gomock.Call {
 }
 
 // GetPlaybooksForTeam mocks base method
-func (m *MockStore) GetPlaybooksForTeam(arg0 string, arg1 playbook.Options) ([]playbook.Playbook, error) {
+func (m *MockStore) GetPlaybooksForTeam(arg0 playbook.RequesterInfo, arg1 string, arg2 playbook.Options) (playbook.GetPlaybooksResults, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPlaybooksForTeam", arg0, arg1)
-	ret0, _ := ret[0].([]playbook.Playbook)
+	ret := m.ctrl.Call(m, "GetPlaybooksForTeam", arg0, arg1, arg2)
+	ret0, _ := ret[0].(playbook.GetPlaybooksResults)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPlaybooksForTeam indicates an expected call of GetPlaybooksForTeam
-func (mr *MockStoreMockRecorder) GetPlaybooksForTeam(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetPlaybooksForTeam(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksForTeam", reflect.TypeOf((*MockStore)(nil).GetPlaybooksForTeam), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksForTeam", reflect.TypeOf((*MockStore)(nil).GetPlaybooksForTeam), arg0, arg1, arg2)
 }
 
 // Update mocks base method
