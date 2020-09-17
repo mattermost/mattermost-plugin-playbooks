@@ -11,9 +11,10 @@ import (
 )
 
 type SQLStore struct {
-	log     bot.Logger
-	db      *sqlx.DB
-	builder sq.StatementBuilderType
+	log                 bot.Logger
+	db                  *sqlx.DB
+	builder             sq.StatementBuilderType
+	cachedUnaccentCheck *bool
 }
 
 // New constructs a new instance of SQLStore.
@@ -39,6 +40,7 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 		log,
 		db,
 		builder,
+		nil,
 	}, nil
 }
 
