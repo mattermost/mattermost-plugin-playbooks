@@ -217,7 +217,6 @@ jobs:
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
           MM_SERVICESETTINGS_ENABLETESTING: true
           MM_SERVICESETTINGS_ENABLEDEVELOPER: true
-          IR_USE_SQL: true
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
