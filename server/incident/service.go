@@ -503,9 +503,7 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 		return nil, err
 	}
 
-	if !incidentToModify.IsActive {
-		return nil, ErrIncidentNotActive
-	} else if incidentToModify.ActiveStage == stageIdx {
+	if incidentToModify.ActiveStage == stageIdx {
 		return incidentToModify, nil
 	}
 
