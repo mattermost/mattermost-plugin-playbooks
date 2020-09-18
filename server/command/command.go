@@ -113,7 +113,10 @@ func (r *Runner) isValid() error {
 }
 
 func (r *Runner) postCommandResponse(text string) {
-	r.poster.Ephemeral(r.args.UserId, r.args.ChannelId, "%s", text)
+	post := &model.Post{
+		Message: text,
+	}
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
 func (r *Runner) actionStart(args []string) {
