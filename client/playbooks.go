@@ -5,15 +5,18 @@ package client
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"fmt"
+	"net/http"
 )
+
+const playbooks = "playbooks"
 
 // Playbook represents a playbook.
 type Playbook struct {
 	ID         string      `json:"id"`
 	Title      string      `json:"title"`
 	Checklists []Checklist `json:"checklists"`
+	TeamID     string      `json:"team_id"`
 }
 
 // Checklist represents a playbook's checklist.
@@ -32,12 +35,17 @@ type ChecklistItem struct {
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
 type PlaybookCreateOptions struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	TeamID string `json:"team_id"`
+	UserID string `json:"user_id"`
 }
 
 // PlaybookUpdateOptions specifies the parameters for PlaybooksService.Update method.
 type PlaybookUpdateOptions struct {
-	Name *string `json:"name"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	TeamID string `json:"team_id"`
+	UserID string `json:"user_id"`
 }
 
 // PlaybookListOptions specifies the optional parameters to the
@@ -60,25 +68,103 @@ type PlaybooksService struct {
 
 // Create an playbook.
 func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOptions) (*Playbook, error) {
-	return nil, errors.New("not implemented")
+	u := playbooks
+	playbookRequest := Playbook{
+		Title:  opts.Name,
+		TeamID: opts.TeamID,
+	}
+	req, err := s.client.NewRequest(http.MethodPost, u, playbookRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	p := new(Playbook)
+	req.Header.Add("Mattermost-User-ID", opts.UserID)
+	resp, err := s.client.Do(ctx, req, p)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return p, nil
 }
 
 // Get a playbook.
 func (s *PlaybooksService) Get(ctx context.Context, playbookID string) (*Playbook, error) {
-	return nil, errors.New("not implemented")
+	u := fmt.Sprintf("%s/%s", playbooks, playbookID)
+	req, err := s.client.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	p := new(Playbook)
+	resp, err := s.client.Do(ctx, req, p)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return p, nil
 }
 
 // Update a playbook.
 func (s *PlaybooksService) Update(ctx context.Context, opts PlaybookUpdateOptions) (*Playbook, error) {
-	return nil, errors.New("not implemented")
+	u := fmt.Sprintf("%s/%s", playbooks, opts.ID)
+	playbookRequest := Playbook{
+		Title:  opts.Name,
+		TeamID: opts.TeamID,
+	}
+	req, err := s.client.NewRequest(http.MethodPost, u, playbookRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Mattermost-User-ID", opts.UserID)
+	resp, err := s.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return nil, nil
 }
 
 // List the playbooks.
 func (s *PlaybooksService) List(ctx context.Context, opt PlaybookListOptions) (*PlaybookList, error) {
-	return nil, errors.New("not implemented")
+	u := playbooks
+	u, err := addOptions(u, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &PlaybookList{}
+	resp, err := s.client.Do(ctx, req, result)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return result, nil
 }
 
 // Delete a playbook.
 func (s *PlaybooksService) Delete(ctx context.Context, playbookID string) (*Playbook, error) {
-	return nil, errors.New("not implemented")
+	u := fmt.Sprintf("%s/%s", playbooks, playbookID)
+	req, err := s.client.NewRequest(http.MethodDelete, u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return nil, nil
 }
