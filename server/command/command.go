@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -23,6 +24,7 @@ const helpText = "###### Mattermost Incident Response Plugin - Slash Command Hel
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/incident announce ~[channels]` - Announce the currrent incident in other channels. \n" +
+	"* `/incident list` - List all your incidents. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -43,7 +45,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, restart, check, announce",
+		AutoCompleteDesc: "Available commands: start, end, restart, check, announce, list",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
@@ -76,6 +78,9 @@ func getAutocompleteData() *model.AutocompleteData {
 	announce.AddNamedTextArgument("channel",
 		"Channel to announce incident in", "~[channel]", "", true)
 	slashIncident.AddCommand(announce)
+
+	list := model.NewAutocompleteData("list", "", "Lists all your incidents")
+	slashIncident.AddCommand(list)
 
 	return slashIncident
 }
@@ -226,6 +231,90 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("Error announcing to: " + channelarg)
 		}
 	}
+}
+
+func (r *Runner) actionList() {
+	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving current team: %v", err))
+		return
+	}
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:              r.args.UserId,
+		TeamID:              r.args.TeamId,
+		UserIDtoIsAdmin:     map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+		TeamIDtoCanViewTeam: map[string]bool{r.args.TeamId: permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI)},
+	}
+
+	options := incident.HeaderFilterOptions{
+		TeamID:  r.args.TeamId,
+		PerPage: 10,
+		Sort:    incident.SortByCreateAt,
+		Order:   incident.OrderDesc,
+		Status:  incident.Ongoing,
+	}
+
+	result, err := r.incidentService.GetIncidents(requesterInfo, options)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Error retrieving the incidents: %v", err))
+		return
+	}
+
+	message := "Ongoing Incidents in **" + team.DisplayName + "** Team:\n"
+	if len(result.Items) == 0 {
+		message = "There are no ongoing incidents in **" + team.DisplayName + "** team."
+	}
+
+	now := time.Now()
+	attachments := make([]*model.SlackAttachment, len(result.Items))
+	for i, theIncident := range result.Items {
+		thePlaybook, err := r.playbookService.Get(theIncident.PlaybookID)
+		if err != nil {
+			r.postCommandResponse(fmt.Sprintf("Error retrieving playbook of incident '%s': %v", theIncident.Name, err))
+			return
+		}
+
+		commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
+		if err != nil {
+			r.postCommandResponse(fmt.Sprintf("Error retrieving commander of incident '%s': %v", theIncident.Name, err))
+			return
+		}
+
+		channel, err := r.pluginAPI.Channel.Get(theIncident.ChannelID)
+		if err != nil {
+			r.postCommandResponse(fmt.Sprintf("Error retrieving channel of incident '%s': %v", theIncident.Name, err))
+			return
+		}
+
+		duration := now.Sub(time.Unix(0, theIncident.CreateAt*1000000)).Round(time.Second)
+
+		durationStr := duration.String()
+		if duration.Hours() > 23 {
+			days := duration / (24 * time.Hour)
+			duration %= 24 * time.Hour
+
+			durationStr = fmt.Sprintf("%dd%s", days, duration.String())
+		}
+
+		attachments[i] = &model.SlackAttachment{
+			Text: fmt.Sprintf("### [%s](/%s/channels/%s)", channel.DisplayName, team.Name, channel.Name),
+			Fields: []*model.SlackAttachmentField{
+				{Title: "Stage:", Value: fmt.Sprintf("**%s**", thePlaybook.Checklists[theIncident.ActiveStage].Title)},
+				{Title: "Duration:", Value: durationStr},
+				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
+			},
+		}
+	}
+
+	post := &model.Post{
+		Message: message,
+		Props: map[string]interface{}{
+			"attachments": attachments,
+		},
+	}
+
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
 func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
@@ -592,6 +681,8 @@ func (r *Runner) Execute() error {
 		r.actionRestart()
 	case "announce":
 		r.actionAnnounce(parameters)
+	case "list":
+		r.actionList()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "st":
