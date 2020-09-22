@@ -87,6 +87,29 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		queryForTotal = queryForTotal.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 	}
 
+	if len(options.MembersIDs) > 0 {
+		// Build a string such as "'memberid0', 'memberid1', 'memberid3'"
+		membersIDs := make([]string, len(options.MembersIDs))
+		for i, id := range options.MembersIDs {
+			membersIDs[i] = "'" + id + "'"
+		}
+		arrayStr := strings.Join(membersIDs, ",")
+
+		membershipClause := fmt.Sprintf(`ChannelID IN (
+				SELECT ChannelID
+				FROM ChannelMembers
+				WHERE UserID IN (%s)
+				GROUP BY ChannelID
+				HAVING COUNT(UserID) = %d
+			)`,
+			arrayStr,
+			len(options.MembersIDs),
+		)
+
+		queryForResults = queryForResults.Where(membershipClause)
+		queryForTotal = queryForTotal.Where(membershipClause)
+	}
+
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		column := "Name"
