@@ -296,7 +296,7 @@ func (r *Runner) actionList() {
 		}
 
 		attachments[i] = &model.SlackAttachment{
-			Text: fmt.Sprintf("### [%s](/%s/channels/%s)", channel.DisplayName, team.Name, channel.Name),
+			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
 				{Title: "Stage:", Value: fmt.Sprintf("**%s**", thePlaybook.Checklists[theIncident.ActiveStage].Title)},
 				{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), now)},
