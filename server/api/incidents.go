@@ -260,7 +260,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	// Commander should have permission to the team
-	if err := permissions.ViewTeam(newIncident.CommanderUserID, newIncident.TeamID, h.pluginAPI); err != nil {
+	if !permissions.CanViewTeam(newIncident.CommanderUserID, newIncident.TeamID, h.pluginAPI) {
 		return nil, errors.New("commander user does not have permissions for the team")
 	}
 
@@ -299,12 +299,16 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
+	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
+		return
+	}
 
 	requesterInfo := incident.RequesterInfo{
-		UserID:              userID,
-		TeamID:              filterOptions.TeamID,
-		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		TeamIDtoCanViewTeam: map[string]bool{filterOptions.TeamID: permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI)},
+		UserID:          userID,
+		TeamID:          filterOptions.TeamID,
+		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
 	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
@@ -498,7 +502,7 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if err := permissions.ViewTeam(userID, teamID, h.pluginAPI); err != nil {
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
@@ -512,10 +516,9 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 	}
 
 	requesterInfo := incident.RequesterInfo{
-		UserID:              userID,
-		TeamID:              teamID,
-		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+		UserID:          userID,
+		TeamID:          teamID,
+		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
 	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
@@ -549,7 +552,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if err := permissions.ViewTeam(userID, teamID, h.pluginAPI); err != nil {
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
@@ -564,10 +567,9 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requesterInfo := incident.RequesterInfo{
-		UserID:              userID,
-		TeamID:              teamID,
-		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+		UserID:          userID,
+		TeamID:          teamID,
+		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
 	incidents, err := h.incidentService.GetIncidents(requesterInfo, options)

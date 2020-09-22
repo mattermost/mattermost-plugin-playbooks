@@ -709,11 +709,10 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - Alice (in no channels but member of team, can see public incidents)",
+			Name: "team1 - Alice (in no channels but member of team (because request must have made it through the API team membership test to the store), can see public incidents)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Alice",
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: "Alice",
+				TeamID: team1id,
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
@@ -727,29 +726,10 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team2 - Alice (in no channels and not member of team)",
+			Name: "team2 - Charlotte (in no channels but member of team -- because her request must have made it to the store through the API's team membership check)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Alice",
-				TeamID:              team2id,
-				TeamIDtoCanViewTeam: map[string]bool{team2id: false},
-			},
-			Options: incident.HeaderFilterOptions{
+				UserID: "Charlotte",
 				TeamID: team2id,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 0,
-				PageCount:  0,
-				HasMore:    false,
-				Items:      nil,
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 - Charlotte (in no channels but member of team)",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Charlotte",
-				TeamID:              team2id,
-				TeamIDtoCanViewTeam: map[string]bool{team2id: true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
@@ -783,9 +763,8 @@ func TestGetIncidents(t *testing.T) {
 
 		t.Run("zero incidents", func(t *testing.T) {
 			result, err := incidentStore.GetIncidents(incident.RequesterInfo{
-				UserID:              "Lucy",
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: "Lucy",
+				TeamID: team1id,
 			},
 				incident.HeaderFilterOptions{
 					TeamID:  team1id,
@@ -1155,44 +1134,10 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team 1 - non-member",
+			Name: "team1 - Alice (in no channels but member of team (because must have made it through API team membership test), can see public incidents)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID: "non-existing-id",
-			},
-			Options: incident.HeaderFilterOptions{
+				UserID: "Alice",
 				TeamID: team1id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team 2 - non-member",
-			RequesterInfo: incident.RequesterInfo{
-				UserID: "non-existing-id",
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID: team2id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team 3 - non-member",
-			RequesterInfo: incident.RequesterInfo{
-				UserID: "non-existing-id",
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID: team3id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Alice (in no channels but member of team, can see public incidents)",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Alice",
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
@@ -1201,22 +1146,10 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team2 - Alice (in no channels and not member of team)",
+			Name: "team2 - Charlotte (in no channels but member of team, because must have made it through API team membership test)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID: "Alice",
-			},
-			Options: incident.HeaderFilterOptions{
+				UserID: "Charlotte",
 				TeamID: team2id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 - Charlotte (in no channels but member of team)",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Charlotte",
-				TeamID:              team2id,
-				TeamIDtoCanViewTeam: map[string]bool{team2id: true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
