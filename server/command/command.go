@@ -248,11 +248,12 @@ func (r *Runner) actionList() {
 	}
 
 	options := incident.HeaderFilterOptions{
-		TeamID:  r.args.TeamId,
-		PerPage: 10,
-		Sort:    incident.SortByCreateAt,
-		Order:   incident.OrderDesc,
-		Status:  incident.Ongoing,
+		TeamID:     r.args.TeamId,
+		MembersIDs: []string{r.args.UserId},
+		PerPage:    10,
+		Sort:       incident.SortByCreateAt,
+		Order:      incident.OrderDesc,
+		Status:     incident.Ongoing,
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
