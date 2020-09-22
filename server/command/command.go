@@ -124,6 +124,13 @@ func (r *Runner) postCommandResponse(text string) {
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
+func (r *Runner) warnUserAndLogErrorf(format string, args ...interface{}) {
+	r.logger.Errorf(format, args...)
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{
+		Message: "Your request could not be completed. Check the system logs for more information.",
+	})
+}
+
 func (r *Runner) actionStart(args []string) {
 	clientID := ""
 	if len(args) > 0 {
@@ -148,12 +155,12 @@ func (r *Runner) actionStart(args []string) {
 			Direction: playbook.OrderAsc,
 		})
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 
 	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items); err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 }
@@ -182,13 +189,13 @@ func (r *Runner) actionCheck(args []string) {
 			r.postCommandResponse("You can only check/uncheck an item from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
 	err = r.incidentService.ToggleCheckedState(incidentID, r.args.UserId, checklist, item)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error checking/unchecking item: %v", err))
+		r.warnUserAndLogErrorf("Error checking/unchecking item: %v", err)
 	}
 }
 
@@ -204,25 +211,25 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("You can only announce from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
 	currentIncident, err := r.incidentService.GetIncident(incidentID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
 	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving commander user: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
 		return
 	}
 
 	incidentChannel, err := r.pluginAPI.Channel.Get(currentIncident.ChannelID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident channel: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident channel: %v", err)
 		return
 	}
 
@@ -236,7 +243,7 @@ func (r *Runner) actionAnnounce(args []string) {
 func (r *Runner) actionList() {
 	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving current team: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving current team: %v", err)
 		return
 	}
 
@@ -258,7 +265,7 @@ func (r *Runner) actionList() {
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving the incidents: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving the incidents: %v", err)
 		return
 	}
 
@@ -272,19 +279,19 @@ func (r *Runner) actionList() {
 	for i, theIncident := range result.Items {
 		thePlaybook, err := r.playbookService.Get(theIncident.PlaybookID)
 		if err != nil {
-			r.postCommandResponse(fmt.Sprintf("Error retrieving playbook of incident '%s': %v", theIncident.Name, err))
+			r.warnUserAndLogErrorf("Error retrieving playbook of incident '%s': %v", theIncident.Name, err)
 			return
 		}
 
 		commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
 		if err != nil {
-			r.postCommandResponse(fmt.Sprintf("Error retrieving commander of incident '%s': %v", theIncident.Name, err))
+			r.warnUserAndLogErrorf("Error retrieving commander of incident '%s': %v", theIncident.Name, err)
 			return
 		}
 
 		channel, err := r.pluginAPI.Channel.Get(theIncident.ChannelID)
 		if err != nil {
-			r.postCommandResponse(fmt.Sprintf("Error retrieving channel of incident '%s': %v", theIncident.Name, err))
+			r.warnUserAndLogErrorf("Error retrieving channel of incident '%s': %v", theIncident.Name, err)
 			return
 		}
 
@@ -338,7 +345,7 @@ func (r *Runner) actionEnd() {
 			r.postCommandResponse("You can only end an incident from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -347,7 +354,7 @@ func (r *Runner) actionEnd() {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -358,7 +365,7 @@ func (r *Runner) actionEnd() {
 		r.postCommandResponse("This incident has already been closed.")
 		return
 	case err != nil:
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 }
@@ -370,7 +377,7 @@ func (r *Runner) actionRestart() {
 			r.postCommandResponse("You can only restart an incident from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -379,7 +386,7 @@ func (r *Runner) actionRestart() {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -393,7 +400,7 @@ func (r *Runner) actionRestart() {
 		r.postCommandResponse("This incident is already active.")
 		return
 	case err != nil:
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 }
