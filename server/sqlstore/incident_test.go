@@ -792,6 +792,111 @@ func TestGetIncidents(t *testing.T) {
 			},
 			ExpectedErr: nil,
 		},
+		{
+			Name: "team1 - Admin gets incidents with John as member",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:          lucy.ID,
+				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+			},
+			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
+				MembersIDs: []string{john.ID},
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc01, inc02, inc03},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - Admin gets incidents with Jane as member",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:          lucy.ID,
+				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+			},
+			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
+				MembersIDs: []string{jane.ID},
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc03, inc04, inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - Admin gets incidents with John and Jane as members",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:          lucy.ID,
+				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+			},
+			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
+				MembersIDs: []string{john.ID, jane.ID},
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc03},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - John gets its own incidents",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: john.ID,
+			},
+			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
+				MembersIDs: []string{john.ID},
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc01, inc02, inc03},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - Jane gets its own incidents",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: jane.ID,
+			},
+			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
+				MembersIDs: []string{jane.ID},
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc03, inc04, inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - Jane gets the incidents she shares with John",
+			RequesterInfo: incident.RequesterInfo{
+				UserID: jane.ID,
+			},
+			Options: incident.HeaderFilterOptions{
+				TeamID:     team1id,
+				MembersIDs: []string{jane.ID, john.ID},
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc03},
+			},
+			ExpectedErr: nil,
+		},
 	}
 
 	for _, driverName := range driverNames {
@@ -807,6 +912,8 @@ func TestGetIncidents(t *testing.T) {
 		addUsersToTeam(t, store, []userInfo{alice, charlotte, john, jane}, team1id)
 		addUsersToTeam(t, store, []userInfo{charlotte}, team2id)
 		addUsersToChannels(t, store, []userInfo{bob}, []string{channelID01, channelID02, channelID03, channelID04, channelID05, channelID06, channelID07, channelID08, channelID09})
+		addUsersToChannels(t, store, []userInfo{john}, []string{channelID01, channelID02, channelID03})
+		addUsersToChannels(t, store, []userInfo{jane}, []string{channelID03, channelID04, channelID05})
 		makeChannelsPublicOrPrivate(t, store, []string{channelID01, channelID02, channelID03, channelID06}, true)
 		makeChannelsPublicOrPrivate(t, store, []string{channelID04, channelID05, channelID07, channelID08, channelID09}, false)
 		makeAdmin(t, store, lucy)
