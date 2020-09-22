@@ -18,7 +18,7 @@ var (
 		WithTeamID(team1id).
 		WithCreateAt(500).
 		WithChecklists([]int{1, 2}).
-		WithMembers([]string{"jon", "Andrew", "Matt"}).
+		WithMembers([]userInfo{jon, andrew, matt}).
 		ToPlaybook()
 
 	pb02 = NewPBBuilder().
@@ -27,7 +27,7 @@ var (
 		WithCreateAt(600).
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
-		WithMembers([]string{"Andrew", "Matt"}).
+		WithMembers([]userInfo{andrew, matt}).
 		ToPlaybook()
 
 	pb03 = NewPBBuilder().
@@ -35,7 +35,7 @@ var (
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
-		WithMembers([]string{"jon", "Matt"}).
+		WithMembers([]userInfo{jon, matt}).
 		ToPlaybook()
 
 	pb04 = NewPBBuilder().
@@ -44,7 +44,7 @@ var (
 		WithTeamID(team1id).
 		WithCreateAt(800).
 		WithChecklists([]int{20}).
-		WithMembers([]string{"Matt"}).
+		WithMembers([]userInfo{matt}).
 		ToPlaybook()
 
 	pb05 = NewPBBuilder().
@@ -60,7 +60,7 @@ var (
 		WithTeamID(team2id).
 		WithCreateAt(1000).
 		WithChecklists([]int{1}).
-		WithMembers([]string{"jon", "Andrew"}).
+		WithMembers([]userInfo{jon, andrew}).
 		ToPlaybook()
 
 	pb07 = NewPBBuilder().
@@ -68,7 +68,7 @@ var (
 		WithTeamID(team2id).
 		WithCreateAt(1100).
 		WithChecklists([]int{1, 2, 3}).
-		WithMembers([]string{"Matt"}).
+		WithMembers([]userInfo{matt}).
 		ToPlaybook()
 
 	pb08 = NewPBBuilder().
@@ -76,12 +76,42 @@ var (
 		WithTeamID(team3id).
 		WithCreateAt(1200).
 		WithChecklists([]int{1}).
-		WithMembers([]string{"Andrew"}).
+		WithMembers([]userInfo{andrew}).
 		ToPlaybook()
 
 	pb = []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
 
-	users = []string{"jon", "Andrew", "Matt", "Lucy"}
+	jon = userInfo{
+		ID:   model.NewId(),
+		Name: "jon",
+	}
+
+	andrew = userInfo{
+		ID:   model.NewId(),
+		Name: "Andrew",
+	}
+
+	matt = userInfo{
+		ID:   model.NewId(),
+		Name: "Matt",
+	}
+
+	lucia = userInfo{
+		ID:   model.NewId(),
+		Name: "Lucía",
+	}
+
+	bill = userInfo{
+		ID:   model.NewId(),
+		Name: "Bill",
+	}
+
+	jen = userInfo{
+		ID:   model.NewId(),
+		Name: "Jen",
+	}
+
+	users = []userInfo{jon, andrew, matt, lucia, bill, jen}
 )
 
 func TestGetPlaybook(t *testing.T) {
@@ -223,7 +253,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Andrew",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              "Andrew",
+				UserID:              andrew.ID,
 				TeamID:              team1id,
 				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
@@ -242,7 +272,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from jon",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              "jon",
+				UserID:              jon.ID,
 				TeamID:              team1id,
 				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
@@ -261,7 +291,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from jon title desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              "jon",
+				UserID:              jon.ID,
 				TeamID:              team1id,
 				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
@@ -281,7 +311,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from jon sort by stages desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              "jon",
+				UserID:              jon.ID,
 				TeamID:              team1id,
 				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
@@ -301,8 +331,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -319,8 +349,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
@@ -338,8 +368,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by title desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
@@ -357,8 +387,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps, default is asc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortBySteps,
@@ -375,8 +405,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps, specify asc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
@@ -394,8 +424,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by steps, desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
@@ -413,8 +443,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by stages",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByStages,
@@ -431,8 +461,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Admin sort by stages, desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
@@ -450,7 +480,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team2 from Matt",
 			teamID: team2id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              "Matt",
+				UserID:              matt.ID,
 				TeamID:              team2id,
 				TeamIDtoCanViewTeam: map[string]bool{team2id: true},
 			},
@@ -469,7 +499,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team3 from Andrew (not on team)",
 			teamID: team3id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              "Andrew",
+				UserID:              andrew.ID,
 				TeamID:              team3id,
 				TeamIDtoCanViewTeam: map[string]bool{team3id: true},
 			},
@@ -488,8 +518,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team3 from Admin",
 			teamID: team3id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -531,7 +561,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		addUsers(t, store, users)
 		addUsersToTeam(t, store, users, team1id)
 		addUsersToTeam(t, store, users, team2id)
-		makeAdmin(t, store, "Lucy")
+		makeAdmin(t, store, lucy)
 
 		createPlaybooks(playbookStore)
 
@@ -654,9 +684,9 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name: "Incident with 2 members, go to 1",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
-					WithMembers([]string{"Jon", "Andrew"}).ToPlaybook(),
+					WithMembers([]userInfo{jon, andrew}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
-					old.MemberIDs = []string{"Andrew"}
+					old.MemberIDs = []string{andrew.ID}
 					return old
 				},
 				expectedErr: nil,
@@ -664,9 +694,9 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name: "Incident with 3 members, go to 4 with different members",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
-					WithMembers([]string{"Jon", "Andrew", "Bob"}).ToPlaybook(),
+					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
-					old.MemberIDs = []string{"Matt", "Bill", "Alice", "Jen"}
+					old.MemberIDs = []string{matt.ID, bill.ID, alice.ID, jen.ID}
 					return old
 				},
 				expectedErr: nil,
@@ -674,9 +704,9 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name: "Incident with 3 members, go to 4 with one different member",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
-					WithMembers([]string{"Jon", "Andrew", "Bob"}).ToPlaybook(),
+					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
-					old.MemberIDs = []string{"Jon", "Andrew", "Bob", "Alice"}
+					old.MemberIDs = []string{jon.ID, andrew.ID, bob.ID, alice.ID}
 					return old
 				},
 				expectedErr: nil,
@@ -685,15 +715,23 @@ func TestUpdatePlaybook(t *testing.T) {
 				name:     "Incident with 0 members, go to 2",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
-					old.MemberIDs = []string{"Alice", "Jen"}
+					old.MemberIDs = []string{alice.ID, jen.ID}
 					return old
 				},
 				expectedErr: nil,
 			},
 			{
 				name: "Incident with 5 members, go to 0",
-				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
-					WithMembers([]string{"Jon", "Andrew", "j1", "j2", "j3"}).ToPlaybook(),
+				playbook: NewPBBuilder().
+					WithChecklists([]int{1, 2}).
+					WithMembers([]userInfo{
+						jon,
+						andrew,
+						{model.NewId(), "j1"},
+						{model.NewId(), "j2"},
+						{model.NewId(), "j3"},
+					}).
+					ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
 					old.MemberIDs = nil
 					return old
@@ -859,8 +897,12 @@ func sum(nums []int) int64 {
 	return int64(ret)
 }
 
-func (p *PlaybookBuilder) WithMembers(members []string) *PlaybookBuilder {
-	p.MemberIDs = members
+func (p *PlaybookBuilder) WithMembers(members []userInfo) *PlaybookBuilder {
+	p.MemberIDs = make([]string, len(members))
+
+	for i, member := range members {
+		p.MemberIDs[i] = member.ID
+	}
 
 	return p
 }
