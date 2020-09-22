@@ -45,8 +45,8 @@ type HeaderFilterOptions struct {
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
 	CommanderID string
 
-	// MembersIDs filters incidents that have these members. Defaults to an empty list (no filter).
-	MembersIDs []string
+	// MemberID filters incidents that have this member. Defaults to blank (no filter).
+	MemberID string
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Order fields (i.e., results are
@@ -130,10 +130,8 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 		return errors.New("bad parameter 'commander_id': must be 26 characters or blank")
 	}
 
-	for _, memberID := range options.MembersIDs {
-		if !model.IsValidId(memberID) {
-			return errors.Errorf("bad parameter 'members_ids': all IDs must be 26 alphanumeric characters: [%s]", memberID)
-		}
+	if options.MemberID != "" && !model.IsValidId(options.MemberID) {
+		return errors.New("bad parameter 'member_id': must be 26 characters or blank")
 	}
 
 	return nil

@@ -799,8 +799,8 @@ func TestGetIncidents(t *testing.T) {
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID:     team1id,
-				MembersIDs: []string{john.ID},
+				TeamID:   team1id,
+				MemberID: john.ID,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 3,
@@ -817,8 +817,8 @@ func TestGetIncidents(t *testing.T) {
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID:     team1id,
-				MembersIDs: []string{jane.ID},
+				TeamID:   team1id,
+				MemberID: jane.ID,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 3,
@@ -829,31 +829,13 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - Admin gets incidents with John and Jane as members",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID:     team1id,
-				MembersIDs: []string{john.ID, jane.ID},
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 1,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc03},
-			},
-			ExpectedErr: nil,
-		},
-		{
 			Name: "team1 - John gets its own incidents",
 			RequesterInfo: incident.RequesterInfo{
 				UserID: john.ID,
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID:     team1id,
-				MembersIDs: []string{john.ID},
+				TeamID:   team1id,
+				MemberID: john.ID,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 3,
@@ -869,31 +851,14 @@ func TestGetIncidents(t *testing.T) {
 				UserID: jane.ID,
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID:     team1id,
-				MembersIDs: []string{jane.ID},
+				TeamID:   team1id,
+				MemberID: jane.ID,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []incident.Incident{inc03, inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Jane gets the incidents she shares with John",
-			RequesterInfo: incident.RequesterInfo{
-				UserID: jane.ID,
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID:     team1id,
-				MembersIDs: []string{jane.ID, john.ID},
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 1,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc03},
 			},
 			ExpectedErr: nil,
 		},

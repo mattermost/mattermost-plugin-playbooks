@@ -87,24 +87,14 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		queryForTotal = queryForTotal.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 	}
 
-	if len(options.MembersIDs) > 0 {
-		// Build a string such as "'memberid0', 'memberid1', 'memberid3'"
-		membersIDs := make([]string, len(options.MembersIDs))
-		for i, id := range options.MembersIDs {
-			membersIDs[i] = "'" + id + "'"
-		}
-		arrayStr := strings.Join(membersIDs, ",")
-
-		membershipClause := fmt.Sprintf(`ChannelID IN (
-				SELECT ChannelID
-				FROM ChannelMembers
-				WHERE UserID IN (%s)
-				GROUP BY ChannelID
-				HAVING COUNT(UserID) = %d
-			)`,
-			arrayStr,
-			len(options.MembersIDs),
-		)
+	if options.MemberID != "" {
+		membershipClause := s.queryBuilder.
+			Select("1").
+			Prefix("EXISTS(").
+			From("ChannelMembers AS cm").
+			Where("cm.ChannelId = incident.ChannelID").
+			Where(sq.Eq{"cm.UserId": options.MemberID}).
+			Suffix(")")
 
 		queryForResults = queryForResults.Where(membershipClause)
 		queryForTotal = queryForTotal.Where(membershipClause)
