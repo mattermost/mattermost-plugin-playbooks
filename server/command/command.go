@@ -295,21 +295,11 @@ func (r *Runner) actionList() {
 			return
 		}
 
-		duration := now.Sub(time.Unix(0, theIncident.CreateAt*1000000)).Round(time.Second)
-
-		durationStr := duration.String()
-		if duration.Hours() > 23 {
-			days := duration / (24 * time.Hour)
-			duration %= 24 * time.Hour
-
-			durationStr = fmt.Sprintf("%dd%s", days, duration.String())
-		}
-
 		attachments[i] = &model.SlackAttachment{
 			Text: fmt.Sprintf("### [%s](/%s/channels/%s)", channel.DisplayName, team.Name, channel.Name),
 			Fields: []*model.SlackAttachmentField{
 				{Title: "Stage:", Value: fmt.Sprintf("**%s**", thePlaybook.Checklists[theIncident.ActiveStage].Title)},
-				{Title: "Duration:", Value: durationStr},
+				{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), now)},
 				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
 			},
 		}
@@ -323,6 +313,25 @@ func (r *Runner) actionList() {
 	}
 
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
+}
+
+func getTimeForMillis(unixMillis int64) time.Time {
+	return time.Unix(0, unixMillis*int64(1000000))
+}
+
+func durationString(start, end time.Time) string {
+	duration := end.Sub(start).Round(time.Second)
+
+	durationStr := duration.String()
+
+	if duration.Hours() > 23 {
+		days := duration / (24 * time.Hour)
+		duration %= 24 * time.Hour
+
+		durationStr = fmt.Sprintf("%dd%s", days, duration.String())
+	}
+
+	return durationStr
 }
 
 func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
