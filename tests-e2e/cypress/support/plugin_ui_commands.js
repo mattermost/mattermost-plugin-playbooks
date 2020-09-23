@@ -25,12 +25,17 @@ Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescr
     cy.get('#interactiveDialogModal').should('not.be.visible');
 });
 
-// Opens incident dialog using the `/incident start` slash command
-Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
-    cy.findByTestId('post_textbox').clear().type(incidentStartCommand);
+// Runs the given slash command
+Cypress.Commands.add('executeSlashCommand', (command) => {
+    cy.findByTestId('post_textbox').clear().type(command);
 
     // Using esc to make sure we exit out of slash command autocomplete
     cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 100}).type('{enter}');
+});
+
+// Opens incident dialog using the `/incident start` slash command
+Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
+    cy.executeSlashCommand(incidentStartCommand);
 });
 
 // Starts incident with the `/incident start` slash command
