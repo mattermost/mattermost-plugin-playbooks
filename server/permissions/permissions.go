@@ -81,15 +81,6 @@ func EditIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incide
 	return ErrNoPermissions
 }
 
-// ViewTeam returns nil if the userID has permissions to view teamID
-func ViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) error {
-	if pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		return nil
-	}
-
-	return ErrNoPermissions
-}
-
 // CanViewTeam returns true if the userID has permissions to view teamID
 func CanViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_LIST_TEAM_CHANNELS)

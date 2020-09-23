@@ -267,17 +267,14 @@ func (p *playbookStore) buildPermissionsExpr(info playbook.RequesterInfo) sq.Sql
 		return nil
 	}
 
-	isPlaybookMember := p.store.builder.
+	// is the requester a member of the playbook?
+	return p.store.builder.
 		Select("1").
 		Prefix("EXISTS(").
 		From("IR_PlaybookMember as pm").
 		Where("pm.PlaybookID = p.ID").
 		Where(sq.Eq{"pm.MemberID": info.UserID}).
 		Suffix(")")
-
-	// For now, whether you can view team channels or not, if you are a playbook member
-	// then you can view the playbook.
-	return isPlaybookMember
 }
 
 // Update updates a playbook
