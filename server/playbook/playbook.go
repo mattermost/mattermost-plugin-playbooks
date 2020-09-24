@@ -72,6 +72,9 @@ type RequesterInfo struct {
 	UserID          string
 	TeamID          string
 	UserIDtoIsAdmin map[string]bool
+
+	// MemberOnly when true will return playbooks only if the requester is a member of those playbooks.
+	MemberOnly bool
 }
 
 // Service is the playbook service for managing playbooks
