@@ -280,12 +280,6 @@ func (r *Runner) actionList() {
 	now := time.Now()
 	attachments := make([]*model.SlackAttachment, len(result.Items))
 	for i, theIncident := range result.Items {
-		thePlaybook, err := r.playbookService.Get(theIncident.PlaybookID)
-		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving playbook of incident '%s': %v", theIncident.Name, err)
-			return
-		}
-
 		commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error retrieving commander of incident '%s': %v", theIncident.Name, err)
@@ -301,7 +295,7 @@ func (r *Runner) actionList() {
 		attachments[i] = &model.SlackAttachment{
 			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
-				{Title: "Stage:", Value: fmt.Sprintf("**%s**", thePlaybook.Checklists[theIncident.ActiveStage].Title)},
+				{Title: "Stage:", Value: fmt.Sprintf("**%s**", theIncident.ActiveStageTitle)},
 				{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), now)},
 				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
 			},

@@ -513,6 +513,7 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 
 	oldActiveStage := incidentToModify.ActiveStage
 	incidentToModify.ActiveStage = stageIdx
+	incidentToModify.ActiveStageTitle = incidentToModify.Checklists[stageIdx].Title
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return nil, errors.Wrapf(err, "failed to update incident")
 	}

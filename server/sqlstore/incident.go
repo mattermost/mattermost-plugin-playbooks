@@ -40,7 +40,7 @@ var _ incident.Store = (*incidentStore)(nil)
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID", "ChecklistsJSON").
 		From("IR_Incident AS incident")
 
 	return &incidentStore{
@@ -128,9 +128,21 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
 
-	var incidents []incident.Incident
-	if err := s.store.selectBuilder(s.store.db, &incidents, queryForResults); err != nil {
+	var rawIncidents []sqlIncident
+	if err := s.store.selectBuilder(s.store.db, &rawIncidents, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
+	}
+	var incidents []incident.Incident
+
+	if len(rawIncidents) > 0 {
+		incidents = make([]incident.Incident, len(rawIncidents))
+		for i, rawIncident := range rawIncidents {
+			theIncident, err := toIncidentWithoutChecklists(rawIncident)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to convert raw incident '%s'", rawIncident.ID)
+			}
+			incidents[i] = *theIncident
+		}
 	}
 
 	var total int
@@ -231,12 +243,8 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 		return nil, errors.New("ID cannot be empty")
 	}
 
-	withChecklistsSelect := s.incidentSelect.
-		Columns("ChecklistsJSON").
-		From("IR_Incident")
-
 	var rawIncident sqlIncident
-	err := s.store.getBuilder(s.store.db, &rawIncident, withChecklistsSelect.Where(sq.Eq{"ID": incidentID}))
+	err := s.store.getBuilder(s.store.db, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {
@@ -410,6 +418,33 @@ func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
+
+	numChecklists := len(i.Checklists)
+	if numChecklists != 0 {
+		if i.ActiveStage < 0 || i.ActiveStage >= len(i.Checklists) {
+			return nil, errors.Errorf("invalid ActiveStage in incident '%s': index is %d, but incident has %d checklists", rawIncident.ID, i.ActiveStage, len(i.Checklists))
+		}
+		i.ActiveStageTitle = i.Checklists[i.ActiveStage].Title
+	}
+
+	return &i, nil
+}
+
+func toIncidentWithoutChecklists(rawIncident sqlIncident) (*incident.Incident, error) {
+	i := rawIncident.Incident
+	var checklists []playbook.Checklist
+	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &checklists); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
+	}
+
+	numChecklists := len(checklists)
+	if numChecklists != 0 {
+		if i.ActiveStage < 0 || i.ActiveStage >= len(checklists) {
+			return nil, errors.Errorf("invalid ActiveStage in incident '%s': index is %d, but incident has %d checklists", rawIncident.ID, i.ActiveStage, len(i.Checklists))
+		}
+		i.ActiveStageTitle = checklists[i.ActiveStage].Title
+	}
+
 	return &i, nil
 }
 
