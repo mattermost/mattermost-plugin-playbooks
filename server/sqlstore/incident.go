@@ -338,8 +338,8 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 		return nil
 	}
 
-	if info.TeamIDtoCanViewTeam[info.TeamID] {
-		checkMembershipOrPublicChannel := sq.Expr(`
+	// is the requester a channel member, or is the channel public?
+	return sq.Expr(`
 		  (
 			  -- If requester is a channel member
 			  EXISTS(SELECT 1
@@ -352,17 +352,6 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 							WHERE c.Id = incident.ChannelID
 							  AND c.Type = 'O')
 		  )`, info.UserID)
-
-		return checkMembershipOrPublicChannel
-	}
-
-	return s.store.builder.
-		Select("1").
-		Prefix("EXISTS(").
-		From("ChannelMembers AS cm").
-		Where("cm.ChannelId = incident.ChannelID").
-		Where(sq.Eq{"cm.UserId": info.UserID}).
-		Suffix(")")
 }
 
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {

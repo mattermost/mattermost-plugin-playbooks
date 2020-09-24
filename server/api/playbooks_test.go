@@ -170,10 +170,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:              "testuserid",
-					TeamID:              "testteamid",
-					UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
-					TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+					UserID:          "testuserid",
+					TeamID:          "testteamid",
+					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
 				},
 				"testteamid",
 				gomock.Any(),
@@ -567,10 +566,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:              "testuserid",
-					TeamID:              "testteamid",
-					UserIDtoIsAdmin:     map[string]bool{"testuserid": false},
-					TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+					UserID:          "testuserid",
+					TeamID:          "testteamid",
+					UserIDtoIsAdmin: map[string]bool{"testuserid": false},
 				},
 				"testteamid",
 				gomock.Any(),
@@ -799,10 +797,9 @@ func TestSortingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:              "testuserid",
-						TeamID:              "testteamid",
-						UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
-						TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+						UserID:          "testuserid",
+						TeamID:          "testteamid",
+						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
 					},
 					"testteamid",
 					gomock.Any(),
@@ -1010,10 +1007,9 @@ func TestPagingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:              "testuserid",
-						TeamID:              "testteamid",
-						UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
-						TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+						UserID:          "testuserid",
+						TeamID:          "testteamid",
+						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
 					},
 					"testteamid",
 					gomock.Any(),

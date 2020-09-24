@@ -253,9 +253,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from Andrew",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              andrew.ID,
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: andrew.ID,
+				TeamID: team1id,
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -272,9 +271,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from jon",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              jon.ID,
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: jon.ID,
+				TeamID: team1id,
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -291,9 +289,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from jon title desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              jon.ID,
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: jon.ID,
+				TeamID: team1id,
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
@@ -311,9 +308,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team1 from jon sort by stages desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              jon.ID,
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: jon.ID,
+				TeamID: team1id,
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
@@ -480,9 +476,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team2 from Matt",
 			teamID: team2id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              matt.ID,
-				TeamID:              team2id,
-				TeamIDtoCanViewTeam: map[string]bool{team2id: true},
+				UserID: matt.ID,
+				TeamID: team2id,
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -499,9 +494,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			name:   "team3 from Andrew (not on team)",
 			teamID: team3id,
 			requesterInfo: playbook.RequesterInfo{
-				UserID:              andrew.ID,
-				TeamID:              team3id,
-				TeamIDtoCanViewTeam: map[string]bool{team3id: true},
+				UserID: andrew.ID,
+				TeamID: team3id,
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,

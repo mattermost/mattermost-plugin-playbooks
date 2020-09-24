@@ -9,6 +9,7 @@ import (
 	mock_config "github.com/mattermost/mattermost-plugin-incident-response/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
@@ -240,6 +241,136 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			tt.prepMocks(store, poster, api)
 
 			err := service.RestartIncident(tt.args.incidentID, tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RestartIncident() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
+func TestChangeActiveStage(t *testing.T) {
+	type args struct {
+		incidentID string
+		userID     string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		prepMocks func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API)
+		wantErr   bool
+	}{
+		{
+			name: "ongoing incident",
+			args: args{
+				incidentID: "incidentID",
+				userID:     "userID1",
+			},
+			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
+				testIncident := incident.Incident{
+					Header: incident.Header{
+						ID:              "incidentID",
+						CommanderUserID: "testUserID",
+						TeamID:          "testTeamID",
+						Name:            "incidentName",
+						ChannelID:       "channelID",
+						IsActive:        true,
+					},
+					PostID: "",
+					Checklists: []playbook.Checklist{
+						{Title: "Stage 1"},
+						{Title: "Stage 2"},
+					},
+				}
+
+				store.EXPECT().
+					GetIncident("incidentID").
+					Return(&testIncident, nil).Times(1)
+
+				updatedIncident := testIncident
+				updatedIncident.ActiveStage = 1
+
+				store.EXPECT().
+					UpdateIncident(&updatedIncident).
+					Return(nil).Times(1)
+
+				poster.EXPECT().
+					PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channelID").
+					Times(1)
+
+				api.On("GetUser", "userID1").
+					Return(&model.User{Username: "testuser"}, nil)
+
+				poster.EXPECT().
+					PostMessage("channelID", "testuser changed the active stage from **Stage 1** to **Stage 2**.").
+					Return("messageID", nil).
+					Times(1)
+			},
+			wantErr: false,
+		},
+		{
+			name: "ended incident",
+			args: args{
+				incidentID: "incidentID",
+				userID:     "userID1",
+			},
+			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
+				testIncident := incident.Incident{
+					Header: incident.Header{
+						ID:              "incidentID",
+						CommanderUserID: "testUserID",
+						TeamID:          "testTeamID",
+						Name:            "incidentName",
+						ChannelID:       "channelID",
+						IsActive:        false,
+					},
+					PostID: "",
+					Checklists: []playbook.Checklist{
+						{Title: "Stage 1"},
+						{Title: "Stage 2"},
+					},
+				}
+
+				store.EXPECT().
+					GetIncident("incidentID").
+					Return(&testIncident, nil).Times(1)
+
+				updatedIncident := testIncident
+				updatedIncident.ActiveStage = 1
+
+				store.EXPECT().
+					UpdateIncident(&updatedIncident).
+					Return(nil).Times(1)
+
+				poster.EXPECT().
+					PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channelID").
+					Times(1)
+
+				api.On("GetUser", "userID1").
+					Return(&model.User{Username: "testuser"}, nil)
+
+				poster.EXPECT().
+					PostMessage("channelID", "testuser changed the active stage from **Stage 1** to **Stage 2**.").
+					Return("messageID", nil).
+					Times(1)
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			controller := gomock.NewController(t)
+			api := &plugintest.API{}
+			client := pluginapi.NewClient(api)
+			store := mock_incident.NewMockStore(controller)
+			poster := mock_poster.NewMockPoster(controller)
+			configService := mock_config.NewMockService(controller)
+			telemetryService := &telemetry.NoopTelemetry{}
+			service := incident.NewService(client, store, poster, configService, telemetryService)
+
+			tt.prepMocks(store, poster, api)
+
+			_, err := service.ChangeActiveStage(tt.args.incidentID, tt.args.userID, 1)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RestartIncident() error = %v, wantErr %v", err, tt.wantErr)
 				return

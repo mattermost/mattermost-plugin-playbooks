@@ -7,7 +7,7 @@ export default function WarningIcon() {
     return (
         <i
             id='warningIcon'
-            className='fal fa-warning'
+            className='icon-alert-outline'
         />
     );
 }

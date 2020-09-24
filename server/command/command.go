@@ -142,11 +142,15 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
+	if !permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
+		r.postCommandResponse("Must be a member of the team to start incidents.")
+		return
+	}
+
 	requesterInfo := playbook.RequesterInfo{
-		UserID:              r.args.UserId,
-		TeamID:              r.args.TeamId,
-		UserIDtoIsAdmin:     map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
-		TeamIDtoCanViewTeam: map[string]bool{r.args.TeamId: permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI)},
+		UserID:          r.args.UserId,
+		TeamID:          r.args.TeamId,
+		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
@@ -248,10 +252,9 @@ func (r *Runner) actionList() {
 	}
 
 	requesterInfo := incident.RequesterInfo{
-		UserID:              r.args.UserId,
-		TeamID:              r.args.TeamId,
-		UserIDtoIsAdmin:     map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
-		TeamIDtoCanViewTeam: map[string]bool{r.args.TeamId: permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI)},
+		UserID:          r.args.UserId,
+		TeamID:          r.args.TeamId,
+		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
 	}
 
 	options := incident.HeaderFilterOptions{
