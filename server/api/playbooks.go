@@ -100,6 +100,16 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// replace nils with empty slices for the frontend
+	if pbook.Checklists == nil {
+		pbook.Checklists = []playbook.Checklist{}
+	}
+	for i, cl := range pbook.Checklists {
+		if cl.Items == nil {
+			pbook.Checklists[i].Items = []playbook.ChecklistItem{}
+		}
+	}
+
 	ReturnJSON(w, &pbook)
 }
 

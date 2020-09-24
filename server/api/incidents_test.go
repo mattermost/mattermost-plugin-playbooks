@@ -531,7 +531,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
@@ -674,7 +674,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident - not part of channel or team", func(t *testing.T) {
@@ -761,7 +761,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident - part of channel", func(t *testing.T) {
@@ -805,7 +805,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get private incident details - not part of channel", func(t *testing.T) {
@@ -860,7 +860,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		testIncidentDetails := incident.Details{
@@ -901,7 +901,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident details - not part of channel or team", func(t *testing.T) {
@@ -958,7 +958,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		testIncidentDetails := incident.Details{
@@ -1001,7 +1001,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident details - part of channel", func(t *testing.T) {
@@ -1017,7 +1017,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		testIncidentDetails := incident.Details{
@@ -1058,7 +1058,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get incidents", func(t *testing.T) {

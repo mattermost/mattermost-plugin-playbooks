@@ -13,7 +13,7 @@ import {incidentCreated, receivedTeamIncidentChannels} from 'src/actions';
 import {fetchIncidentChannels} from 'src/client';
 
 import {clientId} from './selectors';
-import {isIncident, Incident} from './types/incident';
+import {isIncident, Incident, removeNulls} from './types/incident';
 
 export const websocketSubscribers = new Set<(incident: Incident) => void>();
 
@@ -29,9 +29,9 @@ export function handleWebsocketIncidentUpdate() {
         if (!msg.data.payload) {
             return;
         }
-        const incident = JSON.parse(msg.data.payload);
+        let incident = JSON.parse(msg.data.payload);
         if (!isIncident(incident)) {
-            return;
+            incident = removeNulls(incident);
         }
 
         websocketSubscribers.forEach((fn) => fn(incident));
@@ -44,9 +44,9 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
             return;
         }
         const payload = JSON.parse(msg.data.payload);
-        const incident = payload.incident;
+        let incident = payload.incident;
         if (!isIncident(incident)) {
-            return;
+            incident = removeNulls(incident);
         }
 
         dispatch(incidentCreated(incident));
