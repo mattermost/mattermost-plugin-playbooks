@@ -87,9 +87,21 @@ var migrations = []Migration{
 				}
 			} else {
 				if _, err := e.Exec(`
+					SAVEPOINT before_unaccent;
+				`); err != nil {
+					return errors.Wrap(err, "failed creating savepoint before_unaccent")
+				}
+
+				if _, err := e.Exec(`
 					CREATE EXTENSION IF NOT EXISTS unaccent;
 				`); err != nil {
-					logger.Errorf("Failed creating the unaccent extension, the search will be accent-sensitive. Error: %v", err)
+					logger.Warnf("Failed creating the unaccent extension, the search will be accent-sensitive. Error: %v", err)
+
+					if _, err := e.Exec(`
+						ROLLBACK TO before_unaccent;
+					`); err != nil {
+						return errors.Wrap(err, "failed rolling back to savepoint before_unaccent")
+					}
 				}
 
 				if _, err := e.Exec(`
