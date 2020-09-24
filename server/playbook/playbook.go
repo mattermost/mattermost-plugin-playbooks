@@ -73,7 +73,7 @@ type RequesterInfo struct {
 	TeamID          string
 	UserIDtoIsAdmin map[string]bool
 
-	// MemberOnly when true will return playbooks only if the requester is a member of those playbooks.
+ 	// MemberOnly filters playbooks to those for which UserId is a member
 	MemberOnly bool
 }
 
