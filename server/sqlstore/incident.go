@@ -132,17 +132,14 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	if err := s.store.selectBuilder(s.store.db, &rawIncidents, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
 	}
-	var incidents []incident.Incident
 
-	if len(rawIncidents) > 0 {
-		incidents = make([]incident.Incident, len(rawIncidents))
-		for i, rawIncident := range rawIncidents {
-			theIncident, err := toIncidentWithoutChecklists(rawIncident)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to convert raw incident '%s'", rawIncident.ID)
-			}
-			incidents[i] = *theIncident
+	var incidents []incident.Incident
+	for _, rawIncident := range rawIncidents {
+		theIncident, err := toIncidentWithoutChecklists(rawIncident)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert raw incident '%s'", rawIncident.ID)
 		}
+		incidents = append(incidents, *theIncident)
 	}
 
 	var total int
