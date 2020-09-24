@@ -35,7 +35,7 @@ var (
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
-		WithMembers([]string{"jon", "Matt"}).
+		WithMembers([]string{"jon", "Matt", "Lucy"}).
 		ToPlaybook()
 
 	pb04 = NewPBBuilder().
@@ -72,11 +72,11 @@ var (
 		ToPlaybook()
 
 	pb08 = NewPBBuilder().
-		WithTitle("playbook 8 -- so many members, but should have Desmond").
+		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
 		WithTeamID(team3id).
 		WithCreateAt(1300).
 		WithChecklists([]int{1}).
-		WithMembers([]string{"km69ab3boj1w6ft9mh83wao7qk", "48wthyysxrhhs3ww4mnnfmg1bn", "1sziwjjsxfe5iez9puk8dtrd6f", "dir7jfkho1dnna3frw96ahhp46", "bx4omgdi1exgpn155hs89trres", "g3gc8s63pnaxqf3q5bm3jq3itc", "ripkmp6wjxsrb6nctri3z96wga", "3xh8nxhp1asz3deb1gjcrotrhm", "8xig6s3465xyg7bsptdtu3b4dc", "mbrhcb57zpm1f7mtxewjwjux17", "hum776w1fsiqq6dgc9561pspjh", "ty7yisf6uohztcneox1swfmktz", "u68r5j1dyrn1rdemffwesh4mt4", "9w1sxocjx81pcd3gpbs3zhz5r5", "a5um18y94q9eurndefh78m4r1g", "bo7bx1entxw3nuizc1qg3r48oy", "x7cbowuxdykm7ytukdimnqji6c", "gdsnue5o8r4m6wfntsooff477s", "pp4oezhq9iw7rkzfercwx14i8i", "94idra7dufbzyjf4u1pte3hkr7", "ybz1okk7xwhop8abwehhep1aku", "yimdy1t684zbjowpbuiduwwodj", "9o1sennwafq93mfktesq3u148k", "wx53zae8f65dapqsyosrna8ut5", "w6myqcskkm8i8o9irdreuph56w", "3q7tmspxz19z69prdkarbdt3p8", "7ctuig4u1ufua6nssidpgr6ewq", "hkuxd5ek95y9taoxik9p64asf3", "zjj46gmzu13jjn5fqd94bp5u1a", "ujziq8brph9jiofzer9xnrf7mn", "cz8geybczsqntb7knr69rtwjfd", "rz4o3ma9z9wddcemxx45nzn8ww", "tusurxfzphgu9mn8p1x5yx6jrk", "17j5mienxuoiwuakmy1o5d7ib3", "9a3wbd837n8na6mwbnt14kkbpq", "nqo7mcziz9ziw5s3fs1ef1ijk4", "ynomnwu6w3d1ukdb4m5r16t1gz", "dhb4zk1yixrwjd677co3dskfab", "w4fktm4688grn5uujw5uazi6z1", "e8tpfuwhfcma1max7ecudewore", "tm7d9bpawauot1zmzmrebppauq", "8kr759nfjtxa6hictg3asgxig6", "1kjiu1wcm4hwhfjpagzwf4t7n3", "brhambc1te8z53emhgupa8kzpd", "m4ss9t7qq67b4jc5dnfrseqep6", "zikhetznm4a8mrf49ugm7tozqw", "u7571bbcmx8npcmd5566m5ukb6", "h4n4mre1dfuqycmfbieogifkot", "uy3n7pqxexm1zwzfznd7eaaxzd", "gtam6jfecsbz3rjdeaqrd7x9ug", "o3f49i6pj1o5f64zc4iwggodfp", "oxd5unhuobn7wwcaeqnwsdsu66", "gfaht9zz684qeaj5sp15f47wjh", "i66ra6qgri3qrdhq5f8qck4ph6", "9m6qrptdhgmcuz99x67x6u961u", "5u1o88mksy8rb7u4icwugmxbe1", "ndr7ynmqma9xdpmopydwpmgo3t", "idh3obto6pgqyyqyip7ccz1ofw", "f6ttuh1fib1z7ojn7m4k4ibfaj", "g5gy4ftagxxsg3oui8gje7bzs3", "bin6rum17mnkfdthwyacur54zb", "ubmprty7n17rujuz54ftt14fjq", "w4orazbza9fdky5xnf3134fhr6", "g9h113mgki94znn5yqxub3ag6d", "az17h8jcpyc1g18cngr9smts1h", "ik7bcdgsed9zg1k9h1of3ajyf1", "ams86onzsc438xrrtngjqd6ifd", "8y7ndwcrmtyeii4zyohbgy3kbx", "wag85ck6ywy6zo4mqpbim91kys", "iocdaqbuhgtwrzipp8kx17ebf9", "871rg1i4hboxcwdk4x65d7nbmc", "6eu6bpbo9g6my1pd4qnwbzbnff", "71suj8gdmzcukfqq9afoym8qm3", "ckmbrttb1kduukdgq8gboyk1zf", "cyyoh9rcuf6pm6xdrdf84qqwzk", "w1nr1cayrh5esp83a4mzppn3nw", "u1479anr9ergdf99mz6ofhi48n", "1khpthie5h7oapxtmqpuqdqkod", "t9eocsfwod3k3bbdga33k9uet4", "k5t8c41bbrko75knjh8zepkd3z", "1nky9tsw3k9nnwhyu38pcnoqfm", "rz8d3ke4j44hf6nabyc7wbgoft", "eri48z5ektr1b7xkr9sy17ao1i", "wibzmdmo1q1jjz4hapsout7geh", "b7nx3itj6nghd54u3gzy5ndj93", "i5r7fazxp31ddixiiwne1bhpaa", "z484cdy4e6gszik74myr5mcg4e", "8xb55g14qtuyih6ojnw4eptway", "djsmuoqhrj58jkonyh1pnp64f1", "t6cha81jkc5fhow3k3xbbbjis8", "ohwu5rut5j3shohaa8tz9p4hjx", "1t3wp8a63jpgpij9wxq83w98aq", "fjx4wargux3smyafn83q55qo8a", "n5hpf9cuskzpks57e145yi8u6q", "k9x35pzo5rq7tce5ob8uggs5x5", "u3c9yikcmy1tgooujkg4i5awuy", "tmmk74jhdz3mmnm6iehk5d48ic", "jwa9rumxk5zeknjdn11pq3mnyz", "87bratz37jt7s8bcg14tftydar", "gynarn89deddsoedut4yg4458s", "Desmond"}).
+		WithMembers([]string{"km69ab3boj1w6ft9mh83wao7qk", "48wthyysxrhhs3ww4mnnfmg1bn", "1sziwjjsxfe5iez9puk8dtrd6f", "dir7jfkho1dnna3frw96ahhp46", "bx4omgdi1exgpn155hs89trres", "g3gc8s63pnaxqf3q5bm3jq3itc", "ripkmp6wjxsrb6nctri3z96wga", "3xh8nxhp1asz3deb1gjcrotrhm", "8xig6s3465xyg7bsptdtu3b4dc", "mbrhcb57zpm1f7mtxewjwjux17", "hum776w1fsiqq6dgc9561pspjh", "ty7yisf6uohztcneox1swfmktz", "u68r5j1dyrn1rdemffwesh4mt4", "9w1sxocjx81pcd3gpbs3zhz5r5", "a5um18y94q9eurndefh78m4r1g", "bo7bx1entxw3nuizc1qg3r48oy", "x7cbowuxdykm7ytukdimnqji6c", "gdsnue5o8r4m6wfntsooff477s", "pp4oezhq9iw7rkzfercwx14i8i", "94idra7dufbzyjf4u1pte3hkr7", "ybz1okk7xwhop8abwehhep1aku", "yimdy1t684zbjowpbuiduwwodj", "9o1sennwafq93mfktesq3u148k", "wx53zae8f65dapqsyosrna8ut5", "w6myqcskkm8i8o9irdreuph56w", "3q7tmspxz19z69prdkarbdt3p8", "7ctuig4u1ufua6nssidpgr6ewq", "hkuxd5ek95y9taoxik9p64asf3", "zjj46gmzu13jjn5fqd94bp5u1a", "ujziq8brph9jiofzer9xnrf7mn", "cz8geybczsqntb7knr69rtwjfd", "rz4o3ma9z9wddcemxx45nzn8ww", "tusurxfzphgu9mn8p1x5yx6jrk", "17j5mienxuoiwuakmy1o5d7ib3", "9a3wbd837n8na6mwbnt14kkbpq", "nqo7mcziz9ziw5s3fs1ef1ijk4", "ynomnwu6w3d1ukdb4m5r16t1gz", "dhb4zk1yixrwjd677co3dskfab", "w4fktm4688grn5uujw5uazi6z1", "e8tpfuwhfcma1max7ecudewore", "tm7d9bpawauot1zmzmrebppauq", "8kr759nfjtxa6hictg3asgxig6", "1kjiu1wcm4hwhfjpagzwf4t7n3", "brhambc1te8z53emhgupa8kzpd", "m4ss9t7qq67b4jc5dnfrseqep6", "zikhetznm4a8mrf49ugm7tozqw", "u7571bbcmx8npcmd5566m5ukb6", "h4n4mre1dfuqycmfbieogifkot", "uy3n7pqxexm1zwzfznd7eaaxzd", "gtam6jfecsbz3rjdeaqrd7x9ug", "o3f49i6pj1o5f64zc4iwggodfp", "oxd5unhuobn7wwcaeqnwsdsu66", "gfaht9zz684qeaj5sp15f47wjh", "i66ra6qgri3qrdhq5f8qck4ph6", "9m6qrptdhgmcuz99x67x6u961u", "5u1o88mksy8rb7u4icwugmxbe1", "ndr7ynmqma9xdpmopydwpmgo3t", "idh3obto6pgqyyqyip7ccz1ofw", "f6ttuh1fib1z7ojn7m4k4ibfaj", "g5gy4ftagxxsg3oui8gje7bzs3", "bin6rum17mnkfdthwyacur54zb", "ubmprty7n17rujuz54ftt14fjq", "w4orazbza9fdky5xnf3134fhr6", "g9h113mgki94znn5yqxub3ag6d", "az17h8jcpyc1g18cngr9smts1h", "ik7bcdgsed9zg1k9h1of3ajyf1", "ams86onzsc438xrrtngjqd6ifd", "8y7ndwcrmtyeii4zyohbgy3kbx", "wag85ck6ywy6zo4mqpbim91kys", "iocdaqbuhgtwrzipp8kx17ebf9", "871rg1i4hboxcwdk4x65d7nbmc", "6eu6bpbo9g6my1pd4qnwbzbnff", "71suj8gdmzcukfqq9afoym8qm3", "ckmbrttb1kduukdgq8gboyk1zf", "cyyoh9rcuf6pm6xdrdf84qqwzk", "w1nr1cayrh5esp83a4mzppn3nw", "u1479anr9ergdf99mz6ofhi48n", "1khpthie5h7oapxtmqpuqdqkod", "t9eocsfwod3k3bbdga33k9uet4", "k5t8c41bbrko75knjh8zepkd3z", "1nky9tsw3k9nnwhyu38pcnoqfm", "rz8d3ke4j44hf6nabyc7wbgoft", "eri48z5ektr1b7xkr9sy17ao1i", "wibzmdmo1q1jjz4hapsout7geh", "b7nx3itj6nghd54u3gzy5ndj93", "i5r7fazxp31ddixiiwne1bhpaa", "z484cdy4e6gszik74myr5mcg4e", "8xb55g14qtuyih6ojnw4eptway", "djsmuoqhrj58jkonyh1pnp64f1", "t6cha81jkc5fhow3k3xbbbjis8", "ohwu5rut5j3shohaa8tz9p4hjx", "1t3wp8a63jpgpij9wxq83w98aq", "fjx4wargux3smyafn83q55qo8a", "n5hpf9cuskzpks57e145yi8u6q", "k9x35pzo5rq7tce5ob8uggs5x5", "u3c9yikcmy1tgooujkg4i5awuy", "tmmk74jhdz3mmnm6iehk5d48ic", "jwa9rumxk5zeknjdn11pq3mnyz", "87bratz37jt7s8bcg14tftydar", "gynarn89deddsoedut4yg4458s", "Desmond", "Lucy"}).
 		ToPlaybook()
 
 	pb = []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
@@ -345,6 +345,25 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			name:   "team1 from Admin, member only",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				MemberOnly:      true,
+			},
+			options: playbook.Options{
+				Sort: playbook.SortByTitle,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb03},
+			},
+			expectedErr: nil,
+		},
+		{
 			name:   "team1 from Admin sort by steps desc",
 			teamID: team1id,
 			requesterInfo: playbook.RequesterInfo{
@@ -526,6 +545,25 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []playbook.Playbook{pb07, pb08},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "team3 from Admin, memberOnly",
+			teamID: team3id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:          "Lucy",
+				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
+				MemberOnly:      true,
+			},
+			options: playbook.Options{
+				Sort: playbook.SortByTitle,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb08},
 			},
 			expectedErr: nil,
 		},

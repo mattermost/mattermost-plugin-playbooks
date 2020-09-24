@@ -188,9 +188,20 @@ func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
-	permissionsExpr := p.buildPermissionsExpr(requesterInfo)
-
 	correctPaginationOpts(&opts)
+
+	var permissionsAndFilter sq.Sqlizer
+	isAdmin := requesterInfo.UserIDtoIsAdmin[requesterInfo.UserID]
+
+	if isAdmin && requesterInfo.MemberOnly || !isAdmin {
+		permissionsAndFilter = p.store.builder.
+			Select("1").
+			Prefix("EXISTS(").
+			From("IR_PlaybookMember as pm").
+			Where("pm.PlaybookID = p.ID").
+			Where(sq.Eq{"pm.MemberID": requesterInfo.UserID}).
+			Suffix(")")
+	}
 
 	queryForResults := p.store.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
@@ -198,7 +209,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID}).
-		Where(permissionsExpr).
+		Where(permissionsAndFilter).
 		Offset(uint64(opts.Page * opts.PerPage)).
 		Limit(uint64(opts.PerPage))
 
@@ -221,7 +232,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID}).
-		Where(permissionsExpr)
+		Where(permissionsAndFilter)
 
 	var total int
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {
@@ -236,21 +247,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 		HasMore:    hasMore,
 		Items:      playbooks,
 	}, nil
-}
-
-func (p *playbookStore) buildPermissionsExpr(info playbook.RequesterInfo) sq.Sqlizer {
-	if info.UserIDtoIsAdmin[info.UserID] && !info.MemberOnly {
-		return nil
-	}
-
-	// is the requester a member of the playbook?
-	return p.store.builder.
-		Select("1").
-		Prefix("EXISTS(").
-		From("IR_PlaybookMember as pm").
-		Where("pm.PlaybookID = p.ID").
-		Where(sq.Eq{"pm.MemberID": info.UserID}).
-		Suffix(")")
 }
 
 // Update updates a playbook
