@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	"unicode"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -14,9 +13,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 )
 
 type sqlIncident struct {
@@ -95,18 +91,8 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-			unaccentExists, err := s.store.isUnaccentAvailable()
-			if err != nil {
-				s.store.log.Errorf("failed to check if the unaccent function exists: %w", err)
-			}
-
-			if unaccentExists {
-				column = "LOWER(UNACCENT(Name))"
-				searchString = normalize(options.SearchTerm)
-			} else {
-				column = "LOWER(Name)"
-				searchString = strings.ToLower(options.SearchTerm)
-			}
+			column = "LOWER(Name)"
+			searchString = strings.ToLower(options.SearchTerm)
 		}
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
@@ -398,12 +384,4 @@ func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
 	return &i, nil
-}
-
-// normalize removes unicode marks and lowercases text
-func normalize(s string) string {
-	// create a transformer, from NFC to NFD, removes non-spacing unicode marks, then back to NFC
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	normed, _, _ := transform.String(t, strings.ToLower(s))
-	return normed
 }

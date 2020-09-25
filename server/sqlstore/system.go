@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
@@ -52,33 +51,4 @@ func (sqlStore *SQLStore) setSystemValue(e execer, key, value string) error {
 	}
 
 	return nil
-}
-
-func (sqlStore *SQLStore) isUnaccentAvailable() (bool, error) {
-	if sqlStore.cachedUnaccentCheck != nil {
-		return *sqlStore.cachedUnaccentCheck, nil
-	}
-
-	if sqlStore.db.DriverName() != model.DATABASE_DRIVER_POSTGRES {
-		sqlStore.cachedUnaccentCheck = bToP(false)
-
-		return false, nil
-	}
-
-	var unaccentExists bool
-	err := sqlStore.getBuilder(sqlStore.db, &unaccentExists,
-		sq.Expr("SELECT EXISTS(SELECT * FROM pg_proc WHERE proname = 'unaccent')"))
-
-	if err != nil {
-		return false, err
-	}
-
-	sqlStore.cachedUnaccentCheck = &unaccentExists
-
-	return unaccentExists, err
-}
-
-// bToP stands for boolean To Pointer
-func bToP(b bool) *bool {
-	return &b
 }
