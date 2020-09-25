@@ -87,12 +87,6 @@ var migrations = []Migration{
 				}
 			} else {
 				if _, err := e.Exec(`
-					CREATE EXTENSION IF NOT EXISTS unaccent;
-				`); err != nil {
-					logger.Errorf("Failed creating the unaccent extension, the search will be accent-sensitive. Error: %v", err)
-				}
-
-				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID TEXT PRIMARY KEY,
 						Name TEXT NOT NULL,

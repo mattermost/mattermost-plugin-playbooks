@@ -11,6 +11,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func newUserInfo() userInfo {
+	id := model.NewId()
+	return userInfo{
+		ID:   id,
+		Name: id,
+	}
+}
+
+func multipleUserInfo(n int) []userInfo {
+	list := make([]userInfo, 0, n)
+	for i := 0; i < n; i++ {
+		list = append(list, newUserInfo())
+	}
+	return list
+}
+
 var (
 	pb01 = NewPBBuilder().
 		WithTitle("playbook 1").
@@ -35,7 +51,7 @@ var (
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
-		WithMembers([]userInfo{jon, matt}).
+		WithMembers([]userInfo{jon, matt, lucia}).
 		ToPlaybook()
 
 	pb04 = NewPBBuilder().
@@ -49,34 +65,34 @@ var (
 
 	pb05 = NewPBBuilder().
 		WithTitle("playbook 5").
-		WithDescription("this won't get returned because there are no members").
-		WithTeamID(team1id).
-		WithCreateAt(900).
-		WithChecklists([]int{1, 2, 40}).
-		ToPlaybook()
-
-	pb06 = NewPBBuilder().
-		WithTitle("playbook 6").
 		WithTeamID(team2id).
 		WithCreateAt(1000).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{jon, andrew}).
 		ToPlaybook()
 
-	pb07 = NewPBBuilder().
-		WithTitle("playbook 7").
+	pb06 = NewPBBuilder().
+		WithTitle("playbook 6").
 		WithTeamID(team2id).
 		WithCreateAt(1100).
 		WithChecklists([]int{1, 2, 3}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
 
-	pb08 = NewPBBuilder().
-		WithTitle("playbook 8").
+	pb07 = NewPBBuilder().
+		WithTitle("playbook 7").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{andrew}).
+		ToPlaybook()
+
+	pb08 = NewPBBuilder().
+		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
+		WithTeamID(team3id).
+		WithCreateAt(1300).
+		WithChecklists([]int{1}).
+		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
 
 	pb = []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
@@ -111,7 +127,12 @@ var (
 		Name: "Jen",
 	}
 
-	users = []userInfo{jon, andrew, matt, lucia, bill, jen}
+	desmond = userInfo{
+		ID:   model.NewId(),
+		Name: "Desmond",
+	}
+
+	users = []userInfo{jon, andrew, matt, lucia, bill, jen, desmond}
 )
 
 func TestGetPlaybook(t *testing.T) {
@@ -135,6 +156,25 @@ func TestGetPlaybook(t *testing.T) {
 			actual, err := playbookStore.Get(id)
 			require.NoError(t, err)
 			require.Equal(t, expected, actual)
+		})
+
+		t.Run(driverName+" - create and retrieve all playbooks", func(t *testing.T) {
+			var inserted []playbook.Playbook
+			for _, p := range pb {
+				id, err := playbookStore.Create(p)
+				require.NoError(t, err)
+
+				tmp := p.Clone()
+				tmp.ID = id
+				inserted = append(inserted, tmp)
+			}
+
+			for _, p := range inserted {
+				got, err := playbookStore.Get(p.ID)
+				require.NoError(t, err)
+				require.Equal(t, p, got)
+			}
+			require.Equal(t, len(pb), len(inserted))
 		})
 
 		t.Run(driverName+" - create but retrieve non-existing playbook", func(t *testing.T) {
@@ -168,15 +208,6 @@ func TestGetPlaybook(t *testing.T) {
 }
 
 func TestGetPlaybooks(t *testing.T) {
-	createPlaybooks := func(store playbook.Store) {
-		t.Helper()
-
-		for i := range pb {
-			_, err := store.Create(pb[i])
-			require.NoError(t, err)
-		}
-	}
-
 	tests := []struct {
 		name        string
 		expected    []playbook.Playbook
@@ -184,7 +215,7 @@ func TestGetPlaybooks(t *testing.T) {
 	}{
 		{
 			name:        "get all playbooks",
-			expected:    []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08},
+			expected:    pb,
 			expectedErr: nil,
 		},
 	}
@@ -199,7 +230,27 @@ func TestGetPlaybooks(t *testing.T) {
 			require.ElementsMatch(t, []playbook.Playbook{}, result)
 		})
 
-		createPlaybooks(playbookStore)
+		// create playbooks, test that they were created correctly
+		all, err := playbookStore.GetPlaybooks()
+		require.NoError(t, err)
+		require.Equal(t, 0, len(all))
+
+		var inserted []playbook.Playbook
+		for _, p := range pb {
+			id, err := playbookStore.Create(p)
+			require.NoError(t, err)
+
+			tmp := p.Clone()
+			tmp.ID = id
+			inserted = append(inserted, tmp)
+		}
+
+		for _, p := range inserted {
+			got, err := playbookStore.Get(p.ID)
+			require.NoError(t, err)
+			require.Equal(t, p, got)
+		}
+		require.Equal(t, len(pb), len(inserted))
 
 		for _, testCase := range tests {
 			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
@@ -221,11 +272,14 @@ func TestGetPlaybooks(t *testing.T) {
 				}
 
 				// remove the checklists from the expected playbooks--we don't return them in getPlaybooks
-				for i := range testCase.expected {
-					testCase.expected[i].Checklists = []playbook.Checklist(nil)
+				var expected []playbook.Playbook
+				for _, p := range testCase.expected {
+					tmp := p.Clone()
+					tmp.Checklists = nil
+					expected = append(expected, tmp)
 				}
 
-				require.ElementsMatch(t, testCase.expected, actual)
+				require.ElementsMatch(t, expected, actual)
 			})
 		}
 	}
@@ -338,6 +392,25 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []playbook.Playbook{pb01, pb02, pb03, pb04},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "team1 from Admin, member only",
+			teamID: team1id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				MemberOnly:      true,
+			},
+			options: playbook.Options{
+				Sort: playbook.SortByTitle,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb03},
 			},
 			expectedErr: nil,
 		},
@@ -486,7 +559,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				TotalCount: 1,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb07},
+				Items:      []playbook.Playbook{pb06},
 			},
 			expectedErr: nil,
 		},
@@ -504,7 +577,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				TotalCount: 1,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb08},
+				Items:      []playbook.Playbook{pb07},
 			},
 			expectedErr: nil,
 		},
@@ -514,6 +587,43 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			requesterInfo: playbook.RequesterInfo{
 				UserID:          lucia.ID,
 				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+			},
+			options: playbook.Options{
+				Sort: playbook.SortByTitle,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb07, pb08},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "team3 from Admin, memberOnly",
+			teamID: team3id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID:          lucia.ID,
+				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				MemberOnly:      true,
+			},
+			options: playbook.Options{
+				Sort: playbook.SortByTitle,
+			},
+			expected: playbook.GetPlaybooksResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []playbook.Playbook{pb08},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "team3 from Desmond - testing many members",
+			teamID: team3id,
+			requesterInfo: playbook.RequesterInfo{
+				UserID: desmond.ID,
+				TeamID: team3id,
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -533,7 +643,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []playbook.Playbook{},
+				Items:      nil,
 			},
 			expectedErr: nil,
 		},
@@ -578,9 +688,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 					actual.Items[i].ID = ""
 				}
 
-				// remove the checklists from the expected playbooks--we don't return them in getPlaybooks
+				// remove the checklists and members from the expected playbooks--we don't return them in getPlaybooks
 				for i := range testCase.expected.Items {
-					testCase.expected.Items[i].Checklists = []playbook.Checklist(nil)
+					testCase.expected.Items[i].Checklists = nil
+					testCase.expected.Items[i].MemberIDs = nil
 				}
 
 				require.Equal(t, testCase.expected, actual)

@@ -760,10 +760,6 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 
 	var options []*model.PostActionOptions
 	for _, playbook := range playbooks {
-		if !canStartIncidentWithPlaybook(commanderID, playbook) {
-			continue
-		}
-
 		options = append(options, &model.PostActionOptions{
 			Text:  playbook.Title,
 			Value: playbook.ID,
@@ -853,15 +849,4 @@ func addRandomBits(name string) string {
 	}
 	randBits := model.NewId()
 	return fmt.Sprintf("%s-%s", name, randBits[:4])
-}
-
-func canStartIncidentWithPlaybook(userID string, pb playbook.Playbook) bool {
-	// Members of a playbook can use it to start incident
-	for _, memberID := range pb.MemberIDs {
-		if memberID == userID {
-			return true
-		}
-	}
-
-	return false
 }

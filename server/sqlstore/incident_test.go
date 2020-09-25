@@ -102,7 +102,7 @@ var (
 		ToIncident()
 
 	inc03 = *NewBuilder().
-		WithName("incident 3 - Hörse stapler battery shotgun mouse shotputmouse").
+		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
 		WithChannelID(channelID03). // public
 		WithIsActive(false).
 		WithCommanderUserID(commander1.UserID).
@@ -157,7 +157,7 @@ var (
 		ToIncident()
 
 	inc08 = *NewBuilder().
-		WithName("incident 8 - ziggurat!").
+		WithName("incident 8 - ziggürat!").
 		WithChannelID(channelID08). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
@@ -619,32 +619,14 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team3 - case-insensitive and unicode-normalized - admin",
+			Name: "team3 - case-insensitive and unicode characters - admin",
 			RequesterInfo: incident.RequesterInfo{
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team3id,
-				SearchTerm: "ziggurat",
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc08, inc09},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team3 - case-insensitive and unicode-normalized with unicode search term - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID:     team3id,
-				SearchTerm: "ziggūràt",
+				SearchTerm: "ZiGgüRat",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
