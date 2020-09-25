@@ -267,7 +267,6 @@ func (r *Runner) actionChangeCommander(args []string) {
 		return
 	}
 
-	currentIncident.CommanderUserID = targetCommanderUser.Id
 	err = r.incidentService.ChangeCommander(currentIncident.ID, r.args.UserId, targetCommanderUser.Id)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Failed to change commander to @%s: %v", targetCommanderUsername, err))

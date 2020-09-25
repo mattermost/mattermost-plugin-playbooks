@@ -147,7 +147,7 @@ describe('slash command', () => {
             });
         });
 
-        describe('should show an message when the user is already the commander', () => {
+        describe('should show a message when the user is already the commander', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
