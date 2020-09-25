@@ -72,6 +72,9 @@ type RequesterInfo struct {
 	UserID          string
 	TeamID          string
 	UserIDtoIsAdmin map[string]bool
+
+	// MemberOnly filters playbooks to those for which UserId is a member
+	MemberOnly bool
 }
 
 // Service is the playbook service for managing playbooks
