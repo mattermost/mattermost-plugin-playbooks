@@ -71,7 +71,7 @@ describe('slash command', () => {
             cy.executeSlashCommand('/incident commander');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('This is not an incident channel.');
+            cy.verifyEphemeralMessage('You can only show the commander from within the incident\'s channel.');
         });
 
         it('should show the current commander', () => {
@@ -95,7 +95,7 @@ describe('slash command', () => {
             cy.executeSlashCommand('/incident commander user-2');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('This is not an incident channel.');
+            cy.verifyEphemeralMessage('You can only change the commander from within the incident\'s channel.');
         });
 
         describe('should show an error when the user is not found', () => {

@@ -204,7 +204,7 @@ func (r *Runner) actionCommander(args []string) {
 func (r *Runner) actionShowCommander([]string) {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if errors.Is(err, incident.ErrNotFound) {
-		r.postCommandResponse("This is not an incident channel.")
+		r.postCommandResponse("You can only show the commander from within the incident's channel.")
 		return
 	} else if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
@@ -231,7 +231,7 @@ func (r *Runner) actionChangeCommander(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if errors.Is(err, incident.ErrNotFound) {
-		r.postCommandResponse("This is not an incident channel.")
+		r.postCommandResponse("You can only change the commander from within the incident's channel.")
 		return
 	} else if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
