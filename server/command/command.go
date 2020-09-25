@@ -223,7 +223,7 @@ func (r *Runner) actionShowCommander([]string) {
 		return
 	}
 
-	r.postCommandResponse(fmt.Sprintf("**@%s** is the current commander for **%s**", commanderUser.Username, currentIncident.Name))
+	r.postCommandResponse(fmt.Sprintf("**@%s** is the current commander for this incident.", commanderUser.Username))
 }
 
 func (r *Runner) actionChangeCommander(args []string) {

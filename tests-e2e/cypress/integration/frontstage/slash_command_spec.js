@@ -82,7 +82,7 @@ describe('slash command', () => {
             cy.executeSlashCommand('/incident commander');
 
             // * Verify the expected commander.
-            cy.verifyEphemeralMessage(`@user-1 is the current commander for ${incidentName}`);
+            cy.verifyEphemeralMessage('@user-1 is the current commander for this incident.');
         });
     });
 
