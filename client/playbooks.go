@@ -9,8 +9,6 @@ import (
 	"net/http"
 )
 
-const playbooks = "playbooks"
-
 // Playbook represents a playbook.
 type Playbook struct {
 	ID         string      `json:"id"`
@@ -68,103 +66,98 @@ type PlaybooksService struct {
 
 // Create an playbook.
 func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOptions) (*Playbook, error) {
-	u := playbooks
+	url := "playbooks"
 	playbookRequest := Playbook{
 		Title:  opts.Name,
 		TeamID: opts.TeamID,
 	}
-	req, err := s.client.NewRequest(http.MethodPost, u, playbookRequest)
+	req, err := s.client.NewRequest(http.MethodPost, url, playbookRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	p := new(Playbook)
 	req.Header.Add("Mattermost-User-ID", opts.UserID)
-	resp, err := s.client.Do(ctx, req, p)
+	_, err = s.client.Do(ctx, req, p)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return p, nil
 }
 
 // Get a playbook.
 func (s *PlaybooksService) Get(ctx context.Context, playbookID string) (*Playbook, error) {
-	u := fmt.Sprintf("%s/%s", playbooks, playbookID)
-	req, err := s.client.NewRequest(http.MethodGet, u, nil)
+	url := fmt.Sprintf("%s/%s", "playbooks", playbookID)
+	req, err := s.client.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	p := new(Playbook)
-	resp, err := s.client.Do(ctx, req, p)
+	_, err = s.client.Do(ctx, req, p)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return p, nil
 }
 
 // Update a playbook.
 func (s *PlaybooksService) Update(ctx context.Context, opts PlaybookUpdateOptions) (*Playbook, error) {
-	u := fmt.Sprintf("%s/%s", playbooks, opts.ID)
+	url := fmt.Sprintf("%s/%s", "playbooks", opts.ID)
 	playbookRequest := Playbook{
 		Title:  opts.Name,
 		TeamID: opts.TeamID,
 	}
-	req, err := s.client.NewRequest(http.MethodPost, u, playbookRequest)
+	req, err := s.client.NewRequest(http.MethodPost, url, playbookRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("Mattermost-User-ID", opts.UserID)
-	resp, err := s.client.Do(ctx, req, nil)
+	_, err = s.client.Do(ctx, req, nil)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return nil, nil
 }
 
 // List the playbooks.
 func (s *PlaybooksService) List(ctx context.Context, opt PlaybookListOptions) (*PlaybookList, error) {
-	u := playbooks
-	u, err := addOptions(u, opt)
+	url := "playbooks"
+	url, err := addOptions(url, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := s.client.NewRequest(http.MethodGet, u, nil)
+	req, err := s.client.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &PlaybookList{}
-	resp, err := s.client.Do(ctx, req, result)
+	_, err = s.client.Do(ctx, req, result)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return result, nil
 }
 
 // Delete a playbook.
 func (s *PlaybooksService) Delete(ctx context.Context, playbookID string) (*Playbook, error) {
-	u := fmt.Sprintf("%s/%s", playbooks, playbookID)
-	req, err := s.client.NewRequest(http.MethodDelete, u, nil)
+	url := fmt.Sprintf("%s/%s", "playbooks", playbookID)
+	req, err := s.client.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := s.client.Do(ctx, req, nil)
+	_, err = s.client.Do(ctx, req, nil)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return nil, nil
 }
