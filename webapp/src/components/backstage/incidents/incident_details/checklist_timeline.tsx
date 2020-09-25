@@ -48,8 +48,8 @@ const ChecklistTimeline: FC<Props> = (props: Props) => {
 
     let content;
 
-    const checklistItems = props.incident.checklists?.[0]?.items || [];
-    if (checklistItems.length === 0) {
+    const numItems = props.incident.checklists?.reduce((accum, current) => accum + current.items?.length, 0);
+    if (numItems === 0) {
         content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
             <div>
                 <div>
