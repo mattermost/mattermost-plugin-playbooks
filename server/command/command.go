@@ -74,7 +74,7 @@ func getAutocompleteData() *model.AutocompleteData {
 
 	commander := model.NewAutocompleteData("commander", "[@username]",
 		"Show or change the current commander")
-	commander.AddTextArgument("The desired commander.", "[@username]", "")
+	commander.AddTextArgument("The desired new commander.", "[@username]", "")
 	slashIncident.AddCommand(commander)
 
 	announce := model.NewAutocompleteData("announce", "~[channels]",
@@ -197,7 +197,7 @@ func (r *Runner) actionCommander(args []string) {
 	case 1:
 		r.actionChangeCommander(args)
 	default:
-		r.postCommandResponse(helpText)
+		r.postCommandResponse("/incident commander expects at most one argument.")
 	}
 }
 

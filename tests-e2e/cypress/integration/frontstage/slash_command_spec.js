@@ -204,7 +204,7 @@ describe('slash command', () => {
             cy.executeSlashCommand('/incident commander user-1 sysadmin');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('Slash Command Help');
+            cy.verifyEphemeralMessage('/incident commander expects at most one argument.');
         });
     });
 });
