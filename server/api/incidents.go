@@ -357,8 +357,6 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	removeNulls(incidentToGet)
-
 	jsonBytes, err := json.Marshal(incidentToGet)
 	if err != nil {
 		HandleError(w, err)
@@ -389,8 +387,6 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 		HandleError(w, err)
 		return
 	}
-
-	removeNulls(&incidentToGet.Incident)
 
 	jsonBytes, err := json.Marshal(incidentToGet)
 	if err != nil {
@@ -913,16 +909,4 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,
 	}, nil
-}
-
-func removeNulls(theIncident *incident.Incident) {
-	// replace nils with empty slices for the frontend
-	if theIncident.Checklists == nil {
-		theIncident.Checklists = []playbook.Checklist{}
-	}
-	for i, cl := range theIncident.Checklists {
-		if cl.Items == nil {
-			theIncident.Checklists[i].Items = []playbook.ChecklistItem{}
-		}
-	}
 }

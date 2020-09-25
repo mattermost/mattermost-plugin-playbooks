@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Checklist, ChecklistItem, isChecklist} from './playbook';
+import {Checklist, isChecklist} from './playbook';
 
 export interface Incident {
     id: string;
@@ -45,20 +45,6 @@ export function isIncident(arg: any): arg is Incident {
         optional &&
         arg.playbook_id && typeof arg.playbook_id === 'string' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
-}
-
-export function removeNulls(arg: Incident) {
-    if (!arg.checklists) {
-        arg.checklists = [] as Checklist[];
-    }
-    if (!arg.checklists.every(isChecklist)) {
-        for (const c of arg.checklists) {
-            if (!c.items) {
-                c.items = [] as ChecklistItem[];
-            }
-        }
-    }
-    return arg;
 }
 
 export interface FetchIncidentsParams {

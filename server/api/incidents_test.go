@@ -508,7 +508,8 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			Header: testIncidentHeader,
+			Header:     testIncidentHeader,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -646,7 +647,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -731,7 +732,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -777,7 +778,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).

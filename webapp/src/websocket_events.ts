@@ -13,7 +13,7 @@ import {incidentCreated, receivedTeamIncidentChannels} from 'src/actions';
 import {fetchIncidentChannels} from 'src/client';
 
 import {clientId} from './selectors';
-import {isIncident, Incident, removeNulls} from './types/incident';
+import {isIncident, Incident} from './types/incident';
 
 export const websocketSubscribers = new Set<(incident: Incident) => void>();
 
@@ -29,9 +29,11 @@ export function handleWebsocketIncidentUpdate() {
         if (!msg.data.payload) {
             return;
         }
-        let incident = JSON.parse(msg.data.payload);
+        const incident = JSON.parse(msg.data.payload);
         if (!isIncident(incident)) {
-            incident = removeNulls(incident);
+            // eslint-disable-next-line no-console
+            console.log('error: received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate');
+            return;
         }
 
         websocketSubscribers.forEach((fn) => fn(incident));
@@ -44,9 +46,11 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
             return;
         }
         const payload = JSON.parse(msg.data.payload);
-        let incident = payload.incident;
+        const incident = payload.incident;
         if (!isIncident(incident)) {
-            incident = removeNulls(incident);
+            // eslint-disable-next-line no-console
+            console.log('error: received a websocket data payload that was not an incident in handleWebsocketIncidentCreate');
+            return;
         }
 
         dispatch(incidentCreated(incident));
