@@ -4,6 +4,7 @@
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
 
+import {RHSState} from 'src/types/rhs';
 import {pluginId} from './manifest';
 
 //@ts-ignore GlobalState is not complete
@@ -22,3 +23,5 @@ export const isExportLicensed = (state: GlobalState): boolean => {
 
     return license?.IsLicensed === 'true' && license?.MessageExport === 'true';
 };
+
+export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;

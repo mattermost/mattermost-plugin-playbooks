@@ -2,10 +2,36 @@
 // See LICENSE.txt for license information.
 
 import React, {FC} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
-import {useCurrentIncident} from 'src/hooks';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {GlobalState} from 'mattermost-redux/types/store';
 
+import LeftChevron from 'src/components/assets/icons/left_chevron';
+import {RHSState} from 'src/types/rhs';
+import {setRHSState} from 'src/actions';
+import {useCurrentIncident} from 'src/hooks';
+import {currentRHSState} from 'src/selectors';
+
+const RHSIncidentTitle = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
+
+const Button = styled.button`
+    border: none;
+    background: none;
+    padding: 5px 0 0 0;
+`;
+
+const Title = styled.span`
+    margin-left: 11px;
+`;
 import StatusBadge from '../backstage/incidents/status_badge';
 
 const RHSTitleContainer = styled.div`
@@ -23,8 +49,12 @@ const RHSTitleText = styled.div`
 `;
 
 const RHSTitle: FC = () => {
+    const dispatch = useDispatch();
     const [incident] = useCurrentIncident();
+    const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
+    const theme = useSelector<GlobalState, Record<string, string>>(getTheme);
 
+    // jesse's:
     return (
         <RHSTitleContainer>
             <RHSTitleText>{incident?.name || 'Incidents'}</RHSTitleText>
@@ -35,6 +65,32 @@ const RHSTitle: FC = () => {
                 />
             )}
         </RHSTitleContainer>
+    );
+
+    // mine:
+    const detailsTitle = (
+        <RHSIncidentTitle>
+            <Button
+                onClick={() => dispatch(setRHSState(RHSState.ViewingList))}
+            >
+                <LeftChevron theme={theme}/>
+            </Button>
+            <Title>
+                {(incident && incident.name) || 'Incidents'}
+            </Title>
+        </RHSIncidentTitle>
+    );
+
+    const listTitle = (
+        <RHSIncidentTitle>
+            <Title>
+                {'Your Ongoing Incidents'}
+            </Title>
+        </RHSIncidentTitle>
+    );
+
+    return (
+        rhsState === RHSState.ViewingIncident ? detailsTitle : listTitle
     );
 };
 

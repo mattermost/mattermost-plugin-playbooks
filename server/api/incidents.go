@@ -307,7 +307,6 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          filterOptions.TeamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
@@ -517,7 +516,6 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
@@ -568,7 +566,6 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
@@ -901,6 +898,15 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
+	memberParam := strings.ToLower(u.Query().Get("member_only"))
+	if memberParam == "" {
+		memberParam = "false"
+	}
+	memberOnly, err := strconv.ParseBool(memberParam)
+	if err != nil {
+		return nil, errors.Errorf("bad member_only parameter '%s'", memberParam)
+	}
+
 	return &incident.HeaderFilterOptions{
 		TeamID:      teamID,
 		Page:        page,
@@ -910,5 +916,6 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		Status:      status,
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,
+		MemberOnly:  memberOnly,
 	}, nil
 }

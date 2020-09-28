@@ -86,4 +86,5 @@ export interface FetchIncidentsParams {
     status?: string;
     commander_user_id?: string;
     search_term?: string;
+    member_only?: boolean;
 }

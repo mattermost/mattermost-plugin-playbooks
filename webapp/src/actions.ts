@@ -10,6 +10,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {selectToggleRHS} from 'src/selectors';
 import {Incident} from 'src/types/incident';
+import {RHSState} from 'src/types/rhs';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -22,7 +23,7 @@ import {
     INCIDENT_CREATED,
     IncidentCreated,
     RECEIVED_TEAM_INCIDENT_CHANNELS,
-    ReceivedTeamIncidentChannels,
+    ReceivedTeamIncidentChannels, SetRHSState, SET_RHS_STATE,
 } from './types/actions';
 
 import {
@@ -60,6 +61,13 @@ export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,
         open,
+    };
+}
+
+export function setRHSState(nextState: RHSState): SetRHSState {
+    return {
+        type: SET_RHS_STATE,
+        nextState,
     };
 }
 

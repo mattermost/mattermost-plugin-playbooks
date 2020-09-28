@@ -9,7 +9,7 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {fetchIncidentByChannel} from 'src/client';
+import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
 import {websocketSubscribers} from 'src/websocket_events';
 
 import {Incident} from './types/incident';
@@ -67,6 +67,67 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
     }, [incident]);
 
     return [incident, state];
+}
+
+export enum CurrentIncidentListState {
+    Loading,
+    NotFound,
+    Loaded,
+}
+
+export function useCurrentIncidentList(): [Incident[] | null, CurrentIncidentListState] {
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const [incidents, setIncidents] = useState<Incident[] | null>(null);
+    const [state, setState] = useState<CurrentIncidentListState>(CurrentIncidentListState.Loading);
+
+    const currentTeamId = currentTeam?.id;
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!currentTeamId) {
+                setIncidents(null);
+                setState(CurrentIncidentListState.NotFound);
+                return;
+            }
+
+            try {
+                const result = await fetchIncidents({
+                    member_only: true,
+                    team_id: currentTeam.id,
+                    sort: 'create_at',
+                    order: 'desc',
+                    status: 'active',
+                });
+
+                setIncidents(result.items);
+                setState(CurrentIncidentListState.Loaded);
+            } catch (err) {
+                if (err.status_code === 404) {
+                    setIncidents(null);
+                    setState(CurrentIncidentListState.NotFound);
+                }
+            }
+        };
+        setState(CurrentIncidentListState.Loading);
+        fetchData();
+    }, [currentTeamId]);
+
+    // useEffect(() => {
+    //     const doUpdate = (updatedIncident: Incident) => {
+    //         if (incident !== null &&
+    //             updatedIncident.is_active &&
+    //             updatedIncident.team_id === currentTeamId &&
+    //
+    //         ) {
+    //             setIncident(updatedIncident);
+    //         }
+    //     };
+    //     websocketSubscribers.add(doUpdate);
+    //     return () => {
+    //         websocketSubscribers.delete(doUpdate);
+    //     };
+    // }, [incident]);
+
+    return [incidents, state];
 }
 
 /**

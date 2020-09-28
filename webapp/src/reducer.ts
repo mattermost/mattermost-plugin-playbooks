@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {combineReducers} from 'redux';
+import {RHSState} from 'src/types/rhs';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -13,7 +14,7 @@ import {
     INCIDENT_CREATED,
     IncidentCreated,
     RECEIVED_TEAM_INCIDENT_CHANNELS,
-    ReceivedTeamIncidentChannels,
+    ReceivedTeamIncidentChannels, SetRHSState, SET_RHS_STATE,
 } from './types/actions';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
@@ -38,6 +39,15 @@ function clientId(state = '', action: SetClientId) {
     switch (action.type) {
     case SET_CLIENT_ID:
         return action.clientId || '';
+    default:
+        return state;
+    }
+}
+
+function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
+    switch (action.type) {
+    case SET_RHS_STATE:
+        return action.nextState;
     default:
         return state;
     }
@@ -76,4 +86,5 @@ export default combineReducers({
     rhsOpen,
     clientId,
     myIncidentChannelIds,
+    rhsState,
 });
