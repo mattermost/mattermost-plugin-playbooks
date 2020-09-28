@@ -26,11 +26,7 @@ const RHSIncidentTitle = styled.div`
 const Button = styled.button`
     border: none;
     background: none;
-    padding: 5px 0 0 0;
-`;
-
-const Title = styled.span`
-    margin-left: 11px;
+    padding: 5px 11px 0 0;
 `;
 import StatusBadge from '../backstage/incidents/status_badge';
 
@@ -75,17 +71,13 @@ const RHSTitle: FC = () => {
             >
                 <LeftChevron theme={theme}/>
             </Button>
-            <Title>
-                {(incident && incident.name) || 'Incidents'}
-            </Title>
+            {(incident && incident.name) || 'Incidents'}
         </RHSIncidentTitle>
     );
 
     const listTitle = (
         <RHSIncidentTitle>
-            <Title>
-                {'Your Ongoing Incidents'}
-            </Title>
+            {'Your Ongoing Incidents'}
         </RHSIncidentTitle>
     );
 

@@ -75,7 +75,7 @@ export function fetchIncidentByChannel(channelId: string) {
 }
 
 export function fetchIncidentChannels(teamID: string) {
-    return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}`);
+    return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}&per_page=10000`);
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {

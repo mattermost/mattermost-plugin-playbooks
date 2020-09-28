@@ -2,14 +2,14 @@
 // See LICENSE.txt for license information.
 
 import {Store} from 'redux';
-import {GlobalState} from 'mattermost-redux/types/store';
+
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
 
+import {receivedTeamIncidentChannels, setRHSState, toggleRHS} from 'src/actions';
 import {fetchIncidentChannels} from 'src/client';
-
-import {isIncidentRHSOpen, isIncidentChannel} from 'src/selectors';
-import {toggleRHS, receivedTeamIncidentChannels} from 'src/actions';
+import {isIncidentChannel, isIncidentRHSOpen} from 'src/selectors';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';

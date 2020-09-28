@@ -56,22 +56,19 @@ function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
 // myIncidentChannelIds is a set of incident channel ids for which the current user is an incident
 // member. Note that it is lazy loaded on team change, but will also track incremental updates
 // as provided by websocket events.
-const myIncidentChannelIds = (state: Set<string> = new Set(), action: IncidentCreated | ReceivedTeamIncidentChannels) => {
+const myIncidentChannelIds = (state: Record<string, boolean> = {}, action: IncidentCreated | ReceivedTeamIncidentChannels) => {
     switch (action.type) {
     case INCIDENT_CREATED: {
         const incidentCreatedAction = action as IncidentCreated;
         const incident = incidentCreatedAction.incident;
-        const newState = new Set(state);
-
-        newState.add(incident.channel_id);
-        return newState;
+        return {...state, [incident.channel_id]: true};
     }
     case RECEIVED_TEAM_INCIDENT_CHANNELS: {
         const receivedTeamIncidentChannelsAction = action as ReceivedTeamIncidentChannels;
-        const newState = new Set(state);
+        const newState = {...state};
 
         for (const channelId of receivedTeamIncidentChannelsAction.channelIds) {
-            newState.add(channelId);
+            newState[channelId] = true;
         }
 
         return newState;

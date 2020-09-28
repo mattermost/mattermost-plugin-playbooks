@@ -5,6 +5,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
 
 import {RHSState} from 'src/types/rhs';
+
 import {pluginId} from './manifest';
 
 //@ts-ignore GlobalState is not complete
@@ -16,7 +17,7 @@ export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(st
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => pluginState(state).myIncidentChannelIds.has(channelId);
+export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => pluginState(state).myIncidentChannelIds[channelId];
 
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);
