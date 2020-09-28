@@ -860,9 +860,9 @@ func TestCreateAndGetIncident(t *testing.T) {
 				ExpectedErr: errors.New("ID should not be set"),
 			},
 			{
-				Name:        "Incident should not contain checklists with no items",
+				Name:        "Incident /can/ contain checklists with no items",
 				Incident:    NewBuilder().WithChecklists([]int{0}).ToIncident(),
-				ExpectedErr: errors.New("checklists with no items are not allowed"),
+				ExpectedErr: nil,
 			},
 		}
 
@@ -960,13 +960,13 @@ func TestUpdateIncident(t *testing.T) {
 				ExpectedErr: errors.New("ID should not be empty"),
 			},
 			{
-				Name:     "Incident should not contain checklists with no items",
+				Name:     "Incident /can/ contain checklists with no items",
 				Incident: NewBuilder().WithChecklists([]int{1}).ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
-					old.Checklists[0].Items = []playbook.ChecklistItem{}
+					old.Checklists[0].Items = nil
 					return &old
 				},
-				ExpectedErr: errors.New("checklists with no items are not allowed"),
+				ExpectedErr: nil,
 			},
 			{
 				Name:     "Not active",
@@ -1314,12 +1314,12 @@ func (t *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuild
 	t.Checklists = make([]playbook.Checklist, len(itemsPerChecklist))
 
 	for i, numItems := range itemsPerChecklist {
-		items := make([]playbook.ChecklistItem, numItems)
+		var items []playbook.ChecklistItem
 		for j := 0; j < numItems; j++ {
-			items[j] = playbook.ChecklistItem{
+			items = append(items, playbook.ChecklistItem{
 				ID:    model.NewId(),
 				Title: fmt.Sprint("Checklist ", i, " - item ", j),
-			}
+			})
 		}
 
 		t.Checklists[i] = playbook.Checklist{

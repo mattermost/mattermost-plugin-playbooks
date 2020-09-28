@@ -31,6 +31,8 @@ export function handleWebsocketIncidentUpdate() {
         }
         const incident = JSON.parse(msg.data.payload);
         if (!isIncident(incident)) {
+            // eslint-disable-next-line no-console
+            console.log('error: received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate');
             return;
         }
 
@@ -46,6 +48,8 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
         const payload = JSON.parse(msg.data.payload);
         const incident = payload.incident;
         if (!isIncident(incident)) {
+            // eslint-disable-next-line no-console
+            console.log('error: received a websocket data payload that was not an incident in handleWebsocketIncidentCreate');
             return;
         }
 

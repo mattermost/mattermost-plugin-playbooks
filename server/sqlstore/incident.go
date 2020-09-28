@@ -328,12 +328,6 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 }
 
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
-	for _, checklist := range origIncident.Checklists {
-		if len(checklist.Items) == 0 {
-			return nil, errors.New("checklists with no items are not allowed")
-		}
-	}
-
 	newChecklists := populateChecklistIDs(origIncident.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {

@@ -45,6 +45,7 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
+		MemberIDs: []string{},
 	}
 	withid := playbook.Playbook{
 		ID:     "testplaybookid",
@@ -60,6 +61,7 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
+		MemberIDs: []string{},
 	}
 	withidBytes, err := json.Marshal(&withid)
 	require.NoError(t, err)
@@ -844,16 +846,19 @@ func TestPagingPlaybooks(t *testing.T) {
 		Title:      "A",
 		TeamID:     "testteamid",
 		Checklists: []playbook.Checklist{},
+		MemberIDs:  []string{},
 	}
 	playbooktest2 := playbook.Playbook{
 		Title:      "B",
 		TeamID:     "testteamid",
 		Checklists: []playbook.Checklist{},
+		MemberIDs:  []string{},
 	}
 	playbooktest3 := playbook.Playbook{
 		Title:      "C",
 		TeamID:     "testteamid",
 		Checklists: []playbook.Checklist{},
+		MemberIDs:  []string{},
 	}
 
 	var mockCtrl *gomock.Controller

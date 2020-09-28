@@ -376,12 +376,6 @@ func getSteps(pbook playbook.Playbook) int {
 }
 
 func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
-	for _, checklist := range origPlaybook.Checklists {
-		if len(checklist.Items) == 0 {
-			return nil, errors.New("checklists with no items are not allowed")
-		}
-	}
-
 	checklistsJSON, err := json.Marshal(origPlaybook.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)

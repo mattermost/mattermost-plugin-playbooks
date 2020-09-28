@@ -669,13 +669,14 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: errors.New("id should not be empty"),
 			},
 			{
-				name:     "Incident should not contain checklists with no items",
+				name:     "Incident /can/ contain checklists with no items",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
 				update: func(old playbook.Playbook) playbook.Playbook {
-					old.Checklists[0].Items = []playbook.ChecklistItem{}
+					old.Checklists[0].Items = nil
+					old.NumSteps = 0
 					return old
 				},
-				expectedErr: errors.New("checklists with no items are not allowed"),
+				expectedErr: nil,
 			},
 			{
 				name:     "playbook now public",
@@ -914,12 +915,12 @@ func (p *PlaybookBuilder) WithChecklists(itemsPerChecklist []int) *PlaybookBuild
 	p.Checklists = make([]playbook.Checklist, len(itemsPerChecklist))
 
 	for i, numItems := range itemsPerChecklist {
-		items := make([]playbook.ChecklistItem, numItems)
+		var items []playbook.ChecklistItem
 		for j := 0; j < numItems; j++ {
-			items[j] = playbook.ChecklistItem{
+			items = append(items, playbook.ChecklistItem{
 				ID:    model.NewId(),
 				Title: fmt.Sprint("Checklist ", i, " - item ", j),
-			}
+			})
 		}
 
 		p.Checklists[i] = playbook.Checklist{

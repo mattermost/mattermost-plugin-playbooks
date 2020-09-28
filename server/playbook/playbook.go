@@ -1,6 +1,8 @@
 package playbook
 
 import (
+	"encoding/json"
+
 	"github.com/pkg/errors"
 )
 
@@ -31,6 +33,26 @@ func (p Playbook) Clone() Playbook {
 	newPlaybook.Checklists = newChecklists
 	newPlaybook.MemberIDs = append([]string(nil), p.MemberIDs...)
 	return newPlaybook
+}
+
+func (p Playbook) MarshalJSON() ([]byte, error) {
+	type Alias Playbook
+
+	old := Alias(p.Clone())
+	// replace nils with empty slices for the frontend
+	if old.Checklists == nil {
+		old.Checklists = []Checklist{}
+	}
+	for j, cl := range old.Checklists {
+		if cl.Items == nil {
+			old.Checklists[j].Items = []ChecklistItem{}
+		}
+	}
+	if old.MemberIDs == nil {
+		old.MemberIDs = []string{}
+	}
+
+	return json.Marshal(old)
 }
 
 // Checklist represents a checklist in a playbook
