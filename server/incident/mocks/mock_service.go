@@ -323,6 +323,20 @@ func (mr *MockServiceMockRecorder) RestartIncident(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestartIncident", reflect.TypeOf((*MockService)(nil).RestartIncident), arg0, arg1)
 }
 
+// RunChecklistItemSlashCommand mocks base method
+func (m *MockService) RunChecklistItemSlashCommand(arg0, arg1 string, arg2, arg3 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunChecklistItemSlashCommand", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunChecklistItemSlashCommand indicates an expected call of RunChecklistItemSlashCommand
+func (mr *MockServiceMockRecorder) RunChecklistItemSlashCommand(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunChecklistItemSlashCommand", reflect.TypeOf((*MockService)(nil).RunChecklistItemSlashCommand), arg0, arg1, arg2, arg3)
+}
+
 // SetAssignee mocks base method
 func (m *MockService) SetAssignee(arg0, arg1, arg2 string, arg3, arg4 int) error {
 	m.ctrl.T.Helper()
