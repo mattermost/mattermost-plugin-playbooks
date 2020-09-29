@@ -21,9 +21,10 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 import {isMobile} from 'src/mobile';
 import {toggleRHS, endIncident, restartIncident} from 'src/actions';
 
+import Duration from '../duration';
+
 import 'src/components/checklist.scss';
 import './incident_details.scss';
-import Duration from './duration';
 
 interface Props {
     incident: Incident;
