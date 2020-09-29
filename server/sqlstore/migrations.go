@@ -228,7 +228,8 @@ var migrations = []Migration{
 				}
 
 				if theIncident.ActiveStage < 0 || theIncident.ActiveStage >= numChecklists {
-					return errors.Errorf("index %d out of bounds: incident %s has %d stages", theIncident.ActiveStage, theIncident.ID, numChecklists)
+					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", theIncident.ActiveStage, theIncident.ID, numChecklists)
+					continue
 				}
 
 				incidentUpdate := sqlStore.builder.
