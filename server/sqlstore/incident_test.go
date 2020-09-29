@@ -72,7 +72,7 @@ var (
 		ToIncident()
 
 	inc03 = *NewBuilder().
-		WithName("incident 3 - Hörse stapler battery shotgun mouse shotputmouse").
+		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
 		WithChannelID(channelID03). // public
 		WithIsActive(false).
 		WithCommanderUserID(commander1.UserID).
@@ -127,7 +127,7 @@ var (
 		ToIncident()
 
 	inc08 = *NewBuilder().
-		WithName("incident 8 - ziggurat!").
+		WithName("incident 8 - ziggürat!").
 		WithChannelID(channelID08). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
@@ -589,32 +589,14 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team3 - case-insensitive and unicode-normalized - admin",
+			Name: "team3 - case-insensitive and unicode characters - admin",
 			RequesterInfo: incident.RequesterInfo{
 				UserID:          "Lucy",
 				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID:     team3id,
-				SearchTerm: "ziggurat",
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc08, inc09},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team3 - case-insensitive and unicode-normalized with unicode search term - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          "Lucy",
-				UserIDtoIsAdmin: map[string]bool{"Lucy": true},
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID:     team3id,
-				SearchTerm: "ziggūràt",
+				SearchTerm: "ZiGgüRat",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
@@ -709,11 +691,10 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - Alice (in no channels but member of team, can see public incidents)",
+			Name: "team1 - Alice (in no channels but member of team (because request must have made it through the API team membership test to the store), can see public incidents)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Alice",
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: "Alice",
+				TeamID: team1id,
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
@@ -727,29 +708,10 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team2 - Alice (in no channels and not member of team)",
+			Name: "team2 - Charlotte (in no channels but member of team -- because her request must have made it to the store through the API's team membership check)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Alice",
-				TeamID:              team2id,
-				TeamIDtoCanViewTeam: map[string]bool{team2id: false},
-			},
-			Options: incident.HeaderFilterOptions{
+				UserID: "Charlotte",
 				TeamID: team2id,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 0,
-				PageCount:  0,
-				HasMore:    false,
-				Items:      nil,
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 - Charlotte (in no channels but member of team)",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Charlotte",
-				TeamID:              team2id,
-				TeamIDtoCanViewTeam: map[string]bool{team2id: true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
@@ -783,9 +745,8 @@ func TestGetIncidents(t *testing.T) {
 
 		t.Run("zero incidents", func(t *testing.T) {
 			result, err := incidentStore.GetIncidents(incident.RequesterInfo{
-				UserID:              "Lucy",
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
+				UserID: "Lucy",
+				TeamID: team1id,
 			},
 				incident.HeaderFilterOptions{
 					TeamID:  team1id,
@@ -899,9 +860,9 @@ func TestCreateAndGetIncident(t *testing.T) {
 				ExpectedErr: errors.New("ID should not be set"),
 			},
 			{
-				Name:        "Incident should not contain checklists with no items",
+				Name:        "Incident /can/ contain checklists with no items",
 				Incident:    NewBuilder().WithChecklists([]int{0}).ToIncident(),
-				ExpectedErr: errors.New("checklists with no items are not allowed"),
+				ExpectedErr: nil,
 			},
 		}
 
@@ -999,13 +960,13 @@ func TestUpdateIncident(t *testing.T) {
 				ExpectedErr: errors.New("ID should not be empty"),
 			},
 			{
-				Name:     "Incident should not contain checklists with no items",
+				Name:     "Incident /can/ contain checklists with no items",
 				Incident: NewBuilder().WithChecklists([]int{1}).ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
-					old.Checklists[0].Items = []playbook.ChecklistItem{}
+					old.Checklists[0].Items = nil
 					return &old
 				},
-				ExpectedErr: errors.New("checklists with no items are not allowed"),
+				ExpectedErr: nil,
 			},
 			{
 				Name:     "Not active",
@@ -1155,44 +1116,10 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team 1 - non-member",
+			Name: "team1 - Alice (in no channels but member of team (because must have made it through API team membership test), can see public incidents)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID: "non-existing-id",
-			},
-			Options: incident.HeaderFilterOptions{
+				UserID: "Alice",
 				TeamID: team1id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team 2 - non-member",
-			RequesterInfo: incident.RequesterInfo{
-				UserID: "non-existing-id",
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID: team2id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team 3 - non-member",
-			RequesterInfo: incident.RequesterInfo{
-				UserID: "non-existing-id",
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID: team3id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Alice (in no channels but member of team, can see public incidents)",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Alice",
-				TeamID:              team1id,
-				TeamIDtoCanViewTeam: map[string]bool{team1id: true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
@@ -1201,22 +1128,10 @@ func TestGetCommanders(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team2 - Alice (in no channels and not member of team)",
+			Name: "team2 - Charlotte (in no channels but member of team, because must have made it through API team membership test)",
 			RequesterInfo: incident.RequesterInfo{
-				UserID: "Alice",
-			},
-			Options: incident.HeaderFilterOptions{
+				UserID: "Charlotte",
 				TeamID: team2id,
-			},
-			Expected:    nil,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 - Charlotte (in no channels but member of team)",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:              "Charlotte",
-				TeamID:              team2id,
-				TeamIDtoCanViewTeam: map[string]bool{team2id: true},
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
@@ -1399,12 +1314,12 @@ func (t *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuild
 	t.Checklists = make([]playbook.Checklist, len(itemsPerChecklist))
 
 	for i, numItems := range itemsPerChecklist {
-		items := make([]playbook.ChecklistItem, numItems)
+		var items []playbook.ChecklistItem
 		for j := 0; j < numItems; j++ {
-			items[j] = playbook.ChecklistItem{
+			items = append(items, playbook.ChecklistItem{
 				ID:    model.NewId(),
 				Title: fmt.Sprint("Checklist ", i, " - item ", j),
-			}
+			})
 		}
 
 		t.Checklists[i] = playbook.Checklist{

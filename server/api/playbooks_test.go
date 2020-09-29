@@ -45,6 +45,7 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
+		MemberIDs: []string{},
 	}
 	withid := playbook.Playbook{
 		ID:     "testplaybookid",
@@ -60,6 +61,7 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
+		MemberIDs: []string{},
 	}
 	withidBytes, err := json.Marshal(&withid)
 	require.NoError(t, err)
@@ -170,10 +172,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:              "testuserid",
-					TeamID:              "testteamid",
-					UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
-					TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+					UserID:          "testuserid",
+					TeamID:          "testteamid",
+					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
 				},
 				"testteamid",
 				gomock.Any(),
@@ -567,10 +568,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:              "testuserid",
-					TeamID:              "testteamid",
-					UserIDtoIsAdmin:     map[string]bool{"testuserid": false},
-					TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+					UserID:          "testuserid",
+					TeamID:          "testteamid",
+					UserIDtoIsAdmin: map[string]bool{"testuserid": false},
 				},
 				"testteamid",
 				gomock.Any(),
@@ -799,10 +799,9 @@ func TestSortingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:              "testuserid",
-						TeamID:              "testteamid",
-						UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
-						TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+						UserID:          "testuserid",
+						TeamID:          "testteamid",
+						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
 					},
 					"testteamid",
 					gomock.Any(),
@@ -847,16 +846,19 @@ func TestPagingPlaybooks(t *testing.T) {
 		Title:      "A",
 		TeamID:     "testteamid",
 		Checklists: []playbook.Checklist{},
+		MemberIDs:  []string{},
 	}
 	playbooktest2 := playbook.Playbook{
 		Title:      "B",
 		TeamID:     "testteamid",
 		Checklists: []playbook.Checklist{},
+		MemberIDs:  []string{},
 	}
 	playbooktest3 := playbook.Playbook{
 		Title:      "C",
 		TeamID:     "testteamid",
 		Checklists: []playbook.Checklist{},
+		MemberIDs:  []string{},
 	}
 
 	var mockCtrl *gomock.Controller
@@ -1010,10 +1012,9 @@ func TestPagingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:              "testuserid",
-						TeamID:              "testteamid",
-						UserIDtoIsAdmin:     map[string]bool{"testuserid": true},
-						TeamIDtoCanViewTeam: map[string]bool{"testteamid": true},
+						UserID:          "testuserid",
+						TeamID:          "testteamid",
+						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
 					},
 					"testteamid",
 					gomock.Any(),

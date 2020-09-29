@@ -508,7 +508,8 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			Header: testIncidentHeader,
+			Header:     testIncidentHeader,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -531,7 +532,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
@@ -646,7 +647,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -674,7 +675,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident - not part of channel or team", func(t *testing.T) {
@@ -731,7 +732,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -761,7 +762,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident - part of channel", func(t *testing.T) {
@@ -777,7 +778,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -805,7 +806,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get private incident details - not part of channel", func(t *testing.T) {
@@ -860,7 +861,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		testIncidentDetails := incident.Details{
@@ -901,7 +902,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident details - not part of channel or team", func(t *testing.T) {
@@ -958,7 +959,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		testIncidentDetails := incident.Details{
@@ -1001,7 +1002,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get public incident details - part of channel", func(t *testing.T) {
@@ -1017,7 +1018,7 @@ func TestIncidents(t *testing.T) {
 			},
 			PostID:     "",
 			PlaybookID: "",
-			Checklists: nil,
+			Checklists: []playbook.Checklist{},
 		}
 
 		testIncidentDetails := incident.Details{
@@ -1058,7 +1059,7 @@ func TestIncidents(t *testing.T) {
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
 		require.NoError(t, err)
-		assert.Equal(t, resultIncident, testIncident)
+		assert.Equal(t, testIncident, resultIncident)
 	})
 
 	t.Run("get incidents", func(t *testing.T) {
@@ -1077,7 +1078,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 100,
 			PageCount:  200,
@@ -1111,16 +1112,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("get empty list of incidents", func(t *testing.T) {
 		reset()
 
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
-		result := &incident.GetIncidentsResults{
-			TotalCount: 0,
-			PageCount:  0,
-			HasMore:    false,
-			Items:      nil,
-		}
-		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v1/incidents?team_id=non-existent", nil)
@@ -1130,18 +1122,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var actualList incident.GetIncidentsResults
-		err = json.NewDecoder(resp.Body).Decode(&actualList)
-		require.NoError(t, err)
-		expectedList := incident.GetIncidentsResults{
-			TotalCount: 0,
-			PageCount:  0,
-			HasMore:    false,
-			Items:      []incident.Incident{},
-		}
-		assert.Equal(t, expectedList, actualList)
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 }
 

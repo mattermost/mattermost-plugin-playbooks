@@ -1,6 +1,8 @@
 package playbook
 
 import (
+	"encoding/json"
+
 	"github.com/pkg/errors"
 )
 
@@ -31,6 +33,26 @@ func (p Playbook) Clone() Playbook {
 	newPlaybook.Checklists = newChecklists
 	newPlaybook.MemberIDs = append([]string(nil), p.MemberIDs...)
 	return newPlaybook
+}
+
+func (p Playbook) MarshalJSON() ([]byte, error) {
+	type Alias Playbook
+
+	old := Alias(p.Clone())
+	// replace nils with empty slices for the frontend
+	if old.Checklists == nil {
+		old.Checklists = []Checklist{}
+	}
+	for j, cl := range old.Checklists {
+		if cl.Items == nil {
+			old.Checklists[j].Items = []ChecklistItem{}
+		}
+	}
+	if old.MemberIDs == nil {
+		old.MemberIDs = []string{}
+	}
+
+	return json.Marshal(old)
 }
 
 // Checklist represents a checklist in a playbook
@@ -69,10 +91,12 @@ type GetPlaybooksResults struct {
 
 // RequesterInfo holds the userID and permissions for the user making the request
 type RequesterInfo struct {
-	UserID              string
-	TeamID              string
-	UserIDtoIsAdmin     map[string]bool
-	TeamIDtoCanViewTeam map[string]bool
+	UserID          string
+	TeamID          string
+	UserIDtoIsAdmin map[string]bool
+
+	// MemberOnly filters playbooks to those for which UserId is a member
+	MemberOnly bool
 }
 
 // Service is the playbook service for managing playbooks

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	"unicode"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -14,9 +13,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 )
 
 type sqlIncident struct {
@@ -95,18 +91,8 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-			unaccentExists, err := s.store.isUnaccentAvailable()
-			if err != nil {
-				s.store.log.Errorf("failed to check if the unaccent function exists: %w", err)
-			}
-
-			if unaccentExists {
-				column = "LOWER(UNACCENT(Name))"
-				searchString = normalize(options.SearchTerm)
-			} else {
-				column = "LOWER(Name)"
-				searchString = strings.ToLower(options.SearchTerm)
-			}
+			column = "LOWER(Name)"
+			searchString = strings.ToLower(options.SearchTerm)
 		}
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
@@ -325,8 +311,8 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 		return nil
 	}
 
-	if info.TeamIDtoCanViewTeam[info.TeamID] {
-		checkMembershipOrPublicChannel := sq.Expr(`
+	// is the requester a channel member, or is the channel public?
+	return sq.Expr(`
 		  (
 			  -- If requester is a channel member
 			  EXISTS(SELECT 1
@@ -339,26 +325,9 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 							WHERE c.Id = incident.ChannelID
 							  AND c.Type = 'O')
 		  )`, info.UserID)
-
-		return checkMembershipOrPublicChannel
-	}
-
-	return s.store.builder.
-		Select("1").
-		Prefix("EXISTS(").
-		From("ChannelMembers AS cm").
-		Where("cm.ChannelId = incident.ChannelID").
-		Where(sq.Eq{"cm.UserId": info.UserID}).
-		Suffix(")")
 }
 
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
-	for _, checklist := range origIncident.Checklists {
-		if len(checklist.Items) == 0 {
-			return nil, errors.New("checklists with no items are not allowed")
-		}
-	}
-
 	newChecklists := populateChecklistIDs(origIncident.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {
@@ -409,12 +378,4 @@ func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
 	return &i, nil
-}
-
-// normalize removes unicode marks and lowercases text
-func normalize(s string) string {
-	// create a transformer, from NFC to NFD, removes non-spacing unicode marks, then back to NFC
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	normed, _, _ := transform.String(t, strings.ToLower(s))
-	return normed
 }

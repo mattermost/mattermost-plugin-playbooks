@@ -58,7 +58,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := permissions.ViewTeam(userID, pbook.TeamID, h.pluginAPI); err != nil {
+	if !permissions.CanViewTeam(userID, pbook.TeamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to create playbook on teamID %s",
 			userID,
@@ -188,7 +188,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err2 := permissions.ViewTeam(userID, teamID, h.pluginAPI); err2 != nil {
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
 			userID,
@@ -198,10 +198,9 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requesterInfo := playbook.RequesterInfo{
-		UserID:              userID,
-		TeamID:              teamID,
-		UserIDtoIsAdmin:     map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		TeamIDtoCanViewTeam: map[string]bool{teamID: permissions.CanViewTeam(userID, teamID, h.pluginAPI)},
+		UserID:          userID,
+		TeamID:          teamID,
+		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
@@ -224,7 +223,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
-	if err := permissions.ViewTeam(userID, thePlaybook.TeamID, h.pluginAPI); err != nil {
+	if !permissions.CanViewTeam(userID, thePlaybook.TeamID, h.pluginAPI) {
 		return false
 	}
 

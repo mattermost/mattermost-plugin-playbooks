@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -152,28 +151,34 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 }
 
 // GetPlaybooks retrieves all playbooks that are not deleted.
-func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
+func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	tx, err := p.store.db.Beginx()
 	if err != nil {
-		return out, errors.Wrap(err, "could not begin transaction")
+		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer p.store.finalizeTransaction(tx)
 
-	err = p.store.selectBuilder(tx, &out, p.playbookSelect.Where(sq.Eq{"DeleteAt": 0}))
+	var out []playbook.Playbook
+	err = p.store.selectBuilder(tx, &out, p.store.builder.
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+			"DeleteAt", "NumStages", "NumSteps").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0}))
+
 	if err == sql.ErrNoRows {
-		return out, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
+		return nil, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
 	} else if err != nil {
-		return out, errors.Wrap(err, "failed to get playbooks")
+		return nil, errors.Wrap(err, "failed to get playbooks")
 	}
 
 	var memberIDs playbookMembers
 	err = p.store.selectBuilder(tx, &memberIDs, p.memberIDsSelect)
 	if err != nil && err != sql.ErrNoRows {
-		return out, errors.Wrapf(err, "failed to get memberIDs")
+		return nil, errors.Wrapf(err, "failed to get memberIDs")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return out, errors.Wrap(err, "could not commit transaction")
+		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
 	addMembersToPlaybooks(memberIDs, out)
@@ -183,36 +188,28 @@ func (p *playbookStore) GetPlaybooks() (out []playbook.Playbook, err error) {
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
-	getMembers := `
-			(SELECT PlaybookID, string_agg(MemberID, ' ') members
-			   FROM IR_PlaybookMember
-			   GROUP BY PlaybookID
-			) pmember
-			ON p.ID = pmember.PlaybookID
-		`
-
-	if p.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
-		getMembers = `
-				(SELECT PlaybookID, GROUP_CONCAT(MemberID SEPARATOR ' ') members
-				   FROM IR_PlaybookMember
-				   GROUP BY PlaybookID
-				) pmember
-				ON p.ID = pmember.PlaybookID
-			`
-	}
-
-	permissionsExpr := p.buildPermissionsExpr(requesterInfo)
-
 	correctPaginationOpts(&opts)
+
+	var permissionsAndFilter sq.Sqlizer
+	isAdmin := requesterInfo.UserIDtoIsAdmin[requesterInfo.UserID]
+
+	if isAdmin && requesterInfo.MemberOnly || !isAdmin {
+		permissionsAndFilter = p.store.builder.
+			Select("1").
+			Prefix("EXISTS(").
+			From("IR_PlaybookMember as pm").
+			Where("pm.PlaybookID = p.ID").
+			Where(sq.Eq{"pm.MemberID": requesterInfo.UserID}).
+			Suffix(")")
+	}
 
 	queryForResults := p.store.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "pmember.Members").
+			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
-		Join(getMembers).
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID}).
-		Where(permissionsExpr).
+		Where(permissionsAndFilter).
 		Offset(uint64(opts.Page * opts.PerPage)).
 		Limit(uint64(opts.PerPage))
 
@@ -222,11 +219,8 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 		queryForResults = queryForResults.OrderBy(sortOptionToSQL(opts.Sort))
 	}
 
-	var playbookWithMembers []struct {
-		playbook.Playbook
-		Members string
-	}
-	err := p.store.selectBuilder(p.store.db, &playbookWithMembers, queryForResults)
+	var playbooks []playbook.Playbook
+	err := p.store.selectBuilder(p.store.db, &playbooks, queryForResults)
 	if err == sql.ErrNoRows {
 		return playbook.GetPlaybooksResults{}, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
 	} else if err != nil {
@@ -236,10 +230,9 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 	queryForTotal := p.store.builder.
 		Select("COUNT(*)").
 		From("IR_Playbook AS p").
-		Join(getMembers).
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID}).
-		Where(permissionsExpr)
+		Where(permissionsAndFilter)
 
 	var total int
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {
@@ -248,36 +241,12 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 	pageCount := int(math.Ceil(float64(total) / float64(opts.PerPage)))
 	hasMore := opts.Page+1 < pageCount
 
-	playbooks := make([]playbook.Playbook, 0, len(playbookWithMembers))
-	for _, p := range playbookWithMembers {
-		p.Playbook.MemberIDs = strings.Fields(p.Members)
-		playbooks = append(playbooks, p.Playbook)
-	}
-
 	return playbook.GetPlaybooksResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		HasMore:    hasMore,
 		Items:      playbooks,
 	}, nil
-}
-
-func (p *playbookStore) buildPermissionsExpr(info playbook.RequesterInfo) sq.Sqlizer {
-	if info.UserIDtoIsAdmin[info.UserID] {
-		return nil
-	}
-
-	isPlaybookMember := p.store.builder.
-		Select("1").
-		Prefix("EXISTS(").
-		From("IR_PlaybookMember as pm").
-		Where("pm.PlaybookID = p.ID").
-		Where(sq.Eq{"pm.MemberID": info.UserID}).
-		Suffix(")")
-
-	// For now, whether you can view team channels or not, if you are a playbook member
-	// then you can view the playbook.
-	return isPlaybookMember
 }
 
 // Update updates a playbook
@@ -407,12 +376,6 @@ func getSteps(pbook playbook.Playbook) int {
 }
 
 func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
-	for _, checklist := range origPlaybook.Checklists {
-		if len(checklist.Items) == 0 {
-			return nil, errors.New("checklists with no items are not allowed")
-		}
-	}
-
 	checklistsJSON, err := json.Marshal(origPlaybook.Checklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)

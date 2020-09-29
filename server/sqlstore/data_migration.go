@@ -253,31 +253,44 @@ func DataMigration(store *SQLStore, tx *sqlx.Tx, kvAPI KVAPI) error {
 	return nil
 }
 
+func oldChecklistToNewChecklist(oldChecklist oldChecklist) playbook.Checklist {
+	newItems := make([]playbook.ChecklistItem, len(oldChecklist.Items))
+
+	for j, oldItem := range oldChecklist.Items {
+		var newStateModified int64
+		if !oldItem.StateModified.IsZero() {
+			newStateModified = model.GetMillisForTime(oldItem.StateModified)
+		}
+		var newAssigneeModified int64
+		if !oldItem.AssigneeModified.IsZero() {
+			newAssigneeModified = model.GetMillisForTime(oldItem.AssigneeModified)
+		}
+
+		newItems[j] = playbook.ChecklistItem{
+			ID:                     model.NewId(),
+			Title:                  oldItem.Title,
+			State:                  oldItem.State,
+			StateModified:          newStateModified,
+			StateModifiedPostID:    oldItem.StateModifiedPostID,
+			AssigneeID:             oldItem.AssigneeID,
+			AssigneeModified:       newAssigneeModified,
+			AssigneeModifiedPostID: oldItem.AssigneeModifiedPostID,
+			Command:                oldItem.Command,
+			Description:            oldItem.Description,
+		}
+	}
+
+	return playbook.Checklist{
+		ID:    model.NewId(),
+		Title: oldChecklist.Title,
+		Items: newItems,
+	}
+}
+
 func oldChecklistsToJSON(oldChecklists []oldChecklist) ([]byte, error) {
 	newChecklists := make([]playbook.Checklist, len(oldChecklists))
 	for i, oldChecklist := range oldChecklists {
-		newItems := make([]playbook.ChecklistItem, len(oldChecklist.Items))
-
-		for j, oldItem := range oldChecklist.Items {
-			newItems[j] = playbook.ChecklistItem{
-				ID:                     model.NewId(),
-				Title:                  oldItem.Title,
-				State:                  oldItem.State,
-				StateModified:          model.GetMillisForTime(oldItem.StateModified),
-				StateModifiedPostID:    oldItem.StateModifiedPostID,
-				AssigneeID:             oldItem.AssigneeID,
-				AssigneeModified:       model.GetMillisForTime(oldItem.AssigneeModified),
-				AssigneeModifiedPostID: oldItem.AssigneeModifiedPostID,
-				Command:                oldItem.Command,
-				Description:            oldItem.Description,
-			}
-		}
-
-		newChecklists[i] = playbook.Checklist{
-			ID:    model.NewId(),
-			Title: oldChecklist.Title,
-			Items: newItems,
-		}
+		newChecklists[i] = oldChecklistToNewChecklist(oldChecklist)
 	}
 
 	return json.Marshal(newChecklists)

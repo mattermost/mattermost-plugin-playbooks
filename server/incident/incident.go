@@ -1,6 +1,8 @@
 package incident
 
 import (
+	"encoding/json"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -23,6 +25,23 @@ func (i *Incident) Clone() *Incident {
 	}
 	newIncident.Checklists = newChecklists
 	return &newIncident
+}
+
+func (i *Incident) MarshalJSON() ([]byte, error) {
+	type Alias Incident
+
+	old := (*Alias)(i.Clone())
+	// replace nils with empty slices for the frontend
+	if old.Checklists == nil {
+		old.Checklists = []playbook.Checklist{}
+	}
+	for j, cl := range old.Checklists {
+		if cl.Items == nil {
+			old.Checklists[j].Items = []playbook.ChecklistItem{}
+		}
+	}
+
+	return json.Marshal(old)
 }
 
 // Header holds the summary information of an incident.
@@ -79,10 +98,9 @@ type DialogState struct {
 // RequesterInfo holds the userID and teamID that this request is regarding, and permissions
 // for the user making the request
 type RequesterInfo struct {
-	UserID              string
-	TeamID              string
-	UserIDtoIsAdmin     map[string]bool
-	TeamIDtoCanViewTeam map[string]bool
+	UserID          string
+	TeamID          string
+	UserIDtoIsAdmin map[string]bool
 }
 
 // ErrNotFound used to indicate entity not found.
