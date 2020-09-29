@@ -233,31 +233,25 @@ type Telemetry interface {
 	// RestartIncident tracks the restart of an incident.
 	RestartIncident(incident *Incident)
 
-	// ModifyCheckedState tracks the checking and unchecking of items by the user
-	// identified by userID in the incident identified by incidentID.
+	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
 
-	// SetAssignee tracks the changing of an assignee on an item by the user
-	// identified by userID in the incident identified by incidentID.
+	// SetAssignee tracks the changing of an assignee on an item.
 	SetAssignee(incidentID, userID string)
 
-	// AddChecklistItem tracks the creation of a new checklist item by the user
-	// identified by userID in the incident identified by incidentID.
+	// AddChecklistItem tracks the creation of a new checklist item.
 	AddChecklistItem(incidentID, userID string)
 
-	// RemoveChecklistItem tracks the removal of a checklist item by the user
-	// identified by userID in the incident identified by incidentID.
+	// RemoveChecklistItem tracks the removal of a checklist item.
 	RemoveChecklistItem(incidentID, userID string)
 
-	// RenameChecklistItem tracks the update of a checklist item by the user
-	// identified by userID in the incident identified by incidentID.
+	// RenameChecklistItem tracks the update of a checklist item.
 	RenameChecklistItem(incidentID, userID string)
 
-	// MoveChecklistItem tracks the uncheking of checked item by the user
-	// identified by userID in the incident identified by incidentID.
+	// MoveChecklistItem tracks the unchecking of checked item.
 	MoveChecklistItem(incidentID, userID string)
 
-	// ChangeCommander tracks changes in commander by the user
+	// ChangeCommander tracks changes in commander.
 	ChangeCommander(incident *Incident)
 
 	// ChangeCommander tracks changes in stage
