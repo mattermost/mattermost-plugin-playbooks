@@ -15,7 +15,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {clientExecuteCommand, fetchUsersInChannel, setAssignee} from 'src/client';
+import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useTimeout} from 'src/hooks';
@@ -28,7 +28,7 @@ interface ChecklistItemDetailsProps {
     checklistNum: number;
     itemNum: number;
     channelId: string;
-    incidentId?: string;
+    incidentId: string;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
 }
@@ -140,8 +140,6 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
 };
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
-    const store = useStore();
-    const dispatch = useDispatch();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
@@ -263,7 +261,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         onClick={() => {
                             if (!running) {
                                 setRunning(true);
-                                clientExecuteCommand(dispatch, store.getState, props.checklistItem.command);
+                                clientRunChecklistItemSlashCommand(props.incidentId, props.checklistNum, props.itemNum);
                             }
                         }}
                     >

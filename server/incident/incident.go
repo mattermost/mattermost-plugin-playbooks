@@ -170,6 +170,9 @@ type Service interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
+	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
+	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
+
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
 
@@ -256,4 +259,8 @@ type Telemetry interface {
 
 	// ChangeCommander tracks changes in stage
 	ChangeStage(incident *Incident)
+
+	// RunChecklistItemSlashCommand tracks the execution of a slash command attached to
+	// a checklist item.
+	RunChecklistItemSlashCommand(incidentID, userID string)
 }
