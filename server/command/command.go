@@ -24,7 +24,7 @@ const helpText = "###### Mattermost Incident Response Plugin - Slash Command Hel
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/incident announce ~[channels]` - Announce the currrent incident in other channels. \n" +
 	"\n" +
-	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
+	"Learn more [in our documentation](https://docs.mattermost.com/administration/devops-command-center.html). \n" +
 	""
 
 const confirmPrompt = "CONFIRM"
