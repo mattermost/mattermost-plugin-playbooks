@@ -48,10 +48,7 @@ const Duration: FC<DurationProps> = (props: DurationProps) => {
     const duration = moment.duration(end.diff(start));
 
     return (
-        <div className='first-title'>
-            {'Duration'}
-            <div className='time'>{renderDuration(duration)}</div>
-        </div>
+        <div className='time'>{renderDuration(duration)}</div>
     );
 };
 

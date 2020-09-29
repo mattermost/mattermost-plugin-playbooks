@@ -13,8 +13,13 @@ import {
     setChecklistItemState,
 } from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
+import {
+    renderThumbHorizontal,
+    renderThumbVertical,
+    renderView,
+} from 'src/components/rhs/rhs_shared';
 import {Incident} from 'src/types/incident';
-import {Checklist, ChecklistItem, emptyChecklist, ChecklistItemState} from 'src/types/playbook';
+import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 
@@ -28,30 +33,6 @@ import './incident_details.scss';
 
 interface Props {
     incident: Incident;
-}
-
-function renderView(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--view'
-        />);
-}
-
-function renderThumbHorizontal(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--horizontal'
-        />);
-}
-
-function renderThumbVertical(props: any): JSX.Element {
-    return (
-        <div
-            {...props}
-            className='scrollbar--vertical'
-        />);
 }
 
 interface Option {
@@ -213,10 +194,13 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                                 selfIsFirstOption={true}
                             />
                         </div>
-                        <Duration
-                            created_at={props.incident.create_at}
-                            ended_at={props.incident.end_at}
-                        />
+                        <div className='first-title'>
+                            {'Duration'}
+                            <Duration
+                                created_at={props.incident.create_at}
+                                ended_at={props.incident.end_at}
+                            />
+                        </div>
                     </div>
                     <div className='inner-container'>
                         <StageSelector

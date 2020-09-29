@@ -20,37 +20,37 @@ export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     return useSelector<GlobalState, boolean>((state) => haveITeamPermission(state, options));
 }
 
-export enum CurrentIncidentState {
+export enum IncidentFetchState {
     Loading,
     NotFound,
     Loaded,
 }
 
-export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
+export function useCurrentIncident(): [Incident | null, IncidentFetchState] {
     const currentChannel = useSelector<GlobalState, Channel>(getCurrentChannel);
     const [incident, setIncident] = useState<Incident | null>(null);
-    const [state, setState] = useState<CurrentIncidentState>(CurrentIncidentState.Loading);
+    const [state, setState] = useState<IncidentFetchState>(IncidentFetchState.Loading);
 
     const currentChannelId = currentChannel?.id;
     useEffect(() => {
         const fetchIncident = async () => {
             if (!currentChannelId) {
                 setIncident(null);
-                setState(CurrentIncidentState.NotFound);
+                setState(IncidentFetchState.NotFound);
                 return;
             }
 
             try {
                 setIncident(await fetchIncidentByChannel(currentChannelId));
-                setState(CurrentIncidentState.Loaded);
+                setState(IncidentFetchState.Loaded);
             } catch (err) {
                 if (err.status_code === 404) {
                     setIncident(null);
-                    setState(CurrentIncidentState.NotFound);
+                    setState(IncidentFetchState.NotFound);
                 }
             }
         };
-        setState(CurrentIncidentState.Loading);
+        setState(IncidentFetchState.Loading);
         fetchIncident();
     }, [currentChannelId]);
 
@@ -69,23 +69,23 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
     return [incident, state];
 }
 
-export enum CurrentIncidentListState {
+export enum ListFetchState {
     Loading,
     NotFound,
     Loaded,
 }
 
-export function useCurrentIncidentList(): [Incident[] | null, CurrentIncidentListState] {
+export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const [incidents, setIncidents] = useState<Incident[] | null>(null);
-    const [state, setState] = useState<CurrentIncidentListState>(CurrentIncidentListState.Loading);
+    const [state, setState] = useState<ListFetchState>(ListFetchState.Loading);
 
     const currentTeamId = currentTeam?.id;
     useEffect(() => {
         const fetchData = async () => {
             if (!currentTeamId) {
                 setIncidents(null);
-                setState(CurrentIncidentListState.NotFound);
+                setState(ListFetchState.NotFound);
                 return;
             }
 
@@ -99,18 +99,19 @@ export function useCurrentIncidentList(): [Incident[] | null, CurrentIncidentLis
                 });
 
                 setIncidents(result.items);
-                setState(CurrentIncidentListState.Loaded);
+                setState(ListFetchState.Loaded);
             } catch (err) {
                 if (err.status_code === 404) {
                     setIncidents(null);
-                    setState(CurrentIncidentListState.NotFound);
+                    setState(ListFetchState.NotFound);
                 }
             }
         };
-        setState(CurrentIncidentListState.Loading);
+        setState(ListFetchState.Loading);
         fetchData();
     }, [currentTeamId]);
 
+    // TODO: listen to added to channel events
     // useEffect(() => {
     //     const doUpdate = (updatedIncident: Incident) => {
     //         if (incident !== null &&

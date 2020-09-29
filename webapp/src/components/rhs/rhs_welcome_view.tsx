@@ -14,7 +14,7 @@ import {navigateToTeamPluginUrl} from 'src/browser_routing';
 import {clientHasPlaybooks} from 'src/client';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import NoContentPlaybookSvgRhs from 'src/components/assets/no_content_playbooks_rhs_svg';
-import {RHSContainer} from 'src/components/rhs/rhs_shared_styled_components';
+import {RHSContainer} from 'src/components/rhs/rhs_shared';
 
 const NoIncidentsContainer = styled.div`
     margin: 48px 40px 0;
