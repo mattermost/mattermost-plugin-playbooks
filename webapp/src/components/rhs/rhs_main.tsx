@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {setRHSOpen, setRHSState} from 'src/actions';
+import {setRHSOpen, setRHSState, startIncident} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
 import RHSIncidentDetails from 'src/components/rhs/incident_details';
 import RHSListView from 'src/components/rhs/rhs_list_view';
@@ -63,7 +63,10 @@ const RightHandSidebar: FC<null> = () => {
         return (
             <RHSContainer>
                 <RHSContent>
-                    <RHSListView incidentList={incidentList}/>
+                    <RHSListView
+                        incidentList={incidentList}
+                        currentIncidentId={incident?.id}
+                    />
                 </RHSContent>
             </RHSContainer>
         );

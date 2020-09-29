@@ -40,3 +40,11 @@ export function renderThumbVertical(props: any): JSX.Element {
         />);
 }
 
+export function renderTrackHorizontal(props: any): JSX.Element {
+    return (
+        <div
+            {...props}
+            style={{display: 'none'}}
+            className='track-horizontal'
+        />);
+}
