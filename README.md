@@ -52,7 +52,7 @@ Read more about the Backstage here.
 There are two things you need to do before starting development on the plugin:
 
 1.  You will need a running server to deploy the plugin to, and the web app to manually test your changes. If you have never set up your Mattermost development environment, do so following the instructions for both the [server](https://developers.mattermost.com/contribute/server/developer-setup/) and the [web app](https://developers.mattermost.com/contribute/webapp/developer-setup/).
-2.  The plugin needs a Mattermost E20 License to start. Alternatively, you can run it for development by configuring your Mattermost server to enable both testing and developer mode. You can do so directly on the server's `conf/conf.json` file, setting both `ServiceSettings.EnableTesting` and `ServiceSettings.EnableDeveloper` to `true` (don't forget to restart the server afterwards). You can also configure these settings via the System Console, under Environment > Developer. See [License](#License) for more information.
+ 2.  The plugin needs a Mattermost E20 License to start. Alternatively, you can run it for development by configuring your Mattermost server to enable both testing and developer mode. You can do so directly on the server's `config/config.json` file, setting both `ServiceSettings.EnableTesting` and `ServiceSettings.EnableDeveloper` to `true` (don't forget to restart the server afterwards). You can also configure these settings via the System Console, under Environment > Developer. See [License](#License) for more information. 
 
 If this is the first time you contribute to a Mattermost plugin, the [plugin documentation](https://developers.mattermost.com/extend/plugins/) is a good read to go through before diving into the code.
 
