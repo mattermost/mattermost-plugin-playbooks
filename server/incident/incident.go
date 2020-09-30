@@ -170,7 +170,7 @@ type Service interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
-	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
+	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
 
 	// AddChecklistItem adds an item to the specified checklist

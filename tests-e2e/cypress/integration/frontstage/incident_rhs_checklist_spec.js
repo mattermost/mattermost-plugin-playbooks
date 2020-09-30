@@ -83,7 +83,7 @@ describe('incident rhs checklist', () => {
         });
 
         it('successfully runs a valid slash command', () => {
-            // * Run the /invalid slash command
+            // * Run the /echo slash command
             cy.findAllByText('(Run)').eq(1).click();
 
             // # Verify the expected output.
