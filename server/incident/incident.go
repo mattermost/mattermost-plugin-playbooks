@@ -64,14 +64,38 @@ type UpdateOptions struct {
 	ActiveStage *int `json:"active_stage"`
 }
 
-// Details holds the incident's channel and team metadata.
+// Details holds the extra details needed for some API calls (e.g., the backstage's incident details)
 type Details struct {
-	Incident
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
 	NumMembers         int64  `json:"num_members"`
 	TotalPosts         int64  `json:"total_posts"`
+}
+
+// WithDetails holds the Incident with Details
+type WithDetails struct {
+	Incident
+	Details
+}
+
+func (d *WithDetails) MarshalJSON() ([]byte, error) {
+	incidentJSON, err := json.Marshal(d.Incident)
+	if err != nil {
+		return nil, err
+	}
+
+	detailsJSON, err := json.Marshal(d.Details)
+	if err != nil {
+		return nil, err
+	}
+
+	combinedJSON := make([]byte, 0, len(incidentJSON)+len(detailsJSON)-1)
+	combinedJSON = append(combinedJSON, incidentJSON[:len(incidentJSON)-1]...)
+	combinedJSON = append(combinedJSON, ',')
+	combinedJSON = append(combinedJSON, detailsJSON[1:]...)
+
+	return combinedJSON, nil
 }
 
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
@@ -144,7 +168,7 @@ type Service interface {
 	GetIncident(incidentID string) (*Incident, error)
 
 	// GetIncidentWithDetails gets an incident with the detailed metadata.
-	GetIncidentWithDetails(incidentID string) (*Details, error)
+	GetIncidentWithDetails(incidentID string) (*WithDetails, error)
 
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.

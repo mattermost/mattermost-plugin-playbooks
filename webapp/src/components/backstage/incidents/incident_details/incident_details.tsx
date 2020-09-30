@@ -14,7 +14,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import Spinner from 'src/components/assets/icons/spinner';
 import {fetchIncidentWithDetails} from 'src/client';
-import {Incident} from 'src/types/incident';
+import {Incident, IncidentWithDetails} from 'src/types/incident';
 import Profile from 'src/components/profile/profile';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
@@ -52,7 +52,6 @@ const IncidentTitle = styled.div`
 const CommanderContainer = styled.div`
     display: flex;
     align-items: center;
-    widows: 100%;
     margin-right: 15px;
 
     .label {
@@ -239,7 +238,7 @@ const FetchingStateType = {
 };
 
 const BackstageIncidentDetails: FC = () => {
-    const [incident, setIncident] = useState<Incident>({} as Incident);
+    const [incident, setIncident] = useState<IncidentWithDetails | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const match = useRouteMatch<MatchParams>();
@@ -269,7 +268,7 @@ const BackstageIncidentDetails: FC = () => {
         );
     }
 
-    if (fetchingState === FetchingStateType.notFound) {
+    if (fetchingState === FetchingStateType.notFound || incident === null) {
         return <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.INCIDENTS)}/>;
     }
 
@@ -289,7 +288,7 @@ const BackstageIncidentDetails: FC = () => {
                     onClick={closeIncidentDetails}
                 />
                 <IncidentTitle data-testid='incident-title'>
-                    {`Incident ${incident.name}` }
+                    {`Incident ${incident.name}`}
                 </IncidentTitle>
                 <StatusBadge isActive={incident.is_active}/>
                 <NavbarPadding/>

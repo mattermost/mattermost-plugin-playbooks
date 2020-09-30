@@ -13,7 +13,12 @@ import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
-import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
+import {
+    FetchIncidentsParams,
+    FetchIncidentsReturn,
+    assertIncident,
+    assertIncidentWithDetails,
+} from 'src/types/incident';
 import {
     Playbook,
     ChecklistItem,
@@ -38,11 +43,27 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
 }
 
 export function fetchIncident(id: string) {
-    return doGet(`${apiUrl}/incidents/${id}`);
+    const data = doGet(`${apiUrl}/incidents/${id}`);
+    try {
+        assertIncident(data);
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`expected an Incident in fetchIncident, received: ${data}`, error);
+    }
+
+    return data;
 }
 
-export function fetchIncidentWithDetails(id: string) {
-    return doGet(`${apiUrl}/incidents/${id}/details`);
+export async function fetchIncidentWithDetails(id: string) {
+    const data = await doGet(`${apiUrl}/incidents/${id}/details`);
+    try {
+        assertIncidentWithDetails(data);
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`expected an IncidentWithDetails in fetchIncidentWithDetails, received: ${data}`, error);
+    }
+
+    return data;
 }
 
 export function fetchIncidentByChannel(channelId: string) {
