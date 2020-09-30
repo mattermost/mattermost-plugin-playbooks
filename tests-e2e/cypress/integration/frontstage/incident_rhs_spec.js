@@ -38,225 +38,229 @@ describe('incident rhs', () => {
         cy.apiLogin('user-1');
     });
 
-    it('does not open when navigating to a non-incident channel', () => {
+    describe('does not open', () => {
+        it('when navigating to a non-incident channel', () => {
         // # Navigate to the application
-        cy.visit('/');
+            cy.visit('/');
 
-        // # Select a channel without an incident.
-        cy.get('#sidebarItem_off-topic').click();
+            // # Select a channel without an incident.
+            cy.get('#sidebarItem_off-topic').click();
 
-        // # Wait until the channel loads enough to show the post textbox.
-        cy.get('#post-create').should('be.visible');
+            // # Wait until the channel loads enough to show the post textbox.
+            cy.get('#post-create').should('be.visible');
 
-        // # Wait a bit longer to be confident.
-        cy.wait(2000);
+            // # Wait a bit longer to be confident.
+            cy.wait(2000);
 
-        // * Verify the incident RHS is not open.
-        cy.get('#rhsContainer').should('not.be.visible');
-    });
+            // * Verify the incident RHS is not open.
+            cy.get('#rhsContainer').should('not.be.visible');
+        });
 
-    it('does not open when navigating to an incident channel with the RHS already open', () => {
+        it('when navigating to an incident channel with the RHS already open', () => {
         // # Navigate to the application.
-        cy.visit('/');
+            cy.visit('/');
 
-        // # Select a channel without an incident.
-        cy.get('#sidebarItem_off-topic').click();
+            // # Select a channel without an incident.
+            cy.get('#sidebarItem_off-topic').click();
 
-        // # Start the incident after loading the application
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
-        const incidentChannelName = 'incident-' + now;
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName,
-            commanderUserId: userId,
-        });
+            // # Start the incident after loading the application
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
 
-        // # Open the flagged posts RHS
-        cy.get('#channelHeaderFlagButton').click();
+            // # Open the flagged posts RHS
+            cy.get('#channelHeaderFlagButton').click();
 
-        // # Open the incident channel from the LHS.
-        cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
-        // # Wait until the channel loads enough to show the post textbox.
-        cy.get('#post-create').should('be.visible');
+            // # Wait until the channel loads enough to show the post textbox.
+            cy.get('#post-create').should('be.visible');
 
-        // # Wait a bit longer to be confident.
-        cy.wait(2000);
+            // # Wait a bit longer to be confident.
+            cy.wait(2000);
 
-        // * Verify the incident RHS is not open.
-        cy.get('#rhsContainer').should('not.be.visible');
-    });
-
-    it('opens when navigating directly to an ongoing incident channel', () => {
-        // # Start the incident
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
-        const incidentChannelName = 'incident-' + now;
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName,
-            commanderUserId: userId,
-        });
-
-        // # Navigate directly to the application and the incident channel
-        cy.visit('/ad-1/channels/' + incidentChannelName);
-
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText(incidentName).should('be.visible');
+            // * Verify the incident RHS is not open.
+            cy.get('#rhsContainer').should('not.be.visible');
         });
     });
 
-    it('opens when navigating directly to an ended incident channel', () => {
-        // # Start the incident
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
-        const incidentChannelName = 'incident-' + now;
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName,
-            commanderUserId: userId,
-        }).then((incident) => {
-            // # End the incident
-            cy.apiDeleteIncident(incident.id);
+    describe('opens', () => {
+        it('when navigating directly to an ongoing incident channel', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText(incidentName).should('be.visible');
+            });
         });
 
-        // # Navigate directly to the application and the incident channel
-        cy.visit('/ad-1/channels/' + incidentChannelName);
+        it('when navigating directly to an ended incident channel', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiDeleteIncident(incident.id);
+            });
 
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText(incidentName).should('be.visible');
-        });
-    });
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
 
-    it('opens for a new, ongoing incident channel opened from the lhs', () => {
-        // # Navigate to the application.
-        cy.visit('/');
-
-        // # Select a channel without an incident.
-        cy.get('#sidebarItem_off-topic').click();
-
-        // # Start the incident after loading the application
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
-        const incidentChannelName = 'incident-' + now;
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName,
-            commanderUserId: userId,
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText(incidentName).should('be.visible');
+            });
         });
 
-        // # Open the incident channel from the LHS.
-        cy.get(`#sidebarItem_${incidentChannelName}`).click();
+        it('for a new, ongoing incident channel opened from the lhs', () => {
+            // # Navigate to the application.
+            cy.visit('/');
 
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText(incidentName).should('be.visible');
-        });
-    });
+            // # Select a channel without an incident.
+            cy.get('#sidebarItem_off-topic').click();
 
-    it('opens for a new, ended incident channel opened from the lhs', () => {
-        // # Navigate to the application.
-        cy.visit('/');
+            // # Start the incident after loading the application
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
 
-        // # Select a channel without an incident.
-        cy.get('#sidebarItem_off-topic').click();
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
-        // # Start the incident after loading the application
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
-        const incidentChannelName = 'incident-' + now;
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName,
-            commanderUserId: userId,
-        }).then((incident) => {
-            // # End the incident
-            cy.apiDeleteIncident(incident.id);
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText(incidentName).should('be.visible');
+            });
         });
 
-        // # Open the incident channel from the LHS.
-        cy.get(`#sidebarItem_${incidentChannelName}`).click();
+        it('for a new, ended incident channel opened from the lhs', () => {
+            // # Navigate to the application.
+            cy.visit('/');
 
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText(incidentName).should('be.visible');
-        });
-    });
+            // # Select a channel without an incident.
+            cy.get('#sidebarItem_off-topic').click();
 
-    it('opens for an existing, ongoing incident channel opened from the lhs', () => {
-        // # Start the incident before loading the application
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
-        const incidentChannelName = 'incident-' + now;
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName,
-            commanderUserId: userId,
-        });
+            // # Start the incident after loading the application
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiDeleteIncident(incident.id);
+            });
 
-        // # Navigate to a channel without an incident.
-        cy.visit('/ad-1/channels/off-topic');
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
-        // # Open the incident channel from the LHS.
-        cy.get(`#sidebarItem_${incidentChannelName}`).click();
-
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText(incidentName).should('be.visible');
-        });
-    });
-
-    it('opens for an existing, ended incident channel opened from the lhs', () => {
-        // # Start the incident before loading the application
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
-        const incidentChannelName = 'incident-' + now;
-
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName,
-            commanderUserId: userId,
-        }).then((incident) => {
-            // # End the incident
-            cy.apiDeleteIncident(incident.id);
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText(incidentName).should('be.visible');
+            });
         });
 
-        // # Navigate to a channel without an incident.
-        cy.visit('/ad-1/channels/off-topic');
+        it('for an existing, ongoing incident channel opened from the lhs', () => {
+            // # Start the incident before loading the application
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
 
-        // # Open the incident channel from the LHS.
-        cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            // # Navigate to a channel without an incident.
+            cy.visit('/ad-1/channels/off-topic');
 
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText(incidentName).should('be.visible');
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText(incidentName).should('be.visible');
+            });
         });
-    });
 
-    it('opens when starting an incident', () => {
-        // # Navigate to the application and a channel without an incident
-        cy.visit('/ad-1/channels/off-topic');
+        it('for an existing, ended incident channel opened from the lhs', () => {
+            // # Start the incident before loading the application
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
 
-        // # Start an incident with a slash command
-        const now = Date.now();
-        const incidentName = 'Incident (' + now + ')';
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiDeleteIncident(incident.id);
+            });
 
-        // const incidentChannelName = 'incident-' + now;
-        cy.startIncidentWithSlashCommand(playbookName, incidentName);
+            // # Navigate to a channel without an incident.
+            cy.visit('/ad-1/channels/off-topic');
 
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText(incidentName).should('be.visible');
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText(incidentName).should('be.visible');
+            });
+        });
+
+        it('when starting an incident', () => {
+            // # Navigate to the application and a channel without an incident
+            cy.visit('/ad-1/channels/off-topic');
+
+            // # Start an incident with a slash command
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+
+            // const incidentChannelName = 'incident-' + now;
+            cy.startIncidentWithSlashCommand(playbookName, incidentName);
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText(incidentName).should('be.visible');
+            });
         });
     });
 
@@ -284,5 +288,73 @@ describe('incident rhs', () => {
 
         // * Verify the incident RHS is no longer open.
         cy.get('#rhsContainer').should('not.be.visible');
+    });
+
+    describe('shows status in rhs header', () => {
+        it('when ongoing', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the title shows "Ongoing"
+            cy.get('#rhsContainer').within(() => {
+                cy.get('.sidebar--right__title').contains('Ongoing');
+            });
+        });
+
+        it('when ended', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiDeleteIncident(incident.id);
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the title shows "Ended"
+            cy.get('#rhsContainer').within(() => {
+                cy.get('.sidebar--right__title').contains('Ended');
+            });
+        });
+
+        it('for an incident with a long title name', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident with a really long name (' + now + ')';
+            const incidentChannelName = 'incident-with-a-really-long-name-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the title shows "Ongoing"
+            cy.get('#rhsContainer').within(() => {
+                cy.get('.sidebar--right__title').contains('Ongoing');
+            });
+        });
     });
 });
