@@ -8,6 +8,14 @@ Incident Response allows your team to coordinate, manage and resolve incidents f
 
 ![Incident Response plugin screenshot](assets/center_channel.png)
 
+## License
+
+This repository is licensed under the [Mattermost Source Available License](LICENSE) and requires a valid Enterprise E20 license when used for production. See [frequently asked questions](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
+
+Although a valid Mattermost Enterprise E20 license is required if using this plugin in production, the [Mattermost Source Available License](LICENSE) allows you to compile and test this plugin in development and testing environments without a Mattermost Enterprise E20 license. As such, we welcome community contributions to this plugin.
+
+On startup, the plugin checks for a valid Mattermost Enterprise E20 license. If you're running the Enterprise Edition of the Mattermost server and don't already have a valid license, you can obtain a trial license from **System Console > Edition and License**. If you're running the Team Edition of the Mattermost server, including when you run the server directly from source, you may instead configure your server to enable both testing (`ServiceSettings.EnableTesting`) and developer mode (`ServiceSettings.EnableDeveloper`). These settings are not recommended in production environments. See [Contributing](#contributing) to learn more about how to set up your development environment.
+
 ## Features
 
 ### Plan your incidents
@@ -42,7 +50,6 @@ There will come a time where you will have several incidents, some of them ongoi
 3. See the list of all incidents. You can filter by Commander, Status (ongoing or ended) and look for a specific incident using the search box.
 4. Click on the incident you are interested in.
 5. A summary with some statistics of the incident will show. From this screen, you can also jump to the channel (with the button in the Messages box) and export the channel log, which will download a CSV file with a transcript of all the messages in the channel.
-
 
 ## Contributing
 
@@ -134,11 +141,3 @@ Now you are ready to run the tests from within `tests-e2e/`. There are two alter
 2. run `npm run cypress:open` to open the Cypress dashboard, select the test spec you want and run it.
 
 For a full documentation on E2E tests for Mattermost web app and troubleshooting, please see https://developers.mattermost.com/contribute/webapp/end-to-end-tests/.
-
-## License
-
-This repository is licensed under the [Mattermost Source Available License](LICENSE) and requires a valid Enterprise E20 license. See [frequently asked questions](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
-
-Although a valid Mattermost Enterprise E20 license is required if using this plugin in production, the [Mattermost Source Available License](LICENSE) allows you to compile and test this plugin in development and testing environments without a Mattermost Enterprise E20 license. As such, we welcome community contributions to this plugin.
-
-On startup, the plugin checks for a valid Mattermost Enterprise E20 license. If you're running the Enterprise Edition of the Mattermost server and don't already have a valid license, you can obtain a trial license from **System Console > Edition and License**. If you're running the Team Edition of the Mattermost server, including when you run the server directly from source, you may instead configure your server to enable both testing (`ServiceSettings.EnableTesting`) and developer mode (`ServiceSettings.EnableDeveloper`). These settings are not recommended in production environments.
