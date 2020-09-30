@@ -45,6 +45,9 @@ type HeaderFilterOptions struct {
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
 	CommanderID string
 
+	// MemberID filters incidents that have this member. Defaults to blank (no filter).
+	MemberID string
+
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Order fields (i.e., results are
 	// not returned in relevance order).
@@ -125,6 +128,10 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 
 	if options.CommanderID != "" && !model.IsValidId(options.CommanderID) {
 		return errors.New("bad parameter 'commander_id': must be 26 characters or blank")
+	}
+
+	if options.MemberID != "" && !model.IsValidId(options.MemberID) {
+		return errors.New("bad parameter 'member_id': must be 26 characters or blank")
 	}
 
 	return nil

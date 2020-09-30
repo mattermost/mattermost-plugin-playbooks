@@ -86,7 +86,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
-		poster.EXPECT().Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
@@ -142,7 +142,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
-		poster.EXPECT().Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
@@ -1262,7 +1262,7 @@ func TestChangeActiveStage(t *testing.T) {
 			poster.EXPECT().
 				PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 			poster.EXPECT().
-				Ephemeral(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+				EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 
 			// Mock retrieval of the old incident
 			incidentService.EXPECT().

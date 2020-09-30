@@ -36,7 +36,7 @@ var _ incident.Store = (*incidentStore)(nil)
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "PostID", "PlaybookID").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID").
 		From("IR_Incident AS incident")
 
 	return &incidentStore{
@@ -83,6 +83,19 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		queryForTotal = queryForTotal.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 	}
 
+	if options.MemberID != "" {
+		membershipClause := s.queryBuilder.
+			Select("1").
+			Prefix("EXISTS(").
+			From("ChannelMembers AS cm").
+			Where("cm.ChannelId = incident.ChannelID").
+			Where(sq.Eq{"cm.UserId": options.MemberID}).
+			Suffix(")")
+
+		queryForResults = queryForResults.Where(membershipClause)
+		queryForTotal = queryForTotal.Where(membershipClause)
+	}
+
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		column := "Name"
@@ -121,7 +134,8 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	}, nil
 }
 
-// CreateIncident creates a new incident.
+// CreateIncident creates a new incident. It assumes that ActiveStage is correct
+// and that ActiveStageTitle is already synced.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*incident.Incident, error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
@@ -140,20 +154,21 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":              rawIncident.ID,
-			"Name":            rawIncident.Name,
-			"Description":     rawIncident.Description,
-			"IsActive":        rawIncident.IsActive,
-			"CommanderUserID": rawIncident.CommanderUserID,
-			"TeamID":          rawIncident.TeamID,
-			"ChannelID":       rawIncident.ChannelID,
-			"CreateAt":        rawIncident.CreateAt,
-			"EndAt":           rawIncident.EndAt,
-			"DeleteAt":        rawIncident.DeleteAt,
-			"ActiveStage":     rawIncident.ActiveStage,
-			"PostID":          rawIncident.PostID,
-			"PlaybookID":      rawIncident.PlaybookID,
-			"ChecklistsJSON":  rawIncident.ChecklistsJSON,
+			"ID":               rawIncident.ID,
+			"Name":             rawIncident.Name,
+			"Description":      rawIncident.Description,
+			"IsActive":         rawIncident.IsActive,
+			"CommanderUserID":  rawIncident.CommanderUserID,
+			"TeamID":           rawIncident.TeamID,
+			"ChannelID":        rawIncident.ChannelID,
+			"CreateAt":         rawIncident.CreateAt,
+			"EndAt":            rawIncident.EndAt,
+			"DeleteAt":         rawIncident.DeleteAt,
+			"ActiveStage":      rawIncident.ActiveStage,
+			"ActiveStageTitle": rawIncident.ActiveStageTitle,
+			"PostID":           rawIncident.PostID,
+			"PlaybookID":       rawIncident.PlaybookID,
+			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
 		}))
 
 	if err != nil {
@@ -163,7 +178,8 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	return incidentCopy, nil
 }
 
-// UpdateIncident updates an incident.
+// UpdateIncident updates an incident. It assumes that ActiveStage is correct
+// and that ActiveStageTitle is already synced.
 func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if newIncident == nil {
 		return errors.New("incident is nil")
@@ -180,14 +196,15 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":            rawIncident.Name,
-			"Description":     rawIncident.Description,
-			"IsActive":        rawIncident.IsActive,
-			"CommanderUserID": rawIncident.CommanderUserID,
-			"EndAt":           rawIncident.EndAt,
-			"DeleteAt":        rawIncident.DeleteAt,
-			"ActiveStage":     rawIncident.ActiveStage,
-			"ChecklistsJSON":  rawIncident.ChecklistsJSON,
+			"Name":             rawIncident.Name,
+			"Description":      rawIncident.Description,
+			"IsActive":         rawIncident.IsActive,
+			"CommanderUserID":  rawIncident.CommanderUserID,
+			"EndAt":            rawIncident.EndAt,
+			"DeleteAt":         rawIncident.DeleteAt,
+			"ActiveStage":      rawIncident.ActiveStage,
+			"ActiveStageTitle": rawIncident.ActiveStageTitle,
+			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -205,8 +222,7 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 	}
 
 	withChecklistsSelect := s.incidentSelect.
-		Columns("ChecklistsJSON").
-		From("IR_Incident")
+		Columns("ChecklistsJSON")
 
 	var rawIncident sqlIncident
 	err := s.store.getBuilder(s.store.db, &rawIncident, withChecklistsSelect.Where(sq.Eq{"ID": incidentID}))
@@ -377,5 +393,6 @@ func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
+
 	return &i, nil
 }

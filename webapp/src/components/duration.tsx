@@ -9,6 +9,25 @@ interface DurationProps {
     ended_at: number;
 }
 
+export const renderDuration = (duration: moment.Duration) => {
+    if (duration.asSeconds() < 60) {
+        return '< 1m';
+    }
+
+    const durationComponents = [];
+    if (duration.days() > 0) {
+        durationComponents.push(duration.days() + 'd');
+    }
+    if (duration.hours() > 0) {
+        durationComponents.push(duration.hours() + 'h');
+    }
+    if (duration.minutes() > 0) {
+        durationComponents.push(duration.minutes() + 'm');
+    }
+
+    return durationComponents.join(' ');
+};
+
 const Duration: FC<DurationProps> = (props: DurationProps) => {
     const [now, setNow] = useState(moment());
 
@@ -16,8 +35,8 @@ const Duration: FC<DurationProps> = (props: DurationProps) => {
         const tick = () => {
             setNow(moment());
         };
-        const quarterSecond = 250;
-        const timerId = setInterval(tick, quarterSecond);
+        const everySecond = 1000;
+        const timerId = setInterval(tick, everySecond);
 
         return () => {
             clearInterval(timerId);
@@ -26,24 +45,12 @@ const Duration: FC<DurationProps> = (props: DurationProps) => {
 
     const start = moment(props.created_at);
     const end = (props.ended_at && moment(props.ended_at)) || now;
-
     const duration = moment.duration(end.diff(start));
-    let durationString = '';
-    if (duration.days() > 0) {
-        durationString += duration.days() + 'd ';
-    }
-    if (duration.hours() > 0) {
-        durationString += duration.hours() + 'h ';
-    }
-    if (duration.minutes() > 0) {
-        durationString += duration.minutes() + 'm ';
-    }
-    durationString += duration.seconds() + 's';
 
     return (
         <div className='first-title'>
             {'Duration'}
-            <div className='time'>{durationString}</div>
+            <div className='time'>{renderDuration(duration)}</div>
         </div>
     );
 };
