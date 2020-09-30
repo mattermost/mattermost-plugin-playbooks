@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import * as TIMEOUTS from '../../fixtures/timeouts';
+
 describe('backstage', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
 
@@ -65,4 +67,56 @@ describe('backstage', () => {
         // * Verify that incidents are shown
         cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
     });
+    it('opens playbook creation page with New Playbook button', () => {
+        // # Open backstage
+        cy.openBackstage();
+
+        // # Click 'New Playbook' button
+        cy.findByText('New Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+
+        // * Verify a new playbook creation page opened:
+        
+        verifyPlaybookCreationPageOpened();
+    });
+
+    it('opens playbook creation page with "Blank Playbook" template option', () => {
+        // # Open backstage
+        cy.openBackstage();
+
+        // # Click 'Blank Playbook'
+        cy.findByText('Blank Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+
+        // * Verify a new playbook creation page opened
+        verifyPlaybookCreationPageOpened();
+        
+    });
+
+    it('opens Incident Response Playbook page from its template option', () => {
+        // # Open backstage
+        cy.openBackstage();
+
+        // # Click 'Incident Response Playbook'
+        cy.findByText('Incident Response Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+
+        // * Verify the page url contains 'Incident Response Playbook'
+        cy.url().should('include', `playbooks/new?template_title=Incident%20Response%20Playbook`);
+
+        // * Verify the playbook name is 'Incident Response Playbook'
+        cy.get('#playbook-name').should('be.visible').within(() => {
+            cy.findByText('Incident Response Playbook').should('be.visible');
+        });
+    });
 });
+
+function verifyPlaybookCreationPageOpened(template=false) {
+    // * Verify the page url contains 'com.mattermost.plugin-incident-response/playbooks/new'
+    cy.url().should('include', `com.mattermost.plugin-incident-response/playbooks/new`);
+
+    // * Verify the playbook name is 'Untitled Playbook'
+    cy.get('#playbook-name').should('be.visible').within(() => {
+        cy.findByText('Untitled Playbook').should('be.visible');
+    });
+
+    // * Verify there is 'Save' button
+    cy.findByTestId('save_playbook').should('be.visible');
+}
