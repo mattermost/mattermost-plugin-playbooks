@@ -874,8 +874,10 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 		return err
 	}
 
-	msg := fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name)
-	h.poster.Ephemeral(incdnt.CommanderUserID, channelID, "%s", msg)
+	post := &model.Post{
+		Message: fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name),
+	}
+	h.poster.EphemeralPost(incdnt.CommanderUserID, channelID, post)
 
 	return nil
 }

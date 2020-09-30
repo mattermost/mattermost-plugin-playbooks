@@ -35,7 +35,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				PlaybookID: "theplaybookid",
 				Checklists: nil,
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"post_id":"","playbook_id":"theplaybookid","checklists":[]}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[]}`),
 			wantErr:  false,
 		},
 		{
@@ -64,7 +64,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}]}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}]}`),
 			wantErr:  false,
 		},
 	}

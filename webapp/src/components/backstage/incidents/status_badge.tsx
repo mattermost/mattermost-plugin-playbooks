@@ -2,30 +2,42 @@
 // See LICENSE.txt for license information.
 import React from 'react';
 
-import classNames from 'classnames';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
-const Badge = styled.div`
+interface BadgeProps {
+    isActive?: boolean;
+    compact?: boolean;
+}
+
+const Badge = styled.div<BadgeProps>`
     position: relative;
-    top: 1px;
     display: inline-block;
-    height: 24px;
     font-size: 12px;
-    line-height: 24px;
     border-radius: 4px;
     padding: 0 8px;
-    color: var(--center-channel-color-72);
-    background-color: var(--center-channel-color-16);
     font-weight: 600;
 
-    &.ongoing {
+    color: var(--center-channel-color-72);
+    background-color: var(--center-channel-color-16);
+
+    ${(props) => props.isActive && css`
         color: var(--sidebar-text);
         background-color: var(--sidebar-bg);
-    }
+    `}
+
+    top: 1px;
+    height: 24px;
+    line-height: 24px;
+
+    ${(props) => props.compact && css`
+        top: -1px;
+        line-height: 21px;
+        height: 21px;
+    `}
 `;
 
-const StatusBadge = (props: { isActive: boolean }) => (
-    <Badge className={classNames({ongoing: props.isActive})}>
+const StatusBadge = (props: BadgeProps) => (
+    <Badge {...props}>
         {props.isActive ? 'Ongoing' : 'Ended'}
     </Badge>
 );

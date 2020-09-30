@@ -46,17 +46,18 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 
 // Header holds the summary information of an incident.
 type Header struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	IsActive        bool   `json:"is_active"`
-	CommanderUserID string `json:"commander_user_id"`
-	TeamID          string `json:"team_id"`
-	ChannelID       string `json:"channel_id"`
-	CreateAt        int64  `json:"create_at"`
-	EndAt           int64  `json:"end_at"`
-	DeleteAt        int64  `json:"delete_at"`
-	ActiveStage     int    `json:"active_stage"`
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	IsActive         bool   `json:"is_active"`
+	CommanderUserID  string `json:"commander_user_id"`
+	TeamID           string `json:"team_id"`
+	ChannelID        string `json:"channel_id"`
+	CreateAt         int64  `json:"create_at"`
+	EndAt            int64  `json:"end_at"`
+	DeleteAt         int64  `json:"delete_at"`
+	ActiveStage      int    `json:"active_stage"`
+	ActiveStageTitle string `json:"active_stage_title"`
 }
 
 type UpdateOptions struct {

@@ -19,6 +19,7 @@ import Profile from 'src/components/profile/profile';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
+import {renderDuration} from 'src/components/duration';
 
 import StatusBadge from '../status_badge';
 
@@ -374,22 +375,9 @@ const duration = (incident: Incident) => {
     }
 
     const endTime = incident.is_active ? moment() : moment(incident.end_at);
-
     const timeSinceCreation = moment.duration(endTime.diff(moment(incident.create_at)));
 
-    if (timeSinceCreation.days()) {
-        return `${timeSinceCreation.days()} days ${timeSinceCreation.hours()} h`;
-    }
-
-    if (timeSinceCreation.hours()) {
-        return `${timeSinceCreation.hours()} h ${timeSinceCreation.minutes()} m`;
-    }
-
-    if (timeSinceCreation.minutes()) {
-        return `${timeSinceCreation.minutes()} m`;
-    }
-
-    return `${timeSinceCreation.seconds()} s`;
+    return renderDuration(timeSinceCreation);
 };
 
 const timeFrameText = (incident: Incident) => {

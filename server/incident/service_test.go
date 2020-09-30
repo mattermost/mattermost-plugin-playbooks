@@ -250,6 +250,24 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 }
 
 func TestChangeActiveStage(t *testing.T) {
+	testIncident := incident.Incident{
+		Header: incident.Header{
+			ID:               "incidentID",
+			CommanderUserID:  "testUserID",
+			TeamID:           "testTeamID",
+			Name:             "incidentName",
+			ChannelID:        "channelID",
+			IsActive:         true,
+			ActiveStage:      0,
+			ActiveStageTitle: "Stage 2",
+		},
+		PostID: "",
+		Checklists: []playbook.Checklist{
+			{Title: "Stage 1"},
+			{Title: "Stage 2"},
+		},
+	}
+
 	type args struct {
 		incidentID string
 		userID     string
@@ -267,22 +285,6 @@ func TestChangeActiveStage(t *testing.T) {
 				userID:     "userID1",
 			},
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
-				testIncident := incident.Incident{
-					Header: incident.Header{
-						ID:              "incidentID",
-						CommanderUserID: "testUserID",
-						TeamID:          "testTeamID",
-						Name:            "incidentName",
-						ChannelID:       "channelID",
-						IsActive:        true,
-					},
-					PostID: "",
-					Checklists: []playbook.Checklist{
-						{Title: "Stage 1"},
-						{Title: "Stage 2"},
-					},
-				}
-
 				store.EXPECT().
 					GetIncident("incidentID").
 					Return(&testIncident, nil).Times(1)
@@ -315,22 +317,6 @@ func TestChangeActiveStage(t *testing.T) {
 				userID:     "userID1",
 			},
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_poster.MockPoster, api *plugintest.API) {
-				testIncident := incident.Incident{
-					Header: incident.Header{
-						ID:              "incidentID",
-						CommanderUserID: "testUserID",
-						TeamID:          "testTeamID",
-						Name:            "incidentName",
-						ChannelID:       "channelID",
-						IsActive:        false,
-					},
-					PostID: "",
-					Checklists: []playbook.Checklist{
-						{Title: "Stage 1"},
-						{Title: "Stage 2"},
-					},
-				}
-
 				store.EXPECT().
 					GetIncident("incidentID").
 					Return(&testIncident, nil).Times(1)
@@ -370,11 +356,14 @@ func TestChangeActiveStage(t *testing.T) {
 
 			tt.prepMocks(store, poster, api)
 
-			_, err := service.ChangeActiveStage(tt.args.incidentID, tt.args.userID, 1)
+			changedIncident, err := service.ChangeActiveStage(tt.args.incidentID, tt.args.userID, 1)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RestartIncident() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
+			require.Equal(t, changedIncident.ActiveStage, 1)
+			require.Equal(t, changedIncident.ActiveStageTitle, "Stage 2")
 		})
 	}
 }

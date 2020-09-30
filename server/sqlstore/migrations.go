@@ -1,10 +1,13 @@
 package sqlstore
 
 import (
+	"encoding/json"
 	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/jmoiron/sqlx"
+	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -12,14 +15,14 @@ import (
 type Migration struct {
 	fromVersion   semver.Version
 	toVersion     semver.Version
-	migrationFunc func(execer, bot.Logger) error
+	migrationFunc func(sqlx.Ext, *SQLStore) error
 }
 
 var migrations = []Migration{
 	{
 		fromVersion: semver.MustParse("0.0.0"),
 		toVersion:   semver.MustParse("0.1.0"),
-		migrationFunc: func(e execer, logger bot.Logger) error {
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if _, err := e.Exec(`
 				CREATE TABLE IF NOT EXISTS IR_System (
 					SKey VARCHAR(64) PRIMARY KEY,
@@ -180,8 +183,65 @@ var migrations = []Migration{
 	{
 		fromVersion: semver.MustParse("0.1.0"),
 		toVersion:   semver.MustParse("0.2.0"),
-		migrationFunc: func(e execer, logger bot.Logger) error {
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			// migration to 0.2.0 is used to trigger the data migration from the kvstore.
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.2.0"),
+		toVersion:   semver.MustParse("0.3.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ActiveStageTitle VARCHAR(1024) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
+				}
+
+			} else {
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ActiveStageTitle TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
+				}
+			}
+
+			getIncidentsQuery := sqlStore.builder.
+				Select("ID", "ActiveStage", "ChecklistsJSON").
+				From("IR_Incident")
+
+			var incidents []struct {
+				ID             string
+				ActiveStage    int
+				ChecklistsJSON json.RawMessage
+			}
+			if err := sqlStore.selectBuilder(e, &incidents, getIncidentsQuery); err != nil {
+				return errors.Wrapf(err, "failed getting incidents to update their ActiveStageTitle")
+			}
+
+			for _, theIncident := range incidents {
+				var checklists []playbook.Checklist
+				if err := json.Unmarshal(theIncident.ChecklistsJSON, &checklists); err != nil {
+					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", theIncident.ID)
+				}
+
+				numChecklists := len(checklists)
+				if numChecklists == 0 {
+					continue
+				}
+
+				if theIncident.ActiveStage < 0 || theIncident.ActiveStage >= numChecklists {
+					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", theIncident.ActiveStage, theIncident.ID, numChecklists)
+					continue
+				}
+
+				incidentUpdate := sqlStore.builder.
+					Update("IR_Incident").
+					Set("ActiveStageTitle", checklists[theIncident.ActiveStage].Title).
+					Where(sq.Eq{"ID": theIncident.ID})
+
+				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
+					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", theIncident.ID)
+				}
+			}
+
 			return nil
 		},
 	},
