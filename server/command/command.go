@@ -23,8 +23,9 @@ const helpText = "###### Mattermost Incident Response Plugin - Slash Command Hel
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
-	"* `/incident announce ~[channels]` - Announce the currrent incident in other channels. \n" +
+	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
 	"* `/incident list` - List all your incidents. \n" +
+	"* `/incident info` - Show a summary of the current incident. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -45,7 +46,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, restart, check, announce, list",
+		AutoCompleteDesc: "Available commands: start, end, restart, check, announce, list, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
@@ -81,6 +82,9 @@ func getAutocompleteData() *model.AutocompleteData {
 
 	list := model.NewAutocompleteData("list", "", "Lists all your incidents")
 	slashIncident.AddCommand(list)
+
+	info := model.NewAutocompleteData("info", "", "Shows a summary of the current incident")
+	slashIncident.AddCommand(info)
 
 	return slashIncident
 }
@@ -309,7 +313,77 @@ func (r *Runner) actionList() {
 			"attachments": attachments,
 		},
 	}
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
+}
 
+func (r *Runner) actionInfo() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only show the details of an incident from within the incident's channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
+		return
+	}
+
+	if !session.IsMobileApp() {
+		// The RHS was opened by the webapp, so inform the user
+		r.postCommandResponse("See the incident's information on the RHS.")
+		return
+	}
+
+	theIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
+		return
+	}
+
+	if theIncident.ActiveStage >= len(theIncident.Checklists) {
+		r.warnUserAndLogErrorf("Error retrieving current checklist: active stage is %d and the incident has %d checklists", theIncident.ActiveStage, len(theIncident.Checklists))
+		return
+	}
+
+	activeChecklist := theIncident.Checklists[theIncident.ActiveStage]
+
+	tasks := ""
+	for _, item := range activeChecklist.Items {
+		icon := ":white_large_square: "
+		timestamp := ""
+		if item.State == playbook.ChecklistItemStateClosed {
+			icon = ":white_check_mark: "
+			timestamp = " (" + getTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
+		}
+
+		tasks += icon + item.Title + timestamp + "\n"
+	}
+	attachment := &model.SlackAttachment{
+		Fields: []*model.SlackAttachmentField{
+			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
+			{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), time.Now())},
+			{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
+			{Title: "Stage:", Value: fmt.Sprintf("%s", activeChecklist.Title)},
+			{Title: "Tasks:", Value: tasks},
+		},
+	}
+
+	post := &model.Post{
+		Props: map[string]interface{}{
+			"attachments": []*model.SlackAttachment{attachment},
+		},
+	}
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
@@ -698,6 +772,8 @@ func (r *Runner) Execute() error {
 		r.actionAnnounce(parameters)
 	case "list":
 		r.actionList()
+	case "info":
+		r.actionInfo()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "st":
