@@ -36,7 +36,7 @@ const Badge = styled.div<BadgeProps>`
     `}
 `;
 
-const StatusBadge = (props: { isActive?: boolean, compact?: boolean }) => (
+const StatusBadge = (props: BadgeProps) => (
     <Badge {...props}>
         {props.isActive ? 'Ongoing' : 'Ended'}
     </Badge>
