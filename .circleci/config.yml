@@ -263,6 +263,8 @@ jobs:
             export RESULTS_OUTPUT="results-output.txt"
             cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
       - *save_cypress_cache
+      - store_artifacts:
+          path: tests-e2e/cypress/videos
 
 workflows:
   version: 2
