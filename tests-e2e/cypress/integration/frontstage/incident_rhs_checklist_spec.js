@@ -16,6 +16,9 @@ describe('incident rhs checklist', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
 
+        // # Switch to clean display mode
+        cy.apiSaveMessageDisplayPreference('clean');
+
         cy.apiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
