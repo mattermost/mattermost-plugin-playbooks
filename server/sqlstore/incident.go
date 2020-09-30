@@ -228,8 +228,7 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 	}
 
 	withChecklistsSelect := s.incidentSelect.
-		Columns("ChecklistsJSON").
-		From("IR_Incident")
+		Columns("ChecklistsJSON")
 
 	var rawIncident sqlIncident
 	err := s.store.getBuilder(s.store.db, &rawIncident, withChecklistsSelect.Where(sq.Eq{"ID": incidentID}))
