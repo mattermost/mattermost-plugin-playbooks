@@ -1391,7 +1391,10 @@ func (t *IncidentBuilder) WithID() *IncidentBuilder {
 }
 
 func (t *IncidentBuilder) ToIncident() *incident.Incident {
-	_ = syncActiveStageTitle(t.Incident)
+	if len(t.Incident.Checklists) > 0 {
+		t.Incident.ActiveStageTitle = t.Incident.Checklists[t.Incident.ActiveStage].Title
+	}
+
 	return t.Incident
 }
 

@@ -134,7 +134,8 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	}, nil
 }
 
-// CreateIncident creates a new incident.
+// CreateIncident creates a new incident. It assumes that ActiveStage is correct
+// and that ActiveStageTitle is already synced.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*incident.Incident, error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
@@ -144,10 +145,6 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	}
 	incidentCopy := newIncident.Clone()
 	incidentCopy.ID = model.NewId()
-
-	if err := syncActiveStageTitle(incidentCopy); err != nil {
-		return nil, err
-	}
 
 	rawIncident, err := toSQLIncident(*incidentCopy)
 	if err != nil {
@@ -181,17 +178,14 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	return incidentCopy, nil
 }
 
-// UpdateIncident updates an incident.
+// UpdateIncident updates an incident. It assumes that ActiveStage is correct
+// and that ActiveStageTitle is already synced.
 func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if newIncident == nil {
 		return errors.New("incident is nil")
 	}
 	if newIncident.ID == "" {
 		return errors.New("ID should not be empty")
-	}
-
-	if err := syncActiveStageTitle(newIncident); err != nil {
-		return err
 	}
 
 	rawIncident, err := toSQLIncident(*newIncident)
@@ -407,18 +401,4 @@ func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	}
 
 	return &i, nil
-}
-
-func syncActiveStageTitle(inc *incident.Incident) error {
-	numChecklists := len(inc.Checklists)
-	if numChecklists > 0 {
-		idx := inc.ActiveStage
-		if idx < 0 || idx >= numChecklists {
-			return errors.Errorf("active stage %d out of bounds: incident %s has %d stages", idx, inc.ID, numChecklists)
-		}
-
-		inc.ActiveStageTitle = inc.Checklists[idx].Title
-	}
-
-	return nil
 }
