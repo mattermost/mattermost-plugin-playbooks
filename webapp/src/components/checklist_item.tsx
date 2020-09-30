@@ -84,6 +84,11 @@ const DescriptionTitle = styled.span`
     color: var(--center-channel-color);
 `;
 
+const StyledSpinner = styled(Spinner)`
+    margin-left: 4px;
+    padding-top: 3px;
+`;
+
 interface StepDescriptionProps {
     text: string;
     channelNames: ChannelNamesMap;
@@ -265,12 +270,12 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }
                         }}
                     >
-                        {'(Run)'}
+                        {'Run'}
                     </div>
                     <div className={'command'}>
                         {props.checklistItem.command}
                     </div>
-                    {running && <Spinner/>}
+                    {running && <StyledSpinner/>}
                 </div>
             }
             <div className={'assignee-container'}>
