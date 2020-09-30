@@ -227,19 +227,19 @@ func (r *Runner) actionShowCommander([]string) {
 		r.postCommandResponse("You can only show the commander from within the incident's channel.")
 		return
 	} else if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
 		return
 	}
 
 	currentIncident, err := r.incidentService.GetIncident(incidentID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
 	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving commander user: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
 		return
 	}
 
@@ -254,13 +254,13 @@ func (r *Runner) actionChangeCommander(args []string) {
 		r.postCommandResponse("You can only change the commander from within the incident's channel.")
 		return
 	} else if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
 		return
 	}
 
 	currentIncident, err := r.incidentService.GetIncident(incidentID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -269,7 +269,7 @@ func (r *Runner) actionChangeCommander(args []string) {
 		r.postCommandResponse(fmt.Sprintf("Unable to find user @%s", targetCommanderUsername))
 		return
 	} else if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Failed to find user @%s: %v", targetCommanderUsername, err))
+		r.warnUserAndLogErrorf("Error finding user @%s: %v", targetCommanderUsername, err)
 		return
 	}
 
@@ -283,13 +283,13 @@ func (r *Runner) actionChangeCommander(args []string) {
 		r.postCommandResponse(fmt.Sprintf("User @%s must be part of this channel to make them commander.", targetCommanderUsername))
 		return
 	} else if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Failed to find user @%s as channel member: %v", targetCommanderUsername, err))
+		r.warnUserAndLogErrorf("Failed to find user @%s as channel member: %v", targetCommanderUsername, err)
 		return
 	}
 
 	err = r.incidentService.ChangeCommander(currentIncident.ID, r.args.UserId, targetCommanderUser.Id)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Failed to change commander to @%s: %v", targetCommanderUsername, err))
+		r.warnUserAndLogErrorf("Failed to change commander to @%s: %v", targetCommanderUsername, err)
 		return
 	}
 }
