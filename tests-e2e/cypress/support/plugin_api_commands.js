@@ -71,6 +71,26 @@ Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
     });
 });
 
+/**
+ * Change the commander of an incident directly via API
+ * @param {String} incidentId
+ * @param {String} userId
+ * All parameters required
+ */
+Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: incidentsEndpoint + '/' + incidentId + '/commander',
+        method: 'POST',
+        body: {
+            commander_id: userId,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
 // Verify incident is created
 Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDescription) => {
     cy.apiGetAllIncidents(teamId).then((response) => {
