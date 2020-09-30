@@ -43,7 +43,6 @@ There will come a time where you will have several incidents, some of them ongoi
 4. Click on the incident you are interested in.
 5. A summary with some statistics of the incident will show. From this screen, you can also jump to the channel (with the button in the Messages box) and export the channel log, which will download a CSV file with a transcript of all the messages in the channel.
 
-Read more about the Backstage here.
 
 ## Contributing
 
