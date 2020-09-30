@@ -88,7 +88,6 @@ describe('backstage', () => {
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened();
-        
     });
 
     it('opens Incident Response Playbook page from its template option', () => {
