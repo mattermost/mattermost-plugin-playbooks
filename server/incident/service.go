@@ -84,6 +84,17 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 		}
 	}
 
+	// Make sure ActiveStage is correct and ActiveStageTitle is synced
+	numChecklists := len(incdnt.Checklists)
+	if numChecklists > 0 {
+		idx := incdnt.ActiveStage
+		if idx < 0 || idx >= numChecklists {
+			return nil, errors.Errorf("active stage %d out of bounds: incident %s has %d stages", idx, incdnt.ID, numChecklists)
+		}
+
+		incdnt.ActiveStageTitle = incdnt.Checklists[idx].Title
+	}
+
 	incdnt, err = s.store.CreateIncident(incdnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create incident")
@@ -94,7 +105,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to to resolve user %s", incdnt.CommanderUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
 	}
 
 	if _, err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
@@ -513,6 +524,11 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 
 	oldActiveStage := incidentToModify.ActiveStage
 	incidentToModify.ActiveStage = stageIdx
+
+	if len(incidentToModify.Checklists) > 0 {
+		incidentToModify.ActiveStageTitle = incidentToModify.Checklists[stageIdx].Title
+	}
+
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return nil, errors.Wrapf(err, "failed to update incident")
 	}

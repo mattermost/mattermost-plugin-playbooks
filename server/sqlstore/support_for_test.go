@@ -357,40 +357,45 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
-func addUsers(t *testing.T, store *SQLStore, userIDs []string) {
+type userInfo struct {
+	ID   string
+	Name string
+}
+
+func addUsers(t *testing.T, store *SQLStore, users []userInfo) {
 	t.Helper()
 
-	insertBuilder := store.builder.Insert("Users").Columns("ID")
+	insertBuilder := store.builder.Insert("Users").Columns("ID", "Username")
 
-	for _, u := range userIDs {
-		insertBuilder = insertBuilder.Values(u)
+	for _, u := range users {
+		insertBuilder = insertBuilder.Values(u.ID, u.Name)
 	}
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)
 }
 
-func addUsersToTeam(t *testing.T, store *SQLStore, userIDs []string, teamID string) {
+func addUsersToTeam(t *testing.T, store *SQLStore, users []userInfo, teamID string) {
 	t.Helper()
 
 	insertBuilder := store.builder.Insert("TeamMembers").Columns("TeamId", "UserId")
 
-	for _, u := range userIDs {
-		insertBuilder = insertBuilder.Values(teamID, u)
+	for _, u := range users {
+		insertBuilder = insertBuilder.Values(teamID, u.ID)
 	}
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)
 }
 
-func addUsersToChannels(t *testing.T, store *SQLStore, userIDs, channelIDs []string) {
+func addUsersToChannels(t *testing.T, store *SQLStore, users []userInfo, channelIDs []string) {
 	t.Helper()
 
 	insertBuilder := store.builder.Insert("ChannelMembers").Columns("ChannelId", "UserId")
 
-	for _, u := range userIDs {
+	for _, u := range users {
 		for _, c := range channelIDs {
-			insertBuilder = insertBuilder.Values(c, u)
+			insertBuilder = insertBuilder.Values(c, u.ID)
 		}
 	}
 
@@ -416,12 +421,12 @@ func makeChannelsPublicOrPrivate(t *testing.T, store *SQLStore, channelIDs []str
 	require.NoError(t, err)
 }
 
-func makeAdmin(t *testing.T, store *SQLStore, userID string) {
+func makeAdmin(t *testing.T, store *SQLStore, user userInfo) {
 	t.Helper()
 
 	updateBuilder := store.builder.
 		Update("Users").
-		Where(sq.Eq{"Id": userID}).
+		Where(sq.Eq{"Id": user.ID}).
 		Set("Roles", "role1 role2 system_admin role3")
 
 	_, err := store.execBuilder(store.db, updateBuilder)
