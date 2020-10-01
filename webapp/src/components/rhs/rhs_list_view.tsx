@@ -68,24 +68,31 @@ const IncidentTitle = styled.div`
     line-height: 20px;
     letter-spacing: 0;
     text-align: left;
+    margin-bottom: 4px;
 `;
 
-const Grid = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 3fr;
-    grid-template-rows: 1fr 1fr 1fr;
-    grid-gap: 4px;
-    padding: 8px 0 16px 0;
-    align-items: center;
+const Row = styled.div`
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    //padding: 8px 0 16px 0;
+    //align-items: center;
     font-size: 12px;
     line-height: 16px;
+    margin: 4px 0;
 `;
 
-const RowTitle = styled.div`
+const Col1 = styled.div`
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     font-weight: 600;
 `;
 
-const RowContent = styled.div`
+const Col2 = styled.div`
+    display: flex;
+    flex-direction: column;
+    flex: 2;
     font-weight: 400;
 `;
 
@@ -107,6 +114,7 @@ const Button = styled.button`
     color: var(--button-bg);
     text-align: center;
     padding: 10px 0;
+    margin: 10px;
 `;
 
 const Footer = styled.div`
@@ -165,21 +173,25 @@ const RHSListView = (props: Props) => {
                         active={props.currentIncidentId ? props.currentIncidentId === incident.id : false}
                     >
                         <IncidentTitle>{incident.name}</IncidentTitle>
-                        <Grid>
-                            <RowTitle>{'Stage:'}</RowTitle>
-                            <RowContent>{}</RowContent>
-                            <RowTitle>{'Duration:'}</RowTitle>
-                            <RowContent>
+                        <Row>
+                            <Col1>{'Stage:'}</Col1>
+                            <Col2>{incident.active_stage_title}</Col2>
+                        </Row>
+                        <Row>
+                            <Col1>{'Duration:'}</Col1>
+                            <Col2>
                                 <Duration
                                     created_at={incident.create_at}
                                     ended_at={incident.end_at}
                                 />
-                            </RowContent>
-                            <RowTitle>{'Commander:'}</RowTitle>
-                            <RowContent>
+                            </Col2>
+                        </Row>
+                        <Row>
+                            <Col1>{'Commander:'}</Col1>
+                            <Col2>
                                 <SmallerProfile userId={incident.commander_user_id}/>
-                            </RowContent>
-                        </Grid>
+                            </Col2>
+                        </Row>
                         <Button onClick={() => viewIncident(incident.channel_id)}>
                             {'Go to Incident Channel'}
                         </Button>
