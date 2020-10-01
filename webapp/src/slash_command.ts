@@ -27,6 +27,7 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             const currentChannel = getCurrentChannel(state);
 
             if (isIncidentChannel(state, currentChannel.id) && !isIncidentRHSOpen(state)) {
+                //@ts-ignore thunk
                 store.dispatch(toggleRHS());
 
                 return Promise.resolve({});

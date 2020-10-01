@@ -463,7 +463,7 @@ func (r *Runner) actionInfo() {
 			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
 			{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), time.Now())},
 			{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
-			{Title: "Stage:", Value: fmt.Sprintf("%s", activeChecklist.Title)},
+			{Title: "Stage:", Value: activeChecklist.Title},
 			{Title: "Tasks:", Value: tasks},
 		},
 	}
