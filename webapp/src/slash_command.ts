@@ -28,6 +28,8 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
 
             if (isIncidentChannel(state, currentChannel.id) && !isIncidentRHSOpen(state)) {
                 store.dispatch(toggleRHS());
+
+                return Promise.resolve({});
             }
 
             return Promise.resolve({message: messageTrimmed, args});
