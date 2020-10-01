@@ -1,6 +1,7 @@
 package incident
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -90,12 +91,18 @@ func (d *WithDetails) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	combinedJSON := make([]byte, 0, len(incidentJSON)+len(detailsJSON)-1)
-	combinedJSON = append(combinedJSON, incidentJSON[:len(incidentJSON)-1]...)
-	combinedJSON = append(combinedJSON, ',')
-	combinedJSON = append(combinedJSON, detailsJSON[1:]...)
+	var buf bytes.Buffer
+	if _, err = buf.Write(incidentJSON[:len(incidentJSON)-1]); err != nil {
+		return nil, err
+	}
+	if err = buf.WriteByte(','); err != nil {
+		return nil, err
+	}
+	if _, err = buf.Write(detailsJSON[1:]); err != nil {
+		return nil, err
+	}
 
-	return combinedJSON, nil
+	return buf.Bytes(), nil
 }
 
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching

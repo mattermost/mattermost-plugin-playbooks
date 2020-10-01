@@ -28,6 +28,7 @@ import {
     FetchPlaybooksNoChecklistReturn,
     PlaybookNoChecklist,
 } from 'src/types/playbook';
+import SystemSettings from 'src/system_settings';
 
 import {pluginId} from './manifest';
 
@@ -46,7 +47,7 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
 
 export async function fetchIncident(id: string) {
     const data = await doGet(`${apiUrl}/incidents/${id}`);
-    if (!isIncident(data)) {
+    if (SystemSettings.EnableDeveloperMode && !isIncident(data)) {
         // eslint-disable-next-line no-console
         console.error('expected an Incident in fetchIncident, received:', data);
     }
@@ -57,7 +58,7 @@ export async function fetchIncident(id: string) {
 
 export async function fetchIncidentWithDetails(id: string) {
     const data = await doGet(`${apiUrl}/incidents/${id}/details`);
-    if (!isIncidentWithDetails(data)) {
+    if (SystemSettings.EnableDeveloperMode && !isIncidentWithDetails(data)) {
         // eslint-disable-next-line no-console
         console.error('expected an IncidentWithDetails in fetchIncidentWithDetails, received:', data);
     }

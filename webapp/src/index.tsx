@@ -10,9 +10,11 @@ import {GlobalState} from 'mattermost-redux/types/store';
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {isMobile} from 'src/mobile';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
+import SystemSettings from 'src/system_settings';
 
 import {pluginId} from './manifest';
 import ChannelHeaderButton from './components/assets/icons/channel_header_button';
@@ -41,6 +43,9 @@ import {makeSlashCommandHook} from './slash_command';
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
         registry.registerReducer(reducer);
+
+        const config = getConfig(store.getState());
+        SystemSettings.EnableDeveloperMode = Boolean(config.EnableDeveloper);
 
         let mainMenuActionId: string | null;
         const updateMainMenuAction = () => {
