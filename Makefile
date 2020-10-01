@@ -53,7 +53,8 @@ ifneq ($(HAS_SERVER),)
 		exit 1; \
 	fi; \
 
-	@echo Skipping run of golangci-lint
+	@echo Running golangci-lint
+	golangci-lint run ./...
 endif
 
 ## Builds the server, if it exists, for all supported architectures.
