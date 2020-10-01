@@ -5,9 +5,11 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import {UserProfile} from 'mattermost-redux/types/users';
 
 import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
 import {websocketSubscribers} from 'src/websocket_events';
@@ -77,6 +79,7 @@ export enum ListFetchState {
 
 export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const currentUser = useSelector<GlobalState, UserProfile>(getCurrentUser);
     const [incidents, setIncidents] = useState<Incident[] | null>(null);
     const [state, setState] = useState<ListFetchState>(ListFetchState.Loading);
 
@@ -91,7 +94,7 @@ export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
 
             try {
                 const result = await fetchIncidents({
-                    member_only: true,
+                    member_id: currentUser.id,
                     team_id: currentTeam.id,
                     sort: 'create_at',
                     order: 'desc',

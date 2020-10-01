@@ -14,7 +14,6 @@ import {pluginId} from 'src/manifest';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
 import Profile from 'src/components/profile/profile';
-import Duration from 'src/components/rhs/duration';
 import {
     renderThumbVertical,
     renderTrackHorizontal,
@@ -24,6 +23,7 @@ import {setRHSState, startIncident} from 'src/actions';
 import {navigateToUrl} from 'src/browser_routing';
 import {RHSState} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
+import Duration from 'src/components/duration';
 
 const StartIncidentHeader = styled.div`
     display: block;
@@ -167,7 +167,7 @@ const RHSListView = (props: Props) => {
                         <IncidentTitle>{incident.name}</IncidentTitle>
                         <Grid>
                             <RowTitle>{'Stage:'}</RowTitle>
-                            <RowContent>{'Stage number ' + incident.active_stage}</RowContent>
+                            <RowContent>{}</RowContent>
                             <RowTitle>{'Duration:'}</RowTitle>
                             <RowContent>
                                 <Duration

@@ -893,14 +893,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
-	memberParam := strings.ToLower(u.Query().Get("member_only"))
-	if memberParam == "" {
-		memberParam = "false"
-	}
-	memberOnly, err := strconv.ParseBool(memberParam)
-	if err != nil {
-		return nil, errors.Errorf("bad member_only parameter '%s'", memberParam)
-	}
+	memberID := strings.ToLower(u.Query().Get("member_id"))
 
 	return &incident.HeaderFilterOptions{
 		TeamID:      teamID,
@@ -911,6 +904,6 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		Status:      status,
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,
-		MemberOnly:  memberOnly,
+		MemberID:    memberID,
 	}, nil
 }

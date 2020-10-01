@@ -13,27 +13,10 @@ import {RHSState} from 'src/types/rhs';
 import {setRHSState} from 'src/actions';
 import {useCurrentIncident} from 'src/hooks';
 import {currentRHSState} from 'src/selectors';
-
-const RHSIncidentTitle = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const Button = styled.button`
-    border: none;
-    background: none;
-    padding: 5px 11px 0 0;
-`;
-import StatusBadge from '../backstage/incidents/status_badge';
+import StatusBadge from 'src/components/backstage/incidents/status_badge';
 
 const RHSTitleContainer = styled.div`
     display: flex;
-    flex-direction: row;
-    align-items: flex-end;
     justify-content: space-between;
     overflow: hidden;
 `;
@@ -44,45 +27,43 @@ const RHSTitleText = styled.div`
     margin-right: 8px;
 `;
 
+const Button = styled.button`
+    display: flex;
+    border: none;
+    background: none;
+    padding: 0px 11px 0 0;
+    align-items: center;
+`;
+
 const RHSTitle: FC = () => {
     const dispatch = useDispatch();
     const [incident] = useCurrentIncident();
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const theme = useSelector<GlobalState, Record<string, string>>(getTheme);
 
-    // jesse's:
+    if (rhsState === RHSState.ViewingIncident) {
+        return (
+            <RHSTitleContainer>
+                <Button
+                    onClick={() => dispatch(setRHSState(RHSState.ViewingList))}
+                >
+                    <LeftChevron theme={theme}/>
+                </Button>
+                <RHSTitleText>{incident?.name || 'Incidents'}</RHSTitleText>
+                {incident && (
+                    <StatusBadge
+                        isActive={incident?.is_active}
+                        compact={true}
+                    />
+                )}
+            </RHSTitleContainer>
+        );
+    }
+
     return (
-        <RHSTitleContainer>
-            <RHSTitleText>{incident?.name || 'Incidents'}</RHSTitleText>
-            {incident && (
-                <StatusBadge
-                    isActive={incident?.is_active}
-                    compact={true}
-                />
-            )}
-        </RHSTitleContainer>
-    );
-
-    // mine:
-    const detailsTitle = (
-        <RHSIncidentTitle>
-            <Button
-                onClick={() => dispatch(setRHSState(RHSState.ViewingList))}
-            >
-                <LeftChevron theme={theme}/>
-            </Button>
-            {(incident && incident.name) || 'Incidents'}
-        </RHSIncidentTitle>
-    );
-
-    const listTitle = (
-        <RHSIncidentTitle>
+        <RHSTitleText>
             {'Your Ongoing Incidents'}
-        </RHSIncidentTitle>
-    );
-
-    return (
-        rhsState === RHSState.ViewingIncident ? detailsTitle : listTitle
+        </RHSTitleText>
     );
 };
 

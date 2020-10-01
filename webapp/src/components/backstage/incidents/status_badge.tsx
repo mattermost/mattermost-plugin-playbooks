@@ -30,7 +30,6 @@ const Badge = styled.div<BadgeProps>`
     line-height: 24px;
 
     ${(props) => props.compact && css`
-        top: -1px;
         line-height: 21px;
         height: 21px;
     `}
