@@ -37,7 +37,7 @@ export interface FetchIncidentsReturn {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isIncident(arg: any): boolean {
+export function isIncident(arg: any): arg is Incident {
     return Boolean(arg &&
         arg.id && typeof arg.id === 'string' &&
         arg.name && typeof arg.name === 'string' &&
@@ -57,14 +57,7 @@ export function isIncident(arg: any): boolean {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function assertIncident(arg: any): asserts arg is Incident {
-    if (!isIncident(arg)) {
-        throw new Error(`Expected Incident, received: ${arg}`);
-    }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isIncidentWithDetails(arg: any): boolean {
+export function isIncidentWithDetails(arg: any): arg is IncidentWithDetails {
     return Boolean(arg &&
         arg.channel_name && typeof arg.channel_name === 'string' &&
         arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
@@ -72,13 +65,6 @@ export function isIncidentWithDetails(arg: any): boolean {
         typeof arg.num_members === 'number' &&
         typeof arg.total_posts === 'number' &&
         isIncident(arg));
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function assertIncidentWithDetails(arg: any): asserts arg is IncidentWithDetails {
-    if (!isIncidentWithDetails(arg)) {
-        throw new Error(`Expected IncidentWithDetails, received: ${arg}`);
-    }
 }
 
 export interface FetchIncidentsParams {

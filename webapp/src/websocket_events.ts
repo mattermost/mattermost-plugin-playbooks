@@ -13,7 +13,7 @@ import {incidentCreated, receivedTeamIncidentChannels} from 'src/actions';
 import {fetchIncidentChannels} from 'src/client';
 
 import {clientId} from './selectors';
-import {assertIncident, Incident} from './types/incident';
+import {Incident, isIncident} from './types/incident';
 
 export const websocketSubscribers = new Set<(incident: Incident) => void>();
 
@@ -29,14 +29,13 @@ export function handleWebsocketIncidentUpdate() {
         if (!msg.data.payload) {
             return;
         }
-        const incident = JSON.parse(msg.data.payload);
-        try {
-            assertIncident(incident);
-        } catch (error) {
+        const data = JSON.parse(msg.data.payload);
+        if (!isIncident(data)) {
             // eslint-disable-next-line no-console
-            console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate', incident, error);
+            console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate:', data);
             return;
         }
+        const incident = data as Incident;
 
         websocketSubscribers.forEach((fn) => fn(incident));
     };
@@ -48,14 +47,12 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
             return;
         }
         const payload = JSON.parse(msg.data.payload);
-        const incident = payload.incident;
-        try {
-            assertIncident(incident);
-        } catch (error) {
+        const data = payload.incident;
+        if (!isIncident(data)) {
             // eslint-disable-next-line no-console
-            console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentCreate', incident, error);
-            return;
+            console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentCreate:', data);
         }
+        const incident = data as Incident;
 
         dispatch(incidentCreated(incident));
 

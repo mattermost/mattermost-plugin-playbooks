@@ -16,8 +16,10 @@ import {CommanderInfo} from 'src/types/backstage';
 import {
     FetchIncidentsParams,
     FetchIncidentsReturn,
-    assertIncident,
-    assertIncidentWithDetails,
+    isIncidentWithDetails,
+    IncidentWithDetails,
+    isIncident,
+    Incident,
 } from 'src/types/incident';
 import {
     Playbook,
@@ -42,28 +44,26 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
     return data as FetchIncidentsReturn;
 }
 
-export function fetchIncident(id: string) {
-    const data = doGet(`${apiUrl}/incidents/${id}`);
-    try {
-        assertIncident(data);
-    } catch (error) {
+export async function fetchIncident(id: string) {
+    const data = await doGet(`${apiUrl}/incidents/${id}`);
+    if (!isIncident(data)) {
         // eslint-disable-next-line no-console
-        console.error(`expected an Incident in fetchIncident, received: ${data}`, error);
+        console.error('expected an Incident in fetchIncident, received:', data);
     }
 
-    return data;
+    // Prefer to continue to run even though we may be missing a field.
+    return data as Incident;
 }
 
 export async function fetchIncidentWithDetails(id: string) {
     const data = await doGet(`${apiUrl}/incidents/${id}/details`);
-    try {
-        assertIncidentWithDetails(data);
-    } catch (error) {
+    if (!isIncidentWithDetails(data)) {
         // eslint-disable-next-line no-console
-        console.error(`expected an IncidentWithDetails in fetchIncidentWithDetails, received: ${data}`, error);
+        console.error('expected an IncidentWithDetails in fetchIncidentWithDetails, received:', data);
     }
 
-    return data;
+    // Prefer to continue to run even though we may be missing a field.
+    return data as IncidentWithDetails;
 }
 
 export function fetchIncidentByChannel(channelId: string) {

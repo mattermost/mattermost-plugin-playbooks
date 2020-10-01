@@ -80,7 +80,7 @@ type WithDetails struct {
 }
 
 func (d *WithDetails) MarshalJSON() ([]byte, error) {
-	incidentJSON, err := json.Marshal(d.Incident)
+	incidentJSON, err := json.Marshal(&d.Incident)
 	if err != nil {
 		return nil, err
 	}
