@@ -9,6 +9,7 @@ import './plugin_api_commands';
 import './server_api_commands';
 import './ui_commands';
 import './plugin_ui_commands';
+import './api/preference';
 
 require('cypress-terminal-report/src/installLogsCollector')();
 

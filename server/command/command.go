@@ -23,6 +23,7 @@ const helpText = "###### Mattermost Incident Response Plugin - Slash Command Hel
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
+	"* `/incident commander [@username]` - Show or change the current commander. \n" +
 	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
 	"* `/incident list` - List all your incidents. \n" +
 	"* `/incident info` - Show a summary of the current incident. \n" +
@@ -46,7 +47,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, restart, check, announce, list, info",
+		AutoCompleteDesc: "Available commands: start, end, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
@@ -54,7 +55,7 @@ func getCommand() *model.Command {
 
 func getAutocompleteData() *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, restart, check, announce")
+		"Available commands: start, end, restart, check, announce, list, commander")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -82,6 +83,11 @@ func getAutocompleteData() *model.AutocompleteData {
 
 	list := model.NewAutocompleteData("list", "", "Lists all your incidents")
 	slashIncident.AddCommand(list)
+
+	commander := model.NewAutocompleteData("commander", "[@username]",
+		"Show or change the current commander")
+	commander.AddTextArgument("The desired new commander.", "[@username]", "")
+	slashIncident.AddCommand(commander)
 
 	info := model.NewAutocompleteData("info", "", "Shows a summary of the current incident")
 	slashIncident.AddCommand(info)
@@ -205,6 +211,90 @@ func (r *Runner) actionCheck(args []string) {
 	err = r.incidentService.ToggleCheckedState(incidentID, r.args.UserId, checklist, item)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error checking/unchecking item: %v", err)
+	}
+}
+
+func (r *Runner) actionCommander(args []string) {
+	switch len(args) {
+	case 0:
+		r.actionShowCommander(args)
+	case 1:
+		r.actionChangeCommander(args)
+	default:
+		r.postCommandResponse("/incident commander expects at most one argument.")
+	}
+}
+
+func (r *Runner) actionShowCommander([]string) {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if errors.Is(err, incident.ErrNotFound) {
+		r.postCommandResponse("You can only show the commander from within the incident's channel.")
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
+		return
+	}
+
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
+		return
+	}
+
+	r.postCommandResponse(fmt.Sprintf("**@%s** is the current commander for this incident.", commanderUser.Username))
+}
+
+func (r *Runner) actionChangeCommander(args []string) {
+	targetCommanderUsername := strings.TrimLeft(args[0], "@")
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if errors.Is(err, incident.ErrNotFound) {
+		r.postCommandResponse("You can only change the commander from within the incident's channel.")
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
+		return
+	}
+
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	targetCommanderUser, err := r.pluginAPI.User.GetByUsername(targetCommanderUsername)
+	if errors.Is(err, pluginapi.ErrNotFound) {
+		r.postCommandResponse(fmt.Sprintf("Unable to find user @%s", targetCommanderUsername))
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error finding user @%s: %v", targetCommanderUsername, err)
+		return
+	}
+
+	if currentIncident.CommanderUserID == targetCommanderUser.Id {
+		r.postCommandResponse(fmt.Sprintf("User @%s is already commander of this incident.", targetCommanderUsername))
+		return
+	}
+
+	_, err = r.pluginAPI.Channel.GetMember(r.args.ChannelId, targetCommanderUser.Id)
+	if errors.Is(err, pluginapi.ErrNotFound) {
+		r.postCommandResponse(fmt.Sprintf("User @%s must be part of this channel to make them commander.", targetCommanderUsername))
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Failed to find user @%s as channel member: %v", targetCommanderUsername, err)
+		return
+	}
+
+	err = r.incidentService.ChangeCommander(currentIncident.ID, r.args.UserId, targetCommanderUser.Id)
+	if err != nil {
+		r.warnUserAndLogErrorf("Failed to change commander to @%s: %v", targetCommanderUsername, err)
+		return
 	}
 }
 
@@ -768,6 +858,8 @@ func (r *Runner) Execute() error {
 		r.actionCheck(parameters)
 	case "restart":
 		r.actionRestart()
+	case "commander":
+		r.actionCommander(parameters)
 	case "announce":
 		r.actionAnnounce(parameters)
 	case "list":

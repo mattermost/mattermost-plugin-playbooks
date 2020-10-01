@@ -83,3 +83,33 @@ Cypress.Commands.add('getCurrentTeamId', () => {
 Cypress.Commands.add('getCurrentUserId', () => {
     return cy.getCookie('MMUSERID').then((cookie) => cookie.value);
 });
+
+// verifyPostedMessage verifies the receipt of a post containing the given message substring.
+Cypress.Commands.add('verifyPostedMessage', (message) => {
+    cy.wait(TIMEOUTS.TINY).getLastPostId().then((postId) => {
+        cy.get(`#post_${postId}`).within(() => {
+            cy.get(`#postMessageText_${postId}`).contains(message);
+        });
+    });
+});
+
+// verifyEphemeralMessage verifies the receipt of an ephemeral message containing the given
+// message substring. An exact match is avoided to simplify tests.
+Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
+    // # Checking if we got the ephemeral message with the selection we made
+    cy.wait(TIMEOUTS.TINY).getLastPostId().then((postId) => {
+        cy.get(`#post_${postId}`).within(() => {
+            if (isCompactMode) {
+                // * Check if Bot message only visible to you and has requisite message.
+                cy.get(`#postMessageText_${postId}`).contains(message);
+                cy.get(`#postMessageText_${postId}`).contains('(Only visible to you)');
+            } else {
+                // * Check if Bot message only visible to you
+                cy.get('.post__visibility').last().should('be.visible').and('have.text', '(Only visible to you)');
+
+                // * Check if we got ephemeral message of our selection
+                cy.get(`#postMessageText_${postId}`).contains(message);
+            }
+        });
+    });
+});
