@@ -1,7 +1,6 @@
 package incident
 
 import (
-	"bytes"
 	"encoding/json"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -76,33 +75,8 @@ type Details struct {
 
 // WithDetails holds the Incident with Details
 type WithDetails struct {
-	Incident
-	Details
-}
-
-func (d *WithDetails) MarshalJSON() ([]byte, error) {
-	incidentJSON, err := json.Marshal(&d.Incident)
-	if err != nil {
-		return nil, err
-	}
-
-	detailsJSON, err := json.Marshal(d.Details)
-	if err != nil {
-		return nil, err
-	}
-
-	var buf bytes.Buffer
-	if _, err = buf.Write(incidentJSON[:len(incidentJSON)-1]); err != nil {
-		return nil, err
-	}
-	if err = buf.WriteByte(','); err != nil {
-		return nil, err
-	}
-	if _, err = buf.Write(detailsJSON[1:]); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	Incident Incident `json:"incident"`
+	Details  Details  `json:"details"`
 }
 
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching

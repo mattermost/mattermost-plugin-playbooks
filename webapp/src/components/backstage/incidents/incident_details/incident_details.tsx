@@ -273,7 +273,7 @@ const BackstageIncidentDetails: FC = () => {
     }
 
     const goToChannel = () => {
-        navigateToUrl(`/${incident.team_name}/channels/${incident.channel_name}`);
+        navigateToUrl(`/${incident.details.team_name}/channels/${incident.details.channel_name}`);
     };
 
     const closeIncidentDetails = () => {
@@ -288,14 +288,14 @@ const BackstageIncidentDetails: FC = () => {
                     onClick={closeIncidentDetails}
                 />
                 <IncidentTitle data-testid='incident-title'>
-                    {`Incident ${incident.name}`}
+                    {`Incident ${incident.incident.name}`}
                 </IncidentTitle>
-                <StatusBadge isActive={incident.is_active}/>
+                <StatusBadge isActive={incident.incident.is_active}/>
                 <NavbarPadding/>
                 <CommanderContainer>
                     <span className='label'>{'Commander:'}</span>
                     <Profile
-                        userId={incident.commander_user_id}
+                        userId={incident.incident.commander_user_id}
                         classNames={{ProfileButton: true, profile: true}}
                     />
                 </CommanderContainer>
@@ -307,7 +307,7 @@ const BackstageIncidentDetails: FC = () => {
                         <div className='summary-tab'>
                             {'Summary'}
                         </div>
-                        <ExportLink incident={incident}/>
+                        <ExportLink incident={incident.incident}/>
                     </div>
                     <div className='statistics-row'>
                         <div className='statistics-row__block'>
@@ -316,10 +316,10 @@ const BackstageIncidentDetails: FC = () => {
                             </div>
                             <div className='content'>
                                 <i className='icon icon-clock-outline box-icon'/>
-                                {duration(incident)}
+                                {duration(incident.incident)}
                             </div>
                             <div className='block-footer text-right'>
-                                <span>{timeFrameText(incident)}</span>
+                                <span>{timeFrameText(incident.incident)}</span>
                             </div>
                         </div>
                         <OverlayTrigger
@@ -333,7 +333,7 @@ const BackstageIncidentDetails: FC = () => {
                                 </div>
                                 <div className='content'>
                                     <i className='icon icon-account-multiple-outline box-icon'/>
-                                    {incident.num_members}
+                                    {incident.details.num_members}
                                 </div>
                             </div>
                         </OverlayTrigger>
@@ -343,7 +343,7 @@ const BackstageIncidentDetails: FC = () => {
                             </div>
                             <div className='content'>
                                 <i className='icon icon-send box-icon'/>
-                                {incident.total_posts}
+                                {incident.details.total_posts}
                             </div>
                             <div className='block-footer text-right'>
                                 <a
@@ -358,7 +358,7 @@ const BackstageIncidentDetails: FC = () => {
                     </div>
                     <div className='chart-block'>
                         <ChecklistTimeline
-                            incident={incident}
+                            incident={incident.incident}
                         />
                     </div>
                 </BackstageIncidentDetailsContainer>

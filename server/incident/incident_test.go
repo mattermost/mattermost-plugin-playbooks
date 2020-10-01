@@ -120,7 +120,7 @@ func TestWithDetails_MarshalJSON(t *testing.T) {
 				},
 			},
 
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[],"channel_name":"theChannel Name","channel_display_name":"theChannel Display Name","team_name":"the team's name","num_members":3,"total_posts":45}`),
+			expected: []byte(`{"incident":{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[]},"details":{"channel_name":"theChannel Name","channel_display_name":"theChannel Display Name","team_name":"the team's name","num_members":3,"total_posts":45}}`),
 			wantErr:  false,
 		},
 		{
@@ -159,7 +159,7 @@ func TestWithDetails_MarshalJSON(t *testing.T) {
 					TotalPosts:         45,
 				},
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}],"channel_name":"theChannel Name","channel_display_name":"theChannel Display Name","team_name":"the team's name","num_members":3,"total_posts":45}`),
+			expected: []byte(`{"incident":{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}]},"details":{"channel_name":"theChannel Name","channel_display_name":"theChannel Display Name","team_name":"the team's name","num_members":3,"total_posts":45}}`),
 			wantErr:  false,
 		},
 	}

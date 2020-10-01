@@ -21,12 +21,17 @@ export interface Incident {
     checklists: Checklist[];
 }
 
-export interface IncidentWithDetails extends Incident {
+export interface Details {
     channel_name: string;
     channel_display_name: string;
     team_name: string;
     num_members: number;
     total_posts: number;
+}
+
+export interface IncidentWithDetails {
+    incident: Incident;
+    details: Details;
 }
 
 export interface FetchIncidentsReturn {
@@ -57,14 +62,19 @@ export function isIncident(arg: any): arg is Incident {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isIncidentWithDetails(arg: any): arg is IncidentWithDetails {
+export function isDetails(arg: any): arg is IncidentWithDetails {
     return Boolean(arg &&
         arg.channel_name && typeof arg.channel_name === 'string' &&
         arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
         arg.team_name && typeof arg.team_name === 'string' &&
         typeof arg.num_members === 'number' &&
-        typeof arg.total_posts === 'number' &&
-        isIncident(arg));
+        typeof arg.total_posts === 'number');
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isIncidentWithDetails(arg: any): arg is IncidentWithDetails {
+    return Boolean(arg.incident && isIncident(arg.incident) &&
+        arg.details && isDetails(arg.details));
 }
 
 export interface FetchIncidentsParams {
