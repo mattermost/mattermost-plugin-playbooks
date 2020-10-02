@@ -161,7 +161,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
-    if (props.checklistItem.command_last_run && lastRun && props.checklistItem.command_last_run > lastRun) {
+    if (props.checklistItem.command_last_run > lastRun) {
         setRunning(false);
         setLastRun(props.checklistItem.command_last_run);
     }
