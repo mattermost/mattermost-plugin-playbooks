@@ -119,5 +119,6 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.assignee_modified === 'number' &&
         typeof arg.assignee_modified_post_id === 'string' &&
         typeof arg.state === 'string' &&
-        typeof arg.command === 'string';
+        typeof arg.command === 'string' &&
+        typeof arg.command_last_run === 'number';
 }
