@@ -141,7 +141,7 @@ const RightHandSidebar: FC<null> = () => {
                             {'Simplify your processes with Incident Response'}
                         </h1>
                         <p className='mt-3 mb-8 light'>
-                            {'To get started, create your incident playbook to define your incident response workflow. We’ve included an incident response playbook template as a starting point.'}
+                            {'Create a playbook to define your incident response workflow. Select a template or create your playbook from scratch.'}
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton
