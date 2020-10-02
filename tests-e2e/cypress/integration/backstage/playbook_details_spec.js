@@ -12,7 +12,7 @@ describe('backstage playbook details', () => {
         cy.apiLogin('user-1');
     });
 
-    xit('redirects to not found error if the playbook is unknown', () => {
+    it('redirects to not found error if the playbook is unknown', () => {
         // # Visit the URL of a non-existing playbook
         cy.visit('/ad-1/com.mattermost.plugin-incident-response/playbooks/an_unknown_id');
 
