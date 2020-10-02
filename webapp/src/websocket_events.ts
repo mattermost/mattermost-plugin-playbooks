@@ -29,17 +29,17 @@ export function handleWebsocketIncidentUpdate() {
             return;
         }
         const data = JSON.parse(msg.data.payload);
-        if (!isIncident(data)) {
-            // eslint-disable-next-line no-process-env
-            if (process.env.NODE_ENV !== 'production') {
+
+        // eslint-disable-next-line no-process-env
+        if (process.env.NODE_ENV !== 'production') {
+            if (!isIncident(data)) {
                 // eslint-disable-next-line no-console
                 console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate:', data);
             }
-
-            return;
         }
+        const incident = data as Incident;
 
-        websocketSubscribers.forEach((fn) => fn(data));
+        websocketSubscribers.forEach((fn) => fn(incident));
     };
 }
 
@@ -50,17 +50,17 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
         }
         const payload = JSON.parse(msg.data.payload);
         const data = payload.incident;
-        if (!isIncident(data)) {
-            // eslint-disable-next-line no-process-env
-            if (process.env.NODE_ENV !== 'production') {
+
+        // eslint-disable-next-line no-process-env
+        if (process.env.NODE_ENV !== 'production') {
+            if (!isIncident(data)) {
                 // eslint-disable-next-line no-console
                 console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentCreate:', data);
             }
-
-            return;
         }
+        const incident = data as Incident;
 
-        dispatch(incidentCreated(data));
+        dispatch(incidentCreated(incident));
 
         if (payload.client_id !== clientId(getState())) {
             return;
@@ -69,7 +69,7 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
         const currentTeam = getCurrentTeam(getState());
 
         // Navigate to the newly created channel
-        const url = `/${currentTeam.name}/channels/${data.channel_id}`;
+        const url = `/${currentTeam.name}/channels/${incident.channel_id}`;
         navigateToUrl(url);
     };
 }

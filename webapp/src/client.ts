@@ -46,33 +46,28 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
 
 export async function fetchIncident(id: string) {
     const data = await doGet(`${apiUrl}/incidents/${id}`);
-    if (!isIncident(data)) {
-        // eslint-disable-next-line no-process-env
-        if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-process-env
+    if (process.env.NODE_ENV !== 'production') {
+        if (!isIncident(data)) {
             // eslint-disable-next-line no-console
             console.error('expected an Incident in fetchIncident, received:', data);
         }
-
-        return null;
     }
 
-    // Prefer to continue to run even though we may be missing a field.
-    return data;
+    return data as Incident;
 }
 
 export async function fetchIncidentWithDetails(id: string) {
     const data = await doGet(`${apiUrl}/incidents/${id}/details`);
-    if (!isIncidentWithDetails(data)) {
-        // eslint-disable-next-line no-process-env
-        if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-process-env
+    if (process.env.NODE_ENV !== 'production') {
+        if (!isIncidentWithDetails(data)) {
             // eslint-disable-next-line no-console
             console.error('expected an IncidentWithDetails in fetchIncidentWithDetails, received:', data);
         }
-
-        return null;
     }
 
-    return data;
+    return data as IncidentWithDetails;
 }
 
 export function fetchIncidentByChannel(channelId: string) {
