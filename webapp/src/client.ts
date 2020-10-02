@@ -28,7 +28,6 @@ import {
     FetchPlaybooksNoChecklistReturn,
     PlaybookNoChecklist,
 } from 'src/types/playbook';
-import SystemSettings from 'src/system_settings';
 
 import {pluginId} from './manifest';
 
@@ -47,24 +46,33 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
 
 export async function fetchIncident(id: string) {
     const data = await doGet(`${apiUrl}/incidents/${id}`);
-    if (SystemSettings.EnableDeveloperMode && !isIncident(data)) {
-        // eslint-disable-next-line no-console
-        console.error('expected an Incident in fetchIncident, received:', data);
+    if (!isIncident(data)) {
+        // eslint-disable-next-line no-process-env
+        if (process.env.NODE_ENV !== 'production') {
+            // eslint-disable-next-line no-console
+            console.error('expected an Incident in fetchIncident, received:', data);
+        }
+
+        return null;
     }
 
     // Prefer to continue to run even though we may be missing a field.
-    return data as Incident;
+    return data;
 }
 
 export async function fetchIncidentWithDetails(id: string) {
     const data = await doGet(`${apiUrl}/incidents/${id}/details`);
-    if (SystemSettings.EnableDeveloperMode && !isIncidentWithDetails(data)) {
-        // eslint-disable-next-line no-console
-        console.error('expected an IncidentWithDetails in fetchIncidentWithDetails, received:', data);
+    if (!isIncidentWithDetails(data)) {
+        // eslint-disable-next-line no-process-env
+        if (process.env.NODE_ENV !== 'production') {
+            // eslint-disable-next-line no-console
+            console.error('expected an IncidentWithDetails in fetchIncidentWithDetails, received:', data);
+        }
+
+        return null;
     }
 
-    // Prefer to continue to run even though we may be missing a field.
-    return data as IncidentWithDetails;
+    return data;
 }
 
 export function fetchIncidentByChannel(channelId: string) {

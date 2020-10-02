@@ -8,7 +8,6 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Dispatch} from 'redux';
 
 import {navigateToUrl} from 'src/browser_routing';
-import SystemSettings from 'src/system_settings';
 import {incidentCreated, receivedTeamIncidentChannels} from 'src/actions';
 import {fetchIncidentChannels} from 'src/client';
 
@@ -30,14 +29,17 @@ export function handleWebsocketIncidentUpdate() {
             return;
         }
         const data = JSON.parse(msg.data.payload);
-        if (SystemSettings.EnableDeveloperMode && !isIncident(data)) {
-            // eslint-disable-next-line no-console
-            console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate:', data);
+        if (!isIncident(data)) {
+            // eslint-disable-next-line no-process-env
+            if (process.env.NODE_ENV !== 'production') {
+                // eslint-disable-next-line no-console
+                console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate:', data);
+            }
+
             return;
         }
-        const incident = data as Incident;
 
-        websocketSubscribers.forEach((fn) => fn(incident));
+        websocketSubscribers.forEach((fn) => fn(data));
     };
 }
 
@@ -48,13 +50,17 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
         }
         const payload = JSON.parse(msg.data.payload);
         const data = payload.incident;
-        if (SystemSettings.EnableDeveloperMode && !isIncident(data)) {
-            // eslint-disable-next-line no-console
-            console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentCreate:', data);
-        }
-        const incident = data as Incident;
+        if (!isIncident(data)) {
+            // eslint-disable-next-line no-process-env
+            if (process.env.NODE_ENV !== 'production') {
+                // eslint-disable-next-line no-console
+                console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentCreate:', data);
+            }
 
-        dispatch(incidentCreated(incident));
+            return;
+        }
+
+        dispatch(incidentCreated(data));
 
         if (payload.client_id !== clientId(getState())) {
             return;
@@ -63,7 +69,7 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
         const currentTeam = getCurrentTeam(getState());
 
         // Navigate to the newly created channel
-        const url = `/${currentTeam.name}/channels/${incident.channel_id}`;
+        const url = `/${currentTeam.name}/channels/${data.channel_id}`;
         navigateToUrl(url);
     };
 }
