@@ -3,6 +3,7 @@
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Store} from 'redux';
 
@@ -33,7 +34,8 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         // Update the known set of incident channels whenever the team changes.
         if (currentTeamId !== currentTeam.id) {
             currentTeamId = currentTeam.id;
-            store.dispatch(receivedTeamIncidentChannels(await fetchIncidentChannels(currentTeam.id)));
+            const currentUserId = getCurrentUserId(state);
+            store.dispatch(receivedTeamIncidentChannels(await fetchIncidentChannels(currentTeam.id, currentUserId)));
         }
 
         // Only consider opening the RHS if the channel has changed and wasn't already seen as

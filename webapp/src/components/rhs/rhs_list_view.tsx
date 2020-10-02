@@ -114,7 +114,7 @@ const Button = styled.button`
     color: var(--button-bg);
     text-align: center;
     padding: 10px 0;
-    margin: 10px;
+    margin-top: 10px;
 `;
 
 const Footer = styled.div`

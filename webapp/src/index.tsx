@@ -10,9 +10,12 @@ import {GlobalState} from 'mattermost-redux/types/store';
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import WebsocketEvents from 'mattermost-redux/constants/websocket';
 
 import {isMobile} from 'src/mobile';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
+import {makeRHSOpener} from 'src/rhs_opener';
+import {makeSlashCommandHook} from 'src/slash_command';
 
 import {pluginId} from './manifest';
 import ChannelHeaderButton from './components/assets/icons/channel_header_button';
@@ -21,22 +24,21 @@ import RHSTitle from './components/rhs/rhs_title';
 import StartIncidentPostMenu from './components/post_menu';
 import Backstage from './components/backstage/backstage';
 import ErrorPage from './components/error_page';
-
 import {
     setToggleRHSAction,
 } from './actions';
 import reducer from './reducer';
 import {
     handleReconnect,
-    handleWebsocketIncidentUpdate,
-    handleWebsocketIncidentCreate,
+    handleWebsocketIncidentUpdated,
+    handleWebsocketIncidentCreated,
+    handleWebsocketUserAdded,
+    handleWebsocketUserRemoved,
 } from './websocket_events';
 import {
     WEBSOCKET_INCIDENT_UPDATED,
     WEBSOCKET_INCIDENT_CREATED,
 } from './types/websocket_events';
-import {makeRHSOpener} from './rhs_opener';
-import {makeSlashCommandHook} from './slash_command';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
@@ -63,7 +65,8 @@ export default class Plugin {
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
 
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar,
+            <RHSTitle/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
@@ -73,8 +76,10 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
 
         registry.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdate());
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreate(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdated());
+        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded);
+        registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved);
 
         // Listen for channel changes and open the RHS when appropriate.
         store.subscribe(makeRHSOpener(store));

@@ -19,6 +19,8 @@ export const clientId = (state: GlobalState): string => pluginState(state).clien
 
 export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => pluginState(state).myIncidentChannelIds[channelId];
 
+export const incidentChannels = (state: GlobalState): Record<string, boolean> => pluginState(state).myIncidentChannelIds;
+
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);
 

@@ -12,9 +12,15 @@ import {Team} from 'mattermost-redux/types/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
-import {websocketSubscribers} from 'src/websocket_events';
-
-import {Incident} from './types/incident';
+import {
+    websocketSubscribersToIncidentCreate,
+    websocketSubscribersToIncidentUpdate,
+    websocketSubscribersToUserAdded,
+    websocketSubscribersToUserRemoved,
+} from 'src/websocket_events';
+import {Incident} from 'src/types/incident';
+import {incidentChannels} from 'src/selectors';
+import {UserAdded, UserRemoved} from 'src/types/websocket_events';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -62,9 +68,9 @@ export function useCurrentIncident(): [Incident | null, IncidentFetchState] {
                 setIncident(updatedIncident);
             }
         };
-        websocketSubscribers.add(doUpdate);
+        websocketSubscribersToIncidentUpdate.add(doUpdate);
         return () => {
-            websocketSubscribers.delete(doUpdate);
+            websocketSubscribersToIncidentUpdate.delete(doUpdate);
         };
     }, [incident]);
 
@@ -80,10 +86,12 @@ export enum ListFetchState {
 export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentUser = useSelector<GlobalState, UserProfile>(getCurrentUser);
+    const myIncidentChannels = useSelector<GlobalState, Record<string, boolean>>(incidentChannels);
     const [incidents, setIncidents] = useState<Incident[] | null>(null);
     const [state, setState] = useState<ListFetchState>(ListFetchState.Loading);
 
     const currentTeamId = currentTeam?.id;
+    const currentUserId = currentUser?.id;
     useEffect(() => {
         const fetchData = async () => {
             if (!currentTeamId) {
@@ -94,8 +102,8 @@ export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
 
             try {
                 const result = await fetchIncidents({
-                    member_id: currentUser.id,
-                    team_id: currentTeam.id,
+                    member_id: currentUserId,
+                    team_id: currentTeamId,
                     sort: 'create_at',
                     order: 'desc',
                     status: 'active',
@@ -112,26 +120,70 @@ export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
         };
         setState(ListFetchState.Loading);
         fetchData();
-    }, [currentTeamId]);
+    }, [currentTeamId, currentUserId]);
 
-    // TODO: listen to added to channel events
-    // useEffect(() => {
-    //     const doUpdate = (updatedIncident: Incident) => {
-    //         if (incident !== null &&
-    //             updatedIncident.is_active &&
-    //             updatedIncident.team_id === currentTeamId &&
-    //
-    //         ) {
-    //             setIncident(updatedIncident);
-    //         }
-    //     };
-    //     websocketSubscribers.add(doUpdate);
-    //     return () => {
-    //         websocketSubscribers.delete(doUpdate);
-    //     };
-    // }, [incident]);
+    useEffect(() => {
+        const onUpdate = (updatedIncident: Incident) => {
+            if (updatedIncident.is_active &&
+                updatedIncident.team_id === currentTeamId &&
+                myIncidentChannels[updatedIncident.channel_id]
+            ) {
+                if (incidents) {
+                    let newIncidents = incidents.map((incident) => {
+                        if (incident.id === updatedIncident.id) {
+                            return updatedIncident;
+                        }
+                        return incident;
+                    });
+                    newIncidents = sortIncidentsDescByCreateAt(newIncidents);
+                    setIncidents(newIncidents);
+                }
+            }
+        };
+        websocketSubscribersToIncidentUpdate.add(onUpdate);
+
+        const onCreate = (newIncident: Incident) => {
+            if (newIncident.is_active && newIncident.team_id === currentTeamId) {
+                let newIncidents = incidents ? [newIncident, ...incidents] : [newIncident];
+                newIncidents = sortIncidentsDescByCreateAt(newIncidents);
+                setIncidents(newIncidents);
+            }
+        };
+        websocketSubscribersToIncidentCreate.add(onCreate);
+
+        const onAdded = async (userAdded: UserAdded) => {
+            if (userAdded.user_id === currentUserId && userAdded.team_id === currentTeamId) {
+                const newIncident = await fetchIncidentByChannel(userAdded.channel_id);
+                let newIncidents = incidents ? [newIncident, ...incidents] : [newIncident];
+                newIncidents = sortIncidentsDescByCreateAt(newIncidents);
+                setIncidents(newIncidents);
+            }
+        };
+        websocketSubscribersToUserAdded.add(onAdded);
+
+        const onRemoved = (userRemoved: UserRemoved) => {
+            if (userRemoved.user_id === currentUserId && myIncidentChannels[userRemoved.channel_id]) {
+                if (incidents) {
+                    const newIncidents = incidents.filter((i) => i.channel_id !== userRemoved.channel_id);
+                    setIncidents(newIncidents);
+                }
+            }
+        };
+        websocketSubscribersToUserRemoved.add(onRemoved);
+
+        return () => {
+            websocketSubscribersToIncidentUpdate.delete(onUpdate);
+            websocketSubscribersToIncidentCreate.delete(onCreate);
+            websocketSubscribersToUserAdded.delete(onAdded);
+            websocketSubscribersToUserAdded.delete(onRemoved);
+        };
+    }, [incidents, currentUserId, currentTeamId, myIncidentChannels]);
 
     return [incidents, state];
+}
+
+function sortIncidentsDescByCreateAt(incidents: Incident[]) {
+    return incidents.sort((a, b) => b.create_at - a.create_at);
 }
 
 /**
