@@ -8,12 +8,11 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Dispatch} from 'redux';
 
 import {navigateToUrl} from 'src/browser_routing';
-
 import {incidentCreated, receivedTeamIncidentChannels} from 'src/actions';
 import {fetchIncidentChannels} from 'src/client';
 
 import {clientId} from './selectors';
-import {isIncident, Incident} from './types/incident';
+import {Incident, isIncident} from './types/incident';
 
 export const websocketSubscribers = new Set<(incident: Incident) => void>();
 
@@ -29,12 +28,16 @@ export function handleWebsocketIncidentUpdate() {
         if (!msg.data.payload) {
             return;
         }
-        const incident = JSON.parse(msg.data.payload);
-        if (!isIncident(incident)) {
-            // eslint-disable-next-line no-console
-            console.log('error: received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate');
-            return;
+        const data = JSON.parse(msg.data.payload);
+
+        // eslint-disable-next-line no-process-env
+        if (process.env.NODE_ENV !== 'production') {
+            if (!isIncident(data)) {
+                // eslint-disable-next-line no-console
+                console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentUpdate:', data);
+            }
         }
+        const incident = data as Incident;
 
         websocketSubscribers.forEach((fn) => fn(incident));
     };
@@ -46,12 +49,16 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
             return;
         }
         const payload = JSON.parse(msg.data.payload);
-        const incident = payload.incident;
-        if (!isIncident(incident)) {
-            // eslint-disable-next-line no-console
-            console.log('error: received a websocket data payload that was not an incident in handleWebsocketIncidentCreate');
-            return;
+        const data = payload.incident;
+
+        // eslint-disable-next-line no-process-env
+        if (process.env.NODE_ENV !== 'production') {
+            if (!isIncident(data)) {
+                // eslint-disable-next-line no-console
+                console.error('received a websocket data payload that was not an incident in handleWebsocketIncidentCreate:', data);
+            }
         }
+        const incident = data as Incident;
 
         dispatch(incidentCreated(incident));
 
