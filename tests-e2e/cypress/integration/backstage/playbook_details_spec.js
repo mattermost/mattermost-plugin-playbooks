@@ -6,13 +6,10 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import * as TIMEOUTS from '../../fixtures/timeouts';
-
 describe('backstage playbook details', () => {
     beforeEach(() => {
         // # Login as user-1
         cy.apiLogin('user-1');
-        cy.visit('/');
     });
 
     it('redirects to not found error if the playbook is unknown', () => {
