@@ -211,7 +211,7 @@ const PlaybookList: FC = () => {
                                     onClick={() => newPlaybook()}
                                 >
                                     <i className='icon-plus mr-2'/>
-                                    {'New Playbook'}
+                                    {'Create a Playbook'}
                                 </button>
                             </div>
                         </div>
@@ -325,8 +325,8 @@ const Button = styled.button`
 const NoContentPage = (props: {onNewPlaybook: () => void}) => {
     return (
         <Container>
-            <Title>{'What are Playbooks?'}</Title>
-            <Description>{'A playbook is an incident template. It is created ahead of time during planning and defines the stages and tasks an incident will have, along with who can start an incident with the playbook.'}</Description>
+            <Title>{'What is a Playbook?'}</Title>
+            <Description>{'A playbook is a workflow template which must be created before an incident occurs. It defines the stages and tasks associated with an incident, as well as who can use playbook to start an incident.'}</Description>
             <Button
                 className='mt-6'
                 onClick={() => props.onNewPlaybook()}
