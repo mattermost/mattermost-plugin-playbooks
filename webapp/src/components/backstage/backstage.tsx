@@ -79,7 +79,7 @@ export const BackstageNavbar = styled.div`
     display: flex;
     align-items: center;
     height: 80px;
-    padding: 20px 32px;
+    padding: 28px 31px;
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
     font-family: 'compass-icons';
@@ -97,7 +97,7 @@ const BackstageTitlebarItem = styled(NavLink)`
         color: var(--center-channel-color);
         fill: var(--center-channel-color);
         padding: 8px;
-        margin-left: 28px;
+        margin-right: 39px;
         display: flex;
         align-items: center;
 

@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {Playbook, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
-import SirenIcon from 'src/components/assets/icons/siren_icon';
+import AlertIcon from 'src/components/assets/icons/alert_icon';
 
 export interface PresetTemplate {
     title: string;
@@ -22,7 +22,7 @@ export const PresetTemplates: PresetTemplate[] = [
     },
     {
         title: 'Incident Response Playbook',
-        icon: <SirenIcon/>,
+        icon: <AlertIcon/>,
         template: {
             ...emptyPlaybook(),
             title: 'Incident Response Playbook',
@@ -162,6 +162,7 @@ const TemplateTitle = styled.div`
     line-height: 20px;
     color: var(--center-channel-color);
     padding: 20px 0 0 0;
+    text-align: center;
 `;
 
 const TemplateItem = (props: TemplateItemProps) => {
