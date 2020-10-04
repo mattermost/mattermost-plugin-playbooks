@@ -176,6 +176,9 @@ type Service interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
+	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
+	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
+
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
 
@@ -239,33 +242,31 @@ type Telemetry interface {
 	// RestartIncident tracks the restart of an incident.
 	RestartIncident(incident *Incident)
 
-	// ModifyCheckedState tracks the checking and unchecking of items by the user
-	// identified by userID in the incident identified by incidentID.
+	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
 
-	// SetAssignee tracks the changing of an assignee on an item by the user
-	// identified by userID in the incident identified by incidentID.
+	// SetAssignee tracks the changing of an assignee on an item.
 	SetAssignee(incidentID, userID string)
 
-	// AddChecklistItem tracks the creation of a new checklist item by the user
-	// identified by userID in the incident identified by incidentID.
+	// AddChecklistItem tracks the creation of a new checklist item.
 	AddChecklistItem(incidentID, userID string)
 
-	// RemoveChecklistItem tracks the removal of a checklist item by the user
-	// identified by userID in the incident identified by incidentID.
+	// RemoveChecklistItem tracks the removal of a checklist item.
 	RemoveChecklistItem(incidentID, userID string)
 
-	// RenameChecklistItem tracks the update of a checklist item by the user
-	// identified by userID in the incident identified by incidentID.
+	// RenameChecklistItem tracks the update of a checklist item.
 	RenameChecklistItem(incidentID, userID string)
 
-	// MoveChecklistItem tracks the uncheking of checked item by the user
-	// identified by userID in the incident identified by incidentID.
+	// MoveChecklistItem tracks the unchecking of checked item.
 	MoveChecklistItem(incidentID, userID string)
 
-	// ChangeCommander tracks changes in commander by the user
+	// ChangeCommander tracks changes in commander.
 	ChangeCommander(incident *Incident)
 
 	// ChangeCommander tracks changes in stage
 	ChangeStage(incident *Incident)
+
+	// RunChecklistItemSlashCommand tracks the execution of a slash command attached to
+	// a checklist item.
+	RunChecklistItemSlashCommand(incidentID, userID string)
 }

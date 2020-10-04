@@ -73,3 +73,7 @@ func (t *NoopTelemetry) ChangeCommander(*incident.Incident) {
 // ChangeStage does nothing
 func (t *NoopTelemetry) ChangeStage(*incident.Incident) {
 }
+
+// RunChecklistItemSlashCommand does nothing
+func (t *NoopTelemetry) RunChecklistItemSlashCommand(incidentID, userID string) {
+}

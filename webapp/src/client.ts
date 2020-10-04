@@ -96,6 +96,14 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
+export async function clientRunChecklistItemSlashCommand(incidentId: string, checklistNumber: number, itemNumber: number) {
+    try {
+        await doPost(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNumber}/item/${itemNumber}/run`);
+    } catch (error) {
+        console.error(error); //eslint-disable-line no-console
+    }
+}
+
 export function clientFetchPlaybooks(teamID: string, params: FetchIncidentsParams) {
     const queryParams = qs.stringify({
         team_id: teamID,
