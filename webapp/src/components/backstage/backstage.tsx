@@ -23,28 +23,10 @@ import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/br
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
 import RightDots from '../assets/right_dots';
+import RightFade from '../assets/right_fade';
 import LeftDots from '../assets/left_dots';
+import LeftFade from '../assets/left_fade';
 
-const RightFade = styled.div`
-    position: absolute;
-    top: 85px;
-    right: 0;
-    height: 100%;
-    width: 188px;
-    z-index: 0;
-    background: linear-gradient(270deg, var(--center-channel-bg),transparent 60%);
-    pointer-events: none;
-`;
-
-const LeftFade = styled.div`
-    position: absolute;
-    width: 176px;
-    top: 85px;
-    left: 0;
-    height: 100%;
-    background: linear-gradient(90deg, var(--center-channel-bg) 0%, rgba(255, 255, 255, 0) 94.89%);
-    pointer-events: none;
-`;
 
 const BackstageContainer = styled.div`
     overflow: hidden;
