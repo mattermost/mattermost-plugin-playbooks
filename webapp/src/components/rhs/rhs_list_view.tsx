@@ -20,13 +20,16 @@ import {
     renderView,
 } from 'src/components/rhs/rhs_shared';
 import {setRHSState, startIncident} from 'src/actions';
-import {navigateToUrl} from 'src/browser_routing';
+import {navigateToTeamPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {RHSState} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
 import Duration from 'src/components/duration';
+import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 
-const StartIncidentHeader = styled.div`
-    display: block;
+const Header = styled.div`
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    justify-items: center;
     font-size: 12px;
     font-style: normal;
     font-weight: 600;
@@ -34,7 +37,15 @@ const StartIncidentHeader = styled.div`
     height: 47px;
     letter-spacing: 0;
     text-align: center;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-24)
+    box-shadow: inset 0px -1px 0px var(--center-channel-color-24);
+`;
+
+const CenterCell = styled.div`
+    grid-column-start: 2;
+`;
+
+const RightCell = styled.div`
+    margin-left: auto;
 `;
 
 const Link = styled.span`
@@ -160,11 +171,19 @@ const RHSListView = (props: Props) => {
             renderTrackHorizontal={renderTrackHorizontal}
             style={{position: 'absolute'}}
         >
-            <StartIncidentHeader>
-                <Link onClick={() => dispatch(startIncident())}>
-                    <PlusIcon/>{'Start Incident'}
-                </Link>
-            </StartIncidentHeader>
+            <Header>
+                <CenterCell>
+                    <Link onClick={() => dispatch(startIncident())}>
+                        <PlusIcon/>{'Start Incident'}
+                    </Link>
+                </CenterCell>
+                <RightCell>
+                    <ThreeDotMenu
+                        onCreatePlaybook={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
+                        onSeeAllIncidents={() => navigateToTeamPluginUrl(currentTeam.name, '/incidents')}
+                    />
+                </RightCell>
+            </Header>
 
             {props.incidentList?.map((incident) => {
                 return (
@@ -207,5 +226,26 @@ const RHSListView = (props: Props) => {
         </Scrollbars>
     );
 };
+
+interface ThreeDotMenuProps {
+    onCreatePlaybook: () => void;
+    onSeeAllIncidents: () => void;
+}
+
+const ThreeDotMenu = (props: ThreeDotMenuProps) => (
+    <DotMenu
+        vertical={true}
+        openLeft={true}
+    >
+        <DropdownMenuItem
+            text='Create Playbook'
+            onClick={props.onCreatePlaybook}
+        />
+        <DropdownMenuItem
+            text='See all Incidents'
+            onClick={props.onSeeAllIncidents}
+        />
+    </DotMenu>
+);
 
 export default RHSListView;

@@ -11,13 +11,17 @@ const DropdownMenuWrapper = styled.div`
     position: relative;
 `;
 
-const DropdownMenu = styled.div`
+interface DropdownMenuProps {
+    openLeft?: boolean;
+}
+
+const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
     position: absolute;
     top: 100%;
-    left: 0;
+    left: ${(props) => (props.openLeft ? '-140px' : '0')};
     min-width: 160px;
     text-align: left;
     list-style: none;
@@ -27,6 +31,7 @@ const DropdownMenu = styled.div`
     font-style: normal;
     font-weight: normal;
     font-size: 14px;
+    line-height: 20px;
     color: var(--center-channel-color);
     position: 'fixed';
 
@@ -45,6 +50,8 @@ const IconWrapper = styled.div`
 
 interface DotMenuProps {
     children: JSX.Element[] | JSX.Element;
+    vertical?: boolean;
+    openLeft?: boolean;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
@@ -71,12 +78,12 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
             }}
         >
             <IconWrapper>
-                <DotMenuIcon/>
+                <DotMenuIcon className={props.vertical ? 'icon-dots-vertical' : 'icon-dots-horizontal'}/>
             </IconWrapper>
             <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu>
+                    <DropdownMenu openLeft={props.openLeft}>
                         {props.children}
                     </DropdownMenu>
                 }
