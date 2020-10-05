@@ -55,6 +55,7 @@ export interface ChecklistItem {
     assignee_modified?: number;
     assignee_modified_post_id?: string;
     command: string;
+    command_last_run: number;
 }
 
 export function emptyPlaybook(): Playbook {
@@ -81,6 +82,7 @@ export function emptyChecklistItem(): ChecklistItem {
         state: ChecklistItemState.Open,
         command: '',
         description: '',
+        command_last_run: 0,
     };
 }
 
@@ -88,6 +90,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     title,
     description,
     command,
+    command_last_run: 0,
     state,
 });
 
@@ -118,5 +121,6 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.assignee_modified === 'number' &&
         typeof arg.assignee_modified_post_id === 'string' &&
         typeof arg.state === 'string' &&
-        typeof arg.command === 'string';
+        typeof arg.command === 'string' &&
+        typeof arg.command_last_run === 'number';
 }

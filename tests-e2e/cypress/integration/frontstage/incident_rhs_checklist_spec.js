@@ -78,19 +78,48 @@ describe('incident rhs checklist', () => {
         });
 
         it('shows an ephemeral error when running an invalid slash command', () => {
-            // * Run the /invalid slash command
-            cy.findAllByText('(Run)').eq(0).click();
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                // * Verify the command has not yet been run.
+                cy.get('.run').eq(0).should('have.text', 'Run');
+
+                // * Run the /invalid slash command
+                cy.get('.run').eq(0).click();
+
+                // * Verify the command still has not yet been run.
+                cy.get('.run').eq(0).should('have.text', 'Run');
+            });
 
             // * Verify the expected error message.
             cy.verifyEphemeralMessage('Failed to execute slash command /invalid');
         });
 
         it('successfully runs a valid slash command', () => {
-            // * Run the /echo slash command
-            cy.findAllByText('(Run)').eq(1).click();
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                // * Verify the command has not yet been run.
+                cy.get('.run').eq(1).should('have.text', 'Run');
+
+                // * Run the /invalid slash command
+                cy.get('.run').eq(1).click();
+
+                // * Verify the command has now been run.
+                cy.get('.run').eq(1).should('have.text', 'Rerun');
+            });
 
             // # Verify the expected output.
             cy.verifyPostedMessage('VALID');
+        });
+
+        it('still shows slash commands as having been run after reload', () => {
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                // * Verify the invalid command still has not yet been run.
+                cy.get('.run').eq(0).should('have.text', 'Run');
+
+                // * Verify the valid command has been run.
+                cy.get('.run').eq(1).should('have.text', 'Rerun');
+            });
         });
     });
 });

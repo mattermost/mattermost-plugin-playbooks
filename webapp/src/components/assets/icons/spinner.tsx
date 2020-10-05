@@ -2,9 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React, {FC} from 'react';
+import classNames from 'classnames';
 
-const Spinner: FC = () => (
-    <i className='fa fa-spin fa-spinner mr-2'/>
+interface SpinnerProps {
+    className?: string
+}
+
+const Spinner: FC<SpinnerProps> = (props: SpinnerProps) => (
+    <i className={classNames('fa fa-pulse fa-spinner', props.className)}/>
 );
 
 export default Spinner;

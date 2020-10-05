@@ -44,6 +44,10 @@ const SpinnerContainer = styled.div`
     padding: 20px;
 `;
 
+const StyledSpinner = styled(Spinner)`
+    margin-right: 4px;
+`;
+
 const NoIncidentsContainer = styled.div`
     margin: 48px 40px 0;
     display: block;
@@ -88,7 +92,7 @@ const RightHandSidebar: FC<null> = () => {
             <RHSContainer>
                 <RHSContent>
                     <SpinnerContainer>
-                        <Spinner/>
+                        <StyledSpinner/>
                         <span>{'Loading...'}</span>
                     </SpinnerContainer>
                 </RHSContent>

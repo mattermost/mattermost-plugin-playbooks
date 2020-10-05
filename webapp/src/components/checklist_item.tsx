@@ -84,6 +84,11 @@ const DescriptionTitle = styled.span`
     color: var(--center-channel-color);
 `;
 
+const StyledSpinner = styled(Spinner)`
+    margin-left: 4px;
+    padding-top: 3px;
+`;
+
 interface StepDescriptionProps {
     text: string;
     channelNames: ChannelNamesMap;
@@ -153,6 +158,13 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     };
 
     const [running, setRunning] = useState(false);
+    const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
+
+    // Immediately stop the running indicator when we get notified of a more recent execution.
+    if (props.checklistItem.command_last_run > lastRun) {
+        setRunning(false);
+        setLastRun(props.checklistItem.command_last_run);
+    }
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
@@ -265,12 +277,12 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }
                         }}
                     >
-                        {'(Run)'}
+                        {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
                     </div>
                     <div className={'command'}>
                         {props.checklistItem.command}
                     </div>
-                    {running && <Spinner/>}
+                    {running && <StyledSpinner/>}
                 </div>
             }
             <div className={'assignee-container'}>

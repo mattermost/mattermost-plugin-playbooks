@@ -499,6 +499,13 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		return errors.Wrap(err, "failed to run slash command")
 	}
 
+	// Record the last (successful) run time.
+	incident.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
+	if err = s.store.UpdateIncident(incident); err != nil {
+		return errors.Wrapf(err, "failed to update incident recording run of slash command")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
 	s.telemetry.RunChecklistItemSlashCommand(incidentID, userID)
 
 	return nil

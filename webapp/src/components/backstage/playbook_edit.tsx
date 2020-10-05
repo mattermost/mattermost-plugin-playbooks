@@ -19,7 +19,6 @@ import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import Spinner from 'src/components/assets/icons/spinner';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
@@ -342,11 +341,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         case FetchingStateType.notFound:
             return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
         case FetchingStateType.loading:
-            return (
-                <div className='Playbook container-medium text-center'>
-                    <Spinner/>
-                </div>
-            );
+            return null;
         }
     }
 
