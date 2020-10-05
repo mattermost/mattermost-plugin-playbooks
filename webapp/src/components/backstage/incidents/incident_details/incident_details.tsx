@@ -12,7 +12,6 @@ import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import Spinner from 'src/components/assets/icons/spinner';
 import {fetchIncidentWithDetails} from 'src/client';
 import {Incident, IncidentWithDetails} from 'src/types/incident';
 import Profile from 'src/components/profile/profile';
@@ -259,13 +258,7 @@ const BackstageIncidentDetails: FC = () => {
     }, [match.params.incidentId]);
 
     if (fetchingState === FetchingStateType.loading) {
-        return (
-            <div className='container-medium text-center'>
-                <div className='BackstageIncidentDetails'>
-                    <Spinner/>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     if (fetchingState === FetchingStateType.notFound || incidentWithDetails === null) {

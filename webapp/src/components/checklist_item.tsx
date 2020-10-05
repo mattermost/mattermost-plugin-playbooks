@@ -15,7 +15,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {clientExecuteCommand, fetchUsersInChannel, setAssignee} from 'src/client';
+import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useTimeout} from 'src/hooks';
@@ -28,7 +28,7 @@ interface ChecklistItemDetailsProps {
     checklistNum: number;
     itemNum: number;
     channelId: string;
-    incidentId?: string;
+    incidentId: string;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
 }
@@ -82,6 +82,11 @@ const DescriptionTitle = styled.span`
     font-size: 14px;
     line-height: 20px;
     color: var(--center-channel-color);
+`;
+
+const StyledSpinner = styled(Spinner)`
+    margin-left: 4px;
+    padding-top: 3px;
 `;
 
 interface StepDescriptionProps {
@@ -140,8 +145,6 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
 };
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
-    const store = useStore();
-    const dispatch = useDispatch();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
@@ -155,6 +158,13 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     };
 
     const [running, setRunning] = useState(false);
+    const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
+
+    // Immediately stop the running indicator when we get notified of a more recent execution.
+    if (props.checklistItem.command_last_run > lastRun) {
+        setRunning(false);
+        setLastRun(props.checklistItem.command_last_run);
+    }
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
@@ -263,16 +273,16 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         onClick={() => {
                             if (!running) {
                                 setRunning(true);
-                                clientExecuteCommand(dispatch, store.getState, props.checklistItem.command);
+                                clientRunChecklistItemSlashCommand(props.incidentId, props.checklistNum, props.itemNum);
                             }
                         }}
                     >
-                        {'(Run)'}
+                        {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
                     </div>
                     <div className={'command'}>
                         {props.checklistItem.command}
                     </div>
-                    {running && <Spinner/>}
+                    {running && <StyledSpinner/>}
                 </div>
             }
             <div className={'assignee-container'}>
