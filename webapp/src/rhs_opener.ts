@@ -7,8 +7,8 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Store} from 'redux';
 
-import {receivedTeamIncidentChannels, setRHSState, toggleRHS} from 'src/actions';
-import {fetchIncidentChannels} from 'src/client';
+import {receivedTeamIncidents, setRHSState, toggleRHS} from 'src/actions';
+import {fetchIncidentChannels, fetchIncidents} from 'src/client';
 import {isIncidentChannel, isIncidentRHSOpen} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 
@@ -31,11 +31,12 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             return;
         }
 
-        // Update the known set of incident channels whenever the team changes.
+        // Update the known set of incidents whenever the team changes.
         if (currentTeamId !== currentTeam.id) {
             currentTeamId = currentTeam.id;
             const currentUserId = getCurrentUserId(state);
-            store.dispatch(receivedTeamIncidentChannels(await fetchIncidentChannels(currentTeam.id, currentUserId)));
+            const fetched = await fetchIncidents({team_id: currentTeam.id, member_id: currentUserId});
+            store.dispatch(receivedTeamIncidents(fetched.items));
         }
 
         // Only consider opening the RHS if the channel has changed and wasn't already seen as
@@ -46,8 +47,8 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         currentChannelId = currentChannel.id;
         currentChannelIsIncident = isIncidentChannel(state, currentChannelId);
 
-        // Show the Incident Details or Incident List view when we change channels with the RHS open
-        if (isIncidentRHSOpen(state) && sentRHSStateForChannelId !== currentChannelId) {
+        // Decide whether to show the Incident Details or Incident List view when we change channels
+        if (sentRHSStateForChannelId !== currentChannelId) {
             sentRHSStateForChannelId = currentChannelId;
             if (currentChannelIsIncident) {
                 store.dispatch(setRHSState(RHSState.ViewingIncident));

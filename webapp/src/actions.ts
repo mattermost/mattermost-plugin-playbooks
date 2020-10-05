@@ -22,8 +22,12 @@ import {
     SetClientId,
     INCIDENT_CREATED,
     IncidentCreated,
-    RECEIVED_TEAM_INCIDENT_CHANNELS,
-    ReceivedTeamIncidentChannels, SetRHSState, SET_RHS_STATE,
+    RECEIVED_TEAM_INCIDENTS,
+    ReceivedTeamIncidents,
+    SetRHSState,
+    SET_RHS_STATE,
+    RemovedFromIncidentChannel,
+    REMOVED_FROM_INCIDENT_CHANNEL, IncidentUpdated, INCIDENT_UPDATED,
 } from './types/actions';
 
 import {
@@ -107,7 +111,17 @@ export const incidentCreated = (incident: Incident): IncidentCreated => ({
     incident,
 });
 
-export const receivedTeamIncidentChannels = (channelIds: string[]): ReceivedTeamIncidentChannels => ({
-    type: RECEIVED_TEAM_INCIDENT_CHANNELS,
-    channelIds,
+export const incidentUpdated = (incident: Incident): IncidentUpdated => ({
+    type: INCIDENT_UPDATED,
+    incident,
+});
+
+export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncidents => ({
+    type: RECEIVED_TEAM_INCIDENTS,
+    incidents,
+});
+
+export const removedFromIncidentChannel = (channelId: string): RemovedFromIncidentChannel => ({
+    type: REMOVED_FROM_INCIDENT_CHANNEL,
+    channelId,
 });

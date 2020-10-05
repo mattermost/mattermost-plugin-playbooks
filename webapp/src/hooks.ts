@@ -5,22 +5,13 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import {UserProfile} from 'mattermost-redux/types/users';
 
 import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
-import {
-    websocketSubscribersToIncidentCreate,
-    websocketSubscribersToIncidentUpdate,
-    websocketSubscribersToUserAdded,
-    websocketSubscribersToUserRemoved,
-} from 'src/websocket_events';
+import {websocketSubscribersToIncidentUpdate} from 'src/websocket_events';
 import {Incident} from 'src/types/incident';
-import {incidentChannels} from 'src/selectors';
-import {UserAdded, UserRemoved} from 'src/types/websocket_events';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -77,140 +68,26 @@ export function useCurrentIncident(): [Incident | null, IncidentFetchState] {
     return [incident, state];
 }
 
-export enum ListFetchState {
-    Loading,
-    NotFound,
-    Loaded,
-}
-
-export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    const currentUser = useSelector<GlobalState, UserProfile>(getCurrentUser);
-    const myIncidentChannels = useSelector<GlobalState, Record<string, boolean>>(incidentChannels);
-    const [incidents, setIncidents] = useState<Incident[] | null>(null);
-    const [state, setState] = useState<ListFetchState>(ListFetchState.Loading);
-
-    const currentTeamId = currentTeam?.id;
-    const currentUserId = currentUser?.id;
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!currentTeamId) {
-                setIncidents(null);
-                setState(ListFetchState.NotFound);
-                return;
-            }
-
-            try {
-                const result = await fetchIncidents({
-                    member_id: currentUserId,
-                    team_id: currentTeamId,
-                    sort: 'create_at',
-                    order: 'desc',
-                    status: 'active',
-                });
-
-                setIncidents(result.items);
-                setState(ListFetchState.Loaded);
-            } catch (err) {
-                if (err.status_code === 404) {
-                    setIncidents(null);
-                    setState(ListFetchState.NotFound);
-                }
-            }
-        };
-        setState(ListFetchState.Loading);
-        fetchData();
-    }, [currentTeamId, currentUserId]);
-
-    useEffect(() => {
-        const onUpdate = (updatedIncident: Incident) => {
-            if (updatedIncident.team_id === currentTeamId) {
-                if (incidents) {
-                    let newIncidents = incidents.map((incident) => {
-                        if (incident.id === updatedIncident.id) {
-                            return updatedIncident;
-                        }
-                        return incident;
-                    });
-
-                    // if the updated incident is not in the current list, it might have been restarted
-                    if (!newIncidents.some((incident) => incident.id === updatedIncident.id)) {
-                        newIncidents.push(updatedIncident);
-                    }
-
-                    // don't display inactive incidents
-                    newIncidents = newIncidents.filter((incident) => incident.is_active);
-                    newIncidents = sortIncidentsDescByCreateAt(newIncidents);
-                    setIncidents(newIncidents);
-                }
-            }
-        };
-        websocketSubscribersToIncidentUpdate.add(onUpdate);
-
-        const onCreate = (newIncident: Incident) => {
-            if (newIncident.is_active && newIncident.team_id === currentTeamId) {
-                let newIncidents = incidents ? [newIncident, ...incidents] : [newIncident];
-                newIncidents = sortIncidentsDescByCreateAt(newIncidents);
-                setIncidents(newIncidents);
-            }
-        };
-        websocketSubscribersToIncidentCreate.add(onCreate);
-
-        const onAdded = async (userAdded: UserAdded) => {
-            if (userAdded.user_id === currentUserId && userAdded.team_id === currentTeamId) {
-                const newIncident = await fetchIncidentByChannel(userAdded.channel_id);
-                let newIncidents = incidents ? [newIncident, ...incidents] : [newIncident];
-                newIncidents = sortIncidentsDescByCreateAt(newIncidents);
-                setIncidents(newIncidents);
-            }
-        };
-        websocketSubscribersToUserAdded.add(onAdded);
-
-        const onRemoved = (userRemoved: UserRemoved) => {
-            if (userRemoved.user_id === currentUserId) {
-                if (incidents) {
-                    const newIncidents = incidents.filter((i) => i.channel_id !== userRemoved.channel_id);
-                    setIncidents(newIncidents);
-                }
-            }
-        };
-        websocketSubscribersToUserRemoved.add(onRemoved);
-
-        return () => {
-            websocketSubscribersToIncidentUpdate.delete(onUpdate);
-            websocketSubscribersToIncidentCreate.delete(onCreate);
-            websocketSubscribersToUserAdded.delete(onAdded);
-            websocketSubscribersToUserAdded.delete(onRemoved);
-        };
-    }, [incidents, currentUserId, currentTeamId, myIncidentChannels]);
-
-    return [incidents, state];
-}
-
-function sortIncidentsDescByCreateAt(incidents: Incident[]) {
-    return incidents.sort((a, b) => b.create_at - a.create_at);
-}
-
 /**
  * Hook that calls handler when targetKey is pressed.
  */
 export function useKeyPress(targetKey: string, handler: () => void) {
-    // If pressed key is our target key then set to true
-    function downHandler({key}: KeyboardEvent) {
-        if (key === targetKey) {
-            handler();
-        }
-    }
-
     // Add event listeners
     useEffect(() => {
+        // If pressed key is our target key then set to true
+        function downHandler({key}: KeyboardEvent) {
+            if (key === targetKey) {
+                handler();
+            }
+        }
+
         window.addEventListener('keydown', downHandler);
 
         // Remove event listeners on cleanup
         return () => {
             window.removeEventListener('keydown', downHandler);
         };
-    }, []); // Empty array ensures that effect is only run on mount and unmount
+    }, [handler, targetKey]); // Empty array ensures that effect is only run on mount and unmount
 }
 
 /**
@@ -231,7 +108,7 @@ export function useClickOutsideRef(ref: MutableRefObject<HTMLElement | null>, ha
             // Unbind the event listener on clean up
             document.removeEventListener('mousedown', onMouseDown);
         };
-    }, [ref]);
+    }, [ref, handler]);
 }
 
 /**

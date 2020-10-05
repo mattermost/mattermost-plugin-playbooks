@@ -4,9 +4,9 @@
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
 
+import {pluginId} from 'src/manifest';
 import {RHSState} from 'src/types/rhs';
-
-import {pluginId} from './manifest';
+import {Incident} from 'src/types/incident';
 
 //@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
@@ -17,9 +17,23 @@ export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(st
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => pluginState(state).myIncidentChannelIds[channelId];
+export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => {
+    return Boolean(pluginState(state).myChannelIdToIncidents[channelId]);
+};
 
-export const incidentChannels = (state: GlobalState): Record<string, boolean> => pluginState(state).myIncidentChannelIds;
+export const activeIncidentList = (state: GlobalState): Incident[] => {
+    const incidents = [] as Incident[];
+    for (const incident of Object.values<Incident>(pluginState(state).myChannelIdToIncidents)) {
+        if (incident.is_active) {
+            incidents.push(incident);
+        }
+    }
+    return sortIncidentsDescByCreateAt(incidents);
+};
+
+function sortIncidentsDescByCreateAt(incidents: Incident[]) {
+    return incidents.sort((a, b) => b.create_at - a.create_at);
+}
 
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);
