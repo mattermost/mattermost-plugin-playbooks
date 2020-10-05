@@ -124,10 +124,7 @@ export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
 
     useEffect(() => {
         const onUpdate = (updatedIncident: Incident) => {
-            if (updatedIncident.is_active &&
-                updatedIncident.team_id === currentTeamId &&
-                myIncidentChannels[updatedIncident.channel_id]
-            ) {
+            if (updatedIncident.team_id === currentTeamId) {
                 if (incidents) {
                     let newIncidents = incidents.map((incident) => {
                         if (incident.id === updatedIncident.id) {
@@ -135,6 +132,14 @@ export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
                         }
                         return incident;
                     });
+
+                    // if the updated incident is not in the current list, it might have been restarted
+                    if (!newIncidents.some((incident) => incident.id === updatedIncident.id)) {
+                        newIncidents.push(updatedIncident);
+                    }
+
+                    // don't display inactive incidents
+                    newIncidents = newIncidents.filter((incident) => incident.is_active);
                     newIncidents = sortIncidentsDescByCreateAt(newIncidents);
                     setIncidents(newIncidents);
                 }
@@ -162,7 +167,7 @@ export function useCurrentIncidentList(): [Incident[] | null, ListFetchState] {
         websocketSubscribersToUserAdded.add(onAdded);
 
         const onRemoved = (userRemoved: UserRemoved) => {
-            if (userRemoved.user_id === currentUserId && myIncidentChannels[userRemoved.channel_id]) {
+            if (userRemoved.user_id === currentUserId) {
                 if (incidents) {
                     const newIncidents = incidents.filter((i) => i.channel_id !== userRemoved.channel_id);
                     setIncidents(newIncidents);

@@ -5,7 +5,7 @@ import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {navigateToUrl} from 'src/browser_routing';
@@ -81,21 +81,31 @@ export function handleWebsocketIncidentCreated(getState: GetStateFunc, dispatch:
     };
 }
 
-export function handleWebsocketUserAdded(msg: WebSocketMessage): void {
-    const userAdded: UserAdded = {
-        user_id: msg.data.user_id,
-        team_id: msg.data.team_id,
-        channel_id: msg.broadcast.channel_id,
-    };
+export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage): void => {
+        const userAdded: UserAdded = {
+            user_id: msg.data.user_id,
+            team_id: msg.data.team_id,
+            channel_id: msg.broadcast.channel_id,
+        };
 
-    websocketSubscribersToUserAdded.forEach((fn) => fn(userAdded));
+        const currentUserId = getCurrentUserId(getState());
+        const currentTeamId = getCurrentTeamId(getState());
+        if (currentUserId === msg.data.user_id && currentTeamId === msg.data.team_id) {
+            dispatch(receivedTeamIncidentChannels([msg.broadcast.channel_id]));
+        }
+
+        websocketSubscribersToUserAdded.forEach((fn) => fn(userAdded));
+    };
 }
 
-export function handleWebsocketUserRemoved(msg: WebSocketMessage): void {
-    const userRemoved: UserRemoved = {
-        user_id: msg.data.user_id,
-        channel_id: msg.broadcast.channel_id,
-    };
+export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage): void => {
+        const userRemoved: UserRemoved = {
+            user_id: msg.data.user_id,
+            channel_id: msg.broadcast.channel_id,
+        };
 
-    websocketSubscribersToUserRemoved.forEach((fn) => fn(userRemoved));
+        websocketSubscribersToUserRemoved.forEach((fn) => fn(userRemoved));
+    };
 }

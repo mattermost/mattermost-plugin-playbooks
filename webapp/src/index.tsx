@@ -78,8 +78,8 @@ export default class Plugin {
         registry.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdated());
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded);
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved);
+        registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
 
         // Listen for channel changes and open the RHS when appropriate.
         store.subscribe(makeRHSOpener(store));
