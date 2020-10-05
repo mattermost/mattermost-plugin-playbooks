@@ -6,21 +6,32 @@ import {Checklist, isChecklist} from './playbook';
 export interface Incident {
     id: string;
     name: string;
+    description: string;
     is_active: boolean;
     commander_user_id: string;
     team_id: string;
     channel_id: string;
     create_at: number;
     end_at: number;
-    post_id?: string;
+    delete_at: number;
+    active_stage: number;
+    active_stage_title: string;
+    post_id: string;
     playbook_id: string;
     checklists: Checklist[];
+}
+
+export interface Details {
     channel_name: string;
     channel_display_name: string;
     team_name: string;
     num_members: number;
     total_posts: number;
-    active_stage: number;
+}
+
+export interface IncidentWithDetails {
+    incident: Incident;
+    details: Details;
 }
 
 export interface FetchIncidentsReturn {
@@ -32,19 +43,38 @@ export interface FetchIncidentsReturn {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isIncident(arg: any): arg is Incident {
-    const optional = arg.post_id ? typeof arg.post_id === 'string' : true as boolean;
-    return arg &&
+    return Boolean(arg &&
         arg.id && typeof arg.id === 'string' &&
         arg.name && typeof arg.name === 'string' &&
+        typeof arg.description === 'string' &&
         typeof arg.is_active === 'boolean' &&
         arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
-        typeof arg.channel_id === 'string' &&
-        typeof arg.end_at === 'number' &&
+        arg.channel_id && typeof arg.channel_id === 'string' &&
         typeof arg.create_at === 'number' &&
-        optional &&
+        typeof arg.end_at === 'number' &&
+        typeof arg.delete_at === 'number' &&
+        typeof arg.active_stage === 'number' &&
+        typeof arg.active_stage_title === 'string' &&
+        typeof arg.post_id === 'string' &&
         arg.playbook_id && typeof arg.playbook_id === 'string' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
+        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isDetails(arg: any): arg is IncidentWithDetails {
+    return Boolean(arg &&
+        arg.channel_name && typeof arg.channel_name === 'string' &&
+        arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
+        arg.team_name && typeof arg.team_name === 'string' &&
+        typeof arg.num_members === 'number' &&
+        typeof arg.total_posts === 'number');
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isIncidentWithDetails(arg: any): arg is IncidentWithDetails {
+    return Boolean(arg.incident && isIncident(arg.incident) &&
+        arg.details && isDetails(arg.details));
 }
 
 export interface FetchIncidentsParams {

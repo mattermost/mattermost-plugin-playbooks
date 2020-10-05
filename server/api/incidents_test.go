@@ -864,13 +864,15 @@ func TestIncidents(t *testing.T) {
 			Checklists: []playbook.Checklist{},
 		}
 
-		testIncidentDetails := incident.Details{
-			Incident:           testIncident,
-			ChannelName:        "theChannelName",
-			ChannelDisplayName: "theChannelDisplayName",
-			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
-			TotalPosts:         42,
+		testIncidentDetails := incident.WithDetails{
+			Incident: testIncident,
+			Details: incident.Details{
+				ChannelName:        "theChannelName",
+				ChannelDisplayName: "theChannelDisplayName",
+				TeamName:           "ourAwesomeTeam",
+				NumMembers:         11,
+				TotalPosts:         42,
+			},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -899,10 +901,10 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		var resultDetails incident.WithDetails
+		err = json.NewDecoder(resp.Body).Decode(&resultDetails)
 		require.NoError(t, err)
-		assert.Equal(t, testIncident, resultIncident)
+		assert.Equal(t, testIncidentDetails, resultDetails)
 	})
 
 	t.Run("get public incident details - not part of channel or team", func(t *testing.T) {
@@ -962,13 +964,15 @@ func TestIncidents(t *testing.T) {
 			Checklists: []playbook.Checklist{},
 		}
 
-		testIncidentDetails := incident.Details{
-			Incident:           testIncident,
-			ChannelName:        "theChannelName",
-			ChannelDisplayName: "theChannelDisplayName",
-			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
-			TotalPosts:         42,
+		testIncidentDetails := incident.WithDetails{
+			Incident: testIncident,
+			Details: incident.Details{
+				ChannelName:        "theChannelName",
+				ChannelDisplayName: "theChannelDisplayName",
+				TeamName:           "ourAwesomeTeam",
+				NumMembers:         11,
+				TotalPosts:         42,
+			},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -999,10 +1003,10 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		var resultDetails incident.WithDetails
+		err = json.NewDecoder(resp.Body).Decode(&resultDetails)
 		require.NoError(t, err)
-		assert.Equal(t, testIncident, resultIncident)
+		assert.Equal(t, testIncidentDetails, resultDetails)
 	})
 
 	t.Run("get public incident details - part of channel", func(t *testing.T) {
@@ -1021,13 +1025,15 @@ func TestIncidents(t *testing.T) {
 			Checklists: []playbook.Checklist{},
 		}
 
-		testIncidentDetails := incident.Details{
-			Incident:           testIncident,
-			ChannelName:        "theChannelName",
-			ChannelDisplayName: "theChannelDisplayName",
-			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
-			TotalPosts:         42,
+		testIncidentDetails := incident.WithDetails{
+			Incident: testIncident,
+			Details: incident.Details{
+				ChannelName:        "theChannelName",
+				ChannelDisplayName: "theChannelDisplayName",
+				TeamName:           "ourAwesomeTeam",
+				NumMembers:         11,
+				TotalPosts:         42,
+			},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1056,10 +1062,10 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		var resultDetails incident.WithDetails
+		err = json.NewDecoder(resp.Body).Decode(&resultDetails)
 		require.NoError(t, err)
-		assert.Equal(t, testIncident, resultIncident)
+		assert.Equal(t, testIncidentDetails, resultDetails)
 	})
 
 	t.Run("get incidents", func(t *testing.T) {

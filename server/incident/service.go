@@ -267,7 +267,7 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 }
 
 // GetIncidentWithDetails gets an incident with the detailed metadata.
-func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*Details, error) {
+func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*WithDetails, error) {
 	incident, err := s.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident '%s'", incidentID)
@@ -669,7 +669,7 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	return ret, nil
 }
 
-func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
+func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*WithDetails, error) {
 	// Get main channel details
 	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
@@ -685,13 +685,15 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 		return nil, errors.Wrapf(err, "failed to get the count of incident members for channel id '%s'", incident.ChannelID)
 	}
 
-	incidentWithDetails := &Details{
-		Incident:           incident,
-		ChannelName:        channel.Name,
-		ChannelDisplayName: channel.DisplayName,
-		TeamName:           team.Name,
-		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         numMembers,
+	incidentWithDetails := &WithDetails{
+		Incident: incident,
+		Details: Details{
+			ChannelName:        channel.Name,
+			ChannelDisplayName: channel.DisplayName,
+			TeamName:           team.Name,
+			TotalPosts:         channel.TotalMsgCount,
+			NumMembers:         numMembers,
+		},
 	}
 	return incidentWithDetails, nil
 }

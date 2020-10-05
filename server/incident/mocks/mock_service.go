@@ -168,10 +168,10 @@ func (mr *MockServiceMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *go
 }
 
 // GetIncidentWithDetails mocks base method
-func (m *MockService) GetIncidentWithDetails(arg0 string) (*incident.Details, error) {
+func (m *MockService) GetIncidentWithDetails(arg0 string) (*incident.WithDetails, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidentWithDetails", arg0)
-	ret0, _ := ret[0].(*incident.Details)
+	ret0, _ := ret[0].(*incident.WithDetails)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
