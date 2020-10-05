@@ -38,6 +38,7 @@ interface Props {
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
     onSelectedChange: (userId?: string) => void;
+    customControlProps?: any;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -195,6 +196,7 @@ export default function ProfileSelector(props: Props) {
                 onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
                 classNamePrefix='incident-user-select'
                 className='incident-user-select'
+                {...props.customControlProps}
             />
         </Dropdown>
     );
