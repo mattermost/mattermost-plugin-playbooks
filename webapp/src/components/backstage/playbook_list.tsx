@@ -28,6 +28,11 @@ import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
+import RightDots from 'src/components/assets/right_dots';
+import RightFade from 'src/components/assets/right_fade';
+import LeftDots from 'src/components/assets/left_dots';
+import LeftFade from 'src/components/assets/left_fade';
+
 const DeleteBannerTimeout = 5000;
 
 const PlaybookList: FC = () => {
@@ -194,6 +199,10 @@ const PlaybookList: FC = () => {
             {
                 (playbooks && playbooks.length !== 0) &&
                 <>
+                    <RightDots/>
+                    <RightFade/>
+                    <LeftDots/>
+                    <LeftFade/>
                     <div className='playbook-list container-medium'>
                         <div className='Backstage__header'>
                             <div

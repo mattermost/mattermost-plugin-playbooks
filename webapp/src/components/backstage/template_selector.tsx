@@ -75,6 +75,12 @@ const RootContainer = styled.div`
     background: rgba(var(--center-channel-color-rgb), 0.03);
 `;
 
+// BackgroundColorContainer hides the left dots from showing over the template selector.
+const BackgroundColorContainer = styled.div`
+    position: relative;
+    background: var(--center-channel-bg);
+`;
+
 const InnerContainer = styled.div`
     max-width: 1120px;
     width: 100%;
@@ -114,26 +120,28 @@ interface Props {
 
 const TemplateSelector: FC<Props> = ({templates = PresetTemplates, onSelect}: Props) => {
     return (
-        <RootContainer>
-            <InnerContainer>
-                <Title>{'Start a new playbook'}</Title>
-                <TemplateItemDiv>
-                    {
-                        templates.map((template: PresetTemplate) => (
-                            <TemplateItem
-                                key={template.title}
-                                title={template.title}
-                                onClick={() => {
-                                    onSelect(template);
-                                }}
-                            >
-                                {template.icon}
-                            </TemplateItem>
-                        ))
-                    }
-                </TemplateItemDiv>
-            </InnerContainer>
-        </RootContainer>
+        <BackgroundColorContainer>
+            <RootContainer>
+                <InnerContainer>
+                    <Title>{'Start a new playbook'}</Title>
+                    <TemplateItemDiv>
+                        {
+                            templates.map((template: PresetTemplate) => (
+                                <TemplateItem
+                                    key={template.title}
+                                    title={template.title}
+                                    onClick={() => {
+                                        onSelect(template);
+                                    }}
+                                >
+                                    {template.icon}
+                                </TemplateItem>
+                            ))
+                        }
+                    </TemplateItemDiv>
+                </InnerContainer>
+            </RootContainer>
+        </BackgroundColorContainer>
     );
 };
 

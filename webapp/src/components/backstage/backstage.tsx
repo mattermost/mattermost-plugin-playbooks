@@ -22,11 +22,6 @@ import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/br
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
-import RightDots from '../assets/right_dots';
-import RightFade from '../assets/right_fade';
-import LeftDots from '../assets/left_dots';
-import LeftFade from '../assets/left_fade';
-
 
 const BackstageContainer = styled.div`
     overflow: hidden;
@@ -194,10 +189,6 @@ const Backstage: FC = () => {
                     </Route>
                 </Switch>
             </BackstageBody>
-            <RightDots/>
-            <RightFade/>
-            <LeftDots/>
-            <LeftFade/>
         </BackstageContainer>
     );
 };

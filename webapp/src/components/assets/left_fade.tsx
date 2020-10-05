@@ -8,6 +8,7 @@ const LeftFade = styled.div`
     height: 100%;
     background: linear-gradient(90deg, var(--center-channel-bg) 0%, rgba(255, 255, 255, 0) 94.89%);
     pointer-events: none;
+    z-index: -1;
 `;
 
 export default LeftFade;

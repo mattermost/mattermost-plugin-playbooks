@@ -6,7 +6,7 @@ const RightFade = styled.div`
     right: 0;
     height: 100%;
     width: 188px;
-    z-index: 0;
+    z-index: -1;
     background: linear-gradient(270deg, var(--center-channel-bg),transparent 60%);
     pointer-events: none;
 `;
