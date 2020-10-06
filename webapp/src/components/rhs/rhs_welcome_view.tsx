@@ -51,7 +51,7 @@ const RHSWelcomeView = () => {
     if (hasPlaybooks) {
         return (
             <RHSContainer>
-                <NoIncidentsContainer>
+                <NoIncidentsContainer data-testid='welcome-view-has-playbooks'>
                     <NoContentPlaybookSvgRhs/>
                     <NoIncidentsItem>
                         <h1>
@@ -83,7 +83,7 @@ const RHSWelcomeView = () => {
 
     return (
         <RHSContainer>
-            <NoIncidentsContainer>
+            <NoIncidentsContainer data-testid='welcome-view'>
                 <NoContentPlaybookSvgRhs/>
                 <NoIncidentsItem>
                     <h1>

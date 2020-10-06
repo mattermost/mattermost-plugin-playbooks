@@ -77,7 +77,6 @@ Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) =
     cy.startIncident(playbookName, incidentName);
 });
 
-// Open backstage
 Cypress.Commands.add('openBackstage', () => {
     cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('be.visible').within(() => {
         // # Click hamburger main menu

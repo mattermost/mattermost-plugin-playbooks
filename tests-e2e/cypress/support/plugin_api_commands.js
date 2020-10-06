@@ -20,6 +20,20 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
 });
 
 /**
+* Get all incidents directly via API
+*/
+Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/com.mattermost.plugin-incident-response/api/v1/incidents?team_id=${teamId}&status=active`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
 * Get an incident directly via API
 * @param {String} incidentId
 * All parameters required
@@ -60,10 +74,26 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
  * @param {String} incidentId
  * All parameters required
  */
-Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
+Cypress.Commands.add('apiEndIncident', (incidentId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint + '/' + incidentId + '/end',
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Restart an incident directly via API
+ * @param {String} incidentId
+ * All parameters required
+ */
+Cypress.Commands.add('apiRestartIncident', (incidentId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: incidentsEndpoint + '/' + incidentId + '/restart',
         method: 'PUT',
     }).then((response) => {
         expect(response.status).to.equal(200);

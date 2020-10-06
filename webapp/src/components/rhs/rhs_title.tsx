@@ -46,10 +46,10 @@ const RHSTitle: FC = () => {
             <RHSTitleContainer>
                 <Button
                     onClick={() => dispatch(setRHSState(RHSState.ViewingList))}
+                    data-testid='back-button'
                 >
                     <LeftChevron theme={theme}/>
-                </Button>
-                <RHSTitleText>{incident?.name || 'Incidents'}</RHSTitleText>
+                </Button><RHSTitleText data-testid='rhs-title'>{incident?.name || 'Incidents'}</RHSTitleText>
                 {incident && (
                     <StatusBadge
                         isActive={incident?.is_active}

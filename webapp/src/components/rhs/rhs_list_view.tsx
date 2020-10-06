@@ -211,7 +211,10 @@ const RHSListView = (props: Props) => {
                                 <SmallerProfile userId={incident.commander_user_id}/>
                             </Col2>
                         </Row>
-                        <Button onClick={() => viewIncident(incident.channel_id)}>
+                        <Button
+                            onClick={() => viewIncident(incident.channel_id)}
+                            data-testid='go-to-channel'
+                        >
                             {'Go to Incident Channel'}
                         </Button>
                     </IncidentContainer>

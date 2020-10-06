@@ -40,7 +40,7 @@ describe('incident rhs', () => {
 
     describe('does not open', () => {
         it('when navigating to a non-incident channel', () => {
-        // # Navigate to the application
+            // # Navigate to the application
             cy.visit('/');
 
             // # Select a channel without an incident.
@@ -57,7 +57,7 @@ describe('incident rhs', () => {
         });
 
         it('when navigating to an incident channel with the RHS already open', () => {
-        // # Navigate to the application.
+            // # Navigate to the application.
             cy.visit('/');
 
             // # Select a channel without an incident.
@@ -125,7 +125,7 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiDeleteIncident(incident.id);
+                cy.apiEndIncident(incident.id);
             });
 
             // # Navigate directly to the application and the incident channel
@@ -182,7 +182,7 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiDeleteIncident(incident.id);
+                cy.apiEndIncident(incident.id);
             });
 
             // # Open the incident channel from the LHS.
@@ -231,7 +231,7 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiDeleteIncident(incident.id);
+                cy.apiEndIncident(incident.id);
             });
 
             // # Navigate to a channel without an incident.
@@ -324,7 +324,7 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiDeleteIncident(incident.id);
+                cy.apiEndIncident(incident.id);
             });
 
             // # Navigate directly to the application and the incident channel
