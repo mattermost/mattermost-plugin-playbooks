@@ -23,7 +23,7 @@ On startup, the plugin checks for a valid Mattermost Enterprise Edition E20 lice
 During an active incident, you want to focus on triaging and solving the problem as soon as possible. Planning your incident support strategy ahead of time with playbooks is the best way to ensure incidents run smoothly.
 
 1. Navigate to Playbooks & Incidents in the main menu.
-2. Create a new playbook, either from a predefined template or from scratch. You can add as many stages and tasks as you need. Share the playbook with the people that should decide on your processes, and select the type of channel created when an incident starts: public or private.
+2. Create a new playbook, using either a predefined template or from scratch. You can add as many stages and tasks as you need. Share the playbook with the relevant team members, and select the type of channel created when an incident starts - either Public or Private.
 3. Save the playbook.
 
 A playbook is a recipe for an incident. Plan what the responders will need to do in such situations, and make sure to schedule a post-mortem analysis to iterate on the design of your playbooks after the incident finishes. Read more about Playbooks [here](https://docs.mattermost.com/administration/devops-command-center.html#creating-a-playbook).
