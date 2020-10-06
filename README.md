@@ -22,20 +22,20 @@ On startup, the plugin checks for a valid Mattermost Enterprise Edition E20 lice
 
 During an active incident, you want to focus on triaging and solving the problem as soon as possible. Planning your incident support strategy ahead of time with playbooks is the best way to ensure incidents run smoothly.
 
+A playbook is a recipe for dealing with and resolving an incident. In a playbook, you can plan ahead so that during an incident responders know exactly what to do. Make sure to schedule a post-mortem analysis to iterate on the design of your playbooks after the incident finishes. Read more about Playbooks [here](https://docs.mattermost.com/administration/devops-command-center.html#creating-a-playbook).
+
 1. Navigate to Playbooks & Incidents in the main menu.
 2. Create a new playbook, using either a predefined template or from scratch. You can add as many stages and tasks as you need. Share the playbook with the relevant team members, and select the type of channel created when an incident starts - either Public or Private.
 3. Save the playbook.
-
-A playbook is a recipe for an incident. Plan what the responders will need to do in such situations, and make sure to schedule a post-mortem analysis to iterate on the design of your playbooks after the incident finishes. Read more about Playbooks [here](https://docs.mattermost.com/administration/devops-command-center.html#creating-a-playbook).
 
 ### Start an incident
 
 A server in your cluster is down, a customer is unable to login or your team has detected a performance degradation. Whatever the problem is, if it needs coordination and a quick response, starting an incident will help you focus on solving it. There are two alternative ways to start an incident:
 
--   Write the slash command `/incident start`.
--   Click on the Incident Response icon on the channel header, which will open the RHS with a **Start Incident** button.
+-   Use the slash command `/incident start`.
+-   Click on the Incident Response icon on the channel header, to open the RHS with a **Start Incident** button.
 
-Either of those actions will open a dialog. Choose the playbook that best suits the incident, give it a name and an optional description and click on **Start Incident**. You will automatically jump to the channel associated with the incident, of which you are the commander now.
+Choose the playbook that best suits the incident, give it a name and an optional description, and click on **Start Incident**. You will automatically jump to the channel associated with the incident, of which you are the commander now.
 
 The RHS shows the active stage and a checklist of the tasks to do. You can assign users to the tasks (remember to add them to the channel!), run the predefined slash commands and, of course, you can message your teammates to triage and solve the incident.
 
