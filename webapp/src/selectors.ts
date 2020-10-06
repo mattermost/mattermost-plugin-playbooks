@@ -42,3 +42,5 @@ export const isExportLicensed = (state: GlobalState): boolean => {
 };
 
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
+
+export const currentlyFetchingIncidents = (state: GlobalState): boolean => pluginState(state).fetchingIncidents;

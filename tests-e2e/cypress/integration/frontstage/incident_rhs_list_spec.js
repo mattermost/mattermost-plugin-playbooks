@@ -340,10 +340,10 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('be.visible').within(() => {
                 cy.findByTestId('rhs-title').should('be.visible').within(() => {
                     cy.findByText(newIncidentName).should('be.visible');
-
-                    // * Verify the title shows "Ongoing"
-                    cy.get('.sidebar--right__title').contains('Ongoing');
                 });
+
+                // * Verify the title shows "Ongoing"
+                cy.get('.sidebar--right__title').contains('Ongoing');
             });
 
             // # Close the RHS
@@ -358,10 +358,10 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('be.visible').within(() => {
                 cy.findByTestId('rhs-title').should('be.visible').within(() => {
                     cy.findByText(incidentName).should('be.visible');
-
-                    // * Verify the title shows "Ongoing"
-                    cy.get('.sidebar--right__title').contains('Ongoing');
                 });
+
+                // * Verify the title shows "Ongoing"
+                cy.get('.sidebar--right__title').contains('Ongoing');
             });
         });
 
@@ -401,10 +401,10 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('be.visible').within(() => {
                 cy.findByTestId('rhs-title').should('be.visible').within(() => {
                     cy.findByText(incidentName).should('be.visible');
-
-                    // * Verify the title shows "Ongoing"
-                    cy.get('.sidebar--right__title').contains('Ongoing');
                 });
+
+                // * Verify the title shows "Ongoing"
+                cy.get('.sidebar--right__title').contains('Ongoing');
             });
         });
 
@@ -443,10 +443,10 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('be.visible').within(() => {
                 cy.findByTestId('rhs-title').should('be.visible').within(() => {
                     cy.findByText(incidentName).should('be.visible');
-
-                    // * Verify the title shows "Ongoing"
-                    cy.get('.sidebar--right__title').contains('Ongoing');
                 });
+
+                // * Verify the title shows "Ongoing"
+                cy.get('.sidebar--right__title').contains('Ongoing');
             });
         });
     });
@@ -506,9 +506,6 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('be.visible').within(() => {
                 cy.findByTestId('rhs-title').should('be.visible').within(() => {
                     cy.findByText(incidentName).should('be.visible');
-
-                    // * Verify the title shows "Ongoing"
-                    cy.get('.sidebar--right__title').contains('Ongoing');
                 });
 
                 // * Verify the title shows "Ongoing"
