@@ -4,21 +4,23 @@
 import React, {FC, useState, useRef} from 'react';
 import styled from 'styled-components';
 
-import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
 const DropdownMenuWrapper = styled.div`
     position: relative;
 `;
 
-const DropdownMenu = styled.div`
+interface DropdownMenuProps {
+    top?: boolean;
+}
+
+const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
     position: absolute;
-    top: 100%;
-    left: 0;
-    min-width: 160px;
+    ${(props: DropdownMenuProps) => props.top ? "bottom: 35px;" : "top: 100%;"}
+    min-width: 226px;
     text-align: left;
     list-style: none;
 
@@ -38,13 +40,10 @@ const DropdownMenu = styled.div`
     z-index: 1;
 `;
 
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px 10px 0;
-`;
-
 interface DotMenuProps {
     children: JSX.Element[] | JSX.Element;
+    icon: JSX.Element;
+    top?: boolean;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
@@ -70,13 +69,11 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                 toggleOpen();
             }}
         >
-            <IconWrapper>
-                <DotMenuIcon/>
-            </IconWrapper>
+            {props.icon}
             <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu>
+                    <DropdownMenu top={props.top}>
                         {props.children}
                     </DropdownMenu>
                 }

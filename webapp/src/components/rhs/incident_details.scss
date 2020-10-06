@@ -142,19 +142,3 @@ $font-family: Open Sans;
         }
     }
 }
-
-.footer-div {
-    background: var(--center-channel-bg);
-    border-top: 1px solid var(--center-channel-color-16);
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: auto;
-    text-align: right;
-    padding: 2rem;
-
-    a {
-        opacity: unset;
-    }
-}
