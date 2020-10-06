@@ -51,7 +51,7 @@ There will come a time where you will have several incidents, some of them ongoi
 2. Select **Incidents** in the header.
 3. See the list of all incidents. You can filter by Commander, Status (ongoing or ended) and look for a specific incident using the search box.
 4. Select the incident you want to learn more about.
-5. A summary with some statistics of the incident will show. From this screen, you can also jump to the channel (with the button in the Messages box) and export the channel log, which will download a CSV file with a transcript of all the messages in the channel.
+5. The summary screen includes statistics about the incident. You can also jump to the channel as well as export the channel log .CSV file which is a transcript of all the messages in the channel.
 
 ## Contributing
 
@@ -59,10 +59,10 @@ There will come a time where you will have several incidents, some of them ongoi
 
 There are two things you need to do before starting development on the plugin:
 
-1.  You will need a running server to deploy the plugin to, and the web app to manually test your changes. If you have never set up your Mattermost development environment, do so following the instructions for both the [server](https://developers.mattermost.com/contribute/server/developer-setup/) and the [web app](https://developers.mattermost.com/contribute/webapp/developer-setup/).
-2.  Normally, the plugin needs a Mattermost E20 License to start. However, you can bypass this and run it for development by configuring your Mattermost server to enable both testing and developer mode. You can do so directly on the server's `config/config.json` file, setting both `ServiceSettings.EnableTesting` and `ServiceSettings.EnableDeveloper` to `true` (don't forget to restart the server afterwards). You can also configure these settings via the System Console, under Environment > Developer. See [License](#License) for more information.
+1.  You'll need a running server for the plugin deployment, and the web app to manually test your changes. If you have never set up your Mattermost development environment, do so following the instructions for both the [server](https://developers.mattermost.com/contribute/server/developer-setup/) and the [web app](https://developers.mattermost.com/contribute/webapp/developer-setup/).
+2.  Normally, the plugin needs a Mattermost Enterprise Edition E20 License to start. However, you can bypass this and run it for development by configuring your Mattermost server to enable both testing and developer mode. You can do so directly on the server's `config/config.json` file, setting both `ServiceSettings.EnableTesting` and `ServiceSettings.EnableDeveloper` to `true` (don't forget to restart the server afterwards). You can also configure these settings via the System Console, under **Environment > Developer**. See [License](#License) for more information.
 
-If this is the first time you contribute to a Mattermost plugin, the [plugin documentation](https://developers.mattermost.com/extend/plugins/) is a good read to go through before diving into the code.
+If this is the first time you're contributing to a Mattermost plugin, the [plugin documentation](https://developers.mattermost.com/extend/plugins/) is a good read to go through before diving into the code.
 
 ### Set up your development environment
 
@@ -75,9 +75,9 @@ cd mattermost-plugin-incident-response
 make
 ```
 
-The default target for `make` triggers the commands `check-style`, `test` and `dist`: if everything works as expected, you will end up with a packaged plugin in the `dist/` directory, ready to be uploaded to Mattermost via the System Console. There are more `make` commands: run `make help` to get a comprehensive list of them.
+The default target for `make` triggers the commands `check-style`, `test`, and `dist`: if everything works as expected, you'll end up with a packaged plugin in the `dist/` directory, ready to be uploaded to Mattermost via the System Console. There are more `make` commands: run `make help` to get a comprehensive list of them.
 
-One particularly interesting command is `make deploy`, which looks for a running Mattermost server, and directly deploys the plugin to it and enables it via the API. For this to work, you need to set up a few environment variables before:
+One particularly interesting command is `make deploy`, which looks for a running Mattermost server, and directly deploys the plugin to it and enables it via the API. For this to work, you first need to set up a few environment variables:
 
 ```sh
 # This is the default URL for a local Mattermost server.
@@ -97,7 +97,7 @@ make deploy
 
 #### Unit tests
 
-Running the unit tests for both the server and the webapp is as easy as running
+Running the unit tests for both the server and the web app is as easy as running:
 
 ```sh
 make test
@@ -105,7 +105,7 @@ make test
 
 Please note that the tests of the [`sqlstore`](server/sqlstore) package need a running server to work: they create temporal databases using the PostgreSQL and MySQL containers created by the server.
 
-If you want to run only the tests of the server part, you may do so with the usual `go test` command, as in
+If you want to run only the tests of the server part, you may do so with the usual `go test` command, as in:
 
 ```sh
 # Run all server tests
