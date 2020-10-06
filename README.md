@@ -64,7 +64,7 @@ If this is the first time you contribute to a Mattermost plugin, the [plugin doc
 
 ### Set up your development environment
 
-You have a running server and web app, and you have read the plugin documentation. Now you only need to do the usual dance: clone, cd, make.
+You have a running server and web app, and you have read the plugin documentation. Now you only need to do the usual dance: `clone`, `cd`, `make`.
 
 ```sh
 # Change the URL below to your fork if you plan to make a PR!
@@ -137,7 +137,7 @@ make test-data
 
 Now you are ready to run the tests from within `tests-e2e/`. There are two alternative ways:
 
-1. run `npm test` to run all tests headlessly.
-2. run `npm run cypress:open` to open the Cypress dashboard, select the test spec you want and run it.
+1. Run `npm test` to run all tests headlessly.
+2. Run `npm run cypress:open` to open the Cypress dashboard, select the test spec you want and run it.
 
 For a full documentation on E2E tests for Mattermost web app and troubleshooting, please see https://developers.mattermost.com/contribute/webapp/end-to-end-tests/.
