@@ -14,7 +14,7 @@ import {
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 
@@ -61,19 +61,36 @@ interface StageProps {
     activeStage: number;
 }
 
+const StageWrapper = styled.span`
+    display: flex;
+    justify-content: space-between;
+`;
+
+const StageCounter = styled.span`
+    font-size: 14px;
+    line-height: 20px;
+    text-align: right;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+`;
+
+
 const Stage: FC<StageProps> = (props: StageProps) => {
+    if (props.stages.length <= 1) {
+        return null;
+    }
+
     return (
         <React.Fragment>
             <div className='title'>
                 {'Current Stage:'}
             </div>
             <div>
-                <span className='stage-title__right'>
+                <StageWrapper>
                     {props.stages[props.activeStage].title}
-                    <span className='stage-title__count'>
+                    <StageCounter>
                         {`(${props.activeStage + 1}/${props.stages.length})`}
-                    </span>
-                </span>
+                    </StageCounter>
+                </StageWrapper>
             </div>
         </React.Fragment>
     );
@@ -91,6 +108,36 @@ interface NextStageButtonProps {
 const HamburgerButton = styled(ThreeDotsIcon)`
     font-size: 24px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+    position: relative;
+    top: calc(50% - 12px);
+`;
+
+const BasicButton = styled.button`
+    display: block;
+    border: 1px solid var(--button-bg);
+    border-radius: 4px;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 9.5px;
+    color: var(--button-bg);
+    text-align: center;
+    padding: 10px 0;
+`;
+
+interface BasicButtonProps {
+    primary: boolean;
+}
+
+const StyledButton = styled(BasicButton)<BasicButtonProps>`
+    min-width: 114px;
+    height: 40px;
+
+    ${(props: BasicButtonProps) => props.primary && css`
+        background: var(--button-bg);
+        color: var(--button-color);
+    `}
+}
 `;
 
 const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) => {
@@ -107,29 +154,27 @@ const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) 
         action = props.endIncident;
     }
 
-    let classes = 'btn btn-primary';
-
     const allItemsChecked = props.stages[props.activeStage].items.every(
         (item: ChecklistItem) => item.state === ChecklistItemState.Closed
     );
 
-    if (props.isActive && !allItemsChecked) {
-        classes = 'btn';
-    }
-
     return (
-        <button
-            className={classes}
+        <StyledButton
+            primary={!props.isActive || allItemsChecked}
             onClick={action}
         >
             {text}
-        </button>
+        </StyledButton>
     );
 };
 
 const RHSFooter = styled.div`
     display: flex;
     justify-content: space-between;
+
+    button:only-child {
+        margin-left: auto;
+    }
 
     background: var(--center-channel-bg);
     border-top: 1px solid var(--center-channel-color-16);
@@ -167,6 +212,26 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     const checklists = props.incident.checklists || [];
     const activeChecklistIdx = props.incident.active_stage
     const activeChecklist = checklists[activeChecklistIdx] || {title: '', items: []};
+
+    const dotMenu = (
+        <DotMenu
+            icon={<HamburgerButton/>}
+            top={true}
+        >
+            { props.incident.active_stage > 0 &&
+                <DropdownMenuItem
+                    text='Previous Stage'
+                    onClick={() => dispatch(prevStage())}
+                />
+            }
+            { props.incident.active_stage < props.incident.checklists.length - 1 &&
+                <DropdownMenuItem
+                    text='End Incident'
+                    onClick={() => dispatch(endIncident())}
+                />
+            }
+        </DotMenu>
+    );
 
     return (
         <React.Fragment>
@@ -235,19 +300,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                 </div>
             </Scrollbars>
             <RHSFooter>
-                <DotMenu
-                    icon={<HamburgerButton/>}
-                    top
-                >
-                    <DropdownMenuItem
-                        text='End Incident'
-                        onClick={() => dispatch(endIncident())}
-                    />
-                    <DropdownMenuItem
-                        text='Previous Stage'
-                        onClick={() => dispatch(prevStage())}
-                    />
-                </DotMenu>
+                {props.incident.checklists.length > 1 && dotMenu}
                 <NextStageButton
                     stages={checklists}
                     activeStage={activeChecklistIdx}
