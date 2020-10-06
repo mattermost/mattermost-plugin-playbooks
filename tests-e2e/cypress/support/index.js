@@ -52,7 +52,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
 });
 
 /**
- * End all active incidents directly from API with current user. Need to login after this.
+ * End all active incidents directly from API with current user.
  */
 Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
     cy.apiGetAllActiveIncidents(teamId).then((response) => {
