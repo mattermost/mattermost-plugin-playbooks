@@ -10,7 +10,7 @@ Incident Response allows your team to coordinate, manage, and resolve incidents 
 
 ## License
 
-This repository is licensed under the [Mattermost Source Available License](LICENSE) and requires a valid Enterprise E20 license when used for production. See [frequently asked questions](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
+This repository is licensed under the [Mattermost Source Available License](LICENSE) and requires a valid Enterprise Edition E20 license when used for production. See [frequently asked questions](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
 
 Although a valid Mattermost Enterprise E20 license is required if using this plugin in production, the [Mattermost Source Available License](LICENSE) allows you to compile and test this plugin in development and testing environments without a Mattermost Enterprise E20 license. As such, we welcome community contributions to this plugin.
 
