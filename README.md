@@ -20,7 +20,7 @@ On startup, the plugin checks for a valid Mattermost Enterprise Edition E20 lice
 
 ### Plan your incidents
 
-When an incident starts, you want to focus on triaging and solving the problem as soon as possible. Planning your incidents ahead of time with playbooks is the best way to do it:
+During an active incident, you want to focus on triaging and solving the problem as soon as possible. Planning your incident support strategy ahead of time with playbooks is the best way to ensure incidents run smoothly.
 
 1. Navigate to Playbooks & Incidents in the main menu.
 2. Create a new playbook, either from a predefined template or from scratch. You can add as many stages and tasks as you need. Share the playbook with the people that should decide on your processes, and select the type of channel created when an incident starts: public or private.
