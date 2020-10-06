@@ -47,7 +47,7 @@ Read more about Incidents [here](https://docs.mattermost.com/administration/devo
 
 There will come a time where you will have several incidents, some of them ongoing, some ended. If you ever need a quick glance at the status of an incident, follow these steps:
 
-1. Navigate to Playbooks & Incidents in the main menu.
+1. Navigate to **Main Menu > Incidents & Playbooks**.
 2. Click on Incidents on the header.
 3. See the list of all incidents. You can filter by Commander, Status (ongoing or ended) and look for a specific incident using the search box.
 4. Click on the incident you are interested in.
