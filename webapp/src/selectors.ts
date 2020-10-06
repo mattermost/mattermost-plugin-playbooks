@@ -28,12 +28,10 @@ export const activeIncidentList = (state: GlobalState): Incident[] => {
             incidents.push(incident);
         }
     }
-    return sortIncidentsDescByCreateAt(incidents);
-};
 
-function sortIncidentsDescByCreateAt(incidents: Incident[]) {
+    // return descending by create_at
     return incidents.sort((a, b) => b.create_at - a.create_at);
-}
+};
 
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);
