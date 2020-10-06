@@ -30,7 +30,9 @@ A playbook is a recipe for dealing with and resolving an incident. In a playbook
 
 ### Start an incident
 
-A server in your cluster is down, a customer is unable to login or your team has detected a performance degradation. Whatever the problem is, if it needs coordination and a quick response, starting an incident will help you focus on solving it. There are two alternative ways to start an incident:
+A server in your cluster is down, a customer is unable to log in, or your team has detected a performance degradation. 
+
+Whatever the problem is, if it needs coordination and a quick response, starting an incident will help you focus on solving it. There are two ways to start an incident:
 
 -   Use the slash command `/incident start`.
 -   Click on the Incident Response icon on the channel header, to open the RHS with a **Start Incident** button.
