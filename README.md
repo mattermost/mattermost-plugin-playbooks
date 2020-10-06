@@ -50,7 +50,7 @@ There will come a time where you will have several incidents, some of them ongoi
 1. Navigate to **Main Menu > Incidents & Playbooks**.
 2. Select **Incidents** in the header.
 3. See the list of all incidents. You can filter by Commander, Status (ongoing or ended) and look for a specific incident using the search box.
-4. Click on the incident you are interested in.
+4. Select the incident you want to learn more about.
 5. A summary with some statistics of the incident will show. From this screen, you can also jump to the channel (with the button in the Messages box) and export the channel log, which will download a CSV file with a transcript of all the messages in the channel.
 
 ## Contributing
