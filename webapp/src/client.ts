@@ -13,7 +13,14 @@ import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
-import {FetchIncidentsParams, FetchIncidentsReturn} from 'src/types/incident';
+import {
+    FetchIncidentsParams,
+    FetchIncidentsReturn,
+    isIncidentWithDetails,
+    IncidentWithDetails,
+    isIncident,
+    Incident,
+} from 'src/types/incident';
 import {
     Playbook,
     ChecklistItem,
@@ -37,12 +44,30 @@ export async function fetchIncidents(params: FetchIncidentsParams) {
     return data as FetchIncidentsReturn;
 }
 
-export function fetchIncident(id: string) {
-    return doGet(`${apiUrl}/incidents/${id}`);
+export async function fetchIncident(id: string) {
+    const data = await doGet(`${apiUrl}/incidents/${id}`);
+    // eslint-disable-next-line no-process-env
+    if (process.env.NODE_ENV !== 'production') {
+        if (!isIncident(data)) {
+            // eslint-disable-next-line no-console
+            console.error('expected an Incident in fetchIncident, received:', data);
+        }
+    }
+
+    return data as Incident;
 }
 
-export function fetchIncidentWithDetails(id: string) {
-    return doGet(`${apiUrl}/incidents/${id}/details`);
+export async function fetchIncidentWithDetails(id: string) {
+    const data = await doGet(`${apiUrl}/incidents/${id}/details`);
+    // eslint-disable-next-line no-process-env
+    if (process.env.NODE_ENV !== 'production') {
+        if (!isIncidentWithDetails(data)) {
+            // eslint-disable-next-line no-console
+            console.error('expected an IncidentWithDetails in fetchIncidentWithDetails, received:', data);
+        }
+    }
+
+    return data as IncidentWithDetails;
 }
 
 export function fetchIncidentByChannel(channelId: string) {
@@ -66,6 +91,14 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
         //@ts-ignore Typing in mattermost-redux is wrong
         const data = await Client4.executeCommand(command, args);
         dispatch(setTriggerId(data?.trigger_id));
+    } catch (error) {
+        console.error(error); //eslint-disable-line no-console
+    }
+}
+
+export async function clientRunChecklistItemSlashCommand(incidentId: string, checklistNumber: number, itemNumber: number) {
+    try {
+        await doPost(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNumber}/item/${itemNumber}/run`);
     } catch (error) {
         console.error(error); //eslint-disable-line no-console
     }

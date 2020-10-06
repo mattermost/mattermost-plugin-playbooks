@@ -23,20 +23,21 @@ type RudderTelemetry struct {
 
 // Unique strings that identify each of the tracked events
 const (
-	eventCreateIncident           = "CreateIncident"
-	eventEndIncident              = "EndIncident"
-	eventRestartIncident          = "RestartIncident"
-	eventAddChecklistItem         = "AddChecklistItem"
-	eventRemoveChecklistItem      = "RemoveChecklistItem"
-	eventRenameChecklistItem      = "RenameChecklistItem"
-	eventModifyStateChecklistItem = "ModifyStateChecklistItem"
-	eventMoveChecklistItem        = "MoveChecklistItem"
-	eventSetAssignee              = "SetAssignee"
-	eventCreatePlaybook           = "CreatePlaybook"
-	eventUpdatePlaybook           = "UpdatePlaybook"
-	eventDeletePlaybook           = "DeletePlaybook"
-	eventChangeCommander          = "ChangeCommander"
-	eventChangeStage              = "ChangeStage"
+	eventCreateIncident               = "CreateIncident"
+	eventEndIncident                  = "EndIncident"
+	eventRestartIncident              = "RestartIncident"
+	eventAddChecklistItem             = "AddChecklistItem"
+	eventRemoveChecklistItem          = "RemoveChecklistItem"
+	eventRenameChecklistItem          = "RenameChecklistItem"
+	eventModifyStateChecklistItem     = "ModifyStateChecklistItem"
+	eventMoveChecklistItem            = "MoveChecklistItem"
+	eventSetAssignee                  = "SetAssignee"
+	eventCreatePlaybook               = "CreatePlaybook"
+	eventUpdatePlaybook               = "UpdatePlaybook"
+	eventDeletePlaybook               = "DeletePlaybook"
+	eventChangeCommander              = "ChangeCommander"
+	eventChangeStage                  = "ChangeStage"
+	eventRunChecklistItemSlashCommand = "RunChecklistItemSlashCommand"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -219,6 +220,11 @@ func (t *RudderTelemetry) ChangeCommander(effectedIncident *incident.Incident) {
 // ChangeStage tracks changes in stage
 func (t *RudderTelemetry) ChangeStage(effectedIncident *incident.Incident) {
 	t.track(eventChangeStage, incidentProperties(effectedIncident))
+}
+
+// RunChecklistItemSlashCommand tracks the execution of a slash command on a checklist item.
+func (t *RudderTelemetry) RunChecklistItemSlashCommand(incidentID, userID string) {
+	t.track(eventRunChecklistItemSlashCommand, checklistItemProperties(incidentID, userID))
 }
 
 // Enable creates a new client to track all future events. It does nothing if

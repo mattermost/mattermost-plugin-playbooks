@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -22,7 +23,10 @@ const helpText = "###### Mattermost Incident Response Plugin - Slash Command Hel
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
-	"* `/incident announce ~[channels]` - Announce the currrent incident in other channels. \n" +
+	"* `/incident commander [@username]` - Show or change the current commander. \n" +
+	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
+	"* `/incident list` - List all your incidents. \n" +
+	"* `/incident info` - Show a summary of the current incident. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -43,7 +47,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, restart, check, announce",
+		AutoCompleteDesc: "Available commands: start, end, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
@@ -51,7 +55,7 @@ func getCommand() *model.Command {
 
 func getAutocompleteData() *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, restart, check, announce")
+		"Available commands: start, end, restart, check, announce, list, commander")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -76,6 +80,17 @@ func getAutocompleteData() *model.AutocompleteData {
 	announce.AddNamedTextArgument("channel",
 		"Channel to announce incident in", "~[channel]", "", true)
 	slashIncident.AddCommand(announce)
+
+	list := model.NewAutocompleteData("list", "", "Lists all your incidents")
+	slashIncident.AddCommand(list)
+
+	commander := model.NewAutocompleteData("commander", "[@username]",
+		"Show or change the current commander")
+	commander.AddTextArgument("The desired new commander.", "[@username]", "")
+	slashIncident.AddCommand(commander)
+
+	info := model.NewAutocompleteData("info", "", "Shows a summary of the current incident")
+	slashIncident.AddCommand(info)
 
 	return slashIncident
 }
@@ -113,7 +128,17 @@ func (r *Runner) isValid() error {
 }
 
 func (r *Runner) postCommandResponse(text string) {
-	r.poster.Ephemeral(r.args.UserId, r.args.ChannelId, "%s", text)
+	post := &model.Post{
+		Message: text,
+	}
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
+}
+
+func (r *Runner) warnUserAndLogErrorf(format string, args ...interface{}) {
+	r.logger.Errorf(format, args...)
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{
+		Message: "Your request could not be completed. Check the system logs for more information.",
+	})
 }
 
 func (r *Runner) actionStart(args []string) {
@@ -145,12 +170,12 @@ func (r *Runner) actionStart(args []string) {
 			Direction: playbook.OrderAsc,
 		})
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 
 	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items); err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 }
@@ -179,13 +204,97 @@ func (r *Runner) actionCheck(args []string) {
 			r.postCommandResponse("You can only check/uncheck an item from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
 	err = r.incidentService.ToggleCheckedState(incidentID, r.args.UserId, checklist, item)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error checking/unchecking item: %v", err))
+		r.warnUserAndLogErrorf("Error checking/unchecking item: %v", err)
+	}
+}
+
+func (r *Runner) actionCommander(args []string) {
+	switch len(args) {
+	case 0:
+		r.actionShowCommander(args)
+	case 1:
+		r.actionChangeCommander(args)
+	default:
+		r.postCommandResponse("/incident commander expects at most one argument.")
+	}
+}
+
+func (r *Runner) actionShowCommander([]string) {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if errors.Is(err, incident.ErrNotFound) {
+		r.postCommandResponse("You can only show the commander from within the incident's channel.")
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
+		return
+	}
+
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
+		return
+	}
+
+	r.postCommandResponse(fmt.Sprintf("**@%s** is the current commander for this incident.", commanderUser.Username))
+}
+
+func (r *Runner) actionChangeCommander(args []string) {
+	targetCommanderUsername := strings.TrimLeft(args[0], "@")
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if errors.Is(err, incident.ErrNotFound) {
+		r.postCommandResponse("You can only change the commander from within the incident's channel.")
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
+		return
+	}
+
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	targetCommanderUser, err := r.pluginAPI.User.GetByUsername(targetCommanderUsername)
+	if errors.Is(err, pluginapi.ErrNotFound) {
+		r.postCommandResponse(fmt.Sprintf("Unable to find user @%s", targetCommanderUsername))
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error finding user @%s: %v", targetCommanderUsername, err)
+		return
+	}
+
+	if currentIncident.CommanderUserID == targetCommanderUser.Id {
+		r.postCommandResponse(fmt.Sprintf("User @%s is already commander of this incident.", targetCommanderUsername))
+		return
+	}
+
+	_, err = r.pluginAPI.Channel.GetMember(r.args.ChannelId, targetCommanderUser.Id)
+	if errors.Is(err, pluginapi.ErrNotFound) {
+		r.postCommandResponse(fmt.Sprintf("User @%s must be part of this channel to make them commander.", targetCommanderUsername))
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Failed to find user @%s as channel member: %v", targetCommanderUsername, err)
+		return
+	}
+
+	err = r.incidentService.ChangeCommander(currentIncident.ID, r.args.UserId, targetCommanderUser.Id)
+	if err != nil {
+		r.warnUserAndLogErrorf("Failed to change commander to @%s: %v", targetCommanderUsername, err)
+		return
 	}
 }
 
@@ -201,25 +310,25 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("You can only announce from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
 	currentIncident, err := r.incidentService.GetIncident(incidentID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
 	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving commander user: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
 		return
 	}
 
 	incidentChannel, err := r.pluginAPI.Channel.Get(currentIncident.ChannelID)
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident channel: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident channel: %v", err)
 		return
 	}
 
@@ -228,6 +337,162 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("Error announcing to: " + channelarg)
 		}
 	}
+}
+
+func (r *Runner) actionList() {
+	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving current team: %v", err)
+		return
+	}
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:          r.args.UserId,
+		TeamID:          r.args.TeamId,
+		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+	}
+
+	options := incident.HeaderFilterOptions{
+		TeamID:   r.args.TeamId,
+		MemberID: r.args.UserId,
+		PerPage:  10,
+		Sort:     incident.SortByCreateAt,
+		Order:    incident.OrderDesc,
+		Status:   incident.Ongoing,
+	}
+
+	result, err := r.incidentService.GetIncidents(requesterInfo, options)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving the incidents: %v", err)
+		return
+	}
+
+	message := "Ongoing Incidents in **" + team.DisplayName + "** Team:\n"
+	if len(result.Items) == 0 {
+		message = "There are no ongoing incidents in **" + team.DisplayName + "** team."
+	}
+
+	now := time.Now()
+	attachments := make([]*model.SlackAttachment, len(result.Items))
+	for i, theIncident := range result.Items {
+		commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error retrieving commander of incident '%s': %v", theIncident.Name, err)
+			return
+		}
+
+		channel, err := r.pluginAPI.Channel.Get(theIncident.ChannelID)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error retrieving channel of incident '%s': %v", theIncident.Name, err)
+			return
+		}
+
+		attachments[i] = &model.SlackAttachment{
+			Pretext: fmt.Sprintf("### ~%s", channel.Name),
+			Fields: []*model.SlackAttachmentField{
+				{Title: "Stage:", Value: fmt.Sprintf("**%s**", theIncident.ActiveStageTitle)},
+				{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), now)},
+				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
+			},
+		}
+	}
+
+	post := &model.Post{
+		Message: message,
+		Props: map[string]interface{}{
+			"attachments": attachments,
+		},
+	}
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
+}
+
+func (r *Runner) actionInfo() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if errors.Is(err, incident.ErrNotFound) {
+		r.postCommandResponse("You can only show the details of an incident from within the incident's channel.")
+		return
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
+		return
+	}
+
+	if !session.IsMobileApp() {
+		// The RHS was opened by the webapp, so inform the user
+		r.postCommandResponse("Your incident details are already open in the right hand side of the channel.")
+		return
+	}
+
+	theIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
+		return
+	}
+
+	if theIncident.ActiveStage >= len(theIncident.Checklists) {
+		r.warnUserAndLogErrorf("Error retrieving current checklist: active stage is %d and the incident has %d checklists", theIncident.ActiveStage, len(theIncident.Checklists))
+		return
+	}
+
+	activeChecklist := theIncident.Checklists[theIncident.ActiveStage]
+
+	tasks := ""
+	for _, item := range activeChecklist.Items {
+		icon := ":white_large_square: "
+		timestamp := ""
+		if item.State == playbook.ChecklistItemStateClosed {
+			icon = ":white_check_mark: "
+			timestamp = " (" + getTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
+		}
+
+		tasks += icon + item.Title + timestamp + "\n"
+	}
+	attachment := &model.SlackAttachment{
+		Fields: []*model.SlackAttachmentField{
+			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
+			{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), time.Now())},
+			{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
+			{Title: "Stage:", Value: activeChecklist.Title},
+			{Title: "Tasks:", Value: tasks},
+		},
+	}
+
+	post := &model.Post{
+		Props: map[string]interface{}{
+			"attachments": []*model.SlackAttachment{attachment},
+		},
+	}
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
+}
+
+func getTimeForMillis(unixMillis int64) time.Time {
+	return time.Unix(0, unixMillis*int64(1000000))
+}
+
+func durationString(start, end time.Time) string {
+	duration := end.Sub(start).Round(time.Second)
+
+	durationStr := duration.String()
+
+	if duration.Hours() > 23 {
+		days := duration / (24 * time.Hour)
+		duration %= 24 * time.Hour
+
+		durationStr = fmt.Sprintf("%dd%s", days, duration.String())
+	}
+
+	return durationStr
 }
 
 func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
@@ -250,7 +515,7 @@ func (r *Runner) actionEnd() {
 			r.postCommandResponse("You can only end an incident from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -259,7 +524,7 @@ func (r *Runner) actionEnd() {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -270,7 +535,7 @@ func (r *Runner) actionEnd() {
 		r.postCommandResponse("This incident has already been closed.")
 		return
 	case err != nil:
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 }
@@ -282,7 +547,7 @@ func (r *Runner) actionRestart() {
 			r.postCommandResponse("You can only restart an incident from within the incident's channel.")
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -291,7 +556,7 @@ func (r *Runner) actionRestart() {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
 		}
-		r.postCommandResponse(fmt.Sprintf("Error retrieving incident: %v", err))
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
@@ -305,7 +570,7 @@ func (r *Runner) actionRestart() {
 		r.postCommandResponse("This incident is already active.")
 		return
 	case err != nil:
-		r.postCommandResponse(fmt.Sprintf("Error: %v", err))
+		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 }
@@ -592,8 +857,14 @@ func (r *Runner) Execute() error {
 		r.actionCheck(parameters)
 	case "restart":
 		r.actionRestart()
+	case "commander":
+		r.actionCommander(parameters)
 	case "announce":
 		r.actionAnnounce(parameters)
+	case "list":
+		r.actionList()
+	case "info":
+		r.actionInfo()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "st":

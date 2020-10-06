@@ -39,7 +39,7 @@ type Poster interface {
 	DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error
 
 	// Ephemeral sends an ephemeral message to a user.
-	Ephemeral(userID, channelID, format string, args ...interface{})
+	EphemeralPost(userID, channelID string, post *model.Post)
 
 	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID.
 	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)

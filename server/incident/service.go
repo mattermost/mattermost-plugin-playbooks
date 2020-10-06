@@ -84,6 +84,17 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 		}
 	}
 
+	// Make sure ActiveStage is correct and ActiveStageTitle is synced
+	numChecklists := len(incdnt.Checklists)
+	if numChecklists > 0 {
+		idx := incdnt.ActiveStage
+		if idx < 0 || idx >= numChecklists {
+			return nil, errors.Errorf("active stage %d out of bounds: incident %s has %d stages", idx, incdnt.ID, numChecklists)
+		}
+
+		incdnt.ActiveStageTitle = incdnt.Checklists[idx].Title
+	}
+
 	incdnt, err = s.store.CreateIncident(incdnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create incident")
@@ -94,7 +105,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to to resolve user %s", incdnt.CommanderUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
 	}
 
 	if _, err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
@@ -256,7 +267,7 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 }
 
 // GetIncidentWithDetails gets an incident with the detailed metadata.
-func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*Details, error) {
+func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*WithDetails, error) {
 	incident, err := s.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident '%s'", incidentID)
@@ -454,6 +465,52 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	return nil
 }
 
+// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
+// item.
+func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error {
+	incident, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	if !playbook.IsValidChecklistItemIndex(incident.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	itemToRun := incident.Checklists[checklistNumber].Items[itemNumber]
+	if strings.TrimSpace(itemToRun.Command) == "" {
+		return errors.New("no slash command associated with this checklist item")
+	}
+
+	_, err = s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
+		Command:   itemToRun.Command,
+		UserId:    userID,
+		TeamId:    incident.TeamID,
+		ChannelId: incident.ChannelID,
+	})
+	if err == pluginapi.ErrNotFound {
+		trigger := strings.Fields(itemToRun.Command)[0]
+		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to find slash command **%s**", trigger)})
+
+		return errors.Wrap(err, "failed to find slash command")
+	} else if err != nil {
+		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to execute slash command **%s**", itemToRun.Command)})
+
+		return errors.Wrap(err, "failed to run slash command")
+	}
+
+	// Record the last (successful) run time.
+	incident.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
+	if err = s.store.UpdateIncident(incident); err != nil {
+		return errors.Wrapf(err, "failed to update incident recording run of slash command")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
+	s.telemetry.RunChecklistItemSlashCommand(incidentID, userID)
+
+	return nil
+}
+
 // AddChecklistItem adds an item to the specified checklist
 func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error {
 	incidentToModify, err := s.checklistParamsVerify(incidentID, userID, checklistNumber)
@@ -513,6 +570,11 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 
 	oldActiveStage := incidentToModify.ActiveStage
 	incidentToModify.ActiveStage = stageIdx
+
+	if len(incidentToModify.Checklists) > 0 {
+		incidentToModify.ActiveStageTitle = incidentToModify.Checklists[stageIdx].Title
+	}
+
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return nil, errors.Wrapf(err, "failed to update incident")
 	}
@@ -607,7 +669,7 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	return ret, nil
 }
 
-func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, error) {
+func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*WithDetails, error) {
 	// Get main channel details
 	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
@@ -623,13 +685,15 @@ func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*Details, erro
 		return nil, errors.Wrapf(err, "failed to get the count of incident members for channel id '%s'", incident.ChannelID)
 	}
 
-	incidentWithDetails := &Details{
-		Incident:           incident,
-		ChannelName:        channel.Name,
-		ChannelDisplayName: channel.DisplayName,
-		TeamName:           team.Name,
-		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         numMembers,
+	incidentWithDetails := &WithDetails{
+		Incident: incident,
+		Details: Details{
+			ChannelName:        channel.Name,
+			ChannelDisplayName: channel.DisplayName,
+			TeamName:           team.Name,
+			TotalPosts:         channel.TotalMsgCount,
+			NumMembers:         numMembers,
+		},
 	}
 	return incidentWithDetails, nil
 }

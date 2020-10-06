@@ -263,15 +263,13 @@ jobs:
             export RESULTS_OUTPUT="results-output.txt"
             cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
       - *save_cypress_cache
+      - store_artifacts:
+          path: tests-e2e/cypress/videos
 
 workflows:
   version: 2
   ci:
     jobs:
-      - plugin-ci/lint:
-          filters:
-            tags:
-              only: /^v.*/
       - coverage-MySQL56-Postgres96:
           filters:
             tags:
@@ -302,7 +300,6 @@ workflows:
               only: master
           context: plugin-ci
           requires:
-            - plugin-ci/lint
             - coverage-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
@@ -317,7 +314,6 @@ workflows:
               ignore: /.*/
           context: plugin-ci
           requires:
-            - plugin-ci/lint
             - coverage-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
@@ -332,7 +328,6 @@ workflows:
               ignore: /.*/
           context: matterbuild-github-token
           requires:
-            - plugin-ci/lint
             - coverage-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11

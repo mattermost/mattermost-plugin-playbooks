@@ -263,11 +263,13 @@ const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
 
     const save = () => {
         // Discard invalid slash commands.
-        if (command.trim() === '/') {
+        if (command.trim() === '/' || command.trim() === '') {
             setCommand('');
+            props.setCommand('');
+            setCommandOpen(false);
+        } else {
+            props.setCommand(command);
         }
-
-        props.setCommand(command);
     };
 
     let slashCommandBox = (

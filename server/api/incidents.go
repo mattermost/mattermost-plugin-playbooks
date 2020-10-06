@@ -75,6 +75,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistItem.HandleFunc("", handler.itemRename).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
 
 	return handler
 }
@@ -726,6 +727,30 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
+func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.incidentService.RunChecklistItemSlashCommand(incidentID, userID, checklistNum, itemNum); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -849,8 +874,10 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 		return err
 	}
 
-	msg := fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name)
-	h.poster.Ephemeral(incdnt.CommanderUserID, channelID, "%s", msg)
+	post := &model.Post{
+		Message: fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name),
+	}
+	h.poster.EphemeralPost(incdnt.CommanderUserID, channelID, post)
 
 	return nil
 }
