@@ -39,8 +39,6 @@ const RightHandSidebar: FC<null> = () => {
     const dispatch = useDispatch();
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const incidentList = useSelector<GlobalState, Incident[]>(activeIncidentList);
-    const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const isCurrrentChannelAnIncident = useSelector<GlobalState, boolean>((state) => isIncidentChannel(state, currentChannelId));
 
     // Only get the current incident, and incidentList at the top of the rhs hierarchy.
     // This prevents race conditions.
@@ -52,6 +50,10 @@ const RightHandSidebar: FC<null> = () => {
             dispatch(setRHSOpen(false));
         };
     }, [dispatch]);
+
+    if (rhsState === RHSState.WelcomeScreen) {
+        return <RHSWelcomeView/>;
+    }
 
     if (rhsState === RHSState.ViewingList) {
         return (
@@ -69,11 +71,9 @@ const RightHandSidebar: FC<null> = () => {
     if (incidentFetchState === IncidentFetchState.Loading) {
         return spinner;
     } else if (incidentFetchState === IncidentFetchState.NotFound || incident === null) {
-        if (!isCurrrentChannelAnIncident) {
-            // There is no incident for this channel. Return to list view.
-            dispatch(setRHSState(RHSState.ViewingList));
-        }
-        return <RHSWelcomeView/>;
+        // This should not happen--if incident is not found or null, we should be viewing the list.
+        // Returning the spinner so that if it ever happens, we at least show something.
+        return spinner;
     }
 
     return (

@@ -46,6 +46,9 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
                 member_id: currentUserId,
             });
             store.dispatch(finishedFetchingIncidents());
+
+            // Reset so that we can get set the correct rhs state.
+            sentRHSStateForChannelId = '';
             store.dispatch(receivedTeamIncidents(fetched.items));
         }
 
@@ -62,8 +65,9 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             sentRHSStateForChannelId = currentChannelId;
 
             // If currentlyFetchingIncidents is true, it means we can't rely on isIncidentChannel,
-            // so default to ViewingIncident.
-            if (currentChannelIsIncident || currentlyFetchingIncidents(state)) {
+            if (currentlyFetchingIncidents(state)) {
+                store.dispatch(setRHSState(RHSState.WelcomeScreen));
+            } else if (currentChannelIsIncident) {
                 store.dispatch(setRHSState(RHSState.ViewingIncident));
             } else {
                 store.dispatch(setRHSState(RHSState.ViewingList));
