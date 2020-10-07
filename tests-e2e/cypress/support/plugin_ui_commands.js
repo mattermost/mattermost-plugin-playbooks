@@ -23,8 +23,7 @@ Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescr
         cy.get('#interactiveDialogSubmit').click();
     });
 
-    // Skip this assertion, since failing for some reason in CI.
-    // cy.get('#interactiveDialogModal').should('not.be.visible');
+    cy.get('#interactiveDialogModal').should('not.exist');
 });
 
 // Runs the given slash command
