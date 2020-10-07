@@ -19,8 +19,8 @@ Every event we track is accompanied with metadata that help us identify each eve
 
 **Events data**
 
-| Event  | Triggers   |  Information collected |   |   |
-|---|---|---|---|---|
+| Event  | Triggers   |  Information collected |  
+|--------|------------|------------------------|
 | Incident created  | Any user sends the `/incident start` command and creates an incident.</br><br> Any user clicks on the `+` button on the **Incident List** view, in the RHS and creates an incident.</br><br> Any user clicks on the drop-down menu of any post, clicks on the **Start incident** option, and creates an incident.  | `ID`: Unique identifier of the incident.</br><br> `IsActive`: Boolean  value indicating if the incident is active. It always equals `true`.</br><br>`CommanderUserID`: Unique identifier of the commander of the incident. It equals the identifier of the user that created the incident.</br><br>`TeamID`: Unique identifier of the team where the incident channel is created.</br><br>`CreatedAt`: Timestamp of the incident creation.</br><br>`ChannelIDs`: A list containing a single element, the channel created along with the incident.</br><br>`PostID`: Unique identifier of the post.</br><br>`NumChecklists`: Number of checklists. It always equals 1.</br><br>`TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0.</br><br>`ID`: Unique identifier of the incident.</br><br>`IsActive`: Boolean  value indicating if the incident is active. It always equals `true`.</br><br>`CommanderUserID`: Unique identifier of the commander of the incident. It equals the identifier of the user that created the incident.</br><br>`TeamID`: Unique identifier of the team where the incident channel is created.</br><br>`CreatedAt`: Timestamp of the incident creation.</br><br>`ChannelIDs`: A list containing a single element, the channel created along with the incident.</br><br>`PostID`: Unique identifier of the post.</br><br>`NumChecklists`: Number of checklists. It always equals 1.</br><br>`TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0. |   
 |   |   |   |  
 |   |   |   |   
