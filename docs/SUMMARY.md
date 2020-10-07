@@ -4,7 +4,7 @@
 
 - [Overview](overview.md)
 - [Permissions](permissions.md)
-- [Incident Response Slash Commands (incident-response-slash-commands.md)
+- [Incident Response Slash Commands](incident-response-slash-commands.md)
 
 ## Playbooks and Task Management
 
