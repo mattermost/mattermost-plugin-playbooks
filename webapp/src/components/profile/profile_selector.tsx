@@ -16,7 +16,7 @@ import ProfileButton from 'src/components/profile/profile_button';
 
 interface Option {
     value: string;
-    label: JSX.Element;
+    label: JSX.Element|string;
     userId: string;
 }
 
@@ -38,6 +38,7 @@ interface Props {
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
     onSelectedChange: (userId?: string) => void;
+    customControlProps?: any;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -166,12 +167,7 @@ export default function ProfileSelector(props: Props) {
         );
     }
 
-    // The following is awkward, but makes TS happy.
-    const baseComponents = {DropdownIndicator: null, IndicatorSeparator: null};
-    const components = props.customControl ? {
-        ...baseComponents,
-        Control: props.customControl,
-    } : baseComponents;
+    const components = props.customControl ? {Control: props.customControl} : {};
 
     return (
         <Dropdown
@@ -195,6 +191,7 @@ export default function ProfileSelector(props: Props) {
                 onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
                 classNamePrefix='incident-user-select'
                 className='incident-user-select'
+                {...props.customControlProps}
             />
         </Dropdown>
     );

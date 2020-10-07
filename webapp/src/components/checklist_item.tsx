@@ -144,6 +144,20 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
     );
 };
 
+const ControlComponent = (ownProps: ControlProps<any>) => (
+    <div>
+        <components.Control {...ownProps}/>
+        {ownProps.selectProps.showCustomReset && (
+            <a
+                className='IncidentFilter-reset'
+                onClick={ownProps.selectProps.onCustomReset}
+            >
+                {'No Assignee'}
+            </a>
+        )}
+    </div>
+);
+
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -186,29 +200,14 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
-    const ControlComponent = (ownProps: ControlProps<any>) => {
-        const resetLink = assignee_id && (
-            <a
-                className='IncidentFilter-reset'
-                onClick={() => {
-                    onAssigneeChange();
-                    setProfileSelectorToggle(!profileSelectorToggle);
-                }}
-            >
-                {'No Assignee'}
-            </a>
-        );
-
-        return (
-            <div>
-                <components.Control {...ownProps}/>
-                {resetLink}
-            </div>
-        );
-    };
 
     let timestamp = '';
     const title = props.checklistItem.title;
+
+    const resetAssignee = () => {
+        onAssigneeChange();
+        setProfileSelectorToggle(!profileSelectorToggle);
+    };
 
     if (props.checklistItem.state === ChecklistItemState.Closed && props.checklistItem.state_modified) {
         const stateModified = moment(props.checklistItem.state_modified);
@@ -296,6 +295,10 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     onSelectedChange={onAssigneeChange}
                     selfIsFirstOption={true}
                     customControl={ControlComponent}
+                    customControlProps={{
+                        showCustomReset: Boolean(assignee_id),
+                        onCustomReset: resetAssignee,
+                    }}
                     controlledOpenToggle={profileSelectorToggle}
                 />
             </div>
