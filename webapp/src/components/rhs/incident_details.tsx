@@ -61,7 +61,7 @@ interface StageProps {
     activeStage: number;
 }
 
-const StageWrapper = styled.span`
+const StageWrapper = styled.div`
     display: flex;
     justify-content: space-between;
 `;
@@ -79,19 +79,20 @@ const Stage: FC<StageProps> = (props: StageProps) => {
     }
 
     return (
-        <React.Fragment>
+        <div
+            className='inner-container'
+            id='incidentRHSStages'
+        >
             <div className='title'>
                 {'Current Stage:'}
             </div>
-            <div>
-                <StageWrapper>
-                    {props.stages[props.activeStage].title}
-                    <StageCounter>
-                        {`(${props.activeStage + 1}/${props.stages.length})`}
-                    </StageCounter>
-                </StageWrapper>
-            </div>
-        </React.Fragment>
+            <StageWrapper>
+                {props.stages[props.activeStage].title}
+                <StageCounter>
+                    {`(${props.activeStage + 1}/${props.stages.length})`}
+                </StageCounter>
+            </StageWrapper>
+        </div>
     );
 };
 
@@ -271,12 +272,10 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                             ended_at={props.incident.end_at}
                         />
                     </div>
-                    <div className='inner-container'>
-                        <Stage
-                            stages={checklists}
-                            activeStage={activeChecklistIdx}
-                        />
-                    </div>
+                    <Stage
+                        stages={checklists}
+                        activeStage={activeChecklistIdx}
+                    />
                     <div
                         className='checklist-inner-container'
                     >
@@ -306,7 +305,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     </div>
                 </div>
             </Scrollbars>
-            <RHSFooter>
+            <RHSFooter id='incidentRHSFooter'>
                 {props.incident.checklists.length > 1 && dotMenu}
                 <NextStageButton
                     stages={checklists}
