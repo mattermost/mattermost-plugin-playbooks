@@ -223,7 +223,22 @@ describe('slash command', () => {
             cy.verifyEphemeralMessage('/incident commander expects at most one argument.');
         });
     });
+
     describe('/incident stage', () => {
+        beforeEach(() => {
+            const now = Date.now();
+            incidentName = 'Incident (' + now + ')';
+            incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                incidentId = incident.id;
+            });
+        });
+
         describe('not in an incident channel', () => {
             beforeEach(() => {
                 // # Navigate to a non-incident channel
@@ -277,7 +292,7 @@ describe('slash command', () => {
                         cy.executeSlashCommand('/incident stage next');
 
                         // * Verify the expected error message.
-                        cy.verifyEphemeralMessage('The active stage is the last one. If you want to end the incident, run `/incident end`');
+                        cy.verifyEphemeralMessage('The active stage is the last one. If you want to end the incident, run /incident end');
                     });
 
                     it('with all tasks finished', () => {
@@ -292,7 +307,7 @@ describe('slash command', () => {
                         cy.executeSlashCommand('/incident stage next');
 
                         // * Verify the expected error message.
-                        cy.verifyEphemeralMessage('The active stage is the last one. If you want to end the incident, run `/incident end`');
+                        cy.verifyEphemeralMessage('The active stage is the last one. If you want to end the incident, run /incident end');
                     });
                 });
 
