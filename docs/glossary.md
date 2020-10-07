@@ -8,4 +8,3 @@
 * **Incident participant:** A Mattermost user with access to the corresponding incident channel.
 * **The RHS:** The incident list and incident details displayed on the right hand side of the webapp. Clicking an incident from the list in the RHS surfaces details of the selected incident. It is not available on mobile.
 * **Incident backstage:** The full-screen analytics and configuration screens accessible from the webapp. It is not available on mobile.
-* **Active incident:** An incident that has not been ended.
