@@ -281,6 +281,20 @@ func (mr *MockServiceMockRecorder) OpenEndIncidentDialog(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenEndIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenEndIncidentDialog), arg0, arg1)
 }
 
+// OpenNextStageDialog mocks base method
+func (m *MockService) OpenNextStageDialog(arg0 string, arg1 int, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenNextStageDialog", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenNextStageDialog indicates an expected call of OpenNextStageDialog
+func (mr *MockServiceMockRecorder) OpenNextStageDialog(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenNextStageDialog", reflect.TypeOf((*MockService)(nil).OpenNextStageDialog), arg0, arg1, arg2)
+}
+
 // RemoveChecklistItem mocks base method
 func (m *MockService) RemoveChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
 	m.ctrl.T.Helper()
