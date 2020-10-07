@@ -140,6 +140,8 @@ describe('incident rhs', () => {
         it('for a new, ongoing incident channel opened from the lhs', () => {
             // # Navigate to the application.
             cy.visit('/');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Select a channel without an incident.
@@ -168,6 +170,8 @@ describe('incident rhs', () => {
         it('for a new, ended incident channel opened from the lhs', () => {
             // # Navigate to the application.
             cy.visit('/');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Select a channel without an incident.
@@ -210,6 +214,8 @@ describe('incident rhs', () => {
 
             // # Navigate to a channel without an incident.
             cy.visit('/ad-1/channels/off-topic');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Open the incident channel from the LHS.
@@ -239,6 +245,8 @@ describe('incident rhs', () => {
 
             // # Navigate to a channel without an incident.
             cy.visit('/ad-1/channels/off-topic');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Open the incident channel from the LHS.

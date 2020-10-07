@@ -7,7 +7,12 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Store} from 'redux';
 
-import {fetchingIncidents, receivedTeamIncidents, setRHSState, toggleRHS} from 'src/actions';
+import {
+    finishedFetchingIncidents,
+    receivedTeamIncidents,
+    setRHSState, startedFetchingIncidents,
+    toggleRHS,
+} from 'src/actions';
 import {fetchIncidents} from 'src/client';
 import {currentlyFetchingIncidents, isIncidentChannel, isIncidentRHSOpen} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
@@ -34,13 +39,13 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         // Update the known set of incidents whenever the team changes.
         if (currentTeamId !== currentTeam.id) {
             currentTeamId = currentTeam.id;
-            store.dispatch(fetchingIncidents(true));
+            store.dispatch(startedFetchingIncidents());
             const currentUserId = getCurrentUserId(state);
             const fetched = await fetchIncidents({
                 team_id: currentTeam.id,
                 member_id: currentUserId,
             });
-            store.dispatch(fetchingIncidents(false));
+            store.dispatch(finishedFetchingIncidents());
             store.dispatch(receivedTeamIncidents(fetched.items));
         }
 

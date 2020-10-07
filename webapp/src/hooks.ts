@@ -86,7 +86,7 @@ export function useKeyPress(targetKey: string, handler: () => void) {
         return () => {
             window.removeEventListener('keydown', downHandler);
         };
-    }, [handler, targetKey]); // Empty array ensures that effect is only run on mount and unmount
+    }, [handler, targetKey]);
 }
 
 /**

@@ -125,9 +125,14 @@ export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncide
     incidents,
 });
 
-export const fetchingIncidents = (fetching: boolean): FetchingIncidents => ({
+export const startedFetchingIncidents = (): FetchingIncidents => ({
     type: FETCHING_INCIDENTS,
-    fetching,
+    fetching: true,
+});
+
+export const finishedFetchingIncidents = (): FetchingIncidents => ({
+    type: FETCHING_INCIDENTS,
+    fetching: false,
 });
 
 export const removedFromIncidentChannel = (channelId: string): RemovedFromIncidentChannel => ({

@@ -11,7 +11,8 @@ const incidentsEndpoint = endpoints.incidents;
 Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-response/api/v1/incidents?team_id=${teamId}`,
+        url: '/plugins/com.mattermost.plugin-incident-response/api/v1/incidents',
+        qs: {team_id: teamId, per_page: 10000},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -20,12 +21,28 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
 });
 
 /**
-* Get all incidents directly via API
+* Get all active incidents directly via API
 */
 Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-response/api/v1/incidents?team_id=${teamId}&status=active`,
+        url: '/plugins/com.mattermost.plugin-incident-response/api/v1/incidents',
+        qs: {team_id: teamId, status: 'active'},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+* Get incident by name directly via API
+*/
+Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-response/api/v1/incidents',
+        qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -123,9 +140,9 @@ Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
 
 // Verify incident is created
 Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDescription) => {
-    cy.apiGetAllIncidents(teamId).then((response) => {
-        const allIncidents = JSON.parse(response.body);
-        const incident = allIncidents.items.find((inc) => inc.name === incidentName);
+    cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
+        const returnedIncidents = JSON.parse(response.body);
+        const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
         assert.isTrue(incident.is_active);
         assert.equal(incident.name, incidentName);
@@ -140,9 +157,9 @@ Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDes
 
 // Verify incident is not created
 Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
-    cy.apiGetAllIncidents(teamId).then((response) => {
-        const allIncidents = JSON.parse(response.body);
-        const incident = allIncidents.items.find((inc) => inc.name === incidentName);
+    cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
+        const returnedIncidents = JSON.parse(response.body);
+        const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
         assert.isFalse(incident.is_active);
     });

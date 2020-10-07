@@ -69,6 +69,8 @@ describe('rhs incident list', () => {
 
             // # Navigate directly to a non-incident channel
             cy.wait(1000).visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -85,6 +87,8 @@ describe('rhs incident list', () => {
         it('when in an incident, leaving to another channel, and ending the incident', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/off-topic');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start an incident
@@ -100,6 +104,8 @@ describe('rhs incident list', () => {
 
                 // # move to non-incident channel
                 cy.get('#sidebarItem_town-square').click();
+
+                // # Ensure the channel is loaded before continuing (allows redux to sync).
                 cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
                 // # Click the incident icon
@@ -130,6 +136,8 @@ describe('rhs incident list', () => {
 
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -158,6 +166,8 @@ describe('rhs incident list', () => {
         it('after seeing incident details and clicking on the back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -169,6 +179,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -197,6 +209,8 @@ describe('rhs incident list', () => {
         it('in incidents, closing the RHS, going to town-square, and clicking on the header icon', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -208,6 +222,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Close the RHS
@@ -217,6 +233,8 @@ describe('rhs incident list', () => {
 
             // # Go to town-square
             cy.get('#sidebarItem_town-square').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is closed
@@ -238,6 +256,8 @@ describe('rhs incident list', () => {
         it('after clicking back and going to town-square', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -249,6 +269,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the back button
@@ -258,6 +280,8 @@ describe('rhs incident list', () => {
 
             // # Go to town-square
             cy.get('#sidebarItem_town-square').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is open and we can see the new incident
@@ -277,6 +301,8 @@ describe('rhs incident list', () => {
 
             // # Visit a private channel: autem-2
             cy.visit('/ad-1/channels/autem-2');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is closed
@@ -300,6 +326,8 @@ describe('rhs incident list', () => {
         it('after opening incidents list and clicking on the go to channel button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -334,6 +362,8 @@ describe('rhs incident list', () => {
         it('after going to an incident channel, closing rhs, and clicking on LHS of another incident channel', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start 2 new incidents
@@ -356,6 +386,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${secondIncidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -375,6 +407,8 @@ describe('rhs incident list', () => {
 
             // # Open the first incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -391,6 +425,8 @@ describe('rhs incident list', () => {
         it('after going to incident, closing rhs, going to town-square, and clicking on same incident channel in LHS', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -402,6 +438,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -418,6 +456,8 @@ describe('rhs incident list', () => {
 
             // # Open town-square from the LHS.
             cy.get('#sidebarItem_town-square').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is closed
@@ -425,6 +465,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -441,6 +483,8 @@ describe('rhs incident list', () => {
         it('after going to incident, go to town-square, then back', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -452,6 +496,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -463,6 +509,8 @@ describe('rhs incident list', () => {
 
             // # Open town-square from the LHS.
             cy.get('#sidebarItem_town-square').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is open and we can see the new incident
@@ -474,6 +522,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -492,6 +542,8 @@ describe('rhs incident list', () => {
         it('should see incident in list when user is added to the channel by another user', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -527,6 +579,8 @@ describe('rhs incident list', () => {
         it('should see incident in list when user creates new incident and presses back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -538,6 +592,8 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
@@ -564,6 +620,8 @@ describe('rhs incident list', () => {
         it('incident should be removed from list when user is removed from channel', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -608,6 +666,8 @@ describe('rhs incident list', () => {
         it('incident should be removed from list when the user closes incident and presses back button', () => {
             // # Select a channel without an incident.
             cy.get('#sidebarItem_town-square').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
@@ -659,6 +719,8 @@ describe('rhs incident list', () => {
         it('incident should be removed from list when another user closes incident', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -710,6 +772,8 @@ describe('rhs incident list', () => {
         it('should see incident in list when the user restarts an incident and presses back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -762,6 +826,8 @@ describe('rhs incident list', () => {
         it('should see incident in list when another user restarts an incident', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -829,6 +895,8 @@ describe('rhs incident list', () => {
         it('should be able to open start incident dialog', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // In case we're running this test from scratch, the incident list should not be empty.
@@ -873,6 +941,10 @@ describe('rhs incident list', () => {
         it('should be able to create playbook from three dot menu', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -895,6 +967,8 @@ describe('rhs incident list', () => {
         it('should be able to go to incident backstage from three dot menu', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon
@@ -917,6 +991,8 @@ describe('rhs incident list', () => {
         it('should be able to see all incidents (incidents backstage list)', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the incident icon

@@ -918,7 +918,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
-	memberID := strings.ToLower(u.Query().Get("member_id"))
+	memberID := u.Query().Get("member_id")
 
 	return &incident.HeaderFilterOptions{
 		TeamID:      teamID,

@@ -89,7 +89,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 			Prefix("EXISTS(").
 			From("ChannelMembers AS cm").
 			Where("cm.ChannelId = incident.ChannelID").
-			Where(sq.Eq{"cm.UserId": options.MemberID}).
+			Where(sq.Eq{"cm.UserId": strings.ToLower(options.MemberID)}).
 			Suffix(")")
 
 		queryForResults = queryForResults.Where(membershipClause)
