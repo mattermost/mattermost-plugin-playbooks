@@ -1,26 +1,20 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Store} from 'redux';
+import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Store} from 'redux';
 
-import {
-    finishedFetchingIncidents,
-    receivedTeamIncidents,
-    setRHSState, startedFetchingIncidents,
-    toggleRHS,
-} from 'src/actions';
 import {fetchIncidents} from 'src/client';
-import {currentlyFetchingIncidents, isIncidentChannel, isIncidentRHSOpen} from 'src/selectors';
-import {RHSState} from 'src/types/rhs';
+
+import {isIncidentRHSOpen, isIncidentChannel} from 'src/selectors';
+import {toggleRHS, receivedTeamIncidents} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';
     let currentChannelId = '';
-    let sentRHSStateForChannelId = '';
     let currentChannelIsIncident = false;
 
     return async () => {
@@ -39,16 +33,11 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         // Update the known set of incidents whenever the team changes.
         if (currentTeamId !== currentTeam.id) {
             currentTeamId = currentTeam.id;
-            store.dispatch(startedFetchingIncidents());
             const currentUserId = getCurrentUserId(state);
             const fetched = await fetchIncidents({
                 team_id: currentTeam.id,
                 member_id: currentUserId,
             });
-            store.dispatch(finishedFetchingIncidents());
-
-            // Reset so that we can get set the correct rhs state.
-            sentRHSStateForChannelId = '';
             store.dispatch(receivedTeamIncidents(fetched.items));
         }
 
@@ -59,20 +48,6 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         }
         currentChannelId = currentChannel.id;
         currentChannelIsIncident = isIncidentChannel(state, currentChannelId);
-
-        // Decide whether to show the Incident Details or Incident List view when we change channels
-        if (sentRHSStateForChannelId !== currentChannelId) {
-            sentRHSStateForChannelId = currentChannelId;
-
-            // If currentlyFetchingIncidents is true, it means we can't rely on isIncidentChannel,
-            if (currentlyFetchingIncidents(state)) {
-                store.dispatch(setRHSState(RHSState.WelcomeScreen));
-            } else if (currentChannelIsIncident) {
-                store.dispatch(setRHSState(RHSState.ViewingIncident));
-            } else {
-                store.dispatch(setRHSState(RHSState.ViewingList));
-            }
-        }
 
         // Don't do anything if the incident RHS is already open.
         if (isIncidentRHSOpen(state)) {

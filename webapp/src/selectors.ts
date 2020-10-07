@@ -29,7 +29,7 @@ export const myActiveIncidentsList = createSelector(
     myChannelIdToIncidents,
     (channelIdToIncidents) => {
         const incidents = [] as Incident[];
-        for (const incident of Object.values<Incident>(channelIdToIncidents)) {
+        for (const incident of Object.values(channelIdToIncidents)) {
             if (incident.is_active) {
                 incidents.push(incident);
             }
@@ -47,5 +47,3 @@ export const isExportLicensed = (state: GlobalState): boolean => {
 };
 
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
-
-export const currentlyFetchingIncidents = (state: GlobalState): boolean => pluginState(state).fetchingIncidents;

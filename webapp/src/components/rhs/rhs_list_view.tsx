@@ -9,6 +9,7 @@ import styled, {css} from 'styled-components';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {pluginId} from 'src/manifest';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
@@ -17,11 +18,10 @@ import Profile from 'src/components/profile/profile';
 import {
     renderThumbVertical,
     renderTrackHorizontal,
-    renderView,
+    renderView, RHSContainer, RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {setRHSState, startIncident} from 'src/actions';
+import {startIncident} from 'src/actions';
 import {navigateToTeamPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {RHSState} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
 import Duration from 'src/components/duration';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
@@ -138,17 +138,13 @@ const Footer = styled.div`
     padding-bottom: 10rem;
 `;
 
-interface Props {
-    currentIncidentId?: string;
-}
-
-const RHSListView = (props: Props) => {
+const RHSListView = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const incidentList = useSelector<GlobalState, Incident[]>(myActiveIncidentsList);
 
     const viewIncident = (channelId: string) => {
-        dispatch(setRHSState(RHSState.ViewingIncident));
         navigateToUrl(`/${currentTeam.name}/channels/${channelId}`);
     };
 
@@ -161,71 +157,75 @@ const RHSListView = (props: Props) => {
     }
 
     return (
-        <Scrollbars
-            autoHide={true}
-            autoHideTimeout={500}
-            autoHideDuration={500}
-            renderThumbVertical={renderThumbVertical}
-            renderView={renderView}
-            renderTrackHorizontal={renderTrackHorizontal}
-            style={{position: 'absolute'}}
-        >
-            <Header>
-                <CenterCell>
-                    <Link onClick={() => dispatch(startIncident())}>
-                        <PlusIcon/>{'Start Incident'}
-                    </Link>
-                </CenterCell>
-                <RightCell>
-                    <ThreeDotMenu
-                        onCreatePlaybook={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                        onSeeAllIncidents={() => navigateToTeamPluginUrl(currentTeam.name, '/incidents')}
-                    />
-                </RightCell>
-            </Header>
+        <RHSContainer>
+            <RHSContent>
+                <Scrollbars
+                    autoHide={true}
+                    autoHideTimeout={500}
+                    autoHideDuration={500}
+                    renderThumbVertical={renderThumbVertical}
+                    renderView={renderView}
+                    renderTrackHorizontal={renderTrackHorizontal}
+                    style={{position: 'absolute'}}
+                >
+                    <Header>
+                        <CenterCell>
+                            <Link onClick={() => dispatch(startIncident())}>
+                                <PlusIcon/>{'Start Incident'}
+                            </Link>
+                        </CenterCell>
+                        <RightCell>
+                            <ThreeDotMenu
+                                onCreatePlaybook={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
+                                onSeeAllIncidents={() => navigateToTeamPluginUrl(currentTeam.name, '/incidents')}
+                            />
+                        </RightCell>
+                    </Header>
 
-            {incidentList.map((incident) => {
-                return (
-                    <IncidentContainer
-                        key={incident.id}
-                        active={props.currentIncidentId ? props.currentIncidentId === incident.id : false}
-                    >
-                        <IncidentTitle>{incident.name}</IncidentTitle>
-                        <Row>
-                            <Col1>{'Stage:'}</Col1>
-                            <Col2>{incident.active_stage_title}</Col2>
-                        </Row>
-                        <Row>
-                            <Col1>{'Duration:'}</Col1>
-                            <Col2>
-                                <Duration
-                                    created_at={incident.create_at}
-                                    ended_at={incident.end_at}
-                                />
-                            </Col2>
-                        </Row>
-                        <Row>
-                            <Col1>{'Commander:'}</Col1>
-                            <Col2>
-                                <SmallerProfile userId={incident.commander_user_id}/>
-                            </Col2>
-                        </Row>
-                        <Button
-                            onClick={() => viewIncident(incident.channel_id)}
-                            data-testid='go-to-channel'
-                        >
-                            {'Go to Incident Channel'}
-                        </Button>
-                    </IncidentContainer>
-                );
-            })}
+                    {incidentList.map((incident) => {
+                        return (
+                            <IncidentContainer
+                                key={incident.id}
+                                active={currentChannelId === incident.channel_id}
+                            >
+                                <IncidentTitle>{incident.name}</IncidentTitle>
+                                <Row>
+                                    <Col1>{'Stage:'}</Col1>
+                                    <Col2>{incident.active_stage_title}</Col2>
+                                </Row>
+                                <Row>
+                                    <Col1>{'Duration:'}</Col1>
+                                    <Col2>
+                                        <Duration
+                                            created_at={incident.create_at}
+                                            ended_at={incident.end_at}
+                                        />
+                                    </Col2>
+                                </Row>
+                                <Row>
+                                    <Col1>{'Commander:'}</Col1>
+                                    <Col2>
+                                        <SmallerProfile userId={incident.commander_user_id}/>
+                                    </Col2>
+                                </Row>
+                                <Button
+                                    onClick={() => viewIncident(incident.channel_id)}
+                                    data-testid='go-to-channel'
+                                >
+                                    {'Go to Incident Channel'}
+                                </Button>
+                            </IncidentContainer>
+                        );
+                    })}
 
-            <Footer>
-                {'Looking for closed incidents? '}
-                <a onClick={viewBackstageIncidentList}>{'Click here'}</a>
-                {' to see all incidents.'}
-            </Footer>
-        </Scrollbars>
+                    <Footer>
+                        {'Looking for closed incidents? '}
+                        <a onClick={viewBackstageIncidentList}>{'Click here'}</a>
+                        {' to see all incidents.'}
+                    </Footer>
+                </Scrollbars>
+            </RHSContent>
+        </RHSContainer>
     );
 };
 

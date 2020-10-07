@@ -20,7 +20,8 @@ import {
     SET_RHS_STATE,
     RemovedFromIncidentChannel,
     IncidentUpdated,
-    INCIDENT_UPDATED, REMOVED_FROM_INCIDENT_CHANNEL, FetchingIncidents, FETCHING_INCIDENTS,
+    INCIDENT_UPDATED,
+    REMOVED_FROM_INCIDENT_CHANNEL,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -96,20 +97,10 @@ const myChannelIdToIncidents = (state: Record<string, Incident> = {}, action: In
     }
 };
 
-function fetchingIncidents(state = true, action: FetchingIncidents) {
-    switch (action.type) {
-    case FETCHING_INCIDENTS:
-        return action.fetching;
-    default:
-        return state;
-    }
-}
-
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
     myChannelIdToIncidents,
     rhsState,
-    fetchingIncidents,
 });

@@ -30,8 +30,6 @@ import {
     REMOVED_FROM_INCIDENT_CHANNEL,
     IncidentUpdated,
     INCIDENT_UPDATED,
-    FETCHING_INCIDENTS,
-    FetchingIncidents,
 } from './types/actions';
 
 import {
@@ -123,16 +121,6 @@ export const incidentUpdated = (incident: Incident): IncidentUpdated => ({
 export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncidents => ({
     type: RECEIVED_TEAM_INCIDENTS,
     incidents,
-});
-
-export const startedFetchingIncidents = (): FetchingIncidents => ({
-    type: FETCHING_INCIDENTS,
-    fetching: true,
-});
-
-export const finishedFetchingIncidents = (): FetchingIncidents => ({
-    type: FETCHING_INCIDENTS,
-    fetching: false,
 });
 
 export const removedFromIncidentChannel = (channelId: string): RemovedFromIncidentChannel => ({

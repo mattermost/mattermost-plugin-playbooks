@@ -4,5 +4,4 @@
 export enum RHSState {
     ViewingList,
     ViewingIncident,
-    WelcomeScreen,
 }
