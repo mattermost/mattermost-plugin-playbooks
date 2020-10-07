@@ -8,7 +8,10 @@
 
 ## Workflows and incidents
 
-- [Incident Response Management](incident-response-management.md)
+- [Planning incidents](planning-incidents.md)
+- [Starting incidents](starting-incidents.md)
+- [Ending incidents](ending-incidents.md)
+- [Reviewing and refining incident response](reviewing-and-refining-incident-response.md)
 
 ## Data
 
