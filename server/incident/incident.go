@@ -82,6 +82,30 @@ type GetIncidentsResults struct {
 	Items      []Incident `json:"items"`
 }
 
+func (r GetIncidentsResults) Clone() GetIncidentsResults {
+	newGetIncidentsResults := r
+
+	newGetIncidentsResults.Items = make([]Incident, 0, len(r.Items))
+	for _, i := range r.Items {
+		newGetIncidentsResults.Items = append(newGetIncidentsResults.Items, *i.Clone())
+	}
+
+	return newGetIncidentsResults
+}
+
+func (r GetIncidentsResults) MarshalJSON() ([]byte, error) {
+	type Alias GetIncidentsResults
+
+	old := Alias(r.Clone())
+
+	// replace nils with empty slices for the frontend
+	if old.Items == nil {
+		old.Items = []Incident{}
+	}
+
+	return json.Marshal(old)
+}
+
 // CommanderInfo holds the summary information of a commander.
 type CommanderInfo struct {
 	UserID   string `json:"user_id"`

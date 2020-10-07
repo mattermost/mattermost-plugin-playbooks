@@ -36,7 +36,7 @@ var _ incident.Store = (*incidentStore)(nil)
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID", "ChecklistsJSON").
 		From("IR_Incident AS incident")
 
 	return &incidentStore{
@@ -114,8 +114,8 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
 
-	var incidents []incident.Incident
-	if err := s.store.selectBuilder(s.store.db, &incidents, queryForResults); err != nil {
+	var rawIncidents []sqlIncident
+	if err := s.store.selectBuilder(s.store.db, &rawIncidents, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
 	}
 
@@ -125,6 +125,15 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	}
 	pageCount := int(math.Ceil(float64(total) / float64(options.PerPage)))
 	hasMore := options.Page+1 < pageCount
+
+	incidents := make([]incident.Incident, 0, len(rawIncidents))
+	for _, rawIncident := range rawIncidents {
+		incident, err := toIncident(rawIncident)
+		if err != nil {
+			return nil, err
+		}
+		incidents = append(incidents, *incident)
+	}
 
 	return &incident.GetIncidentsResults{
 		TotalCount: total,
@@ -221,11 +230,8 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 		return nil, errors.New("ID cannot be empty")
 	}
 
-	withChecklistsSelect := s.incidentSelect.
-		Columns("ChecklistsJSON")
-
 	var rawIncident sqlIncident
-	err := s.store.getBuilder(s.store.db, &rawIncident, withChecklistsSelect.Where(sq.Eq{"ID": incidentID}))
+	err := s.store.getBuilder(s.store.db, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {

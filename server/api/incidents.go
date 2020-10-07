@@ -290,8 +290,6 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 }
 
 // getIncidents handles the GET /incidents endpoint.
-// NOTE: The incidents will NOT have the Checklists slice. Checklists will only be included
-// in a call to getIncident.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
@@ -316,16 +314,6 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		HandleError(w, err)
 		return
-	}
-
-	// To return an empty array instead of null
-	if results.Items == nil {
-		results.Items = []incident.Incident{}
-	}
-
-	// Return an empty array instead of null
-	for i := range results.Items {
-		results.Items[i].Checklists = []playbook.Checklist{}
 	}
 
 	jsonBytes, err := json.Marshal(results)
