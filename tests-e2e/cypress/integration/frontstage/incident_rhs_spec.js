@@ -53,7 +53,7 @@ describe('incident rhs', () => {
             cy.wait(2000);
 
             // * Verify the incident RHS is not open.
-            cy.get('#rhsContainer').should('not.be.visible');
+            cy.get('#rhsContainer').should('not.exist');
         });
 
         it('when navigating to an incident channel with the RHS already open', () => {
@@ -87,7 +87,7 @@ describe('incident rhs', () => {
             cy.wait(2000);
 
             // * Verify the incident RHS is not open.
-            cy.get('#rhsContainer').should('not.be.visible');
+            cy.get('#rhsContainer').should('not.exist');
         });
     });
 
@@ -287,7 +287,7 @@ describe('incident rhs', () => {
         });
 
         // * Verify the incident RHS is no longer open.
-        cy.get('#rhsContainer').should('not.be.visible');
+        cy.get('#rhsContainer').should('not.exist');
     });
 
     describe('shows status in rhs header', () => {
