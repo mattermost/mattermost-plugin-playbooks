@@ -79,18 +79,16 @@ const IncidentTitle = styled.div`
     line-height: 20px;
     letter-spacing: 0;
     text-align: left;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 `;
 
 const Row = styled.div`
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    //padding: 8px 0 16px 0;
-    //align-items: center;
     font-size: 12px;
-    line-height: 16px;
-    margin: 4px 0;
+    line-height: 20px;
+    margin: 1px 0;
 `;
 
 const Col1 = styled.div`
@@ -103,7 +101,7 @@ const Col1 = styled.div`
 const Col2 = styled.div`
     display: flex;
     flex-direction: column;
-    flex: 2;
+    flex: 3;
     font-weight: 400;
 `;
 
