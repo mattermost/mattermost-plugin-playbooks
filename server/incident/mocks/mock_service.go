@@ -5,11 +5,12 @@
 package mock_incident
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
-	reflect "reflect"
 )
 
 // MockService is a mock of Service interface
@@ -167,19 +168,19 @@ func (mr *MockServiceMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentIDForChannel", reflect.TypeOf((*MockService)(nil).GetIncidentIDForChannel), arg0)
 }
 
-// GetIncidentWithDetails mocks base method
-func (m *MockService) GetIncidentWithDetails(arg0 string) (*incident.WithDetails, error) {
+// GetIncidentMetadata mocks base method
+func (m *MockService) GetIncidentMetadata(arg0 string) (*incident.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIncidentWithDetails", arg0)
-	ret0, _ := ret[0].(*incident.WithDetails)
+	ret := m.ctrl.Call(m, "GetIncidentMetadata", arg0)
+	ret0, _ := ret[0].(*incident.Metadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetIncidentWithDetails indicates an expected call of GetIncidentWithDetails
-func (mr *MockServiceMockRecorder) GetIncidentWithDetails(arg0 interface{}) *gomock.Call {
+// GetIncidentMetadata indicates an expected call of GetIncidentMetadata
+func (mr *MockServiceMockRecorder) GetIncidentMetadata(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentWithDetails", reflect.TypeOf((*MockService)(nil).GetIncidentWithDetails), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentMetadata", reflect.TypeOf((*MockService)(nil).GetIncidentMetadata), arg0)
 }
 
 // GetIncidents mocks base method

@@ -64,19 +64,13 @@ type UpdateOptions struct {
 	ActiveStage *int `json:"active_stage"`
 }
 
-// Details holds the extra details needed for some API calls (e.g., the backstage's incident details)
-type Details struct {
+// Metadata tracks ancillary metadata about an incident.
+type Metadata struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
 	NumMembers         int64  `json:"num_members"`
 	TotalPosts         int64  `json:"total_posts"`
-}
-
-// WithDetails holds the Incident with Details
-type WithDetails struct {
-	Incident Incident `json:"incident"`
-	Details  Details  `json:"details"`
 }
 
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
@@ -148,8 +142,8 @@ type Service interface {
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
 	GetIncident(incidentID string) (*Incident, error)
 
-	// GetIncidentWithDetails gets an incident with the detailed metadata.
-	GetIncidentWithDetails(incidentID string) (*WithDetails, error)
+	// GetIncidentMetadata gets ancillary metadata about an incident.
+	GetIncidentMetadata(incidentID string) (*Metadata, error)
 
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.

@@ -51,7 +51,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
-	incidentRouter.HandleFunc("/details", handler.getIncidentWithDetails).Methods(http.MethodGet)
+	incidentRouter.HandleFunc("/metadata", handler.getIncidentMetadata).Methods(http.MethodGet)
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
@@ -371,8 +371,8 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getIncidentWithDetails handles the /incidents/{id}/details endpoint.
-func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.Request) {
+// getIncidentMetadata handles the /incidents/{id}/metadata endpoint.
+func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -383,7 +383,7 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	incidentToGet, err := h.incidentService.GetIncidentMetadata(incidentID)
 	if err != nil {
 		HandleError(w, err)
 		return
