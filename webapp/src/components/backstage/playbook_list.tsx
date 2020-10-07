@@ -17,7 +17,6 @@ import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 
-import Spinner from 'src/components/assets/icons/spinner';
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -128,10 +127,8 @@ const PlaybookList: FC = () => {
 
     let body;
     if (!playbooks) {
-        body = (
-            <Spinner/>
-        );
-    } else if (playbooks.length === 0) {
+        body = null;
+    } else if (playbooks?.length === 0) {
         body = (
             <div className='text-center pt-8'>
                 {'There are no playbooks defined yet.'}

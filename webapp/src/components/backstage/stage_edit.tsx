@@ -11,7 +11,7 @@ import {
 
 import styled from 'styled-components';
 
-import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {Checklist, ChecklistItem, ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
 
@@ -77,12 +77,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
     };
 
     const handleAddChecklistItem = () => {
-        onAddChecklistItem({
-            title: '',
-            state: ChecklistItemState.Open,
-            command: '',
-            description: '',
-        });
+        onAddChecklistItem(newChecklistItem('', '', '', ChecklistItemState.Open));
     };
 
     return (
