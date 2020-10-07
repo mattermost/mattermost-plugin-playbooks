@@ -826,7 +826,7 @@ describe('rhs incident list', () => {
     });
 
     describe('menu items', () => {
-        it('should be able to start incident', () => {
+        it('should be able to open start incident dialog', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
