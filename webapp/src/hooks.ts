@@ -35,7 +35,6 @@ export function useCurrentIncident(): [Incident | null, IncidentFetchState] {
         const fetchIncident = async () => {
             if (!currentChannelId) {
                 setIncident(null);
-                setState(IncidentFetchState.NotFound);
                 return;
             }
 

@@ -36,7 +36,10 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             currentTeamId = currentTeam.id;
             store.dispatch(fetchingIncidents(true));
             const currentUserId = getCurrentUserId(state);
-            const fetched = await fetchIncidents({team_id: currentTeam.id, member_id: currentUserId});
+            const fetched = await fetchIncidents({
+                team_id: currentTeam.id,
+                member_id: currentUserId,
+            });
             store.dispatch(fetchingIncidents(false));
             store.dispatch(receivedTeamIncidents(fetched.items));
         }
@@ -52,6 +55,9 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         // Decide whether to show the Incident Details or Incident List view when we change channels
         if (sentRHSStateForChannelId !== currentChannelId) {
             sentRHSStateForChannelId = currentChannelId;
+
+            // If currentlyFetchingIncidents is true, it means we can't rely on isIncidentChannel,
+            // so default to ViewingIncident.
             if (currentChannelIsIncident || currentlyFetchingIncidents(state)) {
                 store.dispatch(setRHSState(RHSState.ViewingIncident));
             } else {

@@ -6,17 +6,18 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {setRHSOpen} from 'src/actions';
+import {setRHSOpen, setRHSState} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
 import RHSIncidentDetails from 'src/components/rhs/incident_details';
 import RHSListView from 'src/components/rhs/rhs_list_view';
 import {RHSContainer, RHSContent} from 'src/components/rhs/rhs_shared';
-import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import {IncidentFetchState, useCurrentIncident} from 'src/hooks';
-import {activeIncidentList, currentRHSState} from 'src/selectors';
+import {activeIncidentList, currentRHSState, isIncidentChannel} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
+import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 
 export const SpinnerContainer = styled.div`
     text-align: center;
@@ -38,6 +39,8 @@ const RightHandSidebar: FC<null> = () => {
     const dispatch = useDispatch();
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const incidentList = useSelector<GlobalState, Incident[]>(activeIncidentList);
+    const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
+    const isCurrrentChannelAnIncident = useSelector<GlobalState, boolean>((state) => isIncidentChannel(state, currentChannelId));
 
     // Only get the current incident, and incidentList at the top of the rhs hierarchy.
     // This prevents race conditions.
@@ -66,6 +69,10 @@ const RightHandSidebar: FC<null> = () => {
     if (incidentFetchState === IncidentFetchState.Loading) {
         return spinner;
     } else if (incidentFetchState === IncidentFetchState.NotFound || incident === null) {
+        if (!isCurrrentChannelAnIncident) {
+            // There is no incident for this channel. Return to list view.
+            dispatch(setRHSState(RHSState.ViewingList));
+        }
         return <RHSWelcomeView/>;
     }
 

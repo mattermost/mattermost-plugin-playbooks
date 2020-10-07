@@ -84,7 +84,7 @@ describe('rhs incident list', () => {
 
         it('when in an incident, leaving to another channel, and ending the incident', () => {
             // # Navigate directly to a non-incident channel
-            cy.visit('/ad-1/channels/town-square');
+            cy.visit('/ad-1/channels/off-topic');
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start an incident
@@ -100,6 +100,7 @@ describe('rhs incident list', () => {
 
                 // # move to non-incident channel
                 cy.get('#sidebarItem_town-square').click();
+                cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
                 // # Click the incident icon
                 cy.get('#channel-header').within(() => {
@@ -137,17 +138,14 @@ describe('rhs incident list', () => {
             });
 
             // # start 2 incidents
-            let incidentName = 'Private ' + Date.now();
+            const now = Date.now();
+            let incidentName = 'Private ' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentCreated(teamId, incidentName);
-            cy.get('#sidebarItem_town-square').click();
 
             incidentName = 'Private ' + Date.now();
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentCreated(teamId, incidentName);
-
-            // # Select a channel without an incident.
-            cy.get('#sidebarItem_town-square').click();
 
             // * Verify the rhs list is still open and two go-to-channel buttons are visible.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -158,6 +156,10 @@ describe('rhs incident list', () => {
         });
 
         it('after seeing incident details and clicking on the back button', () => {
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -167,6 +169,7 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -192,6 +195,10 @@ describe('rhs incident list', () => {
         });
 
         it('in incidents, closing the RHS, going to town-square, and clicking on the header icon', () => {
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -201,6 +208,7 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Close the RHS
             cy.get('#rhsContainer').within(() => {
@@ -209,6 +217,7 @@ describe('rhs incident list', () => {
 
             // # Go to town-square
             cy.get('#sidebarItem_town-square').click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is closed
             cy.get('#rhsContainer').should('not.be.visible');
@@ -227,6 +236,10 @@ describe('rhs incident list', () => {
         });
 
         it('after clicking back and going to town-square', () => {
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -236,6 +249,7 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # Click the back button
             cy.get('#rhsContainer').within(() => {
@@ -244,6 +258,7 @@ describe('rhs incident list', () => {
 
             // # Go to town-square
             cy.get('#sidebarItem_town-square').click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is open and we can see the new incident
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -262,6 +277,7 @@ describe('rhs incident list', () => {
 
             // # Visit a private channel: autem-2
             cy.visit('/ad-1/channels/autem-2');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is closed
             cy.get('#rhsContainer').should('not.be.visible');
@@ -284,6 +300,7 @@ describe('rhs incident list', () => {
         it('after opening incidents list and clicking on the go to channel button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // # start new incident
             const now = Date.now();
@@ -315,7 +332,11 @@ describe('rhs incident list', () => {
         });
 
         it('after going to an incident channel, closing rhs, and clicking on LHS of another incident channel', () => {
-            // # start new incident
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+
+            // # start 2 new incidents
             let now = Date.now();
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
@@ -323,23 +344,24 @@ describe('rhs incident list', () => {
             cy.verifyIncidentCreated(teamId, incidentName);
 
             now = Date.now() + 1;
-            const newIncidentName = 'Incident (' + now + ')';
-            const newIncidentChannelName = 'incident-' + now;
+            const secondIncidentName = 'Incident (' + now + ')';
+            const secondIncidentChannelName = 'incident-' + now;
             cy.apiStartIncident({
                 teamId,
                 playbookId,
-                incidentName: newIncidentName,
+                incidentName: secondIncidentName,
                 commanderUserId: userId
             });
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentCreated(teamId, secondIncidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${newIncidentChannelName}`).click();
+            cy.get(`#sidebarItem_${secondIncidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
                 cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(newIncidentName).should('be.visible');
+                    cy.findByText(secondIncidentName).should('be.visible');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -353,6 +375,7 @@ describe('rhs incident list', () => {
 
             // # Open the first incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -366,6 +389,10 @@ describe('rhs incident list', () => {
         });
 
         it('after going to incident, closing rhs, going to town-square, and clicking on same incident channel in LHS', () => {
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -375,6 +402,7 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -390,12 +418,14 @@ describe('rhs incident list', () => {
 
             // # Open town-square from the LHS.
             cy.get('#sidebarItem_town-square').click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is closed
             cy.get('#rhsContainer').should('not.be.visible');
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -409,6 +439,10 @@ describe('rhs incident list', () => {
         });
 
         it('after going to incident, go to town-square, then back', () => {
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -418,6 +452,7 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -428,6 +463,7 @@ describe('rhs incident list', () => {
 
             // # Open town-square from the LHS.
             cy.get('#sidebarItem_town-square').click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the rhs list is open and we can see the new incident
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -438,6 +474,7 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -501,6 +538,7 @@ describe('rhs incident list', () => {
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('be.visible').within(() => {
@@ -558,7 +596,7 @@ describe('rhs incident list', () => {
                 // # remove user-1 from the incident
                 cy.removeUserFromChannel(channelId, userId);
 
-                // * Verify we see the welcome screen when there are no incidents
+                // * Verify the incident is not listed
                 cy.get('#rhsContainer').should('be.visible').within(() => {
                     cy.findByText('Your Ongoing Incidents').should('be.visible');
 
@@ -660,7 +698,7 @@ describe('rhs incident list', () => {
                 // # User-2 closes the incident
                 cy.apiEndIncident(incidentId);
 
-                // * Verify we see the welcome screen when there are no incidents
+                // * Verify the incident is not listed
                 cy.get('#rhsContainer').should('be.visible').within(() => {
                     cy.findByText('Your Ongoing Incidents').should('be.visible');
 
