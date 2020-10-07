@@ -57,6 +57,16 @@ describe('backstage incident list', () => {
     });
 
     it('has "Incidents" and team name in heading', () => {
+        // # Start the incident
+        const now = Date.now();
+        const incidentName = 'Incident (' + now + ')';
+        cy.apiStartIncident({
+            teamId,
+            playbookId,
+            incidentName,
+            commanderUserId: userId,
+        });
+
         // # Navigate to the application
         cy.visit('/ad-1');
 

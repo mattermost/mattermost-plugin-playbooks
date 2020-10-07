@@ -13,13 +13,22 @@ describe('backstage', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
 
-        // # Create a playbook
+        // # Create a playbook and start an incident.
         cy.apiGetTeamByName('ad-1').then((team) => {
             cy.apiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
                     userId: user.id,
+                }).then((playbook) => {
+                    const now = Date.now();
+                    const incidentName = 'Incident (' + now + ')';
+                    cy.apiStartIncident({
+                        teamId: team.id,
+                        playbookId: playbook.id,
+                        incidentName,
+                        commanderUserId: user.id,
+                    });
                 });
             });
         });
