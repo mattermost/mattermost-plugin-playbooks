@@ -25,6 +25,7 @@ import {RHSState} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
 import Duration from 'src/components/duration';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import {myActiveIncidentsList} from 'src/selectors';
 
 const Header = styled.div`
     display: grid;
@@ -138,13 +139,13 @@ const Footer = styled.div`
 `;
 
 interface Props {
-    incidentList: Incident[] | null;
     currentIncidentId?: string;
 }
 
 const RHSListView = (props: Props) => {
     const dispatch = useDispatch();
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const incidentList = useSelector<GlobalState, Incident[]>(myActiveIncidentsList);
 
     const viewIncident = (channelId: string) => {
         dispatch(setRHSState(RHSState.ViewingIncident));
@@ -155,7 +156,7 @@ const RHSListView = (props: Props) => {
         navigateToUrl(`/${currentTeam.name}/${pluginId}/incidents`);
     };
 
-    if (!props.incidentList || props.incidentList.length === 0) {
+    if (incidentList.length === 0) {
         return <RHSWelcomeView/>;
     }
 
@@ -183,7 +184,7 @@ const RHSListView = (props: Props) => {
                 </RightCell>
             </Header>
 
-            {props.incidentList?.map((incident) => {
+            {incidentList.map((incident) => {
                 return (
                     <IncidentContainer
                         key={incident.id}

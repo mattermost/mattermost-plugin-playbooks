@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {createSelector} from 'reselect';
+
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
 
@@ -21,17 +23,22 @@ export const isIncidentChannel = (state: GlobalState, channelId: string): boolea
     return Boolean(pluginState(state).myChannelIdToIncidents[channelId]);
 };
 
-export const activeIncidentList = (state: GlobalState): Incident[] => {
-    const incidents = [] as Incident[];
-    for (const incident of Object.values<Incident>(pluginState(state).myChannelIdToIncidents)) {
-        if (incident.is_active) {
-            incidents.push(incident);
-        }
-    }
+const myChannelIdToIncidents = (state: GlobalState): Record<string, Incident> => pluginState(state).myChannelIdToIncidents;
 
-    // return descending by create_at
-    return incidents.sort((a, b) => b.create_at - a.create_at);
-};
+export const myActiveIncidentsList = createSelector(
+    myChannelIdToIncidents,
+    (channelIdToIncidents) => {
+        const incidents = [] as Incident[];
+        for (const incident of Object.values<Incident>(channelIdToIncidents)) {
+            if (incident.is_active) {
+                incidents.push(incident);
+            }
+        }
+
+        // return descending by create_at
+        return incidents.sort((a, b) => b.create_at - a.create_at);
+    },
+);
 
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);

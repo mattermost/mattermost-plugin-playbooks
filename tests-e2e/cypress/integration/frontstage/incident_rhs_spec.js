@@ -276,30 +276,32 @@ describe('incident rhs', () => {
         });
     });
 
-    it('is toggled by incident icon in channel header', () => {
-        // # Size the viewport to show plugin icons even when RHS is open
-        cy.viewport('macbook-13');
+    describe('is toggled', () => {
+        it('by incident icon in channel header', () => {
+            // # Size the viewport to show plugin icons even when RHS is open
+            cy.viewport('macbook-13');
 
-        // # Navigate to the application and a channel without an incident
-        cy.visit('/ad-1/channels/off-topic');
+            // # Navigate to the application and a channel without an incident
+            cy.visit('/ad-1/channels/off-topic');
 
-        // # Click the incident icon
-        cy.get('#channel-header').within(() => {
-            cy.get('#incidentIcon').should('be.visible').click();
+            // # Click the incident icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('be.visible').click();
+            });
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('be.visible').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            });
+
+            // # Click the incident icon again
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('be.visible').click();
+            });
+
+            // * Verify the incident RHS is no longer open.
+            cy.get('#rhsContainer').should('not.be.visible');
         });
-
-        // * Verify the incident RHS is open.
-        cy.get('#rhsContainer').should('be.visible').within(() => {
-            cy.findByText('Incidents').should('be.visible');
-        });
-
-        // # Click the incident icon again
-        cy.get('#channel-header').within(() => {
-            cy.get('#incidentIcon').should('be.visible').click();
-        });
-
-        // * Verify the incident RHS is no longer open.
-        cy.get('#rhsContainer').should('not.be.visible');
     });
 
     describe('shows status in rhs header', () => {

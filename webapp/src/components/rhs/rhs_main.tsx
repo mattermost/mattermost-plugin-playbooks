@@ -6,17 +6,15 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {setRHSOpen, setRHSState} from 'src/actions';
+import {setRHSOpen} from 'src/actions';
 import Spinner from 'src/components/assets/icons/spinner';
 import RHSIncidentDetails from 'src/components/rhs/incident_details';
 import RHSListView from 'src/components/rhs/rhs_list_view';
 import {RHSContainer, RHSContent} from 'src/components/rhs/rhs_shared';
 import {IncidentFetchState, useCurrentIncident} from 'src/hooks';
-import {activeIncidentList, currentRHSState, isIncidentChannel} from 'src/selectors';
+import {currentRHSState} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
-import {Incident} from 'src/types/incident';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 
 export const SpinnerContainer = styled.div`
@@ -38,7 +36,6 @@ const spinner = (
 const RightHandSidebar: FC<null> = () => {
     const dispatch = useDispatch();
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
-    const incidentList = useSelector<GlobalState, Incident[]>(activeIncidentList);
 
     // Only get the current incident, and incidentList at the top of the rhs hierarchy.
     // This prevents race conditions.
@@ -60,7 +57,6 @@ const RightHandSidebar: FC<null> = () => {
             <RHSContainer>
                 <RHSContent>
                     <RHSListView
-                        incidentList={incidentList}
                         currentIncidentId={incident?.id}
                     />
                 </RHSContent>
