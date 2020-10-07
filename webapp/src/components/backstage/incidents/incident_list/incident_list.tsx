@@ -39,6 +39,20 @@ import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 const debounceDelay = 300; // in milliseconds
 
+const ControlComponent = (ownProps: ControlProps<any>) => (
+    <div>
+        <components.Control {...ownProps}/>
+        {ownProps.selectProps.showCustomReset && (
+            <a
+                className='IncidentFilter-reset'
+                onClick={ownProps.selectProps.onCustomReset}
+            >
+                {'Reset to all commanders'}
+            </a>
+        )}
+    </div>
+);
+
 const BackstageIncidentList: FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [totalCount, setTotalCount] = useState(0);
@@ -114,32 +128,17 @@ const BackstageIncidentList: FC = () => {
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
-    const ControlComponent = (ownProps: ControlProps<any>) => {
-        const resetLink = fetchParams.commander_user_id && (
-            <a
-                className='IncidentFilter-reset'
-                onClick={() => {
-                    setCommanderId();
-                    setProfileSelectorToggle(!profileSelectorToggle);
-                }}
-            >
-                {'Reset to all commanders'}
-            </a>
-        );
-
-        return (
-            <div>
-                <components.Control {...ownProps}/>
-                {resetLink}
-            </div>
-        );
-    };
 
     const isFiltering = (
         fetchParams.search_term ||
         fetchParams.commander_user_id ||
         (fetchParams.status && fetchParams.status !== 'all')
     );
+
+    const resetCommander = () => {
+        setCommanderId();
+        setProfileSelectorToggle(!profileSelectorToggle);
+    };
 
     const listComponent = (<>
         <div className='IncidentList container-medium'>
@@ -169,6 +168,10 @@ const BackstageIncidentList: FC = () => {
                         enableEdit={true}
                         isClearable={true}
                         customControl={ControlComponent}
+                        customControlProps={{
+                            showCustomReset: Boolean(fetchParams.commander_user_id),
+                            onCustomReset: resetCommander,
+                        }}
                         controlledOpenToggle={profileSelectorToggle}
                         getUsers={fetchCommanders}
                         onSelectedChange={setCommanderId}
