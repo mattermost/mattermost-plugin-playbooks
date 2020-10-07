@@ -557,7 +557,7 @@ describe('incident rhs', () => {
                     });
                 });
 
-                it('with End Stage button', () => {
+                it('with End Incident button', () => {
                     // * Verify that the menu does contain End Incident
                     cy.get('[class^=DropdownMenu]').contains('End Incident');
 
@@ -673,6 +673,28 @@ describe('incident rhs', () => {
 
                 // * Verify that the interactive dialog is visible
                 cy.get('#interactiveDialogModalLabel').contains('Confirm End Incident');
+            });
+
+            it('with "Restart Incident" when the incident is ended', () => {
+                // # Click on the End Incident button
+                cy.get('#incidentRHSFooter button').click();
+
+                // # Confirm the dialog
+                cy.get('#interactiveDialogSubmit').click();
+
+                // * Verify that the button contains Restart Incident
+                cy.get('#incidentRHSFooter button').contains('Restart Incident');
+
+                // # Restart the incident
+                cy.get('#incidentRHSFooter button').click();
+
+                // * Verify that the incident is ongoing
+                cy.get('#rhsContainer').within(() => {
+                    cy.get('.sidebar--right__title').contains('Ongoing');
+                });
+
+                // * Verify that the button contains End Incident again
+                cy.get('#incidentRHSFooter button').contains('End Incident');
             });
         });
 

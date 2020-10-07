@@ -147,9 +147,7 @@ const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) 
     if (!props.isActive) {
         text = 'Restart Incident';
         action = props.restartIncident;
-    }
-
-    if (props.activeStage === props.stages.length - 1) {
+    } else if (props.activeStage === props.stages.length - 1) {
         text = 'End Incident';
         action = props.endIncident;
     }
