@@ -4,6 +4,7 @@
 import React, {FC, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import Scrollbars from 'react-custom-scrollbars';
+import styled, {css} from 'styled-components';
 
 import {
     fetchUsersInChannel,
@@ -14,7 +15,6 @@ import {
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {Incident} from 'src/types/incident';
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import styled, {css} from 'styled-components';
 
 import ProfileSelector from 'src/components/profile/profile_selector';
 
@@ -72,7 +72,6 @@ const StageCounter = styled.span`
     text-align: right;
     color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
-
 
 const Stage: FC<StageProps> = (props: StageProps) => {
     if (props.stages.length <= 1) {
@@ -154,9 +153,9 @@ const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) 
         action = props.endIncident;
     }
 
-    const allItemsChecked = props.stages[props.activeStage].items.every(
-        (item: ChecklistItem) => item.state === ChecklistItemState.Closed
-    );
+    const allItemsChecked = props.stages[props.activeStage].items.every((item: ChecklistItem) => (
+        item.state === ChecklistItemState.Closed
+    ));
 
     return (
         <StyledButton
@@ -210,26 +209,34 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     };
 
     const checklists = props.incident.checklists || [];
-    const activeChecklistIdx = props.incident.active_stage
+    const activeChecklistIdx = props.incident.active_stage;
     const activeChecklist = checklists[activeChecklistIdx] || {title: '', items: []};
+
+    const dotMenuChildren = [];
+    if (props.incident.active_stage > 0) {
+        dotMenuChildren.push(
+            <DropdownMenuItem
+                text='Previous Stage'
+                onClick={() => dispatch(prevStage())}
+            />,
+        );
+    }
+
+    if (props.incident.active_stage < props.incident.checklists.length - 1) {
+        dotMenuChildren.push(
+            <DropdownMenuItem
+                text='End Incident'
+                onClick={() => dispatch(endIncident())}
+            />,
+        );
+    }
 
     const dotMenu = (
         <DotMenu
             icon={<HamburgerButton/>}
             top={true}
         >
-            { props.incident.active_stage > 0 &&
-                <DropdownMenuItem
-                    text='Previous Stage'
-                    onClick={() => dispatch(prevStage())}
-                />
-            }
-            { props.incident.active_stage < props.incident.checklists.length - 1 &&
-                <DropdownMenuItem
-                    text='End Incident'
-                    onClick={() => dispatch(endIncident())}
-                />
-            }
+            {dotMenuChildren}
         </DotMenu>
     );
 

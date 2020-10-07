@@ -19,7 +19,7 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     flex-direction: column;
 
     position: absolute;
-    ${(props: DropdownMenuProps) => props.top ? "bottom: 35px;" : "top: 100%;"}
+    ${(props: DropdownMenuProps) => (props.top ? 'bottom: 35px;' : 'top: 100%;')}
     min-width: 226px;
     text-align: left;
     list-style: none;
