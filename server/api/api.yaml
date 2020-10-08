@@ -7,7 +7,7 @@ info:
     url: https://mattermost.com/
     email: support@mattermost.com
 servers:
-  - url: http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1
+  - url: http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0
 paths:
   /incidents:
     get:
@@ -71,7 +71,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -102,7 +102,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
             -d '{"name": "ExampleIncident", "commander_user_id": "guo3e74njbbdxcpa6p43q974ar", "team_id": "ni8duypfe7bamprxqeffd563gy"}'
@@ -156,7 +156,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/commanders?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/commanders?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -193,7 +193,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/channels?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/channels?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -229,7 +229,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/channel/bdjeidoautgdjxqtgrmm78cg8a' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/channel/bdjeidoautgdjxqtgrmm78cg8a' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -263,7 +263,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -297,7 +297,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter/details' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/details' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -331,7 +331,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -377,7 +377,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/1igmynxs77ywmcbwbsujzktter/commander' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/commander' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"commander_id": "guo3e74njbbdxcpa6p43q974ar"}'
       responses:
@@ -424,7 +424,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/add' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/add' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Title"}'
       responses:
@@ -481,7 +481,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/reorder' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/reorder' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"item_num": 0, "new_location": 2}'
       responses:
@@ -540,7 +540,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "new_title"}'
       responses:
@@ -585,7 +585,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -631,7 +631,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/check' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/check' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -677,7 +677,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/uncheck' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/uncheck' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -740,7 +740,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks?team_id=ni8duypfe7bamprxqeffd563gy&sort=title&direction=asc' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/playbooks?team_id=ni8duypfe7bamprxqeffd563gy&sort=title&direction=asc' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -771,7 +771,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/playbooks?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_incident": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
       responses:
@@ -813,7 +813,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks/qp96egozepn58mg93wein1e8pe' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/playbooks/qp96egozepn58mg93wein1e8pe' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -852,7 +852,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks/qp96egozepn58mg93wein1e8pe' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/playbooks/qp96egozepn58mg93wein1e8pe' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_incident": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
       responses:
@@ -886,7 +886,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks/qp96egozepn58mg93wein1e8pe' \
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/playbooks/qp96egozepn58mg93wein1e8pe' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
