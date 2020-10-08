@@ -229,7 +229,7 @@ describe('slash command > stage', () => {
                     });
                 });
 
-                it('not in the first stage', () => {
+                describe('not in the first stage', () => {
                     beforeEach(() => {
                         // # Check all checkboxes in the stage
                         cy.get('.checklist-inner-container').within(() => {
