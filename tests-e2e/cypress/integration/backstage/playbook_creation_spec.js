@@ -33,21 +33,21 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = `com.mattermost.plugin-incident-response/playbooks/new`;
+        const url = 'com.mattermost.plugin-incident-response/playbooks/new';
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
         cy.openBackstage();
 
         // # Click 'New Playbook' button
-        cy.findByText('New Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
     it('opens playbook creation page with "Blank Playbook" template option', () => {
-        const url = `com.mattermost.plugin-incident-response/playbooks/new`;
+        const url = 'com.mattermost.plugin-incident-response/playbooks/new';
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
@@ -61,9 +61,9 @@ describe('playbook creation button', () => {
     });
 
     it('opens Incident Response Playbook page from its template option', () => {
-        const url = `playbooks/new?template_title=Incident%20Response%20Playbook`;
+        const url = 'playbooks/new?template_title=Incident%20Response%20Playbook';
         const playbookName = 'Incident Response Playbook';
-        
+
         // # Open backstage
         cy.openBackstage();
 
