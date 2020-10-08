@@ -768,8 +768,8 @@ describe('rhs incident list', () => {
         });
 
         it('incident should be removed from list when the user closes incident and presses back button', () => {
-            // # Select a channel without an incident.
-            cy.get('#sidebarItem_town-square').click();
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
