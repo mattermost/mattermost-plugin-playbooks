@@ -22,29 +22,6 @@ import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/br
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
-import RightDots from '../assets/right_dots';
-import LeftDots from '../assets/left_dots';
-
-const RightFade = styled.div`
-    position: absolute;
-    top: 85px;
-    right: 0;
-    height: 100%;
-    width: 188px;
-    z-index: 0;
-    background: linear-gradient(270deg, var(--center-channel-bg),transparent 60%);
-    pointer-events: none;
-`;
-
-const LeftFade = styled.div`
-    position: absolute;
-    width: 176px;
-    top: 85px;
-    left: 0;
-    height: 100%;
-    background: linear-gradient(90deg, var(--center-channel-bg) 0%, rgba(255, 255, 255, 0) 94.89%);
-    pointer-events: none;
-`;
 
 const BackstageContainer = styled.div`
     overflow: hidden;
@@ -79,7 +56,7 @@ export const BackstageNavbar = styled.div`
     display: flex;
     align-items: center;
     height: 80px;
-    padding: 20px 32px;
+    padding: 28px 31px;
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
     font-family: 'compass-icons';
@@ -97,7 +74,7 @@ const BackstageTitlebarItem = styled(NavLink)`
         color: var(--center-channel-color);
         fill: var(--center-channel-color);
         padding: 8px;
-        margin-left: 28px;
+        margin-right: 39px;
         display: flex;
         align-items: center;
 
@@ -212,10 +189,6 @@ const Backstage: FC = () => {
                     </Route>
                 </Switch>
             </BackstageBody>
-            <RightDots/>
-            <RightFade/>
-            <LeftDots/>
-            <LeftFade/>
         </BackstageContainer>
     );
 };

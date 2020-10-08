@@ -11,6 +11,7 @@ const Icon = styled.svg`
     max-height: 70%;
     height: auto;
     pointer-events: none;
+    z-index: -1;
 `;
 
 const LeftDots: FC = () => (
@@ -26,153 +27,153 @@ const LeftDots: FC = () => (
                 rx='3.27146'
                 ry='3.27145'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 15.9141 213.046)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 39.0296 236.196)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 15.9141 166.746)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27145'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 39.0296 189.896)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 62.1452 213.046)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <circle
                 r='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 15.9141 120.447)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 39.0296 143.596)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27145'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 62.1452 166.746)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 85.2609 189.896)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 15.9141 74.1467)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 39.0296 97.2966)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <circle
                 r='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 62.1452 120.447)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27145'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 85.2609 143.596)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 108.376 166.746)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27145'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 15.9141 27.8472)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27145'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 39.0296 50.9971)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27145'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 62.1452 74.1467)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27145'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 85.2609 97.2966)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <circle
                 r='3.27145'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 108.376 120.447)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27145'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 131.492 143.596)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 39.0296 4.69738)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 62.1452 27.8472)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 85.2609 50.9971)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 108.376 74.1467)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <ellipse
                 rx='3.27146'
                 ry='3.27145'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 131.492 97.2966)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <circle
                 r='3.27146'
                 transform='matrix(0.706583 -0.70763 0.706583 0.70763 154.607 120.447)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
         </g>
     </Icon>
