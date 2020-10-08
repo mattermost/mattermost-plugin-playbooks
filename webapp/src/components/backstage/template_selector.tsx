@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {Playbook, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
-import SirenIcon from 'src/components/assets/icons/siren_icon';
+import AlertIcon from 'src/components/assets/icons/alert_icon';
 
 export interface PresetTemplate {
     title: string;
@@ -22,7 +22,7 @@ export const PresetTemplates: PresetTemplate[] = [
     },
     {
         title: 'Incident Response Playbook',
-        icon: <SirenIcon/>,
+        icon: <AlertIcon/>,
         template: {
             ...emptyPlaybook(),
             title: 'Incident Response Playbook',
@@ -75,6 +75,12 @@ const RootContainer = styled.div`
     background: rgba(var(--center-channel-color-rgb), 0.03);
 `;
 
+// BackgroundColorContainer hides the left dots from showing over the template selector.
+const BackgroundColorContainer = styled.div`
+    position: relative;
+    background: var(--center-channel-bg);
+`;
+
 const InnerContainer = styled.div`
     max-width: 1120px;
     width: 100%;
@@ -114,26 +120,28 @@ interface Props {
 
 const TemplateSelector: FC<Props> = ({templates = PresetTemplates, onSelect}: Props) => {
     return (
-        <RootContainer>
-            <InnerContainer>
-                <Title>{'Start a new playbook'}</Title>
-                <TemplateItemDiv>
-                    {
-                        templates.map((template: PresetTemplate) => (
-                            <TemplateItem
-                                key={template.title}
-                                title={template.title}
-                                onClick={() => {
-                                    onSelect(template);
-                                }}
-                            >
-                                {template.icon}
-                            </TemplateItem>
-                        ))
-                    }
-                </TemplateItemDiv>
-            </InnerContainer>
-        </RootContainer>
+        <BackgroundColorContainer>
+            <RootContainer>
+                <InnerContainer>
+                    <Title>{'Start a new playbook'}</Title>
+                    <TemplateItemDiv>
+                        {
+                            templates.map((template: PresetTemplate) => (
+                                <TemplateItem
+                                    key={template.title}
+                                    title={template.title}
+                                    onClick={() => {
+                                        onSelect(template);
+                                    }}
+                                >
+                                    {template.icon}
+                                </TemplateItem>
+                            ))
+                        }
+                    </TemplateItemDiv>
+                </InnerContainer>
+            </RootContainer>
+        </BackgroundColorContainer>
     );
 };
 
@@ -162,6 +170,7 @@ const TemplateTitle = styled.div`
     line-height: 20px;
     color: var(--center-channel-color);
     padding: 20px 0 0 0;
+    text-align: center;
 `;
 
 const TemplateItem = (props: TemplateItemProps) => {

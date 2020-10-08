@@ -28,6 +28,11 @@ import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
+import RightDots from 'src/components/assets/right_dots';
+import RightFade from 'src/components/assets/right_fade';
+import LeftDots from 'src/components/assets/left_dots';
+import LeftFade from 'src/components/assets/left_fade';
+
 const DeleteBannerTimeout = 5000;
 
 const PlaybookList: FC = () => {
@@ -194,6 +199,10 @@ const PlaybookList: FC = () => {
             {
                 (playbooks && playbooks.length !== 0) &&
                 <>
+                    <RightDots/>
+                    <RightFade/>
+                    <LeftDots/>
+                    <LeftFade/>
                     <div className='playbook-list container-medium'>
                         <div className='Backstage__header'>
                             <div
@@ -211,7 +220,7 @@ const PlaybookList: FC = () => {
                                     onClick={() => newPlaybook()}
                                 >
                                     <i className='icon-plus mr-2'/>
-                                    {'New Playbook'}
+                                    {'Create a Playbook'}
                                 </button>
                             </div>
                         </div>
@@ -325,8 +334,8 @@ const Button = styled.button`
 const NoContentPage = (props: {onNewPlaybook: () => void}) => {
     return (
         <Container>
-            <Title>{'What are Playbooks?'}</Title>
-            <Description>{'A playbook is an incident template. It is created ahead of time during planning and defines the stages and tasks an incident will have, along with who can start an incident with the playbook.'}</Description>
+            <Title>{'What is a Playbook?'}</Title>
+            <Description>{'A playbook is a workflow template which must be created before an incident occurs. It defines the stages and tasks associated with an incident, as well as who can use playbook to start an incident.'}</Description>
             <Button
                 className='mt-6'
                 onClick={() => props.onNewPlaybook()}

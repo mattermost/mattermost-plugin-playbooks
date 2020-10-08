@@ -228,7 +228,7 @@ describe('slash command', () => {
             cy.get('#searchResultsCloseButton').click();
 
             // * Verify that the RHS is indeed closed.
-            cy.get('#rhsContainer').should('not.be.visible');
+            cy.get('#rhsContainer').should('not.exist');
 
             // # Run a slash command to show the incident's info.
             cy.executeSlashCommand('/incident info');

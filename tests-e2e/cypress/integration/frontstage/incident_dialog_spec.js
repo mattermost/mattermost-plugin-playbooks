@@ -99,7 +99,7 @@ describe('incident creation dialog', () => {
         cy.get('#interactiveDialogCancel').click();
 
         // * Verify the modal is no longer displayed
-        cy.get('#interactiveDialogModal').should('not.be.visible');
+        cy.get('#interactiveDialogModal').should('not.exist');
 
         // * Verify the incident did not get created
         cy.apiGetAllIncidents(teamId).then((response) => {

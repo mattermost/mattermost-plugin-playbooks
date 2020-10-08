@@ -28,6 +28,10 @@ import {
 import Profile from 'src/components/profile/profile';
 import StatusBadge from '../status_badge';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
+import RightDots from 'src/components/assets/right_dots';
+import RightFade from 'src/components/assets/right_fade';
+import LeftDots from 'src/components/assets/left_dots';
+import LeftFade from 'src/components/assets/left_fade';
 
 import './incident_list.scss';
 import BackstageListHeader from '../../backstage_list_header';
@@ -136,7 +140,7 @@ const BackstageIncidentList: FC = () => {
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
-    const listComponent = (
+    const listComponent = (<>
         <div className='IncidentList container-medium'>
             <div className='Backstage__header'>
                 <div
@@ -274,7 +278,11 @@ const BackstageIncidentList: FC = () => {
                 />
             </div>
         </div>
-    );
+        <RightDots/>
+        <RightFade/>
+        <LeftDots/>
+        <LeftFade/>
+    </>);
 
     return (
         <Switch>
