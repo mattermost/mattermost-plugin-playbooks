@@ -502,20 +502,32 @@ func durationString(start, end time.Time) string {
 	}
 
 	if duration.Minutes() < 60 {
-		return fmt.Sprintf("%2.fm", math.Floor(duration.Minutes()))
+		return fmt.Sprintf("%.fm", math.Floor(duration.Minutes()))
 	}
 
 	if duration.Hours() < 24 {
 		hours := math.Floor(duration.Hours())
 		minutes := math.Mod(math.Floor(duration.Minutes()), 60)
-		return fmt.Sprintf("%2.fh %2.fm", hours, minutes)
+		if minutes == 0 {
+			return fmt.Sprintf("%.fh", hours)
+		}
+		return fmt.Sprintf("%.fh %.fm", hours, minutes)
 	}
 
 	days := math.Floor(duration.Hours() / 24)
 	duration %= 24 * time.Hour
 	hours := math.Floor(duration.Hours())
 	minutes := math.Mod(math.Floor(duration.Minutes()), 60)
-	return fmt.Sprintf("%2.fd %2.fh %2.fm", days, hours, minutes)
+	if minutes == 0 {
+		if hours == 0 {
+			return fmt.Sprintf("%.fd", days)
+		}
+		return fmt.Sprintf("%.fd %.fh", days, hours)
+	}
+	if hours == 0 {
+		return fmt.Sprintf("%.fd %.fm", days, minutes)
+	}
+	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
 func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
