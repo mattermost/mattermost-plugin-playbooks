@@ -22,7 +22,8 @@ Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescr
         // # Submit
         cy.get('#interactiveDialogSubmit').click();
     });
-    cy.get('#interactiveDialogModal').should('not.be.visible');
+
+    cy.get('#interactiveDialogModal').should('not.exist');
 });
 
 // Runs the given slash command

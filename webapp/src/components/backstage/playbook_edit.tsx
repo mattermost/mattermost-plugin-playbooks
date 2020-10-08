@@ -347,8 +347,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     return (
         <OuterContainer>
-            <BackstageNavbar>
+            <BackstageNavbar
+                data-testid='backstage-nav-bar'
+            >
                 <BackstageNavbarIcon
+                    data-testid='icon-arrow-left'
                     className='icon-arrow-left back-icon'
                     onClick={confirmOrClose}
                 />
@@ -397,7 +400,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         />
                     </EditContent>
                 </EditView>
-                <Sidebar>
+                <Sidebar
+                    data-testid='playbook-sidebar'
+                >
                     <SidebarHeader>
                         {'Settings'}
                     </SidebarHeader>
