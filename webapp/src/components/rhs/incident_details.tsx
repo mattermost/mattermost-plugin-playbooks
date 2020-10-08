@@ -197,9 +197,9 @@ const StyledButton = styled(BasicButton)<BasicButtonProps>`
 `;
 
 const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) => {
-    let text = 'Next Stage';
-    let action = props.nextStage;
-    let primary = false;
+    let text;
+    let action;
+    let primary;
 
     if (!props.isActive) {
         text = 'Restart Incident';
@@ -209,9 +209,15 @@ const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) 
         text = 'End Incident';
         action = props.endIncident;
         primary = true;
-    } else if (props.activeStage === props.stages.length - 1) {
-        text = 'End Incident';
-        action = props.endIncident;
+    } else {
+        if (props.activeStage === props.stages.length - 1) {
+            text = 'End Incident';
+            action = props.endIncident;
+        } else {
+            text = 'Next Stage';
+            action = props.nextStage;
+        }
+
         primary = props.stages[props.activeStage].items.every((item: ChecklistItem) => (
             item.state === ChecklistItemState.Closed
         ));
