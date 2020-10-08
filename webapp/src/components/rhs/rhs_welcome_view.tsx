@@ -55,10 +55,10 @@ const RHSWelcomeView = () => {
                     <NoContentPlaybookSvgRhs/>
                     <NoIncidentsItem>
                         <h1>
-                            {'Start taking action now with Incident Response.'}
+                            {'Take action now with Incident Response.'}
                         </h1>
-                        <p className='mt-3 mb-8 light'>
-                            {'You do not have any incidents created yet. Create an incident now.'}
+                        <p className='mt-3 mb-4 light'>
+                            {'You don’t have any active incidents at the moment. Start an incident immediately with an existing playbook.'}
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton
@@ -70,6 +70,9 @@ const RHSWelcomeView = () => {
                                 </span>
                             </PrimaryButton>
                         </div>
+                        <p className='mt-3 mb-4 light'>
+                            {'You can also create a playbook ahead of time so it’s available when you need it.'}
+                        </p>
                         <TertiaryButton
                             onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
                         >
@@ -90,7 +93,7 @@ const RHSWelcomeView = () => {
                         {'Simplify your processes with Incident Response'}
                     </h1>
                     <p className='mt-3 mb-8 light'>
-                        {'To get started, create your incident playbook to define your incident response workflow. We’ve included an incident response playbook template as a starting point.'}
+                        {'Create a playbook to define your incident response workflow. Select a template or create your playbook from scratch.'}
                     </p>
                     <div className='header-button-div mb-4'>
                         <PrimaryButton

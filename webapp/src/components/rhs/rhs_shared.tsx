@@ -9,6 +9,7 @@ export const RHSContainer = styled.div`
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow: auto;
 `;
 
 export const RHSContent = styled.div`
