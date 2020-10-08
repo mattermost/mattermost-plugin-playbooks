@@ -197,6 +197,10 @@ type Service interface {
 	// stage of incidentID to stageIdx.
 	ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error)
 
+	// OpenNextStageDialog opens an interactive dialog so the user can confirm
+	// going to the next stage
+	OpenNextStageDialog(incidentID string, nextStage int, triggerID string) error
+
 	// NukeDB removes all incident related data.
 	NukeDB() error
 }

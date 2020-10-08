@@ -40,12 +40,36 @@ describe('backstage incident list', () => {
     beforeEach(() => {
         // # Login as user-1
         cy.apiLogin('user-1');
+    });
 
-        // # Navigate to the application
-        cy.visit('/');
+    it('shows welcome page when no incidents', () => {
+        // # Navigate to a team with no incidents.
+        cy.visit('/reiciendis-0');
+
+        // # Open backstage
+        cy.openBackstage();
+
+        // # Switch to incidents backstage
+        cy.findByTestId('incidentsLHSButton').click();
+
+        // * Assert welcome page title text.
+        cy.get('#root').findByText('What are Incidents?').should('be.visible');
     });
 
     it('has "Incidents" and team name in heading', () => {
+        // # Start the incident
+        const now = Date.now();
+        const incidentName = 'Incident (' + now + ')';
+        cy.apiStartIncident({
+            teamId,
+            playbookId,
+            incidentName,
+            commanderUserId: userId,
+        });
+
+        // # Navigate to the application
+        cy.visit('/ad-1');
+
         // # Open backstage
         cy.openBackstage();
 
@@ -67,6 +91,9 @@ describe('backstage incident list', () => {
             incidentName,
             commanderUserId: userId,
         });
+
+        // # Navigate to the application
+        cy.visit('/ad-1');
 
         // # Open backstage
         cy.openBackstage();
@@ -106,6 +133,9 @@ describe('backstage incident list', () => {
         beforeEach(() => {
             // # Login as user-1
             cy.apiLogin('user-1');
+
+            // # Navigate to the application
+            cy.visit('/ad-1');
 
             // # Open backstage
             cy.openBackstage();

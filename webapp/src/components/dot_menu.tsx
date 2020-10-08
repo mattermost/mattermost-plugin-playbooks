@@ -4,7 +4,6 @@
 import React, {FC, useState, useRef} from 'react';
 import styled from 'styled-components';
 
-import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
 const DropdownMenuWrapper = styled.div`
@@ -12,16 +11,20 @@ const DropdownMenuWrapper = styled.div`
 `;
 
 interface DropdownMenuProps {
-    openLeft?: boolean;
+    top?: boolean;
+    left?: boolean;
 }
 
+// TODO: fix
 const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
     position: absolute;
-    top: 100%;
-    left: ${(props) => (props.openLeft ? '-140px' : '0')};
+    ${(props: DropdownMenuProps) => (props.top ? 'bottom: 35px;' : 'top: 100%;')}
+    min-width: 226px;
+    // top: 100%;
+    // left: ${(props) => (props.openLeft ? '-140px' : '0')};
     min-width: 160px;
     text-align: left;
     list-style: none;
@@ -43,15 +46,11 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     z-index: 1;
 `;
 
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px 10px 0;
-`;
-
 interface DotMenuProps {
     children: JSX.Element[] | JSX.Element;
-    vertical?: boolean;
-    openLeft?: boolean;
+    icon: JSX.Element;
+    top?: boolean;
+    left?: boolean;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
@@ -77,13 +76,14 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                 toggleOpen();
             }}
         >
-            <IconWrapper>
-                <DotMenuIcon className={props.vertical ? 'icon-dots-vertical' : 'icon-dots-horizontal'}/>
-            </IconWrapper>
+            {props.icon}
             <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu openLeft={props.openLeft}>
+                    <DropdownMenu
+                        top={props.top}
+                        left={props.left}
+                    >
                         {props.children}
                     </DropdownMenu>
                 }

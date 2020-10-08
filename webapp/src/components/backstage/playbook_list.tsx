@@ -17,6 +17,7 @@ import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 
+import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import TemplateSelector, {PresetTemplate} from 'src/components/backstage/template_selector';
@@ -352,9 +353,20 @@ interface PlaybookActionMenuProps {
     onDelete: () => void;
 }
 
+const IconWrapper = styled.div`
+    display: inline-flex;
+    padding: 10px 5px 10px 0;
+`;
+
 const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
     return (
-        <DotMenu>
+        <DotMenu
+            icon={
+                <IconWrapper>
+                    <DotMenuIcon/>
+                </IconWrapper>
+            }
+        >
             <DropdownMenuItem
                 text='Edit'
                 onClick={props.onEdit}

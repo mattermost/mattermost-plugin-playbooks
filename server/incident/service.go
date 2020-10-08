@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -596,6 +597,33 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 	}
 
 	return incidentToModify, nil
+}
+
+// OpenNextStageDialog opens an interactive dialog so the user can confirm
+// going to the next stage
+func (s *ServiceImpl) OpenNextStageDialog(incidentID string, nextStage int, triggerID string) error {
+	dialog := model.Dialog{
+		Title:            "Not all tasks in this stage are complete.",
+		IntroductionText: "Are you sure you want to advance to the next stage?",
+		SubmitLabel:      "Confirm",
+		NotifyOnCancel:   false,
+		State:            strconv.Itoa(nextStage),
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/%s/next-stage-dialog",
+			s.configService.GetManifest().Id,
+			incidentID,
+		),
+		Dialog:    dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrapf(err, "failed to open new incident dialog")
+	}
+
+	return nil
 }
 
 // RenameChecklistItem changes the title of a specified checklist item
