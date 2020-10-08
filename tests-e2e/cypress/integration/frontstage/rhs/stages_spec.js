@@ -12,8 +12,6 @@ describe('incident rhs > stages', () => {
     let userId;
     let playbookId;
 
-    const biStagePlaybookName = playbookName + ' - two stages';
-    let biStagePlaybookId;
     const triStagePlaybookName = playbookName + ' - three stages';
     let triStagePlaybookId;
 
@@ -33,30 +31,6 @@ describe('incident rhs > stages', () => {
                     userId: user.id,
                 }).then((playbook) => {
                     playbookId = playbook.id;
-                });
-
-                cy.apiCreatePlaybook({
-                    teamId: team.id,
-                    title: biStagePlaybookName,
-                    checklists: [
-                        {
-                            title: 'Stage 1',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                        {
-                            title: 'Stage 2',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                    ],
-                    memberIDs: [userId],
-                }).then((playbook) => {
-                    biStagePlaybookId = playbook.id;
                 });
 
                 cy.apiCreatePlaybook({
