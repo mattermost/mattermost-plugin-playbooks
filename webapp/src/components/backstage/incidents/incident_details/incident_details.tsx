@@ -19,6 +19,10 @@ import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {renderDuration} from 'src/components/duration';
+import RightDots from 'src/components/assets/right_dots';
+import RightFade from 'src/components/assets/right_fade';
+import LeftDots from 'src/components/assets/left_dots';
+import LeftFade from 'src/components/assets/left_fade';
 
 import StatusBadge from '../status_badge';
 
@@ -356,6 +360,10 @@ const BackstageIncidentDetails: FC = () => {
                     </div>
                 </BackstageIncidentDetailsContainer>
             </Container>
+            <RightDots/>
+            <RightFade/>
+            <LeftDots/>
+            <LeftFade/>
         </OuterContainer>
     );
 };

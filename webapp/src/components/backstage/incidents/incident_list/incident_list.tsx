@@ -28,12 +28,30 @@ import {
 import Profile from 'src/components/profile/profile';
 import StatusBadge from '../status_badge';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
+import RightDots from 'src/components/assets/right_dots';
+import RightFade from 'src/components/assets/right_fade';
+import LeftDots from 'src/components/assets/left_dots';
+import LeftFade from 'src/components/assets/left_fade';
 
 import './incident_list.scss';
 import BackstageListHeader from '../../backstage_list_header';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 const debounceDelay = 300; // in milliseconds
+
+const ControlComponent = (ownProps: ControlProps<any>) => (
+    <div>
+        <components.Control {...ownProps}/>
+        {ownProps.selectProps.showCustomReset && (
+            <a
+                className='IncidentFilter-reset'
+                onClick={ownProps.selectProps.onCustomReset}
+            >
+                {'Reset to all commanders'}
+            </a>
+        )}
+    </div>
+);
 
 const BackstageIncidentList: FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -110,26 +128,6 @@ const BackstageIncidentList: FC = () => {
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
-    const ControlComponent = (ownProps: ControlProps<any>) => {
-        const resetLink = fetchParams.commander_user_id && (
-            <a
-                className='IncidentFilter-reset'
-                onClick={() => {
-                    setCommanderId();
-                    setProfileSelectorToggle(!profileSelectorToggle);
-                }}
-            >
-                {'Reset to all commanders'}
-            </a>
-        );
-
-        return (
-            <div>
-                <components.Control {...ownProps}/>
-                {resetLink}
-            </div>
-        );
-    };
 
     const isFiltering = (
         fetchParams.search_term ||
@@ -137,7 +135,12 @@ const BackstageIncidentList: FC = () => {
         (fetchParams.status && fetchParams.status !== 'all')
     );
 
-    const listComponent = (
+    const resetCommander = () => {
+        setCommanderId();
+        setProfileSelectorToggle(!profileSelectorToggle);
+    };
+
+    const listComponent = (<>
         <div className='IncidentList container-medium'>
             <div className='Backstage__header'>
                 <div
@@ -165,6 +168,10 @@ const BackstageIncidentList: FC = () => {
                         enableEdit={true}
                         isClearable={true}
                         customControl={ControlComponent}
+                        customControlProps={{
+                            showCustomReset: Boolean(fetchParams.commander_user_id),
+                            onCustomReset: resetCommander,
+                        }}
                         controlledOpenToggle={profileSelectorToggle}
                         getUsers={fetchCommanders}
                         onSelectedChange={setCommanderId}
@@ -271,7 +278,11 @@ const BackstageIncidentList: FC = () => {
                 />
             </div>
         </div>
-    );
+        <RightDots/>
+        <RightFade/>
+        <LeftDots/>
+        <LeftFade/>
+    </>);
 
     return (
         <Switch>

@@ -22,6 +22,7 @@ Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescr
         // # Submit
         cy.get('#interactiveDialogSubmit').click();
     });
+
     cy.get('#interactiveDialogModal').should('not.exist');
 });
 

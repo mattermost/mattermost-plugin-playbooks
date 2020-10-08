@@ -248,8 +248,11 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/end-dialog",
-			s.configService.GetManifest().Id),
+		URL: fmt.Sprintf(
+			"/plugins/%s/api/v1/incidents/%s/end",
+			s.configService.GetManifest().Id,
+			incidentID,
+		),
 		Dialog:    dialog,
 		TriggerId: triggerID,
 	}

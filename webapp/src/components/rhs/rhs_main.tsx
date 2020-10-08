@@ -14,6 +14,14 @@ import {RHSState} from 'src/types/rhs';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import RHSDetailsView from 'src/components/rhs/rhs_details_view';
 
+// TODO overflow auto is new?
+const RHSContainer = styled.div`
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: auto;
+`;
 const RightHandSidebar: FC<null> = () => {
     const dispatch = useDispatch();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
@@ -50,3 +58,59 @@ const RightHandSidebar: FC<null> = () => {
 };
 
 export default RightHandSidebar;
+
+// TODO: replace:
+
+<RHSContainer>
+    <NoIncidentsContainer>
+        <NoContentPlaybookSvgRhs/>
+        <NoIncidentsItem>
+            <h1>
+                {'Take action now with Incident Response.'}
+            </h1>
+            <p className='mt-3 mb-4 light'>
+                {'You don’t have any active incidents at the moment. Start an incident immediately with an existing playbook.'}
+            </p>
+            <div className='header-button-div mb-4'>
+                <PrimaryButton
+                    onClick={() => dispatch(startIncident())}
+                >
+                                    <span>
+                                        {'Start Incident'}
+                                    </span>
+                </PrimaryButton>
+            </div>
+            <p className='mt-3 mb-4 light'>
+                {'You can also create a playbook ahead of time so it’s available when you need it.'}
+            </p>
+            <TertiaryButton
+                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
+            >
+                {'Create Playbook'}
+            </TertiaryButton>
+        </NoIncidentsItem>
+    </NoIncidentsContainer>
+</RHSContainer>
+
+
+<RHSContainer>
+    <NoIncidentsContainer>
+        <NoContentPlaybookSvgRhs/>
+        <NoIncidentsItem>
+            <h1>
+                {'Simplify your processes with Incident Response'}
+            </h1>
+            <p className='mt-3 mb-8 light'>
+                {'Create a playbook to define your incident response workflow. Select a template or create your playbook from scratch.'}
+            </p>
+            <div className='header-button-div mb-4'>
+                <PrimaryButton
+                    onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
+                >
+                    {'Create Playbook'}
+                </PrimaryButton>
+            </div>
+        </NoIncidentsItem>
+    </NoIncidentsContainer>
+</RHSContainer>
+

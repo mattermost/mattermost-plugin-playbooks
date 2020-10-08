@@ -137,23 +137,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /incidents/end-dialog:
-    post:
-      summary: Internal - Ends an incident from dialog
-      operationId: incidentEndDialog
-      security:
-        - BearerAuth: []
-      tags:
-        - Internal-Incidents
-      responses:
-        200:
-          description: Null response
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
 
   /incidents/commanders:
     get:
