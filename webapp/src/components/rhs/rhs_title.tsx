@@ -10,7 +10,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import {RHSState} from 'src/types/rhs';
-import {setRHSState} from 'src/actions';
+import {setRHSViewingList} from 'src/actions';
 import {useCurrentIncident} from 'src/hooks';
 import {currentRHSState} from 'src/selectors';
 import StatusBadge from 'src/components/backstage/incidents/status_badge';
@@ -45,7 +45,7 @@ const RHSTitle: FC = () => {
         return (
             <RHSTitleContainer>
                 <Button
-                    onClick={() => dispatch(setRHSState(RHSState.ViewingList))}
+                    onClick={() => dispatch(setRHSViewingList())}
                     data-testid='back-button'
                 >
                     <LeftChevron theme={theme}/>

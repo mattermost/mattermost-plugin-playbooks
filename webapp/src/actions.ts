@@ -1,6 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {Dispatch, AnyAction} from 'redux';
+import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
 
@@ -13,28 +13,26 @@ import {Incident} from 'src/types/incident';
 import {RHSState} from 'src/types/rhs';
 
 import {
-    RECEIVED_TOGGLE_RHS_ACTION,
-    SET_RHS_OPEN,
-    SET_CLIENT_ID,
-    ReceivedToggleRHSAction,
-    SetRHSOpen,
-    SetTriggerId,
-    SetClientId,
     INCIDENT_CREATED,
-    IncidentCreated,
-    RECEIVED_TEAM_INCIDENTS,
-    ReceivedTeamIncidents,
-    SetRHSState,
-    SET_RHS_STATE,
-    RemovedFromIncidentChannel,
-    REMOVED_FROM_INCIDENT_CHANNEL,
-    IncidentUpdated,
     INCIDENT_UPDATED,
+    IncidentCreated,
+    IncidentUpdated,
+    RECEIVED_TEAM_INCIDENTS,
+    RECEIVED_TOGGLE_RHS_ACTION,
+    ReceivedTeamIncidents,
+    ReceivedToggleRHSAction,
+    REMOVED_FROM_INCIDENT_CHANNEL,
+    RemovedFromIncidentChannel,
+    SET_CLIENT_ID,
+    SET_RHS_OPEN,
+    SET_RHS_STATE,
+    SetClientId,
+    SetRHSOpen,
+    SetRHSState,
+    SetTriggerId,
 } from './types/actions';
 
-import {
-    clientExecuteCommand,
-} from './client';
+import {clientExecuteCommand} from './client';
 
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -70,10 +68,17 @@ export function setRHSOpen(open: boolean): SetRHSOpen {
     };
 }
 
-export function setRHSState(nextState: RHSState): SetRHSState {
+export function setRHSViewingIncident(): SetRHSState {
     return {
         type: SET_RHS_STATE,
-        nextState,
+        nextState: RHSState.ViewingIncident,
+    };
+}
+
+export function setRHSViewingList(): SetRHSState {
+    return {
+        type: SET_RHS_STATE,
+        nextState: RHSState.ViewingList,
     };
 }
 

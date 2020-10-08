@@ -7,7 +7,7 @@ const incidentStartCommand = '/incident start';
 
 // function startIncident(incidentName) {
 Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescription) => {
-    cy.get('#interactiveDialogModal').should('be.visible').within(() => {
+    cy.get('#interactiveDialogModal').should('exist').within(() => {
         // # Select playbook
         cy.selectPlaybookFromDropdown(playbookName);
 
@@ -22,7 +22,7 @@ Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescr
         // # Submit
         cy.get('#interactiveDialogSubmit').click();
     });
-    cy.get('#interactiveDialogModal').should('not.be.visible');
+    cy.get('#interactiveDialogModal').should('not.exist');
 });
 
 // Runs the given slash command
@@ -57,7 +57,7 @@ Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentName) => {
         cy.get('#incidentIcon').click();
     });
 
-    cy.get('#rhsContainer').should('be.visible').within(() => {
+    cy.get('#rhsContainer').should('exist').within(() => {
         cy.findByText('Start Incident').click();
     });
 
@@ -78,14 +78,14 @@ Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) =
 });
 
 Cypress.Commands.add('openBackstage', () => {
-    cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('be.visible').within(() => {
+    cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('exist').within(() => {
         // # Click hamburger main menu
         cy.get('#sidebarHeaderDropdownButton').click();
 
         // * Dropdown menu should be visible
-        cy.get('.dropdown-menu').should('be.visible').within(() => {
+        cy.get('.dropdown-menu').should('exist').within(() => {
             // 'Playbooks & Incidents' button should be visible, then click
-            cy.findByText('Playbooks & Incidents').should('be.visible').click();
+            cy.findByText('Playbooks & Incidents').should('exist').click();
         });
     });
 });
@@ -94,7 +94,7 @@ Cypress.Commands.add('openBackstage', () => {
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.visit(`/${teamName}/com.mattermost.plugin-incident-response/playbooks/new`);
 
-    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.LARGE}).should('be.visible');
+    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.LARGE}).should('exist');
 
     // # Type playbook name
     cy.get('#playbook-name .editable-trigger').click();
@@ -109,7 +109,7 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 
 // Select the playbook from the dropdown menu
 Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
-    cy.findByTestId('autoCompleteSelector').should('be.visible').within(() => {
+    cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
         cy.get('input').type(playbookName);
         cy.get('#suggestionList').contains(playbookName).click({force: true});
     });

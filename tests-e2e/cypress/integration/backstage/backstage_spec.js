@@ -38,7 +38,7 @@ describe('backstage', () => {
         cy.openBackstage();
 
         // * Verify that when backstage loads, the heading is visible and contains "Incident"
-        cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
+        cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
     });
 
     it('switches to playbooks list view via header button', () => {
@@ -49,7 +49,7 @@ describe('backstage', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // * Verify that playbooks are shown
-        cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
+        cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
     });
 
     it('switches to incidents list view via header button', () => {
@@ -63,6 +63,6 @@ describe('backstage', () => {
         cy.findByTestId('incidentsLHSButton').click();
 
         // * Verify that incidents are shown
-        cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
+        cy.findByTestId('titleIncident').should('exist').contains('Incidents');
     });
 });

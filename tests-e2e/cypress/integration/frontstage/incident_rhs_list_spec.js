@@ -71,16 +71,16 @@ describe('rhs incident list', () => {
             cy.wait(1000).visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // * Verify we see the welcome screen when there are no incidents
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('welcome-view-has-playbooks').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('welcome-view-has-playbooks').should('exist');
             });
         });
 
@@ -89,7 +89,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/off-topic');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start an incident
             const incidentName = 'Private ' + Date.now();
@@ -106,26 +106,26 @@ describe('rhs incident list', () => {
                 cy.get('#sidebarItem_town-square').click();
 
                 // # Ensure the channel is loaded before continuing (allows redux to sync).
-                cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+                cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
                 // # Click the incident icon
                 cy.get('#channel-header').within(() => {
-                    cy.get('#incidentIcon').should('be.visible').click();
+                    cy.get('#incidentIcon').should('exist').click();
                 });
 
                 // * Verify the rhs list is open the incident is visible.
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('be.visible');
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 cy.apiEndIncident(incidentId);
             });
 
             // * Verify we see the welcome screen when there are no incidents
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('welcome-view-has-playbooks').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('welcome-view-has-playbooks').should('exist');
             });
         });
     });
@@ -138,11 +138,11 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # start 2 incidents
@@ -156,8 +156,8 @@ describe('rhs incident list', () => {
             cy.verifyIncidentCreated(teamId, incidentName);
 
             // * Verify the rhs list is still open and two go-to-channel buttons are visible.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
                 cy.findAllByTestId('go-to-channel').should('have.length', 2);
             });
@@ -168,7 +168,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -181,12 +181,12 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -195,14 +195,14 @@ describe('rhs incident list', () => {
 
             // # bring up the incident list
             cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('back-button').should('be.visible').click();
+                cy.findByTestId('back-button').should('exist').click();
             });
 
             // * Verify the rhs list is open incident is visible.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
         });
 
@@ -211,7 +211,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -224,32 +224,32 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Close the RHS
             cy.get('#rhsContainer').within(() => {
-                cy.get('#searchResultsCloseButton').should('be.visible').click();
+                cy.get('#searchResultsCloseButton').should('exist').click();
             });
 
             // # Go to town-square
             cy.get('#sidebarItem_town-square').click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the rhs list is closed
-            cy.get('#rhsContainer').should('not.be.visible');
+            cy.get('#rhsContainer').should('not.exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // * Verify the rhs list is open and we can see the new incident
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
         });
 
@@ -258,7 +258,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -271,24 +271,24 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the back button
             cy.get('#rhsContainer').within(() => {
-                cy.findByTestId('back-button').should('be.visible').click();
+                cy.findByTestId('back-button').should('exist').click();
             });
 
             // # Go to town-square
             cy.get('#sidebarItem_town-square').click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the rhs list is open and we can see the new incident
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
         });
 
@@ -303,21 +303,21 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/autem-2');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the rhs list is closed
-            cy.get('#rhsContainer').should('not.be.visible');
+            cy.get('#rhsContainer').should('not.exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // * Verify the rhs list is open and we can see the new incident
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
         });
     });
@@ -328,7 +328,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -338,20 +338,20 @@ describe('rhs incident list', () => {
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // * click on the first go-to-channel button.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
                 cy.findAllByTestId('go-to-channel').eq(0).click();
             });
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -364,7 +364,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start 2 new incidents
             let now = Date.now();
@@ -388,12 +388,12 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${secondIncidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(secondIncidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(secondIncidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -402,19 +402,19 @@ describe('rhs incident list', () => {
 
             // # Close the RHS
             cy.get('#rhsContainer').within(() => {
-                cy.get('#searchResultsCloseButton').should('be.visible').click();
+                cy.get('#searchResultsCloseButton').should('exist').click();
             });
 
             // # Open the first incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -427,7 +427,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -440,39 +440,39 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
             });
 
             // # Close the RHS
             cy.get('#rhsContainer').within(() => {
-                cy.get('#searchResultsCloseButton').should('be.visible').click();
+                cy.get('#searchResultsCloseButton').should('exist').click();
             });
 
             // # Open town-square from the LHS.
             cy.get('#sidebarItem_town-square').click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the rhs list is closed
-            cy.get('#rhsContainer').should('not.be.visible');
+            cy.get('#rhsContainer').should('not.exist');
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -485,7 +485,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -498,12 +498,12 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
             });
 
@@ -511,25 +511,25 @@ describe('rhs incident list', () => {
             cy.get('#sidebarItem_town-square').click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the rhs list is open and we can see the new incident
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -544,11 +544,11 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # Login as user-2
@@ -569,10 +569,10 @@ describe('rhs incident list', () => {
             });
 
             // * Verify the rhs list is open and we can see the new incident
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
         });
 
@@ -581,7 +581,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -594,26 +594,26 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
                 cy.get('.sidebar--right__title').contains('Ongoing');
 
                 // # Click the back button
-                cy.findByTestId('back-button').should('be.visible').click();
+                cy.findByTestId('back-button').should('exist').click();
             });
 
             // * Verify the rhs list is open and we can see the new incident
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
         });
 
@@ -622,11 +622,11 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # Login as user-2
@@ -645,20 +645,20 @@ describe('rhs incident list', () => {
                 cy.apiAddUserToChannel(channelId, userId);
 
                 // * Verify the rhs list is open and we can see the new incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('be.visible');
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // # remove user-1 from the incident
                 cy.removeUserFromChannel(channelId, userId);
 
                 // * Verify the incident is not listed
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('not.be.visible');
+                    cy.findByText(incidentName).should('not.exist');
                 });
             });
         });
@@ -668,7 +668,7 @@ describe('rhs incident list', () => {
             cy.get('#sidebarItem_town-square').click();
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # start new incident
             const now = Date.now();
@@ -681,9 +681,9 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // * Verify the title shows "Ongoing"
@@ -691,28 +691,28 @@ describe('rhs incident list', () => {
             });
 
             // # End incident and go to incident list
-            cy.get('#rhsContainer').should('be.visible').within(() => {
+            cy.get('#rhsContainer').should('exist').within(() => {
                 // # End the incident
                 cy.findByText('End Incident').click();
             });
 
             // # Confirm ending the incident
-            cy.get('.modal-dialog').should('be.visible').find('#interactiveDialogSubmit').click();
+            cy.get('.modal-dialog').should('exist').find('#interactiveDialogSubmit').click();
 
-            cy.get('#rhsContainer').should('be.visible').within(() => {
+            cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the title shows "Ended"
                 cy.get('.sidebar--right__title').contains('Ended');
 
                 // # Click the back button
-                cy.findByTestId('back-button').should('be.visible').click();
+                cy.findByTestId('back-button').should('exist').click();
             });
 
-            cy.get('#rhsContainer').should('be.visible').within(() => {
+            cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the rhs list is open
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
                 // * Verify we cannot see the ended incident
-                cy.findByText(incidentName).should('not.be.visible');
+                cy.findByText(incidentName).should('not.exist');
             });
         });
 
@@ -721,11 +721,11 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # Login as user-2
@@ -751,20 +751,20 @@ describe('rhs incident list', () => {
                 cy.apiAddUserToChannel(channel.id, userId);
 
                 // * Verify the rhs list is open and we can see the new incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('be.visible');
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // # User-2 closes the incident
                 cy.apiEndIncident(incidentId);
 
                 // * Verify the incident is not listed
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('not.be.visible');
+                    cy.findByText(incidentName).should('not.exist');
                 });
             });
         });
@@ -774,11 +774,11 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # start new incident
@@ -795,30 +795,30 @@ describe('rhs incident list', () => {
                 cy.verifyIncidentCreated(teamId, incidentName);
 
                 // * Verify the rhs list is open and we can see the new incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('be.visible');
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // # User-1 closes the incident
                 cy.apiEndIncident(incidentId);
 
                 // * Verify we cannot see the incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('not.be.visible');
+                    cy.findByText(incidentName).should('not.exist');
                 });
 
                 // # User-1 restarts the incident
                 cy.apiRestartIncident(incidentId);
 
                 // * Verify the rhs list is open and we can see the new incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('be.visible');
+                    cy.findByText(incidentName).should('exist');
                 });
             });
         });
@@ -828,16 +828,16 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // * Verify we can see the incidents list
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
             });
 
             // # Login as user-2
@@ -862,30 +862,30 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the rhs list is open and we can see the new incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('be.visible');
+                    cy.findByText(incidentName).should('exist');
                 });
 
                 // # User-2 closes the incident
                 cy.apiEndIncident(incidentId);
 
                 // * Verify we cannot see the incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('not.be.visible');
+                    cy.findByText(incidentName).should('not.exist');
                 });
 
                 // # User-2 restarts the incident
                 cy.apiRestartIncident(incidentId);
 
                 // * Verify the rhs list is open and we can see the new incident
-                cy.get('#rhsContainer').should('be.visible').within(() => {
-                    cy.findByText('Your Ongoing Incidents').should('be.visible');
+                cy.get('#rhsContainer').should('exist').within(() => {
+                    cy.findByText('Your Ongoing Incidents').should('exist');
 
-                    cy.findByText(incidentName).should('be.visible');
+                    cy.findByText(incidentName).should('exist');
                 });
             });
         });
@@ -897,7 +897,7 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // In case we're running this test from scratch, the incident list should not be empty.
             // # start new incident
@@ -911,9 +911,9 @@ describe('rhs incident list', () => {
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByTestId('rhs-title').should('be.visible').within(() => {
-                    cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
                 });
             });
 
@@ -921,10 +921,10 @@ describe('rhs incident list', () => {
             cy.get('#sidebarItem_town-square').click();
 
             // * Verify the rhs list is open and we can see the new incident
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
 
-                cy.findByText(incidentName).should('be.visible');
+                cy.findByText(incidentName).should('exist');
             });
 
             // # click the Start Incident link
@@ -933,8 +933,8 @@ describe('rhs incident list', () => {
             });
 
             // * Verify the incident creation dialog has opened
-            cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-                cy.findByText('Incident Details').should('be.visible');
+            cy.get('#interactiveDialogModal').should('exist').within(() => {
+                cy.findByText('Incident Details').should('exist');
             });
         });
 
@@ -945,11 +945,11 @@ describe('rhs incident list', () => {
             // # Ensure the channel is loaded before continuing (allows redux to sync).
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # click the Start Incident link
@@ -969,11 +969,11 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # click the Start Incident link
@@ -993,11 +993,11 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('be.visible');
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('be.visible').click();
+                cy.get('#incidentIcon').should('exist').click();
             });
 
             // # click the Start Incident link

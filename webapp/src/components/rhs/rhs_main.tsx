@@ -7,7 +7,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {setRHSOpen, setRHSState} from 'src/actions';
+import {setRHSOpen, setRHSViewingIncident, setRHSViewingList} from 'src/actions';
 import RHSListView from 'src/components/rhs/rhs_list_view';
 import {currentRHSState, isIncidentChannel} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
@@ -33,9 +33,9 @@ const RightHandSidebar: FC<null> = () => {
         setSeenChannelId(currentChannelId);
 
         if (inIncidentChannel) {
-            dispatch(setRHSState(RHSState.ViewingIncident));
+            dispatch(setRHSViewingIncident());
         } else {
-            dispatch(setRHSState(RHSState.ViewingList));
+            dispatch(setRHSViewingList());
         }
     }
 
