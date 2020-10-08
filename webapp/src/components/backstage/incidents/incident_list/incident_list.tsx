@@ -125,7 +125,7 @@ const NoContentPage = (props: {onNewIncident: () => void}) => {
         <NoContentContainer>
             <NoContentTextContainer>
                 <NoContentTitle>{'What are Incidents?'}</NoContentTitle>
-                <NoContentDescription>{'Incidents are unexpected situations which impact business operations which require an immediate, multi-disciplinary, response and benefit from a clearly defined process. When the situation is resolved, the incident is ended, and the playbook can be updated to improve the response to similar incidents in the future.'}</NoContentDescription>
+                <NoContentDescription>{'Incidents are unexpected situations which impact business operations; require an immediate, multi-disciplinary, response; and benefit from a clearly defined process. When the situation is resolved, the incident is ended, and the playbook can be updated to improve the response to similar incidents in the future.'}</NoContentDescription>
                 <NoContentButton
                     className='mt-6'
                     onClick={() => props.onNewIncident()}
