@@ -39,21 +39,21 @@ describe('incident creation dialog', () => {
         cy.openIncidentDialogFromSlashCommand();
 
         // * Verify the incident creation dialog has opened
-        cy.get('#interactiveDialogModal').should('be.visible').within(() => {
-            cy.findByText('Incident Details').should('be.visible');
+        cy.get('#interactiveDialogModal').should('exist').within(() => {
+            cy.findByText('Incident Details').should('exist');
         });
     });
 
     it('cannot create an incident without filling required fields', () => {
         cy.get('#interactiveDialogModal').within(() => {
-            cy.findByText('Incident Details').should('be.visible');
+            cy.findByText('Incident Details').should('exist');
 
             // # Attempt to submit
             cy.get('#interactiveDialogSubmit').click();
         });
 
         // * Verify it didn't submit
-        cy.get('#interactiveDialogModal').should('be.visible');
+        cy.get('#interactiveDialogModal').should('exist');
 
         // * Verify required fields
         cy.findByTestId('autoCompleteSelector').contains('Playbook');
@@ -75,16 +75,16 @@ describe('incident creation dialog', () => {
     it('shows expected metadata', () => {
         cy.get('#interactiveDialogModal').within(() => {
             // * Shows current user as commander.
-            cy.findByText('Victor Welch').should('be.visible');
+            cy.findByText('Victor Welch').should('exist');
 
             // * Verify playbook dropdown prompt
-            cy.findByText('Playbook').should('be.visible');
+            cy.findByText('Playbook').should('exist');
 
             // * Verify incident name prompt
-            cy.findByText('Incident Name').should('be.visible');
+            cy.findByText('Incident Name').should('exist');
 
             // * Verify incident description prompt
-            cy.findByText('Incident Description').should('be.visible');
+            cy.findByText('Incident Description').should('exist');
         });
     });
 

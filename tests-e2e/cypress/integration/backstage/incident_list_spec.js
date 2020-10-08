@@ -77,7 +77,7 @@ describe('backstage incident list', () => {
         cy.findByTestId('incidentsLHSButton').click();
 
         // * Assert contents of heading.
-        cy.findByTestId('titleIncident').should('be.visible').contains('Incidents');
+        cy.findByTestId('titleIncident').should('exist').contains('Incidents');
         cy.findByTestId('titleIncident').contains('eligendi');
     });
 

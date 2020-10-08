@@ -9,10 +9,9 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {fetchIncidentByChannel} from 'src/client';
-import {websocketSubscribers} from 'src/websocket_events';
-
-import {Incident} from './types/incident';
+import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
+import {websocketSubscribersToIncidentUpdate} from 'src/websocket_events';
+import {Incident} from 'src/types/incident';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -20,37 +19,36 @@ export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     return useSelector<GlobalState, boolean>((state) => haveITeamPermission(state, options));
 }
 
-export enum CurrentIncidentState {
+export enum IncidentFetchState {
     Loading,
     NotFound,
     Loaded,
 }
 
-export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
+export function useCurrentIncident(): [Incident | null, IncidentFetchState] {
     const currentChannel = useSelector<GlobalState, Channel>(getCurrentChannel);
     const [incident, setIncident] = useState<Incident | null>(null);
-    const [state, setState] = useState<CurrentIncidentState>(CurrentIncidentState.Loading);
+    const [state, setState] = useState<IncidentFetchState>(IncidentFetchState.Loading);
 
     const currentChannelId = currentChannel?.id;
     useEffect(() => {
         const fetchIncident = async () => {
             if (!currentChannelId) {
                 setIncident(null);
-                setState(CurrentIncidentState.NotFound);
                 return;
             }
 
             try {
                 setIncident(await fetchIncidentByChannel(currentChannelId));
-                setState(CurrentIncidentState.Loaded);
+                setState(IncidentFetchState.Loaded);
             } catch (err) {
                 if (err.status_code === 404) {
                     setIncident(null);
-                    setState(CurrentIncidentState.NotFound);
+                    setState(IncidentFetchState.NotFound);
                 }
             }
         };
-        setState(CurrentIncidentState.Loading);
+        setState(IncidentFetchState.Loading);
         fetchIncident();
     }, [currentChannelId]);
 
@@ -60,9 +58,9 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
                 setIncident(updatedIncident);
             }
         };
-        websocketSubscribers.add(doUpdate);
+        websocketSubscribersToIncidentUpdate.add(doUpdate);
         return () => {
-            websocketSubscribers.delete(doUpdate);
+            websocketSubscribersToIncidentUpdate.delete(doUpdate);
         };
     }, [incident]);
 
@@ -73,22 +71,22 @@ export function useCurrentIncident(): [Incident | null, CurrentIncidentState] {
  * Hook that calls handler when targetKey is pressed.
  */
 export function useKeyPress(targetKey: string, handler: () => void) {
-    // If pressed key is our target key then set to true
-    function downHandler({key}: KeyboardEvent) {
-        if (key === targetKey) {
-            handler();
-        }
-    }
-
     // Add event listeners
     useEffect(() => {
+        // If pressed key is our target key then set to true
+        function downHandler({key}: KeyboardEvent) {
+            if (key === targetKey) {
+                handler();
+            }
+        }
+
         window.addEventListener('keydown', downHandler);
 
         // Remove event listeners on cleanup
         return () => {
             window.removeEventListener('keydown', downHandler);
         };
-    }, []); // Empty array ensures that effect is only run on mount and unmount
+    }, [handler, targetKey]);
 }
 
 /**
@@ -109,7 +107,7 @@ export function useClickOutsideRef(ref: MutableRefObject<HTMLElement | null>, ha
             // Unbind the event listener on clean up
             document.removeEventListener('mousedown', onMouseDown);
         };
-    }, [ref]);
+    }, [ref, handler]);
 }
 
 /**

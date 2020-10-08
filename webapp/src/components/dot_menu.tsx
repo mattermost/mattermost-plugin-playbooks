@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useRef} from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
@@ -12,6 +12,7 @@ const DropdownMenuWrapper = styled.div`
 
 interface DropdownMenuProps {
     top?: boolean;
+    left?: boolean;
 }
 
 const DropdownMenu = styled.div<DropdownMenuProps>`
@@ -19,8 +20,12 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     flex-direction: column;
 
     position: absolute;
-    ${(props: DropdownMenuProps) => (props.top ? 'bottom: 35px;' : 'top: 100%;')}
-    min-width: 226px;
+    ${(props) => (props.top ? 'bottom: 35px;' : 'top: 100%;')};
+    ${(props) => (props.left && css`
+        left: -140px;
+        top: -10px;
+    `)};
+    min-width: 160px;
     text-align: left;
     list-style: none;
 
@@ -29,6 +34,7 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     font-style: normal;
     font-weight: normal;
     font-size: 14px;
+    line-height: 20px;
     color: var(--center-channel-color);
     position: 'fixed';
 
@@ -44,6 +50,7 @@ interface DotMenuProps {
     children: JSX.Element[] | JSX.Element;
     icon: JSX.Element;
     top?: boolean;
+    left?: boolean;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
@@ -73,7 +80,10 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
             <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu top={props.top}>
+                    <DropdownMenu
+                        top={props.top}
+                        left={props.left}
+                    >
                         {props.children}
                     </DropdownMenu>
                 }

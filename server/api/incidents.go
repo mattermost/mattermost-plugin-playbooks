@@ -306,7 +306,6 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          filterOptions.TeamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
@@ -491,7 +490,6 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
@@ -519,34 +517,28 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
-	teamID := r.URL.Query().Get("team_id")
-	if teamID == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+	filterOptions, err := parseIncidentsFilterOptions(r.URL)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
-			teamID,
+			filterOptions.TeamID,
 		))
 		return
 	}
 
-	options := incident.HeaderFilterOptions{
-		TeamID: teamID,
-		Status: incident.All,
-	}
-
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
-	incidents, err := h.incidentService.GetIncidents(requesterInfo, options)
+	incidents, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -927,6 +919,8 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
+	memberID := u.Query().Get("member_id")
+
 	return &incident.HeaderFilterOptions{
 		TeamID:      teamID,
 		Page:        page,
@@ -936,5 +930,6 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		Status:      status,
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,
+		MemberID:    memberID,
 	}, nil
 }

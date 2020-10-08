@@ -123,7 +123,6 @@ type DialogState struct {
 // for the user making the request
 type RequesterInfo struct {
 	UserID          string
-	TeamID          string
 	UserIDtoIsAdmin map[string]bool
 }
 

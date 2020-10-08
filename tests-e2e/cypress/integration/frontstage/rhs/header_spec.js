@@ -72,7 +72,7 @@ describe('incident rhs > header', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiDeleteIncident(incident.id);
+                cy.apiEndIncident(incident.id);
             });
 
             // # Navigate directly to the application and the incident channel

@@ -70,12 +70,21 @@ export async function fetchIncidentMetadata(id: string) {
     return data as Metadata;
 }
 
-export function fetchIncidentByChannel(channelId: string) {
-    return doGet(`${apiUrl}/incidents/channel/${channelId}`);
+export async function fetchIncidentByChannel(channelId: string) {
+    const data = await doGet(`${apiUrl}/incidents/channel/${channelId}`);
+    // eslint-disable-next-line no-process-env
+    if (process.env.NODE_ENV !== 'production') {
+        if (!isIncident(data)) {
+            // eslint-disable-next-line no-console
+            console.error('expected an Incident in fetchIncident, received:', data);
+        }
+    }
+
+    return data as Incident;
 }
 
-export function fetchIncidentChannels(teamID: string) {
-    return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}`);
+export function fetchIncidentChannels(teamID: string, userID: string) {
+    return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}&member_id=${userID}`);
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {

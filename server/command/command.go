@@ -362,7 +362,6 @@ func (r *Runner) actionList() {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          r.args.UserId,
-		TeamID:          r.args.TeamId,
 		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
 	}
 

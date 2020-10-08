@@ -726,7 +726,6 @@ func TestGetIncidents(t *testing.T) {
 			Name: "team1 - Alice (in no channels but member of team (because request must have made it through the API team membership test to the store), can see public incidents)",
 			RequesterInfo: incident.RequesterInfo{
 				UserID: alice.ID,
-				TeamID: team1id,
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
@@ -743,7 +742,6 @@ func TestGetIncidents(t *testing.T) {
 			Name: "team2 - Charlotte (in no channels but member of team -- because her request must have made it to the store through the API's team membership check)",
 			RequesterInfo: incident.RequesterInfo{
 				UserID: charlotte.ID,
-				TeamID: team2id,
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,
@@ -850,7 +848,6 @@ func TestGetIncidents(t *testing.T) {
 		t.Run("zero incidents", func(t *testing.T) {
 			result, err := incidentStore.GetIncidents(incident.RequesterInfo{
 				UserID: lucy.ID,
-				TeamID: team1id,
 			},
 				incident.HeaderFilterOptions{
 					TeamID:  team1id,
@@ -1218,7 +1215,6 @@ func TestGetCommanders(t *testing.T) {
 			Name: "team1 - Alice (in no channels but member of team (because must have made it through API team membership test), can see public incidents)",
 			RequesterInfo: incident.RequesterInfo{
 				UserID: "Alice",
-				TeamID: team1id,
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team1id,
@@ -1230,7 +1226,6 @@ func TestGetCommanders(t *testing.T) {
 			Name: "team2 - Charlotte (in no channels but member of team, because must have made it through API team membership test)",
 			RequesterInfo: incident.RequesterInfo{
 				UserID: "Charlotte",
-				TeamID: team2id,
 			},
 			Options: incident.HeaderFilterOptions{
 				TeamID: team2id,

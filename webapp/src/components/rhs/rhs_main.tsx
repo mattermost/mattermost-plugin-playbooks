@@ -4,75 +4,22 @@
 import React, {FC, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
-import styled from 'styled-components';
-
 import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {Team} from 'mattermost-redux/types/teams';
-
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
-import {setRHSOpen, startIncident} from 'src/actions';
-import Spinner from 'src/components/assets/icons/spinner';
-import {CurrentIncidentState, useCurrentIncident} from 'src/hooks';
-import {clientHasPlaybooks} from 'src/client';
-
-import {navigateToTeamPluginUrl} from 'src/browser_routing';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
-import NoContentPlaybookSvgRhs from '../assets/no_content_playbooks_rhs_svg';
-
-import RHSIncidentDetails from './incident_details';
-
-// @ts-ignore
-/* const {formatText, messageHtmlToComponent} = window.PostUtils; */
-
-const RHSContainer = styled.div`
-    height: calc(100vh - 120px);
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow: auto;
-`;
-
-const RHSContent = styled.div`
-    flex: 1 1 auto;
-    position: relative;
-`;
-
-const SpinnerContainer = styled.div`
-    text-align: center;
-    padding: 20px;
-`;
-
-const StyledSpinner = styled(Spinner)`
-    margin-right: 4px;
-`;
-
-const NoIncidentsContainer = styled.div`
-    margin: 48px 40px 0;
-    display: block;
-    flex-direction: column;
-    align-items: center;
-
-    h1 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: bold;
-        text-align: left;
-        line-height: 32px;
-    }
-`;
-
-const NoIncidentsItem = styled.div`
-    margin-bottom: 24px;
-`;
+import {setRHSOpen, setRHSViewingIncident, setRHSViewingList} from 'src/actions';
+import RHSListView from 'src/components/rhs/rhs_list_view';
+import {currentRHSState, isIncidentChannel} from 'src/selectors';
+import {RHSState} from 'src/types/rhs';
+import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
+import RHSDetailsView from 'src/components/rhs/rhs_details_view';
 
 const RightHandSidebar: FC<null> = () => {
     const dispatch = useDispatch();
-    const [incident, incidentState] = useCurrentIncident();
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    const [hasPlaybooks, setHasPlaybooks] = useState<boolean>(false);
+    const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
+    const inIncidentChannel = useSelector<GlobalState, boolean>((state) => isIncidentChannel(state, currentChannelId));
+    const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
+    const [seenChannelId, setSeenChannelId] = useState('');
 
     useEffect(() => {
         dispatch(setRHSOpen(true));
@@ -80,94 +27,27 @@ const RightHandSidebar: FC<null> = () => {
             dispatch(setRHSOpen(false));
         };
     }, [dispatch]);
-    useEffect(() => {
-        const fetchData = async () => {
-            const result = await clientHasPlaybooks(currentTeam.id) as boolean;
-            setHasPlaybooks(result);
-        };
-        fetchData();
-    }, [currentTeam.id]);
 
-    if (incidentState === CurrentIncidentState.Loading) {
-        return (
-            <RHSContainer>
-                <RHSContent>
-                    <SpinnerContainer>
-                        <StyledSpinner/>
-                        <span>{'Loading...'}</span>
-                    </SpinnerContainer>
-                </RHSContent>
-            </RHSContainer>
-        );
-    } else if (incident === null || incidentState === CurrentIncidentState.NotFound) {
-        if (hasPlaybooks) {
-            return (
-                <RHSContainer>
-                    <NoIncidentsContainer>
-                        <NoContentPlaybookSvgRhs/>
-                        <NoIncidentsItem>
-                            <h1>
-                                {'Take action now with Incident Response.'}
-                            </h1>
-                            <p className='mt-3 mb-4 light'>
-                                {'You don’t have any active incidents at the moment. Start an incident immediately with an existing playbook.'}
-                            </p>
-                            <div className='header-button-div mb-4'>
-                                <PrimaryButton
-                                    onClick={() => dispatch(startIncident())}
-                                >
-                                    <span>
-                                        {'Start Incident'}
-                                    </span>
-                                </PrimaryButton>
-                            </div>
-                            <p className='mt-3 mb-4 light'>
-                                {'You can also create a playbook ahead of time so it’s available when you need it.'}
-                            </p>
-                            <TertiaryButton
-                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                            >
-                                {'Create Playbook'}
-                            </TertiaryButton>
-                        </NoIncidentsItem>
-                    </NoIncidentsContainer>
-                </RHSContainer>
-            );
+    // Update the rhs state when the channel changes
+    if (currentChannelId !== seenChannelId) {
+        setSeenChannelId(currentChannelId);
+
+        if (inIncidentChannel) {
+            dispatch(setRHSViewingIncident());
+        } else {
+            dispatch(setRHSViewingList());
         }
-
-        return (
-            <RHSContainer>
-                <NoIncidentsContainer>
-                    <NoContentPlaybookSvgRhs/>
-                    <NoIncidentsItem>
-                        <h1>
-                            {'Simplify your processes with Incident Response'}
-                        </h1>
-                        <p className='mt-3 mb-8 light'>
-                            {'Create a playbook to define your incident response workflow. Select a template or create your playbook from scratch.'}
-                        </p>
-                        <div className='header-button-div mb-4'>
-                            <PrimaryButton
-                                onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                            >
-                                {'Create Playbook'}
-                            </PrimaryButton>
-                        </div>
-                    </NoIncidentsItem>
-                </NoIncidentsContainer>
-            </RHSContainer>
-        );
     }
 
-    return (
-        <RHSContainer>
-            <RHSContent>
-                <RHSIncidentDetails
-                    incident={incident}
-                />
-            </RHSContent>
-        </RHSContainer>
-    );
+    if (rhsState === RHSState.ViewingIncident) {
+        if (inIncidentChannel) {
+            return <RHSDetailsView/>;
+        }
+        return <RHSWelcomeView/>;
+    }
+
+    return <RHSListView/>;
 };
 
 export default RightHandSidebar;
+
