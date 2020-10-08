@@ -251,7 +251,7 @@ describe('slash command', () => {
 
                 // * Verify the expected error message.
                 cy.verifyEphemeralMessage('You can only change an incident stage from within the incident\'s channel.');
-            })
+            });
 
             it('/incident stage prev', () => {
                 // # Run a slash command to go to previous stage
@@ -259,7 +259,7 @@ describe('slash command', () => {
 
                 // * Verify the expected error message.
                 cy.verifyEphemeralMessage('You can only change an incident stage from within the incident\'s channel.');
-            })
+            });
         });
 
         describe('in an incident channel', () => {
@@ -468,5 +468,5 @@ describe('slash command', () => {
             // * Verify the expected error message.
             cy.verifyEphemeralMessage('Your incident details are already open in the right hand side of the channel.');
         });
-    })
+    });
 });
