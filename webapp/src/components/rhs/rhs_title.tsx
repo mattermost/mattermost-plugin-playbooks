@@ -39,7 +39,6 @@ const RHSTitle: FC = () => {
     const dispatch = useDispatch();
     const [incident] = useCurrentIncident();
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
-    const theme = useSelector<GlobalState, Record<string, string>>(getTheme);
 
     if (rhsState === RHSState.ViewingIncident) {
         return (
@@ -48,7 +47,7 @@ const RHSTitle: FC = () => {
                     onClick={() => dispatch(setRHSViewingList())}
                     data-testid='back-button'
                 >
-                    <LeftChevron theme={theme}/>
+                    <LeftChevron/>
                 </Button><RHSTitleText data-testid='rhs-title'>{incident?.name || 'Incidents'}</RHSTitleText>
                 {incident && (
                     <StatusBadge

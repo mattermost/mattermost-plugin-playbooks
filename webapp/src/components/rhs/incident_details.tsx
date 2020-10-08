@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState} from 'react';
+import React, {FC} from 'react';
 import {useDispatch} from 'react-redux';
 import Scrollbars from 'react-custom-scrollbars';
 import styled, {css} from 'styled-components';
@@ -9,7 +9,6 @@ import styled, {css} from 'styled-components';
 import {
     fetchUsersInChannel,
     setCommander,
-    setActiveStage,
     setChecklistItemState,
 } from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
@@ -23,12 +22,11 @@ import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {isMobile} from 'src/mobile';
 import {toggleRHS, endIncident, restartIncident, nextStage, prevStage} from 'src/actions';
-
 import Duration from '../duration';
 import 'src/components/checklist.scss';
 import './incident_details.scss';
-import ThreeDotsIcon from '../assets/icons/three_dots_icon';
 import DotMenu, {DropdownMenuItem} from '../dot_menu';
+import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 
 interface Props {
     incident: Incident;
@@ -145,13 +143,6 @@ interface NextStageButtonProps {
     nextStage: () => void;
 }
 
-const HamburgerButton = styled(ThreeDotsIcon)`
-    font-size: 24px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    position: relative;
-    top: calc(50% - 12px);
-`;
-
 const BasicButton = styled.button`
     display: block;
     border: 1px solid var(--button-bg);
@@ -254,6 +245,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     if (props.incident.active_stage > 0) {
         dotMenuChildren.push(
             <DropdownMenuItem
+                key='previous'
                 text='Previous Stage'
                 onClick={() => dispatch(prevStage())}
             />,
@@ -263,6 +255,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
     if (props.incident.active_stage < props.incident.checklists.length - 1) {
         dotMenuChildren.push(
             <DropdownMenuItem
+                key='end'
                 text='End Incident'
                 onClick={() => dispatch(endIncident())}
             />,

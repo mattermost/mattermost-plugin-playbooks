@@ -359,6 +359,57 @@ describe('rhs incident list', () => {
             });
         });
 
+        it('after clicking back button then clicking on the go to channel button of same incident', () => {
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # start new incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
+            cy.verifyIncidentCreated(teamId, incidentName);
+
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
+                });
+
+                // * Verify the title shows "Ongoing"
+                cy.get('.sidebar--right__title').contains('Ongoing');
+
+                // # Click the back button
+                cy.findByTestId('back-button').should('exist').click();
+            });
+
+            // * click on the first go-to-channel button.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
+
+                cy.findAllByTestId('go-to-channel').eq(0).click();
+            });
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByTestId('rhs-title').should('exist').within(() => {
+                    cy.findByText(incidentName).should('exist');
+                });
+
+                // * Verify the title shows "Ongoing"
+                cy.get('.sidebar--right__title').contains('Ongoing');
+            });
+        });
+
         it('after going to an incident channel, closing rhs, and clicking on LHS of another incident channel', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
@@ -419,6 +470,59 @@ describe('rhs incident list', () => {
 
                 // * Verify the title shows "Ongoing"
                 cy.get('.sidebar--right__title').contains('Ongoing');
+            });
+        });
+
+        it('highlights current incident', () => {
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # start 2 new incidents
+            let now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
+            cy.verifyIncidentCreated(teamId, incidentName);
+
+            now = Date.now() + 1;
+            const secondIncidentName = 'Incident (' + now + ')';
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName: secondIncidentName,
+                commanderUserId: userId
+            });
+            cy.verifyIncidentCreated(teamId, secondIncidentName);
+
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // # Click the back button
+                cy.findByTestId('back-button').should('exist').click();
+            });
+
+            // * Verify second incident is not highlighted
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.get('[class^=IncidentContainer]').eq(0).within(() => {
+                    cy.findByText(secondIncidentName).should('exist');
+                });
+                cy.get('[class^=IncidentContainer]').eq(0).should('have.css', 'box-shadow', 'rgba(61, 60, 64, 0.24) 0px -1px 0px 0px inset');
+            });
+
+            // * Verify first incident is highlighted
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.get('[class^=IncidentContainer]').eq(1).within(() => {
+                    cy.findByText(incidentName).should('exist');
+                });
+                cy.get('[class^=IncidentContainer]').eq(1).should('have.css', 'box-shadow', 'rgba(61, 60, 64, 0.24) 0px -1px 0px 0px inset, rgb(22, 109, 224) 4px 0px 0px 0px inset');
             });
         });
 

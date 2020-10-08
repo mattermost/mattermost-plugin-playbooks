@@ -20,13 +20,13 @@ export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(st
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
 export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => {
-    return Boolean(pluginState(state).myChannelIdToIncidents[channelId]);
+    return Boolean(pluginState(state).myIncidentsMap[channelId]);
 };
 
-const myChannelIdToIncidents = (state: GlobalState): Record<string, Incident> => pluginState(state).myChannelIdToIncidents;
+const myIncidentsMap = (state: GlobalState): Record<string, Incident> => pluginState(state).myIncidentsMap;
 
 export const myActiveIncidentsList = createSelector(
-    myChannelIdToIncidents,
+    myIncidentsMap,
     (channelIdToIncidents) => {
         const incidents = [] as Incident[];
         for (const incident of Object.values(channelIdToIncidents)) {

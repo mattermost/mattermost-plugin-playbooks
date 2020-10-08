@@ -20,12 +20,13 @@ import {
     renderTrackHorizontal,
     renderView, RHSContainer, RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {startIncident} from 'src/actions';
+import {setRHSViewingIncident, startIncident} from 'src/actions';
 import {navigateToTeamPluginUrl, navigateToUrl} from 'src/browser_routing';
 import {Incident} from 'src/types/incident';
 import Duration from 'src/components/duration';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {myActiveIncidentsList} from 'src/selectors';
+import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 
 const Header = styled.div`
     display: grid;
@@ -145,6 +146,7 @@ const RHSListView = () => {
     const incidentList = useSelector<GlobalState, Incident[]>(myActiveIncidentsList);
 
     const viewIncident = (channelId: string) => {
+        dispatch(setRHSViewingIncident());
         navigateToUrl(`/${currentTeam.name}/channels/${channelId}`);
     };
 
@@ -236,8 +238,8 @@ interface ThreeDotMenuProps {
 
 const ThreeDotMenu = (props: ThreeDotMenuProps) => (
     <DotMenu
-        vertical={true}
-        openLeft={true}
+        icon={<HamburgerButton/>}
+        left={true}
     >
         <DropdownMenuItem
             text='Create Playbook'

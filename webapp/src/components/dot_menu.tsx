@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useRef} from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
@@ -15,16 +15,16 @@ interface DropdownMenuProps {
     left?: boolean;
 }
 
-// TODO: fix
 const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
     position: absolute;
-    ${(props: DropdownMenuProps) => (props.top ? 'bottom: 35px;' : 'top: 100%;')}
-    min-width: 226px;
-    // top: 100%;
-    // left: ${(props) => (props.openLeft ? '-140px' : '0')};
+    ${(props) => (props.top ? 'bottom: 35px;' : 'top: 100%;')};
+    ${(props) => (props.left && css`
+        left: -140px;
+        top: -10px;
+    `)};
     min-width: 160px;
     text-align: left;
     list-style: none;

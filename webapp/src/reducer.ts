@@ -61,10 +61,10 @@ function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
     }
 }
 
-// myChannelIdToIncidents is a set of incidents for which the current user is an incident member. Note
+// myIncidentsMap is a map of channelId->incidents for which the current user is an incident member. Note
 // that it is lazy loaded on team change, but will also track incremental updates as provided by
 // websocket events.
-const myChannelIdToIncidents = (state: Record<string, Incident> = {}, action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel) => {
+const myIncidentsMap = (state: Record<string, Incident> = {}, action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel) => {
     switch (action.type) {
     case INCIDENT_CREATED: {
         const incidentCreatedAction = action as IncidentCreated;
@@ -101,6 +101,6 @@ export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
-    myChannelIdToIncidents,
+    myIncidentsMap,
     rhsState,
 });
