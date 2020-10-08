@@ -12,6 +12,8 @@ describe('incident rhs > stages', () => {
     let userId;
     let playbookId;
 
+    const noStagePlaybookName = playbookName + ' - no stages';
+    let noStagePlaybookId;
     const triStagePlaybookName = playbookName + ' - three stages';
     let triStagePlaybookId;
 
@@ -63,6 +65,15 @@ describe('incident rhs > stages', () => {
                 }).then((playbook) => {
                     triStagePlaybookId = playbook.id;
                 });
+
+                cy.apiCreatePlaybook({
+                    teamId: team.id,
+                    title: noStagePlaybookName,
+                    checklists: [],
+                    memberIDs: [userId],
+                }).then((playbook) => {
+                    noStagePlaybookId = playbook.id;
+                });
             });
         });
     });
@@ -72,55 +83,78 @@ describe('incident rhs > stages', () => {
         cy.apiLogin('user-1');
     });
 
-    describe('shows information', () => {
-        describe('for incidents with more than one stage', () => {
-            beforeEach(() => {
-                const now = Date.now();
-                const incidentName = 'Incident (' + now + ')';
-                const incidentChannelName = 'incident-' + now;
+    describe('shows information for incidents with more than one stage', () => {
+        beforeEach(() => {
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
 
-                // # Start the incident
-                cy.apiStartIncident({
-                    teamId,
-                    playbookId: triStagePlaybookId,
-                    incidentName,
-                    commanderUserId: userId,
-                });
-
-                // # Navigate directly to the application and the incident channel
-                cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Start the incident
+            cy.apiStartIncident({
+                teamId,
+                playbookId: triStagePlaybookId,
+                incidentName,
+                commanderUserId: userId,
             });
 
-            it('containing current information', () => {
-                // * Verify that the stage information is visible
-                cy.get('#incidentRHSStages').within(() => {
-                    cy.get('.title').contains('Current Stage');
-                    cy.get('div').contains('Stage 1');
-                    cy.get('span').contains('(1/3)');
-                });
-            });
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+        });
 
-            it('updating when stage changes', () => {
-                // # Check all checkboxes in the stage
-                cy.get('.checklist-inner-container').within(() => {
-                    cy.get('.checkbox').each((checkbox) => {
-                        cy.wrap(checkbox).click();
-                    });
-                });
-
-                // # Click on the Next Stage button
-                cy.get('#incidentRHSFooter button').click();
-
-                // * Verify that the stage information has updated
-                cy.get('#incidentRHSStages').within(() => {
-                    cy.get('.title').contains('Current Stage');
-                    cy.get('div').contains('Stage 2');
-                    cy.get('span').contains('(2/3)');
-                });
+        it('containing current information', () => {
+            // * Verify that the stage information is visible
+            cy.get('#incidentRHSStages').within(() => {
+                cy.get('.title').contains('Current Stage');
+                cy.get('div').contains('Stage 1');
+                cy.get('span').contains('(1/3)');
             });
         });
 
-        it('except for an incident with one single stage', () => {
+        it('updating when stage changes', () => {
+            // # Check all checkboxes in the stage
+            cy.get('.checklist-inner-container').within(() => {
+                cy.get('.checkbox').each((checkbox) => {
+                    cy.wrap(checkbox).click();
+                });
+            });
+
+            // # Click on the Next Stage button
+            cy.get('#incidentRHSFooter button').click();
+
+            // * Verify that the stage information has updated
+            cy.get('#incidentRHSStages').within(() => {
+                cy.get('.title').contains('Current Stage');
+                cy.get('div').contains('Stage 2');
+                cy.get('span').contains('(2/3)');
+            });
+        });
+    });
+
+    describe('does not show information', () => {
+        it('for an incident with no stagese', () => {
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+
+            // # Start the incident
+            cy.apiStartIncident({
+                teamId,
+                noStagePlaybookId,
+                incidentName,
+                commanderUserId: userId,
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // # Wait for the RHS to open.
+            cy.get('#rhsContainer').should('be.visible');
+
+            // * Verify that the stage information is not visible
+            cy.get('#incidentRHSStages').should('not.exist');
+        });
+
+        it('for an incident with one single stage', () => {
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
@@ -135,6 +169,9 @@ describe('incident rhs > stages', () => {
 
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // # Wait for the RHS to open.
+            cy.get('#rhsContainer').should('be.visible');
 
             // * Verify that the stage information is not visible
             cy.get('#incidentRHSStages').should('not.exist');

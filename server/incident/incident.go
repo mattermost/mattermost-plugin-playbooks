@@ -9,6 +9,9 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
+// NoActiveStage is the value of an incident's ActiveStage property when there are no stages.
+const NoActiveStage = -1
+
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
@@ -39,6 +42,13 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []playbook.ChecklistItem{}
 		}
+	}
+
+	// Define consistent semantics for empty checklists and out-of-range active stages.
+	if len(old.Checklists) == 0 {
+		old.Header.ActiveStage = NoActiveStage
+	} else if old.Header.ActiveStage < 0 || old.Header.ActiveStage >= len(old.Checklists) {
+		old.Header.ActiveStage = 0
 	}
 
 	return json.Marshal(old)
