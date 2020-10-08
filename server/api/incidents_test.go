@@ -90,7 +90,7 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -146,7 +146,7 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -197,7 +197,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -260,7 +260,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -306,7 +306,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -357,7 +357,7 @@ func TestIncidents(t *testing.T) {
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -399,7 +399,7 @@ func TestIncidents(t *testing.T) {
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -432,7 +432,7 @@ func TestIncidents(t *testing.T) {
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -458,7 +458,7 @@ func TestIncidents(t *testing.T) {
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -486,7 +486,7 @@ func TestIncidents(t *testing.T) {
 		require.NoError(t, err)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/incidents", bytes.NewBuffer(incidentJSON))
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -520,7 +520,7 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().GetIncident("incidentID").Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.ChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncidentHeader.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -555,7 +555,7 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncidentHeader.ChannelID)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.ChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncidentHeader.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", userID)
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -585,7 +585,7 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/channel/"+testIncidentHeader.ChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncidentHeader.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -624,7 +624,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -663,7 +663,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil).Times(2)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -709,7 +709,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -750,7 +750,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil).Times(2)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -794,7 +794,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil).Times(2)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -838,7 +838,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/metadata", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -889,7 +889,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncidentMetadata, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/metadata", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -935,7 +935,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/metadata", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -988,7 +988,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncidentMetadata, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/metadata", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1044,7 +1044,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncidentMetadata, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents/"+testIncident.ID+"/metadata", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1085,7 +1085,7 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents?team_id=testTeamID1", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents?team_id=testTeamID1", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1112,7 +1112,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/incidents?team_id=non-existent", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents?team_id=non-existent", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1280,7 +1280,7 @@ func TestChangeActiveStage(t *testing.T) {
 			testrecorder := httptest.NewRecorder()
 			updatesJSON, err := json.Marshal(data.updateOptions)
 			require.NoError(t, err)
-			testreq, err := http.NewRequest("PATCH", "/api/v1/incidents/"+data.oldIncident.ID, bytes.NewBuffer(updatesJSON))
+			testreq, err := http.NewRequest("PATCH", "/api/v0/incidents/"+data.oldIncident.ID, bytes.NewBuffer(updatesJSON))
 			testreq.Header.Add("Mattermost-User-ID", "testUserID")
 			require.NoError(t, err)
 			handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1378,7 +1378,7 @@ func TestEndIncident(t *testing.T) {
 					}
 
 					recorder := httptest.NewRecorder()
-					req, err := http.NewRequest(method, "/api/v1/incidents/"+incidentID+"/end", nil)
+					req, err := http.NewRequest(method, "/api/v0/incidents/"+incidentID+"/end", nil)
 					require.NoError(t, err)
 
 					if tc.AuthorizationFunc != nil {

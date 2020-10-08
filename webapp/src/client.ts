@@ -31,7 +31,7 @@ import {
 
 import {pluginId} from './manifest';
 
-const apiUrl = `/plugins/${pluginId}/api/v1`;
+const apiUrl = `/plugins/${pluginId}/api/v0`;
 
 export async function fetchIncidents(params: FetchIncidentsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true});
@@ -241,7 +241,7 @@ export async function setActiveStage(incidentId: string, activeStage: number) {
 }
 
 export function exportChannelUrl(channelId: string) {
-    const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
+    const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v0';
 
     const queryParams = qs.stringify({
         channel_id: channelId,

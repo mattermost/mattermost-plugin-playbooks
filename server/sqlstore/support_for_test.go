@@ -9,7 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
-	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -39,27 +38,13 @@ func setupTestDB(t *testing.T, driverName string) *sqlx.DB {
 	return db
 }
 
-func setupSQLStore(t *testing.T, db *sqlx.DB) (PluginAPIClient, bot.Logger, *SQLStore) {
+func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
-
 	logger := mock_bot.NewMockLogger(mockCtrl)
 
-	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
-	configAPI := mock_sqlstore.NewMockConfigurationAPI(mockCtrl)
-	pluginAPIClient := PluginAPIClient{
-		KV:            kvAPI,
-		Configuration: configAPI,
-	}
-
 	driverName := db.DriverName()
-	configAPI.EXPECT().
-		GetConfig().
-		Return(&model.Config{
-			SqlSettings: model.SqlSettings{DriverName: &driverName},
-		}).
-		Times(1)
 
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
 	if driverName == model.DATABASE_DRIVER_POSTGRES {
@@ -73,27 +58,17 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (PluginAPIClient, bot.Logger, *SQL
 		nil,
 	}
 
-	kvAPI.EXPECT().
-		Get("v2_playbookindex", gomock.Any()).
-		SetArg(1, oldPlaybookIndex{}).
-		Times(1)
-
-	kvAPI.EXPECT().
-		Get("v2_all_headers", gomock.Any()).
-		SetArg(1, map[string]oldHeader{}).
-		Times(1)
-
 	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
 
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	require.NoError(t, err)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
-		err = sqlStore.Migrate(pluginAPIClient, currentSchemaVersion)
+		err = sqlStore.Migrate(currentSchemaVersion)
 		require.NoError(t, err)
 	}
 
-	return pluginAPIClient, logger, sqlStore
+	return logger, sqlStore
 }
 
 func setupUsersTable(t *testing.T, db *sqlx.DB) {

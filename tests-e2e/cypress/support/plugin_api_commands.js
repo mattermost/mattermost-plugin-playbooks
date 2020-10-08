@@ -11,7 +11,7 @@ const incidentsEndpoint = endpoints.incidents;
 Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-response/api/v1/incidents?team_id=${teamId}`,
+        url: `/plugins/com.mattermost.plugin-incident-response/api/v0/incidents?team_id=${teamId}`,
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -122,7 +122,7 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
 Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks',
+        url: '/plugins/com.mattermost.plugin-incident-response/api/v0/playbooks',
         method: 'POST',
         body: {
             title,

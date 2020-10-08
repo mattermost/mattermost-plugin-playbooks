@@ -26,7 +26,7 @@ func NewHandler() *Handler {
 	handler := &Handler{}
 
 	root := mux.NewRouter()
-	api := root.PathPrefix("/api/v1").Subrouter()
+	api := root.PathPrefix("/api/v0").Subrouter()
 	api.Use(MattermostAuthorizationRequired)
 	api.Handle("{anything:.*}", http.NotFoundHandler())
 	api.NotFoundHandler = http.NotFoundHandler()

@@ -132,7 +132,7 @@ func TestCreateSubscription(t *testing.T) {
 			subscriptionJSON, err := json.Marshal(test.subsc)
 			require.NoError(t, err)
 
-			request, err := http.NewRequest("POST", "/api/v1/eventsubscriptions", bytes.NewBuffer(subscriptionJSON))
+			request, err := http.NewRequest("POST", "/api/v0/eventsubscriptions", bytes.NewBuffer(subscriptionJSON))
 			require.NoError(t, err)
 			request.Header.Add("Mattermost-User-ID", test.requestUser)
 
