@@ -86,7 +86,7 @@ func getAutocompleteData() *model.AutocompleteData {
 		"Checks or unchecks a checklist item.")
 	checklist.AddDynamicListArgument(
 		"List of checklist items is downloading from your incident response plugin",
-		"api/v1/incidents/checklist-autocomplete", true)
+		"api/v0/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
 	announce := model.NewAutocompleteData("announce", "~[channels]",

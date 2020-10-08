@@ -113,7 +113,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(playbooktest))
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -127,7 +127,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/testplaybookid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/testplaybookid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -165,7 +165,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?team_id=testteamid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -201,7 +201,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -233,7 +233,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/testplaybookid", nil)
+		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/testplaybookid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -265,7 +265,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/testplaybookid", nil)
+		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/testplaybookid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -287,7 +287,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(playbooktest))
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -304,7 +304,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/testplaybookid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/testplaybookid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -326,7 +326,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?team_id=testteamid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -343,7 +343,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/testplaybookid", jsonPlaybookReader(withid))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(withid))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -365,7 +365,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v1/playbooks", jsonPlaybookReader(withid))
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(withid))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -379,7 +379,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/playbookwithmember", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/playbookwithmember", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -405,7 +405,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks/playbookwithmember", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/playbookwithmember", nil)
 		testreq.Header.Add("Mattermost-User-ID", "unknownMember")
 		require.NoError(t, err)
 
@@ -428,7 +428,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/playbookwithmember", jsonPlaybookReader(playbooktest))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/playbookwithmember", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -463,7 +463,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v1/playbooks/playbookwithmember", jsonPlaybookReader(playbooktest))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/playbookwithmember", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "unknownMember")
 		require.NoError(t, err)
 
@@ -494,7 +494,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/playbookwithmember", nil)
+		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/playbookwithmember", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -526,7 +526,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v1/playbooks/playbookwithmember", nil)
+		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/playbookwithmember", nil)
 		testreq.Header.Add("Mattermost-User-ID", "unknownMember")
 		require.NoError(t, err)
 
@@ -561,7 +561,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v1/playbooks?team_id=testteamid", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
@@ -792,7 +792,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			}
 
 			testrecorder := httptest.NewRecorder()
-			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v1/playbooks?team_id=testteamid&sort=%s&direction=%s", data.sortField, data.sortDirection), nil)
+			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v0/playbooks?team_id=testteamid&sort=%s&direction=%s", data.sortField, data.sortDirection), nil)
 			testreq.Header.Add("Mattermost-User-ID", "testuserid")
 			require.NoError(t, err)
 
@@ -1005,7 +1005,7 @@ func TestPagingPlaybooks(t *testing.T) {
 			reset()
 
 			testrecorder := httptest.NewRecorder()
-			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v1/playbooks?team_id=testteamid&page=%s&per_page=%s", data.page, data.perPage), nil)
+			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v0/playbooks?team_id=testteamid&page=%s&per_page=%s", data.page, data.perPage), nil)
 			testreq.Header.Add("Mattermost-User-ID", "testuserid")
 			require.NoError(t, err)
 

@@ -6,9 +6,11 @@ import (
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -364,7 +366,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -383,7 +385,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -595,7 +597,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -614,7 +616,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -828,7 +830,7 @@ func TestGetIncidents(t *testing.T) {
 		db := setupTestDB(t, driverName)
 		incidentStore := setupIncidentStore(t, db)
 
-		_, _, store := setupSQLStore(t, db)
+		_, store := setupSQLStore(t, db)
 		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
@@ -857,7 +859,7 @@ func TestGetIncidents(t *testing.T) {
 			require.Equal(t, 0, result.TotalCount)
 			require.Equal(t, 0, result.PageCount)
 			require.False(t, result.HasMore)
-			require.Equal(t, []incident.Incident(nil), result.Items)
+			require.Empty(t, result.Items)
 		})
 
 		createIncidents(incidentStore)
@@ -880,11 +882,6 @@ func TestGetIncidents(t *testing.T) {
 					require.True(t, model.IsValidId(item.ID))
 					item.ID = ""
 					result.Items[i] = item
-				}
-
-				// remove the checklists from the expected incidents--we don't return them in getIncidents
-				for i := range testCase.Want.Items {
-					testCase.Want.Items[i].Checklists = nil
 				}
 
 				require.Equal(t, testCase.Want, *result)
@@ -1252,7 +1249,7 @@ func TestGetCommanders(t *testing.T) {
 		db := setupTestDB(t, driverName)
 		incidentStore := setupIncidentStore(t, db)
 
-		_, _, store := setupSQLStore(t, db)
+		_, store := setupSQLStore(t, db)
 		setupUsersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
 		setupTeamMembersTable(t, db)
@@ -1336,7 +1333,18 @@ func TestNukeDB(t *testing.T) {
 }
 
 func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
-	return NewIncidentStore(setupSQLStore(t, db))
+	mockCtrl := gomock.NewController(t)
+
+	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
+	configAPI := mock_sqlstore.NewMockConfigurationAPI(mockCtrl)
+	pluginAPIClient := PluginAPIClient{
+		KV:            kvAPI,
+		Configuration: configAPI,
+	}
+
+	logger, sqlStore := setupSQLStore(t, db)
+
+	return NewIncidentStore(pluginAPIClient, logger, sqlStore)
 }
 
 // IncidentBuilder is a utility to build incidents with a default base.

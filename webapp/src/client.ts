@@ -16,8 +16,8 @@ import {CommanderInfo} from 'src/types/backstage';
 import {
     FetchIncidentsParams,
     FetchIncidentsReturn,
-    isIncidentWithDetails,
-    IncidentWithDetails,
+    isMetadata,
+    Metadata,
     isIncident,
     Incident,
 } from 'src/types/incident';
@@ -31,7 +31,7 @@ import {
 
 import {pluginId} from './manifest';
 
-const apiUrl = `/plugins/${pluginId}/api/v1`;
+const apiUrl = `/plugins/${pluginId}/api/v0`;
 
 export async function fetchIncidents(params: FetchIncidentsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true});
@@ -57,17 +57,17 @@ export async function fetchIncident(id: string) {
     return data as Incident;
 }
 
-export async function fetchIncidentWithDetails(id: string) {
-    const data = await doGet(`${apiUrl}/incidents/${id}/details`);
+export async function fetchIncidentMetadata(id: string) {
+    const data = await doGet(`${apiUrl}/incidents/${id}/metadata`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
-        if (!isIncidentWithDetails(data)) {
+        if (!isMetadata(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an IncidentWithDetails in fetchIncidentWithDetails, received:', data);
+            console.error('expected a Metadata in fetchIncidentMetadata, received:', data);
         }
     }
 
-    return data as IncidentWithDetails;
+    return data as Metadata;
 }
 
 export async function fetchIncidentByChannel(channelId: string) {
@@ -250,7 +250,7 @@ export async function setActiveStage(incidentId: string, activeStage: number) {
 }
 
 export function exportChannelUrl(channelId: string) {
-    const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
+    const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v0';
 
     const queryParams = qs.stringify({
         channel_id: channelId,

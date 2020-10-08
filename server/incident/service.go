@@ -141,7 +141,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, p
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/dialog",
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/dialog",
 			s.configService.GetManifest().Id),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
@@ -250,7 +250,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf(
-			"/plugins/%s/api/v1/incidents/%s/end",
+			"/plugins/%s/api/v0/incidents/%s/end",
 			s.configService.GetManifest().Id,
 			incidentID,
 		),
@@ -270,14 +270,35 @@ func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 	return s.store.GetIncident(incidentID)
 }
 
-// GetIncidentWithDetails gets an incident with the detailed metadata.
-func (s *ServiceImpl) GetIncidentWithDetails(incidentID string) (*WithDetails, error) {
+// GetIncidentMetadata gets ancillary metadata about an incident.
+func (s *ServiceImpl) GetIncidentMetadata(incidentID string) (*Metadata, error) {
 	incident, err := s.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident '%s'", incidentID)
 	}
 
-	return s.appendDetailsToIncident(*incident)
+	// Get main channel details
+	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve channel id '%s'", incident.ChannelID)
+	}
+	team, err := s.pluginAPI.Team.Get(channel.TeamId)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
+	}
+
+	numMembers, err := s.store.GetAllIncidentMembersCount(incident.ChannelID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get the count of incident members for channel id '%s'", incident.ChannelID)
+	}
+
+	return &Metadata{
+		ChannelName:        channel.Name,
+		ChannelDisplayName: channel.DisplayName,
+		TeamName:           team.Name,
+		TotalPosts:         channel.TotalMsgCount,
+		NumMembers:         numMembers,
+	}, nil
 }
 
 // GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
@@ -611,7 +632,7 @@ func (s *ServiceImpl) OpenNextStageDialog(incidentID string, nextStage int, trig
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/%s/next-stage-dialog",
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/next-stage-dialog",
 			s.configService.GetManifest().Id,
 			incidentID,
 		),
@@ -698,35 +719,6 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	}
 
 	return ret, nil
-}
-
-func (s *ServiceImpl) appendDetailsToIncident(incident Incident) (*WithDetails, error) {
-	// Get main channel details
-	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve channel id '%s'", incident.ChannelID)
-	}
-	team, err := s.pluginAPI.Team.Get(channel.TeamId)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
-	}
-
-	numMembers, err := s.store.GetAllIncidentMembersCount(incident.ChannelID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get the count of incident members for channel id '%s'", incident.ChannelID)
-	}
-
-	incidentWithDetails := &WithDetails{
-		Incident: incident,
-		Details: Details{
-			ChannelName:        channel.Name,
-			ChannelDisplayName: channel.DisplayName,
-			TeamName:           team.Name,
-			TotalPosts:         channel.TotalMsgCount,
-			NumMembers:         numMembers,
-		},
-	}
-	return incidentWithDetails, nil
 }
 
 func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {

@@ -51,7 +51,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
-	incidentRouter.HandleFunc("/details", handler.getIncidentWithDetails).Methods(http.MethodGet)
+	incidentRouter.HandleFunc("/metadata", handler.getIncidentMetadata).Methods(http.MethodGet)
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
@@ -290,8 +290,6 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 }
 
 // getIncidents handles the GET /incidents endpoint.
-// NOTE: The incidents will NOT have the Checklists slice. Checklists will only be included
-// in a call to getIncident.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
@@ -315,16 +313,6 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		HandleError(w, err)
 		return
-	}
-
-	// To return an empty array instead of null
-	if results.Items == nil {
-		results.Items = []incident.Incident{}
-	}
-
-	// Return an empty array instead of null
-	for i := range results.Items {
-		results.Items[i].Checklists = []playbook.Checklist{}
 	}
 
 	jsonBytes, err := json.Marshal(results)
@@ -370,8 +358,8 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getIncidentWithDetails handles the /incidents/{id}/details endpoint.
-func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.Request) {
+// getIncidentMetadata handles the /incidents/{id}/metadata endpoint.
+func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -382,7 +370,7 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	incidentToGet, err := h.incidentService.GetIncidentMetadata(incidentID)
 	if err != nil {
 		HandleError(w, err)
 		return
