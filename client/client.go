@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	apiVersion = "v1"
+	apiVersion = "v0"
 	manifestID = "com.mattermost.plugin-incident-response"
 	userAgent  = "go-client/" + apiVersion
 )

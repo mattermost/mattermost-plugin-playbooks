@@ -141,7 +141,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, p
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/dialog",
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/dialog",
 			s.configService.GetManifest().Id),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
@@ -250,7 +250,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf(
-			"/plugins/%s/api/v1/incidents/%s/end",
+			"/plugins/%s/api/v0/incidents/%s/end",
 			s.configService.GetManifest().Id,
 			incidentID,
 		),
@@ -611,7 +611,7 @@ func (s *ServiceImpl) OpenNextStageDialog(incidentID string, nextStage int, trig
 	}
 
 	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v1/incidents/%s/next-stage-dialog",
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/next-stage-dialog",
 			s.configService.GetManifest().Id,
 			incidentID,
 		),
