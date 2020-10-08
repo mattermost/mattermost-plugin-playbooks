@@ -108,7 +108,7 @@ const BackstageIncidentList: FC = () => {
 
         // change to a new column; default to descending for time-based columns, ascending otherwise
         let newOrder = 'desc';
-        if (['name', 'status'].indexOf(colName) !== -1) {
+        if (['name', 'is_active'].indexOf(colName) !== -1) {
             newOrder = 'asc';
         }
         setFetchParams({...fetchParams, sort: colName, order: newOrder});
@@ -195,8 +195,8 @@ const BackstageIncidentList: FC = () => {
                             <SortableColHeader
                                 name={'Status'}
                                 order={fetchParams.order ? fetchParams.order : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'status' : false}
-                                onClick={() => colHeaderClicked('status')}
+                                active={fetchParams.sort ? fetchParams.sort === 'is_active' : false}
+                                onClick={() => colHeaderClicked('is_active')}
                             />
                         </div>
                         <div className='col-sm-2'>
