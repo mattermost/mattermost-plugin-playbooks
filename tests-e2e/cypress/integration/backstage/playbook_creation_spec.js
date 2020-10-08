@@ -28,18 +28,20 @@ describe('playbook creation button', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
 
-        // # Navigate to the application
-        cy.visit('/');
+        // # Navigate to a team without playbooks
+        cy.visit('/ad-1');
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = `com.mattermost.plugin-incident-response/playbooks/new`;
+        const url = 'com.mattermost.plugin-incident-response/playbooks/new';
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
         cy.openBackstage();
 
         // # Click 'New Playbook' button
+        // TODO: This is brittle, since this button only shows up if there are no playbooks in the
+        // team.
         cy.findByText('New Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // * Verify a new playbook creation page opened
@@ -47,7 +49,7 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with "Blank Playbook" template option', () => {
-        const url = `com.mattermost.plugin-incident-response/playbooks/new`;
+        const url = 'com.mattermost.plugin-incident-response/playbooks/new';
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
@@ -61,7 +63,7 @@ describe('playbook creation button', () => {
     });
 
     it('opens Incident Response Playbook page from its template option', () => {
-        const url = `playbooks/new?template_title=Incident%20Response%20Playbook`;
+        const url = 'playbooks/new?template_title=Incident%20Response%20Playbook';
         const playbookName = 'Incident Response Playbook';
         
         // # Open backstage
