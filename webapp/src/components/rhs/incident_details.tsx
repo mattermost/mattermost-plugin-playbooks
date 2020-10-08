@@ -59,6 +59,7 @@ function renderThumbVertical(props: any): JSX.Element {
 interface StageProps {
     stages: Checklist[];
     activeStage: number;
+    isIncidentActive: boolean;
 }
 
 const StageWrapper = styled.div`
@@ -92,7 +93,63 @@ const Stage: FC<StageProps> = (props: StageProps) => {
                     {`(${props.activeStage + 1}/${props.stages.length})`}
                 </StageCounter>
             </StageWrapper>
+            <StageProgressBar {...props}/>
         </div>
+    );
+};
+
+const StageProgressBarElements = styled.div`
+    display: flex;
+    margin-top: 8px;
+`;
+
+interface StageProgressBarElementProps {
+    active: boolean;
+    finished: boolean;
+}
+
+const StageProgressBarElement = styled.div<StageProgressBarElementProps>`
+    height: 8px;
+    width: 100%;
+    margin-right: 3px;
+    background-color: rgba(var(--center-channel-color-rgb), 0.08);
+
+    ${(props) => (props.active && css`
+        background-color: rgba(var(--button-bg-rgb), 0.2);
+    `)}
+
+    ${(props) => (props.finished && css`
+        background-color: var(--button-bg);
+    `)}
+
+
+    &:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+    }
+
+    &:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        margin-right: 0;
+    }
+`;
+
+const StageProgressBar: FC<StageProps> = (props: StageProps) => {
+    if (props.stages.length <= 1) {
+        return null;
+    }
+
+    return (
+        <StageProgressBarElements>
+            {props.stages.map((_, index) => (
+                <StageProgressBarElement
+                    key={index}
+                    active={props.activeStage === index}
+                    finished={props.activeStage > index || !props.isIncidentActive}
+                />
+            ))}
+        </StageProgressBarElements>
     );
 };
 
@@ -137,7 +194,6 @@ const StyledButton = styled(BasicButton)<BasicButtonProps>`
         background: var(--button-bg);
         color: var(--button-color);
     `}
-}
 `;
 
 const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) => {
@@ -273,6 +329,7 @@ const RHSIncidentDetails: FC<Props> = (props: Props) => {
                     <Stage
                         stages={checklists}
                         activeStage={activeChecklistIdx}
+                        isIncidentActive={props.incident.is_active}
                     />
                     <div
                         className='checklist-inner-container'
