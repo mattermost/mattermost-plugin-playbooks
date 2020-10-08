@@ -198,6 +198,7 @@ const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) 
 
 const RHSFooter = styled.div`
     display: flex;
+    align-items: center;
     justify-content: space-between;
 
     button:only-child {

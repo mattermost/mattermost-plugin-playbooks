@@ -47,7 +47,9 @@ const CenterCell = styled.div`
 `;
 
 const RightCell = styled.div`
-    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    margin: 0 17px 0 auto;
 `;
 
 const Link = styled.span`

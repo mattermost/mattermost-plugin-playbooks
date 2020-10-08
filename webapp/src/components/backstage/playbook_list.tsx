@@ -168,7 +168,7 @@ const PlaybookList: FC = () => {
                         p.num_steps
                     }
                 </div>
-                <div className='col-sm-2'>
+                <div className='col-sm-2 action-col'>
                     <PlaybookActionMenu
                         onEdit={() => {
                             editPlaybook(p);
@@ -355,7 +355,7 @@ interface PlaybookActionMenuProps {
 
 const IconWrapper = styled.div`
     display: inline-flex;
-    padding: 10px 5px 10px 0;
+    padding: 10px 5px;
 `;
 
 const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
