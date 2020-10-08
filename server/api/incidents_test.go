@@ -809,7 +809,7 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, testIncident, resultIncident)
 	})
 
-	t.Run("get private incident details - not part of channel", func(t *testing.T) {
+	t.Run("get private incident metadata - not part of channel", func(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
@@ -838,7 +838,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/details", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -848,7 +848,7 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
-	t.Run("get private incident details - part of channel", func(t *testing.T) {
+	t.Run("get private incident metadata - part of channel", func(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
@@ -864,15 +864,12 @@ func TestIncidents(t *testing.T) {
 			Checklists: []playbook.Checklist{},
 		}
 
-		testIncidentDetails := incident.WithDetails{
-			Incident: testIncident,
-			Details: incident.Details{
-				ChannelName:        "theChannelName",
-				ChannelDisplayName: "theChannelDisplayName",
-				TeamName:           "ourAwesomeTeam",
-				NumMembers:         11,
-				TotalPosts:         42,
-			},
+		testIncidentMetadata := incident.Metadata{
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -888,11 +885,11 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		incidentService.EXPECT().
-			GetIncidentWithDetails("incidentID").
-			Return(&testIncidentDetails, nil)
+			GetIncidentMetadata("incidentID").
+			Return(&testIncidentMetadata, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/details", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -901,13 +898,13 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var resultDetails incident.WithDetails
-		err = json.NewDecoder(resp.Body).Decode(&resultDetails)
+		var resultMetadata incident.Metadata
+		err = json.NewDecoder(resp.Body).Decode(&resultMetadata)
 		require.NoError(t, err)
-		assert.Equal(t, testIncidentDetails, resultDetails)
+		assert.Equal(t, testIncidentMetadata, resultMetadata)
 	})
 
-	t.Run("get public incident details - not part of channel or team", func(t *testing.T) {
+	t.Run("get public incident metadata - not part of channel or team", func(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
@@ -938,7 +935,7 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/details", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -948,7 +945,7 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
-	t.Run("get public incident details - not part of channel, but part of team", func(t *testing.T) {
+	t.Run("get public incident metadata - not part of channel, but part of team", func(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
@@ -964,15 +961,12 @@ func TestIncidents(t *testing.T) {
 			Checklists: []playbook.Checklist{},
 		}
 
-		testIncidentDetails := incident.WithDetails{
-			Incident: testIncident,
-			Details: incident.Details{
-				ChannelName:        "theChannelName",
-				ChannelDisplayName: "theChannelDisplayName",
-				TeamName:           "ourAwesomeTeam",
-				NumMembers:         11,
-				TotalPosts:         42,
-			},
+		testIncidentMetadata := incident.Metadata{
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -990,11 +984,11 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		incidentService.EXPECT().
-			GetIncidentWithDetails("incidentID").
-			Return(&testIncidentDetails, nil)
+			GetIncidentMetadata("incidentID").
+			Return(&testIncidentMetadata, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/details", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1003,13 +997,13 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var resultDetails incident.WithDetails
-		err = json.NewDecoder(resp.Body).Decode(&resultDetails)
+		var resultMetadata incident.Metadata
+		err = json.NewDecoder(resp.Body).Decode(&resultMetadata)
 		require.NoError(t, err)
-		assert.Equal(t, testIncidentDetails, resultDetails)
+		assert.Equal(t, testIncidentMetadata, resultMetadata)
 	})
 
-	t.Run("get public incident details - part of channel", func(t *testing.T) {
+	t.Run("get public incident metadata - part of channel", func(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
@@ -1025,15 +1019,12 @@ func TestIncidents(t *testing.T) {
 			Checklists: []playbook.Checklist{},
 		}
 
-		testIncidentDetails := incident.WithDetails{
-			Incident: testIncident,
-			Details: incident.Details{
-				ChannelName:        "theChannelName",
-				ChannelDisplayName: "theChannelDisplayName",
-				TeamName:           "ourAwesomeTeam",
-				NumMembers:         11,
-				TotalPosts:         42,
-			},
+		testIncidentMetadata := incident.Metadata{
+			ChannelName:        "theChannelName",
+			ChannelDisplayName: "theChannelDisplayName",
+			TeamName:           "ourAwesomeTeam",
+			NumMembers:         11,
+			TotalPosts:         42,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1049,11 +1040,11 @@ func TestIncidents(t *testing.T) {
 			Return(&testIncident, nil)
 
 		incidentService.EXPECT().
-			GetIncidentWithDetails("incidentID").
-			Return(&testIncidentDetails, nil)
+			GetIncidentMetadata("incidentID").
+			Return(&testIncidentMetadata, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/details", nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1062,10 +1053,10 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var resultDetails incident.WithDetails
-		err = json.NewDecoder(resp.Body).Decode(&resultDetails)
+		var resultMetadata incident.Metadata
+		err = json.NewDecoder(resp.Body).Decode(&resultMetadata)
 		require.NoError(t, err)
-		assert.Equal(t, testIncidentDetails, resultDetails)
+		assert.Equal(t, testIncidentMetadata, resultMetadata)
 	})
 
 	t.Run("get incidents", func(t *testing.T) {

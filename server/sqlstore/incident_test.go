@@ -366,7 +366,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -385,7 +385,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -597,7 +597,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -616,7 +616,7 @@ func TestGetIncidents(t *testing.T) {
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      nil,
+				Items:      []incident.Incident{},
 			},
 			ExpectedErr: nil,
 		},
@@ -862,7 +862,7 @@ func TestGetIncidents(t *testing.T) {
 			require.Equal(t, 0, result.TotalCount)
 			require.Equal(t, 0, result.PageCount)
 			require.False(t, result.HasMore)
-			require.Equal(t, []incident.Incident(nil), result.Items)
+			require.Empty(t, result.Items)
 		})
 
 		createIncidents(incidentStore)
@@ -885,11 +885,6 @@ func TestGetIncidents(t *testing.T) {
 					require.True(t, model.IsValidId(item.ID))
 					item.ID = ""
 					result.Items[i] = item
-				}
-
-				// remove the checklists from the expected incidents--we don't return them in getIncidents
-				for i := range testCase.Want.Items {
-					testCase.Want.Items[i].Checklists = nil
 				}
 
 				require.Equal(t, testCase.Want, *result)
