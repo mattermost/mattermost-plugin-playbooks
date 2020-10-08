@@ -267,7 +267,7 @@ describe('slash command > stage', () => {
                         });
 
                         // # Run a slash command to go to previous stage
-                        cy.executeSlashCommand('/incident stag prev');
+                        cy.executeSlashCommand('/incident stage prev');
 
                         // * Verify that we're on the first stage
                         cy.get('#incidentRHSStages').within(() => {
