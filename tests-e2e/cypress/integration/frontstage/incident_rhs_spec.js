@@ -483,7 +483,7 @@ describe('incident rhs', () => {
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
             // * Verify that the stage information is not visible
-            cy.get('#incidentRHSStages').should('not.be.visible');
+            cy.get('#incidentRHSStages').should('not.exist');
         });
     });
 
@@ -619,7 +619,7 @@ describe('incident rhs', () => {
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
             // # Check that the three dots button is not visible
-            cy.get('#incidentRHSFooter > .icon-dots-vertical').should('not.be.visible');
+            cy.get('#incidentRHSFooter > .icon-dots-vertical').should('not.exist');
         });
     });
 
@@ -823,7 +823,7 @@ describe('incident rhs', () => {
                 cy.get('#incidentRHSFooter button').click();
 
                 // * Verify that there is no interactive dialog showing up
-                cy.get('#interactiveDialogModalLabel').should('not.be.visible');
+                cy.get('#interactiveDialogModalLabel').should('not.exist');
 
                 // * Verify that we're on the second stage
                 cy.get('#incidentRHSStages').within(() => {
