@@ -76,6 +76,7 @@ func IsValidSortBy(sortBy string) bool {
 		SortByCommanderUserID,
 		SortByTeamID,
 		SortByEndAt,
+		SortByStatus,
 		SortByIsActive:
 		return true
 	}
@@ -111,6 +112,7 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 	case SortByEndAt:
 		options.Sort = "EndAt"
 	case SortByIsActive:
+	case SortByStatus:
 		options.Sort = "IsActive"
 	default:
 		return errors.New("bad parameter 'sort'")
