@@ -11,7 +11,6 @@ Members are able to do the following via both the right-hand sidebar and the mes
 - Invite new members to the channel
 
 
-Members can assign any step to another member via the right-hand sidebar.
 
 ## Changing the incident owner
 
