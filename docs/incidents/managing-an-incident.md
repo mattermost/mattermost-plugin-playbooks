@@ -16,4 +16,4 @@ Members can assign any step to another member via the right-hand sidebar.
 
 ## Changing the incident owner
 
-Any member can assign the incident commander role to themselves in the right-hand sidebar.
+An incident member can assign the incident commander role to themselves, or any other incident member, in the RHS.
