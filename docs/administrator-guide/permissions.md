@@ -4,5 +4,5 @@ Incidents and playbooks are associated with teams in Mattermost. Incident channe
 
 Only members of the team in which the playbook or incident is defined have access. Additionally, membership of playbook is independent of membership in incidents:
 
-- Members of a playbook may start an incident using that playbook, or edit the playbook's stages and steps.
+- Members of a playbook may start an incident using that playbook, and edit the playbook's stages and steps.
 - Members of an incident may modify the current state of the incident, and invite new members to the incident channel.
