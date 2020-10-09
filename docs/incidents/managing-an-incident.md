@@ -10,7 +10,6 @@ Members are able to do the following via both the right-hand sidebar and the mes
 - Start an automated action
 - Invite new members to the channel
 
-## Assigning steps to members
 
 Members can assign any step to another member via the right-hand sidebar.
 
