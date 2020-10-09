@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -496,16 +497,37 @@ func getTimeForMillis(unixMillis int64) time.Time {
 func durationString(start, end time.Time) string {
 	duration := end.Sub(start).Round(time.Second)
 
-	durationStr := duration.String()
-
-	if duration.Hours() > 23 {
-		days := duration / (24 * time.Hour)
-		duration %= 24 * time.Hour
-
-		durationStr = fmt.Sprintf("%dd%s", days, duration.String())
+	if duration.Seconds() < 60 {
+		return "< 1m"
 	}
 
-	return durationStr
+	if duration.Minutes() < 60 {
+		return fmt.Sprintf("%.fm", math.Floor(duration.Minutes()))
+	}
+
+	if duration.Hours() < 24 {
+		hours := math.Floor(duration.Hours())
+		minutes := math.Mod(math.Floor(duration.Minutes()), 60)
+		if minutes == 0 {
+			return fmt.Sprintf("%.fh", hours)
+		}
+		return fmt.Sprintf("%.fh %.fm", hours, minutes)
+	}
+
+	days := math.Floor(duration.Hours() / 24)
+	duration %= 24 * time.Hour
+	hours := math.Floor(duration.Hours())
+	minutes := math.Mod(math.Floor(duration.Minutes()), 60)
+	if minutes == 0 {
+		if hours == 0 {
+			return fmt.Sprintf("%.fd", days)
+		}
+		return fmt.Sprintf("%.fd %.fh", days, hours)
+	}
+	if hours == 0 {
+		return fmt.Sprintf("%.fd %.fm", days, minutes)
+	}
+	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
 func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
