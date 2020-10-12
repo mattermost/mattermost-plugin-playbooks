@@ -2,7 +2,7 @@
 
 ## Viewing incident details
 
-Members are able to do the following via both the right-hand sidebar and the messaging interface:
+Members are able to do the following via both the RHS and the messaging interface:
 - See who is the incident commander
 - See the remaining steps
 - Assign a step to self
