@@ -2,22 +2,22 @@
 
 ## Administrator's Guide
 
-- [Overview](overview.md)
-- [Permissions](permissions.md)
-- [Incident Response Slash Commands](incident-response-slash-commands.md)
+- [Overview](administrator-guide/overview.md)
+- [Permissions](administrator-guide/permissions.md)
+- [Incident Response Slash Commands](administrator-guide/incident-response-slash-commands.md)
 
-## Playbooks and Task Management
+## Playbooks
 
-- [Creating a Playbook](creating-a-playbook.md)
-- [Steps and Stages](incident-task-management.md)
+- [Creating a Playbook](playbooks/creating-a-playbook.md)
+- [Steps and Stages](playbooks/incident-task-management.md)
 
 ## Incident Response
 
-- [Starting an Incident](starting-an-incident.md)
-- [Managing an Incident](managing-an-incident.md)
-- [Joining an Incident](joining-an-incident.md)
-- [Ending an Incident](ending-an-incident.md)
-- [Reviewing an Incident](reviewing-and-refining-incident-response.md)
+- [Starting an Incident](incidents/starting-an-incident.md)
+- [Managing an Incident](incidents/managing-an-incident.md)
+- [Joining an Incident](incidents/joining-an-incident.md)
+- [Ending an Incident](incidents/ending-an-incident.md)
+- [Reviewing an Incident](incidents/reviewing-and-refining-incident-response.md)
 
 ## Data
 
