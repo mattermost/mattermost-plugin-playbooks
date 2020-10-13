@@ -41,7 +41,7 @@ describe('backstage playbook list', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // * Assert contents of heading.
-        cy.findByTestId('titlePlaybook').should('be.visible').contains('Playbooks');
+        cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
         cy.findByTestId('titlePlaybook').contains('eligendi');
     });
 });

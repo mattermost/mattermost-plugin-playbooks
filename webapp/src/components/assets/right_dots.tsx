@@ -11,6 +11,7 @@ const Icon = styled.svg`
     max-height: 70%;
     height: auto;
     pointer-events: none;
+    z-index: -1;
 `;
 
 const RightDots: FC = () => (
@@ -28,7 +29,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 263.1 0.956055)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='121.126'
@@ -36,7 +37,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 121.126 142.929)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.89'
@@ -44,7 +45,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 262.89 284.693)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.437'
@@ -52,7 +53,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 239.437 24.6183)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='97.4641'
@@ -60,7 +61,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 97.4641 166.592)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.227'
@@ -68,7 +69,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 239.227 308.355)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.775'
@@ -76,7 +77,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71815'
                 transform='rotate(45 215.775 48.2805)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='73.802'
@@ -84,7 +85,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 73.802 190.254)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.565'
@@ -92,7 +93,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 215.565 332.017)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='192.113'
@@ -100,7 +101,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 192.113 71.9429)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='50.1397'
@@ -108,7 +109,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 50.1397 213.916)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='191.903'
@@ -116,7 +117,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 191.903 355.679)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.451'
@@ -124,7 +125,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 168.451 95.6049)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='26.4774'
@@ -132,7 +133,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 26.4774 237.578)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.241'
@@ -140,7 +141,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 168.241 379.342)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='144.789'
@@ -148,7 +149,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 144.789 119.267)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='2.81519'
@@ -156,7 +157,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 2.81519 261.24)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='144.579'
@@ -164,7 +165,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 144.579 403.004)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='144.753'
@@ -172,7 +173,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 144.753 166.556)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='263.065'
@@ -180,7 +181,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 263.065 48.2454)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='121.091'
@@ -188,7 +189,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 121.091 190.219)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.855'
@@ -196,7 +197,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 262.855 331.982)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.402'
@@ -204,7 +205,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71815'
                 transform='rotate(45 239.402 71.9077)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='97.429'
@@ -212,7 +213,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 97.429 213.881)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.192'
@@ -220,7 +221,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 239.192 355.644)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.74'
@@ -228,7 +229,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 215.74 95.5699)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='73.7671'
@@ -236,7 +237,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 73.7671 237.543)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.53'
@@ -244,7 +245,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 215.53 379.306)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='192.078'
@@ -252,7 +253,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 192.078 119.232)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='50.1048'
@@ -260,7 +261,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 50.1048 261.206)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='191.868'
@@ -268,7 +269,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 191.868 402.969)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.416'
@@ -276,7 +277,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 168.416 142.895)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='26.4425'
@@ -284,7 +285,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 26.4425 284.868)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.206'
@@ -292,7 +293,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 168.206 426.631)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.381'
@@ -300,7 +301,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 168.381 190.184)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='144.719'
@@ -308,7 +309,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 144.719 213.846)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='263.03'
@@ -316,7 +317,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71815'
                 transform='rotate(45 263.03 95.5348)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='121.056'
@@ -324,7 +325,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 121.056 237.508)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.82'
@@ -332,7 +333,7 @@ const RightDots: FC = () => (
                 width='3.71264'
                 height='3.71816'
                 transform='rotate(45 262.82 379.272)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.367'
@@ -340,7 +341,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 239.367 119.197)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='97.394'
@@ -348,7 +349,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 97.394 261.171)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.157'
@@ -356,7 +357,7 @@ const RightDots: FC = () => (
                 width='3.71264'
                 height='3.71817'
                 transform='rotate(45 239.157 402.934)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.705'
@@ -364,7 +365,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 215.705 142.859)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='73.7319'
@@ -372,7 +373,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 73.7319 284.832)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.495'
@@ -380,7 +381,7 @@ const RightDots: FC = () => (
                 width='3.71264'
                 height='3.71817'
                 transform='rotate(45 215.495 426.596)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='192.043'
@@ -388,7 +389,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 192.043 166.521)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='50.0696'
@@ -396,7 +397,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 50.0696 308.495)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='191.833'
@@ -404,7 +405,7 @@ const RightDots: FC = () => (
                 width='3.71264'
                 height='3.71814'
                 transform='rotate(45 191.833 450.258)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='192.008'
@@ -412,7 +413,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 192.008 213.811)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.346'
@@ -420,7 +421,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 168.346 237.473)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='144.684'
@@ -428,7 +429,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 144.684 261.135)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.995'
@@ -436,7 +437,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 262.995 142.824)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='121.021'
@@ -444,7 +445,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 121.021 284.797)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.785'
@@ -452,7 +453,7 @@ const RightDots: FC = () => (
                 width='3.71264'
                 height='3.71817'
                 transform='rotate(45 262.785 426.561)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.332'
@@ -460,7 +461,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 239.332 166.486)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='97.3591'
@@ -468,7 +469,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 97.3591 308.46)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.122'
@@ -476,7 +477,7 @@ const RightDots: FC = () => (
                 width='3.71264'
                 height='3.71817'
                 transform='rotate(45 239.122 450.223)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.67'
@@ -484,7 +485,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 215.67 190.149)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='73.697'
@@ -492,7 +493,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 73.697 332.122)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.46'
@@ -500,7 +501,7 @@ const RightDots: FC = () => (
                 width='3.71264'
                 height='3.71814'
                 transform='rotate(45 215.46 473.885)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.635'
@@ -508,7 +509,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 215.635 237.438)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='191.973'
@@ -516,7 +517,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 191.973 261.101)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.311'
@@ -524,7 +525,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 168.311 284.763)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='144.648'
@@ -532,7 +533,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 144.648 308.425)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.96'
@@ -540,7 +541,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 262.96 190.114)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='120.986'
@@ -548,7 +549,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 120.986 332.087)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.75'
@@ -556,7 +557,7 @@ const RightDots: FC = () => (
                 width='3.71267'
                 height='3.71817'
                 transform='rotate(45 262.75 473.85)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.297'
@@ -564,7 +565,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 239.297 213.776)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='97.3239'
@@ -572,7 +573,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 97.3239 355.749)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='239.262'
@@ -580,7 +581,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 239.262 261.066)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='215.6'
@@ -588,7 +589,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 215.6 284.727)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='191.938'
@@ -596,7 +597,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71816'
                 transform='rotate(45 191.938 308.39)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='168.276'
@@ -604,7 +605,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 168.276 332.052)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='144.614'
@@ -612,7 +613,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 144.614 355.714)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='262.925'
@@ -620,7 +621,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71817'
                 transform='rotate(45 262.925 237.403)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
             <rect
                 x='120.951'
@@ -628,7 +629,7 @@ const RightDots: FC = () => (
                 width='3.71266'
                 height='3.71814'
                 transform='rotate(45 120.951 379.377)'
-                fill='#166DE0'
+                fill='var(--button-bg)'
             />
         </g>
     </Icon>

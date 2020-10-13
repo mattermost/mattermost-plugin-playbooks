@@ -3,6 +3,8 @@
 
 import {combineReducers} from 'redux';
 
+import {RHSState} from 'src/types/rhs';
+
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
@@ -12,9 +14,16 @@ import {
     SetClientId,
     INCIDENT_CREATED,
     IncidentCreated,
-    RECEIVED_TEAM_INCIDENT_CHANNELS,
-    ReceivedTeamIncidentChannels,
-} from './types/actions';
+    RECEIVED_TEAM_INCIDENTS,
+    ReceivedTeamIncidents,
+    SetRHSState,
+    SET_RHS_STATE,
+    RemovedFromIncidentChannel,
+    IncidentUpdated,
+    INCIDENT_UPDATED,
+    REMOVED_FROM_INCIDENT_CHANNEL,
+} from 'src/types/actions';
+import {Incident} from 'src/types/incident';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -43,27 +52,44 @@ function clientId(state = '', action: SetClientId) {
     }
 }
 
-// myIncidentChannelIds is a set of incident channel ids for which the current user is an incident
-// member. Note that it is lazy loaded on team change, but will also track incremental updates
-// as provided by websocket events.
-const myIncidentChannelIds = (state: Set<string> = new Set(), action: IncidentCreated | ReceivedTeamIncidentChannels) => {
+function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
+    switch (action.type) {
+    case SET_RHS_STATE:
+        return action.nextState;
+    default:
+        return state;
+    }
+}
+
+// myIncidentsMap is a map of channelId->incidents for which the current user is an incident member. Note
+// that it is lazy loaded on team change, but will also track incremental updates as provided by
+// websocket events.
+const myIncidentsMap = (state: Record<string, Incident> = {}, action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel) => {
     switch (action.type) {
     case INCIDENT_CREATED: {
         const incidentCreatedAction = action as IncidentCreated;
         const incident = incidentCreatedAction.incident;
-        const newState = new Set(state);
-
-        newState.add(incident.channel_id);
-        return newState;
+        return {...state, [incident.channel_id]: incident};
     }
-    case RECEIVED_TEAM_INCIDENT_CHANNELS: {
-        const receivedTeamIncidentChannelsAction = action as ReceivedTeamIncidentChannels;
-        const newState = new Set(state);
+    case INCIDENT_UPDATED: {
+        const incidentUpdated = action as IncidentUpdated;
+        const incident = incidentUpdated.incident;
+        return {...state, [incident.channel_id]: incident};
+    }
+    case RECEIVED_TEAM_INCIDENTS: {
+        const receivedTeamIncidentsAction = action as ReceivedTeamIncidents;
+        const newState = {...state};
 
-        for (const channelId of receivedTeamIncidentChannelsAction.channelIds) {
-            newState.add(channelId);
+        for (const incident of receivedTeamIncidentsAction.incidents) {
+            newState[incident.channel_id] = incident;
         }
 
+        return newState;
+    }
+    case REMOVED_FROM_INCIDENT_CHANNEL: {
+        const removedFromChannelAction = action as RemovedFromIncidentChannel;
+        const newState = {...state};
+        delete newState[removedFromChannelAction.channelId];
         return newState;
     }
     default:
@@ -75,5 +101,6 @@ export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
-    myIncidentChannelIds,
+    myIncidentsMap,
+    rhsState,
 });

@@ -4,7 +4,7 @@
 import * as TIMEOUTS from '../fixtures/timeouts';
 
 function waitUntilPermanentPost() {
-    cy.get('#postListContent').should('be.visible');
+    cy.get('#postListContent').should('exist');
     cy.waitUntil(() => cy.findAllByTestId('postView').last().then((el) => !(el[0].id.includes(':'))));
 }
 
@@ -47,11 +47,11 @@ Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') =
 
     if (self === true && user === 'user-1') {
         cy.get('#channelHeaderInfo').within(() => {
-            cy.findByText('user-1 (you)').should('be.visible');
+            cy.findByText('user-1 (you)').should('exist');
         });
     } else {
         cy.get('#channel-header').within(() => {
-            cy.findByText(username).should('be.visible');
+            cy.findByText(username).should('exist');
         });
     }
 });
@@ -67,7 +67,7 @@ Cypress.Commands.add('startGroupMessage', (usernames) => {
 
     usernames.forEach((username) => {
         cy.get('#channel-header').within(() => {
-            cy.findByText(username, {exact: false}).should('be.visible');
+            cy.findByText(username, {exact: false}).should('exist');
         });
     });
 });
@@ -105,7 +105,7 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
                 cy.get(`#postMessageText_${postId}`).contains('(Only visible to you)');
             } else {
                 // * Check if Bot message only visible to you
-                cy.get('.post__visibility').last().should('be.visible').and('have.text', '(Only visible to you)');
+                cy.get('.post__visibility').last().should('exist').and('have.text', '(Only visible to you)');
 
                 // * Check if we got ephemeral message of our selection
                 cy.get(`#postMessageText_${postId}`).contains(message);
