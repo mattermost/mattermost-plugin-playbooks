@@ -15,7 +15,7 @@ func TestAPI(t *testing.T) {
 	}{
 		"404": {
 			test: func(t *testing.T, handler *Handler, writer *httptest.ResponseRecorder) {
-				req := httptest.NewRequest("POST", "/api/v1/nothing", nil)
+				req := httptest.NewRequest("POST", "/api/v0/nothing", nil)
 				handler.ServeHTTP(writer, req, "")
 				resp := writer.Result()
 				defer resp.Body.Close()

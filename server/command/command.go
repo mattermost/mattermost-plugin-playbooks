@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,7 @@ import (
 const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
+	"* `/incident stage` - Move to the next or previous stage. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/incident commander [@username]` - Show or change the current commander. \n" +
 	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
@@ -47,7 +49,7 @@ func getCommand() *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Response Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, restart, check, announce, list, commander, info",
+		AutoCompleteDesc: "Available commands: start, end, stage, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(),
 	}
@@ -55,7 +57,7 @@ func getCommand() *model.Command {
 
 func getAutocompleteData() *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, restart, check, announce, list, commander")
+		"Available commands: start, end, restart, check, announce, list, commander, info, stage")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -63,6 +65,19 @@ func getAutocompleteData() *model.AutocompleteData {
 	end := model.NewAutocompleteData("end", "",
 		"Ends the incident associated with the current channel")
 	slashIncident.AddCommand(end)
+
+	next := model.NewAutocompleteData("stage", "[next/prev]", "Move to the next or previous stage")
+	next.AddStaticListArgument("", true, []model.AutocompleteListItem{
+		{
+			Item:     "next",
+			HelpText: "Move to next stage",
+		},
+		{
+			Item:     "prev",
+			HelpText: "Move to previous stage",
+		},
+	})
+	slashIncident.AddCommand(next)
 
 	restart := model.NewAutocompleteData("restart", "",
 		"Restarts the incident associated with the current channel")
@@ -72,7 +87,7 @@ func getAutocompleteData() *model.AutocompleteData {
 		"Checks or unchecks a checklist item.")
 	checklist.AddDynamicListArgument(
 		"List of checklist items is downloading from your incident response plugin",
-		"api/v1/incidents/checklist-autocomplete", true)
+		"api/v0/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
 	announce := model.NewAutocompleteData("announce", "~[channels]",
@@ -348,7 +363,6 @@ func (r *Runner) actionList() {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          r.args.UserId,
-		TeamID:          r.args.TeamId,
 		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
 	}
 
@@ -483,16 +497,37 @@ func getTimeForMillis(unixMillis int64) time.Time {
 func durationString(start, end time.Time) string {
 	duration := end.Sub(start).Round(time.Second)
 
-	durationStr := duration.String()
-
-	if duration.Hours() > 23 {
-		days := duration / (24 * time.Hour)
-		duration %= 24 * time.Hour
-
-		durationStr = fmt.Sprintf("%dd%s", days, duration.String())
+	if duration.Seconds() < 60 {
+		return "< 1m"
 	}
 
-	return durationStr
+	if duration.Minutes() < 60 {
+		return fmt.Sprintf("%.fm", math.Floor(duration.Minutes()))
+	}
+
+	if duration.Hours() < 24 {
+		hours := math.Floor(duration.Hours())
+		minutes := math.Mod(math.Floor(duration.Minutes()), 60)
+		if minutes == 0 {
+			return fmt.Sprintf("%.fh", hours)
+		}
+		return fmt.Sprintf("%.fh %.fm", hours, minutes)
+	}
+
+	days := math.Floor(duration.Hours() / 24)
+	duration %= 24 * time.Hour
+	hours := math.Floor(duration.Hours())
+	minutes := math.Mod(math.Floor(duration.Minutes()), 60)
+	if minutes == 0 {
+		if hours == 0 {
+			return fmt.Sprintf("%.fd", days)
+		}
+		return fmt.Sprintf("%.fd %.fh", days, hours)
+	}
+	if hours == 0 {
+		return fmt.Sprintf("%.fd %.fm", days, minutes)
+	}
+	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
 func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
@@ -537,6 +572,116 @@ func (r *Runner) actionEnd() {
 	case err != nil:
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
+	}
+}
+
+func (r *Runner) actionStage(args []string) {
+	if len(args) != 1 {
+		r.postCommandResponse("`/incident stage` expects one argument: either `next` or `prev`")
+	}
+
+	switch strings.ToLower(args[0]) {
+	case "next":
+		r.actionStageNext()
+	case "prev":
+		r.actionStagePrev()
+	default:
+		r.postCommandResponse("`/incident stage` expects the argument to be either `next` or `prev`")
+	}
+}
+
+func (r *Runner) actionStageNext() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only change an incident stage from within the incident's channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	numChecklists := len(currentIncident.Checklists)
+	if numChecklists == 0 {
+		r.postCommandResponse("The incident contains no stages.")
+		return
+	}
+
+	if currentIncident.ActiveStage < 0 || currentIncident.ActiveStage >= numChecklists {
+		r.warnUserAndLogErrorf("ActiveStage %d is out of bounds: incident '%s' has %d stages", currentIncident.ActiveStage, incidentID, numChecklists)
+		return
+	}
+
+	if currentIncident.ActiveStage == numChecklists-1 {
+		r.postCommandResponse("The active stage is the last one. If you want to end the incident, run `/incident end`")
+		return
+	}
+
+	allCompleted := true
+	for _, item := range currentIncident.Checklists[currentIncident.ActiveStage].Items {
+		if item.State == playbook.ChecklistItemStateOpen {
+			allCompleted = false
+			break
+		}
+	}
+
+	if !allCompleted {
+		err = r.incidentService.OpenNextStageDialog(incidentID, currentIncident.ActiveStage+1, r.args.TriggerId)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error: %v", err)
+		}
+
+		return
+	}
+
+	_, err = r.incidentService.ChangeActiveStage(incidentID, r.args.UserId, currentIncident.ActiveStage+1)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error changing active stage of incident '%s': %v", incidentID, err)
+	}
+}
+
+func (r *Runner) actionStagePrev() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only change an incident stage from within the incident's channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	currentIncident, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	numChecklists := len(currentIncident.Checklists)
+	if numChecklists == 0 {
+		r.postCommandResponse("The incident contains no stages.")
+		return
+	}
+
+	if currentIncident.ActiveStage < 0 || currentIncident.ActiveStage >= numChecklists {
+		r.warnUserAndLogErrorf("ActiveStage %d is out of bounds: incident '%s' has %d stages", currentIncident.ActiveStage, incidentID, numChecklists)
+		return
+	}
+
+	if currentIncident.ActiveStage == 0 {
+		r.postCommandResponse("The active stage is the first one.")
+		return
+	}
+
+	_, err = r.incidentService.ChangeActiveStage(incidentID, r.args.UserId, currentIncident.ActiveStage-1)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error changing active stage of incident '%s': %v", incidentID, err)
 	}
 }
 
@@ -853,6 +998,8 @@ func (r *Runner) Execute() error {
 		r.actionStart(parameters)
 	case "end":
 		r.actionEnd()
+	case "stage":
+		r.actionStage(parameters)
 	case "check":
 		r.actionCheck(parameters)
 	case "restart":

@@ -184,7 +184,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.1.0"),
 		toVersion:   semver.MustParse("0.2.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			// migration to 0.2.0 is used to trigger the data migration from the kvstore.
+			// prior to v1.0.0 of the plugin, this migration was used to trigger the data migration from the kvstore
 			return nil
 		},
 	},

@@ -1,29 +1,34 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {GetStateFunc} from 'mattermost-redux/types/actions';
-import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {Dispatch} from 'redux';
 
+import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
+import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
 import {navigateToUrl} from 'src/browser_routing';
-import {incidentCreated, receivedTeamIncidentChannels} from 'src/actions';
-import {fetchIncidentChannels} from 'src/client';
+import {
+    incidentCreated, incidentUpdated,
+    removedFromIncidentChannel,
+    receivedTeamIncidents,
+} from 'src/actions';
+import {fetchIncidentByChannel, fetchIncidentChannels} from 'src/client';
+import {clientId} from 'src/selectors';
+import {Incident, isIncident} from 'src/types/incident';
 
-import {clientId} from './selectors';
-import {Incident, isIncident} from './types/incident';
-
-export const websocketSubscribers = new Set<(incident: Incident) => void>();
+export const websocketSubscribersToIncidentUpdate = new Set<(incident: Incident) => void>();
 
 export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
     return async (): Promise<void> => {
         const currentTeam = getCurrentTeam(getState());
-        dispatch(receivedTeamIncidentChannels(await fetchIncidentChannels(currentTeam.id)));
+        const currentUserId = getCurrentUserId(getState());
+        dispatch(receivedTeamIncidents(await fetchIncidentChannels(currentTeam.id, currentUserId)));
     };
 }
 
-export function handleWebsocketIncidentUpdate() {
+export function handleWebsocketIncidentUpdated(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage): void => {
         if (!msg.data.payload) {
             return;
@@ -39,11 +44,13 @@ export function handleWebsocketIncidentUpdate() {
         }
         const incident = data as Incident;
 
-        websocketSubscribers.forEach((fn) => fn(incident));
+        dispatch(incidentUpdated(incident));
+
+        websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
     };
 }
 
-export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: Dispatch) {
+export function handleWebsocketIncidentCreated(getState: GetStateFunc, dispatch: Dispatch) {
     return (msg: WebSocketMessage): void => {
         if (!msg.data.payload) {
             return;
@@ -71,5 +78,25 @@ export function handleWebsocketIncidentCreate(getState: GetStateFunc, dispatch: 
         // Navigate to the newly created channel
         const url = `/${currentTeam.name}/channels/${incident.channel_id}`;
         navigateToUrl(url);
+    };
+}
+
+export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispatch) {
+    return async (msg: WebSocketMessage) => {
+        const currentUserId = getCurrentUserId(getState());
+        const currentTeamId = getCurrentTeamId(getState());
+        if (currentUserId === msg.data.user_id && currentTeamId === msg.data.team_id) {
+            const incident = await fetchIncidentByChannel(msg.broadcast.channel_id);
+            dispatch(receivedTeamIncidents([incident]));
+        }
+    };
+}
+
+export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage) => {
+        const currentUserId = getCurrentUserId(getState());
+        if (currentUserId === msg.broadcast.user_id) {
+            dispatch(removedFromIncidentChannel(msg.data.channel_id));
+        }
     };
 }

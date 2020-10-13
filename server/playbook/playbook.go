@@ -90,6 +90,24 @@ type GetPlaybooksResults struct {
 	Items      []Playbook `json:"items"`
 }
 
+// MarshalJSON customizes the JSON marshalling for GetPlaybooksResults by rendering a nil Items as
+// an empty slice instead.
+func (r GetPlaybooksResults) MarshalJSON() ([]byte, error) {
+	type Alias GetPlaybooksResults
+
+	if r.Items == nil {
+		r.Items = []Playbook{}
+	}
+
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(&r),
+	}
+
+	return json.Marshal(aux)
+}
+
 // RequesterInfo holds the userID and permissions for the user making the request
 type RequesterInfo struct {
 	UserID          string

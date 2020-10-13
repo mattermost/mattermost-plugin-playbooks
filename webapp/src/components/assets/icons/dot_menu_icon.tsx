@@ -12,5 +12,4 @@ const DotMenuIcon = (props: React.PropsWithoutRef<JSX.IntrinsicElements['i']>): 
 export default styled(DotMenuIcon)`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     position: relative;
-    left: -8px;
 `;

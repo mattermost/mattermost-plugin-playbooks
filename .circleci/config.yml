@@ -170,6 +170,7 @@ jobs:
       - *save_test_cache
 
   e2e-cypress-tests:
+    resource_class: large
     docker:
       - image: circleci/golang:1.14.1-node-browsers
         environment:
