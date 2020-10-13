@@ -10,7 +10,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 )
 
 // Incident represents an incident.
@@ -34,7 +33,7 @@ type IncidentCreateOptions struct {
 
 // IncidentUpdateOptions specifies the parameters for IncidentsService.Update method.
 type IncidentUpdateOptions struct {
-	CommanderUserID *string `json:"commander_user_id"`
+	CommanderUserID string `json:"commander_user_id"`
 }
 
 // IncidentListOptions specifies the optional parameters to the
@@ -115,41 +114,70 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 
 // Get an incident.
 func (s *IncidentsService) Get(ctx context.Context, incidentID string) (*Incident, error) {
-	u := fmt.Sprintf("%s/%s", "incidents", incidentID)
-	req, err := s.client.NewRequest(http.MethodGet, u, nil)
+	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+	req, err := s.client.NewRequest(http.MethodGet, incidentURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	i := new(Incident)
-	resp, err := s.client.Do(ctx, req, i)
+	incident := new(Incident)
+	resp, err := s.client.Do(ctx, req, incident)
 	if err != nil {
 		return nil, err
 	}
 	resp.Body.Close()
 
-	return i, nil
+	return incident, nil
 }
 
 // GetByChannelID gets an incident by ChannelID.
 func (s *IncidentsService) GetByChannelID(ctx context.Context, channelID string) (*Incident, error) {
-	return nil, errors.New("not implemented")
-}
-
-// Update an incident.
-func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts IncidentUpdateOptions) (*Incident, error) {
-	return nil, errors.New("not implemented")
-}
-
-// List the incidents.
-func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (*IncidentList, error) {
-	u := "incidents"
-	u, err := addOptions(u, opts)
+	channelURL := fmt.Sprintf("%s/%s/%s", "incidents", "channel", channelID)
+	req, err := s.client.NewRequest(http.MethodGet, channelURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := s.client.NewRequest(http.MethodGet, u, nil)
+	incident := new(Incident)
+	resp, err := s.client.Do(ctx, req, incident)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return incident, nil
+}
+
+// Update an incident.
+func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts IncidentUpdateOptions) (*Incident, error) {
+	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+	incidentUpdateRequest := Incident{
+		CommanderUserID: opts.CommanderUserID,
+	}
+
+	req, err := s.client.NewRequest(http.MethodPatch, incidentURL, incidentUpdateRequest)
+	req.Header.Add("Mattermost-User-ID", opts.CommanderUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// List the incidents.
+func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (*IncidentList, error) {
+	incidentURL := "incidents"
+	incidentURL, err := addOptions(incidentURL, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest(http.MethodGet, incidentURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -166,10 +194,37 @@ func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (
 
 // Delete an incident.
 func (s *IncidentsService) Delete(ctx context.Context, incidentID string) (*Incident, error) {
-	return nil, errors.New("not implemented")
+	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+
+	req, err := s.client.NewRequest(http.MethodDelete, incidentURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // End an incident.
 func (s *IncidentsService) End(ctx context.Context, incidentID string) (*Incident, error) {
-	return nil, errors.New("not implemented")
+	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+
+	incidentEndRequest := Incident{
+		IsActive: false,
+	}
+	req, err := s.client.NewRequest(http.MethodPatch, incidentURL, incidentEndRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
