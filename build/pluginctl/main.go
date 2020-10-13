@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -13,6 +14,8 @@ import (
 const helpText = `
 Usage:
     pluginctl deploy <plugin id> <bundle path>
+    pluginctl disable <plugin id>
+    pluginctl enable <plugin id>
     pluginctl reset <plugin id>
 `
 
@@ -41,6 +44,10 @@ func pluginctl() error {
 			return errors.New("invalid number of arguments")
 		}
 		return deploy(client, os.Args[2], os.Args[3])
+	case "disable":
+		return disablePlugin(client, os.Args[2])
+	case "enable":
+		return enablePlugin(client, os.Args[2])
 	case "reset":
 		return resetPlugin(client, os.Args[2])
 	default:
@@ -49,6 +56,21 @@ func pluginctl() error {
 }
 
 func getClient() (*model.Client4, error) {
+	socketPath := os.Getenv("MM_LOCALSOCKETPATH")
+	if socketPath == "" {
+		socketPath = model.LOCAL_MODE_SOCKET_PATH
+	}
+
+	client, connected := getUnixClient(socketPath)
+	if connected {
+		log.Printf("Connecting using local mode over %s", socketPath)
+		return client, nil
+	}
+
+	if os.Getenv("MM_LOCALSOCKETPATH") != "" {
+		log.Printf("No socket found at %s for local mode deployment. Attempting to authenticate with credentials.", socketPath)
+	}
+
 	siteURL := os.Getenv("MM_SERVICESETTINGS_SITEURL")
 	adminToken := os.Getenv("MM_ADMIN_TOKEN")
 	adminUsername := os.Getenv("MM_ADMIN_USERNAME")
@@ -58,7 +80,7 @@ func getClient() (*model.Client4, error) {
 		return nil, errors.New("MM_SERVICESETTINGS_SITEURL is not set")
 	}
 
-	client := model.NewAPIv4Client(siteURL)
+	client = model.NewAPIv4Client(siteURL)
 
 	if adminToken != "" {
 		log.Printf("Authenticating using token against %s.", siteURL)
@@ -67,7 +89,6 @@ func getClient() (*model.Client4, error) {
 	}
 
 	if adminUsername != "" && adminPassword != "" {
-		client := model.NewAPIv4Client(siteURL)
 		log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
 		_, resp := client.Login(adminUsername, adminPassword)
 		if resp.Error != nil {
@@ -77,6 +98,15 @@ func getClient() (*model.Client4, error) {
 	}
 
 	return nil, errors.New("one of MM_ADMIN_TOKEN or MM_ADMIN_USERNAME/MM_ADMIN_PASSWORD must be defined")
+}
+
+func getUnixClient(socketPath string) (*model.Client4, bool) {
+	_, err := net.Dial("unix", socketPath)
+	if err != nil {
+		return nil, false
+	}
+
+	return model.NewAPIv4SocketClient(socketPath), true
 }
 
 // deploy attempts to upload and enable a plugin via the Client4 API.
@@ -103,18 +133,38 @@ func deploy(client *model.Client4, pluginID, bundlePath string) error {
 	return nil
 }
 
-// resetPlugin attempts to reset the plugin via the Client4 API.
-func resetPlugin(client *model.Client4, pluginID string) error {
+// disablePlugin attempts to disable the plugin via the Client4 API.
+func disablePlugin(client *model.Client4, pluginID string) error {
 	log.Print("Disabling plugin.")
 	_, resp := client.DisablePlugin(pluginID)
 	if resp.Error != nil {
 		return fmt.Errorf("failed to disable plugin: %w", resp.Error)
 	}
 
+	return nil
+}
+
+// enablePlugin attempts to enable the plugin via the Client4 API.
+func enablePlugin(client *model.Client4, pluginID string) error {
 	log.Print("Enabling plugin.")
-	_, resp = client.EnablePlugin(pluginID)
+	_, resp := client.EnablePlugin(pluginID)
 	if resp.Error != nil {
 		return fmt.Errorf("failed to enable plugin: %w", resp.Error)
+	}
+
+	return nil
+}
+
+// resetPlugin attempts to reset the plugin via the Client4 API.
+func resetPlugin(client *model.Client4, pluginID string) error {
+	err := disablePlugin(client, pluginID)
+	if err != nil {
+		return err
+	}
+
+	err = enablePlugin(client, pluginID)
+	if err != nil {
+		return err
 	}
 
 	return nil
