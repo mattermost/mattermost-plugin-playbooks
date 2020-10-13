@@ -35,14 +35,31 @@ Cypress.Commands.add('requireIncidentResponsePlugin', (version) => {
 });
 
 /**
- * Delete all incidents directly from API
+ * End all active incidents directly from API with sysadmin. Need to login after this.
  */
-Cypress.Commands.add('deleteAllIncidents', (teamId) => {
-    cy.apiGetAllIncidents(teamId).then((response) => {
-        const incidents = JSON.parse(response.body);
+Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
+    cy.apiLogin('sysadmin');
+
+    cy.apiGetAllActiveIncidents(teamId).then((response) => {
+        const incidents = JSON.parse(response.body).items;
 
         incidents.forEach((incident) => {
-            cy.apiDeleteIncident(incident.id);
+            cy.apiEndIncident(incident.id);
+        });
+    });
+
+    cy.apiLogout();
+});
+
+/**
+ * End all active incidents directly from API with current user.
+ */
+Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
+    cy.apiGetAllActiveIncidents(teamId).then((response) => {
+        const incidents = JSON.parse(response.body).items;
+
+        incidents.forEach((incident) => {
+            cy.apiEndIncident(incident.id);
         });
     });
 });

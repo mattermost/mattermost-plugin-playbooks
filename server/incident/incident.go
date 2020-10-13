@@ -9,6 +9,9 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 )
 
+// NoActiveStage is the value of an incident's ActiveStage property when there are no stages.
+const NoActiveStage = -1
+
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
@@ -41,6 +44,13 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	// Define consistent semantics for empty checklists and out-of-range active stages.
+	if len(old.Checklists) == 0 {
+		old.Header.ActiveStage = NoActiveStage
+	} else if old.Header.ActiveStage < 0 || old.Header.ActiveStage >= len(old.Checklists) {
+		old.Header.ActiveStage = 0
+	}
+
 	return json.Marshal(old)
 }
 
@@ -64,19 +74,13 @@ type UpdateOptions struct {
 	ActiveStage *int `json:"active_stage"`
 }
 
-// Details holds the extra details needed for some API calls (e.g., the backstage's incident details)
-type Details struct {
+// Metadata tracks ancillary metadata about an incident.
+type Metadata struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
 	NumMembers         int64  `json:"num_members"`
 	TotalPosts         int64  `json:"total_posts"`
-}
-
-// WithDetails holds the Incident with Details
-type WithDetails struct {
-	Incident Incident `json:"incident"`
-	Details  Details  `json:"details"`
 }
 
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
@@ -86,6 +90,30 @@ type GetIncidentsResults struct {
 	PageCount  int        `json:"page_count"`
 	HasMore    bool       `json:"has_more"`
 	Items      []Incident `json:"items"`
+}
+
+func (r GetIncidentsResults) Clone() GetIncidentsResults {
+	newGetIncidentsResults := r
+
+	newGetIncidentsResults.Items = make([]Incident, 0, len(r.Items))
+	for _, i := range r.Items {
+		newGetIncidentsResults.Items = append(newGetIncidentsResults.Items, *i.Clone())
+	}
+
+	return newGetIncidentsResults
+}
+
+func (r GetIncidentsResults) MarshalJSON() ([]byte, error) {
+	type Alias GetIncidentsResults
+
+	old := Alias(r.Clone())
+
+	// replace nils with empty slices for the frontend
+	if old.Items == nil {
+		old.Items = []Incident{}
+	}
+
+	return json.Marshal(old)
 }
 
 // CommanderInfo holds the summary information of a commander.
@@ -105,7 +133,6 @@ type DialogState struct {
 // for the user making the request
 type RequesterInfo struct {
 	UserID          string
-	TeamID          string
 	UserIDtoIsAdmin map[string]bool
 }
 
@@ -148,8 +175,8 @@ type Service interface {
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
 	GetIncident(incidentID string) (*Incident, error)
 
-	// GetIncidentWithDetails gets an incident with the detailed metadata.
-	GetIncidentWithDetails(incidentID string) (*WithDetails, error)
+	// GetIncidentMetadata gets ancillary metadata about an incident.
+	GetIncidentMetadata(incidentID string) (*Metadata, error)
 
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
@@ -197,6 +224,10 @@ type Service interface {
 	// ChangeActiveStage processes a request from userID to change the active
 	// stage of incidentID to stageIdx.
 	ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error)
+
+	// OpenNextStageDialog opens an interactive dialog so the user can confirm
+	// going to the next stage
+	OpenNextStageDialog(incidentID string, nextStage int, triggerID string) error
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

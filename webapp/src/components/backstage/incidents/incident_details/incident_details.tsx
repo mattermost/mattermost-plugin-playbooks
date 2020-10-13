@@ -12,13 +12,17 @@ import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {fetchIncidentWithDetails} from 'src/client';
-import {Incident, IncidentWithDetails} from 'src/types/incident';
+import {fetchIncident, fetchIncidentMetadata} from 'src/client';
+import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
 import Profile from 'src/components/profile/profile';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {renderDuration} from 'src/components/duration';
+import RightDots from 'src/components/assets/right_dots';
+import RightFade from 'src/components/assets/right_fade';
+import LeftDots from 'src/components/assets/left_dots';
+import LeftFade from 'src/components/assets/left_fade';
 
 import StatusBadge from '../status_badge';
 
@@ -237,7 +241,8 @@ const FetchingStateType = {
 };
 
 const BackstageIncidentDetails: FC = () => {
-    const [incidentWithDetails, setIncidentWithDetails] = useState<IncidentWithDetails | null>(null);
+    const [incident, setIncident] = useState<Incident | null>(null);
+    const [incidentMetadata, setIncidentMetadata] = useState<IncidentMetadata | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const match = useRouteMatch<MatchParams>();
@@ -245,28 +250,27 @@ const BackstageIncidentDetails: FC = () => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     useEffect(() => {
-        const fetchIncident = async (incidentId: string) => {
-            try {
-                setIncidentWithDetails(await fetchIncidentWithDetails(incidentId));
-                setFetchingState(FetchingStateType.fetched);
-            } catch {
-                setFetchingState(FetchingStateType.notFound);
-            }
-        };
+        const incidentId = match.params.incidentId;
 
-        fetchIncident(match.params.incidentId);
+        Promise.all([fetchIncident(incidentId), fetchIncidentMetadata(incidentId)]).then(([incidentResult, incidentMetadataResult]) => {
+            setIncident(incidentResult);
+            setIncidentMetadata(incidentMetadataResult);
+            setFetchingState(FetchingStateType.fetched);
+        }).catch(() => {
+            setFetchingState(FetchingStateType.notFound);
+        });
     }, [match.params.incidentId]);
 
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
 
-    if (fetchingState === FetchingStateType.notFound || incidentWithDetails === null) {
+    if (fetchingState === FetchingStateType.notFound || incident === null || incidentMetadata === null) {
         return <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.INCIDENTS)}/>;
     }
 
     const goToChannel = () => {
-        navigateToUrl(`/${incidentWithDetails.details.team_name}/channels/${incidentWithDetails.details.channel_name}`);
+        navigateToUrl(`/${incidentMetadata.team_name}/channels/${incidentMetadata.channel_name}`);
     };
 
     const closeIncidentDetails = () => {
@@ -281,14 +285,14 @@ const BackstageIncidentDetails: FC = () => {
                     onClick={closeIncidentDetails}
                 />
                 <IncidentTitle data-testid='incident-title'>
-                    {`Incident ${incidentWithDetails.incident.name}`}
+                    {`Incident ${incident.name}`}
                 </IncidentTitle>
-                <StatusBadge isActive={incidentWithDetails.incident.is_active}/>
+                <StatusBadge isActive={incident.is_active}/>
                 <NavbarPadding/>
                 <CommanderContainer>
                     <span className='label'>{'Commander:'}</span>
                     <Profile
-                        userId={incidentWithDetails.incident.commander_user_id}
+                        userId={incident.commander_user_id}
                         classNames={{ProfileButton: true, profile: true}}
                     />
                 </CommanderContainer>
@@ -300,7 +304,7 @@ const BackstageIncidentDetails: FC = () => {
                         <div className='summary-tab'>
                             {'Summary'}
                         </div>
-                        <ExportLink incident={incidentWithDetails.incident}/>
+                        <ExportLink incident={incident}/>
                     </div>
                     <div className='statistics-row'>
                         <div className='statistics-row__block'>
@@ -309,10 +313,10 @@ const BackstageIncidentDetails: FC = () => {
                             </div>
                             <div className='content'>
                                 <i className='icon icon-clock-outline box-icon'/>
-                                {duration(incidentWithDetails.incident)}
+                                {duration(incident)}
                             </div>
                             <div className='block-footer text-right'>
-                                <span>{timeFrameText(incidentWithDetails.incident)}</span>
+                                <span>{timeFrameText(incident)}</span>
                             </div>
                         </div>
                         <OverlayTrigger
@@ -326,7 +330,7 @@ const BackstageIncidentDetails: FC = () => {
                                 </div>
                                 <div className='content'>
                                     <i className='icon icon-account-multiple-outline box-icon'/>
-                                    {incidentWithDetails.details.num_members}
+                                    {incidentMetadata.num_members}
                                 </div>
                             </div>
                         </OverlayTrigger>
@@ -336,7 +340,7 @@ const BackstageIncidentDetails: FC = () => {
                             </div>
                             <div className='content'>
                                 <i className='icon icon-send box-icon'/>
-                                {incidentWithDetails.details.total_posts}
+                                {incidentMetadata.total_posts}
                             </div>
                             <div className='block-footer text-right'>
                                 <a
@@ -351,11 +355,15 @@ const BackstageIncidentDetails: FC = () => {
                     </div>
                     <div className='chart-block'>
                         <ChecklistTimeline
-                            incident={incidentWithDetails.incident}
+                            incident={incident}
                         />
                     </div>
                 </BackstageIncidentDetailsContainer>
             </Container>
+            <RightDots/>
+            <RightFade/>
+            <LeftDots/>
+            <LeftFade/>
         </OuterContainer>
     );
 };

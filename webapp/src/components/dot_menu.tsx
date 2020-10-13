@@ -2,22 +2,47 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useRef} from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
-import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
+
+const DotMenuButton = styled.div`
+    display: inline-flex;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    width: 3.2rem;
+    height: 3.2rem;
+    fill: var(--center-channel-color-56);
+    color: var(--center-channel-color-56);
+    cursor: pointer;
+
+    &:hover {
+       background: rgba(var(--center-channel-color-rgb), 0.08);
+       color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+`;
 
 const DropdownMenuWrapper = styled.div`
     position: relative;
 `;
 
-const DropdownMenu = styled.div`
+interface DropdownMenuProps {
+    top?: boolean;
+    left?: boolean;
+}
+
+const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
     position: absolute;
-    top: 100%;
-    left: 0;
+    ${(props) => (props.top ? 'bottom: 35px;' : 'top: 100%;')};
+    ${(props) => (props.left && css`
+        left: -197px;
+        top: 35px;
+    `)};
     min-width: 160px;
     text-align: left;
     list-style: none;
@@ -27,6 +52,7 @@ const DropdownMenu = styled.div`
     font-style: normal;
     font-weight: normal;
     font-size: 14px;
+    line-height: 20px;
     color: var(--center-channel-color);
     position: 'fixed';
 
@@ -38,13 +64,11 @@ const DropdownMenu = styled.div`
     z-index: 1;
 `;
 
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px 10px 0;
-`;
-
 interface DotMenuProps {
     children: JSX.Element[] | JSX.Element;
+    icon: JSX.Element;
+    top?: boolean;
+    left?: boolean;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
@@ -63,25 +87,26 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
     });
 
     return (
-        <div
+        <DotMenuButton
             ref={rootRef}
             onClick={(e) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
         >
-            <IconWrapper>
-                <DotMenuIcon/>
-            </IconWrapper>
+            {props.icon}
             <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu>
+                    <DropdownMenu
+                        top={props.top}
+                        left={props.left}
+                    >
                         {props.children}
                     </DropdownMenu>
                 }
             </DropdownMenuWrapper>
-        </div>
+        </DotMenuButton>
     );
 };
 
@@ -98,12 +123,12 @@ const DropdownMenuItemStyled = styled.a`
 
     &:hover {
         background: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
+        color: var(--center-channel-color);
     }
 }
 `;
 
-export const DropdownMenuItem = (props: {text: string, onClick: () => void}) => {
+export const DropdownMenuItem = (props: { text: string, onClick: () => void }) => {
     return (
         <DropdownMenuItemStyled
             href='#'

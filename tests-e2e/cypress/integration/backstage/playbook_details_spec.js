@@ -38,7 +38,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
 
             // * Verify the autocomplete prompt is open
-            cy.get('#suggestionList').should('be.visible');
+            cy.get('#suggestionList').should('exist');
         });
 
         it('removes the input prompt when blurring with an empty slash command', () => {
@@ -61,7 +61,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
             // # Verify the Add a Slash Command button returns
-            cy.get('#root').findByText('Add a Slash Command').should('be.visible');
+            cy.get('#root').findByText('Add a Slash Command').should('exist');
         });
 
         it('removes the input prompt when blurring with an invalid slash command', () => {
@@ -81,7 +81,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
             // * Verify the Add a Slash Command button returns
-            cy.get('#root').findByText('Add a Slash Command').should('be.visible');
+            cy.get('#root').findByText('Add a Slash Command').should('exist');
         });
     });
 });

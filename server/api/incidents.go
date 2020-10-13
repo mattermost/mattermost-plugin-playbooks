@@ -45,21 +45,21 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
 
 	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
-	incidentsRouter.HandleFunc("/end-dialog", handler.endIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
-	incidentRouter.HandleFunc("/details", handler.getIncidentWithDetails).Methods(http.MethodGet)
+	incidentRouter.HandleFunc("/metadata", handler.getIncidentMetadata).Methods(http.MethodGet)
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
 	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
-	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut, http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -290,8 +290,6 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 }
 
 // getIncidents handles the GET /incidents endpoint.
-// NOTE: The incidents will NOT have the Checklists slice. Checklists will only be included
-// in a call to getIncident.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
@@ -308,7 +306,6 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          filterOptions.TeamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
@@ -316,16 +313,6 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		HandleError(w, err)
 		return
-	}
-
-	// To return an empty array instead of null
-	if results.Items == nil {
-		results.Items = []incident.Incident{}
-	}
-
-	// Return an empty array instead of null
-	for i := range results.Items {
-		results.Items[i].Checklists = []playbook.Checklist{}
 	}
 
 	jsonBytes, err := json.Marshal(results)
@@ -371,8 +358,8 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getIncidentWithDetails handles the /incidents/{id}/details endpoint.
-func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.Request) {
+// getIncidentMetadata handles the /incidents/{id}/metadata endpoint.
+func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -383,7 +370,7 @@ func (h *IncidentHandler) getIncidentWithDetails(w http.ResponseWriter, r *http.
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncidentWithDetails(incidentID)
+	incidentToGet, err := h.incidentService.GetIncidentMetadata(incidentID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -447,11 +434,15 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 }
 
 // endIncident handles the /incidents/{id}/end api endpoint.
+//
+// In addition to being reachable directly via the REST API, the POST version of this endpoint is
+// also used as the target of the interactive dialog spawned by `/incident dialog`.
 func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	err := h.incidentService.EndIncident(vars["id"], userID)
+	err := h.incidentService.EndIncident(incidentID, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -469,25 +460,6 @@ func (h *IncidentHandler) restartIncident(w http.ResponseWriter, r *http.Request
 	err := h.incidentService.RestartIncident(vars["id"], userID)
 	if err != nil {
 		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
-}
-
-// endIncidentFromDialog handles the interactive dialog submission when a user confirms they
-// want to end an incident.
-func (h *IncidentHandler) endIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
-	request := model.SubmitDialogRequestFromJson(r.Body)
-	if request == nil {
-		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
-		return
-	}
-
-	err := h.incidentService.EndIncident(request.State, request.UserId)
-	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to end incident"))
 		return
 	}
 
@@ -518,7 +490,6 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
@@ -546,34 +517,28 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
-	teamID := r.URL.Query().Get("team_id")
-	if teamID == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+	filterOptions, err := parseIncidentsFilterOptions(r.URL)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
-			teamID,
+			filterOptions.TeamID,
 		))
 		return
 	}
 
-	options := incident.HeaderFilterOptions{
-		TeamID: teamID,
-		Status: incident.All,
-	}
-
 	requesterInfo := incident.RequesterInfo{
 		UserID:          userID,
-		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
 	}
 
-	incidents, err := h.incidentService.GetIncidents(requesterInfo, options)
+	incidents, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
@@ -623,6 +588,34 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 
 	if err := h.incidentService.ChangeCommander(vars["id"], userID, params.CommanderID); err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "OK"}`))
+}
+
+// nextStageDialog handles the interactive dialog submission when a user confirms they
+// want to go to the next stage.
+func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request) {
+	incidentID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	request := model.SubmitDialogRequestFromJson(r.Body)
+	if request == nil {
+		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		return
+	}
+
+	stageIdx, err := strconv.Atoi(request.State)
+	if err != nil {
+		HandleError(w, errors.Wrapf(err, "failed to parse stage index"))
+		return
+	}
+
+	_, err = h.incidentService.ChangeActiveStage(incidentID, userID, stageIdx)
+	if err != nil {
+		HandleError(w, errors.Wrapf(err, "failed to change active stage"))
 		return
 	}
 
@@ -926,6 +919,8 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
+	memberID := u.Query().Get("member_id")
+
 	return &incident.HeaderFilterOptions{
 		TeamID:      teamID,
 		Page:        page,
@@ -935,5 +930,6 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		Status:      status,
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,
+		MemberID:    memberID,
 	}, nil
 }

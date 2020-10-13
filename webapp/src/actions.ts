@@ -1,6 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {Dispatch, AnyAction} from 'redux';
+import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
 
@@ -10,24 +10,29 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {selectToggleRHS} from 'src/selectors';
 import {Incident} from 'src/types/incident';
+import {RHSState} from 'src/types/rhs';
 
 import {
-    RECEIVED_TOGGLE_RHS_ACTION,
-    SET_RHS_OPEN,
-    SET_CLIENT_ID,
-    ReceivedToggleRHSAction,
-    SetRHSOpen,
-    SetTriggerId,
-    SetClientId,
     INCIDENT_CREATED,
+    INCIDENT_UPDATED,
     IncidentCreated,
-    RECEIVED_TEAM_INCIDENT_CHANNELS,
-    ReceivedTeamIncidentChannels,
+    IncidentUpdated,
+    RECEIVED_TEAM_INCIDENTS,
+    RECEIVED_TOGGLE_RHS_ACTION,
+    ReceivedTeamIncidents,
+    ReceivedToggleRHSAction,
+    REMOVED_FROM_INCIDENT_CHANNEL,
+    RemovedFromIncidentChannel,
+    SET_CLIENT_ID,
+    SET_RHS_OPEN,
+    SET_RHS_STATE,
+    SetClientId,
+    SetRHSOpen,
+    SetRHSState,
+    SetTriggerId,
 } from './types/actions';
 
-import {
-    clientExecuteCommand,
-} from './client';
+import {clientExecuteCommand} from './client';
 
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -56,10 +61,36 @@ export function restartIncident() {
     };
 }
 
+export function nextStage() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, '/incident stage next');
+    };
+}
+
+export function prevStage() {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, '/incident stage prev');
+    };
+}
+
 export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,
         open,
+    };
+}
+
+export function setRHSViewingIncident(): SetRHSState {
+    return {
+        type: SET_RHS_STATE,
+        nextState: RHSState.ViewingIncident,
+    };
+}
+
+export function setRHSViewingList(): SetRHSState {
+    return {
+        type: SET_RHS_STATE,
+        nextState: RHSState.ViewingList,
     };
 }
 
@@ -99,7 +130,17 @@ export const incidentCreated = (incident: Incident): IncidentCreated => ({
     incident,
 });
 
-export const receivedTeamIncidentChannels = (channelIds: string[]): ReceivedTeamIncidentChannels => ({
-    type: RECEIVED_TEAM_INCIDENT_CHANNELS,
-    channelIds,
+export const incidentUpdated = (incident: Incident): IncidentUpdated => ({
+    type: INCIDENT_UPDATED,
+    incident,
+});
+
+export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncidents => ({
+    type: RECEIVED_TEAM_INCIDENTS,
+    incidents,
+});
+
+export const removedFromIncidentChannel = (channelId: string): RemovedFromIncidentChannel => ({
+    type: REMOVED_FROM_INCIDENT_CHANNEL,
+    channelId,
 });
