@@ -149,6 +149,99 @@ describe('rhs incident list', () => {
     });
 
     describe('should see the complete incident list', () => {
+        it('of the current team, not another teams channels', () => {
+            cy.endAllMyActiveIncidents(teamId);
+            cy.endAllMyActiveIncidents(teamIdMi);
+
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Click the incident icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('exist').click();
+            });
+
+            // # start first incident
+            const now = Date.now();
+            const incidentName1 = 'Private ' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName: incidentName1,
+                commanderUserId: userId
+            });
+            cy.verifyIncidentActive(teamId, incidentName1);
+
+            // * Verify the rhs list is still open and incident is visible.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
+
+                // * Verify incident is visible
+                cy.findByText(incidentName1).should('exist');
+
+                // * Verify only one incident is visible
+                cy.findAllByTestId('go-to-channel').should('have.length', 1);
+            });
+
+            // # Go to second team (not directly, we want redux to not be wiped)
+            cy.get('#reiciendis-0TeamButton').should('exist').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Click the incident icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('exist').click();
+            });
+
+            // # start second incident
+            const now2 = Date.now();
+            const incidentName2 = 'Private ' + now2;
+            cy.apiStartIncident({
+                teamId: teamIdMi,
+                playbookId: playbookIdMi,
+                incidentName: incidentName2,
+                commanderUserId: userId
+            });
+            cy.verifyIncidentActive(teamIdMi, incidentName2);
+
+            // * Verify the rhs list is still open and incident is visible.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
+
+                // * Verify incident2 is visible
+                cy.findByText(incidentName2).should('exist');
+
+                // * Verify only one incident is visible
+                cy.findAllByTestId('go-to-channel').should('have.length', 1);
+            });
+
+            // # Go to first team (not directly, we want redux to not be wiped)
+            cy.get('#ad-1TeamButton').should('exist').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Click the incident icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('exist').click();
+            });
+
+            // * Verify the rhs list is open and only one incident is visible.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
+
+                // * Verify incident is visible
+                cy.findByText(incidentName1).should('exist');
+
+                // * Verify only that one incident is visible
+                cy.findAllByTestId('go-to-channel').should('have.length', 1);
+            });
+        });
+
         it('after creating two incidents and moving back to town-square', () => {
             cy.endAllMyActiveIncidents(teamId);
 
@@ -336,99 +429,6 @@ describe('rhs incident list', () => {
                 cy.findByText('Your Ongoing Incidents').should('exist');
 
                 cy.findByText(incidentName).should('exist');
-            });
-        });
-
-        it('of the current team, not another teams channels', () => {
-            cy.endAllMyActiveIncidents(teamId);
-            cy.endAllMyActiveIncidents(teamIdMi);
-
-            // # Navigate directly to a non-incident channel
-            cy.visit('/ad-1/channels/town-square');
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Click the incident icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click();
-            });
-
-            // # start first incident
-            const now = Date.now();
-            const incidentName1 = 'Private ' + now;
-            cy.apiStartIncident({
-                teamId,
-                playbookId,
-                incidentName: incidentName1,
-                commanderUserId: userId
-            });
-            cy.verifyIncidentActive(teamId, incidentName1);
-
-            // * Verify the rhs list is still open and incident is visible.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('exist');
-
-                // * Verify incident is visible
-                cy.findByText(incidentName1).should('exist');
-
-                // * Verify only one incident is visible
-                cy.findAllByTestId('go-to-channel').should('have.length', 1);
-            });
-
-            // # Go to second team (not directly, we want redux to not be wiped)
-            cy.get('#reiciendis-0TeamButton').should('exist').click();
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Click the incident icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click();
-            });
-
-            // # start second incident
-            const now2 = Date.now();
-            const incidentName2 = 'Private ' + now2;
-            cy.apiStartIncident({
-                teamId: teamIdMi,
-                playbookId: playbookIdMi,
-                incidentName: incidentName2,
-                commanderUserId: userId
-            });
-            cy.verifyIncidentActive(teamIdMi, incidentName2);
-
-            // * Verify the rhs list is still open and incident is visible.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('exist');
-
-                // * Verify incident2 is visible
-                cy.findByText(incidentName2).should('exist');
-
-                // * Verify only one incident is visible
-                cy.findAllByTestId('go-to-channel').should('have.length', 1);
-            });
-
-            // # Go to first team (not directly, we want redux to not be wiped)
-            cy.get('#ad-1TeamButton').should('exist').click();
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Click the incident icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click();
-            });
-
-            // * Verify the rhs list is open and only one incident is visible.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('exist');
-
-                // * Verify incident is visible
-                cy.findByText(incidentName1).should('exist');
-
-                // * Verify only that one incident is visible
-                cy.findAllByTestId('go-to-channel').should('have.length', 1);
             });
         });
     });
