@@ -24,8 +24,8 @@ Here are some examples:
 
 - Add a task called **Sync up** with the slash command `/zoom hello`. Running that slash command initiates a Zoom call in the incident channel. If you've installed Jitsi, you could use `/jitsi hello`. 
 
-![Tasks and slash commands](../../assets/stage_task_slashcommand.png)
+![Tasks and slash commands](../assets/stage_task_slashcommand.png)
 
 - One of your tasks may require the header to be changed to reflect a new status. Create a task called **Change header** with the slash command `/header new header`.
 
-![Tasks and slash commands](../../assets/stage_task_header.png)
+![Tasks and slash commands](../assets/stage_task_header.png)
