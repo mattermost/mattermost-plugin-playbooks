@@ -40,15 +40,10 @@ export const myActiveIncidentsList = createSelector(
             return [];
         }
 
-        const incidents = [] as Incident[];
-        for (const incident of Object.values(incidentMapByTeam[teamId])) {
-            if (incident.is_active) {
-                incidents.push(incident);
-            }
-        }
-
-        // return descending by create_at
-        return incidents.sort((a, b) => b.create_at - a.create_at);
+        // return active incidents, sorted descending by create_at
+        return Object.values(incidentMapByTeam[teamId]).
+            filter((i) => i.is_active).
+            sort((a, b) => b.create_at - a.create_at);
     },
 );
 
