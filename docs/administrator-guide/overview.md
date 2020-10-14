@@ -4,4 +4,4 @@ Incidents are situations which require an immediate response and benefit from a 
 
 ![Incident Response plugin screenshot](assets/center_channel.png)
 
-When incidents are monitored, coordinated, and measured effectively you can transparency, maximize effectiveness, and save costs by cutting down time taken to respond and resolve incidents.
+When incidents are monitored, coordinated, and measured effectively, you can add transparency, maximize effectiveness, and save costs by cutting down time taken to respond and resolve incidents.
