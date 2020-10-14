@@ -159,7 +159,7 @@ const BackstageIncidentList: FC = () => {
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'create_at',
-            order: 'desc',
+            direction: 'desc',
         },
     );
 
@@ -200,18 +200,18 @@ const BackstageIncidentList: FC = () => {
 
     function colHeaderClicked(colName: string) {
         if (fetchParams.sort === colName) {
-            // we're already sorting on this column; reverse the order
-            const newOrder = fetchParams.order === 'asc' ? 'desc' : 'asc';
-            setFetchParams({...fetchParams, order: newOrder});
+            // we're already sorting on this column; reverse the direction
+            const newDirection = fetchParams.direction === 'asc' ? 'desc' : 'asc';
+            setFetchParams({...fetchParams, direction: newDirection});
             return;
         }
 
         // change to a new column; default to descending for time-based columns, ascending otherwise
-        let newOrder = 'desc';
+        let newDirection = 'desc';
         if (['name', 'is_active'].indexOf(colName) !== -1) {
-            newOrder = 'asc';
+            newDirection = 'asc';
         }
-        setFetchParams({...fetchParams, sort: colName, order: newOrder});
+        setFetchParams({...fetchParams, sort: colName, direction: newDirection});
     }
 
     async function fetchCommanders() {
@@ -306,7 +306,7 @@ const BackstageIncidentList: FC = () => {
                         <div className='col-sm-3'>
                             <SortableColHeader
                                 name={'Name'}
-                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                                 active={fetchParams.sort ? fetchParams.sort === 'name' : false}
                                 onClick={() => colHeaderClicked('name')}
                             />
@@ -314,7 +314,7 @@ const BackstageIncidentList: FC = () => {
                         <div className='col-sm-2'>
                             <SortableColHeader
                                 name={'Status'}
-                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                                 active={fetchParams.sort ? fetchParams.sort === 'is_active' : false}
                                 onClick={() => colHeaderClicked('is_active')}
                             />
@@ -322,7 +322,7 @@ const BackstageIncidentList: FC = () => {
                         <div className='col-sm-2'>
                             <SortableColHeader
                                 name={'Start Time'}
-                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                                 active={fetchParams.sort ? fetchParams.sort === 'create_at' : false}
                                 onClick={() => colHeaderClicked('create_at')}
                             />
@@ -330,7 +330,7 @@ const BackstageIncidentList: FC = () => {
                         <div className='col-sm-2'>
                             <SortableColHeader
                                 name={'End Time'}
-                                order={fetchParams.order ? fetchParams.order : 'desc'}
+                                direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                                 active={fetchParams.sort ? fetchParams.sort === 'end_at' : false}
                                 onClick={() => colHeaderClicked('end_at')}
                             />

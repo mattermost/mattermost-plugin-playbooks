@@ -36,8 +36,8 @@ type HeaderFilterOptions struct {
 	// defaults to "create_at".
 	Sort string
 
-	// OrderBy orders by Asc (ascending), or Desc (descending); defaults to desc.
-	Order string
+	// Direction orders by Asc (ascending), or Desc (descending); defaults to desc.
+	Direction string
 
 	// Status filters by All, Ongoing, or Ended; defaults to All.
 	Status Status
@@ -49,7 +49,7 @@ type HeaderFilterOptions struct {
 	MemberID string
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
-	// The search term acts as a filter and respects the Sort and Order fields (i.e., results are
+	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
 	// not returned in relevance order).
 	SearchTerm string
 }
@@ -64,8 +64,8 @@ const (
 	SortByStatus          = "status"
 	SortByIsActive        = "is_active"
 
-	OrderAsc  = "asc"
-	OrderDesc = "desc"
+	DirectionAsc  = "asc"
+	DirectionDesc = "desc"
 )
 
 func IsValidSortBy(sortBy string) bool {
@@ -83,8 +83,8 @@ func IsValidSortBy(sortBy string) bool {
 	return false
 }
 
-func IsValidOrderBy(orderBy string) bool {
-	return orderBy == OrderAsc || orderBy == OrderDesc
+func IsValidDirection(direction string) bool {
+	return direction == DirectionAsc || direction == DirectionDesc
 }
 
 func ValidateOptions(options *HeaderFilterOptions) error {
@@ -116,14 +116,14 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 		return errors.New("bad parameter 'sort'")
 	}
 
-	order := strings.ToLower(options.Order)
-	switch order {
-	case OrderAsc, "": // default
-		options.Order = OrderAsc
-	case OrderDesc:
-		options.Order = OrderDesc
+	direction := strings.ToLower(options.Direction)
+	switch direction {
+	case DirectionAsc, "": // default
+		options.Direction = DirectionAsc
+	case DirectionDesc:
+		options.Direction = DirectionDesc
 	default:
-		return errors.New("bad parameter 'order_by'")
+		return errors.New("bad parameter 'direction'")
 	}
 
 	if options.CommanderID != "" && !model.IsValidId(options.CommanderID) {

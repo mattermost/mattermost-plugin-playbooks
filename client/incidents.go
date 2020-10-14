@@ -45,7 +45,7 @@ type IncidentListOptions struct {
 	TeamID string `url:"team_id,omitempty"`
 
 	Sort      IncidentSort  `url:"sort,omitempty"`
-	Direction SortDirection `url:"order,omitempty"`
+	Direction SortDirection `url:"direction,omitempty"`
 }
 
 // IncidentSort enumerates the available fields we can sort on.

@@ -112,7 +112,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
-	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
+	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Direction))
 
 	var rawIncidents []sqlIncident
 	if err := s.store.selectBuilder(s.store.db, &rawIncidents, queryForResults); err != nil {
