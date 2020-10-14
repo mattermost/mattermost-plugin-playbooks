@@ -370,24 +370,6 @@ func TestChangeActiveStage(t *testing.T) {
 }
 
 func TestOpenCreateIncidentDialog(t *testing.T) {
-	// testIncident := incident.Incident{
-	// 	Header: incident.Header{
-	// 		ID:               "incidentID",
-	// 		CommanderUserID:  "testUserID",
-	// 		TeamID:           "testTeamID",
-	// 		Name:             "incidentName",
-	// 		ChannelID:        "channelID",
-	// 		IsActive:         true,
-	// 		ActiveStage:      0,
-	// 		ActiveStageTitle: "Stage 2",
-	// 	},
-	// 	PostID: "",
-	// 	Checklists: []playbook.Checklist{
-	// 		{Title: "Stage 1"},
-	// 		{Title: "Stage 2"},
-	// 	},
-	// }
-
 	siteURL := "https://mattermost.example.com"
 
 	type args struct {
