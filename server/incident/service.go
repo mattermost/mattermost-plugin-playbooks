@@ -134,8 +134,8 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 }
 
 // OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error {
-	dialog, err := s.newIncidentDialog(teamID, commanderID, postID, clientID, playbooks)
+func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error {
+	dialog, err := s.newIncidentDialog(teamID, commanderID, postID, clientID, playbooks, isMobileApp)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new incident dialog")
 	}
@@ -825,7 +825,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 	return channel, nil
 }
 
-func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID string, playbooks []playbook.Playbook) (*model.Dialog, error) {
+func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) (*model.Dialog, error) {
 	team, err := s.pluginAPI.Team.Get(teamID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch team")
@@ -854,7 +854,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	newPlaybookMarkdown := ""
-	if siteURL != nil && *siteURL != "" {
+	if siteURL != nil && *siteURL != "" && !isMobileApp {
 		url := fmt.Sprintf("%s/%s/%s/playbooks/new", *siteURL, team.Name, s.configService.GetManifest().Id)
 		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
 	}
