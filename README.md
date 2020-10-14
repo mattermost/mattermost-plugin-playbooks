@@ -6,6 +6,8 @@
 
 Incident Response allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://mattermost.gitbook.io/incident-response-plugin/).
 
+![Incident Response plugin screenshot](assets/center_channel.png)
+
 ## License
 
 This repository is licensed under the [Mattermost Source Available License](LICENSE) and requires a valid Enterprise Edition E20 license when used for production. See [frequently asked questions](https://docs.mattermost.com/overview/faq.html#mattermost-source-available-license) to learn more.
