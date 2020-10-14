@@ -340,6 +340,7 @@ describe('rhs incident list', () => {
         });
 
         it('of the current team, not another teams channels', () => {
+            // # Remove all active incidents so that we can verify the number of incidents in the rhs list later
             cy.endAllMyActiveIncidents(teamId);
             cy.endAllMyActiveIncidents(teamIdMi);
 
