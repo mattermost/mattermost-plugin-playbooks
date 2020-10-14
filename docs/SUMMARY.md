@@ -12,8 +12,7 @@
 
 - [Overview](/playbooks/playbook-overview.md)
 - [Creating a Playbook](playbooks/creating-a-playbook.md)
-- [Starting an Incident](incidents/starting-an-incident.md)
-- [Joining an Incident](incidents/joining-an-incident.md)
+- [Starting and Joining Incidents](incidents/starting-and-joining-incidents.md)
 - [Ending an Incident](incidents/ending-an-incident.md)
 - [Viewing Incident Details](incidents/viewing-incident-details.md)
 - [Reviewing and Refining Incident Response](incidents/reviewing-incidents.md)
