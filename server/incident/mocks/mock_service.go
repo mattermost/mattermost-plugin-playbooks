@@ -5,12 +5,11 @@
 package mock_incident
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident"
 	playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
+	reflect "reflect"
 )
 
 // MockService is a mock of Service interface
@@ -255,17 +254,17 @@ func (mr *MockServiceMockRecorder) NukeDB() *gomock.Call {
 }
 
 // OpenCreateIncidentDialog mocks base method
-func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4 string, arg5 []playbook.Playbook) error {
+func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4 string, arg5 []playbook.Playbook, arg6 bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenCreateIncidentDialog", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "OpenCreateIncidentDialog", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OpenCreateIncidentDialog indicates an expected call of OpenCreateIncidentDialog
-func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // OpenEndIncidentDialog mocks base method

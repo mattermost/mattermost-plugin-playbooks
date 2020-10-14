@@ -189,7 +189,13 @@ func (r *Runner) actionStart(args []string) {
 		return
 	}
 
-	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items); err != nil {
+	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
+		return
+	}
+
+	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, session.IsMobileApp()); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
