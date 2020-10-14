@@ -139,7 +139,7 @@ Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
 });
 
 // Verify incident is created
-Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDescription) => {
+Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDescription) => {
     cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
         const returnedIncidents = JSON.parse(response.body);
         const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
@@ -155,7 +155,7 @@ Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDes
     });
 });
 
-// Verify incident is not created
+// Verify incident exists but is not active
 Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
     cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
         const returnedIncidents = JSON.parse(response.body);
