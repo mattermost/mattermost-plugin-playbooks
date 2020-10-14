@@ -1,28 +1,23 @@
 # Table of Contents
 
+- [Overview](administrator-guide/overview.md)
+- [Glossary](glossary.md)
+
 ## Administrator's Guide
 
-- [Overview](administrator-guide/overview.md)
 - [Permissions](administrator-guide/permissions.md)
 - [Incident Response Slash Commands](administrator-guide/incident-response-slash-commands.md)
 
-## Playbooks
+## Incidents and Playbooks
 
+- [Overview](/playbooks/playbook-overview.md)
 - [Creating a Playbook](playbooks/creating-a-playbook.md)
-- [Steps and Stages](playbooks/incident-task-management.md)
-
-## Incident Response
-
 - [Starting an Incident](incidents/starting-an-incident.md)
-- [Managing an Incident](incidents/managing-an-incident.md)
 - [Joining an Incident](incidents/joining-an-incident.md)
 - [Ending an Incident](incidents/ending-an-incident.md)
-- [Reviewing an Incident](incidents/reviewing-and-refining-incident-response.md)
+- [Viewing Incident Details](incidents/viewing-incident-details.md)
+- [Reviewing and Refining Incident Response](incidents/reviewing-incidents.md)
 
 ## Data
 
 - [Telemetry](telemetry.md)
-
-## Terminology
-
-- [Glossary](glossary.md)
