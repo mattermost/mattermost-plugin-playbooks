@@ -18,4 +18,4 @@ A playbook must be defined before starting an incident.
 3. Select **Delete**.
 4. Confirm that you want to **Delete Playbook**.
 
-![Delete a playbook](.../../assets/delete_playbook.png)
+![Delete a playbook](../../assets/delete_playbook.png)
