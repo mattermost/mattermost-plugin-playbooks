@@ -584,6 +584,7 @@ func (r *Runner) actionEnd() {
 func (r *Runner) actionStage(args []string) {
 	if len(args) != 1 {
 		r.postCommandResponse("`/incident stage` expects one argument: either `next` or `prev`")
+		return
 	}
 
 	switch strings.ToLower(args[0]) {
