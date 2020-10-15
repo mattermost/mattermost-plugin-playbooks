@@ -1,6 +1,5 @@
 # Table of Contents
 
-- [Overview](administrator-guide/overview.md)
 - [Glossary](glossary.md)
 
 ## Administrator's Guide
