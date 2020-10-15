@@ -18,4 +18,8 @@ On startup, the plugin checks for a valid Mattermost Enterprise Edition E20 lice
 
 ## Contributing
 
-Please visit the [Incident Response developer docs](https://mattermost.gitbook.io/incident-response-plugin/development/contributing) to learn more about contributing to the project.
+This plugin contains both a server and web app portion. Read our documentation about the [Developer Workflow](https://developers.mattermost.com/extend/plugins/developer-workflow/) and [Developer Setup](https://developers.mattermost.com/extend/plugins/developer-setup/) for more information about developing and extending plugins.
+
+For more information about contributing to Mattermost, and the different ways you can contribute, see https://www.mattermost.org/contribute-to-mattermost.
+
+Please visit the [Incident Response developer docs](https://mattermost.gitbook.io/incident-response-plugin/development/contributing) to learn more about contributing to the Incident Response plugin.
