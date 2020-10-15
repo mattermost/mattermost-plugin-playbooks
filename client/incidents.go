@@ -69,9 +69,6 @@ const (
 
 	// EndAt sorts by the "end_at" field.
 	EndAt IncidentSort = "end_at"
-
-	// ByStatus sorts by the "status" field.
-	ByStatus IncidentSort = "by_status"
 )
 
 // IncidentList contains the paginated result.

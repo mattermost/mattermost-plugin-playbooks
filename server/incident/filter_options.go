@@ -61,7 +61,6 @@ const (
 	SortByCommanderUserID = "commander_user_id"
 	SortByTeamID          = "team_id"
 	SortByEndAt           = "end_at"
-	SortByStatus          = "status"
 	SortByIsActive        = "is_active"
 
 	DirectionAsc  = "asc"
