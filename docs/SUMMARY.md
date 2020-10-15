@@ -20,3 +20,11 @@
 ## Data
 
 - [Telemetry](telemetry.md)
+
+## Development
+
+- [Contribution Guidelines](contributing.md)
+
+## Help and Support
+
+- [Getting Help](help-and-support.md)
