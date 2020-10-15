@@ -1262,6 +1262,20 @@ func (mr *MockAPIMockRecorder) GetTeamsUnreadForUser(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTeamsUnreadForUser", reflect.TypeOf((*MockAPI)(nil).GetTeamsUnreadForUser), arg0)
 }
 
+// GetTelemetryId mocks base method
+func (m *MockAPI) GetTelemetryId() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTelemetryId")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetTelemetryId indicates an expected call of GetTelemetryId
+func (mr *MockAPIMockRecorder) GetTelemetryId() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTelemetryId", reflect.TypeOf((*MockAPI)(nil).GetTelemetryId))
+}
+
 // GetUnsanitizedConfig mocks base method
 func (m *MockAPI) GetUnsanitizedConfig() *model.Config {
 	m.ctrl.T.Helper()
