@@ -15,7 +15,6 @@
 - [Starting and Joining an Incident](incidents/starting-and-joining-an-incident.md)
 - [Ending an Incident](incidents/ending-an-incident.md)
 - [Viewing Incident Details](incidents/viewing-incident-details.md)
-- [Reviewing and Refining Incident Response](incidents/reviewing-incidents.md)
 
 ## Data
 
