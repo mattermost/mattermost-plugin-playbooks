@@ -11,7 +11,7 @@
 
 ## End User's Guide
 
-- [Overview](/playbooks/playbook-overview.md)
+- [Playbooks and Incidents](/playbooks/playbook-overview.md)
 - [Creating and Deleting Playbooks](playbooks/creating-a-playbook.md)
 - [Starting and Joining an Incident](incidents/starting-and-joining-an-incident.md)
 - [Ending an Incident](incidents/ending-an-incident.md)
