@@ -14,7 +14,7 @@
 - [Incident Response Slash Commands](administrator-guide/incident-response-slash-commands.md)
 - [Creating and Managing Playbooks](playbooks/creating-and-managing-playbooks.md)
 - [Starting and Joining an Incident](incidents/starting-and-joining-an-incident.md)
-- [Ending an Incident](incidents/ending-an-incident.md)
+- [Ending and Restarting an Incident](incidents/ending-an-incident.md)
 - [Viewing Incident Details](incidents/viewing-incident-details.md)
 
 ## Development
