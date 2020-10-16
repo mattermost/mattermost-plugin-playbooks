@@ -1,4 +1,4 @@
-# Viewing Incident Details
+## Incident status and information
 
 To view the status of your active incident(s) select **Main Menu > Playbooks & Incidents**. Select the **Incident** tab to view a list of incidents in your team. Select the incident name to view a summary of the incident, jump to the channel, or export the channel.
 
@@ -16,6 +16,6 @@ You can also:
 - Start an automated action
 - Invite new members to the channel
 
-## Channel Export
+## Channel export
 
 Please see the [Channel Export plugin documentation](https://mattermost.gitbook.io/channel-export-plugin) for more information.
