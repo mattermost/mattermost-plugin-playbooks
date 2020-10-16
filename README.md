@@ -6,7 +6,7 @@
 
 Incident Response allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://mattermost.gitbook.io/incident-response-plugin/).
 
-![Incident Response plugin screenshot](assets/center_channel.png)
+![Incident Response plugin screenshot](assets/incident_response.png)
 
 ## License
 
