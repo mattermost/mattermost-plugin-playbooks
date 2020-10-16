@@ -19,7 +19,7 @@ A playbook must be defined before starting an incident.
 
 ## Editing a playbook
 
-You can edit a playbook that's being used in an active incident. However, the changes will only be applied to future incidents - not the active incident, or incidents that previously used that playbook.
+You can edit a playbook at any time. However, the changes will only be applied to future incidents - not the active incidents, or incidents that previously used that playbook.
 
 Navigate to **Main Menu > Playbooks & Incidents** and select the playbook you'd like to edit. You can:
 
