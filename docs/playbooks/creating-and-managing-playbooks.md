@@ -31,6 +31,8 @@ Navigate to **Main Menu > Playbooks & Incidents** and select the playbook you'd 
 - Edit the slash commands in existing tasks.
 - Add new stages and tasks.
 
+![Edit a playbook](../assets/playbook_stages_edit.png)
+
 ## Deleting a playbook
 
 1. Navigate to **Main Menu > Playbooks & Incidents**.
