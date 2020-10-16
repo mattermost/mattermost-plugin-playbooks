@@ -1,23 +1,21 @@
 # Table of Contents
 
+- [Mattermost Incident Response](README.md)
 - [Glossary](glossary.md)
 
 ## Administrator's Guide
 
 - [Permissions](administrator-guide/permissions.md)
 - [Incident Response Slash Commands](administrator-guide/incident-response-slash-commands.md)
+- [Telemetry](telemetry.md)
 
-## Playbooks and Incidents
+## End User's Guide
 
 - [Overview](/playbooks/playbook-overview.md)
 - [Creating and Deleting Playbooks](playbooks/creating-a-playbook.md)
 - [Starting and Joining an Incident](incidents/starting-and-joining-an-incident.md)
 - [Ending an Incident](incidents/ending-an-incident.md)
 - [Viewing Incident Details](incidents/viewing-incident-details.md)
-
-## Data
-
-- [Telemetry](telemetry.md)
 
 ## Development
 
