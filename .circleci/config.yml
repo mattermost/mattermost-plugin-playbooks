@@ -292,6 +292,7 @@ workflows:
             tags:
               only: /^v.*/
       - plugin-ci/build:
+          context: mattermost-plugin-incident-response-production
           filters:
             tags:
               only: /^v.*/
