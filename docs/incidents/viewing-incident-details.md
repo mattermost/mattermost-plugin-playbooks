@@ -16,6 +16,6 @@ You can also:
 - Start an automated action
 - Invite new members to the channel
 
-## Editing a playbook during an incident
+## Channel Export
 
-You can edit a playbook that's being used in an active incident. The changes will only be applied to future incidents - not the active incident, or incidents that previously used that playbook.
+Please see the [Channel Export plugin documentation](https://mattermost.gitbook.io/channel-export-plugin) for more information.
