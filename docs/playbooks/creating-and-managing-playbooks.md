@@ -17,14 +17,19 @@ A playbook must be defined before starting an incident.
 6. Configure whether the incident channel should be public or private within the team.
 7. Share this playbook with other members of the team to allow them to use the playbook to start an incident, as well as edit the contents.
 
-## Editing a Playbook
+## Editing a playbook
 
 You can edit a playbook that's being used in an active incident. However, the changes will only be applied to future incidents - not the active incident, or incidents that previously used that playbook.
 
-1. Navigate to **Main Menu > Playbooks & Incidents**.
-2. Select the playbook name.
-3. Edit the playbook as required.
-4. Select **Save**.
+Navigate to **Main Menu > Playbooks & Incidents** and select the playbook you'd like to edit. You can:
+
+- Change the channel type created with this playbook.
+- Share the playbook.
+- Delete a stage and its associated tasks.
+- Add new tasks to an existing stage.
+- Edit tasks in an existing stage.
+- Edit the slash commands in existing tasks.
+- Add new stages and tasks.
 
 ## Deleting a playbook
 
