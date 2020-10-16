@@ -1,4 +1,4 @@
-# Slash Commands
+## What are slash commands?
 
 Slash commands are shortcuts used to perform actions in Mattermost. To view the available slash commands in Mattermost begin by typing `/` and a list of slash command options appears above the text input box. The autocomplete suggestions help by providing a format example in black text and a short description of the slash command in grey text.
 
