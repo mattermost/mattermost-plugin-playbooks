@@ -1,4 +1,4 @@
-# Starting an Incident
+## Starting an Incident
 
 To start an incident, use one of the following steps:
 
@@ -10,7 +10,7 @@ You need to select a playbook and name your incident before you can select **Sta
 
 The creator of an incident is automatically added as the first member and becomes the commander. To change commanders, click the current commander's name in the RHS and select the new commander. Only members of the channel may be selected as commanders. To change commander to a user who is not in the channel, first add the user to the channel.
 
-## Joining an incident
+## Joining an Incident
 
 When an incident has been started, it's added to the list of channels in the Mattermost team.
 
