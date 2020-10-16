@@ -1,4 +1,4 @@
-# What are Playbooks?
+## What are playbooks?
 
 A playbook is a recipe for dealing with and resolving an incident. In a playbook, you can plan ahead so that during an incident responders know exactly what to do. Make sure to schedule a retrospective analysis to iterate on the design of your playbooks after the incident finishes.
 
