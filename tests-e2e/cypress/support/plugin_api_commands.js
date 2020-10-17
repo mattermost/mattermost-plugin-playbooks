@@ -81,7 +81,7 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
             playbook_id: playbookId,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(201);
         cy.wrap(response.body);
     });
 });
@@ -179,7 +179,7 @@ Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident,
             member_ids: memberIDs,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(201);
         cy.wrap(response.body);
     });
 });

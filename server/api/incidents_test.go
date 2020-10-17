@@ -97,7 +97,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	})
 
 	t.Run("create valid incident from dialog with description", func(t *testing.T) {
@@ -153,7 +153,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	})
 
 	t.Run("create incident from dialog - no permissions for public channels", func(t *testing.T) {
@@ -364,7 +364,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
@@ -406,7 +406,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 		var resultIncident incident.Incident
 		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
@@ -439,7 +439,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("create invalid incident - missing team", func(t *testing.T) {
@@ -465,7 +465,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("create invalid incident - channel id already set", func(t *testing.T) {
@@ -493,7 +493,7 @@ func TestIncidents(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("get incident by channel id", func(t *testing.T) {
