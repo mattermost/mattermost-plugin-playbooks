@@ -50,7 +50,10 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus i
 	}
 
 	w.WriteHeader(httpStatus)
-	_, _ = w.Write(jsonBytes)
+	if _, err = w.Write(jsonBytes); err != nil {
+		HandleError(w, err)
+		return
+	}
 }
 
 // HandleError writes err as json into the response.

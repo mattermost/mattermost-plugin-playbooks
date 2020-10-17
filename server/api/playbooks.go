@@ -205,17 +205,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(playbookResults)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, playbookResults, http.StatusOK)
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {

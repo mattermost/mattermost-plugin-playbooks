@@ -159,17 +159,7 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	jsonBytes, err := json.Marshal(updatedIncident)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, updatedIncident, http.StatusOK)
 }
 
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
@@ -333,17 +323,7 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, results, http.StatusOK)
 }
 
 // getIncident handles the /incidents/{id} endpoint.
@@ -363,17 +343,7 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(incidentToGet)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, incidentToGet, http.StatusOK)
 }
 
 // getIncidentMetadata handles the /incidents/{id}/metadata endpoint.
@@ -394,17 +364,7 @@ func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	jsonBytes, err := json.Marshal(incidentToGet)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, incidentToGet, http.StatusOK)
 }
 
 // getIncidentByChannel handles the /incidents/channel/{channel_id} endpoint.
@@ -438,17 +398,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	jsonBytes, err := json.Marshal(incidentToGet)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, incidentToGet, http.StatusOK)
 }
 
 // endIncident handles the /incidents/{id}/end api endpoint.
@@ -519,17 +469,7 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		commanders = []incident.CommanderInfo{}
 	}
 
-	jsonBytes, err := json.Marshal(commanders)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, commanders, http.StatusOK)
 }
 
 func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
@@ -565,17 +505,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 		channelIds = append(channelIds, incident.ChannelID)
 	}
 
-	jsonBytes, err := json.Marshal(channelIds)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, channelIds, http.StatusOK)
 }
 
 // changeCommander handles the /incidents/{id}/change-commander api endpoint.
@@ -652,18 +582,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 		return
 	}
 
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, data, http.StatusOK)
 }
 
 func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
