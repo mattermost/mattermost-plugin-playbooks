@@ -42,14 +42,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePlugin
 }
 
 // ReturnJSON writes the given pointer to object as json with a success response
-func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}) {
+func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
 	jsonBytes, err := json.Marshal(pointerToObject)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "unable to marshal json"))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(httpStatus)
 	_, _ = w.Write(jsonBytes)
 }
 

@@ -151,6 +151,9 @@ var ErrIncidentNotActive = errors.New("incident not active")
 // ErrIncidentActive is used to indicate trying to run a command on an incident that is active.
 var ErrIncidentActive = errors.New("incident active")
 
+// ErrMalformedIncident is used to indicate an incident is not valid
+var ErrMalformedIncident = errors.New("incident active")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.

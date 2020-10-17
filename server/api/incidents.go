@@ -103,11 +103,22 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 
 	var payloadIncident incident.Incident
 	if err := json.NewDecoder(r.Body).Decode(&payloadIncident); err != nil {
-		HandleError(w, errors.Wrapf(err, "unable to decode incident"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode incident", err)
 		return
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, userID)
+
+	if errors.Is(err, incident.ErrPermission) {
+		HandleErrorWithCode(w, http.StatusForbidden, "unable to create incident", err)
+		return
+	}
+
+	if errors.Is(err, incident.ErrMalformedIncident) {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
+		return
+	}
+
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "unable to create incident"))
 		return
@@ -117,7 +128,8 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		"incident": newIncident,
 	}, userID)
 
-	ReturnJSON(w, &newIncident)
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", newIncident.ID))
+	ReturnJSON(w, &newIncident, http.StatusCreated)
 }
 
 func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request) {
@@ -133,7 +145,7 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 
 	var updates incident.UpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
-		HandleError(w, errors.Wrapf(err, "unable to decode payload"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
@@ -165,14 +177,14 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
 
 	var state incident.DialogState
 	err := json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to unmarshal dialog state"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
 		return
 	}
 
@@ -200,6 +212,11 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
 	if err != nil {
+		if errors.Is(err, incident.ErrMalformedIncident) {
+			HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
+			return
+		}
+
 		var msg string
 
 		if errors.Is(err, incident.ErrChannelDisplayNameInvalid) {
@@ -232,37 +249,38 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", newIncident.ID))
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID string) (*incident.Incident, error) {
 	if newIncident.ID != "" {
-		return nil, errors.New("incident already has an id")
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident already has an id")
 	}
 
 	if newIncident.ChannelID != "" {
-		return nil, errors.New("incident channel already has an id")
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident channel already has an id")
 	}
 
 	if newIncident.CreateAt != 0 {
-		return nil, errors.New("incident channel already has created at date")
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident channel already has created at date")
 	}
 
 	if newIncident.EndAt != 0 {
-		return nil, errors.New("incident channel already has ended at date")
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident channel already has ended at date")
 	}
 
 	if newIncident.TeamID == "" {
-		return nil, errors.New("missing team id of incident")
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing team id of incident")
 	}
 
 	if newIncident.CommanderUserID == "" {
-		return nil, errors.New("missing commander user id of incident")
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing commander user id of incident")
 	}
 
 	// Commander should have permission to the team
 	if !permissions.CanViewTeam(newIncident.CommanderUserID, newIncident.TeamID, h.pluginAPI) {
-		return nil, errors.New("commander user does not have permissions for the team")
+		return nil, errors.Wrap(incident.ErrPermission, "commander user does not have permissions for the team")
 	}
 
 	public := true
@@ -571,7 +589,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		CommanderID string `json:"commander_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, errors.Wrapf(err, "could not decode request body"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "could not decode request body", err)
 		return
 	}
 
@@ -603,13 +621,13 @@ func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request
 
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		HandleError(w, errors.New("failed to decode SubmitDialogRequest"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
 
 	stageIdx, err := strconv.Atoi(request.State)
 	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to parse stage index"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse stage index", err)
 		return
 	}
 
@@ -645,6 +663,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(jsonBytes); err != nil {
 		HandleError(w, err)
 		return
@@ -656,12 +675,12 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -670,12 +689,12 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 		NewState string `json:"new_state"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, errors.Wrap(err, "failed to unmarshal"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
 
 	if !playbook.IsValidChecklistItemState(params.NewState) {
-		HandleError(w, errors.New("bad parameter new state"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter new state", nil)
 		return
 	}
 
@@ -693,12 +712,12 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -707,7 +726,7 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 		AssigneeID string `json:"assignee_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, errors.Wrap(err, "failed to unmarshal"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
 
@@ -725,12 +744,12 @@ func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	incidentID := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -749,14 +768,14 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var checklistItem playbook.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
-		HandleError(w, errors.Wrap(err, "failed to decode ChecklistItem"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode ChecklistItem", err)
 		return
 	}
 
@@ -772,7 +791,7 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
@@ -781,12 +800,12 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -796,7 +815,7 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
@@ -805,12 +824,12 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse item"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -820,7 +839,7 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 		Command string `json:"command"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleError(w, errors.Wrap(err, "failed to unmarshal edit params state"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params state", err)
 		return
 	}
 
@@ -838,7 +857,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleError(w, errors.Wrap(err, "failed to parse checklist"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -848,7 +867,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 		NewLocation int `json:"new_location"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
-		HandleError(w, errors.Wrap(err, "failed to unmarshal edit params"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params", err)
 		return
 	}
 
