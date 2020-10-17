@@ -139,9 +139,6 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write([]byte(`{"status": "OK"}`)); err != nil {
-		HandleError(w, err)
-	}
 }
 
 func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
@@ -170,9 +167,6 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-	if _, err = w.Write([]byte(`{"status": "OK"}`)); err != nil {
-		HandleError(w, err)
-	}
 }
 
 func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {

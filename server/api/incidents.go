@@ -467,7 +467,6 @@ func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 // restartIncident handles the /incidents/{id}/restart api endpoint.
@@ -482,7 +481,6 @@ func (h *IncidentHandler) restartIncident(w http.ResponseWriter, r *http.Request
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 // getCommanders handles the /incidents/commanders api endpoint.
@@ -610,7 +608,6 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 // nextStageDialog handles the interactive dialog submission when a user confirms they
@@ -638,7 +635,6 @@ func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
@@ -704,7 +700,6 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request) {
@@ -736,7 +731,6 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
@@ -760,7 +754,6 @@ func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
@@ -792,7 +785,6 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
@@ -816,7 +808,6 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
@@ -849,7 +840,6 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Request) {
@@ -877,7 +867,6 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status": "OK"}`))
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {

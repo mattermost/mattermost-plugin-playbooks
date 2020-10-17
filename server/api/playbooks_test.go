@@ -221,12 +221,7 @@ func TestPlaybooks(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
-		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-
-		require.NoError(t, err)
-		assert.Equal(t, []byte(`{"status": "OK"}`), result)
 	})
 
 	t.Run("delete playbook", func(t *testing.T) {
@@ -253,12 +248,7 @@ func TestPlaybooks(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
-		defer resp.Body.Close()
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-
-		require.NoError(t, err)
-		assert.Equal(t, []byte(`{"status": "OK"}`), result)
 	})
 
 	t.Run("delete playbook no team permission", func(t *testing.T) {
@@ -451,12 +441,7 @@ func TestPlaybooks(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
-		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-
-		require.NoError(t, err)
-		assert.Equal(t, []byte(`{"status": "OK"}`), result)
 	})
 
 	t.Run("update playbook by non-member", func(t *testing.T) {
@@ -514,12 +499,7 @@ func TestPlaybooks(t *testing.T) {
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
 
 		resp := testrecorder.Result()
-		defer resp.Body.Close()
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-
-		require.NoError(t, err)
-		assert.Equal(t, []byte(`{"status": "OK"}`), result)
 	})
 
 	t.Run("delete playbook by non-member", func(t *testing.T) {
