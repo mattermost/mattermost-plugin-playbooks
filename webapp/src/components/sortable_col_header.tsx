@@ -11,15 +11,15 @@ const Header = styled.div`
 
 interface Props {
     name: string;
-    order: string;
+    direction: string;
     active: boolean;
     onClick: () => void;
 }
 
 export function SortableColHeader(props: Props) {
     const chevron = classNames('icon--small', 'ml-2', {
-        'icon-chevron-down': props.order === 'desc',
-        'icon-chevron-up': props.order === 'asc',
+        'icon-chevron-down': props.direction === 'desc',
+        'icon-chevron-up': props.direction === 'asc',
     });
 
     return (

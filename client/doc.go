@@ -27,7 +27,7 @@ Some API methods have optional parameters that can be passed. For example:
 
 	// list incidents by status
 	list, err := client.Incidents.List(context.Background(), ir.IncidentListOptions{
-		Sort: ir.ByStatus,
+		Sort: ir.ByIsActive,
 	})
 
 Using the https://godoc.org/context package, one can easily

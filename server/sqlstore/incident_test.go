@@ -228,8 +228,8 @@ func TestGetIncidents(t *testing.T) {
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID: team1id,
-				Order:  "desc",
+				TeamID:    team1id,
+				Direction: "desc",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 5,
@@ -246,9 +246,9 @@ func TestGetIncidents(t *testing.T) {
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID: team2id,
-				Sort:   incident.SortByCreateAt,
-				Order:  incident.OrderDesc,
+				TeamID:    team2id,
+				Sort:      incident.SortByCreateAt,
+				Direction: incident.DirectionDesc,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
@@ -453,11 +453,11 @@ func TestGetIncidents(t *testing.T) {
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID:  team1id,
-				Sort:    "end_at",
-				Order:   "desc",
-				Page:    1,
-				PerPage: 2,
+				TeamID:    team1id,
+				Sort:      "end_at",
+				Direction: "desc",
+				Page:      1,
+				PerPage:   2,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 5,
@@ -497,7 +497,7 @@ func TestGetIncidents(t *testing.T) {
 				TeamID:      team1id,
 				Status:      incident.Ongoing,
 				CommanderID: commander3.UserID,
-				Order:       "desc",
+				Direction:   "desc",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 1,
@@ -516,7 +516,7 @@ func TestGetIncidents(t *testing.T) {
 			Options: incident.HeaderFilterOptions{
 				TeamID:      team1id,
 				CommanderID: commander1.UserID,
-				Order:       "desc",
+				Direction:   "desc",
 				Sort:        "end_at",
 			},
 			Want: incident.GetIncidentsResults{
@@ -664,17 +664,17 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
 		},
 		{
-			Name: "bad parameter order by",
+			Name: "bad parameter direction by",
 			RequesterInfo: incident.RequesterInfo{
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID: team2id,
-				Order:  "invalid order",
+				TeamID:    team2id,
+				Direction: "invalid direction",
 			},
 			Want:        incident.GetIncidentsResults{},
-			ExpectedErr: errors.New("bad parameter 'order_by'"),
+			ExpectedErr: errors.New("bad parameter 'direction'"),
 		},
 		{
 			Name: "bad commander id",
@@ -695,8 +695,8 @@ func TestGetIncidents(t *testing.T) {
 				UserID: bob.ID,
 			},
 			Options: incident.HeaderFilterOptions{
-				TeamID: team1id,
-				Order:  "desc",
+				TeamID:    team1id,
+				Direction: "desc",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 5,

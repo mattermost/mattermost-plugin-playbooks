@@ -901,7 +901,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	}
 
 	sort := u.Query().Get("sort")
-	order := u.Query().Get("order")
+	direction := u.Query().Get("direction")
 
 	statusParam := strings.ToLower(u.Query().Get("status"))
 	var status incident.Status
@@ -926,7 +926,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		Page:        page,
 		PerPage:     perPage,
 		Sort:        sort,
-		Order:       order,
+		Direction:   direction,
 		Status:      status,
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,

@@ -56,7 +56,7 @@ const PlaybookList: FC = () => {
 
     function colHeaderClicked(colName: string) {
         if (fetchParams.sort === colName) {
-            // we're already sorting on this column; reverse the order
+            // we're already sorting on this column; reverse the direction
             const newSortDirection = fetchParams.direction === 'asc' ? 'desc' : 'asc';
             setFetchParams({...fetchParams, direction: newSortDirection});
             return;
@@ -230,7 +230,7 @@ const PlaybookList: FC = () => {
                                 <div className='col-sm-4'>
                                     <SortableColHeader
                                         name={'Name'}
-                                        order={fetchParams.direction}
+                                        direction={fetchParams.direction}
                                         active={fetchParams.sort === 'title'}
                                         onClick={() => colHeaderClicked('title')}
                                     />
@@ -238,7 +238,7 @@ const PlaybookList: FC = () => {
                                 <div className='col-sm-2'>
                                     <SortableColHeader
                                         name={'Stages'}
-                                        order={fetchParams.direction}
+                                        direction={fetchParams.direction}
                                         active={fetchParams.sort === 'stages'}
                                         onClick={() => colHeaderClicked('stages')}
                                     />
@@ -246,7 +246,7 @@ const PlaybookList: FC = () => {
                                 <div className='col-sm-2'>
                                     <SortableColHeader
                                         name={'Tasks'}
-                                        order={fetchParams.direction}
+                                        direction={fetchParams.direction}
                                         active={fetchParams.sort === 'steps'}
                                         onClick={() => colHeaderClicked('steps')}
                                     />
