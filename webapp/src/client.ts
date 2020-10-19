@@ -250,7 +250,7 @@ export async function setActiveStage(incidentId: string, activeStage: number) {
 }
 
 export function exportChannelUrl(channelId: string) {
-    const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v0';
+    const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 
     const queryParams = qs.stringify({
         channel_id: channelId,

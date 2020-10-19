@@ -7,6 +7,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -96,7 +97,8 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
     return (msg: WebSocketMessage) => {
         const currentUserId = getCurrentUserId(getState());
         if (currentUserId === msg.broadcast.user_id) {
-            dispatch(removedFromIncidentChannel(msg.data.channel_id));
+            const channel = getChannel(getState(), msg.data.channel_id);
+            dispatch(removedFromIncidentChannel(channel.team_id, channel.id));
         }
     };
 }

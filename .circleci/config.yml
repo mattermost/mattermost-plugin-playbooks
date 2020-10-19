@@ -271,6 +271,10 @@ workflows:
   version: 2
   ci:
     jobs:
+      - plugin-ci/lint:
+          filters:
+            tags:
+              only: /^v.*/
       - coverage-MySQL56-Postgres96:
           filters:
             tags:
@@ -301,6 +305,7 @@ workflows:
               only: master
           context: plugin-ci
           requires:
+            - plugin-ci/lint
             - coverage-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
@@ -315,6 +320,7 @@ workflows:
               ignore: /.*/
           context: plugin-ci
           requires:
+            - plugin-ci/lint
             - coverage-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
@@ -329,6 +335,7 @@ workflows:
               ignore: /.*/
           context: matterbuild-github-token
           requires:
+            - plugin-ci/lint
             - coverage-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11

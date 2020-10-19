@@ -411,9 +411,9 @@ func sortOptionToSQL(sort playbook.SortField) string {
 
 func directionOptionToSQL(direction playbook.SortDirection) string {
 	switch direction {
-	case playbook.OrderAsc, "":
+	case playbook.DirectionAsc, "":
 		return "ASC"
-	case playbook.OrderDesc:
+	case playbook.DirectionDesc:
 		return "DESC"
 	default:
 		return ""

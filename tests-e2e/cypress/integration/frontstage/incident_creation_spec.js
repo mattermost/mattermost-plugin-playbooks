@@ -57,7 +57,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started with slash command
             const incidentName = 'Public ' + Date.now();
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a private channel', () => {
@@ -67,7 +67,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started with slash command
             const incidentName = 'Private ' + Date.now();
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a group message channel', () => {
@@ -80,7 +80,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started with slash command
             const incidentName = 'Public ' + Date.now();
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a direct message channel with another user', () => {
@@ -93,7 +93,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started with slash command
             const incidentName = 'Public ' + Date.now();
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a direct message channel with self', () => {
@@ -106,7 +106,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started with slash command
             const incidentName = 'Public ' + Date.now();
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
     });
 
@@ -118,7 +118,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from incident RHS
             const incidentName = 'Public - ' + Date.now();
             cy.startIncidentFromRHS(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a private channel', () => {
@@ -128,7 +128,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from incident RHS
             const incidentName = 'Private - ' + Date.now();
             cy.startIncidentFromRHS(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a group message channel', () => {
@@ -141,7 +141,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from incident RHS
             const incidentName = 'GM - ' + Date.now();
             cy.startIncidentFromRHS(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a direct message channel with another user', () => {
@@ -154,7 +154,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from incident RHS
             const incidentName = 'DM - ' + Date.now();
             cy.startIncidentFromRHS(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a direct message channel with self', () => {
@@ -167,7 +167,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started with slash command
             const incidentName = 'Self DM ' + Date.now();
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
     });
 
@@ -179,7 +179,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from post menu
             const incidentName = 'Public - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a private channel', () => {
@@ -189,7 +189,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from post menu
             const incidentName = 'Private - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a group message channel', () => {
@@ -202,7 +202,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from post menu
             const incidentName = 'GM - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a direct message channel with another user', () => {
@@ -215,7 +215,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from post menu
             const incidentName = 'DM - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
 
         it('while viewing a direct message channel with self', () => {
@@ -228,7 +228,7 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from post menu
             const incidentName = 'Self DM - ' + Date.now();
             cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
         });
     });
 
@@ -241,6 +241,6 @@ describe('incidents can be started', () => {
         const incidentName = 'With Description - ' + now;
         const incidentDescription = 'Description - ' + now;
         cy.startIncidentWithSlashCommand(playbookName, incidentName, incidentDescription);
-        cy.verifyIncidentCreated(teamId, incidentName, incidentDescription);
+        cy.verifyIncidentActive(teamId, incidentName, incidentDescription);
     });
 });

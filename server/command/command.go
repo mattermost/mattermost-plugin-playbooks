@@ -182,14 +182,20 @@ func (r *Runner) actionStart(args []string) {
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
 		playbook.Options{
 			Sort:      playbook.SortByTitle,
-			Direction: playbook.OrderAsc,
+			Direction: playbook.DirectionAsc,
 		})
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 
-	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items); err != nil {
+	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
+		return
+	}
+
+	if err := r.incidentService.OpenCreateIncidentDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, session.IsMobileApp()); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
@@ -367,12 +373,12 @@ func (r *Runner) actionList() {
 	}
 
 	options := incident.HeaderFilterOptions{
-		TeamID:   r.args.TeamId,
-		MemberID: r.args.UserId,
-		PerPage:  10,
-		Sort:     incident.SortByCreateAt,
-		Order:    incident.OrderDesc,
-		Status:   incident.Ongoing,
+		TeamID:    r.args.TeamId,
+		MemberID:  r.args.UserId,
+		PerPage:   10,
+		Sort:      incident.SortByCreateAt,
+		Direction: incident.DirectionDesc,
+		Status:    incident.Ongoing,
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
@@ -578,6 +584,7 @@ func (r *Runner) actionEnd() {
 func (r *Runner) actionStage(args []string) {
 	if len(args) != 1 {
 		r.postCommandResponse("`/incident stage` expects one argument: either `next` or `prev`")
+		return
 	}
 
 	switch strings.ToLower(args[0]) {

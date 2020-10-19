@@ -61,35 +61,63 @@ function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
     }
 }
 
-// myIncidentsMap is a map of channelId->incidents for which the current user is an incident member. Note
+// myIncidentsByTeam is a map of teamId->{channelId->incidents} for which the current user is an incident member. Note
 // that it is lazy loaded on team change, but will also track incremental updates as provided by
 // websocket events.
-const myIncidentsMap = (state: Record<string, Incident> = {}, action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel) => {
+const myIncidentsByTeam = (state: Record<string, Record<string, Incident>> = {}, action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel) => {
     switch (action.type) {
     case INCIDENT_CREATED: {
         const incidentCreatedAction = action as IncidentCreated;
         const incident = incidentCreatedAction.incident;
-        return {...state, [incident.channel_id]: incident};
+        const teamId = incident.team_id;
+        return {
+            ...state,
+            [teamId]: {
+                ...state[teamId],
+                [incident.channel_id]: incident,
+            },
+        };
     }
     case INCIDENT_UPDATED: {
         const incidentUpdated = action as IncidentUpdated;
         const incident = incidentUpdated.incident;
-        return {...state, [incident.channel_id]: incident};
+        const teamId = incident.team_id;
+        return {
+            ...state,
+            [teamId]: {
+                ...state[teamId],
+                [incident.channel_id]: incident,
+            },
+        };
     }
     case RECEIVED_TEAM_INCIDENTS: {
         const receivedTeamIncidentsAction = action as ReceivedTeamIncidents;
-        const newState = {...state};
+        const incidents = receivedTeamIncidentsAction.incidents;
+        if (incidents.length === 0) {
+            return state;
+        }
+        const teamId = incidents[0].team_id;
+        const newState = {
+            ...state,
+            [teamId]: {
+                ...state[teamId],
+            },
+        };
 
-        for (const incident of receivedTeamIncidentsAction.incidents) {
-            newState[incident.channel_id] = incident;
+        for (const incident of incidents) {
+            newState[teamId][incident.channel_id] = incident;
         }
 
         return newState;
     }
     case REMOVED_FROM_INCIDENT_CHANNEL: {
         const removedFromChannelAction = action as RemovedFromIncidentChannel;
-        const newState = {...state};
-        delete newState[removedFromChannelAction.channelId];
+        const teamId = removedFromChannelAction.teamId;
+        const newState = {
+            ...state,
+            [teamId]: {...state[teamId]},
+        };
+        delete newState[teamId][removedFromChannelAction.channelId];
         return newState;
     }
     default:
@@ -101,6 +129,6 @@ export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
-    myIncidentsMap,
+    myIncidentsByTeam,
     rhsState,
 });

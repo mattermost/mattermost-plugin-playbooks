@@ -53,6 +53,7 @@ export interface ReceivedTeamIncidents {
 
 export interface RemovedFromIncidentChannel {
     type: typeof REMOVED_FROM_INCIDENT_CHANNEL;
+    teamId: string;
     channelId: string;
 }
 

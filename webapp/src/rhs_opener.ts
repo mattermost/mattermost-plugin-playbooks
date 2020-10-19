@@ -9,7 +9,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {fetchIncidents} from 'src/client';
 
-import {isIncidentRHSOpen, isIncidentChannel} from 'src/selectors';
+import {isIncidentRHSOpen, inIncidentChannel} from 'src/selectors';
 import {toggleRHS, receivedTeamIncidents} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
@@ -47,7 +47,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             return;
         }
         currentChannelId = currentChannel.id;
-        currentChannelIsIncident = isIncidentChannel(state, currentChannelId);
+        currentChannelIsIncident = inIncidentChannel(state);
 
         // Don't do anything if the incident RHS is already open.
         if (isIncidentRHSOpen(state)) {

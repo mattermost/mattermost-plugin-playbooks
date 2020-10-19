@@ -4,11 +4,14 @@
 describe('rhs incident list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     const playbook2Name = 'Playbook (' + (Date.now() + 1) + ')';
+    const playbookNameMi = 'Playbook (' + (Date.now() + 2) + ')';
     let teamId;
+    let teamIdMi;
     let userId;
     let user2Id;
     let playbookId;
     let playbook2Id;
+    let playbookIdMi;
 
     before(() => {
         // # Login as user-1
@@ -26,6 +29,21 @@ describe('rhs incident list', () => {
                     userId: user.id,
                 }).then((playbook) => {
                     playbookId = playbook.id;
+                });
+            });
+        });
+
+        // # Prepare Reiciendis-0 team (Minus or Mi in the team bar)
+        cy.apiGetTeamByName('reiciendis-0').then((team) => {
+            teamIdMi = team.id;
+            cy.apiGetCurrentUser().then((user) => {
+                // # Create a playbook
+                cy.apiCreateTestPlaybook({
+                    teamId: team.id,
+                    title: playbookNameMi,
+                    userId: user.id,
+                }).then((playbook) => {
+                    playbookIdMi = playbook.id;
                 });
             });
         });
@@ -100,7 +118,7 @@ describe('rhs incident list', () => {
                 commanderUserId: userId
             }).then((incident) => {
                 const incidentId = incident.id;
-                cy.verifyIncidentCreated(teamId, incidentName);
+                cy.verifyIncidentActive(teamId, incidentName);
 
                 // # move to non-incident channel
                 cy.get('#sidebarItem_town-square').click();
@@ -149,11 +167,11 @@ describe('rhs incident list', () => {
             const now = Date.now();
             let incidentName = 'Private ' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             incidentName = 'Private ' + Date.now();
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // * Verify the rhs list is still open and two go-to-channel buttons are visible.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -175,7 +193,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -218,7 +236,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -265,7 +283,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -297,7 +315,7 @@ describe('rhs incident list', () => {
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Visit a private channel: autem-2
             cy.visit('/ad-1/channels/autem-2');
@@ -320,6 +338,100 @@ describe('rhs incident list', () => {
                 cy.findByText(incidentName).should('exist');
             });
         });
+
+        it('of the current team, not another teams channels', () => {
+            // # Remove all active incidents so that we can verify the number of incidents in the rhs list later
+            cy.endAllMyActiveIncidents(teamId);
+            cy.endAllMyActiveIncidents(teamIdMi);
+
+            // # Navigate directly to a non-incident channel
+            cy.visit('/ad-1/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Click the incident icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('exist').click();
+            });
+
+            // # start first incident
+            const now = Date.now();
+            const incidentName1 = 'Private ' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName: incidentName1,
+                commanderUserId: userId
+            });
+            cy.verifyIncidentActive(teamId, incidentName1);
+
+            // * Verify the rhs list is still open and incident is visible.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
+
+                // * Verify incident is visible
+                cy.findByText(incidentName1).should('exist');
+
+                // * Verify only one incident is visible
+                cy.findAllByTestId('go-to-channel').should('have.length', 1);
+            });
+
+            // # Go to second team (not directly, we want redux to not be wiped)
+            cy.get('#reiciendis-0TeamButton').should('exist').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Click the incident icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('exist').click();
+            });
+
+            // # start second incident
+            const now2 = Date.now();
+            const incidentName2 = 'Private ' + now2;
+            cy.apiStartIncident({
+                teamId: teamIdMi,
+                playbookId: playbookIdMi,
+                incidentName: incidentName2,
+                commanderUserId: userId
+            });
+            cy.verifyIncidentActive(teamIdMi, incidentName2);
+
+            // * Verify the rhs list is still open and incident is visible.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
+
+                // * Verify incident2 is visible
+                cy.findByText(incidentName2).should('exist');
+
+                // * Verify only one incident is visible
+                cy.findAllByTestId('go-to-channel').should('have.length', 1);
+            });
+
+            // # Go to first team (not directly, we want redux to not be wiped)
+            cy.get('#ad-1TeamButton').should('exist').click();
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Click the incident icon
+            cy.get('#channel-header').within(() => {
+                cy.get('#incidentIcon').should('exist').click();
+            });
+
+            // * Verify the rhs list is open and only one incident is visible.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText('Your Ongoing Incidents').should('exist');
+
+                // * Verify incident is visible
+                cy.findByText(incidentName1).should('exist');
+
+                // * Verify only that one incident is visible
+                cy.findAllByTestId('go-to-channel').should('have.length', 1);
+            });
+        });
     });
 
     describe('should see incident details', () => {
@@ -334,7 +446,7 @@ describe('rhs incident list', () => {
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
@@ -371,7 +483,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -422,7 +534,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             now = Date.now() + 1;
             const secondIncidentName = 'Incident (' + now + ')';
@@ -433,7 +545,7 @@ describe('rhs incident list', () => {
                 incidentName: secondIncidentName,
                 commanderUserId: userId
             });
-            cy.verifyIncidentCreated(teamId, secondIncidentName);
+            cy.verifyIncidentActive(teamId, secondIncidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${secondIncidentChannelName}`).click();
@@ -485,7 +597,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             now = Date.now() + 1;
             const secondIncidentName = 'Incident (' + now + ')';
@@ -495,7 +607,7 @@ describe('rhs incident list', () => {
                 incidentName: secondIncidentName,
                 commanderUserId: userId
             });
-            cy.verifyIncidentCreated(teamId, secondIncidentName);
+            cy.verifyIncidentActive(teamId, secondIncidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -538,7 +650,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -596,7 +708,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -663,7 +775,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbook2Id, incidentName, commanderUserId: user2Id});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # add user-1 to the incident
             let channelId;
@@ -692,7 +804,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -741,7 +853,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbook2Id, incidentName, commanderUserId: user2Id});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # add user-1 to the incident
             cy.apiGetChannelByName('ad-1', incidentChannelName).then(({channel}) => {
@@ -779,7 +891,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();
@@ -848,7 +960,7 @@ describe('rhs incident list', () => {
             }).then((incident) => {
                 incidentId = incident.id;
             });
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # add user-1 to the incident
             cy.apiGetChannelByName('ad-1', incidentChannelName).then(({channel}) => {
@@ -896,7 +1008,7 @@ describe('rhs incident list', () => {
                 commanderUserId: userId
             }).then((incident) => {
                 incidentId = incident.id;
-                cy.verifyIncidentCreated(teamId, incidentName);
+                cy.verifyIncidentActive(teamId, incidentName);
 
                 // * Verify the rhs list is open and we can see the new incident
                 cy.get('#rhsContainer').should('exist').within(() => {
@@ -906,7 +1018,9 @@ describe('rhs incident list', () => {
                 });
 
                 // # User-1 closes the incident
-                cy.apiEndIncident(incidentId);
+                // TODO: Waiting here because of https://mattermost.atlassian.net/browse/MM-29617
+                cy.wait(500).apiEndIncident(incidentId);
+                cy.verifyIncidentEnded(teamId, incidentName);
 
                 // * Verify we cannot see the incident
                 cy.get('#rhsContainer').should('exist').within(() => {
@@ -917,6 +1031,7 @@ describe('rhs incident list', () => {
 
                 // # User-1 restarts the incident
                 cy.apiRestartIncident(incidentId);
+                cy.verifyIncidentActive(teamId, incidentName);
 
                 // * Verify the rhs list is open and we can see the new incident
                 cy.get('#rhsContainer').should('exist').within(() => {
@@ -958,7 +1073,7 @@ describe('rhs incident list', () => {
                 commanderUserId: user2Id
             }).then((incident) => {
                 const incidentId = incident.id;
-                cy.verifyIncidentCreated(teamId, incidentName);
+                cy.verifyIncidentActive(teamId, incidentName);
 
                 // # add user-1 to the incident
                 cy.apiGetChannelByName('ad-1', incidentChannelName).then(({channel}) => {
@@ -1009,7 +1124,7 @@ describe('rhs incident list', () => {
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
-            cy.verifyIncidentCreated(teamId, incidentName);
+            cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
             cy.get(`#sidebarItem_${incidentChannelName}`).click();

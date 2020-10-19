@@ -5,6 +5,8 @@ import {createSelector} from 'reselect';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {pluginId} from 'src/manifest';
 import {RHSState} from 'src/types/rhs';
@@ -19,24 +21,29 @@ export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(st
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isIncidentChannel = (state: GlobalState, channelId: string): boolean => {
-    return Boolean(pluginState(state).myIncidentsMap[channelId]);
-};
+const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> => pluginState(state).myIncidentsByTeam;
 
-const myIncidentsMap = (state: GlobalState): Record<string, Incident> => pluginState(state).myIncidentsMap;
+export const inIncidentChannel = createSelector(
+    getCurrentTeamId,
+    getCurrentChannelId,
+    myIncidentsByTeam,
+    (teamId, channelId, incidentMapByTeam) => {
+        return Boolean(incidentMapByTeam[teamId]?.[channelId]);
+    },
+);
 
 export const myActiveIncidentsList = createSelector(
-    myIncidentsMap,
-    (channelIdToIncidents) => {
-        const incidents = [] as Incident[];
-        for (const incident of Object.values(channelIdToIncidents)) {
-            if (incident.is_active) {
-                incidents.push(incident);
-            }
+    getCurrentTeamId,
+    myIncidentsByTeam,
+    (teamId, incidentMapByTeam) => {
+        if (!incidentMapByTeam[teamId]) {
+            return [];
         }
 
-        // return descending by create_at
-        return incidents.sort((a, b) => b.create_at - a.create_at);
+        // return active incidents, sorted descending by create_at
+        return Object.values(incidentMapByTeam[teamId]).
+            filter((i) => i.is_active).
+            sort((a, b) => b.create_at - a.create_at);
     },
 );
 

@@ -9,7 +9,7 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 
 import {setRHSOpen, setRHSViewingIncident, setRHSViewingList} from 'src/actions';
 import RHSListView from 'src/components/rhs/rhs_list_view';
-import {currentRHSState, isIncidentChannel} from 'src/selectors';
+import {currentRHSState, inIncidentChannel} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import RHSDetailsView from 'src/components/rhs/rhs_details_view';
@@ -17,7 +17,7 @@ import RHSDetailsView from 'src/components/rhs/rhs_details_view';
 const RightHandSidebar: FC<null> = () => {
     const dispatch = useDispatch();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const inIncidentChannel = useSelector<GlobalState, boolean>((state) => isIncidentChannel(state, currentChannelId));
+    const inIncident = useSelector<GlobalState, boolean>(inIncidentChannel);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const [seenChannelId, setSeenChannelId] = useState('');
 
@@ -32,7 +32,7 @@ const RightHandSidebar: FC<null> = () => {
     if (currentChannelId !== seenChannelId) {
         setSeenChannelId(currentChannelId);
 
-        if (inIncidentChannel) {
+        if (inIncident) {
             dispatch(setRHSViewingIncident());
         } else {
             dispatch(setRHSViewingList());
@@ -40,7 +40,7 @@ const RightHandSidebar: FC<null> = () => {
     }
 
     if (rhsState === RHSState.ViewingIncident) {
-        if (inIncidentChannel) {
+        if (inIncident) {
             return <RHSDetailsView/>;
         }
         return <RHSWelcomeView/>;

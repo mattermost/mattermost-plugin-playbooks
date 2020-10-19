@@ -99,6 +99,19 @@ describe('slash command > stage', () => {
                 cy.visit('/ad-1/channels/town-square');
             });
 
+            it('without arguments', () => {
+                // # Run a slash command with no arguments
+                cy.executeSlashCommand('/incident stage');
+
+                // * Verify the expected error message.
+                cy.verifyEphemeralMessage('/incident stage expects one argument: either next or prev');
+
+                // * Verify that the incident did not crash
+                cy.get('#postCreateFooter').within(() => {
+                    cy.get('div.has-error').should('not.exist');
+                });
+            });
+
             it('/incident stage next', () => {
                 // # Run a slash command to go to next stage
                 cy.executeSlashCommand('/incident stage next');
@@ -120,6 +133,19 @@ describe('slash command > stage', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
+            });
+
+            it('without arguments', () => {
+                // # Run a slash command with no arguments
+                cy.executeSlashCommand('/incident stage');
+
+                // * Verify the expected error message.
+                cy.verifyEphemeralMessage('/incident stage expects one argument: either next or prev');
+
+                // * Verify that the incident did not crash
+                cy.get('#postCreateFooter').within(() => {
+                    cy.get('div.has-error').should('not.exist');
+                });
             });
 
             describe('/incident stage next', () => {

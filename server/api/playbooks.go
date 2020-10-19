@@ -257,9 +257,9 @@ func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
 	param = strings.ToLower(params.Get("direction"))
 	switch param {
 	case "asc", "":
-		sortDirection = playbook.OrderAsc
+		sortDirection = playbook.DirectionAsc
 	case "desc":
-		sortDirection = playbook.OrderDesc
+		sortDirection = playbook.DirectionDesc
 	default:
 		return playbook.Options{}, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
 	}
