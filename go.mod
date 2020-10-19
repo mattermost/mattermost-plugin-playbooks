@@ -16,3 +16,5 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
 )
+
+replace github.com/mattermost/mattermost-plugin-incident-response/client => ./client
