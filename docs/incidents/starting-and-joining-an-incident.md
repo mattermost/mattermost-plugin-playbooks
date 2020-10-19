@@ -1,4 +1,4 @@
-# Starting an Incident
+## Starting an incident
 
 To start an incident, use one of the following steps:
 
