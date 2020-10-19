@@ -19,10 +19,10 @@ type SortDirection string
 
 const (
 	// Desc is descending order.
-	OrderDesc SortDirection = "DESC"
+	DirectionDesc SortDirection = "DESC"
 
 	// Asc is ascending order.
-	OrderAsc SortDirection = "ASC"
+	DirectionAsc SortDirection = "ASC"
 )
 
 // Options specifies the parameters when getting playbooks.
@@ -47,5 +47,5 @@ func IsValidSort(sort SortField) bool {
 }
 
 func IsValidDirection(direction SortDirection) bool {
-	return direction == OrderAsc || direction == OrderDesc
+	return direction == DirectionAsc || direction == DirectionDesc
 }

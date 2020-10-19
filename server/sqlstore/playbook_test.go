@@ -350,7 +350,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 2,
@@ -369,7 +369,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 2,
@@ -425,7 +425,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -444,7 +444,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -481,7 +481,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
-				Direction: playbook.OrderAsc,
+				Direction: playbook.DirectionAsc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -500,7 +500,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -537,7 +537,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,

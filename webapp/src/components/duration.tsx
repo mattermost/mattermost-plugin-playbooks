@@ -15,8 +15,8 @@ export const renderDuration = (duration: moment.Duration) => {
     }
 
     const durationComponents = [];
-    if (duration.days() > 0) {
-        durationComponents.push(duration.days() + 'd');
+    if (duration.asDays() >= 1) {
+        durationComponents.push(Math.floor(duration.asDays()) + 'd');
     }
     if (duration.hours() > 0) {
         durationComponents.push(duration.hours() + 'h');

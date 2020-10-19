@@ -182,7 +182,7 @@ func (r *Runner) actionStart(args []string) {
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
 		playbook.Options{
 			Sort:      playbook.SortByTitle,
-			Direction: playbook.OrderAsc,
+			Direction: playbook.DirectionAsc,
 		})
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
@@ -373,12 +373,12 @@ func (r *Runner) actionList() {
 	}
 
 	options := incident.HeaderFilterOptions{
-		TeamID:   r.args.TeamId,
-		MemberID: r.args.UserId,
-		PerPage:  10,
-		Sort:     incident.SortByCreateAt,
-		Order:    incident.OrderDesc,
-		Status:   incident.Ongoing,
+		TeamID:    r.args.TeamId,
+		MemberID:  r.args.UserId,
+		PerPage:   10,
+		Sort:      incident.SortByCreateAt,
+		Direction: incident.DirectionDesc,
+		Status:    incident.Ongoing,
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
