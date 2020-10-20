@@ -159,8 +159,8 @@ type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident.
-	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
+	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
+	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
@@ -266,15 +266,16 @@ type Store interface {
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
+// Unless otherwise noted, userID is the user initiating the event.
 type Telemetry interface {
-	// CreateIncidenttracks the creation of a new incident.
-	CreateIncident(incident *Incident, public bool)
+	// CreateIncident tracks the creation of a new incident.
+	CreateIncident(incident *Incident, userID string, public bool)
 
 	// EndIncident tracks the end of an incident.
-	EndIncident(incident *Incident)
+	EndIncident(incident *Incident, userID string)
 
 	// RestartIncident tracks the restart of an incident.
-	RestartIncident(incident *Incident)
+	RestartIncident(incident *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
@@ -295,10 +296,10 @@ type Telemetry interface {
 	MoveChecklistItem(incidentID, userID string)
 
 	// ChangeCommander tracks changes in commander.
-	ChangeCommander(incident *Incident)
+	ChangeCommander(incident *Incident, userID string)
 
 	// ChangeCommander tracks changes in stage
-	ChangeStage(incident *Incident)
+	ChangeStage(incident *Incident, userID string)
 
 	// RunChecklistItemSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.

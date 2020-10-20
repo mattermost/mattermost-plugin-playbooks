@@ -87,7 +87,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -143,7 +143,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -347,7 +347,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
-		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
 		poster.EXPECT().
@@ -389,7 +389,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
-		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
 		poster.EXPECT().

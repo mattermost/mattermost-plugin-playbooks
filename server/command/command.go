@@ -824,7 +824,7 @@ And... yes, of course, we have emojis
 			},
 		},
 	}
-	playbookID, err := r.playbookService.Create(testPlaybook)
+	playbookID, err := r.playbookService.Create(testPlaybook, r.args.UserId)
 	if err != nil {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
@@ -858,7 +858,7 @@ And... yes, of course, we have emojis
 	}
 
 	gotplaybook.Title = "This is an updated title"
-	if err = r.playbookService.Update(gotplaybook); err != nil {
+	if err = r.playbookService.Update(gotplaybook, r.args.UserId); err != nil {
 		r.postCommandResponse("Unable to update playbook Err:" + err.Error())
 		return
 	}
@@ -874,13 +874,13 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	todeleteid, err := r.playbookService.Create(testPlaybook)
+	todeleteid, err := r.playbookService.Create(testPlaybook, r.args.UserId)
 	if err != nil {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
 	}
 	testPlaybook.ID = todeleteid
-	if err = r.playbookService.Delete(testPlaybook); err != nil {
+	if err = r.playbookService.Delete(testPlaybook, r.args.UserId); err != nil {
 		r.postCommandResponse("There was an error while deleting playbook. Err: " + err.Error())
 		return
 	}
@@ -898,7 +898,7 @@ And... yes, of course, we have emojis
 		},
 		PlaybookID: gotplaybook.ID,
 		Checklists: gotplaybook.Checklists,
-	}, true)
+	}, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
 		return

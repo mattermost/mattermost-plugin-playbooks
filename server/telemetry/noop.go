@@ -19,15 +19,15 @@ func (t *NoopTelemetry) Disable() error {
 }
 
 // CreateIncident does nothing
-func (t *NoopTelemetry) CreateIncident(*incident.Incident, bool) {
+func (t *NoopTelemetry) CreateIncident(*incident.Incident, string, bool) {
 }
 
 // EndIncident does nothing
-func (t *NoopTelemetry) EndIncident(*incident.Incident) {
+func (t *NoopTelemetry) EndIncident(*incident.Incident, string) {
 }
 
 // RestartIncident does nothing
-func (t *NoopTelemetry) RestartIncident(*incident.Incident) {
+func (t *NoopTelemetry) RestartIncident(*incident.Incident, string) {
 }
 
 // AddChecklistItem does nothing.
@@ -55,25 +55,25 @@ func (t *NoopTelemetry) MoveChecklistItem(string, string) {
 }
 
 // CreatePlaybook does nothing.
-func (t *NoopTelemetry) CreatePlaybook(playbook.Playbook) {
+func (t *NoopTelemetry) CreatePlaybook(playbook.Playbook, string) {
 }
 
 // UpdatePlaybook does nothing.
-func (t *NoopTelemetry) UpdatePlaybook(playbook.Playbook) {
+func (t *NoopTelemetry) UpdatePlaybook(playbook.Playbook, string) {
 }
 
 // DeletePlaybook does nothing.
-func (t *NoopTelemetry) DeletePlaybook(playbook.Playbook) {
+func (t *NoopTelemetry) DeletePlaybook(playbook.Playbook, string) {
 }
 
 // ChangeCommander does nothing
-func (t *NoopTelemetry) ChangeCommander(*incident.Incident) {
+func (t *NoopTelemetry) ChangeCommander(*incident.Incident, string) {
 }
 
 // ChangeStage does nothing
-func (t *NoopTelemetry) ChangeStage(*incident.Incident) {
+func (t *NoopTelemetry) ChangeStage(*incident.Incident, string) {
 }
 
 // RunChecklistItemSlashCommand does nothing
-func (t *NoopTelemetry) RunChecklistItemSlashCommand(incidentID, userID string) {
+func (t *NoopTelemetry) RunChecklistItemSlashCommand(string, string) {
 }

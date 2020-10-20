@@ -91,13 +91,14 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 	})
 }
 
-func incidentProperties(incdnt *incident.Incident) map[string]interface{} {
+func incidentProperties(incdnt *incident.Incident, userID string) map[string]interface{} {
 	totalChecklistItems := 0
 	for _, checklist := range incdnt.Checklists {
 		totalChecklistItems += len(checklist.Items)
 	}
 
 	return map[string]interface{}{
+		"UserActualID":        userID,
 		"IncidentID":          incdnt.ID,
 		"IsActive":            incdnt.IsActive,
 		"CommanderUserID":     incdnt.CommanderUserID,
@@ -111,20 +112,20 @@ func incidentProperties(incdnt *incident.Incident) map[string]interface{} {
 }
 
 // CreateIncident tracks the creation of the incident passed.
-func (t *RudderTelemetry) CreateIncident(incdnt *incident.Incident, public bool) {
-	properties := incidentProperties(incdnt)
+func (t *RudderTelemetry) CreateIncident(incdnt *incident.Incident, userID string, public bool) {
+	properties := incidentProperties(incdnt, userID)
 	properties["Public"] = public
 	t.track(eventCreateIncident, properties)
 }
 
 // EndIncident tracks the end of the incident passed.
-func (t *RudderTelemetry) EndIncident(incdnt *incident.Incident) {
-	t.track(eventEndIncident, incidentProperties(incdnt))
+func (t *RudderTelemetry) EndIncident(incdnt *incident.Incident, userID string) {
+	t.track(eventEndIncident, incidentProperties(incdnt, userID))
 }
 
 // RestartIncident tracks the restart of the incident.
-func (t *RudderTelemetry) RestartIncident(incdnt *incident.Incident) {
-	t.track(eventRestartIncident, incidentProperties(incdnt))
+func (t *RudderTelemetry) RestartIncident(incdnt *incident.Incident, userID string) {
+	t.track(eventRestartIncident, incidentProperties(incdnt, userID))
 }
 
 func checklistItemProperties(incidentID, userID string) map[string]interface{} {
@@ -174,7 +175,7 @@ func (t *RudderTelemetry) MoveChecklistItem(incidentID, userID string) {
 	t.track(eventMoveChecklistItem, checklistItemProperties(incidentID, userID))
 }
 
-func playbookProperties(pbook playbook.Playbook) map[string]interface{} {
+func playbookProperties(pbook playbook.Playbook, userID string) map[string]interface{} {
 	totalChecklistItems := 0
 	totalChecklistItemsWithCommands := 0
 	for _, checklist := range pbook.Checklists {
@@ -187,6 +188,7 @@ func playbookProperties(pbook playbook.Playbook) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
+		"UserActualID":        userID,
 		"PlaybookID":          pbook.ID,
 		"TeamID":              pbook.TeamID,
 		"NumChecklists":       len(pbook.Checklists),
@@ -198,28 +200,28 @@ func playbookProperties(pbook playbook.Playbook) map[string]interface{} {
 }
 
 // CreatePlaybook tracks the creation of a playbook.
-func (t *RudderTelemetry) CreatePlaybook(pbook playbook.Playbook) {
-	t.track(eventCreatePlaybook, playbookProperties(pbook))
+func (t *RudderTelemetry) CreatePlaybook(pbook playbook.Playbook, userID string) {
+	t.track(eventCreatePlaybook, playbookProperties(pbook, userID))
 }
 
 // UpdatePlaybook tracks the update of a playbook.
-func (t *RudderTelemetry) UpdatePlaybook(pbook playbook.Playbook) {
-	t.track(eventUpdatePlaybook, playbookProperties(pbook))
+func (t *RudderTelemetry) UpdatePlaybook(pbook playbook.Playbook, userID string) {
+	t.track(eventUpdatePlaybook, playbookProperties(pbook, userID))
 }
 
 // DeletePlaybook tracks the deletion of a playbook.
-func (t *RudderTelemetry) DeletePlaybook(pbook playbook.Playbook) {
-	t.track(eventDeletePlaybook, playbookProperties(pbook))
+func (t *RudderTelemetry) DeletePlaybook(pbook playbook.Playbook, userID string) {
+	t.track(eventDeletePlaybook, playbookProperties(pbook, userID))
 }
 
 // ChangeCommander tracks changes in commander
-func (t *RudderTelemetry) ChangeCommander(effectedIncident *incident.Incident) {
-	t.track(eventChangeCommander, incidentProperties(effectedIncident))
+func (t *RudderTelemetry) ChangeCommander(effectedIncident *incident.Incident, userID string) {
+	t.track(eventChangeCommander, incidentProperties(effectedIncident, userID))
 }
 
 // ChangeStage tracks changes in stage
-func (t *RudderTelemetry) ChangeStage(effectedIncident *incident.Incident) {
-	t.track(eventChangeStage, incidentProperties(effectedIncident))
+func (t *RudderTelemetry) ChangeStage(effectedIncident *incident.Incident, userID string) {
+	t.track(eventChangeStage, incidentProperties(effectedIncident, userID))
 }
 
 // RunChecklistItemSlashCommand tracks the execution of a slash command on a checklist item.
