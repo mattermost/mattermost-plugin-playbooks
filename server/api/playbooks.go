@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -49,7 +50,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 	var pbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
-		HandleError(w, errors.Wrapf(err, "unable to decode playbook"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
@@ -78,7 +79,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}{
 		ID: id,
 	}
-	ReturnJSON(w, &result)
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/playbooks/%s", pbook.ID))
+	ReturnJSON(w, &result, http.StatusCreated)
 }
 
 func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +102,7 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ReturnJSON(w, &pbook)
+	ReturnJSON(w, &pbook, http.StatusOK)
 }
 
 func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +110,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	userID := r.Header.Get("Mattermost-User-ID")
 	var pbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
-		HandleError(w, errors.Wrap(err, "unable to decode playbook"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
@@ -137,9 +139,6 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write([]byte(`{"status": "OK"}`)); err != nil {
-		HandleError(w, err)
-	}
 }
 
 func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
@@ -167,10 +166,7 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write([]byte(`{"status": "OK"}`)); err != nil {
-		HandleError(w, err)
-	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
@@ -179,7 +175,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	opts, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		HandleError(w, err)
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to get playbooks", err)
 		return
 	}
 
@@ -209,17 +205,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(playbookResults)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
+	ReturnJSON(w, playbookResults, http.StatusOK)
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
