@@ -1,6 +1,8 @@
-# Mattermost Incident Response Plugin
+# Mattermost Incident Management 
 
-Incident Response allows your team to coordinate, manage, and resolve incidents from within Mattermost.
+*Available in Mattermost Enterprise Edition E20, Mattermost Cloud Professional, and Mattermost Cloud Enterprise.*
+
+Mattermost Incident Management allows your team to coordinate, manage, and resolve incidents from within Mattermost. 
 
 Incidents are situations which require an immediate response and benefit from a clearly defined process guiding towards resolution. Incident Response allows your team to coordinate, manage, and resolve incidents from within Mattermost. You can:
 
@@ -10,4 +12,4 @@ Incidents are situations which require an immediate response and benefit from a 
 
 When incidents are monitored, coordinated, and measured effectively, you can add transparency, maximize effectiveness, and save costs by cutting down time taken to respond to and resolve incidents.
 
-![Incident Response plugin screenshot](../docs/assets/incident_response_landing.png)
+![Mattermost Incident Management screenshot](../docs/assets/incident_response_landing.png)

@@ -6,7 +6,7 @@ Incident members can end an incident using the slash command `/incident end` fro
 
 ## Restarting an incident
 
-An ended incident can be restarted at any time using `/incident restart` from within the incident channel or with the **Restart Incident** button in the RHS.
+An ended incident can be restarted at any time using `/incident restart` from within the incident channel or via **Restart Incident** in the RHS.
 
 ![Restart an incident](../assets/incident_restart_slash_command.png)
 
