@@ -1,6 +1,6 @@
 # Table of Contents
 
-- [Mattermost Incident Response](README.md)
+- [Mattermost Incident Management](README.md)
 - [Glossary](glossary.md)
 
 ## Administrator's Guide
