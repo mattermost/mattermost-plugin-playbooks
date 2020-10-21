@@ -3,7 +3,7 @@
 To start an incident, use one of the following steps:
 
 - Use the slash command */incident start* from any channel.
-- Select the shield icon in the channel header, and click **+ Start Incident**.
+- Select the shield icon in the channel header, and select **+ Start Incident**.
 - Use the context menu of a post and select **Start incident**.
 
 You need to select a playbook and name your incident before you can select **Start Incident**. The incident description is optional. Only playbooks that you're a member of are listed in the **Playbook** drop-down menu.
