@@ -4,7 +4,7 @@ Slash commands are shortcuts used to perform actions in Mattermost. To view the 
 
 ## Using slash commands
 
-The Incident Response plugin includes built-in slash commands:
+Mattermost Incident Management includes built-in slash commands:
 
 - `/incident start` - Start a new incident.
 - `/incident end` - Close the incident of that channel.
@@ -18,7 +18,7 @@ The Incident Response plugin includes built-in slash commands:
 
 ## Adding slash commands to tasks
 
-Slash commands can be added to tasks to initiate actions as part of the incident response. 
+Slash commands can be added to tasks to initiate actions as part of your incident response playbook.
 
 Here are some examples:
 
