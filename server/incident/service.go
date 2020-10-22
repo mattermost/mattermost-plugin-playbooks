@@ -863,7 +863,11 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 
 	var descriptionDefault string
 	if postID != "" {
-		postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, postID)
+		siteURL := ""
+		if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+			siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+		}
+		postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, postID)
 
 		descriptionDefault = fmt.Sprintf("[Original Post](%s)", postURL)
 	}
