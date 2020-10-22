@@ -123,7 +123,11 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to get incident original post")
 	}
 
-	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incdnt.PostID)
+	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	if _, err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
@@ -852,10 +856,13 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 		})
 	}
 
-	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
 	newPlaybookMarkdown := ""
-	if siteURL != nil && *siteURL != "" && !isMobileApp {
-		url := fmt.Sprintf("%s/%s/%s/playbooks/new", *siteURL, team.Name, s.configService.GetManifest().Id)
+	if !isMobileApp {
+		url := fmt.Sprintf("%s/%s/%s/playbooks/new", siteURL, team.Name, s.configService.GetManifest().Id)
 		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
 	}
 
@@ -863,10 +870,6 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 
 	var descriptionDefault string
 	if postID != "" {
-		siteURL := ""
-		if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-			siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-		}
 		postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, postID)
 
 		descriptionDefault = fmt.Sprintf("[Original Post](%s)", postURL)
