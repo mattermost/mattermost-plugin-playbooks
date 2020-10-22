@@ -404,7 +404,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 				api.On("GetUser", "commanderID").
 					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
 				api.On("GetConfig").
-					Return(&model.Config{})
+					Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: model.NewString("")}})
 				configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "pluginId"}).Times(2)
 				api.On("OpenInteractiveDialog", mock.AnythingOfType("model.OpenDialogRequest")).Return(nil).Run(func(args mock.Arguments) {
 					dialogRequest := args.Get(0).(model.OpenDialogRequest)

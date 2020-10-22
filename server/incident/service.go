@@ -861,7 +861,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
 	newPlaybookMarkdown := ""
-	if !isMobileApp {
+	if siteURL != "" && !isMobileApp {
 		url := fmt.Sprintf("%s/%s/%s/playbooks/new", siteURL, team.Name, s.configService.GetManifest().Id)
 		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
 	}
