@@ -3,7 +3,7 @@
 
 import Integrations from 'mattermost-redux/action_types/integrations';
 
-import {RHSState} from 'src/types/rhs';
+import {RHSState, RHSTabState} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
 import {pluginId} from 'src/manifest';
 
@@ -15,6 +15,7 @@ export const INCIDENT_UPDATED = pluginId + '_incident_updated';
 export const RECEIVED_TEAM_INCIDENTS = pluginId + '_received_team_incident_channels';
 export const REMOVED_FROM_INCIDENT_CHANNEL = pluginId + '_removed_from_incident_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
+export const SET_RHS_TAB_STATE = pluginId + '_set_rhs_tab_state';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -60,4 +61,10 @@ export interface RemovedFromIncidentChannel {
 export interface SetRHSState {
     type: typeof SET_RHS_STATE;
     nextState: RHSState;
+}
+
+export interface SetRHSTabState {
+    type: typeof SET_RHS_TAB_STATE;
+    channelId: string;
+    nextState: RHSTabState;
 }

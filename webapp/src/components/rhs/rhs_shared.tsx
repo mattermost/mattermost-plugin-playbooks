@@ -5,11 +5,10 @@ import React from 'react';
 import styled from 'styled-components';
 
 export const RHSContainer = styled.div`
-    height: calc(100vh - 120px);
+    height: calc(100vh - 119px);
     display: flex;
     flex-direction: column;
     position: relative;
-    overflow: auto;
 `;
 
 export const RHSContent = styled.div`
