@@ -52,12 +52,14 @@ const RHSTabView = () => {
             <TabItem
                 active={currentTabState === RHSTabState.ViewingSummary}
                 onClick={() => setTabState(RHSTabState.ViewingSummary)}
+                data-testid='summary'
             >
                 {'Summary'}
             </TabItem>
             <TabItem
                 active={currentTabState === RHSTabState.ViewingTasks}
                 onClick={() => setTabState(RHSTabState.ViewingTasks)}
+                data-testid='tasks'
             >
                 {'Tasks'}
             </TabItem>
