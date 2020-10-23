@@ -79,18 +79,18 @@ func (mr *MockServiceMockRecorder) ChangeCommander(arg0, arg1, arg2 interface{})
 }
 
 // CreateIncident mocks base method
-func (m *MockService) CreateIncident(arg0 *incident.Incident, arg1 bool) (*incident.Incident, error) {
+func (m *MockService) CreateIncident(arg0 *incident.Incident, arg1 string, arg2 bool) (*incident.Incident, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateIncident", arg0, arg1)
+	ret := m.ctrl.Call(m, "CreateIncident", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*incident.Incident)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateIncident indicates an expected call of CreateIncident
-func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1, arg2)
 }
 
 // EndIncident mocks base method

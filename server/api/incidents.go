@@ -98,6 +98,7 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 	})
 }
 
+// createIncidentFromPost handles the POST /incidents endpoint
 func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -294,7 +295,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
 	}
 
-	return h.incidentService.CreateIncident(&newIncident, public)
+	return h.incidentService.CreateIncident(&newIncident, userID, public)
 }
 
 // getIncidents handles the GET /incidents endpoint.

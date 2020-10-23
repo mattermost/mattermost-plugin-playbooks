@@ -43,7 +43,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "testUserID", true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -69,7 +69,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "testUserID", true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -112,7 +112,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "user_id", true)
 		require.NoError(t, err)
 	})
 
@@ -139,7 +139,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "user_id", true)
 		require.EqualError(t, err, "failed to create incident channel: : , ")
 	})
 }
@@ -404,7 +404,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 				api.On("GetUser", "commanderID").
 					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
 				api.On("GetConfig").
-					Return(&model.Config{})
+					Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: model.NewString("")}})
 				configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "pluginId"}).Times(2)
 				api.On("OpenInteractiveDialog", mock.AnythingOfType("model.OpenDialogRequest")).Return(nil).Run(func(args mock.Arguments) {
 					dialogRequest := args.Get(0).(model.OpenDialogRequest)

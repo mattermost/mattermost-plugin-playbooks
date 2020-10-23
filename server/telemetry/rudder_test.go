@@ -167,10 +167,10 @@ func TestRudderTelemetry(t *testing.T) {
 		FuncToTest func()
 	}{
 		"create incident": {eventCreateIncident, func() {
-			rudderClient.CreateIncident(dummyIncident, true)
+			rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
 		}},
 		"end incident": {eventEndIncident, func() {
-			rudderClient.EndIncident(dummyIncident)
+			rudderClient.EndIncident(dummyIncident, dummyUserID)
 		}},
 		"add checklist item": {eventAddChecklistItem, func() {
 			rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID)
@@ -210,7 +210,7 @@ func TestDisableTelemetry(t *testing.T) {
 		err := rudderClient.Disable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, true)
+		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
 
 		select {
 		case <-data:
@@ -231,7 +231,7 @@ func TestDisableTelemetry(t *testing.T) {
 		err = rudderClient.Disable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, true)
+		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
 
 		select {
 		case <-data:
@@ -253,7 +253,7 @@ func TestDisableTelemetry(t *testing.T) {
 		err = rudderClient.Disable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, true)
+		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
 
 		select {
 		case <-data:
@@ -283,7 +283,7 @@ func TestDisableTelemetry(t *testing.T) {
 		err = rudderClient.Enable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, true)
+		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
 
 		select {
 		case payload := <-data:
@@ -295,12 +295,13 @@ func TestDisableTelemetry(t *testing.T) {
 }
 
 func TestIncidentProperties(t *testing.T) {
-	properties := incidentProperties(dummyIncident)
+	properties := incidentProperties(dummyIncident, dummyUserID)
 
 	// ID field is reserved by Rudder to uniquely identify every event
 	require.NotContains(t, properties, "ID")
 
 	expectedProperties := map[string]interface{}{
+		"UserActualID":        dummyUserID,
 		"IncidentID":          dummyIncident.ID,
 		"IsActive":            dummyIncident.IsActive,
 		"CommanderUserID":     dummyIncident.CommanderUserID,

@@ -22,7 +22,7 @@ func NewService(store Store, poster bot.Poster, telemetry Telemetry) Service {
 	}
 }
 
-func (s *service) Create(playbook Playbook) (string, error) {
+func (s *service) Create(playbook Playbook, userID string) (string, error) {
 	playbook.CreateAt = model.GetMillis()
 
 	newID, err := s.store.Create(playbook)
@@ -31,7 +31,7 @@ func (s *service) Create(playbook Playbook) (string, error) {
 	}
 	playbook.ID = newID
 
-	s.telemetry.CreatePlaybook(playbook)
+	s.telemetry.CreatePlaybook(playbook, userID)
 
 	return newID, nil
 }
@@ -48,17 +48,17 @@ func (s *service) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string
 	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 }
 
-func (s *service) Update(playbook Playbook) error {
+func (s *service) Update(playbook Playbook, userID string) error {
 	if err := s.store.Update(playbook); err != nil {
 		return err
 	}
 
-	s.telemetry.UpdatePlaybook(playbook)
+	s.telemetry.UpdatePlaybook(playbook, userID)
 
 	return nil
 }
 
-func (s *service) Delete(playbook Playbook) error {
+func (s *service) Delete(playbook Playbook, userID string) error {
 	if playbook.ID == "" {
 		return errors.New("can't delete a playbook without an ID")
 	}
@@ -67,7 +67,7 @@ func (s *service) Delete(playbook Playbook) error {
 		return err
 	}
 
-	s.telemetry.DeletePlaybook(playbook)
+	s.telemetry.DeletePlaybook(playbook, userID)
 
 	return nil
 }
