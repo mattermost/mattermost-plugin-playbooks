@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
@@ -324,6 +325,28 @@ func (s *incidentStore) NukeDB() (err error) {
 
 	if err := tx.Commit(); err != nil {
 		return errors.Wrap(err, "could not delete all rows")
+	}
+
+	return nil
+}
+
+func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
+	updateQuery := s.queryBuilder.Update("IR_Incident").
+		Where(sq.Eq{"ID": incidentID}).
+		Set("CreateAt", model.GetMillisForTime(creationTimestamp))
+
+	sqlResult, err := s.store.execBuilder(s.store.db, updateQuery)
+	if err != nil {
+		return errors.Wrapf(err, "unable to execute the update query")
+	}
+
+	numRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "unable to check how many rows were updated")
+	}
+
+	if numRows == 0 {
+		return incident.ErrNotFound
 	}
 
 	return nil
