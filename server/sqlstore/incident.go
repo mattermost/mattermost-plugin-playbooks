@@ -310,14 +310,15 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
+	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
+		return errors.Wrap(err, "could not delete IR_Playbook")
+	}
+
 	if _, err := tx.Exec("DELETE FROM IR_Incident"); err != nil {
 		return errors.Wrap(err, "could not delete IR_Incident")
 	}
 
 	if _, err := tx.Exec("DELETE FROM IR_Playbook"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Playbook")
-	}
-	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
 		return errors.Wrap(err, "could not delete IR_Playbook")
 	}
 
