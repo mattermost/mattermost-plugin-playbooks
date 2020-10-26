@@ -125,6 +125,9 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		testData.AddTextArgument("An integer in case you need random, but reproducible, results", "Random seed (optional)", "")
 		test.AddCommand(testData)
 
+		testSelf := model.NewAutocompleteData("self", "", "DESTRUCTIVE ACTION - Perform a series of self tests to ensure everything works as expected.")
+		test.AddCommand(testSelf)
+
 		slashIncident.AddCommand(test)
 	}
 
@@ -748,7 +751,7 @@ func (r *Runner) actionRestart() {
 	}
 }
 
-func (r *Runner) actionSelftest(args []string) {
+func (r *Runner) actionTestSelf(args []string) {
 	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
 		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
@@ -762,7 +765,7 @@ func (r *Runner) actionSelftest(args []string) {
 
 	if len(args) != 2 || args[0] != confirmPrompt || args[1] != "SELF-TEST" {
 		r.postCommandResponse("Are you sure you want to self-test (which will nuke the database and delete all data -- instances, configuration)? " +
-			"All incident data will be lost. To self-test, type `/incident st CONFIRM SELF-TEST`")
+			"All incident data will be lost. To self-test, type `/incident test self CONFIRM SELF-TEST`")
 		return
 	}
 
@@ -1005,6 +1008,8 @@ func (r *Runner) actionTest(args []string) {
 		return
 	case "bulk-data":
 		r.actionTestData(params)
+	case "self":
+		r.actionTestSelf(params)
 	default:
 		r.postCommandResponse(fmt.Sprintf("Command '%s' unknown.", args[0]))
 		return
@@ -1383,8 +1388,6 @@ func (r *Runner) Execute() error {
 		r.actionInfo()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
-	case "st":
-		r.actionSelftest(parameters)
 	case "test":
 		r.actionTest(parameters)
 	default:
