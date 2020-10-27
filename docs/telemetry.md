@@ -1,6 +1,6 @@
 # Telemetry
 
-We only track the events that create, delete, or update items. We never track the specific content of the items. In particular, we do not collect the name of the incidents or the contents of the stages and steps.
+We only track the events that create, delete, or update items. We never track the specific content of the items. In particular, we do not collect the name of the incidents or the contents of the stages and tasks.
 
 Every event we track is accompanied with metadata that help us identify each event and isolate it from the rest of the servers. We can group all events that are coming from a single server, and if that server is licensed, we are able to identify the buyer of the license. The following list details the metadata that accompanies every event:
 
@@ -13,6 +13,8 @@ Every event we track is accompanied with metadata that help us identify each eve
 - `event integrations`: Unused field. It always contains the value `null`.
 - `event originalTimestamp`: Timestamp indicating when the event actually happened. It always equals `eventTimeStamp`.
 - `type`: Type of the event. It always contains the string `track`.
+
+For more information about telemetry, see [Mattermost Telemetry](https://docs.mattermost.com/administration/telemetry.html).
 
 **Events data**
 
