@@ -405,7 +405,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 // endIncident handles the /incidents/{id}/end api endpoint.
 //
 // In addition to being reachable directly via the REST API, the POST version of this endpoint is
-// also used as the target of the interactive dialog spawned by `/incident dialog`.
+// also used as the target of the interactive dialog spawned by `/incident end`.
 func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
