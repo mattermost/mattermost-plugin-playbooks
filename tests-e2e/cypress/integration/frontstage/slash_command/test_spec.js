@@ -91,22 +91,25 @@ describe('slash command > test', () => {
     });
 
     describe('as an admin', () => {
-        beforeEach(() => {
-            // # Login as sysadmin.
-            cy.apiLogin('sysadmin');
-
-            // # Navigate to a channel.
-            cy.visit('/ad-1/channels/town-square');
-        });
-
         describe('with EnableTesting set to false', () => {
-            beforeEach(() => {
+            before(() => {
+                // # Login as sysadmin.
+                cy.apiLogin('sysadmin');
+
                 // # Set EnableTesting to false.
                 cy.apiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: false
                     },
                 });
+            });
+
+            beforeEach(() => {
+                // # Login as sysadmin.
+                cy.apiLogin('sysadmin');
+
+                // # Navigate to a channel.
+                cy.visit('/ad-1/channels/town-square');
             });
 
             it('fails to run subcommand bulk-data', () => {
@@ -135,13 +138,24 @@ describe('slash command > test', () => {
         });
 
         describe('with EnableTesting set to true', () => {
-            beforeEach(() => {
+            before(() => {
+                // # Login as sysadmin.
+                cy.apiLogin('sysadmin');
+
                 // # Set EnableTesting to true.
                 cy.apiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: true
                     },
                 });
+            });
+
+            beforeEach(() => {
+                // # Login as sysadmin.
+                cy.apiLogin('sysadmin');
+
+                // # Navigate to a channel.
+                cy.visit('/ad-1/channels/town-square');
             });
 
             describe('with subcommand self', () => {
