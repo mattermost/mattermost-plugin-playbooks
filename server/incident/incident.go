@@ -289,19 +289,19 @@ type Telemetry interface {
 	// SetAssignee tracks the changing of an assignee on an item.
 	SetAssignee(incidentID, userID string)
 
-	// AddChecklistItem tracks the creation of a new checklist item.
-	AddChecklistItem(incidentID, userID string)
+	// AddTask tracks the creation of a new checklist item.
+	AddTask(incidentID, userID string)
 
-	// RemoveChecklistItem tracks the removal of a checklist item.
-	RemoveChecklistItem(incidentID, userID string)
+	// RemoveTask tracks the removal of a checklist item.
+	RemoveTask(incidentID, userID string)
 
-	// RenameChecklistItem tracks the update of a checklist item.
-	RenameChecklistItem(incidentID, userID string)
+	// RenameTask tracks the update of a checklist item.
+	RenameTask(incidentID, userID string)
 
-	// MoveChecklistItem tracks the unchecking of checked item.
-	MoveChecklistItem(incidentID, userID string)
+	// MoveTask tracks the unchecking of checked item.
+	MoveTask(incidentID, userID string)
 
-	// RunChecklistItemSlashCommand tracks the execution of a slash command attached to
+	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string)
+	RunTaskSlashCommand(incidentID, userID string)
 }

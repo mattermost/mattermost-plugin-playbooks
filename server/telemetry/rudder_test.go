@@ -174,20 +174,20 @@ func TestRudderTelemetry(t *testing.T) {
 		"end incident": {eventIncident, actionEnd, func() {
 			rudderClient.EndIncident(dummyIncident, dummyUserID)
 		}},
-		"add checklist item": {eventChecklist, actionAddItem, func() {
-			rudderClient.AddChecklistItem(dummyIncidentID, dummyUserID)
+		"add checklist item": {eventTasks, actionAddTask, func() {
+			rudderClient.AddTask(dummyIncidentID, dummyUserID)
 		}},
-		"remove checklist item": {eventChecklist, actionRemoveItem, func() {
-			rudderClient.RemoveChecklistItem(dummyIncidentID, dummyUserID)
+		"remove checklist item": {eventTasks, actionRemoveTask, func() {
+			rudderClient.RemoveTask(dummyIncidentID, dummyUserID)
 		}},
-		"rename checklist item": {eventChecklist, actionRenameItem, func() {
-			rudderClient.RenameChecklistItem(dummyIncidentID, dummyUserID)
+		"rename checklist item": {eventTasks, actionRenameTask, func() {
+			rudderClient.RenameTask(dummyIncidentID, dummyUserID)
 		}},
-		"modify checked checklist item": {eventChecklist, actionModifyItemState, func() {
+		"modify checked checklist item": {eventTasks, actionModifyTaskState, func() {
 			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen, true, false)
 		}},
-		"move checklist item": {eventChecklist, actionMoveItem, func() {
-			rudderClient.MoveChecklistItem(dummyIncidentID, dummyUserID)
+		"move checklist item": {eventTasks, actionMoveTask, func() {
+			rudderClient.MoveTask(dummyIncidentID, dummyUserID)
 		}},
 	} {
 		t.Run(name, func(t *testing.T) {
