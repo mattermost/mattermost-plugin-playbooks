@@ -280,7 +280,7 @@ type Telemetry interface {
 	// ChangeCommander tracks changes in commander.
 	ChangeCommander(incident *Incident, userID string)
 
-	// ChangeCommander tracks changes in stage
+	// ChangeStage tracks changes in stage
 	ChangeStage(incident *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
