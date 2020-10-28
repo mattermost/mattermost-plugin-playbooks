@@ -282,6 +282,59 @@ func TestIncidents(t *testing.T) {
 		require.Equal(t, expectedDialogResp, dialogResp)
 	})
 
+	t.Run("create incident from dialog - dialog request userID doesn't match requester's id", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "fakeUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
+			},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
+		i := incident.Incident{
+			Header: incident.Header{
+				CommanderUserID: dialogRequest.UserId,
+				TeamID:          dialogRequest.TeamId,
+				Name:            "incidentName",
+			},
+			PlaybookID: withid.ID,
+			Checklists: withid.Checklists,
+		}
+		retI := i
+		retI.ChannelID = "channelID"
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		var res struct{ Message string }
+		err = json.NewDecoder(resp.Body).Decode(&res)
+		assert.NoError(t, err)
+		assert.Equal(t, "interactive dialog's userID must be the same as the requester's userID", res.Message)
+	})
+
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
 		reset()
 
