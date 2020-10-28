@@ -354,7 +354,17 @@ func (r *Runner) actionAnnounce(args []string) {
 	}
 
 	for _, channelarg := range args {
-		if err := r.announceChannel(strings.TrimPrefix(channelarg, "~"), commanderUser.Username, incidentChannel.Name); err != nil {
+		targetChannelName := strings.TrimPrefix(channelarg, "~")
+		targetChannel, err := r.pluginAPI.Channel.GetByName(r.args.TeamId, targetChannelName, false)
+		if err != nil {
+			r.postCommandResponse("Channel not found: " + channelarg)
+			continue
+		}
+		if !permissions.MemberOfChannelID(r.args.UserId, targetChannel.Id, r.pluginAPI) {
+			r.postCommandResponse("Not a member of: " + channelarg)
+			continue
+		}
+		if err := r.announceChannel(targetChannel.Id, commanderUser.Username, incidentChannel.Name); err != nil {
 			r.postCommandResponse("Error announcing to: " + channelarg)
 		}
 	}
@@ -536,13 +546,8 @@ func durationString(start, end time.Time) string {
 	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
-func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
-	targetChannel, err := r.pluginAPI.Channel.GetByName(r.args.TeamId, targetChannelName, false)
-	if err != nil {
-		return err
-	}
-
-	if _, err := r.poster.PostMessage(targetChannel.Id, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
+func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentChannelName string) error {
+	if _, err := r.poster.PostMessage(targetChannelID, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
 		return err
 	}
 
