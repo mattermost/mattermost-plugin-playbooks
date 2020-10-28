@@ -1132,6 +1132,35 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
+
+	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {
+		reset()
+
+		testIncidentHeader := incident.Header{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncidentHeader.ChannelID).Return(testIncidentHeader.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncidentHeader.ID).Return(&incident.Incident{Header: testIncidentHeader}, nil)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/checklist-autocomplete?channel_id="+testIncidentHeader.ChannelID, nil)
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestChangeActiveStage(t *testing.T) {

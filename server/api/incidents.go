@@ -571,9 +571,17 @@ func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
 func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	incidentID, err := h.incidentService.GetIncidentIDForChannel(query.Get("channel_id"))
+	channelID := query.Get("channel_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
 	if err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", nil)
 		return
 	}
 
