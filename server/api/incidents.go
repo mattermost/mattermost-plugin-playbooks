@@ -295,6 +295,15 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
 	}
 
+	if newIncident.PostID != "" {
+		post, err := h.pluginAPI.Post.GetPost(newIncident.PostID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get incident original post")
+		}
+		if !permissions.MemberOfChannelID(userID, post.ChannelId, h.pluginAPI) {
+			return nil, errors.New("user is not a member of the channel containing the incident's original post")
+		}
+	}
 	return h.incidentService.CreateIncident(&newIncident, userID, public)
 }
 
