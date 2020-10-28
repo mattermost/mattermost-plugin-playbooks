@@ -166,9 +166,16 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
 // the create incident dialog.
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		return
+	}
+
+	if userID != request.UserId {
+		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
 		return
 	}
 
