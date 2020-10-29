@@ -111,7 +111,7 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 // Select the playbook from the dropdown menu
 Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
-        cy.get('input').type(playbookName);
+        cy.get('input').click().type(playbookName);
         cy.get('#suggestionList').contains(playbookName).click({force: true});
     });
 });
