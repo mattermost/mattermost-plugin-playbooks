@@ -33,19 +33,16 @@ Boolean when the following events occur:
 Incidents:
 
 `create`: Tracks the creation of the incident passed.
-    Properties: `actionCreate`
-                `public`
+ - Properties: `actionCreate`;`public`
     
 `end`: Tracks the end of the incident passed.
-    Properties: `actionEnd`
+ - Properties: `actionEnd`
     
 `restart`: Tracks the restart of the incident.
-    Properties: `actionRestart`
+- Properties: `actionRestart`
 
 `change_commander`: Tracks changes in commander.
-    Properties: `actionChangeCommander`
+ - Properties: `actionChangeCommander`
 
 `change_stage`: Tracks changes in stage.
-    Properties: `actionChangeStage`
-
-
+- Properties: `actionChangeStage`
