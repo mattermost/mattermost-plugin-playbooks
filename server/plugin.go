@@ -52,9 +52,6 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
 
-	// Remove the prepackaged old version of the plugin
-	_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
-
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
@@ -162,6 +159,13 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.API.LogDebug("Incident management plugin Activated")
+
+	// prevent a recursive OnConfigurationChange
+	go func() {
+		// Remove the prepackaged old version of the plugin
+		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
+	}()
+
 	return nil
 }
 
