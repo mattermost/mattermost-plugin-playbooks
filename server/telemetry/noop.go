@@ -30,16 +30,16 @@ func (t *NoopTelemetry) EndIncident(*incident.Incident, string) {
 func (t *NoopTelemetry) RestartIncident(*incident.Incident, string) {
 }
 
-// AddChecklistItem does nothing.
-func (t *NoopTelemetry) AddChecklistItem(string, string) {
+// AddTask does nothing.
+func (t *NoopTelemetry) AddTask(string, string) {
 }
 
-// RemoveChecklistItem does nothing.
-func (t *NoopTelemetry) RemoveChecklistItem(string, string) {
+// RemoveTask does nothing.
+func (t *NoopTelemetry) RemoveTask(string, string) {
 }
 
-// RenameChecklistItem does nothing.
-func (t *NoopTelemetry) RenameChecklistItem(string, string) {
+// RenameTask does nothing.
+func (t *NoopTelemetry) RenameTask(string, string) {
 }
 
 // ModifyCheckedState does nothing.
@@ -50,8 +50,8 @@ func (t *NoopTelemetry) ModifyCheckedState(string, string, string, bool, bool) {
 func (t *NoopTelemetry) SetAssignee(string, string) {
 }
 
-// MoveChecklistItem does nothing.
-func (t *NoopTelemetry) MoveChecklistItem(string, string) {
+// MoveTask does nothing.
+func (t *NoopTelemetry) MoveTask(string, string) {
 }
 
 // CreatePlaybook does nothing.
@@ -74,6 +74,6 @@ func (t *NoopTelemetry) ChangeCommander(*incident.Incident, string) {
 func (t *NoopTelemetry) ChangeStage(*incident.Incident, string) {
 }
 
-// RunChecklistItemSlashCommand does nothing
-func (t *NoopTelemetry) RunChecklistItemSlashCommand(string, string) {
+// RunTaskSlashCommand does nothing
+func (t *NoopTelemetry) RunTaskSlashCommand(string, string) {
 }

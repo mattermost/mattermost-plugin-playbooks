@@ -302,6 +302,15 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
 	}
 
+	if newIncident.PostID != "" {
+		post, err := h.pluginAPI.Post.GetPost(newIncident.PostID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get incident original post")
+		}
+		if !permissions.MemberOfChannelID(userID, post.ChannelId, h.pluginAPI) {
+			return nil, errors.New("user is not a member of the channel containing the incident's original post")
+		}
+	}
 	return h.incidentService.CreateIncident(&newIncident, userID, public)
 }
 
@@ -578,9 +587,17 @@ func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
 func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	incidentID, err := h.incidentService.GetIncidentIDForChannel(query.Get("channel_id"))
+	channelID := query.Get("channel_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
 	if err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", nil)
 		return
 	}
 
