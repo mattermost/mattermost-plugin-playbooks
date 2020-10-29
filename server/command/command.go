@@ -546,7 +546,6 @@ func durationString(start, end time.Time) string {
 	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
-
 func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentChannelName string) error {
 	if _, err := r.poster.PostMessage(targetChannelID, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
 		return err
