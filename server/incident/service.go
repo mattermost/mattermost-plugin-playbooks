@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"

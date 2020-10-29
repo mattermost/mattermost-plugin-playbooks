@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	rudder "github.com/rudderlabs/analytics-go"
 	"github.com/stretchr/testify/require"
 )

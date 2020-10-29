@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/stretchr/testify/require"
 )
 

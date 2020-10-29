@@ -14,10 +14,10 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 )
 
 // IncidentHandler is the API handler.

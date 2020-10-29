@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-plugin-incident-response
+module github.com/mattermost/mattermost-plugin-incident-management
 
 go 1.14
 
@@ -17,4 +17,4 @@ require (
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
 )
 
-replace github.com/mattermost/mattermost-plugin-incident-response/client => ./client
+replace github.com/mattermost/mattermost-plugin-incident-management/client => ./client

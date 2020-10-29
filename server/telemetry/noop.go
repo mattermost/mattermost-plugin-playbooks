@@ -1,8 +1,8 @@
 package telemetry
 
 import (
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 )
 
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.

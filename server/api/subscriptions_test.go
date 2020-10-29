@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
-	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks"
-	mock_plugin "github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore/mocks/serverpluginapi"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/pluginkvstore"
+	mock_pluginkvstore "github.com/mattermost/mattermost-plugin-incident-management/server/pluginkvstore/mocks"
+	mock_plugin "github.com/mattermost/mattermost-plugin-incident-management/server/pluginkvstore/mocks/serverpluginapi"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/subscription"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 

@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"

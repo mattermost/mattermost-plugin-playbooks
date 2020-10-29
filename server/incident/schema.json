@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/schema#",
-  "$id": "https://github.com/mattermost/mattermost-plugin-incident-response/blob/master/server/incident/schema.json",
+  "$id": "https://github.com/mattermost/mattermost-plugin-incident-management/blob/master/server/incident/schema.json",
   "type": "object",
   "properties": {
     "id": {

@@ -4,7 +4,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 )
 
 type service struct {
