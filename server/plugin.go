@@ -53,7 +53,7 @@ func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
 
 	// Remove the prepackaged old version of the plugin
-	pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
+	_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
