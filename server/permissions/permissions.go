@@ -94,3 +94,7 @@ func IsAdmin(userID string, pluginAPI *pluginapi.Client) bool {
 func MemberOfChannelID(userID, channelID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL)
 }
+
+func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {
+	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_CREATE_POST)
+}

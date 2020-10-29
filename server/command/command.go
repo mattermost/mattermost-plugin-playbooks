@@ -360,8 +360,8 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("Channel not found: " + channelarg)
 			continue
 		}
-		if !permissions.MemberOfChannelID(r.args.UserId, targetChannel.Id, r.pluginAPI) {
-			r.postCommandResponse("Not a member of: " + channelarg)
+		if !permissions.CanPostToChannel(r.args.UserId, targetChannel.Id, r.pluginAPI) {
+			r.postCommandResponse("Cannot post to: " + channelarg)
 			continue
 		}
 		if err := r.announceChannel(targetChannel.Id, commanderUser.Username, incidentChannel.Name); err != nil {
@@ -545,6 +545,7 @@ func durationString(start, end time.Time) string {
 	}
 	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
+
 
 func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentChannelName string) error {
 	if _, err := r.poster.PostMessage(targetChannelID, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
