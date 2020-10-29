@@ -201,3 +201,18 @@ Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId}) => (
         ],
     })
 ));
+
+// Verify that the playbook was created
+Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
+    cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
+        qs: {team_id: teamId, sort: 'title', direction: 'asc'},
+        method: 'GET'
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const playbookResults = JSON.parse(response.body);
+        const playbook = playbookResults.items.find((p) => p.title === playbookTitle);
+        assert.isDefined(playbook);
+    })
+));

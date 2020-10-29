@@ -37,6 +37,8 @@ describe('incidents can be started', () => {
                     title: playbookName,
                     userId: user.id,
                 });
+
+                cy.verifyPlaybookCreated(team.id, playbookName);
             });
         });
     });
