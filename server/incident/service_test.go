@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
-	mock_config "github.com/mattermost/mattermost-plugin-incident-response/server/config/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-management/server/config/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
@@ -97,7 +97,7 @@ func TestCreateIncident(t *testing.T) {
 			Type:        model.CHANNEL_PRIVATE,
 			DisplayName: "###",
 			Name:        "",
-			Header:      "The channel was created by the Incident Response plugin.",
+			Header:      "The channel was created by the Incident Management plugin.",
 		}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()

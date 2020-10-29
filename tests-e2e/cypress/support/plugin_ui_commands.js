@@ -93,7 +93,7 @@ Cypress.Commands.add('openBackstage', () => {
 
 // Create playbook
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
-    cy.visit(`/${teamName}/com.mattermost.plugin-incident-response/playbooks/new`);
+    cy.visit(`/${teamName}/com.mattermost.plugin-incident-management/playbooks/new`);
 
     cy.findByTestId('save_playbook', {timeout: TIMEOUTS.LARGE}).should('exist');
 
@@ -111,7 +111,7 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 // Select the playbook from the dropdown menu
 Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
-        cy.get('input').type(playbookName);
+        cy.get('input').click().type(playbookName);
         cy.get('#suggestionList').contains(playbookName).click({force: true});
     });
 });

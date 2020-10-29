@@ -13,8 +13,8 @@ You have a running server and web app, and you have read the plugin documentatio
 
 ```sh
 # Change the URL below to your fork if you plan to make a PR!
-git clone git@github.com:mattermost/mattermost-plugin-incident-response.git
-cd mattermost-plugin-incident-response
+git clone git@github.com:mattermost/mattermost-plugin-incident-management.git
+cd mattermost-plugin-incident-management
 make
 ```
 

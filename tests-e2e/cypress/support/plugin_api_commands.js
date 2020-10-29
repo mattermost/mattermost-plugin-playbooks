@@ -11,7 +11,7 @@ const incidentsEndpoint = endpoints.incidents;
 Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-response/api/v0/incidents',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
         qs: {team_id: teamId, per_page: 10000},
         method: 'GET',
     }).then((response) => {
@@ -26,7 +26,7 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
 Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-response/api/v0/incidents',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
         qs: {team_id: teamId, status: 'active'},
         method: 'GET',
     }).then((response) => {
@@ -41,7 +41,7 @@ Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
 Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-response/api/v0/incidents',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
         qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
@@ -169,7 +169,7 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
 Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-response/api/v0/playbooks',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
         method: 'POST',
         body: {
             title,
@@ -199,5 +199,20 @@ Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId}) => (
         memberIDs: [
             userId,
         ],
+    })
+));
+
+// Verify that the playbook was created
+Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
+    cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
+        qs: {team_id: teamId, sort: 'title', direction: 'asc'},
+        method: 'GET'
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const playbookResults = JSON.parse(response.body);
+        const playbook = playbookResults.items.find((p) => p.title === playbookTitle);
+        assert.isDefined(playbook);
     })
 ));

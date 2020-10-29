@@ -3,8 +3,8 @@ package telemetry
 import (
 	"sync"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/pkg/errors"
 	rudder "github.com/rudderlabs/analytics-go"
 )
