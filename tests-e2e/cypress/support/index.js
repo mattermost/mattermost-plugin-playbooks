@@ -18,7 +18,7 @@ beforeEach(() => {
     Cypress.Cookies.preserveOnce('MMAUTHTOKEN', 'MMUSERID', 'MMCSRF');
 });
 
-Cypress.Commands.add('requireIncidentResponsePlugin', (version) => {
+Cypress.Commands.add('requireIncidentManagementPlugin', (version) => {
     cy.apiGetWebappPlugins().then((response) => {
         const plugins = response.body;
 
@@ -30,7 +30,7 @@ Cypress.Commands.add('requireIncidentResponsePlugin', (version) => {
             }
         }
 
-        expect(isInstalled, `Incident Response plugin should be installed with version ${version}`).to.equal(true);
+        expect(isInstalled, `Incident Management plugin should be installed with version ${version}`).to.equal(true);
     });
 });
 

@@ -780,7 +780,7 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
-	channelHeader := "The channel was created by the Incident Response plugin."
+	channelHeader := "The channel was created by the Incident Management plugin."
 
 	if incdnt.Description != "" {
 		channelHeader = incdnt.Description

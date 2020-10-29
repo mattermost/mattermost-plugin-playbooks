@@ -97,7 +97,7 @@ func TestCreateIncident(t *testing.T) {
 			Type:        model.CHANNEL_PRIVATE,
 			DisplayName: "###",
 			Name:        "",
-			Header:      "The channel was created by the Incident Response plugin.",
+			Header:      "The channel was created by the Incident Management plugin.",
 		}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()

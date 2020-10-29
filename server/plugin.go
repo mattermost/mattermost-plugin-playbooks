@@ -61,7 +61,7 @@ func (p *Plugin) OnActivate() error {
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
 		DisplayName: "Incident Bot",
-		Description: "A prototype demonstrating incident response management in Mattermost.",
+		Description: "Incident Management plugin's bot.",
 	},
 		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
 	)
@@ -157,7 +157,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
-	p.API.LogDebug("Incident response plugin Activated")
+	p.API.LogDebug("Incident management plugin Activated")
 	return nil
 }
 
@@ -193,7 +193,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("IncidentResponsePlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("IncidentManagementPlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil
