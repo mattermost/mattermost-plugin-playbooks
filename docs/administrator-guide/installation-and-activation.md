@@ -13,4 +13,4 @@ When you open the Main Menu, **Playbooks & Incidents** is available as a menu it
 
 ## Activating Mattermost Incident Management for Cloud Deployments
 
-Mattermost Incident Management is included in the Mattermost Cloud workspace but needs to be activated prior to use.
+Mattermost Incident Management is included in the Mattermost Cloud workspace and is enabled by default.
