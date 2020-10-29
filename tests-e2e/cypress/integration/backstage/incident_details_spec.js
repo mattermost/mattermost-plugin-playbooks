@@ -14,9 +14,9 @@ describe('backstage incident details', () => {
 
     it('redirects to not found error if the incident is unknown', () => {
         // # Visit the URL of a non-existing incident
-        cy.visit('/ad-1/com.mattermost.plugin-incident-response/incidents/an_unknown_id');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management/incidents/an_unknown_id');
 
         // * Verify that the user has been redirected to the incidents not found error page
-        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-response/error?type=incidents');
+        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/error?type=incidents');
     });
 });
