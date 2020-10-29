@@ -24,7 +24,7 @@ Cypress.Commands.add('requireIncidentResponsePlugin', (version) => {
 
         let isInstalled = false;
         for (const plugin of plugins) {
-            if (plugin.id === 'com.mattermost.plugin-incident-response' && plugin.version === version) {
+            if (plugin.id === 'com.mattermost.plugin-incident-management' && plugin.version === version) {
                 isInstalled = true;
                 break;
             }

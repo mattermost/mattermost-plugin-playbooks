@@ -12,8 +12,8 @@ var manifest *model.Manifest
 
 const manifestStr = `
 {
-  "id": "com.mattermost.plugin-incident-response",
-  "name": "Incident Response",
+  "id": "com.mattermost.plugin-incident-management",
+  "name": "Incident Management",
   "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
   "version": "1.0.0",
   "min_server_version": "5.28.0",
