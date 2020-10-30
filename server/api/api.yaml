@@ -152,7 +152,7 @@ paths:
                   example: There is one server in the EU cluster that is not responding since April 12.
                 commander_user_id:
                   type: string
-                  description: The identifier of the user that is commanding the incident.
+                  description: The identifier of the user who is commanding the incident.
                   example: bqnbdf8uc0a8yz4i39qrpgkvtg
                 team_id:
                   type: string
@@ -312,7 +312,7 @@ paths:
   /incidents/channels:
     get:
       summary: Get incident channels
-      description: Get all channels associated with an incident, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team or commander ID.
+      description: Get all channels associated with an incident, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team, or commander ID.
       operationId: getChannels
       security:
         - BearerAuth: []
