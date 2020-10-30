@@ -37,6 +37,8 @@ describe('incidents can be started', () => {
                     title: playbookName,
                     userId: user.id,
                 });
+
+                cy.verifyPlaybookCreated(team.id, playbookName);
             });
         });
     });
@@ -47,6 +49,9 @@ describe('incidents can be started', () => {
 
         // # Login as user-1
         cy.apiLogin('user-1');
+
+        // # Verify the playbook is there
+        cy.verifyPlaybookCreated(teamId, playbookName);
     });
 
     describe('via slash command', () => {

@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -535,7 +535,7 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
-	s.telemetry.RunChecklistItemSlashCommand(incidentID, userID)
+	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
 	return nil
 }
@@ -554,7 +554,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.AddChecklistItem(incidentID, userID)
+	s.telemetry.AddTask(incidentID, userID)
 
 	return nil
 }
@@ -576,7 +576,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RemoveChecklistItem(incidentID, userID)
+	s.telemetry.RemoveTask(incidentID, userID)
 
 	return nil
 }
@@ -666,7 +666,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RenameChecklistItem(incidentID, userID)
+	s.telemetry.RenameTask(incidentID, userID)
 
 	return nil
 }
@@ -698,7 +698,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.MoveChecklistItem(incidentID, userID)
+	s.telemetry.MoveTask(incidentID, userID)
 
 	return nil
 }
@@ -780,7 +780,7 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
-	channelHeader := "The channel was created by the Incident Response plugin."
+	channelHeader := "The channel was created by the Incident Management plugin."
 
 	if incdnt.Description != "" {
 		channelHeader = incdnt.Description

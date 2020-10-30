@@ -7,8 +7,8 @@ import (
 	"math"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )

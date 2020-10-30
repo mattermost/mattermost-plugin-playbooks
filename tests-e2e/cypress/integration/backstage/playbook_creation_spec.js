@@ -33,7 +33,7 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = 'com.mattermost.plugin-incident-response/playbooks/new';
+        const url = 'com.mattermost.plugin-incident-management/playbooks/new';
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
@@ -47,7 +47,7 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with "Blank Playbook" template option', () => {
-        const url = 'com.mattermost.plugin-incident-response/playbooks/new';
+        const url = 'com.mattermost.plugin-incident-management/playbooks/new';
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
@@ -76,7 +76,7 @@ describe('playbook creation button', () => {
 });
 
 function verifyPlaybookCreationPageOpened(url, playbookName) {
-    // * Verify the page url contains 'com.mattermost.plugin-incident-response/playbooks/new'
+    // * Verify the page url contains 'com.mattermost.plugin-incident-management/playbooks/new'
     cy.url().should('include', url);
 
     // * Verify the playbook name is 'Untitled Playbook'
