@@ -93,7 +93,7 @@ const RHSWelcomeView = () => {
                         {'Simplify your processes with Incident Management'}
                     </h1>
                     <p className='mt-3 mb-8 light'>
-                        {'Create a playbook to define your incident response workflow. Select a template or create your playbook from scratch.'}
+                        {'Create a playbook to define your incident management workflow. Select a template or create your playbook from scratch.'}
                     </p>
                     <div className='header-button-div mb-4'>
                         <PrimaryButton
