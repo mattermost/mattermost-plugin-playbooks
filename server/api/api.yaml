@@ -12,6 +12,7 @@ paths:
   /incidents:
     get:
       summary: List all incidents
+      description: Retrieve a paged list of incidents, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team or commander ID.
       operationId: listIncidents
       security:
         - BearerAuth: []
@@ -20,52 +21,87 @@ paths:
       parameters:
         - name: team_id
           in: query
-          description: Which team to filter by
+          description: ID of the team to filter by.
           required: true
+          example: el3d3t9p55pevvxs2qkdwz334k
           schema:
             type: string
         - name: page
           in: query
-          description: Defaults to 0
+          description: Zero-based index of the page to request.
           required: false
+          example: 3
           schema:
             type: integer
             format: int32
+            default: 0
         - name: per_page
           in: query
-          description: Defaults to 1000
+          description: Number of incidents to return per page.
           required: false
+          example: 50
           schema:
             type: integer
             format: int32
+            default: 1000
         - name: sort
           in: query
-          description: Defaults to create_at
+          description: Field to sort the returned incidents by.
           required: false
+          example: end_at
           schema:
             type: string
+            default: create_at
+            enum:
+              - id
+              - name
+              - is_active
+              - create_at
+              - end_at
+              - team_id
+              - commander_user_id
         - name: direction
           in: query
-          description: Defaults to desc
+          description: Direction (ascending or descending) followed by the sorting of the incidents.
           required: false
+          example: asc
           schema:
             type: string
+            default: desc
+            enum:
+              - desc
+              - asc
         - name: status
           in: query
-          description: Defaults to all
+          description: The returned list will contain only the incidents with this status.
           required: false
+          example: active
           schema:
             type: string
+            default: all
+            enum:
+              - all
+              - active
+              - ended
         - name: commander_user_id
           in: query
-          description: Gets incidents that matches commander_user_id
+          description: The returned list will contain only the incidents commanded by this user.
           required: false
+          example: lpn2ogt9qzkc59lfvvad9t15v4
           schema:
             type: string
         - name: search_term
           in: query
-          description: Returns results of the search term
+          description: The returned list will contain only the incidents whose name contains the search term.
           required: false
+          example: "server down"
+          schema:
+            type: string
+        - name: member_id
+          in: query
+          description: The returned list will contain only the incidents this user is a member of.
+          required: false
+          example: bruhg1cs65retdbea798hrml4v
           schema:
             type: string
       x-codeSamples:
@@ -75,72 +111,170 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: A paged list of incidents
+          description: A paged list of incidents.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IncidentList"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
     post:
-      summary: Creates a new incident
+      summary: Create a new incident
+      description: Create a new incident in a team, using a playbook as template, with a specific name and a specific commander.
       operationId: createIncidentFromPost
       security:
         - BearerAuth: []
       tags:
         - Incidents
       requestBody:
-        description: Incident payload
+        description: Incident payload.
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Incident"
+              type: object
+              required:
+                - name
+                - commander_user_id
+                - team_id
+                - playbook_id
+              properties:
+                name:
+                  type: string
+                  description: The name of the incident.
+                  example: Server down in EU cluster
+                description:
+                  type: string
+                  description: The description of the incident.
+                  example: There is one server in the EU cluster that is not responding since April 12.
+                commander_user_id:
+                  type: string
+                  description: The identifier of the user who is commanding the incident.
+                  example: bqnbdf8uc0a8yz4i39qrpgkvtg
+                team_id:
+                  type: string
+                  description: The identifier of the team where the incident's channel is in.
+                  example: 61ji2mpflefup3cnuif80r5rde
+                post_id:
+                  type: string
+                  description: If the incident was created from a post, this field contains the identifier of such post. If not, this field is empty.
+                  example: b2ntfcrl4ujivl456ab4b3aago
+                playbook_id:
+                  type: string
+                  description: The identifier of the playbook with from which this incident was created.
+                  example: 0y4a0ntte97cxvfont8y84wa7x
       x-codeSamples:
         - lang: curl
           source: |
             curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"name": "ExampleIncident", "commander_user_id": "guo3e74njbbdxcpa6p43q974ar", "team_id": "ni8duypfe7bamprxqeffd563gy"}'
+            -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "commander_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
       responses:
-        200:
-          description: Created incident
+        201:
+          description: Created incident.
+          headers:
+            Location:
+              description: Location of the created incident.
+              schema:
+                type: string
+                example: /api/v0/incidents/nhkx1nbivu45lr84vtxxukp2vr
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Incident"
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
 
-  /incidents/create-dialog:
+  /incidents/dialog:
     post:
-      summary: Internal - Creates a new incident from dialog
+      summary: Create a new incident from dialog
+      description: This is an internal endpoint to create an incident from the submission of an interactive dialog, filled by a user in the webapp. See [Interactive Dialogs](https://docs.mattermost.com/developer/interactive-dialogs.html) for more information.
       operationId: createIncidentFromDialog
       security:
         - BearerAuth: []
       tags:
-        - Internal-Incidents
+        - Internal
+      requestBody:
+        description: Dialog submission payload.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: dialog_submission
+                url:
+                  type: string
+                callback_id:
+                  type: string
+                  description: Callback ID provided by the integration.
+                state:
+                  type: string
+                  description: Stringified JSON with the post_id and the client_id.
+                user_id:
+                  type: string
+                  description: ID of the user who submitted the dialog.
+                channel_id:
+                  type: string
+                  description: ID of the channel the user was in when submitting the dialog.
+                team_id:
+                  type: string
+                  description: ID of the team the user was on when submitting the dialog.
+                submission:
+                  type: object
+                  description: Map of the dialog fields to their values
+                  required:
+                    - playbookID
+                    - incidentName
+                  properties:
+                    playbookID:
+                      type: string
+                      description: ID of the playbook to create the incident from.
+                      example: ahz0s61gh275i7z2ag4g1ntvjm
+                    incidentName:
+                      type: string
+                      description: The name of the incident to be created.
+                      example: Server down in EU cluster.
+                    incidentDescription:
+                      type: string
+                      description: An optional description of the incident.
+                      example: There is one server in the EU cluster that is not responding since April 12.
+                cancelled:
+                  type: boolean
+                  description: If the dialog was cancelled.
       responses:
-        200:
-          description: Null response
-        default:
-          description: Error
+        201:
+          description: Created incident.
+          headers:
+            Location:
+              description: Location of the created incident.
+              schema:
+                type: string
+                example: /api/v0/incidents/nhkx1nbivu45lr84vtxxukp2vr
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/Incident"
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
 
   /incidents/commanders:
     get:
-      summary: Gets commanders for a given team
+      summary: Get all commanders
+      description: Get the commanders of all incidents, filtered by team.
       operationId: getCommanders
       security:
         - BearerAuth: []
@@ -149,8 +283,9 @@ paths:
       parameters:
         - name: team_id
           in: query
-          description: Which team to filter by
+          description: ID of the team to filter by.
           required: true
+          example: el3d3t9p55pevvxs2qkdwz334k
           schema:
             type: string
       x-codeSamples:
@@ -160,23 +295,24 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Commanders
+          description: A list of commanders.
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/CommanderInfo"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
 
   /incidents/channels:
     get:
-      summary: Gets channels for all incidents
+      summary: Get incident channels
+      description: Get all channels associated with an incident, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team, or commander ID.
       operationId: getChannels
       security:
         - BearerAuth: []
@@ -185,11 +321,71 @@ paths:
       parameters:
         - name: team_id
           in: query
-          description: Which team to filter by
+          description: ID of the team to filter by.
           required: true
+          example: el3d3t9p55pevvxs2qkdwz334k
           schema:
             type: string
-            example: mx3xyzdojfgyfdx8sc8of1gdme
+        - name: sort
+          in: query
+          description: Field to sort the returned channels by, according to their incident.
+          required: false
+          example: end_at
+          schema:
+            type: string
+            default: create_at
+            enum:
+              - id
+              - name
+              - is_active
+              - create_at
+              - end_at
+              - team_id
+              - commander_user_id
+        - name: direction
+          in: query
+          description: Direction (ascending or descending) followed by the sorting of the incidents associated to the channels.
+          required: false
+          example: asc
+          schema:
+            type: string
+            default: desc
+            enum:
+              - desc
+              - asc
+        - name: status
+          in: query
+          description: The returned list will contain only the channels whose incident has this status.
+          required: false
+          example: active
+          schema:
+            type: string
+            default: all
+            enum:
+              - all
+              - active
+              - ended
+        - name: commander_user_id
+          in: query
+          description: The returned list will contain only the channels whose incident is commanded by this user.
+          required: false
+          example: lpn2ogt9qzkc59lfvvad9t15v4
+          schema:
+            type: string
+        - name: search_term
+          in: query
+          description: The returned list will contain only the channels associated to an incident whose name contains the search term.
+          required: false
+          example: "server down"
+          schema:
+            type: string
+        - name: member_id
+          in: query
+          description: The returned list will contain only the channels this user is a member of.
+          required: false
+          example: bruhg1cs65retdbea798hrml4v
+          schema:
+            type: string
       x-codeSamples:
         - lang: curl
           source: |
@@ -197,23 +393,71 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Channel ids
+          description: Channel IDs.
           content:
             application/json:
               schema:
                 type: array
                 items:
                   type: string
-        default:
-          description: Error response
+                  description: ID of the channel.
+                  example: v8zdc1893plelmf54vb7f0ramn
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
+
+  /incidents/checklist-autocomplete:
+    get:
+      summary: Get autocomplete data for /incident check
+      description: This is an internal endpoint used by the autocomplete system to retrieve the data needed to show the list of items that the user can check.
+      operationId: getChecklistAutocomplete
+      security:
+        - BearerAuth: []
+      tags:
+        - Internal
+      parameters:
+        - name: channel_ID
+          in: query
+          description: ID of the channel the user is in.
+          required: true
+          example: r3vk8jdys4rlya46xhdthatoyx
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of autocomplete items for this channel.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: array
+                items:
+                  type: object
+                  required:
+                    - item
+                    - hint
+                    - helptext
+                  properties:
+                    item:
+                      type: string
+                      description: A string containing a pair of integers separated by a space. The first integer is the index of the checklist; the second is the index of the item within the checklist.
+                      example: 1 2
+                    hint:
+                      type: string
+                      description: The title of the corresponding item.
+                      example: Gather information from customer.
+                    helptext:
+                      type: string
+                      description: Always the value "Check/uncheck this item".
+                      example: Check/uncheck this item
+        500:
+          $ref: "#/components/schemas/500"
 
   /incidents/channel/{channel_id}:
     get:
-      summary: Find incident by channel_id
+      summary: Find incident by channel ID
       operationId: getIncidentByChannelId
       security:
         - BearerAuth: []
@@ -223,27 +467,26 @@ paths:
         - name: channel_id
           in: path
           required: true
-          description: Channel id
+          description: ID of the channel associated to the incident to retrieve.
           schema:
             type: string
+            example: hwrmiyzj3kadcilh3ukfcnsbt6
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/channel/bdjeidoautgdjxqtgrmm78cg8a' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/channel/hwrmiyzj3kadcilh3ukfcnsbt6' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident
+          description: Incident associated to the channel.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Incident"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        404:
+          $ref: "#/components/schemas/404"
+        500:
+          $ref: "#/components/schemas/500"
 
   /incidents/{id}:
     get:
@@ -257,13 +500,14 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident to retrieve.
           schema:
             type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -272,17 +516,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Incident"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /incidents/{id}/details:
-    get:
-      summary: Get incident details
-      operationId: getIncidentDetails
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
+    patch:
+      summary: Update an incident
+      operationId: updateIncident
       security:
         - BearerAuth: []
       tags:
@@ -291,9 +531,52 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident to retrieve.
           schema:
             type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
+      requestBody:
+        description: Incident update payload.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                active_stage:
+                  type: int
+                  description: Zero-based index of the stage that will be made active.
+                  example: 2
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PATCH 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/mx3xyzdojfgyfdx8sc8of1gdme' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
+            -H 'Content-Type: application/json'\
+            -d '{"active_stage": 2}'
+      responses:
+        200:
+          description: Incident successfully updated.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
+
+  /incidents/{id}/metadata:
+    get:
+      summary: Get incident metadata
+      operationId: getIncidentMetadata
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the incident whose metadata will be retrieved.
+          schema:
+            type: string
+            example: mx3xyzdojfgyfdx8sc8of1gdme
       x-codeSamples:
         - lang: curl
           source: |
@@ -301,17 +584,15 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident details
+          description: Incident metadata.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IncidentDetails"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/IncidentMetadata"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
 
   /incidents/{id}/end:
     put:
@@ -325,9 +606,10 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident to end.
           schema:
             type: string
+            example: 1igmynxs77ywmcbwbsujzktter
       x-codeSamples:
         - lang: curl
           source: |
@@ -335,22 +617,40 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /incidents/{id}/commander:
+          description: Incident ended
+        500:
+          $ref: "#/components/schemas/500"
     post:
-      summary: Update incident commander
-      operationId: updateIncidentCommander
+      summary: End an incident from dialog
+      description: This is an internal endpoint to end an incident via a confirmation dialog, submitted by a user in the webapp.
+      operationId: endIncidentDialog
+      security:
+        - BearerAuth: []
+      tags:
+        - Internal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the incident to end.
+          schema:
+            type: string
+            example: 1igmynxs77ywmcbwbsujzktter
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Incident ended
+        500:
+          $ref: "#/components/schemas/500"
+
+  /incidents/{id}/restart:
+    put:
+      summary: Restart an incident
+      operationId: restartIncident
       security:
         - BearerAuth: []
       tags:
@@ -359,11 +659,39 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident to restart.
           schema:
             type: string
+            example: 1igmynxs77ywmcbwbsujzktter
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Incident restarted.
+        500:
+          $ref: "#/components/schemas/500"
+
+  /incidents/{id}/commander:
+    post:
+      summary: Update incident commander
+      operationId: changeCommander
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the incident whose commander will be changed.
+          schema:
+            type: string
+            example: 1igmynxs77ywmcbwbsujzktter
       requestBody:
-        description: Update commander payload
+        description: Payload to change the incident's commander.
         content:
           application/json:
             schema:
@@ -371,7 +699,8 @@ paths:
               properties:
                 commander_id:
                   type: string
-                  example: mx3xyzdojfgyfdx8sc8of1gdme
+                  description: The user ID of the new commander.
+                  example: hx7fqtqxp7nn8129t7e505ls6s
               required:
                 - commander_id
       x-codeSamples:
@@ -379,24 +708,49 @@ paths:
           source: |
             curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/commander' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"commander_id": "guo3e74njbbdxcpa6p43q974ar"}'
+            -d '{"commander_id": "hx7fqtqxp7nn8129t7e505ls6s"}'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          description: Commander successfully changed.
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
+
+  /incidents/{id}/next-stage-dialog:
+    post:
+      summary: Go to next stage from dialog
+      description: This is an internal endpoint to go to the next stage via a confirmation dialog, submitted by a user in the webapp.
+      operationId: nextStageDialog
+      security:
+        - BearerAuth: []
+      tags:
+        - Internal
+      requestBody:
+        description: Dialog submission payload.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                  description: String representation of the zero-based index of the stage to go to.
+                  example: "3"
+      responses:
+        200:
+          description: Incident stage update.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
 
   /incidents/{id}/checklists/{checklist}/add:
     put:
-      summary: Add a checklist item
+      summary: Add an item to an incident's checklist
+      description: The most common pattern to add a new item is to only send its title as the request payload. By default, it is an open item, with no assignee and no slash command.
       operationId: addChecklistItem
       security:
         - BearerAuth: []
@@ -406,34 +760,82 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident whose checklist will be modified.
+          example: twcqg0a2m37ydi6ebge3j9ev5z
           schema:
             type: string
         - name: checklist
           in: path
           required: true
-          description: Checklist number
+          description: Zero-based index of the checklist to modify.
+          example: 1
           schema:
             type: integer
       requestBody:
-        description: Checklist item payload
+        description: Checklist item payload.
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ChecklistItem"
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                  description: The title of the checklist item.
+                  example: Gather information from customer.
+                state:
+                  type: string
+                  enum:
+                    - ""
+                    - in_progress
+                    - closed
+                  description: The state of the checklist item. An empty string means that the item is not done.
+                  example: closed
+                state_modified:
+                  type: integer
+                  format: int64
+                  description: The timestamp for the latest modification of the item's state, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item was never modified.
+                  example: 1607774621321
+                state_modified_post_id:
+                  type: string
+                  description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's state.
+                  example: 8nmjfgrkwvokrg13urvo10bx9j
+                assignee_id:
+                  type: string
+                  description: The identifier of the user that has been assigned to complete this item. If the item has no assignee, this is an empty string.
+                  example: pisdatkjtdlkdhht2v4inxuzx1
+                assignee_modified:
+                  type: integer
+                  format: int64
+                  description: The timestamp for the latest modification of the item's assignee, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item never got an assignee.
+                  example: 1608897821125
+                assignee_modified_post_id:
+                  type: string
+                  description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's assignee.
+                  example: ol7h83caow11xfbydhqvyg16b4
+                command:
+                  type: string
+                  description: The slash command associated with this item. If the item has no slash command associated, this is an empty string
+                  example: /opsgenie on-call
+                command_last_run:
+                  type: integer
+                  format: int64
+                  description: The timestamp for the latest execution of the item's command, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the command was never executed.
+                  example: 1608552221019
+                description:
+                  type: string
+                  description: A detailed description of the checklist item, formatted with Markdown.
+                  example: Ask the customer for more information in [Zendesk](https://www.zendesk.com/).
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/add' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/twcqg0a2m37ydi6ebge3j9ev5z/checklists/1/add' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "Title"}'
+            -d '{"title": "Gather information from customer."}'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
+          description: Item successfully added.
         default:
           description: Error response
           content:
@@ -443,7 +845,7 @@ paths:
 
   /incidents/{id}/checklists/{checklist}/reorder:
     put:
-      summary: Reorder a checklist item
+      summary: Reorder an item in an incident's checklist
       operationId: reoderChecklistItem
       security:
         - BearerAuth: []
@@ -453,17 +855,19 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident whose checklist will be modified.
+          example: yj74zsk7dvtsv6ndsynsps3g5s
           schema:
             type: string
         - name: checklist
           in: path
           required: true
-          description: Checklist number
+          description: Zero-based index of the checklist to modify.
+          example: 1
           schema:
             type: integer
       requestBody:
-        description: Reorder checklist item payload
+        description: Reorder checklist item payload.
         content:
           application/json:
             schema:
@@ -471,9 +875,11 @@ paths:
               properties:
                 item_num:
                   type: integer
+                  description: Zero-based index of the item to reorder.
                   example: 2
                 new_location:
                   type: integer
+                  description: Zero-based index of the new place to move the item to.
                   example: 2
               required:
                 - item_num
@@ -481,27 +887,22 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/reorder' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/yj74zsk7dvtsv6ndsynsps3g5s/checklists/1/reorder' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"item_num": 0, "new_location": 2}'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          description: Item successfully reordered.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
 
   /incidents/{id}/checklists/{checklist}/item/{item}:
     put:
-      summary: Rename a checklist item
-      operationId: renameChecklistItem
+      summary: Update an item of an incident's checklist
+      description: Update the title and the slash command of an item in one of the incident's checklists.
+      operationId: itemRename
       security:
         - BearerAuth: []
       tags:
@@ -510,23 +911,26 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident whose checklist will be modified.
+          example: 6t7jdgyqr7b5sk24zkauhmrb06
           schema:
             type: string
         - name: checklist
           in: path
           required: true
-          description: Checklist number
+          description: Zero-based index of the checklist to modify.
+          example: 1
           schema:
             type: integer
         - name: item
           in: path
           required: true
-          description: Item number
+          description: Zero-based index of the item to modify.
+          example: 2
           schema:
             type: integer
       requestBody:
-        description: Rename checklist item payload
+        description: Update checklist item payload.
         content:
           application/json:
             schema:
@@ -534,31 +938,32 @@ paths:
               properties:
                 title:
                   type: string
-                  example: New Title
+                  description: The new title of the item.
+                  example: Gather information from server's logs.
+                command:
+                  type: string
+                  description: The new slash command of the item.
+                  example: /jira update ticket
               required:
                 - title
+                - command
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/6t7jdgyqr7b5sk24zkauhmrb06/checklists/1/item/0' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "new_title"}'
+            -d '{"title": "Gather information from server's logs.", "command": "/jira update ticket"}'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          description: Item updated.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
+
     delete:
-      summary: Delete a checklist item
-      operationId: deleteChecklistItem
+      summary: Delete an item of an incident's checklist
+      operationId: itemDelete
       security:
         - BearerAuth: []
       tags:
@@ -567,44 +972,41 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident whose checklist will be modified.
+          example: zjy2q2iy2jafl0lo2oddos5xn7
           schema:
             type: string
         - name: checklist
           in: path
           required: true
-          description: Checklist number
+          description: Zero-based index of the checklist to modify.
+          example: 1
           schema:
             type: integer
         - name: item
           in: path
           required: true
-          description: Item number
+          description: Zero-based index of the item to modify.
+          example: 2
           schema:
             type: integer
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0' \
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/zjy2q2iy2jafl0lo2oddos5xn7/checklists/1/item/2' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
-        200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        204:
+          description: Item successfully deleted.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
 
-  /incidents/{id}/checklists/{checklist}/item/{item}/check:
+  /incidents/{id}/checklists/{checklist}/item/{item}/state:
     put:
-      summary: Checks a checklist item
-      operationId: checkChecklistItem
+      summary: Update the state of an item
+      operationId: itemSetState
       security:
         - BearerAuth: []
       tags:
@@ -613,44 +1015,60 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident whose checklist will be modified.
+          example: 7l37isroz4e63giev62hs318bn
           schema:
             type: string
         - name: checklist
           in: path
           required: true
-          description: Checklist number
+          description: Zero-based index of the checklist to modify.
+          example: 1
           schema:
             type: integer
         - name: item
           in: path
           required: true
-          description: Item number
+          description: Zero-based index of the item to modify.
+          example: 2
           schema:
             type: integer
+      requestBody:
+        description: Update checklist item's state payload.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_state:
+                  type: string
+                  description: The new state of the item.
+                  enum:
+                    - ""
+                    - in_progress
+                    - closed
+                  example: closed
+                  default: ""
+              required:
+                - new_state
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/check' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+            -d '{"new_state": "closed"}'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          description: Item's state successfully updated.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
 
-  /incidents/{id}/checklists/{checklist}/item/{item}/uncheck:
+  /incidents/{id}/checklists/{checklist}/item/{item}/assignee:
     put:
-      summary: Unchecks a checklist item
-      operationId: uncheckChecklistItem
+      summary: Update the assignee of an item
+      operationId: itemSetAssignee
       security:
         - BearerAuth: []
       tags:
@@ -659,44 +1077,99 @@ paths:
         - name: id
           in: path
           required: true
-          description: Incident id
+          description: ID of the incident whose item will get a new assignee.
+          example: 7l37isroz4e63giev62hs318bn
           schema:
             type: string
         - name: checklist
           in: path
           required: true
-          description: Checklist number
+          description: Zero-based index of the checklist whose item will get a new assignee.
+          example: 1
           schema:
             type: integer
         - name: item
           in: path
           required: true
-          description: Item number
+          description: Zero-based index of the item that will get a new assignee.
+          example: 2
+          schema:
+            type: integer
+      requestBody:
+        description: User ID of the new assignee.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignee_id:
+                  type: string
+                  description: The user ID of the new assignee of the item.
+                  example: ruu86intseidqdxjojia41u7l1
+              required:
+                - assignee_id
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/assignee' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+            -d '{"asignee_id": "ruu86intseidqdxjojia41u7l1"}'
+      responses:
+        200:
+          description: Item's assignee successfully updated.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
+
+  /incidents/{id}/checklists/{checklist}/item/{item}/run:
+    put:
+      summary: Run an item's slash command
+      operationId: itemSetAssignee
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the incident whose item will be executed.
+          example: 7l37isroz4e63giev62hs318bn
+          schema:
+            type: string
+        - name: checklist
+          in: path
+          required: true
+          description: Zero-based index of the checklist whose item will be executed.
+          example: 1
+          schema:
+            type: integer
+        - name: item
+          in: path
+          required: true
+          description: Zero-based index of the item whose slash command will be executed.
+          example: 2
           schema:
             type: integer
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/x1938wijrbgkbfqh56r3m1owzh/checklists/0/item/0/uncheck' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/run' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          description: Item's slash command successfully executed.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
 
   /playbooks:
     get:
       summary: List all playbooks
-      operationId: listPlaybooks
+      description: Retrieve a paged list of playbooks, filtered by team, and sorted by title, number of stages or number of steps.
+      operationId: getPlaybooks
       security:
         - BearerAuth: []
       tags:
@@ -704,57 +1177,70 @@ paths:
       parameters:
         - name: team_id
           in: query
-          description: Which team to filter by
+          description: ID of the team to filter by.
           required: true
+          example: 08fmfasq5wit3qyfmq4mjk0rto
           schema:
             type: string
-            example: mx3xyzdojfgyfdx8sc8of1gdme
         - name: page
           in: query
-          description: Defaults to 0
+          description: Zero-based index of the page to request.
           required: false
+          example: 3
           schema:
             type: integer
             format: int32
+            default: 0
         - name: per_page
           in: query
-          description: Defaults to 1000
+          description: Number of playbooks to return per page.
           required: false
+          example: 50
           schema:
             type: integer
             format: int32
+            default: 1000
         - name: sort
           in: query
-          description: Specify the sort field. Defaults to title.
+          description: Field to sort the returned playbooks by title, number of stages or total number of steps.
           required: false
+          example: stages
           schema:
             type: string
-            example: title
+            default: title
+            enum:
+              - title
+              - stages
+              - steps
         - name: direction
           in: query
-          description: Specify the ascending or descending order of the result. Defaults to asc.
+          description: Direction (ascending or descending) followed by the sorting of the playbooks.
           required: false
+          example: asc
           schema:
             type: string
-            example: asc
+            default: asc
+            enum:
+              - desc
+              - asc
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks?team_id=ni8duypfe7bamprxqeffd563gy&sort=title&direction=asc' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks?team_id=08fmfasq5wit3qyfmq4mjk0rto&sort=title&direction=asc' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: A paged list of playbooks
+          description: A paged list of playbooks.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PlaybookList"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
     post:
       summary: Create a playbook
       operationId: createPlaybook
@@ -767,16 +1253,85 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Playbook"
+              type: object
+              required:
+                - title
+                - team_id
+                - create_public_incident
+                - checklists
+                - member_ids
+              properties:
+                title:
+                  type: string
+                  description: The title of the playbook.
+                  example: Cloud Incidents
+                description:
+                  type: string
+                  description: The description of the playbook.
+                  example: A playbook to follow when there is an incident regarding the availability of the cloud service.
+                team_id:
+                  type: string
+                  description: The identifier of the team where the playbook is in.
+                  example: p03rbi6viyztysbqnkvcqyel2i
+                create_public_incident:
+                  type: boolean
+                  description: A boolean indicating whether the incidents created from this playbook should be public or private.
+                  example: true
+                checklists:
+                  type: array
+                  description: The stages defined by this playbook.
+                  items:
+                    type: object
+                    required:
+                      - title
+                      - items
+                    properties:
+                      title:
+                        type: string
+                        description: The title of the checklist.
+                        example: Triage issue
+                      items:
+                        type: array
+                        description: The list of tasks to do.
+                        items:
+                          type: object
+                          required:
+                            - title
+                          properties:
+                            title:
+                              type: string
+                              description: The title of the checklist item.
+                              example: Gather information from customer.
+                            command:
+                              type: string
+                              description: The slash command associated with this item. If the item has no slash command associated, this is an empty string
+                              example: /opsgenie on-call
+                            description:
+                              type: string
+                              description: A detailed description of the checklist item, formatted with Markdown.
+                              example: Ask the customer for more information in [Zendesk](https://www.zendesk.com/).
+                member_ids:
+                  description: The identifiers of all the users that are members of this playbook.
+                  type: array
+                  items:
+                    type: string
+                    description: User ID of the playbook member.
+                    example: ilh6s1j4yefbdhxhtlzt179i6m
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_incident": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
+            -d '{"title": "Cloud Incidents", "description": "A playbook to follow when there is an incident regarding the availability of the cloud service.", "team_id": "p03rbi6viyztysbqnkvcqyel2i","create_public_incident": true,"checklists": [{"title": "Triage issue","items": [{"title": "Gather information from customer."}]}]}'
       responses:
-        200:
-          description: Playbook ID
+        201:
+          description: ID of the created playbook.
+          headers:
+            Location:
+              description: Location of the created playbook.
+              schema:
+                type: string
+                example: /api/v0/playbook/cdl5o0tjcp5rqlpjidhobj64nd
           content:
             application/json:
               schema:
@@ -784,15 +1339,15 @@ paths:
                 properties:
                   id:
                     type: string
-                    example: mx3xyzdojfgyfdx8sc8of1gdme
+                    example: iz0g457ikesz55dhxcfa0fk9yy
                 required:
                   - id
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
 
   /playbooks/{id}:
     get:
@@ -805,29 +1360,27 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Playbook id
           required: true
+          description: ID of the playbook to retrieve.
           schema:
             type: string
-            example: mx3xyzdojfgyfdx8sc8of1gdme
+            example: iz0g457ikesz55dhxcfa0fk9yy
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/qp96egozepn58mg93wein1e8pe' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Playbook
+          description: Playbook.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Playbook"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
     put:
       summary: Update a playbook
       operationId: updatePlaybook
@@ -838,11 +1391,11 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Playbook id
           required: true
+          description: ID of the playbook to update.
           schema:
             type: string
-            example: mx3xyzdojfgyfdx8sc8of1gdme
+            example: iz0g457ikesz55dhxcfa0fk9yy
       requestBody:
         description: Playbook payload
         content:
@@ -852,22 +1405,18 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/qp96egozepn58mg93wein1e8pe' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_incident": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
       responses:
         200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          description: Playbook succesfully updated.
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
     delete:
       summary: Delete a playbook
       operationId: deletePlaybook
@@ -878,29 +1427,23 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Playbook id
           required: true
+          description: ID of the playbook to delete.
           schema:
             type: string
-            example: mx3xyzdojfgyfdx8sc8of1gdme
+            example: iz0g457ikesz55dhxcfa0fk9yy
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/qp96egozepn58mg93wein1e8pe' \
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
-        200:
-          description: Success response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/200"
-        default:
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        204:
+          description: Playbook successfully deleted.
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
 
 components:
   securitySchemes:
@@ -908,97 +1451,142 @@ components:
       type: http
       scheme: bearer
   schemas:
-    200:
-      title: Successful response
-      type: object
-      properties:
-        status:
-          type: string
-          example: OK
+    400:
+      description: The request is malformed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    403:
+      description: Access to the resource is forbidden for this user.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    404:
+      description: Resource requested not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    500:
+      description: There was an internal error in the server.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     Incident:
       type: object
-      required:
-        - id
-        - name
-        - is_active
-        - commander_user_id
-        - team_id
-        - channel_id
-        - create_at
-        - end_at
       properties:
         id:
           type: string
+          description: A unique, 26 characters long, alphanumeric identifier for the incident.
           example: mx3xyzdojfgyfdx8sc8of1gdme
         name:
           type: string
-          example: ExampleIncident
+          description: The name of the incident.
+          example: Server down in EU cluster
+        description:
+          type: string
+          description: The description of the incident.
+          example: There is one server in the EU cluster that is not responding since April 12.
         is_active:
           type: boolean
+          description: True if the incident is ongoing; false if the incident is ended.
           example: false
         commander_user_id:
           type: string
-          example: mx3xyzdojfgyfdx8sc8of1gdme
+          description: The identifier of the user that is commanding the incident.
+          example: bqnbdf8uc0a8yz4i39qrpgkvtg
         team_id:
           type: string
-          example: mx3xyzdojfgyfdx8sc8of1gdme
+          description: The identifier of the team where the incident's channel is in.
+          example: 61ji2mpflefup3cnuif80r5rde
         channel_id:
           type: string
-          example: mx3xyzdojfgyfdx8sc8of1gdme
+          description: The identifier of the incident's channel.
+          example: hwrmiyzj3kadcilh3ukfcnsbt6
         create_at:
           type: integer
           format: int64
-          example: 1591130815
+          description: The incident creation timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1606807976289
         end_at:
           type: integer
           format: int64
-          example: 1591130815
-    IncidentDetails:
-      allOf:
-        - $ref: "#/components/schemas/Incident"
-        - type: object
-          required:
-            - channel_name
-            - channel_display_name
-            - team_name
-            - num_members
-            - total_posts
-          properties:
-            channel_name:
-              type: string
-            channel_display_name:
-              type: string
-            team_name:
-              type: string
-            num_members:
-              type: integer
-              format: int64
-              example: 202
-            total_posts:
-              type: integer
-              format: int64
-              example: 202
+          description: The incident finish timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the incident is not finished.
+          example: 0
+        delete_at:
+          type: integer
+          format: int64
+          description: The incident deletion timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the incident is not deleted.
+          example: 0
+        active_stage:
+          type: integer
+          format: int32
+          description: Zero-based index of the currently active stage.
+          example: 1
+        active_stage_title:
+          type: string
+          description: The title of the currently active stage.
+          example: Triage issue
+        post_id:
+          type: string
+          description: If the incident was created from a post, this field contains the identifier of such post. If not, this field is empty.
+          example: b2ntfcrl4ujivl456ab4b3aago
+        playbook_id:
+          type: string
+          description: The identifier of the playbook with from which this incident was created.
+          example: 0y4a0ntte97cxvfont8y84wa7x
+        checklists:
+          type: array
+          items:
+            $ref: "#/components/schemas/Checklist"
+    IncidentMetadata:
+      type: object
+      properties:
+        channel_name:
+          type: string
+          description: Name of the channel associated to the incident.
+          example: server-down-in-eu-cluster
+        channel_display_name:
+          type: string
+          description: Display name of the channel associated to the incident.
+          example: Server down in EU cluster
+        team_name:
+          type: string
+          description: Name of the team the incident is in.
+          example: sre-staff
+        num_members:
+          type: integer
+          format: int64
+          description: Number of users that have been members of the incident at any point.
+          example: 25
+        total_posts:
+          type: integer
+          format: int64
+          description: Number of posts in the channel associated to the incident.
+          example: 202
     IncidentList:
       type: object
-      required:
-        - total_count
-        - page_count
-        - has_more
-        - items
       properties:
         total_count:
           type: integer
+          description: The total number of incidents in the list, regardless of the paging.
           format: int32
           example: 305
         page_count:
           type: integer
+          description: The total number of pages. This depends on the total number of incidents in the database and the per_page parameter sent with the request.
           format: int32
-          example: 305
+          example: 2
         has_more:
           type: boolean
+          description: A boolean describing whether there are more pages after the currently returned.
           example: true
         items:
           type: array
+          description: The incidents in this page.
           items:
             $ref: "#/components/schemas/Incident"
     CommanderInfo:
@@ -1009,91 +1597,159 @@ components:
       properties:
         user_id:
           type: string
-          example: mx3xyzdojfgyfdx8sc8of1gdme
+          description: A unique, 26 characters long, alphanumeric identifier for the commander.
+          example: ahz0s61gh275i7z2ag4g1ntvjm
         username:
           type: string
-          example: exampleusername
+          description: Commander's username.
+          example: aaron.medina
     Playbook:
       type: object
-      required:
-        - id
-        - title
-        - team_id
-        - create_public_incident
-        - checklists
       properties:
         id:
           type: string
-          example: mx3xyzdojfgyfdx8sc8of1gdme
+          description: A unique, 26 characters long, alphanumeric identifier for the playbook.
+          example: iz0g457ikesz55dhxcfa0fk9yy
         title:
           type: string
-          example: Playbook
+          description: The title of the playbook.
+          example: Cloud Incidents
+        description:
+          type: string
+          description: The description of the playbook.
+          example: A playbook to follow when there is an incident regarding the availability of the cloud service.
         team_id:
           type: string
-          example: mx3xyzdojfgyfdx8sc8of1gdme
+          description: The identifier of the team where the playbook is in.
+          example: p03rbi6viyztysbqnkvcqyel2i
         create_public_incident:
           type: boolean
+          description: A boolean indicating whether the incidents created from this playbook should be public or private.
           example: true
+        create_at:
+          type: integer
+          format: int64
+          description: The playbook creation timestamp, formatted as the number of milliseconds since the Unix epoch.
+          example: 1602235338837
+        delete_at:
+          type: integer
+          format: int64
+          description: The playbook deletion timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the playbook is not deleted.
+          example: 0
+        num_stages:
+          type: integer
+          format: int64
+          description: The number of stages defined in this playbook.
+          example: 3
+        num_steps:
+          type: integer
+          format: int64
+          description: The total number of steps from all the stages defined in this playbook.
+          example: 18
         checklists:
           type: array
+          description: The stages defined in this playbook.
           items:
             $ref: "#/components/schemas/Checklist"
+        member_ids:
+          description: The identifiers of all the users that are members of this playbook.
+          type: array
+          items:
+            type: string
+            description: User ID of the playbook member.
+            example: ilh6s1j4yefbdhxhtlzt179i6m
     PlaybookList:
       type: object
-      required:
-        - total_count
-        - page_count
-        - has_more
-        - items
       properties:
         total_count:
           type: integer
+          description: The total number of playbooks in the list, regardless of the paging.
           format: int32
           example: 305
         page_count:
           type: integer
+          description: The total number of pages. This depends on the total number of playbooks in the database and the per_page parameter sent with the request.
           format: int32
-          example: 305
+          example: 2
         has_more:
           type: boolean
+          description: A boolean describing whether there are more pages after the currently returned.
           example: true
         items:
           type: array
+          description: The playbooks in this page.
           items:
             $ref: "#/components/schemas/Playbook"
     Checklist:
       type: object
-      required:
-        - title
-        - items
       properties:
+        id:
+          type: string
+          description: A unique, 26 characters long, alphanumeric identifier for the checklist.
+          example: 6f6nsgxzoq84fqh1dnlyivgafd
         title:
           type: string
-          example: Title
+          description: The title of the checklist.
+          example: Triage issue
         items:
           type: array
+          description: The list of tasks to do.
           items:
             $ref: "#/components/schemas/ChecklistItem"
     ChecklistItem:
       type: object
-      required:
-        - title
-        - checked
-        - checked_modified
-        - checked_post_id
       properties:
+        id:
+          type: string
+          description: A unique, 26 characters long, alphanumeric identifier for the checklist item.
+          example: 6f6nsgxzoq84fqh1dnlyivgafd
         title:
           type: string
-          example: Title
-        checked:
-          type: boolean
-          example: true
-        checked_modified:
+          description: The title of the checklist item.
+          example: Gather information from customer.
+        state:
           type: string
-          example: "2020-06-17T21:05:57.958365-04:00"
-        checked_post_id:
+          enum:
+            - ""
+            - in_progress
+            - closed
+          description: The state of the checklist item. An empty string means that the item is not done.
+          example: closed
+        state_modified:
+          type: integer
+          format: int64
+          description: The timestamp for the latest modification of the item's state, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item was never modified.
+          example: 1607774621321
+        state_modified_post_id:
           type: string
-          example: cqw187crwtn8tdjr11umtrwftr
+          description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's state.
+          example: 8nmjfgrkwvokrg13urvo10bx9j
+        assignee_id:
+          type: string
+          description: The identifier of the user that has been assigned to complete this item. If the item has no assignee, this is an empty string.
+          example: pisdatkjtdlkdhht2v4inxuzx1
+        assignee_modified:
+          type: integer
+          format: int64
+          description: The timestamp for the latest modification of the item's assignee, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item never got an assignee.
+          example: 1608897821125
+        assignee_modified_post_id:
+          type: string
+          description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's assignee.
+          example: ol7h83caow11xfbydhqvyg16b4
+        command:
+          type: string
+          description: The slash command associated with this item. If the item has no slash command associated, this is an empty string
+          example: /opsgenie on-call
+        command_last_run:
+          type: integer
+          format: int64
+          description: The timestamp for the latest execution of the item's command, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the command was never executed.
+          example: 1608552221019
+        description:
+          type: string
+          description: A detailed description of the checklist item, formatted with Markdown.
+          example: Ask the customer for more information in [Zendesk](https://www.zendesk.com/).
     Error:
       type: object
       required:
@@ -1102,5 +1758,9 @@ components:
       properties:
         error:
           type: string
+          description: A message with the error description.
+          example: Error retrieving the resource.
         details:
           type: string
+          description: Further details on where and why this error happened.
+          example: Specific details about the error, depending on the case.
