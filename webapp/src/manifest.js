@@ -5,6 +5,10 @@ const manifest = JSON.parse(`
     "id": "com.mattermost.plugin-incident-management",
     "name": "Incident Management",
     "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
+    "homepage_url": "https://github.com/mattermost/mattermost-plugin-incident-response/",
+    "support_url": "https://github.com/mattermost/mattermost-plugin-incident-response/issues",
+    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-incident-response/releases/tag/v1.0.0",
+    "icon_path": "assets/incident_plugin_icon.svg",
     "version": "1.0.0",
     "min_server_version": "5.28.0",
     "server": {
