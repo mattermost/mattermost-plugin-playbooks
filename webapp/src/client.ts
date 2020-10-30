@@ -138,25 +138,22 @@ export function clientFetchPlaybook(playbookID: string) {
 
 export async function savePlaybook(playbook: Playbook) {
     if (!playbook.id) {
-        const {data} = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
+        const data = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
         return data;
     }
 
-    const {data} = await doPut(`${apiUrl}/playbooks/${playbook.id}`,
-        JSON.stringify(playbook),
-    );
-
+    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(playbook),
+    });
     return data;
 }
 
 export async function deletePlaybook(playbook: PlaybookNoChecklist) {
-    try {
-        return await doFetchWithResponse(`${apiUrl}/playbooks/${playbook.id}`, {
-            method: 'delete',
-        });
-    } catch (error) {
-        return {error};
-    }
+    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+        method: 'delete',
+    });
+    return data;
 }
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
@@ -194,7 +191,7 @@ export async function setAssignee(incidentId: string, checklistNum: number, item
 }
 
 export async function setChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
+    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
         JSON.stringify({
             new_state: newState,
         }),
@@ -204,7 +201,7 @@ export async function setChecklistItemState(incidentID: string, checklistNum: nu
 }
 
 export async function clientAddChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
-    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/add`,
+    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/add`,
         JSON.stringify(checklistItem),
     );
 
@@ -221,7 +218,7 @@ export async function clientRemoveChecklistItem(incidentID: string, checklistNum
 }
 
 export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newItem: ChecklistItem) {
-    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`,
+    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`,
         JSON.stringify({
             title: newItem.title,
             command: newItem.command,
@@ -231,7 +228,7 @@ export async function clientEditChecklistItem(incidentID: string, checklistNum: 
 }
 
 export async function clientReorderChecklist(incidentID: string, checklistNum: number, itemNum: number, newLocation: number) {
-    const {data} = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/reorder`,
+    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/reorder`,
         JSON.stringify({
             item_num: itemNum,
             new_location: newLocation,
@@ -299,7 +296,6 @@ export const doFetchWithResponse = async (url: string, options = {}) => {
     let data;
     if (response.ok) {
         data = await response.json();
-
         return {
             response,
             data,
