@@ -2,7 +2,9 @@
 
 We only track the events that create, delete, or update items. We never track the specific content of the items. In particular, we do not collect the name of the incidents or the contents of the stages and tasks.
 
-Every event we track is accompanied with metadata that help us identify each event and isolate it from the rest of the servers. We can group all events that are coming from a single server, and if that server is licensed, we are able to identify the buyer of the license. The following list details the metadata that accompanies every event:
+Every event we track is accompanied with some metadata that help us group events by server. If that server is licensed, we are able to identify the contact person for the license. Otherwise, we are not able to connect personally identifying information from the event data described below. For example, although we collect the `UserActualId` of the user initiating the event, we are unable to connect personal information to that userId. That userId is used only to aggregate, analyze, and display data.
+
+The following list details the types of metadata we collect:
 
 - `incidentID`: Unique identifier of the incident.
 - `userID`: Unique identifier of the user who performed the action.
