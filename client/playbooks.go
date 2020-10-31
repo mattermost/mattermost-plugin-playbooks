@@ -64,6 +64,11 @@ type PlaybooksService struct {
 	client *Client
 }
 
+// NewPlaybooksService creates a new playbooks service
+func NewPlaybooksService(client *Client) PlaybooksService {
+	return PlaybooksService{client: client}
+}
+
 // Create an playbook.
 func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOptions) (*Playbook, error) {
 	url := "playbooks"

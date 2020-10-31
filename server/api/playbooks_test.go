@@ -2,8 +2,10 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	client2 "github.com/mattermost/mattermost-plugin-incident-management/client"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -91,6 +93,8 @@ func TestPlaybooks(t *testing.T) {
 	var playbookService *mock_playbook.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
+	var playbooksService client2.PlaybooksService
+	var ctx context.Context
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
@@ -100,6 +104,10 @@ func TestPlaybooks(t *testing.T) {
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+		ctx = context.Background()
+		playbookClient, clientErr := client2.NewClient("", nil)
+		require.NoError(t, clientErr)
+		playbooksService = client2.NewPlaybooksService(playbookClient)
 	}
 
 	t.Run("create playbook", func(t *testing.T) {
@@ -112,15 +120,26 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		opts := client2.PlaybookCreateOptions{
+			Name:   playbooktest.Title,
+			TeamID: playbooktest.TeamID,
+			UserID: "testuserid",
+		}
 
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+		opts.Name = playbooktest.Title
+
+		_, err = playbooksService.Create(ctx, opts)
+		require.NoError(t, err)
+
+		//testrecorder := httptest.NewRecorder()
+		//testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
+		//testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		//require.NoError(t, err)
+		//handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		//
+		//resp := testrecorder.Result()
+		//defer resp.Body.Close()
+		//assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("get playbook", func(t *testing.T) {
