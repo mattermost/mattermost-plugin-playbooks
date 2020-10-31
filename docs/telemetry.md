@@ -22,7 +22,6 @@ The following list details the types of metadata we collect:
 - `eventTimeStamp`: Timestamp indicating when the event was queued to send to the server.
 - `event integrations`: Unused field. It always contains the value `null`.
 - `event originalTimestamp`: Timestamp indicating when the event actually happened. It always equals `eventTimeStamp`.
-- `type`: Type of the event. There are three event types that are tracked: `incident`, `tasks`, `playbook`.
 
 For more information about telemetry, see [Mattermost Telemetry](https://docs.mattermost.com/administration/telemetry.html).
 
