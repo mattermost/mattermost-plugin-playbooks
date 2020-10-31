@@ -21,7 +21,6 @@ The following list details the types of metadata we collect:
 - `pluginVersion`: Version of the plugin.
 - `eventTimeStamp`: Timestamp indicating when the event was queued to send to the server.
 - `event integrations`: Unused field. It always contains the value `null`.
-- `event originalTimestamp`: Timestamp indicating when the event actually happened. It always equals `eventTimeStamp`.
 
 For more information about telemetry, see [Mattermost Telemetry](https://docs.mattermost.com/administration/telemetry.html).
 
