@@ -6,6 +6,18 @@ Every event we track is accompanied with some metadata that help us group events
 
 The following list details the types of metadata we collect:
 
+#### Data collected for all event types
+
+- `serverVersion`: Version of the server the plugin is running on.
+- `pluginVersion`: Version of the plugin.
+- `eventTimeStamp`: Timestamp indicating when the event was queued to send to the server.
+- `event originalTimestamp`: Timestamp indicating when the event actually happened. It always equals `eventTimeStamp`.
+- `UserID`: Unique identifier of the server.
+- `UserActualID`: Unique identifier of the user who initiated the action.
+- `type`: Type of the event. There are three event types that are tracked: `incident`, `tasks`, `playbook`.
+
+#### Data collected in `incident` events
+
 - `incidentID`: Unique identifier of the incident.
 - `IsActive`: Boolean  value indicating if the incident is active.
 - `CommanderUserID`: Unique identifier of the commander of the incident.
@@ -32,10 +44,6 @@ The following list details the types of metadata we collect:
 - `IsPublic`: True if the playbook was public, false if it was private.
 - `NumMembers`: The number of members with access to this playbook.
 - `NumSlashCommands`: The number of slash commands in this playbook.
-- `diagnosticID`: Unique identifier of the server the plugin is running on.
-- `serverVersion`: Version of the server the plugin is running on.
-- `pluginVersion`: Version of the plugin.
-- `eventTimeStamp`: Timestamp indicating when the event was queued to send to the server.
 
 For more information about telemetry, see [Mattermost Telemetry](https://docs.mattermost.com/administration/telemetry.html).
 
