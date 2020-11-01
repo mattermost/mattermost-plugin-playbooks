@@ -8,7 +8,7 @@ The following list details the types of metadata we collect:
 
 - `incidentID`: Unique identifier of the incident.
 - `userID`: Unique identifier of the user who performed the action.
-- `IsActive`: Boolean  value indicating if the incident is active. It always equals `true`
+- `IsActive`: Boolean  value indicating if the incident is active.
 - `CommanderUserID`: Unique identifier of the commander of the incident. It equals the identifier of the user that created the incident
 - `TeamID`: Unique identifier of the team where the incident channel is created
 - `CreatedAt`: Timestamp of the incident creation
