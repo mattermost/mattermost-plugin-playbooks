@@ -6,7 +6,7 @@ Every event we track is accompanied with some metadata that help us group events
 
 The following list details the types of metadata we collect:
 
-#### Data collected for all event types
+## Data collected for all event types
 
 - `serverVersion`: Version of the server the plugin is running on.
 - `pluginVersion`: Version of the plugin.
@@ -16,30 +16,31 @@ The following list details the types of metadata we collect:
 - `UserActualID`: Unique identifier of the user who initiated the action.
 - `type`: Type of the event. There are three event types that are tracked: `incident`, `tasks`, `playbook`.
 
-#### Data collected in `incident` events
+## Data collected in `incident` events
 
 - `incidentID`: Unique identifier of the incident.
 - `IsActive`: Boolean  value indicating if the incident is active.
 - `CommanderUserID`: Unique identifier of the commander of the incident.
 - `TeamID`: Unique identifier of the team where the incident channel is created
-- `CreatedAt`: Timestamp of the incident creation
-- `PostID`: Unique identifier of the post from which the incident was created (if relevant)
-- `NumChecklists`: Number of stages in this incident. 
+- `CreatedAt`: Timestamp of the incident creation.
+- `PostID`: Unique identifier of the post from which the incident was created (if relevant).
+- `NumChecklists`: Number of stages in this incident.
 - `TotalChecklistItems`: Number of tasks in this incident.
 - `ActiveStage`: A number indicating the stage of the incident (0-based).
 - `Public`: True if the incident was public, false if it was private.
 
-#### Data collected in `tasks` events
+## Data collected in `tasks` events
 
 - `incidentID`: Unique identifier of the incident.
-- `NewState`: `` if the task was marked uncompleted, `done` if the task was marked completed.
-- `WasCommander`: True if the userId who initiated the event was also the commander of the event, false if not.
-- `WasAssignee`: True if the userId who initiated the event was also the assignee of the event, false if not.
+- `NewState`: If the task was marked uncompleted. If the task was marked completed, the result will be `done`.
+- `WasCommander`: `true` if the userId who initiated the event was also the commander of the event, `false` if not.
+- `WasAssignee`: `true` if the userId who initiated the event was also the assignee of the event, `false` if not.
 
-#### Data collected in `playbook` events
+## Data collected in `playbook` events
+
 - `PlaybookID`: Unique identifier of the playbook.
 - `TeamID`: Unique identifier of the team this playbook is associated with.
-- `NumChecklists`: Number of stages in this playbook. 
+- `NumChecklists`: Number of stages in this playbook.
 - `TotalChecklistItems`: Number of tasks in this incident.
 - `IsPublic`: True if the playbook was public, false if it was private.
 - `NumMembers`: The number of members with access to this playbook.
@@ -49,7 +50,7 @@ For more information about telemetry, see [Mattermost Telemetry](https://docs.ma
 
 ## Event data
 
-Non-personally Identifiable Diagnostic Information, distinguished by end users and System Admins
+Non-personally Identifiable Diagnostic Information, distinguished by end users and System Admins.
 
 Boolean when the following events occur:
 
