@@ -12,7 +12,7 @@ The following list details the types of metadata we collect:
 - `TeamID`: Unique identifier of the team where the incident channel is created
 - `CreatedAt`: Timestamp of the incident creation
 - `PostID`: Unique identifier of the post
-- `NumChecklists`: Number of checklists. It always equals 1 
+- `NumChecklists`: Number of stages in this incident. 
 - `TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0.
 - `diagnosticID`: Unique identifier of the server the plugin is running on.
 - `serverVersion`: Version of the server the plugin is running on.
