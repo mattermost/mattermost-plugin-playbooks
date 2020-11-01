@@ -11,7 +11,7 @@ The following list details the types of metadata we collect:
 - `CommanderUserID`: Unique identifier of the commander of the incident.
 - `TeamID`: Unique identifier of the team where the incident channel is created
 - `CreatedAt`: Timestamp of the incident creation
-- `PostID`: Unique identifier of the post
+- `PostID`: Unique identifier of the post from which the incident was created (if relevant)
 - `NumChecklists`: Number of stages in this incident. 
 - `TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0.
 - `diagnosticID`: Unique identifier of the server the plugin is running on.
