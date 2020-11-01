@@ -13,7 +13,25 @@ The following list details the types of metadata we collect:
 - `CreatedAt`: Timestamp of the incident creation
 - `PostID`: Unique identifier of the post from which the incident was created (if relevant)
 - `NumChecklists`: Number of stages in this incident. 
-- `TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0.
+- `TotalChecklistItems`: Number of tasks in this incident.
+- `ActiveStage`: A number indicating the stage of the incident (0-based).
+- `Public`: True if the incident was public, false if it was private.
+
+#### Data collected in `tasks` events
+
+- `incidentID`: Unique identifier of the incident.
+- `NewState`: `` if the task was marked uncompleted, `done` if the task was marked completed.
+- `WasCommander`: True if the userId who initiated the event was also the commander of the event, false if not.
+- `WasAssignee`: True if the userId who initiated the event was also the assignee of the event, false if not.
+
+#### Data collected in `playbook` events
+- `PlaybookID`: Unique identifier of the playbook.
+- `TeamID`: Unique identifier of the team this playbook is associated with.
+- `NumChecklists`: Number of stages in this playbook. 
+- `TotalChecklistItems`: Number of tasks in this incident.
+- `IsPublic`: True if the playbook was public, false if it was private.
+- `NumMembers`: The number of members with access to this playbook.
+- `NumSlashCommands`: The number of slash commands in this playbook.
 - `diagnosticID`: Unique identifier of the server the plugin is running on.
 - `serverVersion`: Version of the server the plugin is running on.
 - `pluginVersion`: Version of the plugin.
