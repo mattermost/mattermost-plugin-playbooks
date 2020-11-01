@@ -12,7 +12,6 @@ The following list details the types of metadata we collect:
 - `CommanderUserID`: Unique identifier of the commander of the incident. It equals the identifier of the user that created the incident
 - `TeamID`: Unique identifier of the team where the incident channel is created
 - `CreatedAt`: Timestamp of the incident creation
-- `ChannelIDs`: A list containing a single element, the channel created along with the incident
 - `PostID`: Unique identifier of the post
 - `NumChecklists`: Number of checklists. It always equals 1 
 - `TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0.
