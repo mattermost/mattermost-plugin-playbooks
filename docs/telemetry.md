@@ -27,7 +27,7 @@ The following list details the types of metadata we collect:
 - `NumChecklists`: Number of stages in this incident.
 - `TotalChecklistItems`: Number of tasks in this incident.
 - `ActiveStage`: A number indicating the stage of the incident (0-based).
-- `Public`: True if the incident was public, false if it was private.
+- `Public`: `true` if the incident was public, `false` if it was private.
 
 ## Data collected in `tasks` events
 
@@ -42,7 +42,7 @@ The following list details the types of metadata we collect:
 - `TeamID`: Unique identifier of the team this playbook is associated with.
 - `NumChecklists`: Number of stages in this playbook.
 - `TotalChecklistItems`: Number of tasks in this incident.
-- `IsPublic`: True if the playbook was public, false if it was private.
+- `IsPublic`: `true` if the playbook was public, `false` if it was private.
 - `NumMembers`: The number of members with access to this playbook.
 - `NumSlashCommands`: The number of slash commands in this playbook.
 
