@@ -47,26 +47,3 @@ The following list details the types of metadata we collect:
 - `NumSlashCommands`: The number of slash commands in this playbook.
 
 For more information about telemetry, see [Mattermost Telemetry](https://docs.mattermost.com/administration/telemetry.html).
-
-## Event data
-
-Non-personally Identifiable Diagnostic Information, distinguished by end users and System Admins.
-
-Boolean when the following events occur:
-
-Incidents:
-
-`create`: Tracks the creation of the incident passed.
- - Properties: `actionCreate`;`public`
-    
-`end`: Tracks the end of the incident passed.
- - Properties: `actionEnd`
-    
-`restart`: Tracks the restart of the incident.
-- Properties: `actionRestart`
-
-`change_commander`: Tracks changes in commander.
- - Properties: `actionChangeCommander`
-
-`change_stage`: Tracks changes in stage.
-- Properties: `actionChangeStage`
