@@ -32,7 +32,7 @@ The following list details the types of metadata we collect:
 ## Data collected in `tasks` events
 
 - `incidentID`: Unique identifier of the incident.
-- `NewState`: If the task was marked uncompleted. If the task was marked completed, the result will be `done`.
+- `NewState`: `null` if the task is uncompleted, `done` if the task was marked completed.
 - `WasCommander`: `true` if the userId who initiated the event was also the commander of the event, `false` if not.
 - `WasAssignee`: `true` if the userId who initiated the event was also the assignee of the event, `false` if not.
 
