@@ -288,6 +288,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
 
+		if !sliceContains(pb.MemberIDs, userID) {
+			return nil, errors.New("userID is not a member of playbook")
+		}
+
 		newIncident.Checklists = pb.Checklists
 		public = pb.CreatePublicIncident
 	}
@@ -884,4 +888,13 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		SearchTerm:  searchTerm,
 		MemberID:    memberID,
 	}, nil
+}
+
+func sliceContains(strs []string, target string) bool {
+	for _, s := range strs {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }
