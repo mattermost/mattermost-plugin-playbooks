@@ -30,6 +30,10 @@ func (t *NoopTelemetry) EndIncident(*incident.Incident, string) {
 func (t *NoopTelemetry) RestartIncident(*incident.Incident, string) {
 }
 
+// UpdateStatus does nothing
+func (t *NoopTelemetry) UpdateStatus(*incident.Incident, string) {
+}
+
 // AddTask does nothing.
 func (t *NoopTelemetry) AddTask(string, string) {
 }

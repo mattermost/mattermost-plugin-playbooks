@@ -45,6 +45,15 @@ const DialogFieldNameKey = "incidentName"
 // DialogFieldDescriptionKey is the key for the incident description field used in OpenCreateIncidentDialog.
 const DialogFieldDescriptionKey = "incidentDescription"
 
+// DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
+const DialogFieldStatusKey = "status"
+
+// DialogFieldMessageKey is the key for the message textarea field used in UpdateIncidentDialog
+const DialogFieldMessageKey = "message"
+
+// DialogFieldReminderKey is the key for the reminder select field used in UpdateIncidentDialog
+const DialogFieldReminderKey = "reminder"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
 	configService config.Service, telemetry Telemetry) *ServiceImpl {
@@ -265,6 +274,63 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrapf(err, "failed to open new incident dialog")
 	}
+
+	return nil
+}
+
+func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string) error {
+	currentIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	if !currentIncident.IsActive {
+		return ErrIncidentNotActive
+	}
+
+	dialog, err := s.newUpdateIncidentDialog()
+	if err != nil {
+		return errors.Wrapf(err, "failed to create update status dialog")
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/update-status-dialog",
+			s.configService.GetManifest().Id,
+			incidentID),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrapf(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+// UpdateStatus updates an incident's status.
+func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	if !incidentToModify.IsActive {
+		return ErrIncidentNotActive
+	}
+
+	postID, err := s.poster.PostMessage(incidentToModify.ChannelID, options.Message)
+	if err != nil {
+		return errors.Wrapf(err, "failed to post update status message")
+	}
+
+	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, postID)
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return errors.Wrapf(err, "failed to update incident")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.telemetry.UpdateStatus(incidentToModify, userID)
 
 	return nil
 }
@@ -905,6 +971,71 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 		SubmitLabel:    "Start Incident",
 		NotifyOnCancel: false,
 		State:          string(state),
+	}, nil
+}
+
+func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
+	return &model.Dialog{
+		Title:            "Update Incident Status",
+		IntroductionText: "Update your incident status and broadcast it to another channel.",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Status",
+				Name:        DialogFieldStatusKey,
+				Type:        "select",
+				Options: []*model.PostActionOptions{
+					{
+						Text:  "Ongoing",
+						Value: "ongoing",
+					},
+					{
+						Text:  "Ended",
+						Value: "ended",
+					},
+				},
+			},
+			{
+				DisplayName: "Message",
+				Name:        DialogFieldMessageKey,
+				Type:        "textarea",
+				// TODO: default should be trimmed previous update, https://mattermost.atlassian.net/browse/MM-30206
+			},
+			{
+				DisplayName: "Reminder for next update",
+				Name:        DialogFieldReminderKey,
+				Type:        "select",
+				Options: []*model.PostActionOptions{
+					{
+						Text:  "None",
+						Value: "0",
+					},
+					{
+						Text:  "15min",
+						Value: "15",
+					},
+					{
+						Text:  "30min",
+						Value: "30",
+					},
+					{
+						Text:  "60min",
+						Value: "60",
+					},
+					{
+						Text:  "4hr",
+						Value: "240",
+					},
+					{
+						Text:  "24hr",
+						Value: "1440",
+					},
+				},
+				Optional: true,
+				Default:  "0",
+			},
+		},
+		SubmitLabel:    "Update Status",
+		NotifyOnCancel: false,
 	}, nil
 }
 

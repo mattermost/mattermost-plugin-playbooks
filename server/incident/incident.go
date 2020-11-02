@@ -15,9 +15,10 @@ const NoActiveStage = -1
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	PostID     string               `json:"post_id"`
-	PlaybookID string               `json:"playbook_id"`
-	Checklists []playbook.Checklist `json:"checklists"`
+	PostID         string               `json:"post_id"`
+	PlaybookID     string               `json:"playbook_id"`
+	Checklists     []playbook.Checklist `json:"checklists"`
+	StatusPostsIDs []string             `json:"status_posts_ids"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -42,6 +43,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []playbook.ChecklistItem{}
 		}
+	}
+	if old.StatusPostsIDs == nil {
+		old.StatusPostsIDs = []string{}
 	}
 
 	// Define consistent semantics for empty checklists and out-of-range active stages.
@@ -72,6 +76,13 @@ type Header struct {
 
 type UpdateOptions struct {
 	ActiveStage *int `json:"active_stage"`
+}
+
+// StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
+type StatusUpdateOptions struct {
+	Status   string
+	Message  string
+	Reminder int
 }
 
 // Metadata tracks ancillary metadata about an incident.
@@ -174,6 +185,12 @@ type Service interface {
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
 	OpenEndIncidentDialog(incidentID string, triggerID string) error
+
+	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
+	OpenUpdateStatusDialog(incidentID string, triggerID string) error
+
+	// UpdateStatus updates an incident's status.
+	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
 
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
 	GetIncident(incidentID string) (*Incident, error)
@@ -282,6 +299,9 @@ type Telemetry interface {
 
 	// ChangeStage tracks changes in stage
 	ChangeStage(incident *Incident, userID string)
+
+	// UpdateStatus tracks when an incident's status has been updated
+	UpdateStatus(incident *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
