@@ -55,6 +55,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -108,6 +109,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -164,6 +166,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -227,6 +230,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: false,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -290,6 +294,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -377,12 +382,56 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: "testTeamID",
 			UserId: "testUserID",
 			State:  `{"post_id": "privatePostID"}`,
+			Submission: map[string]interface{}{
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
+			},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("create incident from dialog -- user is not a member of the playbook", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"some_other_id"},
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  "{}",
 			Submission: map[string]interface{}{
 				incident.DialogFieldPlaybookIDKey: "playbookid1",
 				incident.DialogFieldNameKey:       "incidentName",
@@ -419,6 +468,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		testIncident := incident.Incident{
