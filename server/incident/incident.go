@@ -28,6 +28,10 @@ func (i *Incident) Clone() *Incident {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newIncident.Checklists = newChecklists
+
+	newIncident.StatusPostsIDs = make([]string, len(i.StatusPostsIDs))
+	copy(newIncident.StatusPostsIDs, i.StatusPostsIDs)
+
 	return &newIncident
 }
 

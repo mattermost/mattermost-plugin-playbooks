@@ -595,6 +595,17 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	incidentID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	incidentToModify, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if !permissions.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
+		return
+	}
+
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
@@ -604,11 +615,11 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	var options incident.StatusUpdateOptions
 	options.Status = request.Submission[incident.DialogFieldStatusKey].(string)
 	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
-	if reminder, err := strconv.Atoi(request.Submission[incident.DialogFieldReminderKey].(string)); err != nil {
+	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderKey].(string)); err2 != nil {
 		options.Reminder = reminder
 	}
 
-	err := h.incidentService.UpdateStatus(incidentID, userID, options)
+	err = h.incidentService.UpdateStatus(incidentID, userID, options)
 	if err != nil {
 		HandleError(w, err)
 		return
