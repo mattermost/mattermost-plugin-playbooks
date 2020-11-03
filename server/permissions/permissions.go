@@ -5,7 +5,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -89,4 +89,12 @@ func CanViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) bool {
 // IsAdmin returns true if the userID is a system admin
 func IsAdmin(userID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+}
+
+func MemberOfChannelID(userID, channelID string, pluginAPI *pluginapi.Client) bool {
+	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL)
+}
+
+func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {
+	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_CREATE_POST)
 }

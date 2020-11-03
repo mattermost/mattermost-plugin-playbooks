@@ -7,7 +7,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 )
 
 // NoActiveStage is the value of an incident's ActiveStage property when there are no stages.
@@ -160,8 +160,8 @@ type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident.
-	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
+	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
+	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
@@ -273,15 +273,22 @@ type Store interface {
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
+// Unless otherwise noted, userID is the user initiating the event.
 type Telemetry interface {
-	// CreateIncidenttracks the creation of a new incident.
-	CreateIncident(incident *Incident, public bool)
+	// CreateIncident tracks the creation of a new incident.
+	CreateIncident(incident *Incident, userID string, public bool)
 
 	// EndIncident tracks the end of an incident.
-	EndIncident(incident *Incident)
+	EndIncident(incident *Incident, userID string)
 
 	// RestartIncident tracks the restart of an incident.
-	RestartIncident(incident *Incident)
+	RestartIncident(incident *Incident, userID string)
+
+	// ChangeCommander tracks changes in commander.
+	ChangeCommander(incident *Incident, userID string)
+
+	// ChangeStage tracks changes in stage
+	ChangeStage(incident *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
@@ -289,25 +296,19 @@ type Telemetry interface {
 	// SetAssignee tracks the changing of an assignee on an item.
 	SetAssignee(incidentID, userID string)
 
-	// AddChecklistItem tracks the creation of a new checklist item.
-	AddChecklistItem(incidentID, userID string)
+	// AddTask tracks the creation of a new checklist item.
+	AddTask(incidentID, userID string)
 
-	// RemoveChecklistItem tracks the removal of a checklist item.
-	RemoveChecklistItem(incidentID, userID string)
+	// RemoveTask tracks the removal of a checklist item.
+	RemoveTask(incidentID, userID string)
 
-	// RenameChecklistItem tracks the update of a checklist item.
-	RenameChecklistItem(incidentID, userID string)
+	// RenameTask tracks the update of a checklist item.
+	RenameTask(incidentID, userID string)
 
-	// MoveChecklistItem tracks the unchecking of checked item.
-	MoveChecklistItem(incidentID, userID string)
+	// MoveTask tracks the unchecking of checked item.
+	MoveTask(incidentID, userID string)
 
-	// ChangeCommander tracks changes in commander.
-	ChangeCommander(incident *Incident)
-
-	// ChangeCommander tracks changes in stage
-	ChangeStage(incident *Incident)
-
-	// RunChecklistItemSlashCommand tracks the execution of a slash command attached to
+	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string)
+	RunTaskSlashCommand(incidentID, userID string)
 }

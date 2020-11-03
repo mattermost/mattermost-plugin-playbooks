@@ -5,13 +5,14 @@
 
 ## Administrator's Guide
 
+- [Installing and Configuring Mattermost Incident Management](administrator-guide/installation-and-activation.md)
 - [Permissions](administrator-guide/permissions.md)
 - [Telemetry](telemetry.md)
 
 ## End User's Guide
 
 - [Playbooks and Incidents](/playbooks/playbook-overview.md)
-- [Incident Response Slash Commands](administrator-guide/incident-response-slash-commands.md)
+- [Incident Management Slash Commands](administrator-guide/incident-response-slash-commands.md)
 - [Creating and Managing Playbooks](playbooks/creating-and-managing-playbooks.md)
 - [Starting and Joining an Incident](incidents/starting-and-joining-an-incident.md)
 - [Ending and Restarting an Incident](incidents/ending-an-incident.md)

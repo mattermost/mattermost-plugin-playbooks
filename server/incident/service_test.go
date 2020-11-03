@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
-	mock_config "github.com/mattermost/mattermost-plugin-incident-response/server/config/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-management/server/config/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +43,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "testUserID", true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -69,7 +69,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "testUserID", true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -97,7 +97,7 @@ func TestCreateIncident(t *testing.T) {
 			Type:        model.CHANNEL_PRIVATE,
 			DisplayName: "###",
 			Name:        "",
-			Header:      "The channel was created by the Incident Response plugin.",
+			Header:      "The channel was created by the Incident Management plugin.",
 		}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
@@ -112,7 +112,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "user_id", true)
 		require.NoError(t, err)
 	})
 
@@ -139,7 +139,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, configService, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, true)
+		_, err := s.CreateIncident(incdnt, "user_id", true)
 		require.EqualError(t, err, "failed to create incident channel: : , ")
 	})
 }
@@ -404,7 +404,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 				api.On("GetUser", "commanderID").
 					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
 				api.On("GetConfig").
-					Return(&model.Config{})
+					Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: model.NewString("")}})
 				configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "pluginId"}).Times(2)
 				api.On("OpenInteractiveDialog", mock.AnythingOfType("model.OpenDialogRequest")).Return(nil).Run(func(args mock.Arguments) {
 					dialogRequest := args.Get(0).(model.OpenDialogRequest)

@@ -55,7 +55,7 @@ const RHSWelcomeView = () => {
                     <NoContentPlaybookSvgRhs/>
                     <NoIncidentsItem>
                         <h1>
-                            {'Take action now with Incident Response.'}
+                            {'Take action now with Incident Management.'}
                         </h1>
                         <p className='mt-3 mb-4 light'>
                             {'You don’t have any active incidents at the moment. Start an incident immediately with an existing playbook.'}
@@ -90,10 +90,10 @@ const RHSWelcomeView = () => {
                 <NoContentPlaybookSvgRhs/>
                 <NoIncidentsItem>
                     <h1>
-                        {'Simplify your processes with Incident Response'}
+                        {'Simplify your processes with Incident Management'}
                     </h1>
                     <p className='mt-3 mb-8 light'>
-                        {'Create a playbook to define your incident response workflow. Select a template or create your playbook from scratch.'}
+                        {'Create a playbook to define your incident management workflow. Select a template or create your playbook from scratch.'}
                     </p>
                     <div className='header-button-div mb-4'>
                         <PrimaryButton

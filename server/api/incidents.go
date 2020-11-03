@@ -14,10 +14,10 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 )
 
 // IncidentHandler is the API handler.
@@ -98,6 +98,7 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 	})
 }
 
+// createIncidentFromPost handles the POST /incidents endpoint
 func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -165,9 +166,16 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 // createIncidentFromDialog handles the interactive dialog submission when a user presses confirm on
 // the create incident dialog.
 func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		return
+	}
+
+	if userID != request.UserId {
+		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
 		return
 	}
 
@@ -280,6 +288,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
 
+		if !sliceContains(pb.MemberIDs, userID) {
+			return nil, errors.New("userID is not a member of playbook")
+		}
+
 		newIncident.Checklists = pb.Checklists
 		public = pb.CreatePublicIncident
 	}
@@ -294,7 +306,16 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
 	}
 
-	return h.incidentService.CreateIncident(&newIncident, public)
+	if newIncident.PostID != "" {
+		post, err := h.pluginAPI.Post.GetPost(newIncident.PostID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get incident original post")
+		}
+		if !permissions.MemberOfChannelID(userID, post.ChannelId, h.pluginAPI) {
+			return nil, errors.New("user is not a member of the channel containing the incident's original post")
+		}
+	}
+	return h.incidentService.CreateIncident(&newIncident, userID, public)
 }
 
 // getIncidents handles the GET /incidents endpoint.
@@ -404,7 +425,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 // endIncident handles the /incidents/{id}/end api endpoint.
 //
 // In addition to being reachable directly via the REST API, the POST version of this endpoint is
-// also used as the target of the interactive dialog spawned by `/incident dialog`.
+// also used as the target of the interactive dialog spawned by `/incident end`.
 func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
@@ -570,9 +591,17 @@ func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
 func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	incidentID, err := h.incidentService.GetIncidentIDForChannel(query.Get("channel_id"))
+	channelID := query.Get("channel_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
 	if err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", nil)
 		return
 	}
 
@@ -859,4 +888,13 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 		SearchTerm:  searchTerm,
 		MemberID:    memberID,
 	}, nil
+}
+
+func sliceContains(strs []string, target string) bool {
+	for _, s := range strs {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }

@@ -18,11 +18,11 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-response/server/incident/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
 )
 
 func TestIncidents(t *testing.T) {
@@ -55,6 +55,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -87,7 +88,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -108,6 +109,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -143,7 +145,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&i, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -164,6 +166,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -227,6 +230,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: false,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -282,6 +286,60 @@ func TestIncidents(t *testing.T) {
 		require.Equal(t, expectedDialogResp, dialogResp)
 	})
 
+	t.Run("create incident from dialog - dialog request userID doesn't match requester's id", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "fakeUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
+			},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
+		i := incident.Incident{
+			Header: incident.Header{
+				CommanderUserID: dialogRequest.UserId,
+				TeamID:          dialogRequest.TeamId,
+				Name:            "incidentName",
+			},
+			PlaybookID: withid.ID,
+			Checklists: withid.Checklists,
+		}
+		retI := i
+		retI.ChannelID = "channelID"
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		var res struct{ Message string }
+		err = json.NewDecoder(resp.Body).Decode(&res)
+		assert.NoError(t, err)
+		assert.Equal(t, "interactive dialog's userID must be the same as the requester's userID", res.Message)
+	})
+
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
 		reset()
 
@@ -316,6 +374,92 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 
+	t.Run("create incident from dialog -- user does not have permission for the original postID's channel", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  `{"post_id": "privatePostID"}`,
+			Submission: map[string]interface{}{
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
+			},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("create incident from dialog -- user is not a member of the playbook", func(t *testing.T) {
+		reset()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"some_other_id"},
+		}
+
+		dialogRequest := model.SubmitDialogRequest{
+			TeamId: "testTeamID",
+			UserId: "testUserID",
+			State:  "{}",
+			Submission: map[string]interface{}{
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
+			},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(withid, nil).
+			Times(1)
+
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
 	t.Run("create valid incident", func(t *testing.T) {
 		reset()
 
@@ -324,6 +468,7 @@ func TestIncidents(t *testing.T) {
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
 		}
 
 		testIncident := incident.Incident{
@@ -347,7 +492,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
-		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
 		poster.EXPECT().
@@ -389,7 +534,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
-		incidentService.EXPECT().CreateIncident(&testIncident, true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
 		poster.EXPECT().
@@ -1124,6 +1269,35 @@ func TestIncidents(t *testing.T) {
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents?team_id=non-existent", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {
+		reset()
+
+		testIncidentHeader := incident.Header{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncidentHeader.ChannelID).Return(testIncidentHeader.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncidentHeader.ID).Return(&incident.Incident{Header: testIncidentHeader}, nil)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/checklist-autocomplete?channel_id="+testIncidentHeader.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")

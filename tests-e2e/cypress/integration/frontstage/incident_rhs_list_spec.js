@@ -1180,7 +1180,7 @@ describe('rhs incident list', () => {
             });
 
             // * Verify we reached the playbook backstage
-            cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-response/playbooks');
+            cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/playbooks');
         });
 
         it('should be able to go to incident backstage from three dot menu', () => {
@@ -1204,7 +1204,7 @@ describe('rhs incident list', () => {
             });
 
             // * Verify we reached the playbook backstage
-            cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-response/incidents');
+            cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/incidents');
         });
 
         it('should be able to see all incidents (incidents backstage list)', () => {
@@ -1227,7 +1227,7 @@ describe('rhs incident list', () => {
             });
 
             // * Verify we reached the playbook backstage
-            cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-response/incidents');
+            cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/incidents');
         });
     });
 });

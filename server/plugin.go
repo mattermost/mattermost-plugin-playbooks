@@ -3,16 +3,16 @@ package main
 import (
 	"net/http"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/api"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/command"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/pluginkvstore"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/sqlstore"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/subscription"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/telemetry"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/command"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/pluginkvstore"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/sqlstore"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/subscription"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
@@ -51,6 +51,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
+
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
@@ -61,7 +62,7 @@ func (p *Plugin) OnActivate() error {
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
 		DisplayName: "Incident Bot",
-		Description: "A prototype demonstrating incident response management in Mattermost.",
+		Description: "Incident Management plugin's bot.",
 	},
 		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
 	)
@@ -162,7 +163,14 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
-	p.API.LogDebug("Incident response plugin Activated")
+	p.API.LogDebug("Incident management plugin Activated")
+
+	// prevent a recursive OnConfigurationChange
+	go func() {
+		// Remove the prepackaged old version of the plugin
+		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
+	}()
+
 	return nil
 }
 
@@ -198,7 +206,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("IncidentResponsePlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("IncidentManagementPlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil

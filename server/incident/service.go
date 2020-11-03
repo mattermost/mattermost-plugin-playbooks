@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -63,8 +63,8 @@ func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options HeaderFi
 	return s.store.GetIncidents(requesterInfo, options)
 }
 
-// CreateIncident creates a new incident.
-func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, error) {
+// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
+func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
 	// Try to create the channel first
 	channel, err := s.createIncidentChannel(incdnt, public)
 	if err != nil {
@@ -103,7 +103,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
-	s.telemetry.CreateIncident(incdnt, public)
+	s.telemetry.CreateIncident(incdnt, userID, public)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
@@ -124,7 +124,11 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, public bool) (*Incident, 
 		return nil, errors.Wrapf(err, "failed to get incident original post")
 	}
 
-	postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, incdnt.PostID)
+	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	if _, err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
@@ -176,7 +180,7 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
-	s.telemetry.EndIncident(incdnt)
+	s.telemetry.EndIncident(incdnt, userID)
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
@@ -212,7 +216,7 @@ func (s *ServiceImpl) RestartIncident(incidentID, userID string) error {
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, currentIncident,
 		currentIncident.ChannelID)
-	s.telemetry.RestartIncident(currentIncident)
+	s.telemetry.RestartIncident(currentIncident, userID)
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
@@ -353,7 +357,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.ChangeCommander(incidentToModify)
+	s.telemetry.ChangeCommander(incidentToModify, userID)
 
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
@@ -532,7 +536,7 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
-	s.telemetry.RunChecklistItemSlashCommand(incidentID, userID)
+	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
 	return nil
 }
@@ -551,7 +555,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.AddChecklistItem(incidentID, userID)
+	s.telemetry.AddTask(incidentID, userID)
 
 	return nil
 }
@@ -573,7 +577,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RemoveChecklistItem(incidentID, userID)
+	s.telemetry.RemoveTask(incidentID, userID)
 
 	return nil
 }
@@ -606,7 +610,7 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.ChangeStage(incidentToModify)
+	s.telemetry.ChangeStage(incidentToModify, userID)
 
 	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
 		incidentToModify.Checklists[oldActiveStage].Title,
@@ -663,7 +667,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RenameChecklistItem(incidentID, userID)
+	s.telemetry.RenameTask(incidentID, userID)
 
 	return nil
 }
@@ -695,7 +699,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.MoveChecklistItem(incidentID, userID)
+	s.telemetry.MoveTask(incidentID, userID)
 
 	return nil
 }
@@ -782,7 +786,7 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
-	channelHeader := "The channel was created by the Incident Response plugin."
+	channelHeader := "The channel was created by the Incident Management plugin."
 
 	if incdnt.Description != "" {
 		channelHeader = incdnt.Description
@@ -858,10 +862,13 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 		})
 	}
 
-	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
 	newPlaybookMarkdown := ""
-	if siteURL != nil && *siteURL != "" && !isMobileApp {
-		url := fmt.Sprintf("%s/%s/%s/playbooks/new", *siteURL, team.Name, s.configService.GetManifest().Id)
+	if siteURL != "" && !isMobileApp {
+		url := fmt.Sprintf("%s/%s/%s/playbooks/new", siteURL, team.Name, s.configService.GetManifest().Id)
 		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
 	}
 
@@ -869,7 +876,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 
 	var descriptionDefault string
 	if postID != "" {
-		postURL := fmt.Sprintf("%s/_redirect/pl/%s", *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL, postID)
+		postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, postID)
 
 		descriptionDefault = fmt.Sprintf("[Original Post](%s)", postURL)
 	}

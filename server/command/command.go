@@ -10,10 +10,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -21,7 +21,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-const helpText = "###### Mattermost Incident Response Plugin - Slash Command Help\n" +
+const helpText = "###### Mattermost Incident Management Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident stage` - Move to the next or previous stage. \n" +
@@ -48,7 +48,7 @@ func getCommand(addTestCommands bool) *model.Command {
 	return &model.Command{
 		Trigger:          "incident",
 		DisplayName:      "Incident",
-		Description:      "Incident Response Plugin",
+		Description:      "Incident Management Plugin",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: start, end, stage, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
@@ -87,7 +87,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	checklist := model.NewAutocompleteData("check", "[checklist item]",
 		"Checks or unchecks a checklist item.")
 	checklist.AddDynamicListArgument(
-		"List of checklist items is downloading from your incident response plugin",
+		"List of checklist items is downloading from your Incident Management plugin",
 		"api/v0/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
@@ -378,7 +378,17 @@ func (r *Runner) actionAnnounce(args []string) {
 	}
 
 	for _, channelarg := range args {
-		if err := r.announceChannel(strings.TrimPrefix(channelarg, "~"), commanderUser.Username, incidentChannel.Name); err != nil {
+		targetChannelName := strings.TrimPrefix(channelarg, "~")
+		targetChannel, err := r.pluginAPI.Channel.GetByName(r.args.TeamId, targetChannelName, false)
+		if err != nil {
+			r.postCommandResponse("Channel not found: " + channelarg)
+			continue
+		}
+		if !permissions.CanPostToChannel(r.args.UserId, targetChannel.Id, r.pluginAPI) {
+			r.postCommandResponse("Cannot post to: " + channelarg)
+			continue
+		}
+		if err := r.announceChannel(targetChannel.Id, commanderUser.Username, incidentChannel.Name); err != nil {
 			r.postCommandResponse("Error announcing to: " + channelarg)
 		}
 	}
@@ -560,13 +570,8 @@ func durationString(start, end time.Time) string {
 	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
-func (r *Runner) announceChannel(targetChannelName, commanderUsername, incidentChannelName string) error {
-	targetChannel, err := r.pluginAPI.Channel.GetByName(r.args.TeamId, targetChannelName, false)
-	if err != nil {
-		return err
-	}
-
-	if _, err := r.poster.PostMessage(targetChannel.Id, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
+func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentChannelName string) error {
+	if _, err := r.poster.PostMessage(targetChannelID, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
 		return err
 	}
 
@@ -775,7 +780,7 @@ func (r *Runner) actionTestSelf(args []string) {
 	}
 
 	shortDescription := "A short description."
-	longDescription := `A very long description describing the item in a very descriptive way. Now with Markdown syntax! We have *italics* and **bold**. We have [external](http://example.com) and [internal links](/ad-1/com.mattermost.plugin-incident-response/playbooks). We have even links to channels: ~town-square. And links to users: @sysadmin, @user-1. We do have the usual headings and lists, of course:
+	longDescription := `A very long description describing the item in a very descriptive way. Now with Markdown syntax! We have *italics* and **bold**. We have [external](http://example.com) and [internal links](/ad-1/com.mattermost.plugin-incident-management/playbooks). We have even links to channels: ~town-square. And links to users: @sysadmin, @user-1. We do have the usual headings and lists, of course:
 ## Unordered List
 - One
 - Two
@@ -848,7 +853,7 @@ And... yes, of course, we have emojis
 			},
 		},
 	}
-	playbookID, err := r.playbookService.Create(testPlaybook)
+	playbookID, err := r.playbookService.Create(testPlaybook, r.args.UserId)
 	if err != nil {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
@@ -882,7 +887,7 @@ And... yes, of course, we have emojis
 	}
 
 	gotplaybook.Title = "This is an updated title"
-	if err = r.playbookService.Update(gotplaybook); err != nil {
+	if err = r.playbookService.Update(gotplaybook, r.args.UserId); err != nil {
 		r.postCommandResponse("Unable to update playbook Err:" + err.Error())
 		return
 	}
@@ -898,13 +903,13 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	todeleteid, err := r.playbookService.Create(testPlaybook)
+	todeleteid, err := r.playbookService.Create(testPlaybook, r.args.UserId)
 	if err != nil {
 		r.postCommandResponse("There was an error while creating playbook. Err: " + err.Error())
 		return
 	}
 	testPlaybook.ID = todeleteid
-	if err = r.playbookService.Delete(testPlaybook); err != nil {
+	if err = r.playbookService.Delete(testPlaybook, r.args.UserId); err != nil {
 		r.postCommandResponse("There was an error while deleting playbook. Err: " + err.Error())
 		return
 	}
@@ -922,7 +927,7 @@ And... yes, of course, we have emojis
 		},
 		PlaybookID: gotplaybook.ID,
 		Checklists: gotplaybook.Checklists,
-	}, true)
+	}, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
 		return

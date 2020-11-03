@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-response/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-response/server/playbook/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
@@ -106,7 +106,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		playbookService.EXPECT().
-			Create(playbooktest).
+			Create(playbooktest, "testuserid").
 			Return(model.NewId(), nil).
 			Times(1)
 
@@ -211,7 +211,7 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		playbookService.EXPECT().
-			Update(withid).
+			Update(withid, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -238,7 +238,7 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		playbookService.EXPECT().
-			Delete(withid).
+			Delete(withid, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -431,7 +431,7 @@ func TestPlaybooks(t *testing.T) {
 		updatedPlaybook.ID = "playbookwithmember"
 
 		playbookService.EXPECT().
-			Update(updatedPlaybook).
+			Update(updatedPlaybook, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -461,7 +461,7 @@ func TestPlaybooks(t *testing.T) {
 		updatedPlaybook.ID = "playbookwithmember"
 
 		playbookService.EXPECT().
-			Update(updatedPlaybook).
+			Update(updatedPlaybook, "testUserID").
 			Return(nil).
 			Times(1)
 
@@ -489,7 +489,7 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		playbookService.EXPECT().
-			Delete(withMember).
+			Delete(withMember, "testuserid").
 			Return(nil).
 			Times(1)
 

@@ -20,7 +20,7 @@ import (
 
 const (
 	apiVersion = "v0"
-	manifestID = "com.mattermost.plugin-incident-response"
+	manifestID = "com.mattermost.plugin-incident-management"
 	userAgent  = "go-client/" + apiVersion
 )
 

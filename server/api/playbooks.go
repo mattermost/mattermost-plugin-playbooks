@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -69,7 +69,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	id, err := h.playbookService.Create(pbook)
+	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -133,7 +133,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = h.playbookService.Update(pbook)
+	err = h.playbookService.Update(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -161,7 +161,7 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = h.playbookService.Delete(playbookToDelete)
+	err = h.playbookService.Delete(playbookToDelete, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
