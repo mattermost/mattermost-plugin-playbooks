@@ -1056,7 +1056,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		Checklists: thePlaybook.Checklists,
 	}
 
-	newIncident, err := r.incidentService.CreateIncident(theIncident, true)
+	newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create incident: %v", err)
 		return
@@ -1287,7 +1287,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			Checklists: thePlaybook.Checklists,
 		}
 
-		newIncident, err := r.incidentService.CreateIncident(theIncident, true)
+		newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating incident: %v", err)
 			return
