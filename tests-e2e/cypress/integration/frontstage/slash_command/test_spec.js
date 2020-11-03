@@ -92,7 +92,7 @@ describe('slash command > test', () => {
 
     describe('as an admin', () => {
         describe('with EnableTesting set to false', () => {
-            before(() => {
+            beforeEach(() => {
                 // # Login as sysadmin.
                 cy.apiLogin('sysadmin');
 
@@ -102,11 +102,6 @@ describe('slash command > test', () => {
                         EnableTesting: false
                     },
                 });
-            });
-
-            beforeEach(() => {
-                // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
 
                 // # Navigate to a channel.
                 cy.visit('/ad-1/channels/town-square');
