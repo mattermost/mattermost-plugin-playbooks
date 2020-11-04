@@ -92,9 +92,11 @@ describe('slash command > test', () => {
 
     describe('as an admin', () => {
         describe('with EnableTesting set to false', () => {
-            beforeEach(() => {
-                // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+            before(() => {
+                cy.apiGetConfig().then((config) => {
+                    console.log("Before updating: ");
+                    console.log(config);
+                });
 
                 // # Set EnableTesting to false.
                 cy.apiUpdateConfig({
@@ -102,6 +104,17 @@ describe('slash command > test', () => {
                         EnableTesting: false
                     },
                 });
+
+                cy.apiGetConfig().then((config) => {
+                    console.log("After updating : ");
+                    console.log(config);
+                });
+
+            });
+
+            beforeEach(() => {
+                // # Login as sysadmin.
+                cy.apiLogin('sysadmin');
 
                 // # Navigate to a channel.
                 cy.visit('/ad-1/channels/town-square');
