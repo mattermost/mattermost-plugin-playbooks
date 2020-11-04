@@ -212,7 +212,12 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	teamID := query.Get("team_id")
-	userID := query.Get("user_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+		return
+	}
 
 	requesterInfo := playbook.RequesterInfo{
 		UserID:          userID,
