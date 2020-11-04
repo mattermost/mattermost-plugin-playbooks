@@ -93,6 +93,9 @@ describe('slash command > test', () => {
     describe('as an admin', () => {
         describe('with EnableTesting set to false', () => {
             before(() => {
+                // # Login as sysadmin.
+                cy.apiLogin('sysadmin');
+
                 cy.apiGetConfig().then((config) => {
                     console.log("Before updating: ");
                     console.log(config);
