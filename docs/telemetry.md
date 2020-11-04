@@ -1,30 +1,49 @@
 # Telemetry
 
-We only track the events that create, delete, or update items. We never track the specific content of the items. In particular, we do not collect the name of the incidents or the contents of the stages and steps.
+We only track the events that create, delete, or update items. We never track the specific content of the items. In particular, we do not collect the name of the incidents or the contents of the stages and tasks.
 
-Every event we track is accompanied with metadata that help us identify each event and isolate it from the rest of the servers. We can group all events that are coming from a single server, and if that server is licensed, we are able to identify the buyer of the license. The following list details the metadata that accompanies every event:
+Every event we track is accompanied with some metadata that help us group events by server. If that server is licensed, we are able to identify the contact person for the license. Otherwise, we are not able to connect personally identifying information from the event data described below. For example, although we collect the `UserActualId` of the user initiating the event, we are unable to connect personal information to that userId. That userId is used only to aggregate, analyze, and display data.
 
-- `diagnosticID`: Unique identifier of the server the plugin is running on.
+The following list details the types of metadata we collect:
+
+## Data collected for all event types
+
 - `serverVersion`: Version of the server the plugin is running on.
 - `pluginVersion`: Version of the plugin.
 - `eventTimeStamp`: Timestamp indicating when the event was queued to send to the server.
-- `createdAt`: Timestamp indicating when the event was sent to the server.
-- `id`: Unique identifier of the event.
-- `event integrations`: Unused field. It always contains the value `null`.
 - `event originalTimestamp`: Timestamp indicating when the event actually happened. It always equals `eventTimeStamp`.
-- `type`: Type of the event. It always contains the string `track`.
+- `UserID`: Unique identifier of the server.
+- `UserActualID`: Unique identifier of the user who initiated the action.
+- `type`: Type of the event. There are three event types that are tracked: `incident`, `tasks`, `playbook`.
 
-**Events data**
+## Data collected in `incident` events
 
-| Event  | Triggers   |  Information collected |  
-|--------|------------|------------------------|
-| Incident created | Any user sends the `/incident start` slash command and creates an incident.<br> Any user clicks on **+ Start Incident** in **Your Ongoing Incidents** view, in the RHS and creates an incident.</br><br>Any user clicks on the drop-down menu of any post, clicks on the **Start incident** option, and creates an incident. | `ID`: Unique identifier of the incident.<br>`IsActive`: Boolean  value indicating if the incident is active. It always equals `true`.</br><br>`CommanderUserID`: Unique identifier of the commander of the incident. It equals the identifier of the user that created the incident.</br><br>`TeamID`: Unique identifier of the team where the incident channel is created.</br><br>`CreatedAt`: Timestamp of the incident creation.</br><br>`ChannelIDs`: A list containing a single element, the channel created along with the incident.</br><br>`PostID`: Unique identifier of the post.</br><br>`NumChecklists`: Number of checklists. It always equals 1.</br><br>`TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0.</br><br>`ID`: Unique identifier of the incident.</br><br>`IsActive`: Boolean value indicating if the incident is active. It always equals `true`.</br><br>`CommanderUserID`: Unique identifier of the commander of the incident. It equals the identifier of the user that created the incident.</br><br>`TeamID`: Unique identifier of the team where the incident channel is created.</br><br>`CreatedAt`: Timestamp of the incident creation.</br><br>`ChannelIDs`: A list containing a single element, the channel created along with the incident.</br><br>`PostID`: Unique identifier of the post.</br><br>`NumChecklists`: Number of checklists. It always equals 1.</br><br>`TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0. |
-| Incident finished | Any user sends the `/incident end` slash command.</br><br> Any user clicks on the **End Incident** button through the incident details view, in the RHS. | `ID`: Unique identifier of the incident.<br>`IsActive`: Boolean  value indicating if the incident is active. It always equals `false`.</br><br>`CommanderUserID`: Unique identifier of the commander of the incident. It equals the identifier of the user that created the incident.</br><br>`UserID`: Unique identifier of user that ended the incident.</br><br>`TeamID`: Unique identifier of the team where the incident channel is created.</br><br>`CreatedAt`: Timestamp of the incident creation.</br><br>`ChannelIDs`: A list containing a single element, the channel created along with the incident.</br><br>`PostID`: Unique identifier of the post.</br><br>`NumChecklists`: Number of checklists. It always equals 1.</br><br>`TotalChecklistItems`: Number of checklist items this incident starts with. It always equals 0. |
-| Checklist item created | Any user creates a new checklist item through the incident details view, in the RHS. | `IncidentID`: Unique identifier of the incident where the item was created.<br>`UserID`: Unique identifier of the user that created the item. |
-| Checklist item removed | Any user deletes a checklist item through the incident details view, in the RHS. | `IncidentID`: Unique identifier of the incident where the item was.<br>`UserID`: Unique identifier of the user that removed the item. |
-| Checklist item renamed | Any user edit the contents of a checklist item through the incident details view, in the RHS. | `IncidentID`: Unique identifier of the incident where the item was.<br>`UserID`: Unique identifier of the user that removed the item. |
-| Checklist item moved | Any user moves the position of a checklist item in the list through the incident details view, in the RHS. | `IncidentID`: Unique identifier of the incident where the item is.<br>`UserID`: Unique identifier of the user that edited the item. |
-| Unchecked checklist item checked | Any user checks an unchecked checklist item through the incident details view, in the RHS. | `IncidentID`: Unique identifier of the incident where the item is.<br>`UserID`: Unique identifier of the user that checked the item. |
-| Checked checklist item unchecked | Any user unchecks a checked checklist item through the incident details view, in the RHS. | `IncidentID`: Unique identifier of the incident where the item is.<br>`UserID`: Unique identifier of the user that unchecked the item. |
-| Playbook created | Any user clicks on the **+ Create a Playbook** button in the playbook configuration page and saves it. | `PlaybookID`: Unique identifier of the playbook.<br>`TeamID`: Unique identifier of the team where the playbook is created.</br><br>`NumChecklists`: Number of checklists this playbook has after the update.</br><br>`TotalChecklistItems`: Number of checklist items, among all checklists, this playbook has after the update. |
-| Playbook deleted | Any user clicks **Delete** in the **Actions** menu next to a playbook name in the playbook configuration page and confirms. | `PlaybookID`: Unique identifier of the playbook <br>`TeamID`: Unique identifier of the team where the playbook was located.</br><br>`NumChecklists`: Number of checklists this playbook had immediately prior to deletion.</br><br>`TotalChecklistItems`: Number of checklist items, among all checklists, this playbook had immediately prior to deletion. |
+- `incidentID`: Unique identifier of the incident.
+- `IsActive`: Boolean  value indicating if the incident is active.
+- `CommanderUserID`: Unique identifier of the commander of the incident.
+- `TeamID`: Unique identifier of the team where the incident channel is created.
+- `CreatedAt`: Timestamp of the incident creation.
+- `PostID`: Unique identifier of the post from which the incident was created (if relevant).
+- `NumChecklists`: Number of stages in this incident.
+- `TotalChecklistItems`: Number of tasks in this incident.
+- `ActiveStage`: A number indicating the stage of the incident (0-based).
+- `Public`: `true` if the incident was public, `false` if it was private.
+
+## Data collected in `tasks` events
+
+- `incidentID`: Unique identifier of the incident.
+- `NewState`: `null` if the task is uncompleted, `done` if the task was marked completed.
+- `WasCommander`: `true` if the userId who initiated the event was also the commander of the event, `false` if not.
+- `WasAssignee`: `true` if the userId who initiated the event was also the assignee of the event, `false` if not.
+
+## Data collected in `playbook` events
+
+- `PlaybookID`: Unique identifier of the playbook.
+- `TeamID`: Unique identifier of the team this playbook is associated with.
+- `NumChecklists`: Number of stages in this playbook.
+- `TotalChecklistItems`: Number of tasks in this incident.
+- `IsPublic`: `true` if the playbook was public, `false` if it was private.
+- `NumMembers`: The number of members with access to this playbook.
+- `NumSlashCommands`: The number of slash commands in this playbook.
+
+For more information about telemetry, see [Mattermost Telemetry](https://docs.mattermost.com/administration/telemetry.html).

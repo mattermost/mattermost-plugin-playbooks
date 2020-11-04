@@ -252,7 +252,7 @@ jobs:
             psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
       - *restore_deploy_cache
       - run:
-          name: Install Incident Response plugin
+          name: Install Incident Management plugin
           command: make deploy
       - *save_deploy_cache
       - *restore_cypress_cache
