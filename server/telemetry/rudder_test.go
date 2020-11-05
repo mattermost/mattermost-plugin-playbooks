@@ -309,6 +309,7 @@ func TestIncidentProperties(t *testing.T) {
 		"CommanderUserID":     dummyIncident.CommanderUserID,
 		"TeamID":              dummyIncident.TeamID,
 		"CreateAt":            dummyIncident.CreateAt,
+		"PlaybookID":          dummyIncident.PlaybookID,
 		"PostID":              dummyIncident.PostID,
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
