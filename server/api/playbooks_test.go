@@ -105,7 +105,7 @@ func TestPlaybooks(t *testing.T) {
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
 		ctx = context.Background()
-		playbookClient, clientErr := client2.NewClient("http://localhost:8065", nil)
+		playbookClient, clientErr := client2.NewClient("", nil)
 		require.NoError(t, clientErr)
 		playbooksService = client2.NewPlaybooksService(playbookClient)
 	}
@@ -125,8 +125,6 @@ func TestPlaybooks(t *testing.T) {
 			TeamID: playbooktest.TeamID,
 			UserID: "testuserid",
 		}
-
-		opts.Name = playbooktest.Title
 
 		_, err = playbooksService.Create(ctx, opts)
 		require.NoError(t, err)
