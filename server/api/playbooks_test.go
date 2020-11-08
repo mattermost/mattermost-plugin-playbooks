@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	client2 "github.com/mattermost/mattermost-plugin-incident-management/client"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	client2 "github.com/mattermost/mattermost-plugin-incident-management/client"
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
@@ -105,7 +105,7 @@ func TestPlaybooks(t *testing.T) {
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
 		ctx = context.Background()
-		playbookClient, clientErr := client2.NewClient("", nil)
+		playbookClient, clientErr := client2.NewClient("http://localhost:8065", nil)
 		require.NoError(t, clientErr)
 		playbooksService = client2.NewPlaybooksService(playbookClient)
 	}
@@ -136,7 +136,7 @@ func TestPlaybooks(t *testing.T) {
 		//testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		//require.NoError(t, err)
 		//handler.ServeHTTP(testrecorder, testreq, "testpluginid")
-		//
+
 		//resp := testrecorder.Result()
 		//defer resp.Body.Close()
 		//assert.Equal(t, http.StatusOK, resp.StatusCode)
