@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattermost/mattermost-plugin-api v0.0.13-0.20201022133509-cbfd66db1f58
- 	github.com/mattermost/mattermost-plugin-incident-management/client v0.2.0
+	github.com/mattermost/mattermost-plugin-incident-management/client v0.2.0
 	github.com/mattermost/mattermost-server/v5 v5.28.0
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
