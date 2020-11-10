@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/mattermost/mattermost-plugin-incident-management/server/api"
@@ -205,4 +206,21 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	}
 
 	return &model.CommandResponse{}, nil
+}
+
+func (p *Plugin) PublishWebsocketEventIfPostIsRecentUpdate(post *model.Post) {
+	theIncident, err := p.incidentService.GetIncidentFromRecentUpdatePost(post)
+	if err != nil {
+		if !errors.Is(err, incident.ErrNotFound) {
+			p.API.LogWarn(fmt.Sprintf("unable to get incident from edited post: %v", err))
+		}
+
+		return
+	}
+
+	p.bot.PublishWebsocketEventToChannel(incident.IncidentUpdatedWSEvent, theIncident, theIncident.ChannelID)
+}
+
+func (p *Plugin) MessageHasBeenUpdated(c *plugin.Context, newPost, oldPost *model.Post) {
+	p.PublishWebsocketEventIfPostIsRecentUpdate(newPost)
 }
