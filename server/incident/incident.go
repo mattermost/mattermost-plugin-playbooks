@@ -61,7 +61,8 @@ type Header struct {
 }
 
 type UpdateOptions struct {
-	ActiveStage *int `json:"active_stage"`
+	CommanderUserID *string `json:"commander_user_id"`
+	ActiveStage     *int    `json:"active_stage"`
 }
 
 // Details holds the extra details needed for some API calls (e.g., the backstage's incident details)
