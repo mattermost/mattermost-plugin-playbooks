@@ -19,6 +19,8 @@ export const selectToggleRHS = (state: GlobalState): () => void => pluginState(s
 
 export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
 
+export const getIsRhsExpanded = (state: GlobalState): boolean => state.views.rhs.isSidebarExpanded;
+
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
 const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> => pluginState(state).myIncidentsByTeam;
