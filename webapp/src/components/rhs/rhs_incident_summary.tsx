@@ -16,6 +16,7 @@ import {
     renderView,
 } from 'src/components/rhs/rhs_shared';
 import RHSFooterSummary from 'src/components/rhs/rhs_footer_summary';
+import LatestUpdate from 'src/components/rhs/latest_update';
 
 interface Props {
     incident: Incident;
@@ -72,6 +73,12 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                         </div>
                     </div>
                     <Stage incident={props.incident}/>
+                    <div>
+                        <div className='title'>
+                            {'Recent Update:'}
+                        </div>
+                        <LatestUpdate posts_ids={props.incident.status_posts_ids}/>
+                    </div>
                 </div>
             </Scrollbars>
             <RHSFooterSummary/>
