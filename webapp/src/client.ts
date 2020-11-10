@@ -5,6 +5,7 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {Post} from 'mattermost-redux/types/posts';
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
