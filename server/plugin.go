@@ -139,11 +139,15 @@ func (p *Plugin) OnActivate() error {
 
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+
+	scheduler := cluster.GetJobOnceScheduler(p.API)
+
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
 		incidentStore,
 		p.bot,
 		p.config,
+		scheduler,
 		telemetryClient,
 	)
 
@@ -165,6 +169,10 @@ func (p *Plugin) OnActivate() error {
 		// Remove the prepackaged old version of the plugin
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
 	}()
+
+	if err = scheduler.Start(); err != nil {
+		pluginAPIClient.Log.Error("Job Once Scheduler could not start", "error", err.Error())
+	}
 
 	return nil
 }

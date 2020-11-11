@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
@@ -31,6 +32,7 @@ type ServiceImpl struct {
 	configService config.Service
 	store         Store
 	poster        bot.Poster
+	scheduler     *cluster.JobOnceScheduler
 	telemetry     Telemetry
 }
 
@@ -56,12 +58,13 @@ const DialogFieldReminderKey = "reminder"
 
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
-	configService config.Service, telemetry Telemetry) *ServiceImpl {
+	configService config.Service, scheduler *cluster.JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
 	return &ServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
 		poster:        poster,
 		configService: configService,
+		scheduler:     scheduler,
 		telemetry:     telemetry,
 	}
 }
