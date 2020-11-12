@@ -31,7 +31,7 @@ Cypress.Commands.add('executeSlashCommand', (command) => {
     cy.findByTestId('post_textbox').clear().type(command);
 
     // Using esc to make sure we exit out of slash command autocomplete
-    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 100}).type('{enter}');
+    cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 500}).type('{enter}');
 });
 
 // Opens incident dialog using the `/incident start` slash command
