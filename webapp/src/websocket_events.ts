@@ -7,7 +7,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getChannel, getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -99,6 +99,25 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
         if (currentUserId === msg.broadcast.user_id) {
             const channel = getChannel(getState(), msg.data.channel_id);
             dispatch(removedFromIncidentChannel(channel.team_id, channel.id));
+        }
+    };
+}
+
+export function handleWebsocketPostDeleted(getState: GetStateFunc, dispatch: Dispatch) {
+    return async (msg: WebSocketMessage) => {
+        if (getCurrentChannelId(getState()) === msg.broadcast.channel_id) {
+            let incident : Incident;
+            try {
+                incident = await fetchIncidentByChannel(msg.broadcast.channel_id);
+            } catch (err) {
+                return;
+            }
+
+            const post = JSON.parse(msg.data.post);
+            if (incident.status_posts_ids.includes(post.id)) {
+                dispatch(incidentUpdated(incident));
+                websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
+            }
         }
     };
 }
