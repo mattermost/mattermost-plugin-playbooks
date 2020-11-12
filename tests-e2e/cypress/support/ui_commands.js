@@ -113,3 +113,71 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
         });
     });
 });
+
+/**
+ * Update the status of the current incident through the slash command.
+ * @param {String} message - The new status.
+ * @param {Boolean} isOngoing - Default to true. If false, the update will also end the incident.
+ */
+Cypress.Commands.add('updateStatus', (message, isOngoing = true) => {
+    // # Run the /incident status slash command.
+    cy.executeSlashCommand('/incident status');
+
+    // # Get the interactive dialog modal.
+    cy.get('#interactiveDialogModal').within(() => {
+        // # Set the State of the incident to Ongoing or Ended, depending on isOngoing.
+        cy.findAllByTestId('autoCompleteSelector').first().click().within(() => {
+            if (isOngoing) {
+                cy.findByText('Ongoing').click();
+            } else {
+                cy.findByText('Ended').click();
+            }
+        });
+
+        // # Type the new update in the text box.
+        cy.findByTestId('message').type(message);
+
+        // # Submit the dialog.
+        cy.get('#interactiveDialogSubmit').click();
+    });
+
+    // * Verify that the interactive dialog has gone.
+    cy.get('#interactiveDialogModal').should('not.exist');
+
+    // # Return the post ID of the status update.
+    return cy.getLastPostId();
+});
+
+/**
+ * Delete a post through the post dot menu.
+ * @param {String} postId - ID of the post to delete.
+ */
+Cypress.Commands.add('deletePost', (postId) => {
+    // # Open the post dot menu.
+    cy.clickPostDotMenu(postId);
+
+    // # Click on the Delete menu option.
+    cy.get(`#delete_post_${postId}`).click();
+
+    // # Confirm the deletion in the dialog.
+    cy.get('#deletePostModalButton').click();
+});
+
+/**
+ * Edit a post through the post dot menu.
+ * @param {String} postId - ID of the post to delete.
+ * @param {String} newMessage - New content of the post.
+ */
+Cypress.Commands.add('editPost', (postId, newMessage) => {
+    // # Open the post dot menu.
+    cy.clickPostDotMenu(postId);
+
+    // # Click on the Edit menu option.
+    cy.get(`#edit_post_${postId}`).click();
+
+    // # Overwrite the post content with the new message provided.
+    cy.get('#edit_textbox').clear().type(newMessage);
+
+    // # Confirm the edit in the dialog.
+    cy.get('#editButton').click();
+});

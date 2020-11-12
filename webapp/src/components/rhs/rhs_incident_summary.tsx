@@ -73,7 +73,7 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                         </div>
                     </div>
                     <Stage incident={props.incident}/>
-                    <div>
+                    <div id={'incidentRHSUpdates'}>
                         <div className='title'>
                             {'Recent Update:'}
                         </div>
