@@ -768,9 +768,9 @@ func (r *Runner) actionTestSelf(args []string) {
 		return
 	}
 
-	if len(args) != 2 || args[0] != confirmPrompt || args[1] != "SELF-TEST" {
+	if len(args) != 3 || args[0] != confirmPrompt || args[1] != "TEST" || args[2] != "SELF" {
 		r.postCommandResponse("Are you sure you want to self-test (which will nuke the database and delete all data -- instances, configuration)? " +
-			"All incident data will be lost. To self-test, type `/incident test self CONFIRM SELF-TEST`")
+			"All incident data will be lost. To self-test, type `/incident test self CONFIRM TEST SELF`")
 		return
 	}
 
