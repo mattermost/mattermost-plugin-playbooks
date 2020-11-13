@@ -57,6 +57,18 @@ describe('slash command > test', () => {
     });
 
     describe('as a regular user', () => {
+        before(() => {
+            // # Login as sysadmin.
+            cy.apiLogin('sysadmin');
+
+            // # Set EnableTesting to true.
+            cy.apiUpdateConfig({
+                ServiceSettings: {
+                    EnableTesting: true
+                },
+            });
+        });
+
         beforeEach(() => {
             // # Login as user-1
             cy.apiLogin('user-1');
@@ -96,23 +108,12 @@ describe('slash command > test', () => {
                 // # Login as sysadmin.
                 cy.apiLogin('sysadmin');
 
-                cy.apiGetConfig().then((config) => {
-                    console.log("Before updating: ");
-                    console.log(config);
-                });
-
                 // # Set EnableTesting to false.
                 cy.apiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: false
                     },
                 });
-
-                cy.apiGetConfig().then((config) => {
-                    console.log("After updating : ");
-                    console.log(config);
-                });
-
             });
 
             beforeEach(() => {
@@ -175,7 +176,7 @@ describe('slash command > test', () => {
                     cy.executeSlashCommand('/incident test self');
 
                     // * Verify the ephemeral message asks for the confirmation keywords.
-                    cy.verifyEphemeralMessage('Are you sure you want to self-test (which will nuke the database and delete all data -- instances, configuration)? All incident data will be lost. To self-test, type /incident test self CONFIRM SELF-TEST');
+                    cy.verifyEphemeralMessage('Are you sure you want to self-test (which will nuke the database and delete all data -- instances, configuration)? All incident data will be lost. To self-test, type /incident test self CONFIRM TEST SELF');
                 });
             });
 
