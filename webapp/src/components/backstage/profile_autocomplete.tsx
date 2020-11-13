@@ -8,6 +8,8 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {OptionsType, ControlProps} from 'react-select';
 
+import Profile from 'src/components/profile/profile';
+
 const StyledAsyncSelect = styled(AsyncSelect)`
     flex-grow: 1;
     background-color: var(--center-channel-bg);
@@ -88,7 +90,7 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
     const formatOptionLabel = (option: UserProfile) => {
         return (
             <React.Fragment>
-                { `@${option.username}`}
+                <Profile userId={option.id}/>
             </React.Fragment>
         );
     };
