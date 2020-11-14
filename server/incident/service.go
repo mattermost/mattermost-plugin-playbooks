@@ -324,7 +324,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		UserId:    userID,
 		ChannelId: incidentToModify.ChannelID,
 	}
-	if err := s.pluginAPI.Post.CreatePost(&post); err != nil {
+	if err = s.pluginAPI.Post.CreatePost(&post); err != nil {
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
