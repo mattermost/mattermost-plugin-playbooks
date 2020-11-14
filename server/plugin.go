@@ -146,10 +146,18 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient,
 		incidentStore,
 		p.bot,
+		p.bot,
 		p.config,
 		scheduler,
 		telemetryClient,
 	)
+
+	if err = scheduler.SetCallback(p.incidentService.HandleReminder); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not add the incidentService's HandleReminder", "error", err.Error())
+	}
+	if err = scheduler.Start(); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
+	}
 
 	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
@@ -169,10 +177,6 @@ func (p *Plugin) OnActivate() error {
 		// Remove the prepackaged old version of the plugin
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
 	}()
-
-	if err = scheduler.Start(); err != nil {
-		pluginAPIClient.Log.Error("Job Once Scheduler could not start", "error", err.Error())
-	}
 
 	return nil
 }

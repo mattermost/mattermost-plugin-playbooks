@@ -61,6 +61,8 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder-update", handler.reminderUpdate).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder-dismiss", handler.reminderDismiss).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -615,8 +617,8 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	var options incident.StatusUpdateOptions
 	options.Status = request.Submission[incident.DialogFieldStatusKey].(string)
 	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
-	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderKey].(string)); err2 != nil {
-		options.Reminder = reminder
+	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderInMinutesKey].(string)); err2 == nil {
+		options.ReminderInMinutes = reminder
 	}
 
 	err = h.incidentService.UpdateStatus(incidentID, userID, options)
@@ -626,6 +628,58 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// reminderUpdate handles the POST /incidents/{id}/reminder-update endpoint, called when a
+// user clicks on the reminder interactive button
+func (h *IncidentHandler) reminderUpdate(w http.ResponseWriter, r *http.Request) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
+		return
+	}
+
+	_, err := h.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
+		Command:   "/incident status",
+		UserId:    requestData.UserId,
+		TeamId:    requestData.TeamId,
+		ChannelId: requestData.ChannelId,
+	})
+	if err == pluginapi.ErrNotFound {
+		h.log.Errorf("failed to find 'incident status' slash command")
+		HandleError(w, errors.New("failed to find 'incident status' slash command"))
+		return
+	} else if err != nil {
+		h.log.Errorf(errors.Wrap(err, "failed to run slash command").Error())
+		HandleError(w, errors.Wrap(err, "failed to run slash command"))
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
+}
+
+// reminderDismiss handles the POST /incidents/{id}/reminder-dismiss endpoint, called when a
+// user clicks on the reminder interactive button
+func (h *IncidentHandler) reminderDismiss(w http.ResponseWriter, r *http.Request) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
+		return
+	}
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
+	if err != nil {
+		h.log.Errorf("reminderDismiss: no incident for requestData's channelID: %s", requestData.ChannelId)
+		HandleErrorWithCode(w, http.StatusBadRequest, "no incident for requestData's channelID", err)
+		return
+	}
+
+	if err = h.incidentService.RemoveReminder(incidentID); err != nil {
+		h.log.Errorf("reminderDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
+		HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
 }
 
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint

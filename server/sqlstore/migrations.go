@@ -262,4 +262,23 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.4.0"),
+		toVersion:   semver.MustParse("0.5.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec("ALTER TABLE IR_Incident ADD JSONBag TEXT"); err != nil {
+				return errors.Wrapf(err, "failed adding column JSONBag to table IR_Incident")
+			}
+
+			incidentUpdate := sqlStore.builder.
+				Update("IR_Incident").
+				Set("JSONBag", "{}").
+				Where(sq.Eq{"JSONBag": nil})
+			if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
+				return errors.Errorf("failed updating JSONBag fields")
+			}
+
+			return nil
+		},
+	},
 }

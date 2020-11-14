@@ -601,6 +601,7 @@ func (r *Runner) actionUpdate() {
 		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
+	r.logger.Debugf("<><> 2: incidentID: " + incidentID)
 
 	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
@@ -620,6 +621,7 @@ func (r *Runner) actionUpdate() {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
+	r.logger.Debugf("<><> 5")
 }
 
 func (r *Runner) actionStage(args []string) {

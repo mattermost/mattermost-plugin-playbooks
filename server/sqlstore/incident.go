@@ -19,6 +19,7 @@ type sqlIncident struct {
 	incident.Incident
 	ChecklistsJSON       json.RawMessage
 	StatusPostsIDsString string
+	JSONBag              json.RawMessage
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -38,7 +39,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
-			"ChecklistsJSON", "StatusPostsIDsString").
+			"ChecklistsJSON", "StatusPostsIDsString", "JSONBag").
 		From("IR_Incident AS incident")
 
 	return &incidentStore{
@@ -130,7 +131,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	incidents := make([]incident.Incident, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
-		incident, err := toIncident(rawIncident)
+		incident, err := s.toIncident(rawIncident)
 		if err != nil {
 			return nil, err
 		}
@@ -181,6 +182,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 			"PlaybookID":           rawIncident.PlaybookID,
 			"ChecklistsJSON":       rawIncident.ChecklistsJSON,
 			"StatusPostsIDsString": rawIncident.StatusPostsIDsString,
+			"JSONBag":              rawIncident.JSONBag,
 		}))
 
 	if err != nil {
@@ -218,6 +220,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"ActiveStageTitle":     rawIncident.ActiveStageTitle,
 			"ChecklistsJSON":       rawIncident.ChecklistsJSON,
 			"StatusPostsIDsString": rawIncident.StatusPostsIDsString,
+			"JSONBag":              rawIncident.JSONBag,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -242,7 +245,7 @@ func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, erro
 		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
 	}
 
-	return toIncident(rawIncident)
+	return s.toIncident(rawIncident)
 }
 
 // GetIncidentIDForChannel gets the incidentID associated with the given channelID.
@@ -353,17 +356,36 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 		  )`, info.UserID)
 }
 
+func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
+	i := rawIncident.Incident
+	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: %s", rawIncident.ID)
+	}
+	if err := json.Unmarshal(rawIncident.JSONBag, &i.JSONBag); err != nil {
+		s.log.Errorf("failed to unmarshal JSONBag for incident id: %s; error: %s", rawIncident.ID, err.Error())
+		// Don't fail, just use the empty JSONBag
+	}
+	i.StatusPostsIDs = strings.Fields(rawIncident.StatusPostsIDsString)
+
+	return &i, nil
+}
+
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
 	newChecklists := populateChecklistIDs(origIncident.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
 	}
+	jsonBag, err := json.Marshal(origIncident.JSONBag)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal JSONBag for incident id: '%s'", origIncident.ID)
+	}
 
 	return &sqlIncident{
 		Incident:             origIncident,
 		ChecklistsJSON:       checklistsJSON,
 		StatusPostsIDsString: strings.Join(origIncident.StatusPostsIDs, " "),
+		JSONBag:              jsonBag,
 	}, nil
 }
 
@@ -397,14 +419,4 @@ func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) 
 	}
 
 	return checklistsJSON, nil
-}
-
-func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
-	i := rawIncident.Incident
-	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
-	}
-	i.StatusPostsIDs = strings.Fields(rawIncident.StatusPostsIDsString)
-
-	return &i, nil
 }

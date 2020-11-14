@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/pkg/errors"
@@ -32,6 +33,7 @@ type ServiceImpl struct {
 	configService config.Service
 	store         Store
 	poster        bot.Poster
+	logger        bot.Logger
 	scheduler     *cluster.JobOnceScheduler
 	telemetry     Telemetry
 }
@@ -53,16 +55,17 @@ const DialogFieldStatusKey = "status"
 // DialogFieldMessageKey is the key for the message textarea field used in UpdateIncidentDialog
 const DialogFieldMessageKey = "message"
 
-// DialogFieldReminderKey is the key for the reminder select field used in UpdateIncidentDialog
-const DialogFieldReminderKey = "reminder"
+// DialogFieldReminderInMinutesKey is the key for the reminder select field used in UpdateIncidentDialog
+const DialogFieldReminderInMinutesKey = "reminder"
 
 // NewService creates a new incident ServiceImpl.
-func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
+func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler *cluster.JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
 	return &ServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
 		poster:        poster,
+		logger:        logger,
 		configService: configService,
 		scheduler:     scheduler,
 		telemetry:     telemetry,
@@ -287,6 +290,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
+	s.logger.Debugf("<><> incident: %+v", currentIncident)
 	if !currentIncident.IsActive {
 		return ErrIncidentNotActive
 	}
@@ -304,9 +308,11 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		TriggerId: triggerID,
 	}
 
+	s.logger.Debugf("<><> sending the OpenInteractiveDialog request")
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
 	}
+	s.logger.Debugf("<><> succeeded?")
 
 	return nil
 }
@@ -338,6 +344,17 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.UpdateStatus(incidentToModify, userID)
+
+	if options.ReminderInMinutes != 0 {
+		if err = s.SetReminder(incidentID, time.Duration(options.ReminderInMinutes)); err != nil {
+			s.logger.Errorf(errors.Wrap(err, "error setting the reminder for incident").Error(), "incidentID", incidentID)
+			return err
+		}
+	}
+
+	if err = s.RemoveReminder(incidentID); err != nil {
+		return errors.Wrap(err, "failed to remove reminder")
+	}
 
 	return nil
 }
@@ -1009,7 +1026,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
 			},
 			{
 				DisplayName: "Reminder for next update",
-				Name:        DialogFieldReminderKey,
+				Name:        DialogFieldReminderInMinutesKey,
 				Type:        "select",
 				Options: []*model.PostActionOptions{
 					{

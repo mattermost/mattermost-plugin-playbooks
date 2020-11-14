@@ -10,6 +10,7 @@ import (
 	playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
+	time "time"
 )
 
 // MockService is a mock of Service interface
@@ -197,6 +198,18 @@ func (mr *MockServiceMockRecorder) GetIncidents(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockService)(nil).GetIncidents), arg0, arg1)
 }
 
+// HandleReminder mocks base method
+func (m *MockService) HandleReminder(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "HandleReminder", arg0)
+}
+
+// HandleReminder indicates an expected call of HandleReminder
+func (mr *MockServiceMockRecorder) HandleReminder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReminder", reflect.TypeOf((*MockService)(nil).HandleReminder), arg0)
+}
+
 // IsCommander mocks base method
 func (m *MockService) IsCommander(arg0, arg1 string) bool {
 	m.ctrl.T.Helper()
@@ -377,6 +390,20 @@ func (m *MockService) SetAssignee(arg0, arg1, arg2 string, arg3, arg4 int) error
 func (mr *MockServiceMockRecorder) SetAssignee(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAssignee", reflect.TypeOf((*MockService)(nil).SetAssignee), arg0, arg1, arg2, arg3, arg4)
+}
+
+// SetReminder mocks base method
+func (m *MockService) SetReminder(arg0 *incident.Incident, arg1 time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetReminder", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetReminder indicates an expected call of SetReminder
+func (mr *MockServiceMockRecorder) SetReminder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReminder", reflect.TypeOf((*MockService)(nil).SetReminder), arg0, arg1)
 }
 
 // ToggleCheckedState mocks base method
