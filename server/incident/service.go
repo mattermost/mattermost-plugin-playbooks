@@ -281,7 +281,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string) error {
 	currentIncident, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve incident")
+		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
 	if !currentIncident.IsActive {
@@ -290,7 +290,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 
 	dialog, err := s.newUpdateIncidentDialog()
 	if err != nil {
-		return errors.Wrapf(err, "failed to create update status dialog")
+		return errors.Wrap(err, "failed to create update status dialog")
 	}
 
 	dialogRequest := model.OpenDialogRequest{
@@ -302,7 +302,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	}
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
-		return errors.Wrapf(err, "failed to open update status dialog")
+		return errors.Wrap(err, "failed to open update status dialog")
 	}
 
 	return nil
@@ -312,21 +312,25 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve incident")
+		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
 	if !incidentToModify.IsActive {
 		return ErrIncidentNotActive
 	}
 
-	postID, err := s.poster.PostMessage(incidentToModify.ChannelID, options.Message)
-	if err != nil {
-		return errors.Wrapf(err, "failed to post update status message")
+	post := model.Post{
+		Message:   options.Message,
+		UserId:    userID,
+		ChannelId: incidentToModify.ChannelID,
+	}
+	if err := s.pluginAPI.Post.CreatePost(&post); err != nil {
+		return errors.Wrap(err, "failed to post update status message")
 	}
 
-	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, postID)
+	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, post.Id)
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return errors.Wrapf(err, "failed to update incident")
+		return errors.Wrap(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
