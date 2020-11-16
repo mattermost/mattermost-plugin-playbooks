@@ -639,9 +639,7 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.log.Debugf("<><> requestData: %+v", requestData)
-
-	_, err := h.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
+	resp, err := h.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
 		Command:   "/incident status",
 		UserId:    requestData.UserId,
 		TeamId:    requestData.TeamId,
@@ -656,7 +654,7 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 		HandleError(w, errors.Wrap(err, "failed to run slash command"))
 	}
 
-	ReturnJSON(w, nil, http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{"trigger_id": resp.TriggerId}, http.StatusOK)
 }
 
 // reminderButtonDismiss handles the POST /incidents/{id}/reminder/button-dismiss endpoint, called when a
