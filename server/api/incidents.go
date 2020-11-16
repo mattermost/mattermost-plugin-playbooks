@@ -640,7 +640,7 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 	}
 
 	resp, err := h.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
-		Command:   "/incident status",
+		Command:   "/incident update",
 		UserId:    requestData.UserId,
 		TeamId:    requestData.TeamId,
 		ChannelId: requestData.ChannelId,
