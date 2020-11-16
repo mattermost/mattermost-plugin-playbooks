@@ -5,11 +5,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/mattermost/mattermost-plugin-api/cluster"
-	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
-	mock_config "github.com/mattermost/mattermost-plugin-incident-management/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -19,6 +16,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-management/server/config/mocks"
+	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
 )
 
 func TestCreateIncident(t *testing.T) {

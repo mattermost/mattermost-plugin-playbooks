@@ -5,12 +5,13 @@
 package mock_incident
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
-	reflect "reflect"
-	time "time"
 )
 
 // MockService is a mock of Service interface

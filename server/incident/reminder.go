@@ -92,11 +92,11 @@ func (s *ServiceImpl) SetReminder(incidentID string, timeInMinutes time.Duration
 	key := model.NewId()
 	reminder := Reminder{IncidentID: incidentID}
 
-	if _, err := s.pluginAPI.KV.Set(reminderPrefix+key, reminder); err != nil {
+	if _, err = s.pluginAPI.KV.Set(reminderPrefix+key, reminder); err != nil {
 		return errors.Wrap(err, "unable to set reminder data in kv store")
 	}
 
-	if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(timeInMinutes*time.Minute)); err != nil {
+	if _, err = s.scheduler.ScheduleOnce(key, time.Now().Add(timeInMinutes*time.Minute)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
 	}
 
@@ -119,7 +119,7 @@ func (s *ServiceImpl) RemoveReminder(incidentID string) error {
 	}
 
 	s.scheduler.Close(incidentToModify.ReminderID)
-	if err := s.pluginAPI.KV.Delete(reminderPrefix + incidentToModify.ReminderID); err != nil {
+	if err = s.pluginAPI.KV.Delete(reminderPrefix + incidentToModify.ReminderID); err != nil {
 		return errors.Wrap(err, "unable to delete reminder data from kv store")
 	}
 

@@ -5,11 +5,12 @@
 package mock_plugin
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	model "github.com/mattermost/mattermost-server/v5/model"
 	io "io"
 	http "net/http"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	model "github.com/mattermost/mattermost-server/v5/model"
 )
 
 // MockAPI is a mock of API interface

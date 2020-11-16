@@ -5,9 +5,10 @@
 package mock_bot
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	reflect "reflect"
 )
 
 // MockLogger is a mock of Logger interface

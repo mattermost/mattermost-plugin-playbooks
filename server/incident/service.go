@@ -8,16 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const (
