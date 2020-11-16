@@ -342,15 +342,19 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.UpdateStatus(incidentToModify, userID)
 
+	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
+	if err = s.RemoveReminder(incidentID); err != nil {
+		return errors.Wrap(err, "failed to remove reminder")
+	}
+
 	if options.ReminderInMinutes != 0 {
 		if err = s.SetReminder(incidentID, time.Duration(options.ReminderInMinutes)); err != nil {
-			s.logger.Errorf(errors.Wrap(err, "error setting the reminder for incident").Error(), "incidentID", incidentID)
-			return err
+			return errors.Wrap(err, "failed to set the reminder for incident")
 		}
 	}
 
-	if err = s.RemoveReminder(incidentID); err != nil {
-		return errors.Wrap(err, "failed to remove reminder")
+	if err = s.RemoveReminderPost(incidentID); err != nil {
+		return errors.Wrap(err, "failed to remove reminder post")
 	}
 
 	return nil

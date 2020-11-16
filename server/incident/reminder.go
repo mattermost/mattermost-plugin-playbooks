@@ -19,23 +19,6 @@ type Reminder struct {
 	IncidentID string `json:"incident_id"`
 }
 
-func (s *ServiceImpl) SetReminder(incidentID string, timeInMinutes time.Duration) error {
-	key := model.NewId()
-	reminder := Reminder{IncidentID: incidentID}
-
-	if _, err := s.pluginAPI.KV.Set(reminderPrefix+key, reminder); err != nil {
-		return errors.Wrap(err, "unable to set reminder data in kv store")
-	}
-
-	// FIXME
-	//if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(timeInMinutes*time.Minute)); err != nil {
-	if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(10*time.Second)); err != nil {
-		return errors.Wrap(err, "unable to schedule reminder")
-	}
-
-	return nil
-}
-
 func (s *ServiceImpl) HandleReminder(key string) {
 	var reminder Reminder
 	err := s.pluginAPI.KV.Get(reminderPrefix+key, &reminder)
@@ -100,18 +83,68 @@ func (s *ServiceImpl) HandleReminder(key string) {
 	}
 }
 
-// RemoveReminder will remove the reminder in the incident channel (if any).
+func (s *ServiceImpl) SetReminder(incidentID string, timeInMinutes time.Duration) error {
+	incidentToModify, err := s.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident from store")
+	}
+
+	key := model.NewId()
+	reminder := Reminder{IncidentID: incidentID}
+
+	if _, err := s.pluginAPI.KV.Set(reminderPrefix+key, reminder); err != nil {
+		return errors.Wrap(err, "unable to set reminder data in kv store")
+	}
+
+	// FIXME
+	//if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(timeInMinutes*time.Minute)); err != nil {
+	if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(10*time.Second)); err != nil {
+		return errors.Wrap(err, "unable to schedule reminder")
+	}
+
+	incidentToModify.ReminderID = key
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return errors.Wrapf(err, "error updating incident with reminder id")
+	}
+
+	return nil
+}
+
 func (s *ServiceImpl) RemoveReminder(incidentID string) error {
-	currentIncident, err := s.store.GetIncident(incidentID)
+	incidentToModify, err := s.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident from store")
+	}
+
+	if incidentToModify.ReminderID == "" {
+		return nil
+	}
+
+	s.scheduler.Close(incidentToModify.ReminderID)
+	if err := s.pluginAPI.KV.Delete(reminderPrefix + incidentToModify.ReminderID); err != nil {
+		return errors.Wrap(err, "unable to delete reminder data from kv store")
+	}
+
+	incidentToModify.ReminderID = ""
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return errors.Wrapf(err, "error updating incident removing reminder id")
+	}
+
+	return nil
+}
+
+// RemoveReminderPost will remove the reminder post in the incident channel (if any).
+func (s *ServiceImpl) RemoveReminderPost(incidentID string) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve incident")
 	}
 
-	if currentIncident.ReminderPostID == "" {
+	if incidentToModify.ReminderPostID == "" {
 		return nil
 	}
 
-	post, err := s.pluginAPI.Post.GetPost(currentIncident.ReminderPostID)
+	post, err := s.pluginAPI.Post.GetPost(incidentToModify.ReminderPostID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve reminder post")
 	}
@@ -120,8 +153,13 @@ func (s *ServiceImpl) RemoveReminder(incidentID string) error {
 		return nil
 	}
 
-	if err = s.pluginAPI.Post.DeletePost(currentIncident.ReminderPostID); err != nil {
+	if err = s.pluginAPI.Post.DeletePost(incidentToModify.ReminderPostID); err != nil {
 		return errors.Wrapf(err, "failed to delete reminder post")
+	}
+
+	incidentToModify.ReminderPostID = ""
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return errors.Wrapf(err, "error updating incident removing reminder post id")
 	}
 
 	return nil

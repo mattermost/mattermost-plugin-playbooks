@@ -28,6 +28,7 @@ type Incident struct {
 // field here is all that needs to be done; it will be saved and retrieved from the db
 // automatically.
 type JSONBag struct {
+	ReminderID     string `json:"reminder_id"`
 	ReminderPostID string `json:"reminder_post_id"`
 }
 
@@ -270,11 +271,14 @@ type Service interface {
 	// reminded to update the incident's status.
 	SetReminder(incidentID string, timeInMinutes time.Duration) error
 
+	// RemoveReminder removes the pending reminder for incidentID (if any).
+	RemoveReminder(incidentID string) error
+
 	// HandleReminder is the handler for all reminder events.
 	HandleReminder(key string)
 
-	// RemoveReminder will remove the reminder in the incident channel (if any).
-	RemoveReminder(incidentID string) error
+	// RemoveReminderPost will remove the reminder in the incident channel (if any).
+	RemoveReminderPost(incidentID string) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.

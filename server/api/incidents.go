@@ -673,7 +673,7 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err = h.incidentService.RemoveReminder(incidentID); err != nil {
+	if err = h.incidentService.RemoveReminderPost(incidentID); err != nil {
 		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
 		HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
 		return
@@ -796,9 +796,7 @@ func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ReturnJSON(w, struct {
-		TriggerID string `json:"trigger_id"`
-	}{TriggerID: triggerID}, http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{"trigger_id": triggerID}, http.StatusOK)
 }
 
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
