@@ -266,8 +266,14 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.4.0"),
 		toVersion:   semver.MustParse("0.5.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if _, err := e.Exec("ALTER TABLE IR_Incident ADD JSONBag TEXT"); err != nil {
-				return errors.Wrapf(err, "failed adding column JSONBag to table IR_Incident")
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD JSONBag TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column JSONBag to table IR_Incident")
+				}
+			} else {
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD JSONBag json"); err != nil {
+					return errors.Wrapf(err, "failed adding column JSONBag to table IR_Incident")
+				}
 			}
 
 			incidentUpdate := sqlStore.builder.
