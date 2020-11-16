@@ -96,9 +96,7 @@ func (s *ServiceImpl) SetReminder(incidentID string, timeInMinutes time.Duration
 		return errors.Wrap(err, "unable to set reminder data in kv store")
 	}
 
-	// FIXME
-	//if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(timeInMinutes*time.Minute)); err != nil {
-	if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(10*time.Second)); err != nil {
+	if _, err := s.scheduler.ScheduleOnce(key, time.Now().Add(timeInMinutes*time.Minute)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
 	}
 
