@@ -334,10 +334,10 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
-		var res struct{ Message string }
+		var res struct{ Error string }
 		err = json.NewDecoder(resp.Body).Decode(&res)
 		assert.NoError(t, err)
-		assert.Equal(t, "interactive dialog's userID must be the same as the requester's userID", res.Message)
+		assert.Equal(t, "interactive dialog's userID must be the same as the requester's userID", res.Error)
 	})
 
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
