@@ -63,7 +63,7 @@ func (s *ServiceImpl) HandleReminder(key string) {
 					Type: "button",
 					Name: "Update Status",
 					Integration: &model.PostActionIntegration{
-						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/reminder-update",
+						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/reminder/button-update",
 							s.configService.GetManifest().Id,
 							incidentToModify.ID),
 					},
@@ -72,7 +72,7 @@ func (s *ServiceImpl) HandleReminder(key string) {
 					Type: "button",
 					Name: "Dismiss",
 					Integration: &model.PostActionIntegration{
-						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/reminder-dismiss",
+						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/reminder/button-dismiss",
 							s.configService.GetManifest().Id,
 							incidentToModify.ID),
 					},

@@ -61,8 +61,8 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/reminder-update", handler.reminderUpdate).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/reminder-dismiss", handler.reminderDismiss).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -630,14 +630,16 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 }
 
-// reminderUpdate handles the POST /incidents/{id}/reminder-update endpoint, called when a
+// reminderButtonUpdate handles the POST /incidents/{id}/reminder/button-update endpoint, called when a
 // user clicks on the reminder interactive button
-func (h *IncidentHandler) reminderUpdate(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Request) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
 	}
+
+	h.log.Debugf("<><> requestData: %+v", requestData)
 
 	_, err := h.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
 		Command:   "/incident status",
@@ -657,9 +659,9 @@ func (h *IncidentHandler) reminderUpdate(w http.ResponseWriter, r *http.Request)
 	ReturnJSON(w, nil, http.StatusOK)
 }
 
-// reminderDismiss handles the POST /incidents/{id}/reminder-dismiss endpoint, called when a
+// reminderButtonDismiss handles the POST /incidents/{id}/reminder/button-dismiss endpoint, called when a
 // user clicks on the reminder interactive button
-func (h *IncidentHandler) reminderDismiss(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.Request) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
@@ -668,13 +670,13 @@ func (h *IncidentHandler) reminderDismiss(w http.ResponseWriter, r *http.Request
 
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
 	if err != nil {
-		h.log.Errorf("reminderDismiss: no incident for requestData's channelID: %s", requestData.ChannelId)
+		h.log.Errorf("reminderButtonDismiss: no incident for requestData's channelID: %s", requestData.ChannelId)
 		HandleErrorWithCode(w, http.StatusBadRequest, "no incident for requestData's channelID", err)
 		return
 	}
 
 	if err = h.incidentService.RemoveReminder(incidentID); err != nil {
-		h.log.Errorf("reminderDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
+		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
 		HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
 		return
 	}
