@@ -290,7 +290,6 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
-	s.logger.Debugf("<><> incident: %+v", currentIncident)
 	if !currentIncident.IsActive {
 		return ErrIncidentNotActive
 	}
@@ -308,11 +307,9 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		TriggerId: triggerID,
 	}
 
-	s.logger.Debugf("<><> sending the OpenInteractiveDialog request")
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
 	}
-	s.logger.Debugf("<><> succeeded?")
 
 	return nil
 }
@@ -586,22 +583,22 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
-func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error {
+func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error) {
 	incident, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if !playbook.IsValidChecklistItemIndex(incident.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
+		return "", errors.New("invalid checklist item indices")
 	}
 
 	itemToRun := incident.Checklists[checklistNumber].Items[itemNumber]
 	if strings.TrimSpace(itemToRun.Command) == "" {
-		return errors.New("no slash command associated with this checklist item")
+		return "", errors.New("no slash command associated with this checklist item")
 	}
 
-	_, err = s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
+	cmdResponse, err := s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
 		Command:   itemToRun.Command,
 		UserId:    userID,
 		TeamId:    incident.TeamID,
@@ -611,23 +608,23 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		trigger := strings.Fields(itemToRun.Command)[0]
 		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to find slash command **%s**", trigger)})
 
-		return errors.Wrap(err, "failed to find slash command")
+		return "", errors.Wrap(err, "failed to find slash command")
 	} else if err != nil {
 		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to execute slash command **%s**", itemToRun.Command)})
 
-		return errors.Wrap(err, "failed to run slash command")
+		return "", errors.Wrap(err, "failed to run slash command")
 	}
 
 	// Record the last (successful) run time.
 	incident.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
 	if err = s.store.UpdateIncident(incident); err != nil {
-		return errors.Wrapf(err, "failed to update incident recording run of slash command")
+		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
 	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
-	return nil
+	return cmdResponse.TriggerId, nil
 }
 
 // AddChecklistItem adds an item to the specified checklist

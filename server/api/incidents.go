@@ -790,12 +790,15 @@ func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.RunChecklistItemSlashCommand(incidentID, userID, checklistNum, itemNum); err != nil {
+	triggerID, err := h.incidentService.RunChecklistItemSlashCommand(incidentID, userID, checklistNum, itemNum)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, struct {
+		TriggerID string `json:"trigger_id"`
+	}{TriggerID: triggerID}, http.StatusOK)
 }
 
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {

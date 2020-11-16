@@ -238,7 +238,7 @@ type Service interface {
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
+	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error)
 
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
