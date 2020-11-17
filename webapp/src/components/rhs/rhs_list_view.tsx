@@ -207,6 +207,15 @@ const RHSListView = () => {
                                     </Col2>
                                 </Row>
                                 <Row>
+                                    <Col1>{'Last updated:'}</Col1>
+                                    <Col2>
+                                        <Duration
+                                            created_at={}
+                                            ended_at={}
+                                        />
+                                    </Col2>
+                                </Row>
+                                <Row>
                                     <Col1>{'Commander:'}</Col1>
                                     <Col2>
                                         <SmallerProfile userId={incident.commander_user_id}/>

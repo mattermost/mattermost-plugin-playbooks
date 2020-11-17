@@ -43,6 +43,10 @@ const Duration: FC<DurationProps> = (props: DurationProps) => {
         };
     }, []);
 
+    if (!props.created_at) {
+        return <div className='time'>{'-'}</div>;
+    }
+
     const start = moment(props.created_at);
     const end = (props.ended_at && moment(props.ended_at)) || now;
     const duration = moment.duration(end.diff(start));
