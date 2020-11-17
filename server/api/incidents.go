@@ -60,6 +60,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -582,6 +583,45 @@ func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request
 	_, err = h.incidentService.ChangeActiveStage(incidentID, userID, stageIdx)
 	if err != nil {
 		HandleError(w, errors.Wrapf(err, "failed to change active stage"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// updateStatusDialog handles the POST /incidents/{id}/update-status-dialog endpoint, called when a
+// user submits the Update Status dialog.
+func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Request) {
+	incidentID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentToModify, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if !permissions.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
+		return
+	}
+
+	request := model.SubmitDialogRequestFromJson(r.Body)
+	if request == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		return
+	}
+
+	var options incident.StatusUpdateOptions
+	options.Status = request.Submission[incident.DialogFieldStatusKey].(string)
+	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
+	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderKey].(string)); err2 != nil {
+		options.Reminder = reminder
+	}
+
+	err = h.incidentService.UpdateStatus(incidentID, userID, options)
+	if err != nil {
+		HandleError(w, err)
 		return
 	}
 

@@ -902,7 +902,7 @@ func TestCreateAndGetIncident(t *testing.T) {
 		}{
 			{
 				Name:        "Empty values",
-				Incident:    &incident.Incident{},
+				Incident:    &incident.Incident{StatusPostsIDs: []string{}},
 				ExpectedErr: nil,
 			},
 			{
@@ -1106,6 +1106,24 @@ func TestUpdateIncident(t *testing.T) {
 				Update: func(old incident.Incident) *incident.Incident {
 					old.Checklists[0].Items[0].State = playbook.ChecklistItemStateClosed
 					old.Checklists[1].Items[0].Title = "new title"
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
+				Name:     "Incident with no updates, add an update postid",
+				Incident: NewBuilder().ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.StatusPostsIDs = append(old.StatusPostsIDs, "newpostid")
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
+				Name:     "Incident with a few updates, add an update postid",
+				Incident: NewBuilder().WithUpdateStatusIDs([]string{"id1", "id2", "id3"}).ToIncident(),
+				Update: func(old incident.Incident) *incident.Incident {
+					old.StatusPostsIDs = append(old.StatusPostsIDs, "newpostid")
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1368,9 +1386,10 @@ func NewBuilder() *IncidentBuilder {
 				DeleteAt:        0,
 				ActiveStage:     0,
 			},
-			PostID:     model.NewId(),
-			PlaybookID: model.NewId(),
-			Checklists: nil,
+			PostID:         model.NewId(),
+			PlaybookID:     model.NewId(),
+			Checklists:     nil,
+			StatusPostsIDs: []string{},
 		},
 	}
 }
@@ -1389,6 +1408,12 @@ func (t *IncidentBuilder) WithDescription(desc string) *IncidentBuilder {
 
 func (t *IncidentBuilder) WithID() *IncidentBuilder {
 	t.ID = model.NewId()
+
+	return t
+}
+
+func (t *IncidentBuilder) WithUpdateStatusIDs(ids []string) *IncidentBuilder {
+	t.StatusPostsIDs = append(t.StatusPostsIDs, ids...)
 
 	return t
 }
