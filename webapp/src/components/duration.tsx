@@ -6,7 +6,7 @@ import moment from 'moment';
 
 interface DurationProps {
     from: number;
-    to: number;
+    to: number; // setting to = 0 means "now"
     ago?: boolean;
 }
 
