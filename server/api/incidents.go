@@ -615,7 +615,6 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	}
 
 	var options incident.StatusUpdateOptions
-	options.Status = request.Submission[incident.DialogFieldStatusKey].(string)
 	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
 	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderInMinutesKey].(string)); err2 == nil {
 		options.ReminderInMinutes = reminder

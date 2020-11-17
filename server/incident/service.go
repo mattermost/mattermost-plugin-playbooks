@@ -48,9 +48,6 @@ const DialogFieldNameKey = "incidentName"
 // DialogFieldDescriptionKey is the key for the incident description field used in OpenCreateIncidentDialog.
 const DialogFieldDescriptionKey = "incidentDescription"
 
-// DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
-const DialogFieldStatusKey = "status"
-
 // DialogFieldMessageKey is the key for the message textarea field used in UpdateIncidentDialog
 const DialogFieldMessageKey = "message"
 
@@ -1003,21 +1000,6 @@ func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
 		Title:            "Update Incident Status",
 		IntroductionText: "Update your incident status and broadcast it to another channel.",
 		Elements: []model.DialogElement{
-			{
-				DisplayName: "Status",
-				Name:        DialogFieldStatusKey,
-				Type:        "select",
-				Options: []*model.PostActionOptions{
-					{
-						Text:  "Ongoing",
-						Value: "ongoing",
-					},
-					{
-						Text:  "Ended",
-						Value: "ended",
-					},
-				},
-			},
 			{
 				DisplayName: "Message",
 				Name:        DialogFieldMessageKey,

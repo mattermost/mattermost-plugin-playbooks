@@ -95,7 +95,6 @@ type UpdateOptions struct {
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
 type StatusUpdateOptions struct {
-	Status            string
 	Message           string
 	ReminderInMinutes int
 }
