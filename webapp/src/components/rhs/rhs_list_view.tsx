@@ -72,7 +72,7 @@ const IncidentContainer = styled.div<IncidentContainerProps>`
     box-shadow: inset 0px -1px 0px var(--center-channel-color-24);
 
     ${(props) => props.active && css`
-        box-shadow: inset 0px -1px 0px var(--center-channel-color-24), inset 4px 0px 0px #166DE0;
+        box-shadow: inset 0px -1px 0px var(--center-channel-color-24), inset 4px 0px 0px var(--button-bg);
     `}
 `;
 

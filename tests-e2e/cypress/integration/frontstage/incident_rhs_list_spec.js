@@ -908,6 +908,9 @@ describe('rhs incident list', () => {
 
             // # End incident and go to incident list
             cy.get('#rhsContainer').should('exist').within(() => {
+                // # Select the tasks tab
+                cy.findByTestId('tasks').click();
+
                 // # End the incident
                 cy.findByText('End Incident').click();
             });

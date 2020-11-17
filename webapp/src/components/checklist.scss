@@ -1,12 +1,6 @@
 $font-family: Open Sans;
 
 
-// Checklist component -- the rest of the relevant styles are in incident_details.scss
-.checklist-inner-container {
-    display: flex;
-    flex-direction: column;
-}
-
 // Checkbox component
 .checkbox-container {
     align-items: flex-start;

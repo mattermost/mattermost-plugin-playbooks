@@ -3,7 +3,7 @@
 
 import {combineReducers} from 'redux';
 
-import {RHSState} from 'src/types/rhs';
+import {RHSState, RHSTabState} from 'src/types/rhs';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -22,6 +22,8 @@ import {
     IncidentUpdated,
     INCIDENT_UPDATED,
     REMOVED_FROM_INCIDENT_CHANNEL,
+    SetRHSTabState,
+    SET_RHS_TAB_STATE,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -125,10 +127,23 @@ const myIncidentsByTeam = (state: Record<string, Record<string, Incident>> = {},
     }
 };
 
+const tabStateByChannel = (state: Record<string, RHSTabState> = {}, action: SetRHSTabState) => {
+    switch (action.type) {
+    case SET_RHS_TAB_STATE:
+        return {
+            ...state,
+            [action.channelId]: action.nextState,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
     myIncidentsByTeam,
     rhsState,
+    tabStateByChannel,
 });

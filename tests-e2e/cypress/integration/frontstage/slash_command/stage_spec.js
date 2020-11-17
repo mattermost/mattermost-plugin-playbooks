@@ -151,8 +151,11 @@ describe('slash command > stage', () => {
             describe('/incident stage next', () => {
                 describe('in the last stage', () => {
                     beforeEach(() => {
+                        // # Select the tasks tab
+                        cy.findByTestId('tasks').click();
+
                         // # Check all checkboxes in the stage
-                        cy.get('.checklist-inner-container').within(() => {
+                        cy.get('.checklist').within(() => {
                             cy.get('.checkbox').each((checkbox) => {
                                 cy.wrap(checkbox).click();
                             });
@@ -177,7 +180,7 @@ describe('slash command > stage', () => {
 
                     it('with all tasks finished', () => {
                         // # Check all checkboxes in the stage
-                        cy.get('.checklist-inner-container').within(() => {
+                        cy.get('.checklist').within(() => {
                             cy.get('.checkbox').each((checkbox) => {
                                 cy.wrap(checkbox).click();
                             });
@@ -210,8 +213,11 @@ describe('slash command > stage', () => {
                     });
 
                     it('with all tasks finished', () => {
+                        // # Select the tasks tab
+                        cy.findByTestId('tasks').click();
+
                         // # Check all checkboxes in the stage
-                        cy.get('.checklist-inner-container').within(() => {
+                        cy.get('.checklist').within(() => {
                             cy.get('.checkbox').each((checkbox) => {
                                 cy.wrap(checkbox).click();
                             });
@@ -240,8 +246,11 @@ describe('slash command > stage', () => {
                     });
 
                     it('with all tasks finished', () => {
+                        // # Select the tasks tab
+                        cy.findByTestId('tasks').click();
+
                         // # Check all checkboxes in the stage
-                        cy.get('.checklist-inner-container').within(() => {
+                        cy.get('.checklist').within(() => {
                             cy.get('.checkbox').each((checkbox) => {
                                 cy.wrap(checkbox).click();
                             });
@@ -257,8 +266,11 @@ describe('slash command > stage', () => {
 
                 describe('not in the first stage', () => {
                     beforeEach(() => {
+                        // # Select the tasks tab
+                        cy.findByTestId('tasks').click();
+
                         // # Check all checkboxes in the stage
-                        cy.get('.checklist-inner-container').within(() => {
+                        cy.get('.checklist').within(() => {
                             cy.get('.checkbox').each((checkbox) => {
                                 cy.wrap(checkbox).click();
                             });
@@ -286,7 +298,7 @@ describe('slash command > stage', () => {
 
                     it('with all tasks finished', () => {
                         // # Check all checkboxes in the stage
-                        cy.get('.checklist-inner-container').within(() => {
+                        cy.get('.checklist').within(() => {
                             cy.get('.checkbox').each((checkbox) => {
                                 cy.wrap(checkbox).click();
                             });

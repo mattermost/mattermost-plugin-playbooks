@@ -101,7 +101,19 @@ describe('incident rhs > stages', () => {
             cy.visit('/ad-1/channels/' + incidentChannelName);
         });
 
-        it('containing current information', () => {
+        it('containing current information in summary view', () => {
+            // * Verify that the stage information is visible
+            cy.get('#incidentRHSStages').within(() => {
+                cy.get('.title').contains('Current Stage');
+                cy.get('div').contains('Stage 1');
+                cy.get('span').contains('(1/3)');
+            });
+        });
+
+        it('containing current information in tasks view', () => {
+            // # Select the tasks tab
+            cy.findByTestId('tasks').click();
+
             // * Verify that the stage information is visible
             cy.get('#incidentRHSStages').within(() => {
                 cy.get('.title').contains('Current Stage');
@@ -111,8 +123,11 @@ describe('incident rhs > stages', () => {
         });
 
         it('updating when stage changes', () => {
+            // # Select the tasks tab
+            cy.findByTestId('tasks').click();
+
             // # Check all checkboxes in the stage
-            cy.get('.checklist-inner-container').within(() => {
+            cy.get('.checklist').within(() => {
                 cy.get('.checkbox').each((checkbox) => {
                     cy.wrap(checkbox).click();
                 });
@@ -121,7 +136,17 @@ describe('incident rhs > stages', () => {
             // # Click on the Next Stage button
             cy.get('#incidentRHSFooter button').click();
 
-            // * Verify that the stage information has updated
+            // * Verify that the stage information has updated in tasks tab
+            cy.get('#incidentRHSStages').within(() => {
+                cy.get('.title').contains('Current Stage');
+                cy.get('div').contains('Stage 2');
+                cy.get('span').contains('(2/3)');
+            });
+
+            // # Select the summary tab
+            cy.findByTestId('summary').click();
+
+            // * Verify that the stage information has updated in summary tab
             cy.get('#incidentRHSStages').within(() => {
                 cy.get('.title').contains('Current Stage');
                 cy.get('div').contains('Stage 2');
@@ -131,7 +156,7 @@ describe('incident rhs > stages', () => {
     });
 
     describe('does not show information', () => {
-        it('for an incident with no stagese', () => {
+        it('for an incident with no stages', () => {
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
@@ -150,7 +175,13 @@ describe('incident rhs > stages', () => {
             // # Wait for the RHS to open.
             cy.get('#rhsContainer').should('be.visible');
 
-            // * Verify that the stage information is not visible
+            // * Verify that the stage information is not visible in summary tab
+            cy.get('#incidentRHSStages').should('not.exist');
+
+            // # Select the tasks tab
+            cy.findByTestId('tasks').click();
+
+            // * Verify that the stage information is not visible in tasks tab
             cy.get('#incidentRHSStages').should('not.exist');
         });
 
@@ -173,7 +204,13 @@ describe('incident rhs > stages', () => {
             // # Wait for the RHS to open.
             cy.get('#rhsContainer').should('be.visible');
 
-            // * Verify that the stage information is not visible
+            // * Verify that the stage information is not visible in summary tab
+            cy.get('#incidentRHSStages').should('not.exist');
+
+            // # Select the tasks tab
+            cy.findByTestId('tasks').click();
+
+            // * Verify that the stage information is not visible in tasks tab
             cy.get('#incidentRHSStages').should('not.exist');
         });
     });

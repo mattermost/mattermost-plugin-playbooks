@@ -5,3 +5,8 @@ export enum RHSState {
     ViewingList,
     ViewingIncident,
 }
+
+export enum RHSTabState {
+    ViewingSummary,
+    ViewingTasks,
+}
