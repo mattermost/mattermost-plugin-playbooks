@@ -198,10 +198,10 @@ type Service interface {
 
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
-	OpenEndIncidentDialog(incidentID string, triggerID string) error
+	OpenEndIncidentDialog(incidentID, triggerID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
-	OpenUpdateStatusDialog(incidentID string, triggerID string) error
+	OpenUpdateStatusDialog(incidentID, triggerID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error

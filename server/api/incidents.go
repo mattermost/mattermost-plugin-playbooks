@@ -638,22 +638,20 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	resp, err := h.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
-		Command:   "/incident update",
-		UserId:    requestData.UserId,
-		TeamId:    requestData.TeamId,
-		ChannelId: requestData.ChannelId,
-	})
-	if err == pluginapi.ErrNotFound {
-		h.log.Errorf("failed to find 'incident status' slash command")
-		HandleError(w, errors.New("failed to find 'incident status' slash command"))
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
+	if err != nil {
+		h.log.Errorf("reminderButtonUpdate failed to find incidentID for channelID: %s", requestData.ChannelId)
+		HandleError(w, errors.New("reminderButtonUpdate failed to find incidentID"))
 		return
-	} else if err != nil {
-		h.log.Errorf(errors.Wrap(err, "failed to run slash command").Error())
-		HandleError(w, errors.Wrap(err, "failed to run slash command"))
 	}
 
-	ReturnJSON(w, map[string]interface{}{"trigger_id": resp.TriggerId}, http.StatusOK)
+	if err = h.incidentService.OpenUpdateStatusDialog(incidentID, requestData.TriggerId); err != nil {
+		h.log.Errorf("reminderButtonUpdate failed to open update status dialog")
+		HandleError(w, errors.New("reminderButtonUpdate failed to open update status dialog"))
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
 }
 
 // reminderButtonDismiss handles the POST /incidents/{id}/reminder/button-dismiss endpoint, called when a
