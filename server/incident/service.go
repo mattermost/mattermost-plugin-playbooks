@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
@@ -13,6 +14,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -308,6 +310,40 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	return nil
 }
 
+func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, authorID, originalPostID string) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	incidentTeam, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	author, err := s.pluginAPI.User.Get(authorID)
+	if err != nil {
+		return err
+	}
+
+	duration := timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())
+	status := "Ongoing"
+	if !theIncident.IsActive {
+		status = "Ended"
+	}
+
+	broadcastedMsg := fmt.Sprintf("# Incident Update: [%s](/%s/pl/%s)\n", incidentChannel.DisplayName, incidentTeam.Name, originalPostID)
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, status)
+	broadcastedMsg += "***\n"
+	broadcastedMsg += statusUpdate
+
+	if _, err := s.poster.PostMessage(theIncident.BroadcastChannelID, broadcastedMsg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // UpdateStatus updates an incident's status.
 func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
@@ -327,6 +363,10 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, postID)
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
+	}
+
+	if err := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, postID); err != nil {
+		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
 
 	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
