@@ -15,10 +15,11 @@ const NoActiveStage = -1
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	PostID         string               `json:"post_id"`
-	PlaybookID     string               `json:"playbook_id"`
-	Checklists     []playbook.Checklist `json:"checklists"`
-	StatusPostsIDs []string             `json:"status_posts_ids"`
+	PostID             string               `json:"post_id"`
+	PlaybookID         string               `json:"playbook_id"`
+	Checklists         []playbook.Checklist `json:"checklists"`
+	StatusPostsIDs     []string             `json:"status_posts_ids"`
+	BroadcastChannelID string               `json:"broadcast_channel_id"`
 }
 
 func (i *Incident) Clone() *Incident {

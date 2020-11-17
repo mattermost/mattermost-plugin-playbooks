@@ -40,7 +40,7 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps").
+			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -89,6 +89,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
 			"NumStages":            len(rawPlaybook.Checklists),
 			"NumSteps":             getSteps(rawPlaybook.Playbook),
+			"BroadcastChannelID":   rawPlaybook.BroadcastChannelID,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -277,6 +278,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
 			"NumStages":            len(rawPlaybook.Checklists),
 			"NumSteps":             getSteps(rawPlaybook.Playbook),
+			"BroadcastChannelID":   rawPlaybook.BroadcastChannelID,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

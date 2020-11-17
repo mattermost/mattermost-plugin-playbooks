@@ -295,6 +295,8 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 
 		newIncident.Checklists = pb.Checklists
 		public = pb.CreatePublicIncident
+
+		newIncident.BroadcastChannelID = pb.BroadcastChannelID
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL

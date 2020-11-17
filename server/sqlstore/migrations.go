@@ -253,9 +253,26 @@ var migrations = []Migration{
 				if _, err := e.Exec("ALTER TABLE IR_Incident ADD StatusPostsIDsString VARCHAR(8192) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusPostsIDs to table IR_Incident")
 				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
+				}
+
 			} else {
 				if _, err := e.Exec("ALTER TABLE IR_Incident ADD StatusPostsIDsString TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusPostsIDs to table IR_Incident")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
 				}
 			}
 
