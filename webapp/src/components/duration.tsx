@@ -5,8 +5,9 @@ import React, {FC, useEffect, useState} from 'react';
 import moment from 'moment';
 
 interface DurationProps {
-    created_at: number;
-    ended_at: number;
+    from: number;
+    to: number;
+    ago?: boolean;
 }
 
 export const renderDuration = (duration: moment.Duration) => {
@@ -43,16 +44,16 @@ const Duration: FC<DurationProps> = (props: DurationProps) => {
         };
     }, []);
 
-    if (!props.created_at) {
+    if (!props.from) {
         return <div className='time'>{'-'}</div>;
     }
 
-    const start = moment(props.created_at);
-    const end = (props.ended_at && moment(props.ended_at)) || now;
+    const start = moment(props.from);
+    const end = (props.to && moment(props.to)) || now;
     const duration = moment.duration(end.diff(start));
-
+    const postfix = props.ago ? ' ago' : '';
     return (
-        <div className='time'>{renderDuration(duration)}</div>
+        <div className='time'>{renderDuration(duration) + postfix}</div>
     );
 };
 
