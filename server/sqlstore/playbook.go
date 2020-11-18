@@ -16,6 +16,7 @@ import (
 type sqlPlaybook struct {
 	playbook.Playbook
 	ChecklistsJSON json.RawMessage
+	PropsJSON      json.RawMessage
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -40,7 +41,7 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID").
+			"DeleteAt", "NumStages", "NumSteps", "PropsJSON").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -87,9 +88,9 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"CreateAt":             rawPlaybook.CreateAt,
 			"DeleteAt":             rawPlaybook.DeleteAt,
 			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
+			"PropsJSON":            rawPlaybook.PropsJSON,
 			"NumStages":            len(rawPlaybook.Checklists),
 			"NumSteps":             getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":   rawPlaybook.BroadcastChannelID,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -130,7 +131,7 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 		return out, errors.Wrapf(err, "failed to get playbook by id '%s'", id)
 	}
 
-	if out, err = toPlaybook(rawPlaybook); err != nil {
+	if out, err = p.toPlaybook(rawPlaybook); err != nil {
 		return out, err
 	}
 
@@ -276,9 +277,9 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
 			"DeleteAt":             rawPlaybook.DeleteAt,
 			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
+			"PropsJSON":            rawPlaybook.PropsJSON,
 			"NumStages":            len(rawPlaybook.Checklists),
 			"NumSteps":             getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":   rawPlaybook.BroadcastChannelID,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -382,20 +383,29 @@ func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)
 	}
+	props, err := json.Marshal(origPlaybook.Props)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal Props for playbook id: '%s'", origPlaybook.ID)
+	}
 
 	return &sqlPlaybook{
 		Playbook:       origPlaybook,
 		ChecklistsJSON: checklistsJSON,
+		PropsJSON:      props,
 	}, nil
 }
 
-func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
-	p := rawPlaybook.Playbook
-	if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
-		return playbook.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+func (p *playbookStore) toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
+	thePlaybook := rawPlaybook.Playbook
+	if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &thePlaybook.Checklists); err != nil {
+		return playbook.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", thePlaybook.ID)
+	}
+	if err := json.Unmarshal(rawPlaybook.PropsJSON, &thePlaybook.Props); err != nil {
+		p.log.Errorf("failed to unmarshal Props for playbook id: %s; error: %s; json: [%s]", rawPlaybook.ID, err.Error(), string(rawPlaybook.PropsJSON))
+		// Don't fail, just use the empty Props
 	}
 
-	return p, nil
+	return thePlaybook, nil
 }
 
 func sortOptionToSQL(sort playbook.SortField) string {

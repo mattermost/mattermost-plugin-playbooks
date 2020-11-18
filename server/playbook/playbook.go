@@ -22,7 +22,19 @@ type Playbook struct {
 	NumSteps             int64       `json:"num_steps"`
 	Checklists           []Checklist `json:"checklists"`
 	MemberIDs            []string    `json:"member_ids"`
-	BroadcastChannelID   string      `json:"broadcast_channel_id"`
+	Props
+}
+
+// Props is a place to put info that we don't think needs to be its own SQL column. This includes
+// info that doesn't need to be searched for or ordered by when selecting playbooks. Putting a new
+// field here is all that needs to be done; it will be saved and retrieved from the db
+// automatically.
+//
+// If we find it needs its own column in the db, "graduate" it by moving it to the Playbook struct,
+// add it to the table in migrations.go, add a data migration from Props->new column, and add the
+// column the store select/insert/update statements. The rest of the code will work without change.
+type Props struct {
+	BroadcastChannelID string `json:"broadcast_channel_id"`
 }
 
 func (p Playbook) Clone() Playbook {

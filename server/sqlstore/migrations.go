@@ -254,25 +254,16 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column PropsJSON to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
+				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD PropsJSON TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column PropsJSON to table IR_Playbook")
 				}
-
-				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
-				}
-
 			} else {
 				if _, err := e.Exec("ALTER TABLE IR_Incident ADD PropsJSON json"); err != nil {
 					return errors.Wrapf(err, "failed adding column PropsJSON to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
-				}
-
-				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
+				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD PropsJSON json"); err != nil {
+					return errors.Wrapf(err, "failed adding column PropsJSON to table IR_Playbook")
 				}
 			}
 
@@ -281,7 +272,15 @@ var migrations = []Migration{
 				Set("PropsJSON", "{}").
 				Where(sq.Eq{"PropsJSON": nil})
 			if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
-				return errors.Errorf("failed updating PropsJSON fields")
+				return errors.Errorf("failed updating PropsJSON fields in table IR_Incident")
+			}
+
+			playbookUpdate := sqlStore.builder.
+				Update("IR_Playbook").
+				Set("PropsJSON", "{}").
+				Where(sq.Eq{"PropsJSON": nil})
+			if _, err := sqlStore.execBuilder(e, playbookUpdate); err != nil {
+				return errors.Errorf("failed updating PropsJSON fields in table IR_Playbook")
 			}
 
 			return nil
