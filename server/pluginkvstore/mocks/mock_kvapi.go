@@ -5,9 +5,10 @@
 package mock_pluginkvstore
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	reflect "reflect"
 )
 
 // MockKVAPI is a mock of KVAPI interface

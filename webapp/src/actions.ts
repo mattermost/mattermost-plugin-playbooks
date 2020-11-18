@@ -77,7 +77,7 @@ export function prevStage() {
 
 export function updateStatus() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/incident status');
+        await clientExecuteCommand(dispatch, getState, '/incident update');
     };
 }
 

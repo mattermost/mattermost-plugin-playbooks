@@ -2,6 +2,7 @@ package incident
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -19,6 +20,16 @@ type Incident struct {
 	PlaybookID     string               `json:"playbook_id"`
 	Checklists     []playbook.Checklist `json:"checklists"`
 	StatusPostsIDs []string             `json:"status_posts_ids"`
+	JSONBag
+}
+
+// JSONBag is a place to put info that we don't think needs to be its own SQL column. This includes
+// info that doesn't need to be searched for or ordered by when selecting incidents. Putting a new
+// field here is all that needs to be done; it will be saved and retrieved from the db
+// automatically.
+type JSONBag struct {
+	ReminderID     string `json:"reminder_id"`
+	ReminderPostID string `json:"reminder_post_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -84,9 +95,8 @@ type UpdateOptions struct {
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
 type StatusUpdateOptions struct {
-	Status   string
-	Message  string
-	Reminder int
+	Message           string
+	ReminderInMinutes int
 }
 
 // Metadata tracks ancillary metadata about an incident.
@@ -188,10 +198,10 @@ type Service interface {
 
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
-	OpenEndIncidentDialog(incidentID string, triggerID string) error
+	OpenEndIncidentDialog(incidentID, triggerID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
-	OpenUpdateStatusDialog(incidentID string, triggerID string) error
+	OpenUpdateStatusDialog(incidentID, triggerID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -232,7 +242,7 @@ type Service interface {
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
+	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error)
 
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
@@ -259,6 +269,19 @@ type Service interface {
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+	// reminded to update the incident's status.
+	SetReminder(incidentID string, timeInMinutes time.Duration) error
+
+	// RemoveReminder removes the pending reminder for incidentID (if any).
+	RemoveReminder(incidentID string) error
+
+	// HandleReminder is the handler for all reminder events.
+	HandleReminder(key string)
+
+	// RemoveReminderPost will remove the reminder in the incident channel (if any).
+	RemoveReminderPost(incidentID string) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.

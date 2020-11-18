@@ -61,6 +61,8 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -613,10 +615,9 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	}
 
 	var options incident.StatusUpdateOptions
-	options.Status = request.Submission[incident.DialogFieldStatusKey].(string)
 	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
-	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderKey].(string)); err2 != nil {
-		options.Reminder = reminder
+	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderInMinutesKey].(string)); err2 == nil {
+		options.ReminderInMinutes = reminder
 	}
 
 	err = h.incidentService.UpdateStatus(incidentID, userID, options)
@@ -626,6 +627,56 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// reminderButtonUpdate handles the POST /incidents/{id}/reminder/button-update endpoint, called when a
+// user clicks on the reminder interactive button
+func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Request) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
+		return
+	}
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
+	if err != nil {
+		h.log.Errorf("reminderButtonUpdate failed to find incidentID for channelID: %s", requestData.ChannelId)
+		HandleError(w, errors.New("reminderButtonUpdate failed to find incidentID"))
+		return
+	}
+
+	if err = h.incidentService.OpenUpdateStatusDialog(incidentID, requestData.TriggerId); err != nil {
+		h.log.Errorf("reminderButtonUpdate failed to open update status dialog")
+		HandleError(w, errors.New("reminderButtonUpdate failed to open update status dialog"))
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
+}
+
+// reminderButtonDismiss handles the POST /incidents/{id}/reminder/button-dismiss endpoint, called when a
+// user clicks on the reminder interactive button
+func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.Request) {
+	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	if requestData == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
+		return
+	}
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
+	if err != nil {
+		h.log.Errorf("reminderButtonDismiss: no incident for requestData's channelID: %s", requestData.ChannelId)
+		HandleErrorWithCode(w, http.StatusBadRequest, "no incident for requestData's channelID", err)
+		return
+	}
+
+	if err = h.incidentService.RemoveReminderPost(incidentID); err != nil {
+		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
+		HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
 }
 
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
@@ -736,12 +787,13 @@ func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.RunChecklistItemSlashCommand(incidentID, userID, checklistNum, itemNum); err != nil {
+	triggerID, err := h.incidentService.RunChecklistItemSlashCommand(incidentID, userID, checklistNum, itemNum)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{"trigger_id": triggerID}, http.StatusOK)
 }
 
 func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
