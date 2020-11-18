@@ -22,7 +22,7 @@ import (
 const (
 	// IncidentCreatedWSEvent is for incident creation.
 	IncidentCreatedWSEvent = "incident_created"
-	IncidentUpdatedWSEvent = "incident_updated"
+	incidentUpdatedWSEvent = "incident_updated"
 	noAssigneeName         = "No Assignee"
 )
 
@@ -112,7 +112,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to create incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.CreateIncident(incdnt, userID, public)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
@@ -189,7 +189,7 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 		return errors.Wrapf(err, "failed to end incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.EndIncident(incdnt, userID)
 
 	user, err := s.pluginAPI.User.Get(userID)
@@ -224,7 +224,7 @@ func (s *ServiceImpl) RestartIncident(incidentID, userID string) error {
 		return errors.Wrapf(err, "failed to restart incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, currentIncident,
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, currentIncident,
 		currentIncident.ChannelID)
 	s.telemetry.RestartIncident(currentIncident, userID)
 
@@ -335,7 +335,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.UpdateStatus(incidentToModify, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -402,27 +402,6 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 	return incidentID, nil
 }
 
-// GetIncidentFromRecentUpdatePost returns the incident whose recent updates contain this post.
-func (s *ServiceImpl) GetIncidentFromRecentUpdatePost(post *model.Post) (*Incident, error) {
-	incidentID, err := s.GetIncidentIDForChannel(post.ChannelId)
-	if err != nil {
-		return nil, err
-	}
-
-	theIncident, err := s.GetIncident(incidentID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, updateID := range theIncident.StatusPostsIDs {
-		if post.Id == updateID {
-			return theIncident, nil
-		}
-	}
-
-	return nil, ErrNotFound
-}
-
 // GetCommanders returns all the commanders of the incidents selected by options
 func (s *ServiceImpl) GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error) {
 	return s.store.GetCommanders(requesterInfo, options)
@@ -463,7 +442,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.ChangeCommander(incidentToModify, userID)
 
 	mainChannelID := incidentToModify.ChannelID
@@ -516,7 +495,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 
 	return nil
 }
@@ -597,7 +576,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	s.telemetry.SetAssignee(incidentID, userID)
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 
 	return nil
 }
@@ -642,7 +621,7 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incident, incident.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
 	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
 	return cmdResponse.TriggerId, nil
@@ -661,7 +640,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.AddTask(incidentID, userID)
 
 	return nil
@@ -683,7 +662,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.RemoveTask(incidentID, userID)
 
 	return nil
@@ -716,7 +695,7 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 		return nil, errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.ChangeStage(incidentToModify, userID)
 
 	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
@@ -773,7 +752,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.RenameTask(incidentID, userID)
 
 	return nil
@@ -805,7 +784,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.MoveTask(incidentID, userID)
 
 	return nil

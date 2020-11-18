@@ -216,10 +216,6 @@ type Service interface {
 	// if there is no incident associated with this channel.
 	GetIncidentIDForChannel(channelID string) (string, error)
 
-	// GetIncidentFromRecentUpdatePost returns the incident whose recent updates contain this post.
-	// Returns ErrNotFound if there is no incident associated with this post.
-	GetIncidentFromRecentUpdatePost(post *model.Post) (*Incident, error)
-
 	// GetCommanders returns all the commanders of incidents selected
 	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
 
