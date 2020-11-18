@@ -56,27 +56,36 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus i
 	}
 }
 
-// HandleError writes err as json into the response.
-func HandleError(w http.ResponseWriter, err error) {
-	HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", err)
+// HandleError logs the internal error and sends a generic error as JSON in a 500 response.
+func HandleError(w http.ResponseWriter, internalErr error) {
+	HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
 }
 
-// HandleErrorWithCode writes code, errMsg and errDetails as json into the response.
-func HandleErrorWithCode(w http.ResponseWriter, code int, errMsg string, errDetails error) {
+// HandleErrorWithCode logs the internal error and sends the public facing error
+// message as JSON in a response with the provided code.
+func HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
 	w.WriteHeader(code)
+
 	details := ""
-	if errDetails != nil {
-		details = errDetails.Error()
+	if internalErr != nil {
+		details = internalErr.Error()
 	}
-	b, _ := json.Marshal(struct {
-		Message string `json:"message"` // A human-readable message providing details about the error.
-		Details string `json:"details"` // More details about the error.
+
+	loggedMsg, _ := json.Marshal(struct {
+		Message string `json:"message"` // A public facing message providing details about the error.
+		Details string `json:"details"` // More details, potentially sensitive, about the error.
 	}{
-		Message: errMsg,
+		Message: publicErrorMsg,
 		Details: details,
 	})
-	logrus.Warn(string(b))
-	_, _ = w.Write(b)
+	logrus.Warn(string(loggedMsg))
+
+	responseMsg, _ := json.Marshal(struct {
+		Error string `json:"error"` // A public facing message providing details about the error.
+	}{
+		Error: publicErrorMsg,
+	})
+	_, _ = w.Write(responseMsg)
 }
 
 // MattermostAuthorizationRequired checks if request is authorized.

@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
@@ -343,8 +342,8 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to remove reminder")
 	}
 
-	if options.ReminderInMinutes != 0 {
-		if err = s.SetReminder(incidentID, time.Duration(options.ReminderInMinutes)); err != nil {
+	if options.Reminder != 0 {
+		if err = s.SetReminder(incidentID, options.Reminder); err != nil {
 			return errors.Wrap(err, "failed to set the reminder for incident")
 		}
 	}

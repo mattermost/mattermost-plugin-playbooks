@@ -901,8 +901,12 @@ func TestCreateAndGetIncident(t *testing.T) {
 			ExpectedErr error
 		}{
 			{
-				Name:        "Empty values",
-				Incident:    &incident.Incident{StatusPostsIDs: []string{}},
+				Name: "Empty values",
+				Incident: &incident.Incident{
+					Props: incident.Props{
+						StatusPostsIDs: []string{},
+					},
+				},
 				ExpectedErr: nil,
 			},
 			{
@@ -1386,10 +1390,12 @@ func NewBuilder() *IncidentBuilder {
 				DeleteAt:        0,
 				ActiveStage:     0,
 			},
-			PostID:         model.NewId(),
-			PlaybookID:     model.NewId(),
-			Checklists:     nil,
-			StatusPostsIDs: []string{},
+			PostID:     model.NewId(),
+			PlaybookID: model.NewId(),
+			Checklists: nil,
+			Props: incident.Props{
+				StatusPostsIDs: []string{},
+			},
 		},
 	}
 }

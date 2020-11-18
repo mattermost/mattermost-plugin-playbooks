@@ -16,20 +16,24 @@ const NoActiveStage = -1
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	PostID         string               `json:"post_id"`
-	PlaybookID     string               `json:"playbook_id"`
-	Checklists     []playbook.Checklist `json:"checklists"`
-	StatusPostsIDs []string             `json:"status_posts_ids"`
-	JSONBag
+	PostID     string               `json:"post_id"`
+	PlaybookID string               `json:"playbook_id"`
+	Checklists []playbook.Checklist `json:"checklists"`
+	Props
 }
 
-// JSONBag is a place to put info that we don't think needs to be its own SQL column. This includes
+// Props is a place to put info that we don't think needs to be its own SQL column. This includes
 // info that doesn't need to be searched for or ordered by when selecting incidents. Putting a new
 // field here is all that needs to be done; it will be saved and retrieved from the db
 // automatically.
-type JSONBag struct {
-	ReminderID     string `json:"reminder_id"`
-	ReminderPostID string `json:"reminder_post_id"`
+//
+// If we find it needs its own column in the db, "graduate" it by moving it to the Incident struct,
+// add it to the table in migrations.go, add a data migration from Props->new column, and add the
+// column the store select/insert/update statements. The rest of the code will work without change.
+type Props struct {
+	StatusPostsIDs []string `json:"status_posts_ids"`
+	ReminderID     string   `json:"reminder_id"`
+	ReminderPostID string   `json:"reminder_post_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -95,8 +99,8 @@ type UpdateOptions struct {
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
 type StatusUpdateOptions struct {
-	Message           string
-	ReminderInMinutes int
+	Message  string
+	Reminder time.Duration
 }
 
 // Metadata tracks ancillary metadata about an incident.

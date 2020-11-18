@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -617,7 +618,7 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	var options incident.StatusUpdateOptions
 	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
 	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderInMinutesKey].(string)); err2 == nil {
-		options.ReminderInMinutes = reminder
+		options.Reminder = time.Duration(reminder) * time.Minute
 	}
 
 	err = h.incidentService.UpdateStatus(incidentID, userID, options)
@@ -640,8 +641,17 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
 	if err != nil {
-		h.log.Errorf("reminderButtonUpdate failed to find incidentID for channelID: %s", requestData.ChannelId)
-		HandleError(w, errors.New("reminderButtonUpdate failed to find incidentID"))
+		HandleErrorWithCode(w, http.StatusInternalServerError, "error getting incident",
+			errors.Wrapf(err, "reminderButtonUpdate failed to find incidentID for channelID: %s", requestData.ChannelId))
+		return
+	}
+
+	if err = permissions.EditIncident(requestData.UserId, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			ReturnJSON(w, nil, http.StatusForbidden)
+			return
+		}
+		HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
 		return
 	}
 
@@ -667,6 +677,15 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 	if err != nil {
 		h.log.Errorf("reminderButtonDismiss: no incident for requestData's channelID: %s", requestData.ChannelId)
 		HandleErrorWithCode(w, http.StatusBadRequest, "no incident for requestData's channelID", err)
+		return
+	}
+
+	if err = permissions.EditIncident(requestData.UserId, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			ReturnJSON(w, nil, http.StatusForbidden)
+			return
+		}
+		HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
 		return
 	}
 
