@@ -119,21 +119,12 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
  * @param {String} message - The new status.
  * @param {Boolean} isOngoing - Default to true. If false, the update will also end the incident.
  */
-Cypress.Commands.add('updateStatus', (message, isOngoing = true) => {
+Cypress.Commands.add('updateStatus', (message) => {
     // # Run the /incident status slash command.
-    cy.executeSlashCommand('/incident status');
+    cy.executeSlashCommand('/incident update');
 
     // # Get the interactive dialog modal.
     cy.get('#interactiveDialogModal').within(() => {
-        // # Set the State of the incident to Ongoing or Ended, depending on isOngoing.
-        cy.findAllByTestId('autoCompleteSelector').first().click().within(() => {
-            if (isOngoing) {
-                cy.findByText('Ongoing').click();
-            } else {
-                cy.findByText('Ended').click();
-            }
-        });
-
         // # Type the new update in the text box.
         cy.findByTestId('message').type(message);
 
