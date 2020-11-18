@@ -28,8 +28,12 @@ type Logger interface {
 
 // Poster interface - a small subset of the plugin posting API.
 type Poster interface {
-	// PostMessage posts a simple Direct Message to the specified user. Returns the post id if posting was successful
+	// PostMessage posts a simple message to channelID. Returns the post id if posting was successful.
 	PostMessage(channelID, format string, args ...interface{}) (createdPostID string, err error)
+
+	// PostMessage posts a message with slack attachments to channelID. Returns the post id if
+	// posting was successful. Often used to include post actions.
+	PostMessageWithAttachments(channelID, message string, attachments []*model.SlackAttachment) (createdPostID string, err error)
 
 	// DM posts a simple Direct Message to the specified user.
 	DM(userID, format string, args ...interface{}) error

@@ -110,6 +110,7 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 		"TeamID":              incdnt.TeamID,
 		"CreateAt":            incdnt.CreateAt,
 		"PostID":              incdnt.PostID,
+		"PlaybookID":          incdnt.PlaybookID,
 		"NumChecklists":       len(incdnt.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
 		"ActiveStage":         incdnt.ActiveStage,

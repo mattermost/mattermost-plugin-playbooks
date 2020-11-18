@@ -11,19 +11,19 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const (
 	// IncidentCreatedWSEvent is for incident creation.
 	IncidentCreatedWSEvent = "incident_created"
-	IncidentUpdatedWSEvent = "incident_updated"
+	incidentUpdatedWSEvent = "incident_updated"
 	noAssigneeName         = "No Assignee"
 )
 
@@ -33,6 +33,8 @@ type ServiceImpl struct {
 	configService config.Service
 	store         Store
 	poster        bot.Poster
+	logger        bot.Logger
+	scheduler     *cluster.JobOnceScheduler
 	telemetry     Telemetry
 }
 
@@ -47,23 +49,22 @@ const DialogFieldNameKey = "incidentName"
 // DialogFieldDescriptionKey is the key for the incident description field used in OpenCreateIncidentDialog.
 const DialogFieldDescriptionKey = "incidentDescription"
 
-// DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
-const DialogFieldStatusKey = "status"
-
 // DialogFieldMessageKey is the key for the message textarea field used in UpdateIncidentDialog
 const DialogFieldMessageKey = "message"
 
-// DialogFieldReminderKey is the key for the reminder select field used in UpdateIncidentDialog
-const DialogFieldReminderKey = "reminder"
+// DialogFieldReminderInMinutesKey is the key for the reminder select field used in UpdateIncidentDialog
+const DialogFieldReminderInMinutesKey = "reminder"
 
 // NewService creates a new incident ServiceImpl.
-func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
-	configService config.Service, telemetry Telemetry) *ServiceImpl {
+func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
+	configService config.Service, scheduler *cluster.JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
 	return &ServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
 		poster:        poster,
+		logger:        logger,
 		configService: configService,
+		scheduler:     scheduler,
 		telemetry:     telemetry,
 	}
 }
@@ -112,7 +113,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to create incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.CreateIncident(incdnt, userID, public)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
@@ -189,7 +190,7 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 		return errors.Wrapf(err, "failed to end incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.EndIncident(incdnt, userID)
 
 	user, err := s.pluginAPI.User.Get(userID)
@@ -224,7 +225,7 @@ func (s *ServiceImpl) RestartIncident(incidentID, userID string) error {
 		return errors.Wrapf(err, "failed to restart incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, currentIncident,
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, currentIncident,
 		currentIncident.ChannelID)
 	s.telemetry.RestartIncident(currentIncident, userID)
 
@@ -283,7 +284,7 @@ func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error 
 func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string) error {
 	currentIncident, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve incident")
+		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
 	if !currentIncident.IsActive {
@@ -292,7 +293,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 
 	dialog, err := s.newUpdateIncidentDialog()
 	if err != nil {
-		return errors.Wrapf(err, "failed to create update status dialog")
+		return errors.Wrap(err, "failed to create update status dialog")
 	}
 
 	dialogRequest := model.OpenDialogRequest{
@@ -304,7 +305,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	}
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
-		return errors.Wrapf(err, "failed to open update status dialog")
+		return errors.Wrap(err, "failed to open update status dialog")
 	}
 
 	return nil
@@ -348,29 +349,49 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve incident")
+		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
 	if !incidentToModify.IsActive {
 		return ErrIncidentNotActive
 	}
 
-	postID, err := s.poster.PostMessage(incidentToModify.ChannelID, options.Message)
-	if err != nil {
-		return errors.Wrapf(err, "failed to post update status message")
+	post := model.Post{
+		Message:   options.Message,
+		UserId:    userID,
+		ChannelId: incidentToModify.ChannelID,
+	}
+	if err = s.pluginAPI.Post.CreatePost(&post); err != nil {
+		return errors.Wrap(err, "failed to post update status message")
 	}
 
-	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, postID)
+	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, post.Id)
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return errors.Wrapf(err, "failed to update incident")
+		return errors.Wrap(err, "failed to update incident")
 	}
 
-	if err := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, postID); err != nil {
+	if err := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+
 	s.telemetry.UpdateStatus(incidentToModify, userID)
+
+	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
+	if err = s.RemoveReminder(incidentID); err != nil {
+		return errors.Wrap(err, "failed to remove reminder")
+	}
+
+	if options.Reminder != 0 {
+		if err = s.SetReminder(incidentID, options.Reminder); err != nil {
+			return errors.Wrap(err, "failed to set the reminder for incident")
+		}
+	}
+
+	if err = s.RemoveReminderPost(incidentID); err != nil {
+		return errors.Wrap(err, "failed to remove reminder post")
+	}
 
 	return nil
 }
@@ -421,27 +442,6 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 	return incidentID, nil
 }
 
-// GetIncidentFromRecentUpdatePost returns the incident whose recent updates contain this post.
-func (s *ServiceImpl) GetIncidentFromRecentUpdatePost(post *model.Post) (*Incident, error) {
-	incidentID, err := s.GetIncidentIDForChannel(post.ChannelId)
-	if err != nil {
-		return nil, err
-	}
-
-	theIncident, err := s.GetIncident(incidentID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, updateID := range theIncident.StatusPostsIDs {
-		if post.Id == updateID {
-			return theIncident, nil
-		}
-	}
-
-	return nil, ErrNotFound
-}
-
 // GetCommanders returns all the commanders of the incidents selected by options
 func (s *ServiceImpl) GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error) {
 	return s.store.GetCommanders(requesterInfo, options)
@@ -482,7 +482,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.ChangeCommander(incidentToModify, userID)
 
 	mainChannelID := incidentToModify.ChannelID
@@ -535,7 +535,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 
 	return nil
 }
@@ -616,29 +616,29 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	s.telemetry.SetAssignee(incidentID, userID)
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 
 	return nil
 }
 
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
-func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error {
+func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error) {
 	incident, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if !playbook.IsValidChecklistItemIndex(incident.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
+		return "", errors.New("invalid checklist item indices")
 	}
 
 	itemToRun := incident.Checklists[checklistNumber].Items[itemNumber]
 	if strings.TrimSpace(itemToRun.Command) == "" {
-		return errors.New("no slash command associated with this checklist item")
+		return "", errors.New("no slash command associated with this checklist item")
 	}
 
-	_, err = s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
+	cmdResponse, err := s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
 		Command:   itemToRun.Command,
 		UserId:    userID,
 		TeamId:    incident.TeamID,
@@ -648,23 +648,23 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		trigger := strings.Fields(itemToRun.Command)[0]
 		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to find slash command **%s**", trigger)})
 
-		return errors.Wrap(err, "failed to find slash command")
+		return "", errors.Wrap(err, "failed to find slash command")
 	} else if err != nil {
 		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to execute slash command **%s**", itemToRun.Command)})
 
-		return errors.Wrap(err, "failed to run slash command")
+		return "", errors.Wrap(err, "failed to run slash command")
 	}
 
 	// Record the last (successful) run time.
 	incident.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
 	if err = s.store.UpdateIncident(incident); err != nil {
-		return errors.Wrapf(err, "failed to update incident recording run of slash command")
+		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incident, incident.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
 	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
-	return nil
+	return cmdResponse.TriggerId, nil
 }
 
 // AddChecklistItem adds an item to the specified checklist
@@ -680,7 +680,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.AddTask(incidentID, userID)
 
 	return nil
@@ -702,7 +702,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.RemoveTask(incidentID, userID)
 
 	return nil
@@ -735,7 +735,7 @@ func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int)
 		return nil, errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.ChangeStage(incidentToModify, userID)
 
 	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
@@ -792,7 +792,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.RenameTask(incidentID, userID)
 
 	return nil
@@ -824,7 +824,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(IncidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.MoveTask(incidentID, userID)
 
 	return nil
@@ -1041,21 +1041,6 @@ func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
 		IntroductionText: "Update your incident status and broadcast it to another channel.",
 		Elements: []model.DialogElement{
 			{
-				DisplayName: "Status",
-				Name:        DialogFieldStatusKey,
-				Type:        "select",
-				Options: []*model.PostActionOptions{
-					{
-						Text:  "Ongoing",
-						Value: "ongoing",
-					},
-					{
-						Text:  "Ended",
-						Value: "ended",
-					},
-				},
-			},
-			{
 				DisplayName: "Message",
 				Name:        DialogFieldMessageKey,
 				Type:        "textarea",
@@ -1063,7 +1048,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
 			},
 			{
 				DisplayName: "Reminder for next update",
-				Name:        DialogFieldReminderKey,
+				Name:        DialogFieldReminderInMinutesKey,
 				Type:        "select",
 				Options: []*model.PostActionOptions{
 					{

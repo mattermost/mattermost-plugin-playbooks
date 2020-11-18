@@ -2,6 +2,7 @@ package incident
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -15,11 +16,25 @@ const NoActiveStage = -1
 // Incident holds the detailed information of an incident.
 type Incident struct {
 	Header
-	PostID             string               `json:"post_id"`
-	PlaybookID         string               `json:"playbook_id"`
-	Checklists         []playbook.Checklist `json:"checklists"`
-	StatusPostsIDs     []string             `json:"status_posts_ids"`
-	BroadcastChannelID string               `json:"broadcast_channel_id"`
+	PostID     string               `json:"post_id"`
+	PlaybookID string               `json:"playbook_id"`
+	Checklists []playbook.Checklist `json:"checklists"`
+	Props
+}
+
+// Props is a place to put info that we don't think needs to be its own SQL column. This includes
+// info that doesn't need to be searched for or ordered by when selecting incidents. Putting a new
+// field here is all that needs to be done; it will be saved and retrieved from the db
+// automatically.
+//
+// If we find it needs its own column in the db, "graduate" it by moving it to the Incident struct,
+// add it to the table in migrations.go, add a data migration from Props->new column, and add the
+// column the store select/insert/update statements. The rest of the code will work without change.
+type Props struct {
+	StatusPostsIDs     []string `json:"status_posts_ids"`
+	ReminderID         string   `json:"reminder_id"`
+	ReminderPostID     string   `json:"reminder_post_id"`
+	BroadcastChannelID string   `json:"broadcast_channel_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -85,9 +100,8 @@ type UpdateOptions struct {
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
 type StatusUpdateOptions struct {
-	Status   string
 	Message  string
-	Reminder int
+	Reminder time.Duration
 }
 
 // Metadata tracks ancillary metadata about an incident.
@@ -189,10 +203,10 @@ type Service interface {
 
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
-	OpenEndIncidentDialog(incidentID string, triggerID string) error
+	OpenEndIncidentDialog(incidentID, triggerID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
-	OpenUpdateStatusDialog(incidentID string, triggerID string) error
+	OpenUpdateStatusDialog(incidentID, triggerID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -206,10 +220,6 @@ type Service interface {
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
 	GetIncidentIDForChannel(channelID string) (string, error)
-
-	// GetIncidentFromRecentUpdatePost returns the incident whose recent updates contain this post.
-	// Returns ErrNotFound if there is no incident associated with this post.
-	GetIncidentFromRecentUpdatePost(post *model.Post) (*Incident, error)
 
 	// GetCommanders returns all the commanders of incidents selected
 	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
@@ -233,7 +243,7 @@ type Service interface {
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
+	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error)
 
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
@@ -260,6 +270,19 @@ type Service interface {
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+	// reminded to update the incident's status.
+	SetReminder(incidentID string, timeInMinutes time.Duration) error
+
+	// RemoveReminder removes the pending reminder for incidentID (if any).
+	RemoveReminder(incidentID string) error
+
+	// HandleReminder is the handler for all reminder events.
+	HandleReminder(key string)
+
+	// RemoveReminderPost will remove the reminder in the incident channel (if any).
+	RemoveReminderPost(incidentID string) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.

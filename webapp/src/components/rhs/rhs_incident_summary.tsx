@@ -67,8 +67,8 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                         <div className='first-title'>
                             {'Duration'}
                             <Duration
-                                created_at={props.incident.create_at}
-                                ended_at={props.incident.end_at}
+                                from={props.incident.create_at}
+                                to={props.incident.end_at}
                             />
                         </div>
                     </div>
