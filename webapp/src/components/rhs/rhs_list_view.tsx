@@ -10,6 +10,8 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getPost} from 'mattermost-redux/selectors/entities/posts';
+import {Post} from 'mattermost-redux/types/posts';
 
 import {pluginId} from 'src/manifest';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
@@ -146,6 +148,8 @@ const RHSListView = () => {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const incidentList = useSelector<GlobalState, Incident[]>(myActiveIncidentsList);
+    type GetPostType = (postId: string) => Post;
+    const getPostFromState = useSelector<GlobalState, GetPostType>((state) => (postId) => getPost(state, postId));
 
     const viewIncident = (channelId: string) => {
         dispatch(setRHSViewingIncident());
@@ -187,6 +191,8 @@ const RHSListView = () => {
                     </Header>
 
                     {incidentList.map((incident) => {
+                        const lastUpdated = findLastUpdated(getPostFromState, incident.status_posts_ids);
+
                         return (
                             <IncidentContainer
                                 key={incident.id}
@@ -201,8 +207,18 @@ const RHSListView = () => {
                                     <Col1>{'Duration:'}</Col1>
                                     <Col2>
                                         <Duration
-                                            created_at={incident.create_at}
-                                            ended_at={incident.end_at}
+                                            from={incident.create_at}
+                                            to={incident.end_at}
+                                        />
+                                    </Col2>
+                                </Row>
+                                <Row>
+                                    <Col1>{'Last updated:'}</Col1>
+                                    <Col2>
+                                        <Duration
+                                            from={lastUpdated}
+                                            to={0}
+                                            ago={true}
                                         />
                                     </Col2>
                                 </Row>
@@ -253,5 +269,18 @@ const ThreeDotMenu = (props: ThreeDotMenuProps) => (
         />
     </DotMenu>
 );
+
+const findLastUpdated = (getPostFromState: (postId: string) => Post, updatePostIDs: string[]): number => {
+    const postIDs = [...updatePostIDs].reverse();
+
+    for (const postId of postIDs) {
+        const post = getPostFromState(postId);
+        if (post?.delete_at === 0) {
+            return post.create_at;
+        }
+    }
+
+    return 0;
+};
 
 export default RHSListView;
