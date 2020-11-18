@@ -903,7 +903,7 @@ func TestCreateAndGetIncident(t *testing.T) {
 			{
 				Name: "Empty values",
 				Incident: &incident.Incident{
-					JSONBag: incident.JSONBag{
+					Props: incident.Props{
 						StatusPostsIDs: []string{},
 					},
 				},
@@ -1393,7 +1393,7 @@ func NewBuilder() *IncidentBuilder {
 			PostID:     model.NewId(),
 			PlaybookID: model.NewId(),
 			Checklists: nil,
-			JSONBag: incident.JSONBag{
+			Props: incident.Props{
 				StatusPostsIDs: []string{},
 			},
 		},

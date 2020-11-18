@@ -83,7 +83,7 @@ func (s *ServiceImpl) HandleReminder(key string) {
 	}
 }
 
-func (s *ServiceImpl) SetReminder(incidentID string, timeInMinutes time.Duration) error {
+func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
 	incidentToModify, err := s.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident from store")
@@ -96,7 +96,7 @@ func (s *ServiceImpl) SetReminder(incidentID string, timeInMinutes time.Duration
 		return errors.Wrap(err, "unable to set reminder data in kv store")
 	}
 
-	if _, err = s.scheduler.ScheduleOnce(key, time.Now().Add(timeInMinutes*time.Minute)); err != nil {
+	if _, err = s.scheduler.ScheduleOnce(key, time.Now().Add(fromNow)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
 	}
 

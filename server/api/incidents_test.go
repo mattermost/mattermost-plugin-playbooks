@@ -656,7 +656,7 @@ func TestIncidents(t *testing.T) {
 		testIncident := incident.Incident{
 			Header:     testIncidentHeader,
 			Checklists: []playbook.Checklist{},
-			JSONBag: incident.JSONBag{
+			Props: incident.Props{
 				StatusPostsIDs: []string{},
 			},
 		}
@@ -799,7 +799,7 @@ func TestIncidents(t *testing.T) {
 			PostID:     "",
 			PlaybookID: "",
 			Checklists: []playbook.Checklist{},
-			JSONBag: incident.JSONBag{
+			Props: incident.Props{
 				StatusPostsIDs: []string{},
 			},
 		}
@@ -889,7 +889,7 @@ func TestIncidents(t *testing.T) {
 			PostID:     "",
 			PlaybookID: "",
 			Checklists: []playbook.Checklist{},
-			JSONBag: incident.JSONBag{
+			Props: incident.Props{
 				StatusPostsIDs: []string{},
 			},
 		}
@@ -939,7 +939,7 @@ func TestIncidents(t *testing.T) {
 			PostID:     "",
 			PlaybookID: "",
 			Checklists: []playbook.Checklist{},
-			JSONBag: incident.JSONBag{
+			Props: incident.Props{
 				StatusPostsIDs: []string{},
 			},
 		}
@@ -1239,7 +1239,7 @@ func TestIncidents(t *testing.T) {
 				ActiveStage:     incident.NoActiveStage,
 			},
 			Checklists: []playbook.Checklist{},
-			JSONBag: incident.JSONBag{
+			Props: incident.Props{
 				StatusPostsIDs: []string{},
 			},
 		}
@@ -1389,7 +1389,7 @@ func TestChangeActiveStage(t *testing.T) {
 				Header:     header,
 				PlaybookID: playbookWithChecklists(2).ID,
 				Checklists: playbookWithChecklists(2).Checklists,
-				JSONBag: incident.JSONBag{
+				Props: incident.Props{
 					StatusPostsIDs: []string{},
 				},
 			},
@@ -1407,7 +1407,7 @@ func TestChangeActiveStage(t *testing.T) {
 				Header:     header,
 				PlaybookID: playbookWithChecklists(2).ID,
 				Checklists: playbookWithChecklists(2).Checklists,
-				JSONBag: incident.JSONBag{
+				Props: incident.Props{
 					StatusPostsIDs: []string{},
 				},
 			},
@@ -1424,7 +1424,7 @@ func TestChangeActiveStage(t *testing.T) {
 				Header:     header,
 				PlaybookID: playbookWithChecklists(1).ID,
 				Checklists: playbookWithChecklists(1).Checklists,
-				JSONBag: incident.JSONBag{
+				Props: incident.Props{
 					StatusPostsIDs: []string{},
 				},
 			},
@@ -1441,7 +1441,7 @@ func TestChangeActiveStage(t *testing.T) {
 				Header:     header,
 				PlaybookID: playbookWithChecklists(1).ID,
 				Checklists: playbookWithChecklists(1).Checklists,
-				JSONBag: incident.JSONBag{
+				Props: incident.Props{
 					StatusPostsIDs: []string{},
 				},
 			},

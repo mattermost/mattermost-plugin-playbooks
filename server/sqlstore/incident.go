@@ -18,7 +18,7 @@ import (
 type sqlIncident struct {
 	incident.Incident
 	ChecklistsJSON json.RawMessage
-	JSONBag        json.RawMessage
+	PropsJSON      json.RawMessage
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -38,7 +38,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
-			"ChecklistsJSON", "JSONBag").
+			"ChecklistsJSON", "PropsJSON").
 		From("IR_Incident AS incident")
 
 	return &incidentStore{
@@ -180,7 +180,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 			"PostID":           rawIncident.PostID,
 			"PlaybookID":       rawIncident.PlaybookID,
 			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
-			"JSONBag":          rawIncident.JSONBag,
+			"PropsJSON":        rawIncident.PropsJSON,
 		}))
 
 	if err != nil {
@@ -217,7 +217,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"ActiveStage":      rawIncident.ActiveStage,
 			"ActiveStageTitle": rawIncident.ActiveStageTitle,
 			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
-			"JSONBag":          rawIncident.JSONBag,
+			"PropsJSON":        rawIncident.PropsJSON,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -358,9 +358,9 @@ func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident,
 	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: %s", rawIncident.ID)
 	}
-	if err := json.Unmarshal(rawIncident.JSONBag, &i.JSONBag); err != nil {
-		s.log.Errorf("failed to unmarshal JSONBag for incident id: %s; error: %s", rawIncident.ID, err.Error())
-		// Don't fail, just use the empty JSONBag
+	if err := json.Unmarshal(rawIncident.PropsJSON, &i.Props); err != nil {
+		s.log.Errorf("failed to unmarshal Props for incident id: %s; error: %s", rawIncident.ID, err.Error())
+		// Don't fail, just use the empty Props
 	}
 
 	return &i, nil
@@ -372,15 +372,15 @@ func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
 	}
-	jsonBag, err := json.Marshal(origIncident.JSONBag)
+	props, err := json.Marshal(origIncident.Props)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal JSONBag for incident id: '%s'", origIncident.ID)
+		return nil, errors.Wrapf(err, "failed to marshal Props for incident id: '%s'", origIncident.ID)
 	}
 
 	return &sqlIncident{
 		Incident:       origIncident,
 		ChecklistsJSON: checklistsJSON,
-		JSONBag:        jsonBag,
+		PropsJSON:      props,
 	}, nil
 }
 
