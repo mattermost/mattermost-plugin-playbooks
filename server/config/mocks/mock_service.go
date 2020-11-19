@@ -5,11 +5,10 @@
 package mock_config
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	model "github.com/mattermost/mattermost-server/v5/model"
+	reflect "reflect"
 )
 
 // MockService is a mock of Service interface

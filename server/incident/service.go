@@ -338,9 +338,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	s.telemetry.UpdateStatus(incidentToModify, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
-	if err = s.RemoveReminder(incidentID); err != nil {
-		return errors.Wrap(err, "failed to remove reminder")
-	}
+	s.RemoveReminder(incidentID)
 
 	if options.Reminder != 0 {
 		if err = s.SetReminder(incidentID, options.Reminder); err != nil {

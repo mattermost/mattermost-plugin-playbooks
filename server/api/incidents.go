@@ -656,7 +656,6 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 	}
 
 	if err = h.incidentService.OpenUpdateStatusDialog(incidentID, requestData.TriggerId); err != nil {
-		h.log.Errorf("reminderButtonUpdate failed to open update status dialog")
 		HandleError(w, errors.New("reminderButtonUpdate failed to open update status dialog"))
 		return
 	}

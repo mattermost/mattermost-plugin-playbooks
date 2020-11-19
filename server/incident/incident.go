@@ -14,26 +14,16 @@ import (
 const NoActiveStage = -1
 
 // Incident holds the detailed information of an incident.
+//
+// NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
+// that column needs to be added in the sqlstore code.
 type Incident struct {
 	Header
-	PostID     string               `json:"post_id"`
-	PlaybookID string               `json:"playbook_id"`
-	Checklists []playbook.Checklist `json:"checklists"`
-	Props
-}
-
-// Props is a place to put info that we don't think needs to be its own SQL column. This includes
-// info that doesn't need to be searched for or ordered by when selecting incidents. Putting a new
-// field here is all that needs to be done; it will be saved and retrieved from the db
-// automatically.
-//
-// If we find it needs its own column in the db, "graduate" it by moving it to the Incident struct,
-// add it to the table in migrations.go, add a data migration from Props->new column, and add the
-// column the store select/insert/update statements. The rest of the code will work without change.
-type Props struct {
-	StatusPostsIDs []string `json:"status_posts_ids"`
-	ReminderID     string   `json:"reminder_id"`
-	ReminderPostID string   `json:"reminder_post_id"`
+	PostID         string               `json:"post_id"`
+	PlaybookID     string               `json:"playbook_id"`
+	Checklists     []playbook.Checklist `json:"checklists"`
+	StatusPostsIDs []string             `json:"status_posts_ids"`
+	ReminderPostID string               `json:"reminder_post_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -44,8 +34,9 @@ func (i *Incident) Clone() *Incident {
 	}
 	newIncident.Checklists = newChecklists
 
-	newIncident.StatusPostsIDs = make([]string, len(i.StatusPostsIDs))
-	copy(newIncident.StatusPostsIDs, i.StatusPostsIDs)
+	var newStatusPostsIDs []string
+	newStatusPostsIDs = append(newStatusPostsIDs, i.StatusPostsIDs...)
+	newIncident.StatusPostsIDs = newStatusPostsIDs
 
 	return &newIncident
 }
@@ -275,7 +266,7 @@ type Service interface {
 	SetReminder(incidentID string, timeInMinutes time.Duration) error
 
 	// RemoveReminder removes the pending reminder for incidentID (if any).
-	RemoveReminder(incidentID string) error
+	RemoveReminder(incidentID string)
 
 	// HandleReminder is the handler for all reminder events.
 	HandleReminder(key string)

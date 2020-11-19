@@ -5,13 +5,12 @@
 package mock_incident
 
 import (
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
+	reflect "reflect"
+	time "time"
 )
 
 // MockService is a mock of Service interface
@@ -353,11 +352,9 @@ func (mr *MockServiceMockRecorder) RemoveChecklistItem(arg0, arg1, arg2, arg3 in
 }
 
 // RemoveReminder mocks base method
-func (m *MockService) RemoveReminder(arg0 string) error {
+func (m *MockService) RemoveReminder(arg0 string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveReminder", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "RemoveReminder", arg0)
 }
 
 // RemoveReminder indicates an expected call of RemoveReminder
