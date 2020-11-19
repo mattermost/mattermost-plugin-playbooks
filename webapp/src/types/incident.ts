@@ -19,7 +19,7 @@ export interface Incident {
     post_id: string;
     playbook_id: string;
     checklists: Checklist[];
-    status_posts_ids: string[];
+    status_post_ids: string[];
 }
 
 export interface Metadata {

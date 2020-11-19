@@ -654,9 +654,9 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			Header:         testIncidentHeader,
-			Checklists:     []playbook.Checklist{},
-			StatusPostsIDs: []string{},
+			Header:        testIncidentHeader,
+			Checklists:    []playbook.Checklist{},
+			StatusPostIDs: []string{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -794,10 +794,10 @@ func TestIncidents(t *testing.T) {
 				ChannelID:       "channelID",
 				ActiveStage:     incident.NoActiveStage,
 			},
-			PostID:         "",
-			PlaybookID:     "",
-			Checklists:     []playbook.Checklist{},
-			StatusPostsIDs: []string{},
+			PostID:        "",
+			PlaybookID:    "",
+			Checklists:    []playbook.Checklist{},
+			StatusPostIDs: []string{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -882,10 +882,10 @@ func TestIncidents(t *testing.T) {
 				ChannelID:       "channelID",
 				ActiveStage:     incident.NoActiveStage,
 			},
-			PostID:         "",
-			PlaybookID:     "",
-			Checklists:     []playbook.Checklist{},
-			StatusPostsIDs: []string{},
+			PostID:        "",
+			PlaybookID:    "",
+			Checklists:    []playbook.Checklist{},
+			StatusPostIDs: []string{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -930,10 +930,10 @@ func TestIncidents(t *testing.T) {
 				ChannelID:       "channelID",
 				ActiveStage:     incident.NoActiveStage,
 			},
-			PostID:         "",
-			PlaybookID:     "",
-			Checklists:     []playbook.Checklist{},
-			StatusPostsIDs: []string{},
+			PostID:        "",
+			PlaybookID:    "",
+			Checklists:    []playbook.Checklist{},
+			StatusPostIDs: []string{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1230,8 +1230,8 @@ func TestIncidents(t *testing.T) {
 				ChannelID:       "channelID1",
 				ActiveStage:     incident.NoActiveStage,
 			},
-			Checklists:     []playbook.Checklist{},
-			StatusPostsIDs: []string{},
+			Checklists:    []playbook.Checklist{},
+			StatusPostIDs: []string{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -1376,10 +1376,10 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to a valid active stage",
 			oldIncident: incident.Incident{
-				Header:         header,
-				PlaybookID:     playbookWithChecklists(2).ID,
-				Checklists:     playbookWithChecklists(2).Checklists,
-				StatusPostsIDs: []string{},
+				Header:        header,
+				PlaybookID:    playbookWithChecklists(2).ID,
+				Checklists:    playbookWithChecklists(2).Checklists,
+				StatusPostIDs: []string{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(1)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1392,10 +1392,10 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to the same active stage",
 			oldIncident: incident.Incident{
-				Header:         header,
-				PlaybookID:     playbookWithChecklists(2).ID,
-				Checklists:     playbookWithChecklists(2).Checklists,
-				StatusPostsIDs: []string{},
+				Header:        header,
+				PlaybookID:    playbookWithChecklists(2).ID,
+				Checklists:    playbookWithChecklists(2).Checklists,
+				StatusPostIDs: []string{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(0)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1407,10 +1407,10 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to an invalid stage",
 			oldIncident: incident.Incident{
-				Header:         header,
-				PlaybookID:     playbookWithChecklists(1).ID,
-				Checklists:     playbookWithChecklists(1).Checklists,
-				StatusPostsIDs: []string{},
+				Header:        header,
+				PlaybookID:    playbookWithChecklists(1).ID,
+				Checklists:    playbookWithChecklists(1).Checklists,
+				StatusPostIDs: []string{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(10)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1422,10 +1422,10 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change with nil update value",
 			oldIncident: incident.Incident{
-				Header:         header,
-				PlaybookID:     playbookWithChecklists(1).ID,
-				Checklists:     playbookWithChecklists(1).Checklists,
-				StatusPostsIDs: []string{},
+				Header:        header,
+				PlaybookID:    playbookWithChecklists(1).ID,
+				Checklists:    playbookWithChecklists(1).Checklists,
+				StatusPostIDs: []string{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: nil},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {

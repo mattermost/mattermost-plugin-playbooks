@@ -1114,7 +1114,7 @@ func TestUpdateIncident(t *testing.T) {
 				Name:     "Incident with no updates, add an update postid",
 				Incident: NewBuilder().ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
-					old.StatusPostsIDs = append(old.StatusPostsIDs, "newpostid")
+					old.StatusPostIDs = append(old.StatusPostIDs, "newpostid")
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1123,7 +1123,7 @@ func TestUpdateIncident(t *testing.T) {
 				Name:     "Incident with a few updates, add an update postid",
 				Incident: NewBuilder().WithUpdateStatusIDs([]string{"id1", "id2", "id3"}).ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
-					old.StatusPostsIDs = append(old.StatusPostsIDs, "newpostid2")
+					old.StatusPostIDs = append(old.StatusPostIDs, "newpostid2")
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1386,10 +1386,10 @@ func NewBuilder() *IncidentBuilder {
 				DeleteAt:        0,
 				ActiveStage:     0,
 			},
-			PostID:         model.NewId(),
-			PlaybookID:     model.NewId(),
-			Checklists:     nil,
-			StatusPostsIDs: nil,
+			PostID:        model.NewId(),
+			PlaybookID:    model.NewId(),
+			Checklists:    nil,
+			StatusPostIDs: nil,
 		},
 	}
 }
@@ -1413,7 +1413,7 @@ func (t *IncidentBuilder) WithID() *IncidentBuilder {
 }
 
 func (t *IncidentBuilder) WithUpdateStatusIDs(ids []string) *IncidentBuilder {
-	t.StatusPostsIDs = append(t.StatusPostsIDs, ids...)
+	t.StatusPostIDs = append(t.StatusPostIDs, ids...)
 
 	return t
 }

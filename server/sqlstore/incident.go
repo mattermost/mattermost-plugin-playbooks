@@ -322,7 +322,7 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 	}
 
 	for _, p := range statusIDs {
-		out.StatusPostsIDs = append(out.StatusPostsIDs, p.PostID)
+		out.StatusPostIDs = append(out.StatusPostIDs, p.PostID)
 	}
 
 	return out, nil
@@ -446,15 +446,15 @@ func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident,
 }
 
 func (s *incidentStore) replaceStatusPosts(q queryExecer, incidentToSave incident.Incident) error {
-	// Delete existing posts that are not in the new incidentToSave.StatusPostsIDs list
+	// Delete existing posts that are not in the new incidentToSave.StatusPostIDs list
 	delBuilder := sq.Delete("IR_StatusPosts").
 		Where(sq.Eq{"IncidentID": incidentToSave.ID}).
-		Where(sq.NotEq{"PostID": incidentToSave.StatusPostsIDs})
+		Where(sq.NotEq{"PostID": incidentToSave.StatusPostIDs})
 	if _, err := s.store.execBuilder(q, delBuilder); err != nil {
 		return err
 	}
 
-	if len(incidentToSave.StatusPostsIDs) == 0 {
+	if len(incidentToSave.StatusPostIDs) == 0 {
 		return nil
 	}
 
@@ -475,7 +475,7 @@ INSERT INTO IR_StatusPosts(IncidentID, PostID)
     );`
 	}
 
-	for _, p := range incidentToSave.StatusPostsIDs {
+	for _, p := range incidentToSave.StatusPostIDs {
 		rawInsert := sq.Expr(insertExpr,
 			incidentToSave.ID, p, incidentToSave.ID, p)
 
@@ -538,6 +538,6 @@ func addStatusPostsToIncidents(statusIDs statusPosts, incidents []incident.Incid
 		iToSP[p.IncidentID] = append(iToSP[p.IncidentID], p.PostID)
 	}
 	for i, incdnt := range incidents {
-		incidents[i].StatusPostsIDs = iToSP[incdnt.ID]
+		incidents[i].StatusPostIDs = iToSP[incdnt.ID]
 	}
 }
