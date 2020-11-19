@@ -5,9 +5,8 @@
 package mock_sqlstore
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockKVAPI is a mock of KVAPI interface

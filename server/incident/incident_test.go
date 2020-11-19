@@ -37,7 +37,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				Checklists:         nil,
 				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":-1,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[],"status_posts_ids":[],"reminder_id":"","reminder_post_id":"","broadcast_channel_id":""}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":-1,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[],"status_posts_ids":[],"reminder_post_id":"","broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 		{
@@ -62,7 +62,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				Checklists:         nil,
 				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":-1,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[],"status_posts_ids":[],"reminder_id":"","reminder_post_id":"","broadcast_channel_id":""}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":-1,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[],"status_posts_ids":[],"reminder_post_id":"","broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 		{
@@ -87,7 +87,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				Checklists:         nil,
 				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":-1,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[],"status_posts_ids":[],"reminder_id":"","reminder_post_id":"","broadcast_channel_id":""}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":-1,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[],"status_posts_ids":[],"reminder_post_id":"","broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 		{
@@ -118,7 +118,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				},
 				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}],"status_posts_ids":[],"reminder_id":"","reminder_post_id":"","broadcast_channel_id":""}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}],"status_posts_ids":[],"reminder_post_id":"","broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 		{
@@ -149,7 +149,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				},
 				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}],"status_posts_ids":[],"reminder_id":"","reminder_post_id":"","broadcast_channel_id":""}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]}],"status_posts_ids":[],"reminder_post_id":"","broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 		{
@@ -185,7 +185,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				},
 				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]},{"id":"checklist 2","title":"checklist2","items":[]}],"status_posts_ids":[],"reminder_id":"","reminder_post_id":"","broadcast_channel_id":""}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]},{"id":"checklist 2","title":"checklist2","items":[]}],"status_posts_ids":[],"reminder_post_id":"","broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 		{
@@ -221,7 +221,7 @@ func TestIncident_MarshalJSON(t *testing.T) {
 				},
 				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]},{"id":"checklist 2","title":"checklist2","items":[]}],"status_posts_ids":[],"reminder_id":"","reminder_post_id":"","broadcast_channel_id":""}`),
+			expected: []byte(`{"id":"theincidentid","name":"the incident's name","description":"the incident's description","is_active":true,"commander_user_id":"theincidentcommander","team_id":"theteamid","channel_id":"thechannelid","create_at":200,"end_at":0,"delete_at":0,"active_stage":0,"active_stage_title":"","post_id":"","playbook_id":"theplaybookid","checklists":[{"id":"checklist 1","title":"checklist1","items":[]},{"id":"checklist 2","title":"checklist2","items":[]}],"status_posts_ids":[],"reminder_post_id":"","broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 	}

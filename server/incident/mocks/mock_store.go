@@ -5,10 +5,9 @@
 package mock_incident
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	reflect "reflect"
 )
 
 // MockStore is a mock of Store interface

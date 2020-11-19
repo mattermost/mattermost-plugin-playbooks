@@ -901,12 +901,8 @@ func TestCreateAndGetIncident(t *testing.T) {
 			ExpectedErr error
 		}{
 			{
-				Name: "Empty values",
-				Incident: &incident.Incident{
-					Props: incident.Props{
-						StatusPostsIDs: []string{},
-					},
-				},
+				Name:        "Empty values",
+				Incident:    &incident.Incident{},
 				ExpectedErr: nil,
 			},
 			{
@@ -1127,7 +1123,7 @@ func TestUpdateIncident(t *testing.T) {
 				Name:     "Incident with a few updates, add an update postid",
 				Incident: NewBuilder().WithUpdateStatusIDs([]string{"id1", "id2", "id3"}).ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
-					old.StatusPostsIDs = append(old.StatusPostsIDs, "newpostid")
+					old.StatusPostsIDs = append(old.StatusPostsIDs, "newpostid2")
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1390,12 +1386,10 @@ func NewBuilder() *IncidentBuilder {
 				DeleteAt:        0,
 				ActiveStage:     0,
 			},
-			PostID:     model.NewId(),
-			PlaybookID: model.NewId(),
-			Checklists: nil,
-			Props: incident.Props{
-				StatusPostsIDs: []string{},
-			},
+			PostID:         model.NewId(),
+			PlaybookID:     model.NewId(),
+			Checklists:     nil,
+			StatusPostsIDs: nil,
 		},
 	}
 }
