@@ -113,8 +113,8 @@ const RHSListIncident = (props: Props) => {
             setLastUpdated(0);
         };
 
-        getLastUpdated();
         // TODO: https://mattermost.atlassian.net/browse/MM-30787
+        getLastUpdated();
     }, [props.incident, getPostFromState]);
 
     return (

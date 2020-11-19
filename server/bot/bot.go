@@ -33,7 +33,7 @@ type Poster interface {
 
 	// PostMessage posts a message with slack attachments to channelID. Returns the post id if
 	// posting was successful. Often used to include post actions.
-	PostMessageWithAttachments(channelID, message string, attachments []*model.SlackAttachment) (createdPostID string, err error)
+	PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (createdPostID string, err error)
 
 	// DM posts a simple Direct Message to the specified user.
 	DM(userID, format string, args ...interface{}) error

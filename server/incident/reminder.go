@@ -11,31 +11,20 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	reminderPrefix = "reminder_"
-)
-
 type Reminder struct {
 	IncidentID string `json:"incident_id"`
 }
 
 func (s *ServiceImpl) HandleReminder(key string) {
-	var reminder Reminder
-	err := s.pluginAPI.KV.Get(reminderPrefix+key, &reminder)
-	if err != nil || reminder.IncidentID == "" {
-		// reminder with key wasn't found
-		return
-	}
-
-	incidentToModify, err := s.GetIncident(reminder.IncidentID)
+	incidentToModify, err := s.GetIncident(key)
 	if err != nil {
-		s.logger.Errorf("cannot get incident id: %s", reminder.IncidentID)
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get incident id: %s", key).Error())
 		return
 	}
 
 	commander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
 	if err != nil {
-		s.logger.Errorf("cannot get commander user for id: %s", incidentToModify.CommanderUserID)
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get commander for id: %s", incidentToModify.CommanderUserID).Error())
 		return
 	}
 
@@ -69,11 +58,10 @@ func (s *ServiceImpl) HandleReminder(key string) {
 	}
 	model.ParseSlackAttachment(post, attachments)
 
-	id, err := s.poster.PostMessageWithAttachments(incidentToModify.ChannelID,
-		fmt.Sprintf("@%s, please provide an update on this incident's progress.", commander.Username),
-		attachments)
+	id, err := s.poster.PostMessageWithAttachments(incidentToModify.ChannelID, attachments,
+		"@%s, please provide an update on this incident's progress.", commander.Username)
 	if err != nil {
-		s.logger.Errorf(errors.Wrap(err, "error posting reminder message").Error())
+		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
 		return
 	}
 
@@ -84,51 +72,15 @@ func (s *ServiceImpl) HandleReminder(key string) {
 }
 
 func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
-	incidentToModify, err := s.GetIncident(incidentID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve incident from store")
-	}
-
-	key := model.NewId()
-	reminder := Reminder{IncidentID: incidentID}
-
-	if _, err = s.pluginAPI.KV.Set(reminderPrefix+key, reminder); err != nil {
-		return errors.Wrap(err, "unable to set reminder data in kv store")
-	}
-
-	if _, err = s.scheduler.ScheduleOnce(key, time.Now().Add(fromNow)); err != nil {
+	if _, err := s.scheduler.ScheduleOnce(incidentID, time.Now().Add(fromNow)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
-	}
-
-	incidentToModify.ReminderID = key
-	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return errors.Wrapf(err, "error updating incident with reminder id")
 	}
 
 	return nil
 }
 
-func (s *ServiceImpl) RemoveReminder(incidentID string) error {
-	incidentToModify, err := s.GetIncident(incidentID)
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve incident from store")
-	}
-
-	if incidentToModify.ReminderID == "" {
-		return nil
-	}
-
-	s.scheduler.Close(incidentToModify.ReminderID)
-	if err = s.pluginAPI.KV.Delete(reminderPrefix + incidentToModify.ReminderID); err != nil {
-		return errors.Wrap(err, "unable to delete reminder data from kv store")
-	}
-
-	incidentToModify.ReminderID = ""
-	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return errors.Wrapf(err, "error updating incident removing reminder id")
-	}
-
-	return nil
+func (s *ServiceImpl) RemoveReminder(incidentID string) {
+	s.scheduler.Cancel(incidentID)
 }
 
 // RemoveReminderPost will remove the reminder post in the incident channel (if any).

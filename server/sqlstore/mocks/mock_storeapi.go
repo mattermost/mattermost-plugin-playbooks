@@ -6,9 +6,8 @@ package mock_sqlstore
 
 import (
 	sql "database/sql"
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockStoreAPI is a mock of StoreAPI interface
