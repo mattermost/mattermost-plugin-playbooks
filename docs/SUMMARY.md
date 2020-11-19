@@ -7,7 +7,6 @@
 
 - [Installing and Configuring Mattermost Incident Management](administrator-guide/installation-and-activation.md)
 - [Permissions](administrator-guide/permissions.md)
-- [Telemetry](telemetry.md)
 
 ## End User's Guide
 
