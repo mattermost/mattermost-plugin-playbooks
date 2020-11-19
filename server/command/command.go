@@ -897,11 +897,9 @@ And... yes, of course, we have emojis
 			TeamID:          r.args.TeamId,
 			CommanderUserID: r.args.UserId,
 		},
-		PlaybookID: gotplaybook.ID,
-		Checklists: gotplaybook.Checklists,
-		Props: incident.Props{
-			BroadcastChannelID: gotplaybook.BroadcastChannelID,
-		},
+		PlaybookID:         gotplaybook.ID,
+		Checklists:         gotplaybook.Checklists,
+		BroadcastChannelID: gotplaybook.BroadcastChannelID,
 	}, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
