@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {getRandomInt} from '../utils';
+import {getRandomInt, getRandomId} from '../utils';
 import users from '../fixtures/users.json';
 import timeouts from '../fixtures/timeouts';
 
@@ -185,6 +185,27 @@ Cypress.Commands.add('removeUserFromChannel', (channelId, userId) => {
     }).then((response) => {
         expect(response.status).to.equal(200);
         return cy.wrap({member: response.body});
+    });
+});
+
+Cypress.Commands.add('apiCreateChannel', (teamId, name, displayName, type = 'O', purpose = '', header = '', unique = true) => {
+    const randomSuffix = getRandomId();
+
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/channels',
+        method: 'POST',
+        body: {
+            team_id: teamId,
+            name: unique ? `${name}-${randomSuffix}` : name,
+            display_name: unique ? `${displayName} ${randomSuffix}` : displayName,
+            type,
+            purpose,
+            header,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        return cy.wrap({channel: response.body});
     });
 });
 
