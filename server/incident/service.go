@@ -291,7 +291,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		return ErrIncidentNotActive
 	}
 
-	dialog, err := s.newUpdateIncidentDialog()
+	dialog, err := s.newUpdateIncidentDialog(currentIncident.BroadcastChannelID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -1033,10 +1033,22 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
+func (s *ServiceImpl) newUpdateIncidentDialog(broadcastChannelID string) (*model.Dialog, error) {
+	introductionText := "Update your incident status."
+
+	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
+	if err == nil {
+		team, err := s.pluginAPI.Team.Get(broadcastChannel.TeamId)
+		if err != nil {
+			return nil, err
+		}
+
+		introductionText += fmt.Sprintf(" This post will be broadcasted to [%s](/%s/channels/%s).", broadcastChannel.DisplayName, team.Name, broadcastChannel.Id)
+	}
+
 	return &model.Dialog{
 		Title:            "Update Incident Status",
-		IntroductionText: "Update your incident status and broadcast it to another channel.",
+		IntroductionText: introductionText,
 		Elements: []model.DialogElement{
 			{
 				DisplayName: "Message",

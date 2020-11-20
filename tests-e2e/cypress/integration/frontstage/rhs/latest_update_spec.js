@@ -13,22 +13,24 @@ describe('incident rhs > latest update', () => {
     let playbookId;
 
     before(() => {
-        // TODO Login as user-1 as soon as updates are posted by the users themselves, not the bot
-        // # Login as sysadmin
-        cy.apiLogin('sysadmin');
+        // # Login as user-1
+        cy.apiLogin('user-1');
 
         cy.apiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
                 userId = user.id;
 
-                // # Create a playbook
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                }).then((playbook) => {
-                    playbookId = playbook.id;
+                cy.apiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
+                    // # Create a playbook
+                    cy.apiCreateTestPlaybook({
+                        teamId,
+                        title: playbookName,
+                        userId,
+                        broadcastChannelId: channel.id,
+                    }).then((playbook) => {
+                        playbookId = playbook.id;
+                    });
                 });
             });
         });
@@ -38,9 +40,8 @@ describe('incident rhs > latest update', () => {
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
 
-        // TODO Login as user-1 as soon as updates are posted by the users themselves, not the bot
-        // # Login as sysadmin
-        cy.apiLogin('sysadmin');
+        // # Login as user-1
+        cy.apiLogin('user-1');
 
         // # Create a new incident
         const now = Date.now();
@@ -55,6 +56,50 @@ describe('incident rhs > latest update', () => {
 
         // # Navigate directly to the application and the incident channel
         cy.visit('/ad-1/channels/' + incidentChannelName);
+    });
+
+    describe('status update interactive dialog', () => {
+        it('shows the broadcast channel when there is one', () => {
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                cy.get('#interactiveDialogModalIntroductionText').contains('Update your incident status. This post will be broadcasted to Town Square.');
+            });
+        });
+
+        it('does not show anything when there is not a broadcast channel', () => {
+            // # Create a playbook with no broadcast channel configured
+            cy.apiCreateTestPlaybook({
+                teamId,
+                title: playbookName,
+                userId,
+            }).then((playbook) => {
+                // # Create a new incident
+                const now = Date.now();
+                const incidentName = 'Incident (' + now + ')';
+                const incidentChannelName = 'incident-' + now;
+                cy.apiStartIncident({
+                    teamId,
+                    playbookId: playbook.id,
+                    incidentName,
+                    commanderUserId: userId,
+                });
+
+                // # Navigate to the incident channel
+                cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                // # Run the /incident status slash command.
+                cy.executeSlashCommand('/incident update');
+
+                // # Get the interactive dialog modal.
+                cy.get('#interactiveDialogModal').within(() => {
+                    cy.get('#interactiveDialogModalIntroductionText').contains('Update your incident status.');
+                    cy.get('#interactiveDialogModalIntroductionText').should('not.contain', 'This post will be broadcasted');
+                });
+            });
+        });
     });
 
     describe('shows the latest update', () => {
