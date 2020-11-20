@@ -18,7 +18,7 @@ import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/select
 import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {useTimeout} from 'src/hooks';
+import {useTimeout, useClickOutsideRef} from 'src/hooks';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
@@ -98,7 +98,10 @@ interface StepDescriptionProps {
 const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepDescriptionProps> => {
     const [showTooltip, setShowTooltip] = useState(false);
     const target = useRef(null);
-
+    useClickOutsideRef(target, () => {
+        setShowTooltip(false);
+    });
+    
     const markdownOptions = {
         atMentions: true,
         team: props.team,
