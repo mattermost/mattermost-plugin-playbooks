@@ -20,6 +20,14 @@ export interface Incident {
     playbook_id: string;
     checklists: Checklist[];
     status_post_ids: string[];
+    status_posts: StatusPost[];
+    reminder_post_id: string;
+}
+
+export interface StatusPost {
+    id: string;
+    create_at: string;
+    delete_at: string;
 }
 
 export interface Metadata {
@@ -54,8 +62,17 @@ export function isIncident(arg: any): arg is Incident {
         typeof arg.active_stage_title === 'string' &&
         typeof arg.post_id === 'string' &&
         arg.playbook_id && typeof arg.playbook_id === 'string' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist)) &&
-        arg.status_posts_ids && Array.isArray(arg.status_posts_ids);
+        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
+        arg.status_post_ids && Array.isArray(arg.status_post_ids) &&
+        arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
+        arg.reminder_post_id && typeof arg.reminder_post_id === 'string');
+}
+
+export function isStatusPost(arg: any): arg is StatusPost {
+    return Boolean(arg &&
+        arg.id && typeof arg.id === 'string' &&
+        typeof arg.create_at === 'number' &&
+        typeof arg.delete_at === 'number');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -33,9 +33,9 @@ type incidentStore struct {
 // Ensure playbookStore implements the playbook.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
-type statusPosts []struct {
+type incidentStatusPosts []struct {
 	IncidentID string
-	PostID     string
+	incident.StatusPost
 }
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
@@ -154,17 +154,24 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		incidents = append(incidents, *incident)
 	}
 
-	var statusIDs statusPosts
-	err = s.store.selectBuilder(tx, &statusIDs, s.statusPostsSelect)
+	var statusPosts incidentStatusPosts
+
+	postInfoSelect := s.queryBuilder.
+		Select("ir.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
+		From("IR_StatusPosts as ir").
+		Join("Posts as p ON ir.PostID = p.Id").
+		OrderBy("p.CreateAt")
+
+	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, errors.Wrapf(err, "failed to get statusPosts")
+		return nil, errors.Wrapf(err, "failed to get incidentStatusPosts")
 	}
 
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
-	addStatusPostsToIncidents(statusIDs, incidents)
+	addStatusPostsToIncidents(statusPosts, incidents)
 
 	return &incident.GetIncidentsResults{
 		TotalCount: total,
@@ -311,18 +318,33 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 		return out, err
 	}
 
-	var statusIDs statusPosts
-	err = s.store.selectBuilder(tx, &statusIDs, s.statusPostsSelect.Where(sq.Eq{"IncidentID": incidentID}))
+	var statusPosts incidentStatusPosts
+
+	postInfoSelect := s.queryBuilder.
+		Select("ir.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
+		From("IR_StatusPosts as ir").
+		Join("Posts as p ON ir.PostID = p.Id").
+		Where(sq.Eq{"IncidentID": incidentID}).
+		OrderBy("p.CreateAt")
+
+	// SELECT ir.IncidentID, p.Id, p.CreateAt, p.DeleteAt
+	//    FROM IR_StatusPosts as ir
+	//             JOIN Posts as p
+	//                  ON ir.PostID = p.id
+	//    ORDER BY p.CreateAt;
+
+	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
-		return out, errors.Wrapf(err, "failed to get statusPosts for incident with id '%s'", incidentID)
+		return out, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
 	}
 
 	if err = tx.Commit(); err != nil {
 		return out, errors.Wrap(err, "could not commit transaction")
 	}
 
-	for _, p := range statusIDs {
-		out.StatusPostIDs = append(out.StatusPostIDs, p.PostID)
+	for _, p := range statusPosts {
+		out.StatusPostIDs = append(out.StatusPostIDs, p.ID)
+		out.StatusPosts = append(out.StatusPosts, p.StatusPost)
 	}
 
 	return out, nil
@@ -532,12 +554,15 @@ func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) 
 	return checklistsJSON, nil
 }
 
-func addStatusPostsToIncidents(statusIDs statusPosts, incidents []incident.Incident) {
-	iToSP := make(map[string][]string)
+func addStatusPostsToIncidents(statusIDs incidentStatusPosts, incidents []incident.Incident) {
+	iToPostIDs := make(map[string][]string)
+	iToPosts := make(map[string][]incident.StatusPost)
 	for _, p := range statusIDs {
-		iToSP[p.IncidentID] = append(iToSP[p.IncidentID], p.PostID)
+		iToPostIDs[p.IncidentID] = append(iToPostIDs[p.IncidentID], p.ID)
+		iToPosts[p.IncidentID] = append(iToPosts[p.IncidentID], p.StatusPost)
 	}
 	for i, incdnt := range incidents {
-		incidents[i].StatusPostIDs = iToSP[incdnt.ID]
+		incidents[i].StatusPostIDs = iToPostIDs[incdnt.ID]
+		incidents[i].StatusPosts = iToPosts[incdnt.ID]
 	}
 }

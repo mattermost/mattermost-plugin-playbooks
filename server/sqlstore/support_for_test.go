@@ -332,6 +332,76 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
+func setupPostsTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE public.posts (
+				id character varying(26) NOT NULL,
+				createat bigint,
+				updateat bigint,
+				editat bigint,
+				deleteat bigint,
+				ispinned boolean,
+				userid character varying(26),
+				channelid character varying(26),
+				rootid character varying(26),
+				parentid character varying(26),
+				originalid character varying(26),
+				message character varying(65535),
+				type character varying(26),
+				props character varying(8000),
+				hashtags character varying(1000),
+				filenames character varying(4000),
+				fileids character varying(150),
+				hasreactions boolean
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE Posts (
+			  Id varchar(26) NOT NULL,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  EditAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  IsPinned tinyint(1) DEFAULT NULL,
+			  UserId varchar(26) DEFAULT NULL,
+			  ChannelId varchar(26) DEFAULT NULL,
+			  RootId varchar(26) DEFAULT NULL,
+			  ParentId varchar(26) DEFAULT NULL,
+			  OriginalId varchar(26) DEFAULT NULL,
+			  Message text,
+			  Type varchar(26) DEFAULT NULL,
+			  Props text,
+			  Hashtags text,
+			  Filenames text,
+			  FileIds varchar(150) DEFAULT NULL,
+			  HasReactions tinyint(1) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  KEY idx_posts_update_at (UpdateAt),
+			  KEY idx_posts_create_at (CreateAt),
+			  KEY idx_posts_delete_at (DeleteAt),
+			  KEY idx_posts_channel_id (ChannelId),
+			  KEY idx_posts_root_id (RootId),
+			  KEY idx_posts_user_id (UserId),
+			  KEY idx_posts_is_pinned (IsPinned),
+			  KEY idx_posts_channel_id_update_at (ChannelId,UpdateAt),
+			  KEY idx_posts_channel_id_delete_at_create_at (ChannelId,DeleteAt,CreateAt),
+			  FULLTEXT KEY idx_posts_message_txt (Message),
+			  FULLTEXT KEY idx_posts_hashtags_txt (Hashtags)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
 type userInfo struct {
 	ID   string
 	Name string
@@ -405,5 +475,18 @@ func makeAdmin(t *testing.T, store *SQLStore, user userInfo) {
 		Set("Roles", "role1 role2 system_admin role3")
 
 	_, err := store.execBuilder(store.db, updateBuilder)
+	require.NoError(t, err)
+}
+
+func savePosts(t *testing.T, store *SQLStore, posts []*model.Post) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("Posts").Columns("Id", "CreateAt", "DeleteAt")
+
+	for _, p := range posts {
+		insertBuilder = insertBuilder.Values(p.Id, p.CreateAt, p.DeleteAt)
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)
 }

@@ -39,6 +39,10 @@ func (i *Incident) Clone() *Incident {
 	newStatusPostsIDs = append(newStatusPostsIDs, i.StatusPostIDs...)
 	newIncident.StatusPostIDs = newStatusPostsIDs
 
+	var newStatusPosts []StatusPost
+	newStatusPosts = append(newStatusPosts, i.StatusPosts...)
+	newIncident.StatusPosts = newStatusPosts
+
 	return &newIncident
 }
 
@@ -57,6 +61,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 	if old.StatusPostIDs == nil {
 		old.StatusPostIDs = []string{}
+	}
+	if old.StatusPosts == nil {
+		old.StatusPosts = []StatusPost{}
 	}
 
 	// Define consistent semantics for empty checklists and out-of-range active stages.
