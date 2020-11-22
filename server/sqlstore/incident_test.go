@@ -1214,7 +1214,7 @@ func TestStressTestGetIncidents(t *testing.T) {
 
 		setupPostsTable(t, db)
 		teamID := model.NewId()
-		incidents := createIncidentsAndPosts(t, store, incidentStore, numIncidents, postsPerIncident, teamID)
+		withPosts := createIncidentsAndPosts(t, store, incidentStore, numIncidents, postsPerIncident, teamID)
 
 		t.Run("stress test status posts retrieval", func(t *testing.T) {
 			for _, p := range verifyPages {
@@ -1228,13 +1228,13 @@ func TestStressTestGetIncidents(t *testing.T) {
 					Sort:    "create_at",
 				})
 				require.NoError(t, err)
-				numRet := min(perPage, len(incidents))
+				numRet := min(perPage, len(withPosts))
 				assert.Equal(t, numRet, len(returned.Items))
 				for i := 0; i < numRet; i++ {
 					idx := p*perPage + i
-					assert.ElementsMatch(t, incidents[idx].StatusPosts, returned.Items[i].StatusPosts)
-					assert.ElementsMatch(t, incidents[idx].StatusPostIDs, returned.Items[i].StatusPostIDs)
-					expWithoutStatusPosts := incidents[idx]
+					assert.ElementsMatch(t, withPosts[idx].StatusPosts, returned.Items[i].StatusPosts)
+					assert.ElementsMatch(t, withPosts[idx].StatusPostIDs, returned.Items[i].StatusPostIDs)
+					expWithoutStatusPosts := withPosts[idx]
 					expWithoutStatusPosts.StatusPosts = nil
 					expWithoutStatusPosts.StatusPostIDs = nil
 					actWithoutStatusPosts := returned.Items[i]
@@ -1286,7 +1286,7 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 					PerPage: perPage,
 					Sort:    "create_at",
 				})
-				intervals = append(intervals, time.Now().Sub(start).Milliseconds())
+				intervals = append(intervals, time.Since(start).Milliseconds())
 				require.NoError(t, err)
 			}
 			cil, ciu := ciForN30(intervals)
