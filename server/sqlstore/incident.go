@@ -76,6 +76,15 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		Offset(uint64(options.Page * options.PerPage)).
 		Limit(uint64(options.PerPage))
 
+	queryForIncidentIDs := s.store.builder.
+		Select("ID").
+		From("IR_Incident AS incident").
+		Where(permissionsExpr).
+		Where(sq.Eq{"TeamID": options.TeamID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		Offset(uint64(options.Page * options.PerPage)).
+		Limit(uint64(options.PerPage))
+
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident AS incident").
@@ -85,14 +94,17 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	if options.Status == incident.Ongoing {
 		queryForResults = queryForResults.Where(sq.Eq{"IsActive": true})
+		queryForIncidentIDs = queryForIncidentIDs.Where(sq.Eq{"IsActive": true})
 		queryForTotal = queryForTotal.Where(sq.Eq{"IsActive": true})
 	} else if options.Status == incident.Ended {
 		queryForResults = queryForResults.Where(sq.Eq{"IsActive": false})
+		queryForIncidentIDs = queryForIncidentIDs.Where(sq.Eq{"IsActive": false})
 		queryForTotal = queryForTotal.Where(sq.Eq{"IsActive": false})
 	}
 
 	if options.CommanderID != "" {
 		queryForResults = queryForResults.Where(sq.Eq{"CommanderUserID": options.CommanderID})
+		queryForIncidentIDs = queryForIncidentIDs.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 		queryForTotal = queryForTotal.Where(sq.Eq{"CommanderUserID": options.CommanderID})
 	}
 
@@ -106,6 +118,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 			Suffix(")")
 
 		queryForResults = queryForResults.Where(membershipClause)
+		queryForIncidentIDs = queryForIncidentIDs.Where(membershipClause)
 		queryForTotal = queryForTotal.Where(membershipClause)
 	}
 
@@ -122,10 +135,12 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		}
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+		queryForIncidentIDs = queryForIncidentIDs.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
 	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Direction))
+	queryForIncidentIDs = queryForIncidentIDs.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Direction))
 
 	tx, err := s.store.db.Beginx()
 	if err != nil {
@@ -146,21 +161,26 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	hasMore := options.Page+1 < pageCount
 
 	incidents := make([]incident.Incident, 0, len(rawIncidents))
+	incidentIDs := make([]string, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
-		incident, err2 := s.toIncident(rawIncident)
+		asIncident, err2 := s.toIncident(rawIncident)
 		if err2 != nil {
 			return nil, err2
 		}
-		incidents = append(incidents, *incident)
+		incidents = append(incidents, *asIncident)
+		incidentIDs = append(incidentIDs, asIncident.ID)
 	}
 
 	var statusPosts incidentStatusPosts
 
+	//subclause := queryForIncidentIDs.Prefix("ir.IncidentID IN (").Suffix(")")
 	postInfoSelect := s.queryBuilder.
 		Select("ir.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
 		From("IR_StatusPosts as ir").
 		Join("Posts as p ON ir.PostID = p.Id").
-		OrderBy("p.CreateAt")
+		OrderBy("p.CreateAt").
+		//Where(subclause)
+		Where(sq.Eq{"ir.IncidentID": incidentIDs})
 
 	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {

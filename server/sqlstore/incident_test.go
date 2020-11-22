@@ -2,8 +2,10 @@ package sqlstore
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
@@ -13,6 +15,7 @@ import (
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-management/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1153,17 +1156,17 @@ func TestUpdateIncident(t *testing.T) {
 				Incident: NewBuilder(t).ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
 					old.StatusPostIDs = append(old.StatusPostIDs, post1.Id)
-					addStatusPostsToIncidentFromIDs(t, &old, []string{post1.Id})
+					addStatusPostsToIncidentFromIDs(t, &old, allPosts, []string{post1.Id})
 					return &old
 				},
 				ExpectedErr: nil,
 			},
 			{
 				Name:     "Incident with a few updates, add an update postid",
-				Incident: NewBuilder(t).WithUpdateStatusIDs([]string{post2.Id, post3.Id, post4.Id}).ToIncident(),
+				Incident: NewBuilder(t).WithUpdateStatusIDs(allPosts, []string{post2.Id, post3.Id, post4.Id}).ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
 					old.StatusPostIDs = append(old.StatusPostIDs, post5.Id)
-					addStatusPostsToIncidentFromIDs(t, &old, []string{post5.Id})
+					addStatusPostsToIncidentFromIDs(t, &old, allPosts, []string{post5.Id})
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1191,6 +1194,146 @@ func TestUpdateIncident(t *testing.T) {
 				require.Equal(t, expected, actual)
 			})
 		}
+	}
+}
+
+// intended to catch problems with the code assembling StatusPosts
+func TestStressTestGetIncidents(t *testing.T) {
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	// Change these to larger numbers to stress test. Keep them low for CI.
+	numIncidents := 100
+	postsPerIncident := 3
+	perPage := 10
+	verifyPages := []int{0, 2, 4, 6, 8}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		setupPostsTable(t, db)
+		teamID := model.NewId()
+		incidents := createIncidentsAndPosts(t, store, incidentStore, numIncidents, postsPerIncident, teamID)
+
+		t.Run("stress test status posts retrieval", func(t *testing.T) {
+			for _, p := range verifyPages {
+				returned, err := incidentStore.GetIncidents(incident.RequesterInfo{
+					UserID:          "testID",
+					UserIDtoIsAdmin: map[string]bool{"testID": true},
+				}, incident.HeaderFilterOptions{
+					TeamID:  teamID,
+					Page:    p,
+					PerPage: perPage,
+					Sort:    "create_at",
+				})
+				require.NoError(t, err)
+				numRet := min(perPage, len(incidents))
+				assert.Equal(t, numRet, len(returned.Items))
+				for i := 0; i < numRet; i++ {
+					idx := p*perPage + i
+					assert.ElementsMatch(t, incidents[idx].StatusPosts, returned.Items[i].StatusPosts)
+					assert.ElementsMatch(t, incidents[idx].StatusPostIDs, returned.Items[i].StatusPostIDs)
+					expWithoutStatusPosts := incidents[idx]
+					expWithoutStatusPosts.StatusPosts = nil
+					expWithoutStatusPosts.StatusPostIDs = nil
+					actWithoutStatusPosts := returned.Items[i]
+					actWithoutStatusPosts.StatusPosts = nil
+					actWithoutStatusPosts.StatusPostIDs = nil
+					assert.Equal(t, expWithoutStatusPosts, actWithoutStatusPosts)
+				}
+			}
+		})
+	}
+}
+
+func TestStressTestGetIncidentsStats(t *testing.T) {
+	// don't need to assemble stats in CI
+	t.SkipNow()
+
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	// Change these to larger numbers to stress test.
+	numIncidents := 1000
+	postsPerIncident := 3
+	perPage := 10
+
+	// For stats:
+	numReps := 30
+
+	// so we don't start returning pages with 0 incidents:
+	require.LessOrEqual(t, numReps*perPage, numIncidents)
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		setupPostsTable(t, db)
+		teamID := model.NewId()
+		_ = createIncidentsAndPosts(t, store, incidentStore, numIncidents, postsPerIncident, teamID)
+
+		t.Run("stress test status posts retrieval", func(t *testing.T) {
+			intervals := make([]int64, 0, numReps)
+			for i := 0; i < numReps; i++ {
+				start := time.Now()
+				_, err := incidentStore.GetIncidents(incident.RequesterInfo{
+					UserID:          "testID",
+					UserIDtoIsAdmin: map[string]bool{"testID": true},
+				}, incident.HeaderFilterOptions{
+					TeamID:  teamID,
+					Page:    i,
+					PerPage: perPage,
+					Sort:    "create_at",
+				})
+				intervals = append(intervals, time.Now().Sub(start).Milliseconds())
+				require.NoError(t, err)
+			}
+			cil, ciu := ciForN30(intervals)
+			fmt.Printf("Mean: %.2f\tStdErr: %.2f\t95%% CI: (%.2f, %.2f)\n",
+				mean(intervals), stdErr(intervals), cil, ciu)
+		})
+	}
+}
+
+func createIncidentsAndPosts(t testing.TB, store *SQLStore, incidentStore incident.Store, numIncidents, maxPostsPerIncident int, teamID string) []incident.Incident {
+	incidentsSorted := make([]incident.Incident, 0, numIncidents)
+	for i := 0; i < numIncidents; i++ {
+		numPosts := maxPostsPerIncident
+		posts := make([]*model.Post, 0, numPosts)
+		postIDs := make([]string, 0, numPosts)
+		for j := 0; j < numPosts; j++ {
+			post := newPost(rand.Intn(2) == 0)
+			posts = append(posts, post)
+			postIDs = append(postIDs, post.Id)
+		}
+		savePosts(t, store, posts)
+
+		inc := NewBuilder(t).
+			WithTeamID(teamID).
+			WithCreateAt(int64(100000+i)).
+			WithName(fmt.Sprintf("incident %d", i)).
+			WithChecklists([]int{1}).
+			WithUpdateStatusIDs(posts, postIDs).
+			ToIncident()
+		ret, err := incidentStore.CreateIncident(inc)
+		require.NoError(t, err)
+		incidentsSorted = append(incidentsSorted, *ret)
+	}
+
+	return incidentsSorted
+}
+
+func newPost(deleted bool) *model.Post {
+	createAt := rand.Int63()
+	deleteAt := int64(0)
+	if deleted {
+		deleteAt = createAt + 100
+	}
+	return &model.Post{
+		Id:       model.NewId(),
+		CreateAt: createAt,
+		DeleteAt: deleteAt,
 	}
 }
 
@@ -1390,7 +1533,7 @@ func TestNukeDB(t *testing.T) {
 	}
 }
 
-func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
+func setupIncidentStore(t testing.TB, db *sqlx.DB) incident.Store {
 	mockCtrl := gomock.NewController(t)
 
 	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
@@ -1409,11 +1552,11 @@ func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToIncident()
 type IncidentBuilder struct {
-	t *testing.T
+	t testing.TB
 	i *incident.Incident
 }
 
-func NewBuilder(t *testing.T) *IncidentBuilder {
+func NewBuilder(t testing.TB) *IncidentBuilder {
 	return &IncidentBuilder{
 		t: t,
 		i: &incident.Incident{
@@ -1454,15 +1597,15 @@ func (ib *IncidentBuilder) WithID() *IncidentBuilder {
 	return ib
 }
 
-func (ib *IncidentBuilder) WithUpdateStatusIDs(ids []string) *IncidentBuilder {
+func (ib *IncidentBuilder) WithUpdateStatusIDs(posts []*model.Post, ids []string) *IncidentBuilder {
 	ib.i.StatusPostIDs = append(ib.i.StatusPostIDs, ids...)
-	addStatusPostsToIncidentFromIDs(ib.t, ib.i, ids)
+	addStatusPostsToIncidentFromIDs(ib.t, ib.i, posts, ids)
 	return ib
 }
 
-func addStatusPostsToIncidentFromIDs(t *testing.T, i *incident.Incident, ids []string) {
+func addStatusPostsToIncidentFromIDs(t testing.TB, i *incident.Incident, posts []*model.Post, ids []string) {
 	for _, id := range ids {
-		post := findPostByID(id)
+		post := makeStatusPostByID(posts, id)
 		if t != nil {
 			require.NotEqual(t, "", post.ID)
 		} else {
@@ -1472,8 +1615,8 @@ func addStatusPostsToIncidentFromIDs(t *testing.T, i *incident.Incident, ids []s
 	}
 }
 
-func findPostByID(id string) incident.StatusPost {
-	for _, p := range allPosts {
+func makeStatusPostByID(posts []*model.Post, id string) incident.StatusPost {
+	for _, p := range posts {
 		if p.Id == id {
 			return incident.StatusPost{
 				ID:       p.Id,
@@ -1555,4 +1698,11 @@ func (ib *IncidentBuilder) WithChannelID(id string) *IncidentBuilder {
 	ib.i.ChannelID = id
 
 	return ib
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

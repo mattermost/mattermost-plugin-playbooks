@@ -16,7 +16,7 @@ import (
 
 var driverNames = []string{model.DATABASE_DRIVER_POSTGRES, model.DATABASE_DRIVER_MYSQL}
 
-func setupTestDB(t *testing.T, driverName string) *sqlx.DB {
+func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
 
 	sqlSettings := storetest.MakeSqlSettings(driverName)
@@ -38,7 +38,7 @@ func setupTestDB(t *testing.T, driverName string) *sqlx.DB {
 	return db
 }
 
-func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
+func setupSQLStore(t testing.TB, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
@@ -332,7 +332,7 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
-func setupPostsTable(t *testing.T, db *sqlx.DB) {
+func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
@@ -478,7 +478,7 @@ func makeAdmin(t *testing.T, store *SQLStore, user userInfo) {
 	require.NoError(t, err)
 }
 
-func savePosts(t *testing.T, store *SQLStore, posts []*model.Post) {
+func savePosts(t testing.TB, store *SQLStore, posts []*model.Post) {
 	t.Helper()
 
 	insertBuilder := store.builder.Insert("Posts").Columns("Id", "CreateAt", "DeleteAt")
