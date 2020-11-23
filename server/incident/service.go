@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
@@ -863,6 +864,11 @@ func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, check
 // NukeDB removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
+}
+
+// ChangeCreationDate changes the creation date of the incident.
+func (s *ServiceImpl) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
+	return s.store.ChangeCreationDate(incidentID, creationTimestamp)
 }
 
 func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {
