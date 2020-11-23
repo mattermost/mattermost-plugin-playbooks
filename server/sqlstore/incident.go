@@ -331,12 +331,6 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 		Where(sq.Eq{"IncidentID": incidentID}).
 		OrderBy("p.CreateAt")
 
-	// SELECT ir.IncidentID, p.Id, p.CreateAt, p.DeleteAt
-	//    FROM IR_StatusPosts as ir
-	//             JOIN Posts as p
-	//                  ON ir.PostID = p.id
-	//    ORDER BY p.CreateAt;
-
 	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
 		return out, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
