@@ -96,24 +96,16 @@ const LatestUpdate: FC<LatestUpdateProps> = (props: LatestUpdateProps) => {
     const getPostFromState = useSelector<GlobalState, GetPostType>((state) => (postId) => getPost(state, postId));
 
     useEffect(() => {
-        const getLatestUpdate = async () => {
-            for (let i = props.posts_ids.length - 1; i >= 0; --i) {
-                let post = getPostFromState(props.posts_ids[i]);
-                if (!post) {
-                    // eslint-disable-next-line no-await-in-loop
-                    post = await Client4.getPost(postId);
-                }
+        for (let i = props.posts_ids.length - 1; i >= 0; --i) {
+            const post = getPostFromState(props.posts_ids[i]);
 
-                if (post) {
-                    setLatestUpdate(post);
-                    return;
-                }
+            if (post) {
+                setLatestUpdate(post);
+                return;
             }
+        }
 
-            setLatestUpdate(null);
-        };
-
-        getLatestUpdate();
+        setLatestUpdate(null);
     });
 
     let profileUri = '';
