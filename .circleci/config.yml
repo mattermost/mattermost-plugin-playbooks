@@ -216,8 +216,7 @@ jobs:
           MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
           MM_SQLSETTINGS_DRIVERNAME: postgres
           MM_PLUGINSETTINGS_ENABLEUPLOADS: true
-          MM_SERVICESETTINGS_ENABLETESTING: true
-          MM_SERVICESETTINGS_ENABLEDEVELOPER: true
+          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
@@ -250,6 +249,13 @@ jobs:
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
             psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
+      - run:
+          name: Upload license
+          command: |
+            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
+            TOKEN=${TOKEN//$'\r'/}
+            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+            if test $STATUSCODE -ne 200; then exit 1; fi
       - *restore_deploy_cache
       - run:
           name: Install Incident Management plugin

@@ -26,8 +26,8 @@ export interface Incident {
 
 export interface StatusPost {
     id: string;
-    create_at: string;
-    delete_at: string;
+    create_at: number;
+    delete_at: number;
 }
 
 export interface Metadata {
@@ -65,7 +65,7 @@ export function isIncident(arg: any): arg is Incident {
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.status_post_ids && Array.isArray(arg.status_post_ids) &&
         arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
-        arg.reminder_post_id && typeof arg.reminder_post_id === 'string');
+        typeof arg.reminder_post_id === 'string');
 }
 
 export function isStatusPost(arg: any): arg is StatusPost {

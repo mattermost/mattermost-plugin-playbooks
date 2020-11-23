@@ -5,6 +5,8 @@ import {getRandomInt} from '../utils';
 import users from '../fixtures/users.json';
 import timeouts from '../fixtures/timeouts';
 
+import merge from 'deepmerge';
+
 // *****************************************************************************
 // Authentication
 // https://api.mattermost.com/#tag/authentication
@@ -125,7 +127,7 @@ Cypress.Commands.add('apiGetUserByEmail', (email) => {
         url: '/api/v4/users/email/' + email,
     }).then((response) => {
         expect(response.status).to.equal(200);
-        cy.wrap(response);
+        cy.wrap(response.body);
     });
 });
 
@@ -267,5 +269,33 @@ Cypress.Commands.add('apiGetCurrentUser', () => {
     }).then((response) => {
         expect(response.status).to.equal(200);
         return cy.wrap(response.body);
+    });
+});
+
+Cypress.Commands.add('apiGetConfig', () => {
+    // # Get current settings
+    return cy.request('/api/v4/config').then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap({config: response.body});
+    });
+});
+
+Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
+    // # Get current settings
+    return cy.request('/api/v4/config').then((response) => {
+        const oldConfig = response.body;
+
+        const config = merge.all([oldConfig, newConfig]);
+
+        // # Set the modified config
+        return cy.request({
+            url: '/api/v4/config',
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            method: 'PUT',
+            body: config,
+        }).then((updateResponse) => {
+            expect(updateResponse.status).to.equal(200);
+            return cy.apiGetConfig();
+        });
     });
 });

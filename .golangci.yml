@@ -36,6 +36,8 @@ linters-settings:
     enable-all: true
 
 issues:
+  exclude:
+    - G404
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go

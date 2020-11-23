@@ -114,12 +114,17 @@ const myIncidentsByTeam = (state: Record<string, Record<string, Incident>> = {},
     }
     case REMOVED_FROM_INCIDENT_CHANNEL: {
         const removedFromChannelAction = action as RemovedFromIncidentChannel;
-        const teamId = removedFromChannelAction.teamId;
+        const channelId = removedFromChannelAction.channelId;
+        const teamId = Object.keys(state).find((t) => Boolean(state[t][channelId]));
+        if (!teamId) {
+            return state;
+        }
+
         const newState = {
             ...state,
             [teamId]: {...state[teamId]},
         };
-        delete newState[teamId][removedFromChannelAction.channelId];
+        delete newState[teamId][channelId];
         return newState;
     }
     default:
