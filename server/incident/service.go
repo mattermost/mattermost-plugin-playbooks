@@ -334,6 +334,13 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to update incident")
 	}
 
+	incidentToModify.StatusPosts = append(incidentToModify.StatusPosts,
+		StatusPost{
+			ID:       post.Id,
+			CreateAt: post.CreateAt,
+			DeleteAt: post.DeleteAt,
+		})
+
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.UpdateStatus(incidentToModify, userID)
 

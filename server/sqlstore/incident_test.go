@@ -1609,7 +1609,7 @@ func addStatusPostsToIncidentFromIDs(t testing.TB, i *incident.Incident, posts [
 		if t != nil {
 			require.NotEqual(t, "", post.ID)
 		} else {
-			fmt.Println("<><> could not find PostById, only update with posts that are already in the db")
+			fmt.Println("*** could not find PostById, only update with posts that are already in the db")
 		}
 		i.StatusPosts = append(i.StatusPosts, post)
 	}
