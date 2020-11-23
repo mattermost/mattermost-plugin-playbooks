@@ -29,6 +29,7 @@ const (
 	actionRestart         = "restart"
 	actionChangeStage     = "change_stage"
 	actionChangeCommander = "change_commander"
+	actionUpdateStatus    = "update_status"
 
 	eventTasks                = "tasks"
 	actionAddTask             = "add_task"
@@ -149,6 +150,12 @@ func (t *RudderTelemetry) ChangeCommander(incdnt *incident.Incident, userID stri
 func (t *RudderTelemetry) ChangeStage(incdnt *incident.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionChangeStage
+	t.track(eventIncident, properties)
+}
+
+func (t *RudderTelemetry) UpdateStatus(incdnt *incident.Incident, userID string) {
+	properties := incidentProperties(incdnt, userID)
+	properties["Action"] = actionUpdateStatus
 	t.track(eventIncident, properties)
 }
 

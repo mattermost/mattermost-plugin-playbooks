@@ -19,6 +19,7 @@ export interface Incident {
     post_id: string;
     playbook_id: string;
     checklists: Checklist[];
+    status_posts_ids: string[];
 }
 
 export interface Metadata {
@@ -53,7 +54,8 @@ export function isIncident(arg: any): arg is Incident {
         typeof arg.active_stage_title === 'string' &&
         typeof arg.post_id === 'string' &&
         arg.playbook_id && typeof arg.playbook_id === 'string' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist));
+        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist)) &&
+        arg.status_posts_ids && Array.isArray(arg.status_posts_ids);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

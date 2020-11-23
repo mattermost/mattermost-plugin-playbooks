@@ -9,7 +9,7 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {pluginId} from 'src/manifest';
-import {RHSState} from 'src/types/rhs';
+import {RHSState, RHSTabState} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
 
 //@ts-ignore GlobalState is not complete
@@ -54,3 +54,8 @@ export const isExportLicensed = (state: GlobalState): boolean => {
 };
 
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
+
+export const currentRHSTabState = (state: GlobalState): RHSTabState => {
+    const channelId = getCurrentChannelId(state);
+    return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingSummary;
+};

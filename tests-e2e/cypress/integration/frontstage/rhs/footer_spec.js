@@ -94,6 +94,9 @@ describe('incident rhs > footer', () => {
     });
 
     beforeEach(() => {
+        // # Size the viewport to show the RHS without covering posts.
+        cy.viewport('macbook-13');
+
         // # Login as user-1
         cy.apiLogin('user-1');
     });
@@ -115,6 +118,9 @@ describe('incident rhs > footer', () => {
 
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                // # Select the tasks tab
+                cy.findByTestId('tasks').click();
             });
 
             it('with only "End Incident" when in the first stage', () => {
@@ -137,7 +143,7 @@ describe('incident rhs > footer', () => {
             describe('that are in a middle stage', () => {
                 beforeEach(() => {
                     // # Check all checkboxes in the stage
-                    cy.get('.checklist-inner-container').within(() => {
+                    cy.get('.checklist').within(() => {
                         cy.get('.checkbox').each((checkbox) => {
                             cy.wrap(checkbox).click();
                         });
@@ -184,7 +190,7 @@ describe('incident rhs > footer', () => {
                 // # Go to last stage
                 for (let i = 0; i < 2; i++) {
                     // # Check all checkboxes in the stage
-                    cy.get('.checklist-inner-container').within(() => {
+                    cy.get('.checklist').within(() => {
                         cy.get('.checkbox').each((checkbox) => {
                             cy.wrap(checkbox).click();
                         });
@@ -251,13 +257,14 @@ describe('incident rhs > footer', () => {
 
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                // # Select the tasks tab
+                cy.findByTestId('tasks').click();
             });
 
             it('with "End Incident" and secondary styled when tasks are not finished', () => {
                 // * Verify that the button contains End Incident and is secondary styled
-                cy.get('#incidentRHSFooter button').
-                    contains('End Incident').
-                    should('have.css', 'background-color', 'rgba(0, 0, 0, 0)');
+                cy.get('#incidentRHSFooter button').contains('End Incident').should('have.css', 'background-color', 'rgba(0, 0, 0, 0)');
 
                 // # Click on the End Incident button
                 cy.get('#incidentRHSFooter button').click();
@@ -268,16 +275,14 @@ describe('incident rhs > footer', () => {
 
             it('with "End Incident" and primary styled when all tasks are finished', () => {
                 // # Check all checkboxes in the stage
-                cy.get('.checklist-inner-container').within(() => {
+                cy.get('.checklist').within(() => {
                     cy.get('.checkbox').each((checkbox) => {
                         cy.wrap(checkbox).click();
                     });
                 });
 
                 // # Check that the button contains End Incident and is primary styled
-                cy.get('#incidentRHSFooter button').
-                    contains('End Incident').
-                    should('have.css', 'background-color', 'rgb(22, 109, 224)');
+                cy.get('#incidentRHSFooter button').contains('End Incident').should('have.css', 'background-color', 'rgb(22, 109, 224)');
 
                 // # Click on the End Incident button
                 cy.get('#incidentRHSFooter button').click();
@@ -326,6 +331,9 @@ describe('incident rhs > footer', () => {
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
 
+                // # Select the tasks tab
+                cy.findByTestId('tasks').click();
+
                 // # Go to the last stage
                 cy.executeSlashCommand('/incident stage next');
                 cy.get('#interactiveDialogSubmit').click();
@@ -333,9 +341,7 @@ describe('incident rhs > footer', () => {
 
             it('with "End Incident" secondary styled when tasks are not finished', () => {
                 // # Check that the button contains End Incident and is secondary styled
-                cy.get('#incidentRHSFooter button').
-                    contains('End Incident').
-                    should('have.css', 'background-color', 'rgba(0, 0, 0, 0)');
+                cy.get('#incidentRHSFooter button').contains('End Incident').should('have.css', 'background-color', 'rgba(0, 0, 0, 0)');
 
                 // # Click on the End Incident button
                 cy.get('#incidentRHSFooter button').click();
@@ -346,16 +352,14 @@ describe('incident rhs > footer', () => {
 
             it('with "End Incident" primary styled when all tasks are finished', () => {
                 // # Check all checkboxes in the stage
-                cy.get('.checklist-inner-container').within(() => {
+                cy.get('.checklist').within(() => {
                     cy.get('.checkbox').each((checkbox) => {
                         cy.wrap(checkbox).click();
                     });
                 });
 
                 // # Check that the button contains End Incident and is primary styled
-                cy.get('#incidentRHSFooter button').
-                    contains('End Incident').
-                    should('have.css', 'background-color', 'rgb(22, 109, 224)');
+                cy.get('#incidentRHSFooter button').contains('End Incident').should('have.css', 'background-color', 'rgb(22, 109, 224)');
 
                 // # Click on the End Incident button
                 cy.get('#incidentRHSFooter button').click();
@@ -381,13 +385,14 @@ describe('incident rhs > footer', () => {
 
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                // # Select the tasks tab
+                cy.findByTestId('tasks').click();
             });
 
             it('with "Next Stage" and secondary styled when tasks are not finished', () => {
                 // # Check that the button contains Next Stage and is secondary styled
-                cy.get('#incidentRHSFooter button').
-                    contains('Next Stage').
-                    should('have.css', 'background-color', 'rgba(0, 0, 0, 0)');
+                cy.get('#incidentRHSFooter button').contains('Next Stage').should('have.css', 'background-color', 'rgba(0, 0, 0, 0)');
 
                 // * Verify that we're on the first stage
                 cy.get('#incidentRHSStages').within(() => {
@@ -413,16 +418,14 @@ describe('incident rhs > footer', () => {
 
             it('with "Next Stage" and primary styled when all tasks are finished', () => {
                 // # Check all checkboxes in the stage
-                cy.get('.checklist-inner-container').within(() => {
+                cy.get('.checklist').within(() => {
                     cy.get('.checkbox').each((checkbox) => {
                         cy.wrap(checkbox).click();
                     });
                 });
 
                 // # Check that the button contains Next Stage and is primary styled
-                cy.get('#incidentRHSFooter button').
-                    contains('Next Stage').
-                    should('have.css', 'background-color', 'rgb(22, 109, 224)');
+                cy.get('#incidentRHSFooter button').contains('Next Stage').should('have.css', 'background-color', 'rgb(22, 109, 224)');
 
                 // * Verify that we're on the first stage
                 cy.get('#incidentRHSStages').within(() => {

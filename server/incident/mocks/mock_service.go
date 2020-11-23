@@ -310,6 +310,20 @@ func (mr *MockServiceMockRecorder) OpenNextStageDialog(arg0, arg1, arg2 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenNextStageDialog", reflect.TypeOf((*MockService)(nil).OpenNextStageDialog), arg0, arg1, arg2)
 }
 
+// OpenUpdateStatusDialog mocks base method
+func (m *MockService) OpenUpdateStatusDialog(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenUpdateStatusDialog", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenUpdateStatusDialog indicates an expected call of OpenUpdateStatusDialog
+func (mr *MockServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockService)(nil).OpenUpdateStatusDialog), arg0, arg1)
+}
+
 // RemoveChecklistItem mocks base method
 func (m *MockService) RemoveChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
 	m.ctrl.T.Helper()
@@ -392,4 +406,18 @@ func (m *MockService) ToggleCheckedState(arg0, arg1 string, arg2, arg3 int) erro
 func (mr *MockServiceMockRecorder) ToggleCheckedState(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleCheckedState", reflect.TypeOf((*MockService)(nil).ToggleCheckedState), arg0, arg1, arg2, arg3)
+}
+
+// UpdateStatus mocks base method
+func (m *MockService) UpdateStatus(arg0, arg1 string, arg2 incident.StatusUpdateOptions) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatus", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatus indicates an expected call of UpdateStatus
+func (mr *MockServiceMockRecorder) UpdateStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockService)(nil).UpdateStatus), arg0, arg1, arg2)
 }

@@ -2,15 +2,23 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {useSelector} from 'react-redux';
 import styled from 'styled-components';
+
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import {IncidentFetchState, useCurrentIncident} from 'src/hooks';
 import {RHSContainer, RHSContent} from 'src/components/rhs/rhs_shared';
 import Spinner from 'src/components/assets/icons/spinner';
-import RHSIncidentDetails from 'src/components/rhs/incident_details';
+import RHSTabView from 'src/components/rhs/rhs_tab_view';
+import {RHSTabState} from 'src/types/rhs';
+import {currentRHSTabState} from 'src/selectors';
+import RHSIncidentSummary from 'src/components/rhs/rhs_incident_summary';
+import RHSIncidentTasks from 'src/components/rhs/rhs_incident_tasks';
 
 const RHSDetailsView = () => {
     const [incident, incidentFetchState] = useCurrentIncident();
+    const currentTabState = useSelector<GlobalState, RHSTabState>(currentRHSTabState);
 
     if (incidentFetchState === IncidentFetchState.Loading) {
         return spinner;
@@ -20,12 +28,16 @@ const RHSDetailsView = () => {
         return spinner;
     }
 
+    let currentView = <RHSIncidentSummary incident={incident}/>;
+    if (currentTabState === RHSTabState.ViewingTasks) {
+        currentView = <RHSIncidentTasks incident={incident}/>;
+    }
+
     return (
         <RHSContainer>
             <RHSContent>
-                <RHSIncidentDetails
-                    incident={incident}
-                />
+                <RHSTabView/>
+                {currentView}
             </RHSContent>
         </RHSContainer>
     );

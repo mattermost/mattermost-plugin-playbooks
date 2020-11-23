@@ -818,13 +818,12 @@ func TestSortingPlaybooks(t *testing.T) {
 				assert.NoError(t, err)
 
 				errorResult := struct {
-					Message string `json:"message"`
-					Details string `json:"details"`
+					Error string `json:"error"`
 				}{}
 
 				err = json.Unmarshal(result, &errorResult)
 				require.NoError(t, err)
-				assert.Contains(t, errorResult.Details, data.expectedErr.Error())
+				assert.Contains(t, errorResult.Error, data.expectedErr.Error())
 			}
 		})
 	}
@@ -1040,13 +1039,12 @@ func TestPagingPlaybooks(t *testing.T) {
 				assert.NoError(t, err)
 
 				errorResult := struct {
-					Message string `json:"message"`
-					Details string `json:"details"`
+					Error string `json:"error"`
 				}{}
 
 				err = json.Unmarshal(result, &errorResult)
 				require.NoError(t, err)
-				assert.Contains(t, errorResult.Details, data.expectedErr.Error())
+				assert.Contains(t, errorResult.Error, data.expectedErr.Error())
 			}
 		})
 	}

@@ -18,7 +18,8 @@ import (
 
 type sqlIncident struct {
 	incident.Incident
-	ChecklistsJSON json.RawMessage
+	ChecklistsJSON       json.RawMessage
+	StatusPostsIDsString string
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -37,7 +38,8 @@ var _ incident.Store = (*incidentStore)(nil)
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID", "ChecklistsJSON").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
+			"ChecklistsJSON", "StatusPostsIDsString").
 		From("IR_Incident AS incident")
 
 	return &incidentStore{
@@ -164,21 +166,22 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":               rawIncident.ID,
-			"Name":             rawIncident.Name,
-			"Description":      rawIncident.Description,
-			"IsActive":         rawIncident.IsActive,
-			"CommanderUserID":  rawIncident.CommanderUserID,
-			"TeamID":           rawIncident.TeamID,
-			"ChannelID":        rawIncident.ChannelID,
-			"CreateAt":         rawIncident.CreateAt,
-			"EndAt":            rawIncident.EndAt,
-			"DeleteAt":         rawIncident.DeleteAt,
-			"ActiveStage":      rawIncident.ActiveStage,
-			"ActiveStageTitle": rawIncident.ActiveStageTitle,
-			"PostID":           rawIncident.PostID,
-			"PlaybookID":       rawIncident.PlaybookID,
-			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
+			"ID":                   rawIncident.ID,
+			"Name":                 rawIncident.Name,
+			"Description":          rawIncident.Description,
+			"IsActive":             rawIncident.IsActive,
+			"CommanderUserID":      rawIncident.CommanderUserID,
+			"TeamID":               rawIncident.TeamID,
+			"ChannelID":            rawIncident.ChannelID,
+			"CreateAt":             rawIncident.CreateAt,
+			"EndAt":                rawIncident.EndAt,
+			"DeleteAt":             rawIncident.DeleteAt,
+			"ActiveStage":          rawIncident.ActiveStage,
+			"ActiveStageTitle":     rawIncident.ActiveStageTitle,
+			"PostID":               rawIncident.PostID,
+			"PlaybookID":           rawIncident.PlaybookID,
+			"ChecklistsJSON":       rawIncident.ChecklistsJSON,
+			"StatusPostsIDsString": rawIncident.StatusPostsIDsString,
 		}))
 
 	if err != nil {
@@ -206,15 +209,16 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":             rawIncident.Name,
-			"Description":      rawIncident.Description,
-			"IsActive":         rawIncident.IsActive,
-			"CommanderUserID":  rawIncident.CommanderUserID,
-			"EndAt":            rawIncident.EndAt,
-			"DeleteAt":         rawIncident.DeleteAt,
-			"ActiveStage":      rawIncident.ActiveStage,
-			"ActiveStageTitle": rawIncident.ActiveStageTitle,
-			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
+			"Name":                 rawIncident.Name,
+			"Description":          rawIncident.Description,
+			"IsActive":             rawIncident.IsActive,
+			"CommanderUserID":      rawIncident.CommanderUserID,
+			"EndAt":                rawIncident.EndAt,
+			"DeleteAt":             rawIncident.DeleteAt,
+			"ActiveStage":          rawIncident.ActiveStage,
+			"ActiveStageTitle":     rawIncident.ActiveStageTitle,
+			"ChecklistsJSON":       rawIncident.ChecklistsJSON,
+			"StatusPostsIDsString": rawIncident.StatusPostsIDsString,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -381,8 +385,9 @@ func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
 	}
 
 	return &sqlIncident{
-		Incident:       origIncident,
-		ChecklistsJSON: checklistsJSON,
+		Incident:             origIncident,
+		ChecklistsJSON:       checklistsJSON,
+		StatusPostsIDsString: strings.Join(origIncident.StatusPostsIDs, " "),
 	}, nil
 }
 
@@ -423,6 +428,7 @@ func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
 	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
 	}
+	i.StatusPostsIDs = strings.Fields(rawIncident.StatusPostsIDsString)
 
 	return &i, nil
 }

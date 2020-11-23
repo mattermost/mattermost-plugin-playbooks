@@ -245,4 +245,21 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.3.0"),
+		toVersion:   semver.MustParse("0.4.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD StatusPostsIDsString VARCHAR(8192) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusPostsIDs to table IR_Incident")
+				}
+			} else {
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD StatusPostsIDsString TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusPostsIDs to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
 }

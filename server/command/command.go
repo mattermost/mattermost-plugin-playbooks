@@ -24,6 +24,7 @@ import (
 const helpText = "###### Mattermost Incident Management Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
+	"* `/incident update` - Update the incident's status and (if enabled) post the status update to the broadcast channel. \n" +
 	"* `/incident stage` - Move to the next or previous stage. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/incident commander [@username]` - Show or change the current commander. \n" +
@@ -50,7 +51,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Management Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, stage, restart, check, announce, list, commander, info",
+		AutoCompleteDesc: "Available commands: start, end, update, stage, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -58,7 +59,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, restart, check, announce, list, commander, info, stage")
+		"Available commands: start, end, update, restart, check, announce, list, commander, info, stage")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -66,6 +67,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	end := model.NewAutocompleteData("end", "",
 		"Ends the incident associated with the current channel")
 	slashIncident.AddCommand(end)
+
+	update := model.NewAutocompleteData("update", "",
+		"Update the current incident's status.")
+	slashIncident.AddCommand(update)
 
 	next := model.NewAutocompleteData("stage", "[next/prev]", "Move to the next or previous stage")
 	next.AddStaticListArgument("", true, []model.AutocompleteListItem{
@@ -600,6 +605,37 @@ func (r *Runner) actionEnd() {
 
 	err = r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
 
+	switch {
+	case errors.Is(err, incident.ErrIncidentNotActive):
+		r.postCommandResponse("This incident has already been closed.")
+		return
+	case err != nil:
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+}
+
+func (r *Runner) actionUpdate() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only update an incident from within the incident's channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	err = r.incidentService.OpenUpdateStatusDialog(incidentID, r.args.TriggerId)
 	switch {
 	case errors.Is(err, incident.ErrIncidentNotActive):
 		r.postCommandResponse("This incident has already been closed.")
@@ -1377,6 +1413,8 @@ func (r *Runner) Execute() error {
 		r.actionStart(parameters)
 	case "end":
 		r.actionEnd()
+	case "update":
+		r.actionUpdate()
 	case "stage":
 		r.actionStage(parameters)
 	case "check":
