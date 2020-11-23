@@ -96,7 +96,7 @@ const RHSListIncident = (props: Props) => {
 
     useEffect(() => {
         const getLastUpdated = async () => {
-            const postIDs = [...props.incident.status_posts_ids].reverse();
+            const postIDs = [...props.incident.status_post_ids].reverse();
 
             for (const postId of postIDs) {
                 let post = getPostFromState(postId);

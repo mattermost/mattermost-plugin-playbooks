@@ -329,7 +329,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
-	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, post.Id)
+	incidentToModify.StatusPostIDs = append(incidentToModify.StatusPostIDs, post.Id)
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
