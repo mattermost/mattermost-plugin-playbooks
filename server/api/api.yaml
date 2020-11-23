@@ -1160,6 +1160,10 @@ paths:
       responses:
         200:
           description: Item's slash command successfully executed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TriggerIdReturn"
         400:
           $ref: "#/components/schemas/400"
         500:
@@ -1603,6 +1607,15 @@ components:
           type: string
           description: Commander's username.
           example: aaron.medina
+    TriggerIdReturn:
+      type: object
+      required:
+        - trigger_id
+      properties:
+        trigger_id:
+          type: string
+          description: The trigger_id returned by the slash command.
+          example: ceenjwsg6tgdzjpofxqemy1aio
     Playbook:
       type: object
       properties:

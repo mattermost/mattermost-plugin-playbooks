@@ -103,6 +103,26 @@ func (mr *MockPosterMockRecorder) PostMessage(arg0, arg1 interface{}, arg2 ...in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessage", reflect.TypeOf((*MockPoster)(nil).PostMessage), varargs...)
 }
 
+// PostMessageWithAttachments mocks base method
+func (m *MockPoster) PostMessageWithAttachments(arg0 string, arg1 []*model.SlackAttachment, arg2 string, arg3 ...interface{}) (string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PostMessageWithAttachments", varargs...)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PostMessageWithAttachments indicates an expected call of PostMessageWithAttachments
+func (mr *MockPosterMockRecorder) PostMessageWithAttachments(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessageWithAttachments", reflect.TypeOf((*MockPoster)(nil).PostMessageWithAttachments), varargs...)
+}
+
 // PublishWebsocketEventToChannel mocks base method
 func (m *MockPoster) PublishWebsocketEventToChannel(arg0 string, arg1 interface{}, arg2 string) {
 	m.ctrl.T.Helper()

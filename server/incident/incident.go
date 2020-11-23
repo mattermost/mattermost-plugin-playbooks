@@ -14,12 +14,17 @@ import (
 const NoActiveStage = -1
 
 // Incident holds the detailed information of an incident.
+//
+// NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
+// that column needs to be added in the sqlstore code.
 type Incident struct {
 	Header
 	PostID         string               `json:"post_id"`
 	PlaybookID     string               `json:"playbook_id"`
 	Checklists     []playbook.Checklist `json:"checklists"`
-	StatusPostsIDs []string             `json:"status_posts_ids"`
+	StatusPostIDs  []string             `json:"status_post_ids"`
+	StatusPosts    []StatusPost         `json:"status_posts"`
+	ReminderPostID string               `json:"reminder_post_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -30,8 +35,13 @@ func (i *Incident) Clone() *Incident {
 	}
 	newIncident.Checklists = newChecklists
 
-	newIncident.StatusPostsIDs = make([]string, len(i.StatusPostsIDs))
-	copy(newIncident.StatusPostsIDs, i.StatusPostsIDs)
+	var newStatusPostsIDs []string
+	newStatusPostsIDs = append(newStatusPostsIDs, i.StatusPostIDs...)
+	newIncident.StatusPostIDs = newStatusPostsIDs
+
+	var newStatusPosts []StatusPost
+	newStatusPosts = append(newStatusPosts, i.StatusPosts...)
+	newIncident.StatusPosts = newStatusPosts
 
 	return &newIncident
 }
@@ -49,8 +59,11 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 			old.Checklists[j].Items = []playbook.ChecklistItem{}
 		}
 	}
-	if old.StatusPostsIDs == nil {
-		old.StatusPostsIDs = []string{}
+	if old.StatusPostIDs == nil {
+		old.StatusPostIDs = []string{}
+	}
+	if old.StatusPosts == nil {
+		old.StatusPosts = []StatusPost{}
 	}
 
 	// Define consistent semantics for empty checklists and out-of-range active stages.
@@ -79,15 +92,22 @@ type Header struct {
 	ActiveStageTitle string `json:"active_stage_title"`
 }
 
+// StatusPost is information added to the incident when selecting from the db and sent to the
+// client; it is not saved to the db.
+type StatusPost struct {
+	ID       string `json:"id"`
+	CreateAt int64  `json:"create_at"`
+	DeleteAt int64  `json:"delete_at"`
+}
+
 type UpdateOptions struct {
 	ActiveStage *int `json:"active_stage"`
 }
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
 type StatusUpdateOptions struct {
-	Status   string
 	Message  string
-	Reminder int
+	Reminder time.Duration
 }
 
 // Metadata tracks ancillary metadata about an incident.
@@ -189,10 +209,10 @@ type Service interface {
 
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
-	OpenEndIncidentDialog(incidentID string, triggerID string) error
+	OpenEndIncidentDialog(incidentID, triggerID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
-	OpenUpdateStatusDialog(incidentID string, triggerID string) error
+	OpenUpdateStatusDialog(incidentID, triggerID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -229,7 +249,7 @@ type Service interface {
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
+	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error)
 
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
@@ -256,6 +276,19 @@ type Service interface {
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+	// reminded to update the incident's status.
+	SetReminder(incidentID string, timeInMinutes time.Duration) error
+
+	// RemoveReminder removes the pending reminder for incidentID (if any).
+	RemoveReminder(incidentID string)
+
+	// HandleReminder is the handler for all reminder events.
+	HandleReminder(key string)
+
+	// RemoveReminderPost will remove the reminder in the incident channel (if any).
+	RemoveReminderPost(incidentID string) error
 
 	// ChangeCreationDate changes the creation date of the specified incident.
 	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error

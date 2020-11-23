@@ -11,12 +11,12 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
-
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const (
@@ -32,6 +32,8 @@ type ServiceImpl struct {
 	configService config.Service
 	store         Store
 	poster        bot.Poster
+	logger        bot.Logger
+	scheduler     *cluster.JobOnceScheduler
 	telemetry     Telemetry
 }
 
@@ -46,23 +48,22 @@ const DialogFieldNameKey = "incidentName"
 // DialogFieldDescriptionKey is the key for the incident description field used in OpenCreateIncidentDialog.
 const DialogFieldDescriptionKey = "incidentDescription"
 
-// DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
-const DialogFieldStatusKey = "status"
-
 // DialogFieldMessageKey is the key for the message textarea field used in UpdateIncidentDialog
 const DialogFieldMessageKey = "message"
 
-// DialogFieldReminderKey is the key for the reminder select field used in UpdateIncidentDialog
-const DialogFieldReminderKey = "reminder"
+// DialogFieldReminderInMinutesKey is the key for the reminder select field used in UpdateIncidentDialog
+const DialogFieldReminderInMinutesKey = "reminder"
 
 // NewService creates a new incident ServiceImpl.
-func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster,
-	configService config.Service, telemetry Telemetry) *ServiceImpl {
+func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
+	configService config.Service, scheduler *cluster.JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
 	return &ServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
 		poster:        poster,
+		logger:        logger,
 		configService: configService,
+		scheduler:     scheduler,
 		telemetry:     telemetry,
 	}
 }
@@ -329,13 +330,33 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
-	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, post.Id)
+	incidentToModify.StatusPostIDs = append(incidentToModify.StatusPostIDs, post.Id)
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
 
+	incidentToModify.StatusPosts = append(incidentToModify.StatusPosts,
+		StatusPost{
+			ID:       post.Id,
+			CreateAt: post.CreateAt,
+			DeleteAt: post.DeleteAt,
+		})
+
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.UpdateStatus(incidentToModify, userID)
+
+	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
+	s.RemoveReminder(incidentID)
+
+	if options.Reminder != 0 {
+		if err = s.SetReminder(incidentID, options.Reminder); err != nil {
+			return errors.Wrap(err, "failed to set the reminder for incident")
+		}
+	}
+
+	if err = s.RemoveReminderPost(incidentID); err != nil {
+		return errors.Wrap(err, "failed to remove reminder post")
+	}
 
 	return nil
 }
@@ -567,22 +588,22 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
-func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error {
+func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error) {
 	incident, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if !playbook.IsValidChecklistItemIndex(incident.Checklists, checklistNumber, itemNumber) {
-		return errors.New("invalid checklist item indices")
+		return "", errors.New("invalid checklist item indices")
 	}
 
 	itemToRun := incident.Checklists[checklistNumber].Items[itemNumber]
 	if strings.TrimSpace(itemToRun.Command) == "" {
-		return errors.New("no slash command associated with this checklist item")
+		return "", errors.New("no slash command associated with this checklist item")
 	}
 
-	_, err = s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
+	cmdResponse, err := s.pluginAPI.SlashCommand.Execute(&model.CommandArgs{
 		Command:   itemToRun.Command,
 		UserId:    userID,
 		TeamId:    incident.TeamID,
@@ -592,23 +613,23 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		trigger := strings.Fields(itemToRun.Command)[0]
 		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to find slash command **%s**", trigger)})
 
-		return errors.Wrap(err, "failed to find slash command")
+		return "", errors.Wrap(err, "failed to find slash command")
 	} else if err != nil {
 		s.poster.EphemeralPost(userID, incident.ChannelID, &model.Post{Message: fmt.Sprintf("Failed to execute slash command **%s**", itemToRun.Command)})
 
-		return errors.Wrap(err, "failed to run slash command")
+		return "", errors.Wrap(err, "failed to run slash command")
 	}
 
 	// Record the last (successful) run time.
 	incident.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
 	if err = s.store.UpdateIncident(incident); err != nil {
-		return errors.Wrapf(err, "failed to update incident recording run of slash command")
+		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
 	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
-	return nil
+	return cmdResponse.TriggerId, nil
 }
 
 // AddChecklistItem adds an item to the specified checklist
@@ -990,21 +1011,6 @@ func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
 		IntroductionText: "Update your incident status and broadcast it to another channel.",
 		Elements: []model.DialogElement{
 			{
-				DisplayName: "Status",
-				Name:        DialogFieldStatusKey,
-				Type:        "select",
-				Options: []*model.PostActionOptions{
-					{
-						Text:  "Ongoing",
-						Value: "ongoing",
-					},
-					{
-						Text:  "Ended",
-						Value: "ended",
-					},
-				},
-			},
-			{
 				DisplayName: "Message",
 				Name:        DialogFieldMessageKey,
 				Type:        "textarea",
@@ -1012,7 +1018,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
 			},
 			{
 				DisplayName: "Reminder for next update",
-				Name:        DialogFieldReminderKey,
+				Name:        DialogFieldReminderInMinutesKey,
 				Type:        "select",
 				Options: []*model.PostActionOptions{
 					{

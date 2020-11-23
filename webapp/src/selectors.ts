@@ -21,7 +21,9 @@ export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(st
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> => pluginState(state).myIncidentsByTeam;
+// reminder: myIncidentsByTeam indexes teamId->channelId->incident
+const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> =>
+    pluginState(state).myIncidentsByTeam;
 
 export const inIncidentChannel = createSelector(
     getCurrentTeamId,
@@ -41,9 +43,9 @@ export const myActiveIncidentsList = createSelector(
         }
 
         // return active incidents, sorted descending by create_at
-        return Object.values(incidentMapByTeam[teamId]).
-            filter((i) => i.is_active).
-            sort((a, b) => b.create_at - a.create_at);
+        return Object.values(incidentMapByTeam[teamId])
+            .filter((i) => i.is_active)
+            .sort((a, b) => b.create_at - a.create_at);
     },
 );
 
@@ -58,4 +60,24 @@ export const currentRHSState = (state: GlobalState): RHSState => pluginState(sta
 export const currentRHSTabState = (state: GlobalState): RHSTabState => {
     const channelId = getCurrentChannelId(state);
     return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingSummary;
+};
+
+export const lastUpdatedByIncidentId = createSelector(
+    getCurrentTeamId,
+    myIncidentsByTeam,
+    (teamId, incidentsMapByTeam) => {
+        const result = {} as Record<string, number>;
+        const incidentMap = incidentsMapByTeam[teamId];
+        for (const incident of Object.values(incidentMap)) {
+            result[incident.id] = findLastUpdated(incident);
+        }
+        return result;
+    },
+);
+
+const findLastUpdated = (incident: Incident) => {
+    const posts = [...incident.status_posts]
+        .filter((a) => a.delete_at === 0)
+        .sort((a, b) => b.create_at - a.create_at);
+    return posts.length === 0 ? 0 : posts[0].create_at;
 };

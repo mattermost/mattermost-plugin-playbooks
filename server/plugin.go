@@ -139,13 +139,25 @@ func (p *Plugin) OnActivate() error {
 
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+
+	scheduler := cluster.GetJobOnceScheduler(p.API)
+
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
 		incidentStore,
 		p.bot,
+		p.bot,
 		p.config,
+		scheduler,
 		telemetryClient,
 	)
+
+	if err = scheduler.SetCallback(p.incidentService.HandleReminder); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not add the incidentService's HandleReminder", "error", err.Error())
+	}
+	if err = scheduler.Start(); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
+	}
 
 	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
