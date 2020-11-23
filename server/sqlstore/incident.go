@@ -45,7 +45,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
-			"ChecklistsJSON", "ReminderPostID").
+			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID").
 		From("IR_Incident AS incident")
 
 	statusPostsSelect := sqlStore.builder.
@@ -149,9 +149,10 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	incidents := make([]incident.Incident, 0, len(rawIncidents))
 	incidentIDs := make([]string, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
-		asIncident, err2 := s.toIncident(rawIncident)
-		if err2 != nil {
-			return nil, err2
+		var asIncident *incident.Incident
+		asIncident, err = s.toIncident(rawIncident)
+		if err != nil {
+			return nil, err
 		}
 		incidents = append(incidents, *asIncident)
 		incidentIDs = append(incidentIDs, asIncident.ID)
