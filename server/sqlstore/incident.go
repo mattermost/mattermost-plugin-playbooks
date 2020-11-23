@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
@@ -314,6 +315,10 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
+	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
+		return errors.Wrap(err, "could not delete IR_Playbook")
+	}
+
 	if _, err := tx.Exec("DELETE FROM IR_Incident"); err != nil {
 		return errors.Wrap(err, "could not delete IR_Incident")
 	}
@@ -321,12 +326,31 @@ func (s *incidentStore) NukeDB() (err error) {
 	if _, err := tx.Exec("DELETE FROM IR_Playbook"); err != nil {
 		return errors.Wrap(err, "could not delete IR_Playbook")
 	}
-	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Playbook")
-	}
 
 	if err := tx.Commit(); err != nil {
 		return errors.Wrap(err, "could not delete all rows")
+	}
+
+	return nil
+}
+
+func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
+	updateQuery := s.queryBuilder.Update("IR_Incident").
+		Where(sq.Eq{"ID": incidentID}).
+		Set("CreateAt", model.GetMillisForTime(creationTimestamp))
+
+	sqlResult, err := s.store.execBuilder(s.store.db, updateQuery)
+	if err != nil {
+		return errors.Wrapf(err, "unable to execute the update query")
+	}
+
+	numRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "unable to check how many rows were updated")
+	}
+
+	if numRows == 0 {
+		return incident.ErrNotFound
 	}
 
 	return nil

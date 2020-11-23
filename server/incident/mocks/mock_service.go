@@ -10,6 +10,7 @@ import (
 	playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
+	time "time"
 )
 
 // MockService is a mock of Service interface
@@ -76,6 +77,20 @@ func (m *MockService) ChangeCommander(arg0, arg1, arg2 string) error {
 func (mr *MockServiceMockRecorder) ChangeCommander(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeCommander", reflect.TypeOf((*MockService)(nil).ChangeCommander), arg0, arg1, arg2)
+}
+
+// ChangeCreationDate mocks base method
+func (m *MockService) ChangeCreationDate(arg0 string, arg1 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChangeCreationDate", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ChangeCreationDate indicates an expected call of ChangeCreationDate
+func (mr *MockServiceMockRecorder) ChangeCreationDate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeCreationDate", reflect.TypeOf((*MockService)(nil).ChangeCreationDate), arg0, arg1)
 }
 
 // CreateIncident mocks base method

@@ -1324,7 +1324,13 @@ func TestGetCommanders(t *testing.T) {
 func TestNukeDB(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
+		_, store := setupSQLStore(t, db)
+
+		setupUsersTable(t, db)
+		setupTeamMembersTable(t, db)
+
 		incidentStore := setupIncidentStore(t, db)
+		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run("nuke db with a few incidents in it", func(t *testing.T) {
 			for i := 0; i < 10; i++ {
@@ -1344,8 +1350,39 @@ func TestNukeDB(t *testing.T) {
 			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_Incident")
 			require.NoError(t, err)
 			require.Equal(t, 0, int(rows))
+		})
 
-			// TODO: test for playbooks and playbook members
+		t.Run("nuke db with playbooks", func(t *testing.T) {
+			members := []userInfo{alice, bob}
+			addUsers(t, store, members)
+			addUsersToTeam(t, store, members, team1id)
+
+			for i := 0; i < 10; i++ {
+				newPlaybook := NewPBBuilder().WithMembers(members).ToPlaybook()
+				_, err := playbookStore.Create(newPlaybook)
+				require.NoError(t, err)
+			}
+
+			var rows int64
+
+			err := db.Get(&rows, "SELECT COUNT(*) FROM IR_Playbook")
+			require.NoError(t, err)
+			require.Equal(t, 10, int(rows))
+
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_PlaybookMember")
+			require.NoError(t, err)
+			require.Equal(t, 20, int(rows))
+
+			err = incidentStore.NukeDB()
+			require.NoError(t, err)
+
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_Playbook")
+			require.NoError(t, err)
+			require.Equal(t, 0, int(rows))
+
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_PlaybookMember")
+			require.NoError(t, err)
+			require.Equal(t, 0, int(rows))
 		})
 	}
 }

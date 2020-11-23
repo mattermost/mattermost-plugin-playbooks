@@ -2,6 +2,7 @@ package incident
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -255,6 +256,9 @@ type Service interface {
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// ChangeCreationDate changes the creation date of the specified incident.
+	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -284,6 +288,9 @@ type Store interface {
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// ChangeCreationDate changes the creation date of the specified incident.
+	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
