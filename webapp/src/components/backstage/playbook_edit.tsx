@@ -53,26 +53,6 @@ const TabsHeader = styled.div`
     white-space: nowrap;
 `;
 
-const EditHeaderTextContainer = styled.span`
-    display: inline-flex;
-    flex-direction: column;
-    vertical-align: middle;
-`;
-
-const EditHeaderText = styled.span`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
-`;
-
-const EditHeaderHelpText = styled.span`
-    font-weight: normal;
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-`;
-
 const EditContent = styled.div`
     background: var(--center-channel-color-04);
     flex-grow: 1;

@@ -22,6 +22,24 @@ import ConfirmModal from '../widgets/confirmation_modal';
 import {StageEditor} from './stage_edit';
 import DragHandle from './drag_handle';
 
+const Header = styled.div`
+    padding: 24px 0 0 14px;
+`;
+
+const HeaderTitle = styled.div`
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
+`;
+
+const HeaderHelpText = styled.div`
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
 const NewStage = styled.button`
     border: none;
     background: none;
@@ -52,7 +70,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
         }
 
         if (result.destination.droppableId === result.source.droppableId &&
-                result.destination.index === result.source.index) {
+            result.destination.index === result.source.index) {
             return;
         }
 
@@ -145,65 +163,71 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
     };
 
     return (
-        <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable
-                droppableId='columns'
-                direction='vertical'
-                type='checklist'
-            >
-                {(droppableProvided: DroppableProvided) => (
-                    <div
-                        ref={droppableProvided.innerRef}
-                        {...droppableProvided.droppableProps}
-                    >
-                        {props.checklists?.map((checklist: Checklist, checklistIndex: number) => (
-                            <Draggable
-                                key={checklist.title + checklistIndex}
-                                draggableId={checklist.title + checklistIndex}
-                                index={checklistIndex}
-                            >
-                                {(draggableProvided: DraggableProvided) => (
-                                    <DragHandle
-                                        step={false}
-                                        draggableProvided={draggableProvided}
-                                        onDelete={() => handleDeletePressed(checklistIndex)}
-                                    >
-                                        <StageEditor
-                                            checklist={checklist}
-                                            checklistIndex={checklistIndex}
-                                            onChange={(newChecklist: Checklist) => {
-                                                onChangeChecklist(checklistIndex, newChecklist);
-                                            }}
-                                        />
-                                    </DragHandle>
-                                )}
-                            </Draggable>
-                        ))}
-                        {droppableProvided.placeholder}
-                    </div>
-                )}
-            </Droppable>
-            <NewStageContainer>
-                <HorizontalBar>
-                    <NewStage
-                        onClick={onAddChecklist}
-                    >
-                        <i className='icon-plus icon-16'/>
-                        {'New Stage'}
-                    </NewStage>
-                </HorizontalBar>
-            </NewStageContainer>
-            <ConfirmModal
-                show={confirmRemoveChecklistNum >= 0}
-                title={'Remove Stage'}
-                message={'Are you sure you want to remove the stage? All steps will be removed.'}
-                confirmButtonText={'Remove Stage'}
-                onConfirm={() => {
-                    onRemoveChecklist(confirmRemoveChecklistNum);
-                    setConfirmRemoveChecklistNum(-1);
-                }}
-                onCancel={() => setConfirmRemoveChecklistNum(-1)}
-            />
-        </DragDropContext>
+        <>
+            <Header>
+                <HeaderTitle>{'Tasks'}</HeaderTitle>
+                <HeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the workflow channel.'}</HeaderHelpText>
+            </Header>
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable
+                    droppableId='columns'
+                    direction='vertical'
+                    type='checklist'
+                >
+                    {(droppableProvided: DroppableProvided) => (
+                        <div
+                            ref={droppableProvided.innerRef}
+                            {...droppableProvided.droppableProps}
+                        >
+                            {props.checklists?.map((checklist: Checklist, checklistIndex: number) => (
+                                <Draggable
+                                    key={checklist.title + checklistIndex}
+                                    draggableId={checklist.title + checklistIndex}
+                                    index={checklistIndex}
+                                >
+                                    {(draggableProvided: DraggableProvided) => (
+                                        <DragHandle
+                                            step={false}
+                                            draggableProvided={draggableProvided}
+                                            onDelete={() => handleDeletePressed(checklistIndex)}
+                                        >
+                                            <StageEditor
+                                                checklist={checklist}
+                                                checklistIndex={checklistIndex}
+                                                onChange={(newChecklist: Checklist) => {
+                                                    onChangeChecklist(checklistIndex, newChecklist);
+                                                }}
+                                            />
+                                        </DragHandle>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {droppableProvided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+                <NewStageContainer>
+                    <HorizontalBar>
+                        <NewStage
+                            onClick={onAddChecklist}
+                        >
+                            <i className='icon-plus icon-16'/>
+                            {'New Stage'}
+                        </NewStage>
+                    </HorizontalBar>
+                </NewStageContainer>
+                <ConfirmModal
+                    show={confirmRemoveChecklistNum >= 0}
+                    title={'Remove Stage'}
+                    message={'Are you sure you want to remove the stage? All steps will be removed.'}
+                    confirmButtonText={'Remove Stage'}
+                    onConfirm={() => {
+                        onRemoveChecklist(confirmRemoveChecklistNum);
+                        setConfirmRemoveChecklistNum(-1);
+                    }}
+                    onCancel={() => setConfirmRemoveChecklistNum(-1)}
+                />
+            </DragDropContext>
+        </>
     );
 };
