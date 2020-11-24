@@ -82,12 +82,12 @@ describe('incident rhs > latest update', () => {
             }).then((playbook) => {
                 // # Create a new incident
                 const now = Date.now();
-                const incidentName = 'Incident (' + now + ')';
+                const name = 'Incident (' + now + ')';
                 const incidentChannelName = 'incident-' + now;
                 cy.apiStartIncident({
                     teamId,
                     playbookId: playbook.id,
-                    incidentName,
+                    incidentName: name,
                     commanderUserId: userId,
                 });
 
