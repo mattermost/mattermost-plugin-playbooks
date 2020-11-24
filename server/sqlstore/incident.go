@@ -45,7 +45,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
-			"ChecklistsJSON", "ReminderPostID").
+			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID").
 		From("IR_Incident AS incident")
 
 	statusPostsSelect := sqlStore.builder.
@@ -149,9 +149,10 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	incidents := make([]incident.Incident, 0, len(rawIncidents))
 	incidentIDs := make([]string, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
-		asIncident, err2 := s.toIncident(rawIncident)
-		if err2 != nil {
-			return nil, err2
+		var asIncident *incident.Incident
+		asIncident, err = s.toIncident(rawIncident)
+		if err != nil {
+			return nil, err
 		}
 		incidents = append(incidents, *asIncident)
 		incidentIDs = append(incidentIDs, asIncident.ID)
@@ -234,7 +235,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 		return nil, errors.Wrapf(err, "failed to store new incident")
 	}
 
-	if err = s.replaceStatusPosts(tx, rawIncident.Incident); err != nil {
+	if err = s.appendStatusPosts(tx, rawIncident.Incident); err != nil {
 		return nil, errors.Wrap(err, "failed to replace status posts")
 	}
 
@@ -287,7 +288,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 		return errors.Wrapf(err, "failed to update incident with id '%s'", rawIncident.ID)
 	}
 
-	if err = s.replaceStatusPosts(tx, rawIncident.Incident); err != nil {
+	if err = s.appendStatusPosts(tx, rawIncident.Incident); err != nil {
 		return errors.Wrapf(err, "failed to replace status posts for incident with id '%s'", rawIncident.ID)
 	}
 
@@ -488,15 +489,7 @@ func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident,
 	return &i, nil
 }
 
-func (s *incidentStore) replaceStatusPosts(q queryExecer, incidentToSave incident.Incident) error {
-	// Delete existing posts that are not in the new incidentToSave.StatusPostIDs list
-	delBuilder := sq.Delete("IR_StatusPosts").
-		Where(sq.Eq{"IncidentID": incidentToSave.ID}).
-		Where(sq.NotEq{"PostID": incidentToSave.StatusPostIDs})
-	if _, err := s.store.execBuilder(q, delBuilder); err != nil {
-		return err
-	}
-
+func (s *incidentStore) appendStatusPosts(q queryExecer, incidentToSave incident.Incident) error {
 	if len(incidentToSave.StatusPostIDs) == 0 {
 		return nil
 	}

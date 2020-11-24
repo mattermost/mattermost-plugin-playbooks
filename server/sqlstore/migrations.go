@@ -24,15 +24,15 @@ const MySQLCharset = "DEFAULT CHARACTER SET utf8mb4"
 // this workaround to make the migration idempotent
 var createPGIndex = func(indexName, tableName, columns string) string {
 	return fmt.Sprintf(`
-						DO
-						$$
-						BEGIN
-							IF to_regclass('%s') IS NULL THEN
-								CREATE INDEX %s ON %s (%s);
-							END IF;
-						END
-						$$;
-					`, indexName, indexName, tableName, columns)
+		DO
+		$$
+		BEGIN
+			IF to_regclass('%s') IS NULL THEN
+				CREATE INDEX %s ON %s (%s);
+			END IF;
+		END
+		$$;
+	`, indexName, indexName, tableName, columns)
 }
 
 var migrations = []Migration{
@@ -289,14 +289,6 @@ var migrations = []Migration{
 				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ReminderPostID TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
 				}
-			}
-
-			incidentUpdate := sqlStore.builder.
-				Update("IR_Incident").
-				Set("ReminderPostID", "").
-				Where(sq.Eq{"ReminderPostID": nil})
-			if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
-				return errors.Errorf("failed updating ReminderPostID field")
 			}
 
 			return nil
