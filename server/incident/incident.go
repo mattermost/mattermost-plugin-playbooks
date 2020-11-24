@@ -22,7 +22,8 @@ type Incident struct {
 	PostID             string               `json:"post_id"`
 	PlaybookID         string               `json:"playbook_id"`
 	Checklists         []playbook.Checklist `json:"checklists"`
-	StatusPostsIDs     []string             `json:"status_posts_ids"`
+	StatusPostIDs      []string             `json:"status_post_ids"`
+	StatusPosts        []StatusPost         `json:"status_posts"`
 	ReminderPostID     string               `json:"reminder_post_id"`
 	BroadcastChannelID string               `json:"broadcast_channel_id"`
 }
@@ -36,8 +37,12 @@ func (i *Incident) Clone() *Incident {
 	newIncident.Checklists = newChecklists
 
 	var newStatusPostsIDs []string
-	newStatusPostsIDs = append(newStatusPostsIDs, i.StatusPostsIDs...)
-	newIncident.StatusPostsIDs = newStatusPostsIDs
+	newStatusPostsIDs = append(newStatusPostsIDs, i.StatusPostIDs...)
+	newIncident.StatusPostIDs = newStatusPostsIDs
+
+	var newStatusPosts []StatusPost
+	newStatusPosts = append(newStatusPosts, i.StatusPosts...)
+	newIncident.StatusPosts = newStatusPosts
 
 	return &newIncident
 }
@@ -55,8 +60,11 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 			old.Checklists[j].Items = []playbook.ChecklistItem{}
 		}
 	}
-	if old.StatusPostsIDs == nil {
-		old.StatusPostsIDs = []string{}
+	if old.StatusPostIDs == nil {
+		old.StatusPostIDs = []string{}
+	}
+	if old.StatusPosts == nil {
+		old.StatusPosts = []StatusPost{}
 	}
 
 	// Define consistent semantics for empty checklists and out-of-range active stages.
@@ -83,6 +91,14 @@ type Header struct {
 	DeleteAt         int64  `json:"delete_at"`
 	ActiveStage      int    `json:"active_stage"`
 	ActiveStageTitle string `json:"active_stage_title"`
+}
+
+// StatusPost is information added to the incident when selecting from the db and sent to the
+// client; it is not saved to the db.
+type StatusPost struct {
+	ID       string `json:"id"`
+	CreateAt int64  `json:"create_at"`
+	DeleteAt int64  `json:"delete_at"`
 }
 
 type UpdateOptions struct {
@@ -274,6 +290,9 @@ type Service interface {
 
 	// RemoveReminderPost will remove the reminder in the incident channel (if any).
 	RemoveReminderPost(incidentID string) error
+
+	// ChangeCreationDate changes the creation date of the specified incident.
+	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -303,6 +322,9 @@ type Store interface {
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// ChangeCreationDate changes the creation date of the specified incident.
+	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.

@@ -8,7 +8,7 @@ import {Post} from 'mattermost-redux/types/posts';
 import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {getChannel, getCurrentChannel, getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -98,8 +98,7 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
     return (msg: WebSocketMessage) => {
         const currentUserId = getCurrentUserId(getState());
         if (currentUserId === msg.broadcast.user_id) {
-            const channel = getChannel(getState(), msg.data.channel_id);
-            dispatch(removedFromIncidentChannel(channel.team_id, channel.id));
+            dispatch(removedFromIncidentChannel(msg.data.channel_id));
         }
     };
 }
@@ -112,7 +111,7 @@ async function getIncidentFromStatusUpdate(post: Post) : Promise<Incident | null
         return null;
     }
 
-    if (incident.status_posts_ids.includes(post.id)) {
+    if (incident.status_post_ids.includes(post.id)) {
         return incident;
     }
 

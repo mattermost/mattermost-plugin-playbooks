@@ -11,6 +11,7 @@ describe('incident rhs > latest update', () => {
     let teamId;
     let userId;
     let playbookId;
+    let incidentChannelId;
 
     before(() => {
         // # Login as user-1
@@ -52,6 +53,8 @@ describe('incident rhs > latest update', () => {
             playbookId,
             incidentName,
             commanderUserId: userId,
+        }).then((incident) => {
+            incidentChannelId = incident.channel_id;
         });
 
         // # Navigate directly to the application and the incident channel
@@ -175,6 +178,37 @@ describe('incident rhs > latest update', () => {
                 cy.get('div[class^=UpdateSection-]').within(() => {
                     cy.findByText(newMessage).should('exist');
                 });
+            });
+        });
+
+        it('when it\'s not in the redux store', () => {
+            const now = Date.now();
+            const updateMessage = 'Update - ' + now;
+
+            // # Create a status update
+            cy.updateStatus(updateMessage);
+
+            // * Verify that the RHS shows the status update
+            cy.get('div[class^=UpdateSection-]').within(() => {
+                cy.findByText(updateMessage).should('exist');
+            });
+
+            // # Write 50 posts to make sure the latest update is not loaded after a refresh
+            for (let i = 0; i < 50; i++) {
+                cy.apiCreatePost(incidentChannelId, 'Dummy message #' + i, '', {});
+            }
+
+            // # Reload the page so the redux store is cleared
+            cy.reload();
+
+            // * Verify that there is no post loaded with the status update
+            cy.get('#postListContent').within(() => {
+                cy.findByText(updateMessage).should('not.exist');
+            });
+
+            // * Verify that the RHS still shows the status update
+            cy.get('div[class^=UpdateSection-]').within(() => {
+                cy.findByText(updateMessage).should('exist');
             });
         });
     });

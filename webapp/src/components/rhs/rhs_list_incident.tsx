@@ -13,6 +13,7 @@ import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import Profile from 'src/components/profile/profile';
 import Duration from 'src/components/duration';
 import {Incident} from 'src/types/incident';
+import {lastUpdatedByIncidentId} from 'src/selectors';
 
 const IncidentContainer = styled.div<IncidentContainerProps>`
     display: flex;
@@ -90,32 +91,7 @@ interface Props {
 }
 
 const RHSListIncident = (props: Props) => {
-    type GetPostType = (postId: string) => Post;
-    const getPostFromState = useSelector<GlobalState, GetPostType>((state) => (postId) => getPost(state, postId));
-    const [lastUpdated, setLastUpdated] = useState(0);
-
-    useEffect(() => {
-        const getLastUpdated = async () => {
-            const postIDs = [...props.incident.status_posts_ids].reverse();
-
-            for (const postId of postIDs) {
-                let post = getPostFromState(postId);
-                if (!post) {
-                    // eslint-disable-next-line no-await-in-loop
-                    post = await Client4.getPost(postId);
-                }
-                if (post?.delete_at === 0) {
-                    setLastUpdated(post.create_at);
-                    return;
-                }
-            }
-
-            setLastUpdated(0);
-        };
-
-        // TODO: https://mattermost.atlassian.net/browse/MM-30787
-        getLastUpdated();
-    }, [props.incident, getPostFromState]);
+    const lastUpdatedMap = useSelector(lastUpdatedByIncidentId);
 
     return (
         <IncidentContainer active={props.active}>
@@ -137,7 +113,7 @@ const RHSListIncident = (props: Props) => {
                 <Col1>{'Last updated:'}</Col1>
                 <Col2>
                     <Duration
-                        from={lastUpdated}
+                        from={lastUpdatedMap[props.incident.id]}
                         to={0}
                         ago={true}
                     />

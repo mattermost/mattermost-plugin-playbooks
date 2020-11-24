@@ -365,7 +365,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
-	incidentToModify.StatusPostsIDs = append(incidentToModify.StatusPostsIDs, post.Id)
+	incidentToModify.StatusPostIDs = append(incidentToModify.StatusPostIDs, post.Id)
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
@@ -373,6 +373,13 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
+
+	incidentToModify.StatusPosts = append(incidentToModify.StatusPosts,
+		StatusPost{
+			ID:       post.Id,
+			CreateAt: post.CreateAt,
+			DeleteAt: post.DeleteAt,
+		})
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 
@@ -897,6 +904,11 @@ func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, check
 // NukeDB removes all incident related data.
 func (s *ServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
+}
+
+// ChangeCreationDate changes the creation date of the incident.
+func (s *ServiceImpl) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
+	return s.store.ChangeCreationDate(incidentID, creationTimestamp)
 }
 
 func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {

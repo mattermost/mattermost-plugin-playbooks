@@ -148,9 +148,8 @@ export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncide
     incidents,
 });
 
-export const removedFromIncidentChannel = (teamId: string, channelId: string): RemovedFromIncidentChannel => ({
+export const removedFromIncidentChannel = (channelId: string): RemovedFromIncidentChannel => ({
     type: REMOVED_FROM_INCIDENT_CHANNEL,
-    teamId,
     channelId,
 });
 

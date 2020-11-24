@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import merge from 'deepmerge';
+
 import {getRandomInt, getRandomId} from '../utils';
 import users from '../fixtures/users.json';
 import timeouts from '../fixtures/timeouts';
@@ -125,7 +127,7 @@ Cypress.Commands.add('apiGetUserByEmail', (email) => {
         url: '/api/v4/users/email/' + email,
     }).then((response) => {
         expect(response.status).to.equal(200);
-        cy.wrap(response);
+        cy.wrap(response.body);
     });
 });
 
@@ -288,5 +290,61 @@ Cypress.Commands.add('apiGetCurrentUser', () => {
     }).then((response) => {
         expect(response.status).to.equal(200);
         return cy.wrap(response.body);
+    });
+});
+
+Cypress.Commands.add('apiGetConfig', () => {
+    // # Get current settings
+    return cy.request('/api/v4/config').then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap({config: response.body});
+    });
+});
+
+Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
+    // # Get current settings
+    return cy.request('/api/v4/config').then((response) => {
+        const oldConfig = response.body;
+
+        const config = merge.all([oldConfig, newConfig]);
+
+        // # Set the modified config
+        return cy.request({
+            url: '/api/v4/config',
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            method: 'PUT',
+            body: config,
+        }).then((updateResponse) => {
+            expect(updateResponse.status).to.equal(200);
+            return cy.apiGetConfig();
+        });
+    });
+});
+
+/**
+* Creates a post directly via API
+* This API assume that the user is logged in and has cookie to access
+* @param {String} channelId - Where to post
+* @param {String} message - What to post
+* @param {String} rootId - Parent post ID. Set to "" to avoid nesting
+* @param {Object} props - Post props
+* @param {String} token - Optional token to use for auth. If not provided - posts as current user
+*/
+Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token = '', failOnStatusCode = true) => {
+    const headers = {'X-Requested-With': 'XMLHttpRequest'};
+    if (token !== '') {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    return cy.request({
+        headers,
+        failOnStatusCode,
+        url: '/api/v4/posts',
+        method: 'POST',
+        body: {
+            channel_id: channelId,
+            root_id: rootId,
+            message,
+            props,
+        },
     });
 });
