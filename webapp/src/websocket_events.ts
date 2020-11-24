@@ -111,7 +111,7 @@ async function getIncidentFromStatusUpdate(post: Post) : Promise<Incident | null
         return null;
     }
 
-    if (incident.status_posts_ids.includes(post.id)) {
+    if (incident.status_post_ids.includes(post.id)) {
         return incident;
     }
 

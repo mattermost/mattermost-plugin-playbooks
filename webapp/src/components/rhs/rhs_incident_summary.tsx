@@ -77,7 +77,7 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                         <div className='title'>
                             {'Recent Update:'}
                         </div>
-                        <LatestUpdate posts_ids={props.incident.status_posts_ids}/>
+                        <LatestUpdate statusPosts={props.incident.status_posts}/>
                     </div>
                 </div>
             </Scrollbars>

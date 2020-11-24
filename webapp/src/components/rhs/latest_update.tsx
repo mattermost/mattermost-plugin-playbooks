@@ -24,6 +24,7 @@ import {isMobile} from 'src/mobile';
 import {updateStatus, toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import ShowMore from 'src/components/rhs/show_more';
+import {StatusPost} from 'src/types/incident';
 
 const NoRecentUpdates = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -78,45 +79,62 @@ const EditedIndicator = styled.div`
     margin-top: -7px;
 `;
 
-interface LatestUpdateProps {
-    posts_ids: string[];
+interface Props {
+    statusPosts: StatusPost[];
 }
 
-const LatestUpdate: FC<LatestUpdateProps> = (props: LatestUpdateProps) => {
-    const dispatch = useDispatch();
-
-    const [latestUpdate, setLatestUpdate] = useState<Post | null>(null);
-
-    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, latestUpdate?.user_id || ''));
+function useAuthorInfo(userID: string) : [string, string] {
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
+    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userID));
 
-    type GetPostType = (postId: string) => Post;
-    const getPostFromState = useSelector<GlobalState, GetPostType>((state) => (postId) => getPost(state, postId));
-
-    useEffect(() => {
-        for (let i = props.posts_ids.length - 1; i >= 0; --i) {
-            const post = getPostFromState(props.posts_ids[i]);
-
-            if (post) {
-                setLatestUpdate(post);
-                return;
-            }
-        }
-
-        setLatestUpdate(null);
-    });
-
-    let profileUri = '';
-    let userName = '';
+    let profileUrl = '';
+    let preferredName = '';
     if (user) {
-        const preferredName = displayUsername(user, teamnameNameDisplaySetting);
-        userName = preferredName;
-        profileUri = Client4.getProfilePictureUrl(user.id, user.last_picture_update);
+        profileUrl = Client4.getProfilePictureUrl(user.id, user.last_picture_update);
+        preferredName = displayUsername(user, teamnameNameDisplaySetting);
     }
 
-    if (latestUpdate === null) {
+    return [profileUrl, preferredName];
+}
+
+function usePostFromState(statusPosts: StatusPost[]) : [string, Post | null] {
+    const sortedPosts = [...statusPosts]
+        .filter((a) => a.delete_at === 0)
+        .sort((a, b) => b.create_at - a.create_at);
+
+    const postID = sortedPosts[0]?.id;
+
+    return [postID, useSelector<GlobalState, Post | null>((state) => getPost(state, postID || ''))];
+}
+
+const LatestUpdate: FC<Props> = (props: Props) => {
+    const dispatch = useDispatch();
+    const [latestUpdate, setLatestUpdate] = useState<Post | null>(null);
+
+    const team = useSelector<GlobalState, Team>(getCurrentTeam);
+    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const [authorProfileUrl, authorUserName] = useAuthorInfo(latestUpdate?.user_id || '');
+    const [postID, postFromState] = usePostFromState(props.statusPosts);
+
+    useEffect(() => {
+        const updateLatestUpdate = async () => {
+            if (postFromState) {
+                setLatestUpdate(postFromState);
+                return;
+            }
+
+            if (postID) {
+                setLatestUpdate(await Client4.getPost(postID));
+                return;
+            }
+
+            setLatestUpdate(null);
+        };
+
+        updateLatestUpdate();
+    }, [props.statusPosts]);
+
+    if (!latestUpdate) {
         return (
             <NoRecentUpdates>
                 {'No recent updates. '}<a onClick={() => dispatch(updateStatus())}>{'Click here'}</a>{' to update status.'}
@@ -139,10 +157,10 @@ const LatestUpdate: FC<LatestUpdateProps> = (props: LatestUpdateProps) => {
 
     return (
         <UpdateSection>
-            <ProfilePic src={profileUri}/>
+            <ProfilePic src={authorProfileUrl}/>
             <UpdateContainer>
                 <UpdateHeader>
-                    <UpdateAuthor>{userName}</UpdateAuthor>
+                    <UpdateAuthor>{authorUserName}</UpdateAuthor>
                     <UpdateTimeLink
                         href={`/_redirect/pl/${latestUpdate.id}`}
                         onClick={(e) => {
