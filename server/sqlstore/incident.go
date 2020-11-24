@@ -419,7 +419,7 @@ func (s *incidentStore) NukeDB() (err error) {
 	defer s.store.finalizeTransaction(tx)
 
 	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Playbook")
+		return errors.Wrap(err, "could not delete IR_PlaybookMember")
 	}
 
 	if _, err := tx.Exec("DELETE FROM IR_Incident"); err != nil {
@@ -428,6 +428,14 @@ func (s *incidentStore) NukeDB() (err error) {
 
 	if _, err := tx.Exec("DELETE FROM IR_Playbook"); err != nil {
 		return errors.Wrap(err, "could not delete IR_Playbook")
+	}
+
+	if _, err := tx.Exec("DELETE FROM IR_StatusPosts"); err != nil {
+		return errors.Wrap(err, "could not delete IR_StatusPosts")
+	}
+
+	if _, err := tx.Exec("DELETE FROM IR_System"); err != nil {
+		return errors.Wrap(err, "could not delete IR_System")
 	}
 
 	if err := tx.Commit(); err != nil {
