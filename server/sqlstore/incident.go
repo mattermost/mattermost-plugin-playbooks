@@ -418,23 +418,15 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Playbook")
-	}
-
-	if _, err := tx.Exec("DELETE FROM IR_Incident"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Incident")
-	}
-
-	if _, err := tx.Exec("DELETE FROM IR_Playbook"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Playbook")
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System"); err != nil {
+		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
 	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not delete all rows")
+		return errors.Wrap(err, "could not commit")
 	}
 
-	return nil
+	return s.store.RunMigrations()
 }
 
 func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
