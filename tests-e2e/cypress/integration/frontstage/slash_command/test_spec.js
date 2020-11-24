@@ -11,7 +11,6 @@ import moment from 'moment';
 describe('slash command > test', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
-    let userId;
     let playbookId;
 
     before(() => {
@@ -25,8 +24,6 @@ describe('slash command > test', () => {
         cy.apiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
-                userId = user.id;
-
                 cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then((admin) => {
                     cy.apiCreatePlaybook({
                         teamId: team.id,
