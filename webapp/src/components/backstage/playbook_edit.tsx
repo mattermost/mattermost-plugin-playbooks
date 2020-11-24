@@ -406,7 +406,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 checklists={playbook.checklists}
                                 onChange={updateChecklist}
                             />
-                            {'TODO MM-30519 implment perferences.'}
+                            {'TODO MM-30519 implement perferences.'}
                         </TabsContent>
                     </EditContent>
                 </EditView>
