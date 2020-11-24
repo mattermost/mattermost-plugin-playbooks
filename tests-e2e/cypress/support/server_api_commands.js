@@ -348,3 +348,36 @@ Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token 
         },
     });
 });
+
+/**
+* Deletes a post directly via API
+* This API assume that the user is logged in and has cookie to access
+* @param {String} postId - ID of the post to delete
+*/
+Cypress.Commands.add('apiDeletePost', (postId) => {
+    const headers = {'X-Requested-With': 'XMLHttpRequest'};
+    return cy.request({
+        url: `/api/v4/posts/${postId}`,
+        headers,
+        method: 'DELETE',
+    });
+});
+
+/**
+* Edits a post directly via API
+* This API assume that the user is logged in and has cookie to access
+* @param {String} postId - ID of the post to edit
+* @param {String} message - What to post
+*/
+Cypress.Commands.add('apiEditPost', (postId, message) => {
+    const headers = {'X-Requested-With': 'XMLHttpRequest'};
+    return cy.request({
+        url: `/api/v4/posts/${postId}`,
+        headers,
+        method: 'PUT',
+        body: {
+            id: postId,
+            message,
+        }
+    });
+});
