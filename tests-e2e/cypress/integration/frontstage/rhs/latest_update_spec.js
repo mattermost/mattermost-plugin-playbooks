@@ -22,7 +22,6 @@ describe('incident rhs > latest update', () => {
             teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
                 userId = user.id;
-
                 cy.apiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
                     // # Create a playbook
                     cy.apiCreateTestPlaybook({

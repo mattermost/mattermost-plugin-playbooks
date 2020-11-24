@@ -17,16 +17,16 @@ import {CommanderInfo} from 'src/types/backstage';
 import {
     FetchIncidentsParams,
     FetchIncidentsReturn,
+    Incident,
+    isIncident,
     isMetadata,
     Metadata,
-    isIncident,
-    Incident,
 } from 'src/types/incident';
 import {
-    Playbook,
     ChecklistItem,
     ChecklistItemState,
     FetchPlaybooksNoChecklistReturn,
+    Playbook,
     PlaybookNoChecklist,
 } from 'src/types/playbook';
 
@@ -187,21 +187,18 @@ export async function setCommander(incidentId: string, commanderId: string) {
 export async function setAssignee(incidentId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
     const body = JSON.stringify({assignee_id: assigneeId});
     try {
-        const data = await doPut(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
-        return data;
+        return await doPut(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
     } catch (error) {
         return {error};
     }
 }
 
 export async function setChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
+    return doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
         JSON.stringify({
             new_state: newState,
         }),
     );
-
-    return data;
 }
 
 export async function clientAddChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
