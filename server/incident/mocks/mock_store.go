@@ -152,6 +152,20 @@ func (mr *MockStoreMockRecorder) NukeDB() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockStore)(nil).NukeDB))
 }
 
+// RunMigrations mocks base method
+func (m *MockStore) RunMigrations() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunMigrations")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunMigrations indicates an expected call of RunMigrations
+func (mr *MockStoreMockRecorder) RunMigrations() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunMigrations", reflect.TypeOf((*MockStore)(nil).RunMigrations))
+}
+
 // UpdateIncident mocks base method
 func (m *MockStore) UpdateIncident(arg0 *incident.Incident) error {
 	m.ctrl.T.Helper()
