@@ -322,9 +322,6 @@ type Store interface {
 	// NukeDB removes all incident related data.
 	NukeDB() error
 
-	// RunMigrations manually runs the migrations (if any are needed)
-	RunMigrations() error
-
 	// ChangeCreationDate changes the creation date of the specified incident.
 	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
 }

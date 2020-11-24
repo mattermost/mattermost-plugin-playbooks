@@ -124,20 +124,19 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	incidentStore := sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
-
 	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
 	if err != nil {
 		return errors.Wrapf(err, "failed creating cluster mutex")
 	}
 
 	mutex.Lock()
-	if err = incidentStore.RunMigrations(); err != nil {
+	if err = sqlStore.RunMigrations(); err != nil {
 		mutex.Unlock()
 		return errors.Wrapf(err, "failed to run migrations")
 	}
 	mutex.Unlock()
 
+	incidentStore := sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler()

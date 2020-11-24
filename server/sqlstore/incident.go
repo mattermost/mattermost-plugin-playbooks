@@ -418,32 +418,15 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember, IR_Incident, IR_Playbook, IR_StatusPosts, IR_System CASCADE"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
 	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not delete all rows")
+		return errors.Wrap(err, "could not commit")
 	}
 
-	return s.RunMigrations()
-}
-
-// RunMigrations will run the migrations (if any). The caller should hold a cluster mutex if there
-// is a danger of this being run on multiple servers at once.
-func (s *incidentStore) RunMigrations() error {
-	currentSchemaVersion, err := s.store.GetCurrentVersion()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get the current schema version")
-	}
-
-	if currentSchemaVersion.LT(LatestVersion()) {
-		if err := s.store.Migrate(currentSchemaVersion); err != nil {
-			return errors.Wrapf(err, "failed to complete migrations")
-		}
-	}
-
-	return nil
+	return s.store.RunMigrations()
 }
 
 func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
