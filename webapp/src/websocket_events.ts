@@ -4,9 +4,11 @@
 import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {Post} from 'mattermost-redux/types/posts';
 import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -97,6 +99,47 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
         const currentUserId = getCurrentUserId(getState());
         if (currentUserId === msg.broadcast.user_id) {
             dispatch(removedFromIncidentChannel(msg.data.channel_id));
+        }
+    };
+}
+
+async function getIncidentFromStatusUpdate(post: Post) : Promise<Incident | null> {
+    let incident : Incident;
+    try {
+        incident = await fetchIncidentByChannel(post.channel_id);
+    } catch (err) {
+        return null;
+    }
+
+    if (incident.status_post_ids.includes(post.id)) {
+        return incident;
+    }
+
+    return null;
+}
+
+export function handleWebsocketPostDeleted(getState: GetStateFunc, dispatch: Dispatch) {
+    return async (msg: WebSocketMessage) => {
+        if (getCurrentChannelId(getState()) === msg.broadcast.channel_id) {
+            getIncidentFromStatusUpdate(JSON.parse(msg.data.post)).then((incident) => {
+                if (incident !== null) {
+                    dispatch(incidentUpdated(incident));
+                    websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
+                }
+            });
+        }
+    };
+}
+
+export function handleWebsocketPostEdited(getState: GetStateFunc, dispatch: Dispatch) {
+    return async (msg: WebSocketMessage) => {
+        if (getCurrentChannelId(getState()) === msg.broadcast.channel_id) {
+            getIncidentFromStatusUpdate(JSON.parse(msg.data.post)).then((incident) => {
+                if (incident !== null) {
+                    dispatch(incidentUpdated(incident));
+                    websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
+                }
+            });
         }
     };
 }
