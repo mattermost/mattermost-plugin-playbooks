@@ -756,7 +756,7 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
 func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request) {
@@ -787,7 +787,7 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
 func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
