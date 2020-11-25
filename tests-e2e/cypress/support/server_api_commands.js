@@ -1,11 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {getRandomInt} from '../utils';
+import merge from 'deepmerge';
+
+import {getRandomInt, getRandomId} from '../utils';
 import users from '../fixtures/users.json';
 import timeouts from '../fixtures/timeouts';
-
-import merge from 'deepmerge';
 
 // *****************************************************************************
 // Authentication
@@ -190,6 +190,27 @@ Cypress.Commands.add('removeUserFromChannel', (channelId, userId) => {
     });
 });
 
+Cypress.Commands.add('apiCreateChannel', (teamId, name, displayName, type = 'O', purpose = '', header = '', unique = true) => {
+    const randomSuffix = getRandomId();
+
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/channels',
+        method: 'POST',
+        body: {
+            team_id: teamId,
+            name: unique ? `${name}-${randomSuffix}` : name,
+            display_name: unique ? `${displayName} ${randomSuffix}` : displayName,
+            type,
+            purpose,
+            header,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        return cy.wrap({channel: response.body});
+    });
+});
+
 // *****************************************************************************
 // Plugins
 // https://api.mattermost.com/#tag/plugins
@@ -297,5 +318,66 @@ Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
             expect(updateResponse.status).to.equal(200);
             return cy.apiGetConfig();
         });
+    });
+});
+
+/**
+* Creates a post directly via API
+* This API assume that the user is logged in and has cookie to access
+* @param {String} channelId - Where to post
+* @param {String} message - What to post
+* @param {String} rootId - Parent post ID. Set to "" to avoid nesting
+* @param {Object} props - Post props
+* @param {String} token - Optional token to use for auth. If not provided - posts as current user
+*/
+Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token = '', failOnStatusCode = true) => {
+    const headers = {'X-Requested-With': 'XMLHttpRequest'};
+    if (token !== '') {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    return cy.request({
+        headers,
+        failOnStatusCode,
+        url: '/api/v4/posts',
+        method: 'POST',
+        body: {
+            channel_id: channelId,
+            root_id: rootId,
+            message,
+            props,
+        },
+    });
+});
+
+/**
+* Deletes a post directly via API
+* This API assume that the user is logged in and has cookie to access
+* @param {String} postId - ID of the post to delete
+*/
+Cypress.Commands.add('apiDeletePost', (postId) => {
+    const headers = {'X-Requested-With': 'XMLHttpRequest'};
+    return cy.request({
+        url: `/api/v4/posts/${postId}`,
+        headers,
+        method: 'DELETE',
+    });
+});
+
+/**
+* Edits a post directly via API
+* This API assume that the user is logged in and has cookie to access
+* @param {String} postId - ID of the post to edit
+* @param {String} message - What to post
+*/
+Cypress.Commands.add('apiEditPost', (postId, message) => {
+    const headers = {'X-Requested-With': 'XMLHttpRequest'};
+    return cy.request({
+        url: `/api/v4/posts/${postId}`,
+        headers,
+        method: 'PUT',
+        body: {
+            id: postId,
+            message,
+        }
     });
 });

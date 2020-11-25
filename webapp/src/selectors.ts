@@ -4,6 +4,7 @@
 import {createSelector} from 'reselect';
 
 import {GlobalState} from 'mattermost-redux/types/store';
+import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
@@ -18,6 +19,8 @@ const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;
 
 export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
+
+export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 

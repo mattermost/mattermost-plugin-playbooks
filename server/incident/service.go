@@ -16,6 +16,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -290,7 +291,19 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		return ErrIncidentNotActive
 	}
 
-	dialog, err := s.newUpdateIncidentDialog()
+	message := ""
+	newestPostID := findNewestNonDeletedPostID(currentIncident.StatusPosts)
+	if newestPostID != "" {
+		var post *model.Post
+		post, err = s.pluginAPI.Post.GetPost(newestPostID)
+		if err != nil {
+			return errors.Wrap(err, "failed to find newest post")
+		}
+		message = post.Message
+	}
+	// TODO: if there is no newestPost, use the message template: https://mattermost.atlassian.net/browse/MM-30519
+
+	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -305,6 +318,40 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, authorID, originalPostID string) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	incidentTeam, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	author, err := s.pluginAPI.User.Get(authorID)
+	if err != nil {
+		return err
+	}
+
+	duration := timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())
+	status := "Ongoing"
+	if !theIncident.IsActive {
+		status = "Ended"
+	}
+
+	broadcastedMsg := fmt.Sprintf("# Incident Update: [%s](/%s/pl/%s)\n", incidentChannel.DisplayName, incidentTeam.Name, originalPostID)
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, status)
+	broadcastedMsg += "***\n"
+	broadcastedMsg += statusUpdate
+
+	if _, err := s.poster.PostMessage(theIncident.BroadcastChannelID, broadcastedMsg); err != nil {
+		return err
 	}
 
 	return nil
@@ -335,6 +382,10 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to update incident")
 	}
 
+	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
+		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
+	}
+
 	incidentToModify.StatusPosts = append(incidentToModify.StatusPosts,
 		StatusPost{
 			ID:       post.Id,
@@ -343,6 +394,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		})
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+
 	s.telemetry.UpdateStatus(incidentToModify, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -1005,16 +1057,28 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog() (*model.Dialog, error) {
+func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string) (*model.Dialog, error) {
+	introductionText := "Update your incident status."
+
+	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
+	if err == nil {
+		team, err := s.pluginAPI.Team.Get(broadcastChannel.TeamId)
+		if err != nil {
+			return nil, err
+		}
+
+		introductionText += fmt.Sprintf(" This post will be broadcasted to [%s](/%s/channels/%s).", broadcastChannel.DisplayName, team.Name, broadcastChannel.Id)
+	}
+
 	return &model.Dialog{
 		Title:            "Update Incident Status",
-		IntroductionText: "Update your incident status and broadcast it to another channel.",
+		IntroductionText: introductionText,
 		Elements: []model.DialogElement{
 			{
 				DisplayName: "Message",
 				Name:        DialogFieldMessageKey,
 				Type:        "textarea",
-				// TODO: default should be trimmed previous update, https://mattermost.atlassian.net/browse/MM-30206
+				Default:     message,
 			},
 			{
 				DisplayName: "Reminder for next update",
@@ -1089,4 +1153,17 @@ func addRandomBits(name string) string {
 	}
 	randBits := model.NewId()
 	return fmt.Sprintf("%s-%s", name, randBits[:4])
+}
+
+func findNewestNonDeletedPostID(posts []StatusPost) string {
+	var newest *StatusPost
+	for i, p := range posts {
+		if newest == nil || p.DeleteAt == 0 && p.CreateAt > newest.CreateAt {
+			newest = &posts[i]
+		}
+	}
+	if newest == nil {
+		return ""
+	}
+	return newest.ID
 }

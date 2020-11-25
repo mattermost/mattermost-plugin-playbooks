@@ -1,12 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
+import React, {FC, useState, useEffect, useCallback} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
+import {searchChannels as searchChannelsInTeam} from 'mattermost-redux/actions/channels';
 
 import {Team} from 'mattermost-redux/types/teams';
 
@@ -29,6 +30,7 @@ import './playbook.scss';
 import StagesAndStepsIcon from './stages_and_steps_icon';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
+import ChannelSelector from './channel_selector';
 
 const Container = styled.div`
     display: flex;
@@ -319,6 +321,18 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
     };
 
+    const searchChannels = (term: string) => {
+        return dispatch(searchChannelsInTeam(props.currentTeam.id, term));
+    };
+
+    const handleBroadcastInput = (channelId: string) => {
+        setPlaybook({
+            ...playbook,
+            broadcast_channel_id: channelId,
+        });
+        setChangesMade(true);
+    };
+
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
@@ -375,7 +389,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             setCurrentTab={setCurrentTab}
                         >
                             {'Tasks'}
-                            {'Perferences'}
+                            {'Preferences'}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -386,7 +400,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 checklists={playbook.checklists}
                                 onChange={updateChecklist}
                             />
-                            {'TODO MM-30519 implement perferences.'}
+                            {'TODO MM-30519 implement preferences.'}
                         </TabsContent>
                     </EditContent>
                 </EditView>
@@ -439,6 +453,19 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 onRemoveUser={handleRemoveUser}
                                 searchProfiles={searchUsers}
                                 getProfiles={getUsers}
+                                playbook={playbook}
+                            />
+                        </SidebarBlock>
+                        <SidebarBlock>
+                            <SidebarHeaderText>
+                                {'Broadcast Channel'}
+                                <SidebarHeaderDescription>
+                                    {'Broadcast the incident status to an additional channel. All status posts will be shared automatically with both the incident and broadcast channel.'}
+                                </SidebarHeaderDescription>
+                            </SidebarHeaderText>
+                            <ChannelSelector
+                                searchChannels={searchChannels}
+                                onChannelSelected={handleBroadcastInput}
                                 playbook={playbook}
                             />
                         </SidebarBlock>

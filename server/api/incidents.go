@@ -298,6 +298,8 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 
 		newIncident.Checklists = pb.Checklists
 		public = pb.CreatePublicIncident
+
+		newIncident.BroadcastChannelID = pb.BroadcastChannelID
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -756,7 +758,7 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
 func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request) {
@@ -787,7 +789,7 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
 func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
