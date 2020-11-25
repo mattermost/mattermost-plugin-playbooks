@@ -395,7 +395,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             setCurrentTab={setCurrentTab}
                         >
                             {'Tasks'}
-                            {'Perferences'}
+                            {'Preferences'}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -406,7 +406,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 checklists={playbook.checklists}
                                 onChange={updateChecklist}
                             />
-                            {'TODO MM-30519 implement perferences.'}
+                            {'TODO MM-30519 implement preferences.'}
                         </TabsContent>
                     </EditContent>
                 </EditView>
