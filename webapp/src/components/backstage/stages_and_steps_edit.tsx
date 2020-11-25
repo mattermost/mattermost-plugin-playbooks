@@ -166,7 +166,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
         <>
             <Header>
                 <HeaderTitle>{'Tasks'}</HeaderTitle>
-                <HeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the workflow channel.'}</HeaderHelpText>
+                <HeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</HeaderHelpText>
             </Header>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
