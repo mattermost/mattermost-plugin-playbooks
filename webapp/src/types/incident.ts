@@ -22,6 +22,7 @@ export interface Incident {
     status_post_ids: string[];
     status_posts: StatusPost[];
     reminder_post_id: string;
+    broadcast_channel_id: string;
 }
 
 export interface StatusPost {
@@ -65,7 +66,8 @@ export function isIncident(arg: any): arg is Incident {
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.status_post_ids && Array.isArray(arg.status_post_ids) &&
         arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
-        typeof arg.reminder_post_id === 'string');
+        typeof arg.reminder_post_id === 'string' &&
+        typeof arg.broadcast_channel_id === 'string');
 }
 
 export function isStatusPost(arg: any): arg is StatusPost {

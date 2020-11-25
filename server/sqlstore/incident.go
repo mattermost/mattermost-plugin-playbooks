@@ -45,7 +45,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
-			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID").
+			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID", "BroadcastChannelID").
 		From("IR_Incident AS incident")
 
 	statusPostsSelect := sqlStore.builder.
@@ -213,22 +213,23 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	_, err = s.store.execBuilder(tx, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":               rawIncident.ID,
-			"Name":             rawIncident.Name,
-			"Description":      rawIncident.Description,
-			"IsActive":         rawIncident.IsActive,
-			"CommanderUserID":  rawIncident.CommanderUserID,
-			"TeamID":           rawIncident.TeamID,
-			"ChannelID":        rawIncident.ChannelID,
-			"CreateAt":         rawIncident.CreateAt,
-			"EndAt":            rawIncident.EndAt,
-			"DeleteAt":         rawIncident.DeleteAt,
-			"ActiveStage":      rawIncident.ActiveStage,
-			"ActiveStageTitle": rawIncident.ActiveStageTitle,
-			"PostID":           rawIncident.PostID,
-			"PlaybookID":       rawIncident.PlaybookID,
-			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
-			"ReminderPostID":   rawIncident.ReminderPostID,
+			"ID":                 rawIncident.ID,
+			"Name":               rawIncident.Name,
+			"Description":        rawIncident.Description,
+			"IsActive":           rawIncident.IsActive,
+			"CommanderUserID":    rawIncident.CommanderUserID,
+			"TeamID":             rawIncident.TeamID,
+			"ChannelID":          rawIncident.ChannelID,
+			"CreateAt":           rawIncident.CreateAt,
+			"EndAt":              rawIncident.EndAt,
+			"DeleteAt":           rawIncident.DeleteAt,
+			"ActiveStage":        rawIncident.ActiveStage,
+			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
+			"PostID":             rawIncident.PostID,
+			"PlaybookID":         rawIncident.PlaybookID,
+			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
+			"ReminderPostID":     rawIncident.ReminderPostID,
+			"BroadcastChannelID": rawIncident.BroadcastChannelID,
 		}))
 
 	if err != nil {
@@ -271,16 +272,17 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":             rawIncident.Name,
-			"Description":      rawIncident.Description,
-			"IsActive":         rawIncident.IsActive,
-			"CommanderUserID":  rawIncident.CommanderUserID,
-			"EndAt":            rawIncident.EndAt,
-			"DeleteAt":         rawIncident.DeleteAt,
-			"ActiveStage":      rawIncident.ActiveStage,
-			"ActiveStageTitle": rawIncident.ActiveStageTitle,
-			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
-			"ReminderPostID":   rawIncident.ReminderPostID,
+			"Name":               rawIncident.Name,
+			"Description":        rawIncident.Description,
+			"IsActive":           rawIncident.IsActive,
+			"CommanderUserID":    rawIncident.CommanderUserID,
+			"EndAt":              rawIncident.EndAt,
+			"DeleteAt":           rawIncident.DeleteAt,
+			"ActiveStage":        rawIncident.ActiveStage,
+			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
+			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
+			"ReminderPostID":     rawIncident.ReminderPostID,
+			"BroadcastChannelID": rawIncident.BroadcastChannelID,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 

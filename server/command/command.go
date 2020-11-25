@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -450,7 +450,7 @@ func (r *Runner) actionList() {
 			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
 				{Title: "Stage:", Value: fmt.Sprintf("**%s**", theIncident.ActiveStageTitle)},
-				{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), now)},
+				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), now)},
 				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
 			},
 		}
@@ -512,7 +512,7 @@ func (r *Runner) actionInfo() {
 		timestamp := ""
 		if item.State == playbook.ChecklistItemStateClosed {
 			icon = ":white_check_mark: "
-			timestamp = " (" + getTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
+			timestamp = " (" + timeutils.GetTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
 		}
 
 		tasks += icon + item.Title + timestamp + "\n"
@@ -520,7 +520,7 @@ func (r *Runner) actionInfo() {
 	attachment := &model.SlackAttachment{
 		Fields: []*model.SlackAttachmentField{
 			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
-			{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), time.Now())},
+			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())},
 			{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
 			{Title: "Stage:", Value: activeChecklist.Title},
 			{Title: "Tasks:", Value: tasks},
@@ -533,46 +533,6 @@ func (r *Runner) actionInfo() {
 		},
 	}
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
-}
-
-func getTimeForMillis(unixMillis int64) time.Time {
-	return time.Unix(0, unixMillis*int64(1000000))
-}
-
-func durationString(start, end time.Time) string {
-	duration := end.Sub(start).Round(time.Second)
-
-	if duration.Seconds() < 60 {
-		return "< 1m"
-	}
-
-	if duration.Minutes() < 60 {
-		return fmt.Sprintf("%.fm", math.Floor(duration.Minutes()))
-	}
-
-	if duration.Hours() < 24 {
-		hours := math.Floor(duration.Hours())
-		minutes := math.Mod(math.Floor(duration.Minutes()), 60)
-		if minutes == 0 {
-			return fmt.Sprintf("%.fh", hours)
-		}
-		return fmt.Sprintf("%.fh %.fm", hours, minutes)
-	}
-
-	days := math.Floor(duration.Hours() / 24)
-	duration %= 24 * time.Hour
-	hours := math.Floor(duration.Hours())
-	minutes := math.Mod(math.Floor(duration.Minutes()), 60)
-	if minutes == 0 {
-		if hours == 0 {
-			return fmt.Sprintf("%.fd", days)
-		}
-		return fmt.Sprintf("%.fd %.fh", days, hours)
-	}
-	if hours == 0 {
-		return fmt.Sprintf("%.fd %.fm", days, minutes)
-	}
-	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
 func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentChannelName string) error {
@@ -961,8 +921,9 @@ And... yes, of course, we have emojis
 			TeamID:          r.args.TeamId,
 			CommanderUserID: r.args.UserId,
 		},
-		PlaybookID: gotplaybook.ID,
-		Checklists: gotplaybook.Checklists,
+		PlaybookID:         gotplaybook.ID,
+		Checklists:         gotplaybook.Checklists,
+		BroadcastChannelID: gotplaybook.BroadcastChannelID,
 	}, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
@@ -1329,7 +1290,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			return
 		}
 
-		createAt := getTimeForMillis(timestamps[i])
+		createAt := timeutils.GetTimeForMillis(timestamps[i])
 		err = r.incidentService.ChangeCreationDate(newIncident.ID, createAt)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error changing creation date: %v", err)

@@ -28,8 +28,9 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				NumSteps:             0,
 				Checklists:           nil,
 				MemberIDs:            nil,
+				BroadcastChannelID:   "channelid",
 			},
-			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[],"member_ids":[]}`),
+			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[],"member_ids":[],"broadcast_channel_id":"channelid"}`),
 			wantErr:  false,
 		},
 		{
@@ -51,9 +52,10 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 						Items: nil,
 					},
 				},
-				MemberIDs: []string{"bob", "divyani"},
+				MemberIDs:          []string{"bob", "divyani"},
+				BroadcastChannelID: "",
 			},
-			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[{"id":"checklist1","title":"checklist 1","items":[]}],"member_ids":["bob","divyani"]}`),
+			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[{"id":"checklist1","title":"checklist 1","items":[]}],"member_ids":["bob","divyani"],"broadcast_channel_id":""}`),
 			wantErr:  false,
 		},
 	}
