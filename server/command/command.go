@@ -468,7 +468,7 @@ func (r *Runner) actionList() {
 func (r *Runner) actionInfo() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if errors.Is(err, incident.ErrNotFound) {
-		r.postCommandResponse("You can only show the details of an incident from within the incident's channel.")
+		r.postCommandResponse("You can only see the details of an incident from within the incident's channel.")
 		return
 	} else if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
