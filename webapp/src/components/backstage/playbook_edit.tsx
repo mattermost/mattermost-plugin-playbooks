@@ -13,6 +13,8 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import styled from 'styled-components';
 
+import {Tabs, TabsContent} from 'src/components/tabs';
+
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 
 import {teamPluginErrorUrl} from 'src/browser_routing';
@@ -45,10 +47,9 @@ const EditView = styled.div`
     flex-grow: 1;
 `;
 
-const EditHeader = styled.div`
+const TabsHeader = styled.div`
     height: 72px;
     display: flex;
-    align-items: center;
     padding: 0 32px;
     border-bottom: 1px solid var(--center-channel-color-16);
     white-space: nowrap;
@@ -218,6 +219,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     const location = useLocation();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
+
+    const [currentTab, setCurrentTab] = useState<number>(0);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -400,30 +403,37 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             </BackstageNavbar>
             <Container>
                 <EditView>
-                    <EditHeader>
-                        <StagesAndStepsIcon/>
-                        <EditHeaderTextContainer>
-                            <EditHeaderText>{'Stages and Tasks'}</EditHeaderText>
-                            <EditHeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</EditHeaderHelpText>
-                        </EditHeaderTextContainer>
-                    </EditHeader>
+                    <TabsHeader>
+                        <Tabs
+                            currentTab={currentTab}
+                            setCurrentTab={setCurrentTab}
+                        >
+                            {'Tasks'}
+                            {'Preferences'}
+                        </Tabs>
+                    </TabsHeader>
                     <EditContent>
-                        <StagesAndStepsEdit
-                            checklists={playbook.checklists}
-                            onChange={updateChecklist}
-                        />
+                        <TabsContent
+                            currentTab={currentTab}
+                        >
+                            <StagesAndStepsEdit
+                                checklists={playbook.checklists}
+                                onChange={updateChecklist}
+                            />
+                            {'TODO MM-30519 implement preferences.'}
+                        </TabsContent>
                     </EditContent>
                 </EditView>
                 <Sidebar
                     data-testid='playbook-sidebar'
                 >
                     <SidebarHeader>
-                        {'Settings'}
+                        {'Permissions'}
                     </SidebarHeader>
                     <SidebarContent>
                         <SidebarBlock>
                             <SidebarHeaderText>
-                                {'Incident channel'}
+                                {'Channel access'}
                                 <SidebarHeaderDescription>
                                     {'Determine the type of incident channel this playbook creates when starting an incident.'}
                                 </SidebarHeaderDescription>
@@ -453,7 +463,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         </SidebarBlock>
                         <SidebarBlock>
                             <SidebarHeaderText>
-                                {'Share Playbook'}
+                                {'Playbook access'}
                                 <SidebarHeaderDescription>
                                     {'Only people who you share with can create an incident from this playbook.'}
                                 </SidebarHeaderDescription>
