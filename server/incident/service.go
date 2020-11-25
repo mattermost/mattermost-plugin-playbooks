@@ -1158,7 +1158,7 @@ func addRandomBits(name string) string {
 func findNewestNonDeletedPostID(posts []StatusPost) string {
 	var newest *StatusPost
 	for i, p := range posts {
-		if newest == nil || p.DeleteAt == 0 && p.CreateAt > newest.CreateAt {
+		if p.DeleteAt == 0 && (newest == nil || p.CreateAt > newest.CreateAt) {
 			newest = &posts[i]
 		}
 	}

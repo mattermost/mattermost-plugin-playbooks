@@ -15,6 +15,10 @@
   "rules": {
     "import/no-unresolved": 2,
     "comma-dangle": 0,
+    "dot-location": [
+      2,
+      "property"
+    ],
     "import/order": [
       "error",
       {

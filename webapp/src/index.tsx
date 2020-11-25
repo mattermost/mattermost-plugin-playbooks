@@ -34,8 +34,7 @@ import {
     handleWebsocketIncidentCreated,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
-    handleWebsocketPostDeleted,
-    handleWebsocketPostEdited,
+    handleWebsocketPostEditedOrDeleted,
 } from './websocket_events';
 import {
     WEBSOCKET_INCIDENT_UPDATED,
@@ -67,7 +66,8 @@ export default class Plugin {
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
 
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
+        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar,
+            <RHSTitle/>);
         const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
         // Store the toggleRHS action to use later
@@ -81,8 +81,8 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEdited(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
 
         // Listen for channel changes and open the RHS when appropriate.
         store.subscribe(makeRHSOpener(store));

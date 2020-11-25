@@ -8,7 +8,6 @@ import {Post} from 'mattermost-redux/types/posts';
 import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -17,7 +16,7 @@ import {
     receivedTeamIncidents,
 } from 'src/actions';
 import {fetchIncidentByChannel, fetchIncidentChannels} from 'src/client';
-import {clientId} from 'src/selectors';
+import {clientId, myIncidentsMap} from 'src/selectors';
 import {Incident, isIncident} from 'src/types/incident';
 
 export const websocketSubscribersToIncidentUpdate = new Set<(incident: Incident) => void>();
@@ -103,8 +102,8 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
     };
 }
 
-async function getIncidentFromStatusUpdate(post: Post) : Promise<Incident | null> {
-    let incident : Incident;
+async function getIncidentFromStatusUpdate(post: Post): Promise<Incident | null> {
+    let incident: Incident;
     try {
         incident = await fetchIncidentByChannel(post.channel_id);
     } catch (err) {
@@ -118,28 +117,15 @@ async function getIncidentFromStatusUpdate(post: Post) : Promise<Incident | null
     return null;
 }
 
-export function handleWebsocketPostDeleted(getState: GetStateFunc, dispatch: Dispatch) {
+export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispatch: Dispatch) => {
     return async (msg: WebSocketMessage) => {
-        if (getCurrentChannelId(getState()) === msg.broadcast.channel_id) {
-            getIncidentFromStatusUpdate(JSON.parse(msg.data.post)).then((incident) => {
-                if (incident !== null) {
-                    dispatch(incidentUpdated(incident));
-                    websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
-                }
-            });
+        const activeIncidents = myIncidentsMap(getState());
+        if (activeIncidents[msg.broadcast.channel_id]) {
+            const incident = await getIncidentFromStatusUpdate(JSON.parse(msg.data.post));
+            if (incident) {
+                dispatch(incidentUpdated(incident));
+                websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
+            }
         }
     };
-}
-
-export function handleWebsocketPostEdited(getState: GetStateFunc, dispatch: Dispatch) {
-    return async (msg: WebSocketMessage) => {
-        if (getCurrentChannelId(getState()) === msg.broadcast.channel_id) {
-            getIncidentFromStatusUpdate(JSON.parse(msg.data.post)).then((incident) => {
-                if (incident !== null) {
-                    dispatch(incidentUpdated(incident));
-                    websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
-                }
-            });
-        }
-    };
-}
+};
