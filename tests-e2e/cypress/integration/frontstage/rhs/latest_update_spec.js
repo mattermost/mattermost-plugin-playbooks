@@ -69,7 +69,8 @@ describe('incident rhs > latest update', () => {
 
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
-                cy.get('#interactiveDialogModalIntroductionText').contains('Update your incident status. This post will be broadcasted to Town Square.');
+                cy.get('#interactiveDialogModalIntroductionText')
+                  .contains('Update your incident status. This post will be broadcasted to Town Square.');
             });
         });
 
@@ -99,8 +100,31 @@ describe('incident rhs > latest update', () => {
 
                 // # Get the interactive dialog modal.
                 cy.get('#interactiveDialogModal').within(() => {
-                    cy.get('#interactiveDialogModalIntroductionText').contains('Update your incident status.');
-                    cy.get('#interactiveDialogModalIntroductionText').should('not.contain', 'This post will be broadcasted');
+                    cy.get('#interactiveDialogModalIntroductionText')
+                      .contains('Update your incident status.');
+                    cy.get('#interactiveDialogModalIntroductionText')
+                      .should('not.contain', 'This post will be broadcasted');
+                });
+            });
+        });
+    });
+
+    describe('shows the last update in update message', () => {
+        it('when we have made a previous update', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage);
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the first message is there.
+                cy.findByTestId('messageinput').within(() => {
+                    cy.findByText(firstMessage).should('exist');
                 });
             });
         });
@@ -278,7 +302,8 @@ describe('incident rhs > latest update', () => {
         describe('in a channel we are  currently viewing', () => {
             it('in a brand new incident', () => {
                 // * Verify that the RHS shows that there are no updates.
-                cy.get('#incidentRHSUpdates').contains('No recent updates. Click here to update status.');
+                cy.get('#incidentRHSUpdates')
+                  .contains('No recent updates. Click here to update status.');
             });
 
             it('when the only update is deleted', () => {
@@ -296,7 +321,8 @@ describe('incident rhs > latest update', () => {
                     cy.deletePost(postId);
 
                     // * Verify that the RHS shows that there are no updates.
-                    cy.get('#incidentRHSUpdates').contains('No recent updates. Click here to update status.');
+                    cy.get('#incidentRHSUpdates')
+                      .contains('No recent updates. Click here to update status.');
                 });
             });
 
@@ -332,7 +358,8 @@ describe('incident rhs > latest update', () => {
                         cy.deletePost(firstId);
 
                         // * Verify that the RHS shows that there are no updates.
-                        cy.get('#incidentRHSUpdates').contains('No recent updates. Click here to update status.');
+                        cy.get('#incidentRHSUpdates')
+                          .contains('No recent updates. Click here to update status.');
                     });
                 });
             });
@@ -360,7 +387,8 @@ describe('incident rhs > latest update', () => {
                     });
 
                     // * Verify that the RHS shows that there are no updates.
-                    cy.get('#incidentRHSUpdates').contains('No recent updates. Click here to update status.');
+                    cy.get('#incidentRHSUpdates')
+                      .contains('No recent updates. Click here to update status.');
                 });
             });
 
@@ -397,7 +425,8 @@ describe('incident rhs > latest update', () => {
                         });
 
                         // * Verify that the RHS shows that there are no updates.
-                        cy.get('#incidentRHSUpdates').contains('No recent updates. Click here to update status.');
+                        cy.get('#incidentRHSUpdates')
+                          .contains('No recent updates. Click here to update status.');
                     });
                 });
             });
