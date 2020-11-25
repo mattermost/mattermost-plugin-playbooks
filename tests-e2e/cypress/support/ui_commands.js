@@ -125,8 +125,11 @@ Cypress.Commands.add('updateStatus', (message) => {
 
     // # Get the interactive dialog modal.
     cy.get('#interactiveDialogModal').within(() => {
+        // # remove what's there (if this is a second update)
+        cy.findByTestId('messageinput').clear();
+
         // # Type the new update in the text box.
-        cy.findByTestId('message').type(message);
+        cy.findByTestId('messageinput').type(message);
 
         // # Submit the dialog.
         cy.get('#interactiveDialogSubmit').click();
