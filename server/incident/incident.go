@@ -2,19 +2,30 @@ package incident
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 )
 
+// NoActiveStage is the value of an incident's ActiveStage property when there are no stages.
+const NoActiveStage = -1
+
 // Incident holds the detailed information of an incident.
+//
+// NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
+// that column needs to be added in the sqlstore code.
 type Incident struct {
 	Header
-	PostID     string               `json:"post_id"`
-	PlaybookID string               `json:"playbook_id"`
-	Checklists []playbook.Checklist `json:"checklists"`
+	PostID             string               `json:"post_id"`
+	PlaybookID         string               `json:"playbook_id"`
+	Checklists         []playbook.Checklist `json:"checklists"`
+	StatusPostIDs      []string             `json:"status_post_ids"`
+	StatusPosts        []StatusPost         `json:"status_posts"`
+	ReminderPostID     string               `json:"reminder_post_id"`
+	BroadcastChannelID string               `json:"broadcast_channel_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -24,6 +35,15 @@ func (i *Incident) Clone() *Incident {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newIncident.Checklists = newChecklists
+
+	var newStatusPostsIDs []string
+	newStatusPostsIDs = append(newStatusPostsIDs, i.StatusPostIDs...)
+	newIncident.StatusPostIDs = newStatusPostsIDs
+
+	var newStatusPosts []StatusPost
+	newStatusPosts = append(newStatusPosts, i.StatusPosts...)
+	newIncident.StatusPosts = newStatusPosts
+
 	return &newIncident
 }
 
@@ -39,6 +59,19 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 		if cl.Items == nil {
 			old.Checklists[j].Items = []playbook.ChecklistItem{}
 		}
+	}
+	if old.StatusPostIDs == nil {
+		old.StatusPostIDs = []string{}
+	}
+	if old.StatusPosts == nil {
+		old.StatusPosts = []StatusPost{}
+	}
+
+	// Define consistent semantics for empty checklists and out-of-range active stages.
+	if len(old.Checklists) == 0 {
+		old.Header.ActiveStage = NoActiveStage
+	} else if old.Header.ActiveStage < 0 || old.Header.ActiveStage >= len(old.Checklists) {
+		old.Header.ActiveStage = 0
 	}
 
 	return json.Marshal(old)
@@ -60,24 +93,32 @@ type Header struct {
 	ActiveStageTitle string `json:"active_stage_title"`
 }
 
+// StatusPost is information added to the incident when selecting from the db and sent to the
+// client; it is not saved to the db.
+type StatusPost struct {
+	ID       string `json:"id"`
+	CreateAt int64  `json:"create_at"`
+	DeleteAt int64  `json:"delete_at"`
+}
+
 type UpdateOptions struct {
 	CommanderUserID *string `json:"commander_user_id"`
 	ActiveStage     *int    `json:"active_stage"`
 }
 
-// Details holds the extra details needed for some API calls (e.g., the backstage's incident details)
-type Details struct {
+// StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
+type StatusUpdateOptions struct {
+	Message  string
+	Reminder time.Duration
+}
+
+// Metadata tracks ancillary metadata about an incident.
+type Metadata struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
 	NumMembers         int64  `json:"num_members"`
 	TotalPosts         int64  `json:"total_posts"`
-}
-
-// WithDetails holds the Incident with Details
-type WithDetails struct {
-	Incident Incident `json:"incident"`
-	Details  Details  `json:"details"`
 }
 
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
@@ -87,6 +128,30 @@ type GetIncidentsResults struct {
 	PageCount  int        `json:"page_count"`
 	HasMore    bool       `json:"has_more"`
 	Items      []Incident `json:"items"`
+}
+
+func (r GetIncidentsResults) Clone() GetIncidentsResults {
+	newGetIncidentsResults := r
+
+	newGetIncidentsResults.Items = make([]Incident, 0, len(r.Items))
+	for _, i := range r.Items {
+		newGetIncidentsResults.Items = append(newGetIncidentsResults.Items, *i.Clone())
+	}
+
+	return newGetIncidentsResults
+}
+
+func (r GetIncidentsResults) MarshalJSON() ([]byte, error) {
+	type Alias GetIncidentsResults
+
+	old := Alias(r.Clone())
+
+	// replace nils with empty slices for the frontend
+	if old.Items == nil {
+		old.Items = []Incident{}
+	}
+
+	return json.Marshal(old)
 }
 
 // CommanderInfo holds the summary information of a commander.
@@ -106,7 +171,6 @@ type DialogState struct {
 // for the user making the request
 type RequesterInfo struct {
 	UserID          string
-	TeamID          string
 	UserIDtoIsAdmin map[string]bool
 }
 
@@ -125,16 +189,19 @@ var ErrIncidentNotActive = errors.New("incident not active")
 // ErrIncidentActive is used to indicate trying to run a command on an incident that is active.
 var ErrIncidentActive = errors.New("incident active")
 
+// ErrMalformedIncident is used to indicate an incident is not valid
+var ErrMalformedIncident = errors.New("incident active")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident.
-	CreateIncident(incdnt *Incident, public bool) (*Incident, error)
+	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
+	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
-	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook) error
+	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
 
 	// EndIncident completes the incident with the given ID by the given user.
 	EndIncident(incidentID string, userID string) error
@@ -144,13 +211,19 @@ type Service interface {
 
 	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
 	// be ended.
-	OpenEndIncidentDialog(incidentID string, triggerID string) error
+	OpenEndIncidentDialog(incidentID, triggerID string) error
+
+	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
+	OpenUpdateStatusDialog(incidentID, triggerID string) error
+
+	// UpdateStatus updates an incident's status.
+	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
 
 	// GetIncident gets an incident by ID. Returns error if it could not be found.
 	GetIncident(incidentID string) (*Incident, error)
 
-	// GetIncidentWithDetails gets an incident with the detailed metadata.
-	GetIncidentWithDetails(incidentID string) (*WithDetails, error)
+	// GetIncidentMetadata gets ancillary metadata about an incident.
+	GetIncidentMetadata(incidentID string) (*Metadata, error)
 
 	// GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 	// if there is no incident associated with this channel.
@@ -178,7 +251,7 @@ type Service interface {
 	SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) error
+	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error)
 
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
@@ -199,8 +272,28 @@ type Service interface {
 	// stage of incidentID to stageIdx.
 	ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error)
 
+	// OpenNextStageDialog opens an interactive dialog so the user can confirm
+	// going to the next stage
+	OpenNextStageDialog(incidentID string, nextStage int, triggerID string) error
+
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+	// reminded to update the incident's status.
+	SetReminder(incidentID string, timeInMinutes time.Duration) error
+
+	// RemoveReminder removes the pending reminder for incidentID (if any).
+	RemoveReminder(incidentID string)
+
+	// HandleReminder is the handler for all reminder events.
+	HandleReminder(key string)
+
+	// RemoveReminderPost will remove the reminder in the incident channel (if any).
+	RemoveReminderPost(incidentID string) error
+
+	// ChangeCreationDate changes the creation date of the specified incident.
+	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -230,18 +323,31 @@ type Store interface {
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
+
+	// ChangeCreationDate changes the creation date of the specified incident.
+	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
+// Unless otherwise noted, userID is the user initiating the event.
 type Telemetry interface {
-	// CreateIncidenttracks the creation of a new incident.
-	CreateIncident(incident *Incident, public bool)
+	// CreateIncident tracks the creation of a new incident.
+	CreateIncident(incident *Incident, userID string, public bool)
 
 	// EndIncident tracks the end of an incident.
-	EndIncident(incident *Incident)
+	EndIncident(incident *Incident, userID string)
 
 	// RestartIncident tracks the restart of an incident.
-	RestartIncident(incident *Incident)
+	RestartIncident(incident *Incident, userID string)
+
+	// ChangeCommander tracks changes in commander.
+	ChangeCommander(incident *Incident, userID string)
+
+	// ChangeStage tracks changes in stage
+	ChangeStage(incident *Incident, userID string)
+
+	// UpdateStatus tracks when an incident's status has been updated
+	UpdateStatus(incident *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
@@ -249,25 +355,19 @@ type Telemetry interface {
 	// SetAssignee tracks the changing of an assignee on an item.
 	SetAssignee(incidentID, userID string)
 
-	// AddChecklistItem tracks the creation of a new checklist item.
-	AddChecklistItem(incidentID, userID string)
+	// AddTask tracks the creation of a new checklist item.
+	AddTask(incidentID, userID string)
 
-	// RemoveChecklistItem tracks the removal of a checklist item.
-	RemoveChecklistItem(incidentID, userID string)
+	// RemoveTask tracks the removal of a checklist item.
+	RemoveTask(incidentID, userID string)
 
-	// RenameChecklistItem tracks the update of a checklist item.
-	RenameChecklistItem(incidentID, userID string)
+	// RenameTask tracks the update of a checklist item.
+	RenameTask(incidentID, userID string)
 
-	// MoveChecklistItem tracks the unchecking of checked item.
-	MoveChecklistItem(incidentID, userID string)
+	// MoveTask tracks the unchecking of checked item.
+	MoveTask(incidentID, userID string)
 
-	// ChangeCommander tracks changes in commander.
-	ChangeCommander(incident *Incident)
-
-	// ChangeCommander tracks changes in stage
-	ChangeStage(incident *Incident)
-
-	// RunChecklistItemSlashCommand tracks the execution of a slash command attached to
+	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunChecklistItemSlashCommand(incidentID, userID string)
+	RunTaskSlashCommand(incidentID, userID string)
 }

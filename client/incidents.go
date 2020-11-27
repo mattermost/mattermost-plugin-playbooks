@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -39,7 +39,7 @@ type IncidentListOptions struct {
 	TeamID string `url:"team_id,omitempty"`
 
 	Sort      IncidentSort  `url:"sort,omitempty"`
-	Direction SortDirection `url:"order,omitempty"`
+	Direction SortDirection `url:"direction,omitempty"`
 }
 
 // IncidentSort enumerates the available fields we can sort on.
@@ -63,9 +63,6 @@ const (
 
 	// EndAt sorts by the "end_at" field.
 	EndAt IncidentSort = "end_at"
-
-	// ByStatus sorts by the "status" field.
-	ByStatus IncidentSort = "by_status"
 )
 
 // IncidentList contains the paginated result.

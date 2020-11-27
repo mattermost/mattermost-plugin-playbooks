@@ -5,8 +5,9 @@ import React, {FC, useEffect, useState} from 'react';
 import moment from 'moment';
 
 interface DurationProps {
-    created_at: number;
-    ended_at: number;
+    from: number;
+    to: number; // setting to = 0 means "now"
+    ago?: boolean;
 }
 
 export const renderDuration = (duration: moment.Duration) => {
@@ -15,8 +16,8 @@ export const renderDuration = (duration: moment.Duration) => {
     }
 
     const durationComponents = [];
-    if (duration.days() > 0) {
-        durationComponents.push(duration.days() + 'd');
+    if (duration.asDays() >= 1) {
+        durationComponents.push(Math.floor(duration.asDays()) + 'd');
     }
     if (duration.hours() > 0) {
         durationComponents.push(duration.hours() + 'h');
@@ -43,15 +44,16 @@ const Duration: FC<DurationProps> = (props: DurationProps) => {
         };
     }, []);
 
-    const start = moment(props.created_at);
-    const end = (props.ended_at && moment(props.ended_at)) || now;
-    const duration = moment.duration(end.diff(start));
+    if (!props.from) {
+        return <div className='time'>{'-'}</div>;
+    }
 
+    const start = moment(props.from);
+    const end = (props.to && moment(props.to)) || now;
+    const duration = moment.duration(end.diff(start));
+    const postfix = props.ago ? ' ago' : '';
     return (
-        <div className='first-title'>
-            {'Duration'}
-            <div className='time'>{renderDuration(duration)}</div>
-        </div>
+        <div className='time'>{renderDuration(duration) + postfix}</div>
     );
 };
 

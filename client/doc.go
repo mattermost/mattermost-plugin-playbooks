@@ -5,7 +5,7 @@
 Package client provides a client for using the Workflows API.
 
 Usage:
-	import ir "github.com/mattermost/mattermost-plugin-incident-response/client"
+	import ir "github.com/mattermost/mattermost-plugin-incident-management/client"
 
 Construct a new Workflows client, then use the various services on the client to
 access different parts of the workflows API. For example:
@@ -27,7 +27,7 @@ Some API methods have optional parameters that can be passed. For example:
 
 	// list incidents by status
 	list, err := client.Incidents.List(context.Background(), ir.IncidentListOptions{
-		Sort: ir.ByStatus,
+		Sort: ir.ByIsActive,
 	})
 
 Using the https://godoc.org/context package, one can easily
@@ -45,7 +45,7 @@ If you have an OAuth2 access token (for example, a personal API token as per htt
 you can use it with the oauth2 library using:
 
 	import (
-		ir "github.com/mattermost/mattermost-plugin-incident-response/client"
+		ir "github.com/mattermost/mattermost-plugin-incident-management/client"
 		"golang.org/x/oauth2"
 	)
 

@@ -19,19 +19,24 @@ export interface Incident {
     post_id: string;
     playbook_id: string;
     checklists: Checklist[];
+    status_post_ids: string[];
+    status_posts: StatusPost[];
+    reminder_post_id: string;
+    broadcast_channel_id: string;
 }
 
-export interface Details {
+export interface StatusPost {
+    id: string;
+    create_at: number;
+    delete_at: number;
+}
+
+export interface Metadata {
     channel_name: string;
     channel_display_name: string;
     team_name: string;
     num_members: number;
     total_posts: number;
-}
-
-export interface IncidentWithDetails {
-    incident: Incident;
-    details: Details;
 }
 
 export interface FetchIncidentsReturn {
@@ -58,11 +63,22 @@ export function isIncident(arg: any): arg is Incident {
         typeof arg.active_stage_title === 'string' &&
         typeof arg.post_id === 'string' &&
         arg.playbook_id && typeof arg.playbook_id === 'string' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist));
+        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
+        arg.status_post_ids && Array.isArray(arg.status_post_ids) &&
+        arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
+        typeof arg.reminder_post_id === 'string' &&
+        typeof arg.broadcast_channel_id === 'string');
+}
+
+export function isStatusPost(arg: any): arg is StatusPost {
+    return Boolean(arg &&
+        arg.id && typeof arg.id === 'string' &&
+        typeof arg.create_at === 'number' &&
+        typeof arg.delete_at === 'number');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isDetails(arg: any): arg is IncidentWithDetails {
+export function isMetadata(arg: any): arg is Metadata {
     return Boolean(arg &&
         arg.channel_name && typeof arg.channel_name === 'string' &&
         arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
@@ -71,19 +87,14 @@ export function isDetails(arg: any): arg is IncidentWithDetails {
         typeof arg.total_posts === 'number');
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isIncidentWithDetails(arg: any): arg is IncidentWithDetails {
-    return Boolean(arg.incident && isIncident(arg.incident) &&
-        arg.details && isDetails(arg.details));
-}
-
 export interface FetchIncidentsParams {
     team_id?: string;
     page?: number;
     per_page?: number;
     sort?: string;
-    order?: string;
+    direction?: string;
     status?: string;
     commander_user_id?: string;
     search_term?: string;
+    member_id?: string;
 }

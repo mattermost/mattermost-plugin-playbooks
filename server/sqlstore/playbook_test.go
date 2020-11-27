@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-management/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -348,7 +350,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 2,
@@ -367,7 +369,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 2,
@@ -423,7 +425,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -442,7 +444,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByTitle,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -479,7 +481,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
-				Direction: playbook.OrderAsc,
+				Direction: playbook.DirectionAsc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -498,7 +500,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortBySteps,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -535,7 +537,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			options: playbook.Options{
 				Sort:      playbook.SortByStages,
-				Direction: playbook.OrderDesc,
+				Direction: playbook.DirectionDesc,
 			},
 			expected: playbook.GetPlaybooksResults{
 				TotalCount: 4,
@@ -659,7 +661,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			require.ElementsMatch(t, []playbook.Playbook{}, result)
 		})
 
-		_, _, store := setupSQLStore(t, db)
+		_, store := setupSQLStore(t, db)
 		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
@@ -1018,5 +1020,16 @@ func (p *PlaybookBuilder) ToPlaybook() playbook.Playbook {
 }
 
 func setupPlaybookStore(t *testing.T, db *sqlx.DB) playbook.Store {
-	return NewPlaybookStore(setupSQLStore(t, db))
+	mockCtrl := gomock.NewController(t)
+
+	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
+	configAPI := mock_sqlstore.NewMockConfigurationAPI(mockCtrl)
+	pluginAPIClient := PluginAPIClient{
+		KV:            kvAPI,
+		Configuration: configAPI,
+	}
+
+	logger, sqlStore := setupSQLStore(t, db)
+
+	return NewPlaybookStore(pluginAPIClient, logger, sqlStore)
 }

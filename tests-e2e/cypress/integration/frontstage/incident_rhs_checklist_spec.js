@@ -72,13 +72,16 @@ describe('incident rhs checklist', () => {
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
             // * Verify the incident RHS is open.
-            cy.get('#rhsContainer').should('be.visible').within(() => {
-                cy.findByText(incidentName).should('be.visible');
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(incidentName).should('exist');
+
+                // # Select the tasks tab
+                cy.findByTestId('tasks').click();
             });
         });
 
         it('shows an ephemeral error when running an invalid slash command', () => {
-            cy.get('#rhsContainer').should('be.visible').within(() => {
+            cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the command has not yet been run.
                 cy.get('.run').eq(0).should('have.text', 'Run');
 
@@ -94,7 +97,7 @@ describe('incident rhs checklist', () => {
         });
 
         it('successfully runs a valid slash command', () => {
-            cy.get('#rhsContainer').should('be.visible').within(() => {
+            cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the command has not yet been run.
                 cy.get('.run').eq(1).should('have.text', 'Run');
 
@@ -113,7 +116,10 @@ describe('incident rhs checklist', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            cy.get('#rhsContainer').should('be.visible').within(() => {
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // # Select the tasks tab
+                cy.findByTestId('tasks').click();
+
                 // * Verify the invalid command still has not yet been run.
                 cy.get('.run').eq(0).should('have.text', 'Run');
 

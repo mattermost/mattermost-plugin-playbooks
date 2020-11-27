@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	apiVersion = "v1"
-	manifestID = "com.mattermost.plugin-incident-response"
+	apiVersion = "v0"
+	manifestID = "com.mattermost.plugin-incident-management"
 	userAgent  = "go-client/" + apiVersion
 )
 
@@ -40,14 +40,13 @@ type Client struct {
 // ErrorResponse reports an error caused by an API request.
 type ErrorResponse struct {
 	Response *http.Response // HTTP response that caused this error
-	Message  string         `json:"message"` // error message
-	Details  string         `json:"details"` // more detail on the error
+	Error    string         `json:"error"` // error message
 }
 
 func (r *ErrorResponse) Error() string {
-	return fmt.Sprintf("%v %v: %d %v %+v",
+	return fmt.Sprintf("%v %v: %d %v",
 		r.Response.Request.Method, r.Response.Request.URL,
-		r.Response.StatusCode, r.Message, r.Details)
+		r.Response.StatusCode, r.Error)
 }
 
 // ListOptions specifies the optional parameters to various List methods that

@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -22,29 +23,42 @@ type sqlIncident struct {
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
-	pluginAPI      PluginAPIClient
-	log            bot.Logger
-	store          *SQLStore
-	queryBuilder   sq.StatementBuilderType
-	incidentSelect sq.SelectBuilder
+	pluginAPI         PluginAPIClient
+	log               bot.Logger
+	store             *SQLStore
+	queryBuilder      sq.StatementBuilderType
+	incidentSelect    sq.SelectBuilder
+	statusPostsSelect sq.SelectBuilder
 }
 
 // Ensure playbookStore implements the playbook.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
+type incidentStatusPosts []struct {
+	IncidentID string
+	incident.StatusPost
+}
+
 // NewIncidentStore creates a new store for incident ServiceImpl.
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
+	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID").
+			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
+			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID", "BroadcastChannelID").
 		From("IR_Incident AS incident")
 
+	statusPostsSelect := sqlStore.builder.
+		Select("IncidentID", "PostID").
+		From("IR_StatusPosts")
+
 	return &incidentStore{
-		pluginAPI:      pluginAPI,
-		log:            log,
-		store:          sqlStore,
-		queryBuilder:   sqlStore.builder,
-		incidentSelect: incidentSelect,
+		pluginAPI:         pluginAPI,
+		log:               log,
+		store:             sqlStore,
+		queryBuilder:      sqlStore.builder,
+		incidentSelect:    incidentSelect,
+		statusPostsSelect: statusPostsSelect,
 	}
 }
 
@@ -89,7 +103,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 			Prefix("EXISTS(").
 			From("ChannelMembers AS cm").
 			Where("cm.ChannelId = incident.ChannelID").
-			Where(sq.Eq{"cm.UserId": options.MemberID}).
+			Where(sq.Eq{"cm.UserId": strings.ToLower(options.MemberID)}).
 			Suffix(")")
 
 		queryForResults = queryForResults.Where(membershipClause)
@@ -112,19 +126,57 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
-	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Order))
+	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Direction))
 
-	var incidents []incident.Incident
-	if err := s.store.selectBuilder(s.store.db, &incidents, queryForResults); err != nil {
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not begin transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	var rawIncidents []sqlIncident
+	if err = s.store.selectBuilder(tx, &rawIncidents, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for incidents")
 	}
 
 	var total int
-	if err := s.store.getBuilder(s.store.db, &total, queryForTotal); err != nil {
+	if err = s.store.getBuilder(tx, &total, queryForTotal); err != nil {
 		return nil, errors.Wrap(err, "failed to get total count")
 	}
 	pageCount := int(math.Ceil(float64(total) / float64(options.PerPage)))
 	hasMore := options.Page+1 < pageCount
+
+	incidents := make([]incident.Incident, 0, len(rawIncidents))
+	incidentIDs := make([]string, 0, len(rawIncidents))
+	for _, rawIncident := range rawIncidents {
+		var asIncident *incident.Incident
+		asIncident, err = s.toIncident(rawIncident)
+		if err != nil {
+			return nil, err
+		}
+		incidents = append(incidents, *asIncident)
+		incidentIDs = append(incidentIDs, asIncident.ID)
+	}
+
+	var statusPosts incidentStatusPosts
+
+	postInfoSelect := s.queryBuilder.
+		Select("ir.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
+		From("IR_StatusPosts as ir").
+		Join("Posts as p ON ir.PostID = p.Id").
+		OrderBy("p.CreateAt").
+		Where(sq.Eq{"ir.IncidentID": incidentIDs})
+
+	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrapf(err, "failed to get incidentStatusPosts")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "could not commit transaction")
+	}
+
+	addStatusPostsToIncidents(statusPosts, incidents)
 
 	return &incident.GetIncidentsResults{
 		TotalCount: total,
@@ -136,7 +188,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 // CreateIncident creates a new incident. It assumes that ActiveStage is correct
 // and that ActiveStageTitle is already synced.
-func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*incident.Incident, error) {
+func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
 	}
@@ -151,28 +203,45 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (*inciden
 		return nil, err
 	}
 
-	_, err = s.store.execBuilder(s.store.db, sq.
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return out, errors.Wrap(err, "could not begin transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	// When adding an Incident column #2: add to the SetMap
+	_, err = s.store.execBuilder(tx, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":               rawIncident.ID,
-			"Name":             rawIncident.Name,
-			"Description":      rawIncident.Description,
-			"IsActive":         rawIncident.IsActive,
-			"CommanderUserID":  rawIncident.CommanderUserID,
-			"TeamID":           rawIncident.TeamID,
-			"ChannelID":        rawIncident.ChannelID,
-			"CreateAt":         rawIncident.CreateAt,
-			"EndAt":            rawIncident.EndAt,
-			"DeleteAt":         rawIncident.DeleteAt,
-			"ActiveStage":      rawIncident.ActiveStage,
-			"ActiveStageTitle": rawIncident.ActiveStageTitle,
-			"PostID":           rawIncident.PostID,
-			"PlaybookID":       rawIncident.PlaybookID,
-			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
+			"ID":                 rawIncident.ID,
+			"Name":               rawIncident.Name,
+			"Description":        rawIncident.Description,
+			"IsActive":           rawIncident.IsActive,
+			"CommanderUserID":    rawIncident.CommanderUserID,
+			"TeamID":             rawIncident.TeamID,
+			"ChannelID":          rawIncident.ChannelID,
+			"CreateAt":           rawIncident.CreateAt,
+			"EndAt":              rawIncident.EndAt,
+			"DeleteAt":           rawIncident.DeleteAt,
+			"ActiveStage":        rawIncident.ActiveStage,
+			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
+			"PostID":             rawIncident.PostID,
+			"PlaybookID":         rawIncident.PlaybookID,
+			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
+			"ReminderPostID":     rawIncident.ReminderPostID,
+			"BroadcastChannelID": rawIncident.BroadcastChannelID,
 		}))
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to store new incident")
+	}
+
+	if err = s.appendStatusPosts(tx, rawIncident.Incident); err != nil {
+		return nil, errors.Wrap(err, "failed to replace status posts")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return out, errors.Wrap(err, "could not commit transaction")
 	}
 
 	return incidentCopy, nil
@@ -193,18 +262,27 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 		return err
 	}
 
-	_, err = s.store.execBuilder(s.store.db, sq.
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "could not begin transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
+
+	// When adding an Incident column #3: add to this SetMap (if it is a column that can be updated)
+	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":             rawIncident.Name,
-			"Description":      rawIncident.Description,
-			"IsActive":         rawIncident.IsActive,
-			"CommanderUserID":  rawIncident.CommanderUserID,
-			"EndAt":            rawIncident.EndAt,
-			"DeleteAt":         rawIncident.DeleteAt,
-			"ActiveStage":      rawIncident.ActiveStage,
-			"ActiveStageTitle": rawIncident.ActiveStageTitle,
-			"ChecklistsJSON":   rawIncident.ChecklistsJSON,
+			"Name":               rawIncident.Name,
+			"Description":        rawIncident.Description,
+			"IsActive":           rawIncident.IsActive,
+			"CommanderUserID":    rawIncident.CommanderUserID,
+			"EndAt":              rawIncident.EndAt,
+			"DeleteAt":           rawIncident.DeleteAt,
+			"ActiveStage":        rawIncident.ActiveStage,
+			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
+			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
+			"ReminderPostID":     rawIncident.ReminderPostID,
+			"BroadcastChannelID": rawIncident.BroadcastChannelID,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -212,27 +290,65 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 		return errors.Wrapf(err, "failed to update incident with id '%s'", rawIncident.ID)
 	}
 
+	if err = s.appendStatusPosts(tx, rawIncident.Incident); err != nil {
+		return errors.Wrapf(err, "failed to replace status posts for incident with id '%s'", rawIncident.ID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return errors.Wrap(err, "could not commit transaction")
+	}
+
 	return nil
 }
 
 // GetIncident gets an incident by ID.
-func (s *incidentStore) GetIncident(incidentID string) (*incident.Incident, error) {
+func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, err error) {
 	if incidentID == "" {
 		return nil, errors.New("ID cannot be empty")
 	}
 
-	withChecklistsSelect := s.incidentSelect.
-		Columns("ChecklistsJSON")
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return out, errors.Wrap(err, "could not begin transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
 
 	var rawIncident sqlIncident
-	err := s.store.getBuilder(s.store.db, &rawIncident, withChecklistsSelect.Where(sq.Eq{"ID": incidentID}))
+	err = s.store.getBuilder(tx, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
 	}
 
-	return toIncident(rawIncident)
+	if out, err = s.toIncident(rawIncident); err != nil {
+		return out, err
+	}
+
+	var statusPosts incidentStatusPosts
+
+	postInfoSelect := s.queryBuilder.
+		Select("ir.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
+		From("IR_StatusPosts as ir").
+		Join("Posts as p ON ir.PostID = p.Id").
+		Where(sq.Eq{"IncidentID": incidentID}).
+		OrderBy("p.CreateAt")
+
+	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
+	if err != nil && err != sql.ErrNoRows {
+		return out, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return out, errors.Wrap(err, "could not commit transaction")
+	}
+
+	for _, p := range statusPosts {
+		out.StatusPostIDs = append(out.StatusPostIDs, p.ID)
+		out.StatusPosts = append(out.StatusPosts, p.StatusPost)
+	}
+
+	return out, nil
 }
 
 // GetIncidentIDForChannel gets the incidentID associated with the given channelID.
@@ -304,19 +420,34 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DELETE FROM IR_Incident"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Incident")
-	}
-
-	if _, err := tx.Exec("DELETE FROM IR_Playbook"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Playbook")
-	}
-	if _, err := tx.Exec("DELETE FROM IR_PlaybookMember"); err != nil {
-		return errors.Wrap(err, "could not delete IR_Playbook")
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System"); err != nil {
+		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
 	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "could not delete all rows")
+		return errors.Wrap(err, "could not commit")
+	}
+
+	return s.store.RunMigrations()
+}
+
+func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
+	updateQuery := s.queryBuilder.Update("IR_Incident").
+		Where(sq.Eq{"ID": incidentID}).
+		Set("CreateAt", model.GetMillisForTime(creationTimestamp))
+
+	sqlResult, err := s.store.execBuilder(s.store.db, updateQuery)
+	if err != nil {
+		return errors.Wrapf(err, "unable to execute the update query")
+	}
+
+	numRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return errors.Wrapf(err, "unable to check how many rows were updated")
+	}
+
+	if numRows == 0 {
+		return incident.ErrNotFound
 	}
 
 	return nil
@@ -341,6 +472,49 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 							WHERE c.Id = incident.ChannelID
 							  AND c.Type = 'O')
 		  )`, info.UserID)
+}
+
+func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
+	i := rawIncident.Incident
+	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: %s", rawIncident.ID)
+	}
+
+	return &i, nil
+}
+
+func (s *incidentStore) appendStatusPosts(q queryExecer, incidentToSave incident.Incident) error {
+	if len(incidentToSave.StatusPostIDs) == 0 {
+		return nil
+	}
+
+	insertExpr := `
+INSERT INTO IR_StatusPosts(IncidentID, PostID)
+    SELECT ?, ?
+    WHERE NOT EXISTS (
+        SELECT 1 FROM IR_StatusPosts
+            WHERE IncidentID = ? AND PostID = ?
+    );`
+	if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		insertExpr = `
+INSERT INTO IR_StatusPosts(IncidentID, PostID)
+    SELECT ?, ? FROM DUAL
+    WHERE NOT EXISTS (
+        SELECT 1 FROM IR_StatusPosts
+            WHERE IncidentID = ? AND PostID = ?
+    );`
+	}
+
+	for _, p := range incidentToSave.StatusPostIDs {
+		rawInsert := sq.Expr(insertExpr,
+			incidentToSave.ID, p, incidentToSave.ID, p)
+
+		if _, err := s.store.execBuilder(q, rawInsert); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
@@ -388,11 +562,15 @@ func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) 
 	return checklistsJSON, nil
 }
 
-func toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
-	i := rawIncident.Incident
-	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", rawIncident.ID)
+func addStatusPostsToIncidents(statusIDs incidentStatusPosts, incidents []incident.Incident) {
+	iToPostIDs := make(map[string][]string)
+	iToPosts := make(map[string][]incident.StatusPost)
+	for _, p := range statusIDs {
+		iToPostIDs[p.IncidentID] = append(iToPostIDs[p.IncidentID], p.ID)
+		iToPosts[p.IncidentID] = append(iToPosts[p.IncidentID], p.StatusPost)
 	}
-
-	return &i, nil
+	for i, incdnt := range incidents {
+		incidents[i].StatusPostIDs = iToPostIDs[incdnt.ID]
+		incidents[i].StatusPosts = iToPosts[incdnt.ID]
+	}
 }

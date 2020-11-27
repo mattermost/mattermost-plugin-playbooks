@@ -7,7 +7,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -16,6 +16,23 @@ type Migration struct {
 	fromVersion   semver.Version
 	toVersion     semver.Version
 	migrationFunc func(sqlx.Ext, *SQLStore) error
+}
+
+const MySQLCharset = "DEFAULT CHARACTER SET utf8mb4"
+
+// 'IF NOT EXISTS' syntax is not supported in Postgres 9.4, so we need
+// this workaround to make the migration idempotent
+var createPGIndex = func(indexName, tableName, columns string) string {
+	return fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			IF to_regclass('%s') IS NULL THEN
+				CREATE INDEX %s ON %s (%s);
+			END IF;
+		END
+		$$;
+	`, indexName, indexName, tableName, columns)
 }
 
 var migrations = []Migration{
@@ -33,7 +50,6 @@ var migrations = []Migration{
 			}
 
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				charset := "DEFAULT CHARACTER SET utf8mb4"
 
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
@@ -55,7 +71,7 @@ var migrations = []Migration{
 						INDEX IR_Incident_TeamID_CommanderUserID (TeamID, CommanderUserID),
 						INDEX IR_Incident_ChannelID (ChannelID)
 					)
-				` + charset); err != nil {
+				` + MySQLCharset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Incident")
 				}
 
@@ -74,7 +90,7 @@ var migrations = []Migration{
 						INDEX IR_Playbook_TeamID (TeamID),
 						INDEX IR_PlaybookMember_PlaybookID (ID)
 					)
-				` + charset); err != nil {
+				` + MySQLCharset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Playbook")
 				}
 
@@ -85,7 +101,7 @@ var migrations = []Migration{
 						INDEX IR_PlaybookMember_PlaybookID (PlaybookID),
 						INDEX IR_PlaybookMember_MemberID (MemberID)
 					)
-				` + charset); err != nil {
+				` + MySQLCharset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 			} else {
@@ -137,42 +153,27 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 
-				// 'IF NOT EXISTS' syntax is not supported in 9.4, so we need
-				// this workaround to make the migration idempotent
-				createIndex := func(indexName, tableName, columns string) string {
-					return fmt.Sprintf(`
-						DO
-						$$
-						BEGIN
-							IF to_regclass('%s') IS NULL THEN
-								CREATE INDEX %s ON %s (%s);
-							END IF;
-						END
-						$$;
-					`, indexName, indexName, tableName, columns)
-				}
-
-				if _, err := e.Exec(createIndex("IR_Incident_TeamID", "IR_Incident", "TeamID")); err != nil {
+				if _, err := e.Exec(createPGIndex("IR_Incident_TeamID", "IR_Incident", "TeamID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID")
 				}
 
-				if _, err := e.Exec(createIndex("IR_Incident_TeamID_CommanderUserID", "IR_Incident", "TeamID, CommanderUserID")); err != nil {
+				if _, err := e.Exec(createPGIndex("IR_Incident_TeamID_CommanderUserID", "IR_Incident", "TeamID, CommanderUserID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_TeamID_CommanderUserID")
 				}
 
-				if _, err := e.Exec(createIndex("IR_Incident_ChannelID", "IR_Incident", "ChannelID")); err != nil {
+				if _, err := e.Exec(createPGIndex("IR_Incident_ChannelID", "IR_Incident", "ChannelID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Incident_ChannelID")
 				}
 
-				if _, err := e.Exec(createIndex("IR_Playbook_TeamID", "IR_Playbook", "TeamID")); err != nil {
+				if _, err := e.Exec(createPGIndex("IR_Playbook_TeamID", "IR_Playbook", "TeamID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_Playbook_TeamID")
 				}
 
-				if _, err := e.Exec(createIndex("IR_PlaybookMember_PlaybookID", "IR_PlaybookMember", "PlaybookID")); err != nil {
+				if _, err := e.Exec(createPGIndex("IR_PlaybookMember_PlaybookID", "IR_PlaybookMember", "PlaybookID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_PlaybookID")
 				}
 
-				if _, err := e.Exec(createIndex("IR_PlaybookMember_MemberID", "IR_PlaybookMember", "MemberID")); err != nil {
+				if _, err := e.Exec(createPGIndex("IR_PlaybookMember_MemberID", "IR_PlaybookMember", "MemberID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_PlaybookMember_MemberID ")
 				}
 			}
@@ -184,7 +185,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.1.0"),
 		toVersion:   semver.MustParse("0.2.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			// migration to 0.2.0 is used to trigger the data migration from the kvstore.
+			// prior to v1.0.0 of the plugin, this migration was used to trigger the data migration from the kvstore
 			return nil
 		},
 	},
@@ -239,6 +240,71 @@ var migrations = []Migration{
 
 				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
 					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", theIncident.ID)
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.3.0"),
+		toVersion:   semver.MustParse("0.4.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_StatusPosts (
+						IncidentID VARCHAR(26) NOT NULL REFERENCES IR_Incident(ID),
+						PostID VARCHAR(26) NOT NULL,
+						CONSTRAINT posts_unique UNIQUE (IncidentID, PostID),
+						INDEX IR_StatusPosts_IncidentID (IncidentID),
+						INDEX IR_StatusPosts_PostID (PostID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ReminderPostID VARCHAR(26)"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
+				}
+
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_StatusPosts (
+						IncidentID TEXT NOT NULL REFERENCES IR_Incident(ID),
+						PostID TEXT NOT NULL,
+						UNIQUE (IncidentID, PostID)
+					);
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_StatusPosts_IncidentID", "IR_StatusPosts", "IncidentID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_StatusPosts_IncidentID")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_StatusPosts_PostID", "IR_StatusPosts", "PostID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_StatusPosts_PostID ")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ReminderPostID TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
+				}
+
+				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
 				}
 			}
 

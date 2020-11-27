@@ -11,7 +11,38 @@ const incidentsEndpoint = endpoints.incidents;
 Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-response/api/v1/incidents?team_id=${teamId}`,
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, per_page: 10000},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+* Get all active incidents directly via API
+*/
+Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, status: 'active'},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+* Get incident by name directly via API
+*/
+Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -50,7 +81,7 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
             playbook_id: playbookId,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(201);
         cy.wrap(response.body);
     });
 });
@@ -60,10 +91,26 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
  * @param {String} incidentId
  * All parameters required
  */
-Cypress.Commands.add('apiDeleteIncident', (incidentId) => {
+Cypress.Commands.add('apiEndIncident', (incidentId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint + '/' + incidentId + '/end',
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Restart an incident directly via API
+ * @param {String} incidentId
+ * All parameters required
+ */
+Cypress.Commands.add('apiRestartIncident', (incidentId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: incidentsEndpoint + '/' + incidentId + '/restart',
         method: 'PUT',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -92,10 +139,10 @@ Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
 });
 
 // Verify incident is created
-Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDescription) => {
-    cy.apiGetAllIncidents(teamId).then((response) => {
-        const allIncidents = JSON.parse(response.body);
-        const incident = allIncidents.items.find((inc) => inc.name === incidentName);
+Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDescription) => {
+    cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
+        const returnedIncidents = JSON.parse(response.body);
+        const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
         assert.isTrue(incident.is_active);
         assert.equal(incident.name, incidentName);
@@ -108,21 +155,21 @@ Cypress.Commands.add('verifyIncidentCreated', (teamId, incidentName, incidentDes
     });
 });
 
-// Verify incident is not created
+// Verify incident exists but is not active
 Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
-    cy.apiGetAllIncidents(teamId).then((response) => {
-        const allIncidents = JSON.parse(response.body);
-        const incident = allIncidents.items.find((inc) => inc.name === incidentName);
+    cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
+        const returnedIncidents = JSON.parse(response.body);
+        const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
         assert.isFalse(incident.is_active);
     });
 });
 
 // Create a playbook programmatically.
-Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs}) => {
+Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs, broadcastChannelId}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-response/api/v1/playbooks',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
         method: 'POST',
         body: {
             title,
@@ -130,15 +177,16 @@ Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident,
             create_public_incident: createPublicIncident,
             checklists,
             member_ids: memberIDs,
+            broadcast_channel_id: broadcastChannelId,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(201);
         cy.wrap(response.body);
     });
 });
 
 // Create a test playbook programmatically.
-Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId}) => (
+Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId, broadcastChannelId}) => (
     cy.apiCreatePlaybook({
         teamId,
         title,
@@ -152,5 +200,21 @@ Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId}) => (
         memberIDs: [
             userId,
         ],
+        broadcastChannelId,
+    })
+));
+
+// Verify that the playbook was created
+Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
+    cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
+        qs: {team_id: teamId, sort: 'title', direction: 'asc'},
+        method: 'GET'
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const playbookResults = JSON.parse(response.body);
+        const playbook = playbookResults.items.find((p) => p.title === playbookTitle);
+        assert.isDefined(playbook);
     })
 ));

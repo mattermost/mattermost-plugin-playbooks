@@ -5,11 +5,12 @@ import {Store} from 'redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {fetchIncidentChannels} from 'src/client';
+import {fetchIncidents} from 'src/client';
 
-import {isIncidentRHSOpen, isIncidentChannel} from 'src/selectors';
-import {toggleRHS, receivedTeamIncidentChannels} from 'src/actions';
+import {isIncidentRHSOpen, inIncidentChannel} from 'src/selectors';
+import {toggleRHS, receivedTeamIncidents} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';
@@ -29,10 +30,15 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             return;
         }
 
-        // Update the known set of incident channels whenever the team changes.
+        // Update the known set of incidents whenever the team changes.
         if (currentTeamId !== currentTeam.id) {
             currentTeamId = currentTeam.id;
-            store.dispatch(receivedTeamIncidentChannels(await fetchIncidentChannels(currentTeam.id)));
+            const currentUserId = getCurrentUserId(state);
+            const fetched = await fetchIncidents({
+                team_id: currentTeam.id,
+                member_id: currentUserId,
+            });
+            store.dispatch(receivedTeamIncidents(fetched.items));
         }
 
         // Only consider opening the RHS if the channel has changed and wasn't already seen as
@@ -41,7 +47,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             return;
         }
         currentChannelId = currentChannel.id;
-        currentChannelIsIncident = isIncidentChannel(state, currentChannelId);
+        currentChannelIsIncident = inIncidentChannel(state);
 
         // Don't do anything if the incident RHS is already open.
         if (isIncidentRHSOpen(state)) {

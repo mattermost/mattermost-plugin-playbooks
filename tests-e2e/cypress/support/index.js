@@ -18,31 +18,48 @@ beforeEach(() => {
     Cypress.Cookies.preserveOnce('MMAUTHTOKEN', 'MMUSERID', 'MMCSRF');
 });
 
-Cypress.Commands.add('requireIncidentResponsePlugin', (version) => {
+Cypress.Commands.add('requireIncidentManagementPlugin', (version) => {
     cy.apiGetWebappPlugins().then((response) => {
         const plugins = response.body;
 
         let isInstalled = false;
         for (const plugin of plugins) {
-            if (plugin.id === 'com.mattermost.plugin-incident-response' && plugin.version === version) {
+            if (plugin.id === 'com.mattermost.plugin-incident-management' && plugin.version === version) {
                 isInstalled = true;
                 break;
             }
         }
 
-        expect(isInstalled, `Incident Response plugin should be installed with version ${version}`).to.equal(true);
+        expect(isInstalled, `Incident Management plugin should be installed with version ${version}`).to.equal(true);
     });
 });
 
 /**
- * Delete all incidents directly from API
+ * End all active incidents directly from API with sysadmin. Need to login after this.
  */
-Cypress.Commands.add('deleteAllIncidents', (teamId) => {
-    cy.apiGetAllIncidents(teamId).then((response) => {
-        const incidents = JSON.parse(response.body);
+Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
+    cy.apiLogin('sysadmin');
+
+    cy.apiGetAllActiveIncidents(teamId).then((response) => {
+        const incidents = JSON.parse(response.body).items;
 
         incidents.forEach((incident) => {
-            cy.apiDeleteIncident(incident.id);
+            cy.apiEndIncident(incident.id);
+        });
+    });
+
+    cy.apiLogout();
+});
+
+/**
+ * End all active incidents directly from API with current user.
+ */
+Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
+    cy.apiGetAllActiveIncidents(teamId).then((response) => {
+        const incidents = JSON.parse(response.body).items;
+
+        incidents.forEach((incident) => {
+            cy.apiEndIncident(incident.id);
         });
     });
 });

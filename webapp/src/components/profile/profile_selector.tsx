@@ -167,7 +167,8 @@ export default function ProfileSelector(props: Props) {
         );
     }
 
-    const components = props.customControl ? {Control: props.customControl} : {};
+    const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
+    const components = props.customControl ? {...noDropdown, Control: props.customControl} : noDropdown;
 
     return (
         <Dropdown

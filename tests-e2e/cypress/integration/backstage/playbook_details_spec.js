@@ -14,16 +14,16 @@ describe('backstage playbook details', () => {
 
     it('redirects to not found error if the playbook is unknown', () => {
         // # Visit the URL of a non-existing playbook
-        cy.visit('/ad-1/com.mattermost.plugin-incident-response/playbooks/an_unknown_id');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/an_unknown_id');
 
         // * Verify that the user has been redirected to the playbooks not found error page
-        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-response/error?type=playbooks');
+        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/error?type=playbooks');
     });
 
     describe('slash command', () => {
         it('autocompletes after clicking Add a Slash Command', () => {
             // # Visit the playbook backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-response/playbooks');
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
 
             // # Start a blank playbook
             cy.get('#root').findByText('Blank Playbook').click();
@@ -38,12 +38,12 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
 
             // * Verify the autocomplete prompt is open
-            cy.get('#suggestionList').should('be.visible');
+            cy.get('#suggestionList').should('exist');
         });
 
         it('removes the input prompt when blurring with an empty slash command', () => {
             // # Visit the playbook backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-response/playbooks');
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
 
             // # Start a blank playbook
             cy.get('#root').findByText('Blank Playbook').click();
@@ -61,12 +61,12 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
             // # Verify the Add a Slash Command button returns
-            cy.get('#root').findByText('Add a Slash Command').should('be.visible');
+            cy.get('#root').findByText('Add a Slash Command').should('exist');
         });
 
         it('removes the input prompt when blurring with an invalid slash command', () => {
             // # Visit the playbook backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-response/playbooks');
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
 
             // # Start a blank playbook
             cy.get('#root').findByText('Blank Playbook').click();
@@ -81,7 +81,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
             // * Verify the Add a Slash Command button returns
-            cy.get('#root').findByText('Add a Slash Command').should('be.visible');
+            cy.get('#root').findByText('Add a Slash Command').should('exist');
         });
     });
 });

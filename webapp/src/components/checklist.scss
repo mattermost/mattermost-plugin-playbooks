@@ -1,12 +1,6 @@
 $font-family: Open Sans;
 
 
-// Checklist component -- the rest of the relevant styles are in incident_details.scss
-.checklist-inner-container {
-    display: flex;
-    flex-direction: column;
-}
-
 // Checkbox component
 .checkbox-container {
     align-items: flex-start;
@@ -69,7 +63,7 @@ $font-family: Open Sans;
         min-width: 20px;
         height: 20px;
         background: #ffffff;
-        border: 1px solid #dddddd;
+        border: 2px solid var(--center-channel-color-24);
         border-radius: 4px;
         margin: 0;
         cursor: pointer;
@@ -80,8 +74,8 @@ $font-family: Open Sans;
     }
 
     input[type="checkbox"]:checked {
-        background: #2f80ed;
-        border: 1px solid #2f80ed;
+        background: var(--button-bg);
+        border: 1px solid var(--button-bg);
         box-sizing: border-box;
     }
 

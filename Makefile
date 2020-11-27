@@ -1,7 +1,7 @@
 GO ?= $(shell command -v go 2> /dev/null)
 NPM ?= $(shell command -v npm 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
-DEBUG ?=
+MM_DEBUG ?=
 MANIFEST_FILE ?= plugin.json
 GOPATH ?= $(shell go env GOPATH)
 GO_TEST_FLAGS ?= -race
@@ -62,12 +62,12 @@ endif
 server:
 ifneq ($(HAS_SERVER),)
 	mkdir -p server/dist;
-ifeq ($(DEBUG),)
+ifeq ($(MM_DEBUG),)
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-linux-amd64;
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-darwin-amd64;
 	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-windows-amd64.exe;
 else
-	$(info DEBUG mode is on; to disable, unset DEBUG)
+	$(info DEBUG mode is on; to disable, unset MM_DEBUG)
 
 	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -o dist/plugin-darwin-amd64;
 	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -gcflags "all=-N -l" -o dist/plugin-linux-amd64;
@@ -76,7 +76,7 @@ endif
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
-webapp/node_modules: webapp/package.json
+webapp/node_modules: $(wildcard webapp/package.json)
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) install
 	touch $@
@@ -86,7 +86,7 @@ endif
 .PHONY: webapp
 webapp: webapp/node_modules
 ifneq ($(HAS_WEBAPP),)
-ifeq ($(DEBUG),)
+ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else
 	cd webapp && $(NPM) run debug;
@@ -103,15 +103,15 @@ ifneq ($(wildcard $(ASSETS_DIR)/.),)
 	cp -r $(ASSETS_DIR) dist/$(PLUGIN_ID)/
 endif
 ifneq ($(HAS_PUBLIC),)
-	cp -r public/ dist/$(PLUGIN_ID)/
+	cp -r public dist/$(PLUGIN_ID)/
 endif
 ifneq ($(HAS_SERVER),)
-	mkdir -p dist/$(PLUGIN_ID)/server/dist;
-	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/;
+	mkdir -p dist/$(PLUGIN_ID)/server
+	cp -r server/dist dist/$(PLUGIN_ID)/server/
 endif
 ifneq ($(HAS_WEBAPP),)
-	mkdir -p dist/$(PLUGIN_ID)/webapp/dist;
-	cp -r webapp/dist/* dist/$(PLUGIN_ID)/webapp/dist/;
+	mkdir -p dist/$(PLUGIN_ID)/webapp
+	cp -r webapp/dist dist/$(PLUGIN_ID)/webapp/
 endif
 	cd dist && tar -cvzf $(BUNDLE_NAME) $(PLUGIN_ID)
 
@@ -129,7 +129,7 @@ deploy: dist
 ## Builds and installs the plugin to a server, updating the webapp automatically when changed.
 .PHONY: watch
 watch: apply server bundle
-ifeq ($(DEBUG),)
+ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build:watch
 else
 	cd webapp && $(NPM) run debug:watch
@@ -188,6 +188,9 @@ ifneq ($(HAS_SERVER),)
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
+endif
+ifneq ($(wildcard ./build/sync/plan/.),)
+	cd ./build/sync && $(GO) test -v $(GO_TEST_FLAGS) ./...
 endif
 
 ## Creates a coverage report for the server code.
@@ -248,6 +251,15 @@ ifneq ($(HAS_WEBAPP),)
 	rm -fr webapp/node_modules
 endif
 	rm -fr build/bin/
+
+## Sync directory with a starter template
+sync:
+ifndef STARTERTEMPLATE_PATH
+	@echo STARTERTEMPLATE_PATH is not set.
+	@echo Set STARTERTEMPLATE_PATH to a local clone of https://github.com/mattermost/mattermost-plugin-starter-template and retry.
+	@exit 1
+endif
+	cd ${STARTERTEMPLATE_PATH} && go run ./build/sync/main.go ./build/sync/plan.yml $(PWD)
 
 # Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

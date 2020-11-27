@@ -2,15 +2,16 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-response/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -35,6 +36,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
 	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
@@ -49,7 +51,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 	var pbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
-		HandleError(w, errors.Wrapf(err, "unable to decode playbook"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
@@ -67,7 +69,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	id, err := h.playbookService.Create(pbook)
+	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -78,7 +80,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}{
 		ID: id,
 	}
-	ReturnJSON(w, &result)
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/playbooks/%s", pbook.ID))
+	ReturnJSON(w, &result, http.StatusCreated)
 }
 
 func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +103,7 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ReturnJSON(w, &pbook)
+	ReturnJSON(w, &pbook, http.StatusOK)
 }
 
 func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +111,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	userID := r.Header.Get("Mattermost-User-ID")
 	var pbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
-		HandleError(w, errors.Wrap(err, "unable to decode playbook"))
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
@@ -130,16 +133,13 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = h.playbookService.Update(pbook)
+	err = h.playbookService.Update(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write([]byte(`{"status": "OK"}`)); err != nil {
-		HandleError(w, err)
-	}
 }
 
 func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
@@ -161,16 +161,13 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = h.playbookService.Delete(playbookToDelete)
+	err = h.playbookService.Delete(playbookToDelete, userID)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write([]byte(`{"status": "OK"}`)); err != nil {
-		HandleError(w, err)
-	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
@@ -179,7 +176,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	opts, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		HandleError(w, err)
+		HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
 		return
 	}
 
@@ -209,17 +206,42 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(playbookResults)
+	ReturnJSON(w, playbookResults, http.StatusOK)
+}
+
+func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	teamID := query.Get("team_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+		return
+	}
+
+	requesterInfo := playbook.RequesterInfo{
+		UserID:          userID,
+		TeamID:          teamID,
+		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		MemberOnly:      true,
+	}
+
+	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, playbook.Options{})
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
+	list := make([]model.AutocompleteListItem, 0)
+
+	for _, thePlaybook := range playbooksResult.Items {
+		list = append(list, model.AutocompleteListItem{
+			Item:     thePlaybook.ID,
+			HelpText: thePlaybook.Title,
+		})
 	}
+
+	ReturnJSON(w, list, http.StatusOK)
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
@@ -257,9 +279,9 @@ func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
 	param = strings.ToLower(params.Get("direction"))
 	switch param {
 	case "asc", "":
-		sortDirection = playbook.OrderAsc
+		sortDirection = playbook.DirectionAsc
 	case "desc":
-		sortDirection = playbook.OrderDesc
+		sortDirection = playbook.DirectionDesc
 	default:
 		return playbook.Options{}, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
 	}

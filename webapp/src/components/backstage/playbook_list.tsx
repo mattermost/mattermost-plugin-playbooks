@@ -17,6 +17,7 @@ import {navigateToTeamPluginUrl} from 'src/browser_routing';
 
 import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 
+import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import TemplateSelector, {PresetTemplate} from 'src/components/backstage/template_selector';
@@ -55,7 +56,7 @@ const PlaybookList: FC = () => {
 
     function colHeaderClicked(colName: string) {
         if (fetchParams.sort === colName) {
-            // we're already sorting on this column; reverse the order
+            // we're already sorting on this column; reverse the direction
             const newSortDirection = fetchParams.direction === 'asc' ? 'desc' : 'asc';
             setFetchParams({...fetchParams, direction: newSortDirection});
             return;
@@ -167,7 +168,7 @@ const PlaybookList: FC = () => {
                         p.num_steps
                     }
                 </div>
-                <div className='col-sm-2'>
+                <div className='col-sm-2 action-col'>
                     <PlaybookActionMenu
                         onEdit={() => {
                             editPlaybook(p);
@@ -229,7 +230,7 @@ const PlaybookList: FC = () => {
                                 <div className='col-sm-4'>
                                     <SortableColHeader
                                         name={'Name'}
-                                        order={fetchParams.direction}
+                                        direction={fetchParams.direction}
                                         active={fetchParams.sort === 'title'}
                                         onClick={() => colHeaderClicked('title')}
                                     />
@@ -237,7 +238,7 @@ const PlaybookList: FC = () => {
                                 <div className='col-sm-2'>
                                     <SortableColHeader
                                         name={'Stages'}
-                                        order={fetchParams.direction}
+                                        direction={fetchParams.direction}
                                         active={fetchParams.sort === 'stages'}
                                         onClick={() => colHeaderClicked('stages')}
                                     />
@@ -245,7 +246,7 @@ const PlaybookList: FC = () => {
                                 <div className='col-sm-2'>
                                     <SortableColHeader
                                         name={'Tasks'}
-                                        order={fetchParams.direction}
+                                        direction={fetchParams.direction}
                                         active={fetchParams.sort === 'steps'}
                                         onClick={() => colHeaderClicked('steps')}
                                     />
@@ -352,9 +353,20 @@ interface PlaybookActionMenuProps {
     onDelete: () => void;
 }
 
+const IconWrapper = styled.div`
+    display: inline-flex;
+    padding: 10px 5px;
+`;
+
 const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
     return (
-        <DotMenu>
+        <DotMenu
+            icon={
+                <IconWrapper>
+                    <DotMenuIcon/>
+                </IconWrapper>
+            }
+        >
             <DropdownMenuItem
                 text='Edit'
                 onClick={props.onEdit}

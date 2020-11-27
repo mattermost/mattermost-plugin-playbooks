@@ -4,7 +4,7 @@
 import * as TIMEOUTS from '../fixtures/timeouts';
 
 function waitUntilPermanentPost() {
-    cy.get('#postListContent').should('be.visible');
+    cy.get('#postListContent').should('exist');
     cy.waitUntil(() => cy.findAllByTestId('postView').last().then((el) => !(el[0].id.includes(':'))));
 }
 
@@ -47,11 +47,11 @@ Cypress.Commands.add('startDirectMessage', (username, self = false, user = '') =
 
     if (self === true && user === 'user-1') {
         cy.get('#channelHeaderInfo').within(() => {
-            cy.findByText('user-1 (you)').should('be.visible');
+            cy.findByText('user-1 (you)').should('exist');
         });
     } else {
         cy.get('#channel-header').within(() => {
-            cy.findByText(username).should('be.visible');
+            cy.findByText(username).should('exist');
         });
     }
 });
@@ -67,7 +67,7 @@ Cypress.Commands.add('startGroupMessage', (usernames) => {
 
     usernames.forEach((username) => {
         cy.get('#channel-header').within(() => {
-            cy.findByText(username, {exact: false}).should('be.visible');
+            cy.findByText(username, {exact: false}).should('exist');
         });
     });
 });
@@ -105,11 +105,84 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
                 cy.get(`#postMessageText_${postId}`).contains('(Only visible to you)');
             } else {
                 // * Check if Bot message only visible to you
-                cy.get('.post__visibility').last().should('be.visible').and('have.text', '(Only visible to you)');
+                cy.get('.post__visibility').last().should('exist').and('have.text', '(Only visible to you)');
 
                 // * Check if we got ephemeral message of our selection
                 cy.get(`#postMessageText_${postId}`).contains(message);
             }
         });
     });
+});
+
+/**
+ * Update the status of the current incident through the slash command.
+ * @param {String} message - The new status.
+ * @param {Boolean} isOngoing - Default to true. If false, the update will also end the incident.
+ */
+Cypress.Commands.add('updateStatus', (message) => {
+    // # Run the /incident status slash command.
+    cy.executeSlashCommand('/incident update');
+
+    // # Get the interactive dialog modal.
+    cy.get('#interactiveDialogModal').within(() => {
+        // # remove what's there (if this is a second update)
+        cy.findByTestId('messageinput').clear();
+
+        // # Type the new update in the text box.
+        cy.findByTestId('messageinput').type(message);
+
+        // # Submit the dialog.
+        cy.get('#interactiveDialogSubmit').click();
+    });
+
+    // * Verify that the interactive dialog has gone.
+    cy.get('#interactiveDialogModal').should('not.exist');
+
+    // # Return the post ID of the status update.
+    return cy.getLastPostId();
+});
+
+/**
+ * Delete a post through the post dot menu.
+ * @param {String} postId - ID of the post to delete.
+ */
+Cypress.Commands.add('deletePost', (postId) => {
+    // # Open the post dot menu.
+    cy.clickPostDotMenu(postId);
+
+    // # Click on the Delete menu option.
+    cy.get(`#delete_post_${postId}`).click();
+
+    // # Confirm the deletion in the dialog.
+    cy.get('#deletePostModalButton').click();
+});
+
+/**
+ * Edit a post through the post dot menu.
+ * @param {String} postId - ID of the post to delete.
+ * @param {String} newMessage - New content of the post.
+ */
+Cypress.Commands.add('editPost', (postId, newMessage) => {
+    // # Open the post dot menu.
+    cy.clickPostDotMenu(postId);
+
+    // # Click on the Edit menu option.
+    cy.get(`#edit_post_${postId}`).click();
+
+    // # Overwrite the post content with the new message provided.
+    cy.get('#edit_textbox').clear().type(newMessage);
+
+    // # Confirm the edit in the dialog.
+    cy.get('#editButton').click();
+});
+
+/**
+ * Switch channel through the channel switcher
+ * @param {String} channelName - Display name of the channel.
+ */
+Cypress.Commands.add('uiSwitchChannel', (channelName) => {
+    cy.get('body').type('{ctrl}k');
+    cy.get('#quickSwitchInput').type(channelName);
+    cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
+    cy.get('#channelHeaderTitle').contains(channelName);
 });

@@ -22,6 +22,7 @@ type Playbook struct {
 	NumSteps             int64       `json:"num_steps"`
 	Checklists           []Checklist `json:"checklists"`
 	MemberIDs            []string    `json:"member_ids"`
+	BroadcastChannelID   string      `json:"broadcast_channel_id"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -119,19 +120,20 @@ type RequesterInfo struct {
 }
 
 // Service is the playbook service for managing playbooks
+// userID is the user initiating the event.
 type Service interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.
 	Get(id string) (Playbook, error)
 	// Create creates a new playbook
-	Create(playbook Playbook) (string, error)
+	Create(playbook Playbook, userID string) (string, error)
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
 	// Update updates a playbook
-	Update(playbook Playbook) error
+	Update(playbook Playbook, userID string) error
 	// Delete deletes a playbook
-	Delete(playbook Playbook) error
+	Delete(playbook Playbook, userID string) error
 }
 
 // Store is an interface for storing playbooks
@@ -150,17 +152,17 @@ type Store interface {
 	Delete(id string) error
 }
 
-// Telemetry defines the methods that the Playbook service needs from the
-// RudderTelemetry.
+// Telemetry defines the methods that the Playbook service needs from the RudderTelemetry.
+// userID is the user initiating the event.
 type Telemetry interface {
 	// CreatePlaybook tracks the creation of a playbook.
-	CreatePlaybook(playbook Playbook)
+	CreatePlaybook(playbook Playbook, userID string)
 
 	// UpdatePlaybook tracks the update of a playbook.
-	UpdatePlaybook(playbook Playbook)
+	UpdatePlaybook(playbook Playbook, userID string)
 
 	// DeletePlaybook tracks the deletion of a playbook.
-	DeletePlaybook(playbook Playbook)
+	DeletePlaybook(playbook Playbook, userID string)
 }
 
 const (
