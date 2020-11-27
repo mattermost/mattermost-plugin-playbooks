@@ -31,11 +31,6 @@ type IncidentCreateOptions struct {
 	TeamID          string `json:"team_id"`
 }
 
-// IncidentUpdateOptions specifies the parameters for IncidentsService.Update method.
-type IncidentUpdateOptions struct {
-	CommanderUserID string `json:"commander_user_id"`
-}
-
 // IncidentListOptions specifies the optional parameters to the
 // IncidentsService.List method.
 type IncidentListOptions struct {
@@ -114,7 +109,7 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 
 // Get an incident.
 func (s *IncidentsService) Get(ctx context.Context, incidentID string) (*Incident, error) {
-	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+	incidentURL := fmt.Sprintf("incidents/%s", incidentID)
 	req, err := s.client.NewRequest(http.MethodGet, incidentURL, nil)
 	if err != nil {
 		return nil, err
@@ -132,7 +127,7 @@ func (s *IncidentsService) Get(ctx context.Context, incidentID string) (*Inciden
 
 // GetByChannelID gets an incident by ChannelID.
 func (s *IncidentsService) GetByChannelID(ctx context.Context, channelID string) (*Incident, error) {
-	channelURL := fmt.Sprintf("%s/%s/%s", "incidents", "channel", channelID)
+	channelURL := fmt.Sprintf("incidents/channel/%s", channelID)
 	req, err := s.client.NewRequest(http.MethodGet, channelURL, nil)
 	if err != nil {
 		return nil, err
@@ -149,14 +144,14 @@ func (s *IncidentsService) GetByChannelID(ctx context.Context, channelID string)
 }
 
 // Update an incident.
-func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts IncidentUpdateOptions) (*Incident, error) {
-	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts incident.UpdateOptions) (*Incident, error) {
+	incidentURL := fmt.Sprintf("incidents/%s", incidentID)
 	incidentUpdateRequest := Incident{
-		CommanderUserID: opts.CommanderUserID,
+		CommanderUserID: *opts.CommanderUserID,
 	}
 
 	req, err := s.client.NewRequest(http.MethodPatch, incidentURL, incidentUpdateRequest)
-	req.Header.Add("Mattermost-User-ID", opts.CommanderUserID)
+	req.Header.Add("Mattermost-User-ID", *opts.CommanderUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,38 +188,35 @@ func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (
 }
 
 // Delete an incident.
-func (s *IncidentsService) Delete(ctx context.Context, incidentID string) (*Incident, error) {
-	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+func (s *IncidentsService) Delete(ctx context.Context, incidentID string) error {
+	incidentURL := fmt.Sprintf("incidents/%s", incidentID)
 
 	req, err := s.client.NewRequest(http.MethodDelete, incidentURL, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = s.client.Do(ctx, req, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
 // End an incident.
-func (s *IncidentsService) End(ctx context.Context, incidentID string) (*Incident, error) {
-	incidentURL := fmt.Sprintf("%s/%s", "incidents", incidentID)
+func (s *IncidentsService) End(ctx context.Context, incidentID string) error {
+	incidentURL := fmt.Sprintf("incidents/%s/end", incidentID)
 
-	incidentEndRequest := Incident{
-		IsActive: false,
-	}
-	req, err := s.client.NewRequest(http.MethodPatch, incidentURL, incidentEndRequest)
+	req, err := s.client.NewRequest(http.MethodPut, incidentURL, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = s.client.Do(ctx, req, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
