@@ -98,10 +98,10 @@ interface StepDescriptionProps {
 const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepDescriptionProps> => {
     const [showTooltip, setShowTooltip] = useState(false);
     const target = useRef(null);
-    useClickOutsideRef(target, () => {
-        setShowTooltip(false);
+    const popoverRef = useRef(null);
+    useClickOutsideRef(popoverRef, () => {
+        setTimeout(() => setShowTooltip(false), 10);
     });
-    
     const markdownOptions = {
         atMentions: true,
         team: props.team,
@@ -122,25 +122,29 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
                 target={target.current}
             >
                 <StyledPopover id='info-icon'>
-                    <CloseIcon
-                        className={'icon icon-close'}
-                        onClick={() => setShowTooltip(false)}
-                    />
-                    <DescriptionTitle>{'Step Description'}</DescriptionTitle>
-                    <Scrollbars
-                        autoHeight={true}
-                        autoHeightMax={200}
-                        renderThumbVertical={(thumbProps) => (
-                            <div
-                                {...thumbProps}
-                                className='scrollbar--vertical'
-                            />
-                        )}
+                    <div
+                        ref={popoverRef}
                     >
-                        <PaddedDiv>
-                            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
-                        </PaddedDiv>
-                    </Scrollbars>
+                        <CloseIcon
+                            className={'icon icon-close'}
+                            onClick={() => setShowTooltip(false)}
+                        />
+                        <DescriptionTitle>{'Step Description'}</DescriptionTitle>
+                        <Scrollbars
+                            autoHeight={true}
+                            autoHeightMax={200}
+                            renderThumbVertical={(thumbProps) => (
+                                <div
+                                    {...thumbProps}
+                                    className='scrollbar--vertical'
+                                />
+                            )}
+                        >
+                            <PaddedDiv>
+                                {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
+                            </PaddedDiv>
+                        </Scrollbars>
+                    </div>
                 </StyledPopover>
             </Overlay>
         </>
