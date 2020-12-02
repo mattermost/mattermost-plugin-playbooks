@@ -52,6 +52,11 @@ export const myActiveIncidentsList = createSelector(
     },
 );
 
+// myActiveIncidentsMap returns a map indexed by channelId->incident for the current team
+export const myIncidentsMap = (state: GlobalState) => {
+    return myIncidentsByTeam(state)[getCurrentTeamId(state)] || {};
+};
+
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);
 

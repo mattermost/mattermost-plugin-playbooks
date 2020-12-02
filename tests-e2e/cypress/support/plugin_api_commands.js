@@ -6,8 +6,8 @@ import endpoints from './endpoints.json';
 const incidentsEndpoint = endpoints.incidents;
 
 /**
-* Get all incidents directly via API
-*/
+ * Get all incidents directly via API
+ */
 Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -21,8 +21,8 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
 });
 
 /**
-* Get all active incidents directly via API
-*/
+ * Get all active incidents directly via API
+ */
 Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -36,8 +36,8 @@ Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
 });
 
 /**
-* Get incident by name directly via API
-*/
+ * Get incident by name directly via API
+ */
 Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -51,10 +51,10 @@ Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
 });
 
 /**
-* Get an incident directly via API
-* @param {String} incidentId
-* All parameters required
-*/
+ * Get an incident directly via API
+ * @param {String} incidentId
+ * All parameters required
+ */
 Cypress.Commands.add('apiGetIncident', (incidentId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -218,3 +218,25 @@ Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
         assert.isDefined(playbook);
     })
 ));
+
+// Update an incident's status programmatically.
+Cypress.Commands.add('apiUpdateStatus', ({incidentId, userId, channelId, teamId, message}) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
+        method: 'POST',
+        body: {
+            type: 'dialog_submission',
+            callback_id: '',
+            state: '',
+            user_id: userId,
+            channel_id: channelId,
+            team_id: teamId,
+            submission: {message, reminder: '15'},
+            cancelled: false,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
