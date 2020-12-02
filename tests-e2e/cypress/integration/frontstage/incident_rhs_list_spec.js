@@ -1299,7 +1299,7 @@ describe('rhs incident list', () => {
 
                 cy.findByText(incidentName).should('exist');
 
-                // * Verify the last updated is blank
+                // * Verify the last updated is updated
                 cy.findByText('Last updated:').should('exist');
                 cy.findByText('Last updated:').next().should('have.text', '< 1m ago');
             });
