@@ -87,7 +87,7 @@ describe('slash command > commander', () => {
             cy.executeSlashCommand('/incident commander');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('You can only show the commander from within the incident\'s channel.');
+            cy.verifyEphemeralMessage('You can only see the commander from within the incident\'s channel.');
         });
 
         it('should show the current commander', () => {
