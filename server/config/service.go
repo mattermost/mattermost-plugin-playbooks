@@ -166,13 +166,9 @@ func (c *ServiceImpl) setConfiguration(configuration *Configuration) {
 func (c *ServiceImpl) IsConfiguredForDevelopmentAndTesting() bool {
 	config := c.api.Configuration.GetConfig()
 
-	if config != nil &&
+	return config != nil &&
 		config.ServiceSettings.EnableTesting != nil &&
 		*config.ServiceSettings.EnableTesting &&
 		config.ServiceSettings.EnableDeveloper != nil &&
-		*config.ServiceSettings.EnableDeveloper {
-		return true
-	}
-
-	return false
+		*config.ServiceSettings.EnableDeveloper
 }
