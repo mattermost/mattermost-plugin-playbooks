@@ -160,3 +160,19 @@ func (c *ServiceImpl) setConfiguration(configuration *Configuration) {
 
 	c.configuration = configuration
 }
+
+// IsConfiguredForDevelopmentAndTesting returns true when the server has `EnableDeveloper` and
+// `EnableTesting` configuration settings enabled.
+func (c *ServiceImpl) IsConfiguredForDevelopmentAndTesting() bool {
+	config := c.api.Configuration.GetConfig()
+
+	if config != nil &&
+		config.ServiceSettings.EnableTesting != nil &&
+		*config.ServiceSettings.EnableTesting &&
+		config.ServiceSettings.EnableDeveloper != nil &&
+		*config.ServiceSettings.EnableDeveloper {
+		return true
+	}
+
+	return false
+}
