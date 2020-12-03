@@ -22,6 +22,7 @@ type Playbook struct {
 	NumSteps             int64       `json:"num_steps"`
 	Checklists           []Checklist `json:"checklists"`
 	MemberIDs            []string    `json:"member_ids"`
+	BroadcastChannelID   string      `json:"broadcast_channel_id"`
 }
 
 func (p Playbook) Clone() Playbook {

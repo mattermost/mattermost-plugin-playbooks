@@ -1,16 +1,19 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
+import React, {FC, useState, useEffect, useCallback} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
+import {searchChannels as searchChannelsInTeam} from 'mattermost-redux/actions/channels';
 
 import {Team} from 'mattermost-redux/types/teams';
 
 import styled from 'styled-components';
+
+import {Tabs, TabsContent} from 'src/components/tabs';
 
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 
@@ -27,6 +30,7 @@ import './playbook.scss';
 import StagesAndStepsIcon from './stages_and_steps_icon';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
+import ChannelSelector from './channel_selector';
 
 const Container = styled.div`
     display: flex;
@@ -43,33 +47,12 @@ const EditView = styled.div`
     flex-grow: 1;
 `;
 
-const EditHeader = styled.div`
+const TabsHeader = styled.div`
     height: 72px;
     display: flex;
-    align-items: center;
     padding: 0 32px;
     border-bottom: 1px solid var(--center-channel-color-16);
     white-space: nowrap;
-`;
-
-const EditHeaderTextContainer = styled.span`
-    display: inline-flex;
-    flex-direction: column;
-    vertical-align: middle;
-`;
-
-const EditHeaderText = styled.span`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
-`;
-
-const EditHeaderHelpText = styled.span`
-    font-weight: normal;
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
 const EditContent = styled.div`
@@ -217,6 +200,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
+    const [currentTab, setCurrentTab] = useState<number>(0);
+
     useEffect(() => {
         const fetchData = async () => {
             // No need to fetch anything if we're adding a new playbook
@@ -336,6 +321,18 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
     };
 
+    const searchChannels = (term: string) => {
+        return dispatch(searchChannelsInTeam(props.currentTeam.id, term));
+    };
+
+    const handleBroadcastInput = (channelId: string) => {
+        setPlaybook({
+            ...playbook,
+            broadcast_channel_id: channelId,
+        });
+        setChangesMade(true);
+    };
+
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
@@ -386,30 +383,37 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             </BackstageNavbar>
             <Container>
                 <EditView>
-                    <EditHeader>
-                        <StagesAndStepsIcon/>
-                        <EditHeaderTextContainer>
-                            <EditHeaderText>{'Stages and Tasks'}</EditHeaderText>
-                            <EditHeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</EditHeaderHelpText>
-                        </EditHeaderTextContainer>
-                    </EditHeader>
+                    <TabsHeader>
+                        <Tabs
+                            currentTab={currentTab}
+                            setCurrentTab={setCurrentTab}
+                        >
+                            {'Tasks'}
+                            {'Preferences'}
+                        </Tabs>
+                    </TabsHeader>
                     <EditContent>
-                        <StagesAndStepsEdit
-                            checklists={playbook.checklists}
-                            onChange={updateChecklist}
-                        />
+                        <TabsContent
+                            currentTab={currentTab}
+                        >
+                            <StagesAndStepsEdit
+                                checklists={playbook.checklists}
+                                onChange={updateChecklist}
+                            />
+                            {'TODO MM-30519 implement preferences.'}
+                        </TabsContent>
                     </EditContent>
                 </EditView>
                 <Sidebar
                     data-testid='playbook-sidebar'
                 >
                     <SidebarHeader>
-                        {'Settings'}
+                        {'Permissions'}
                     </SidebarHeader>
                     <SidebarContent>
                         <SidebarBlock>
                             <SidebarHeaderText>
-                                {'Incident channel'}
+                                {'Channel access'}
                                 <SidebarHeaderDescription>
                                     {'Determine the type of incident channel this playbook creates when starting an incident.'}
                                 </SidebarHeaderDescription>
@@ -439,7 +443,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         </SidebarBlock>
                         <SidebarBlock>
                             <SidebarHeaderText>
-                                {'Share Playbook'}
+                                {'Playbook access'}
                                 <SidebarHeaderDescription>
                                     {'Only people who you share with can create an incident from this playbook.'}
                                 </SidebarHeaderDescription>
@@ -449,6 +453,19 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 onRemoveUser={handleRemoveUser}
                                 searchProfiles={searchUsers}
                                 getProfiles={getUsers}
+                                playbook={playbook}
+                            />
+                        </SidebarBlock>
+                        <SidebarBlock>
+                            <SidebarHeaderText>
+                                {'Broadcast Channel'}
+                                <SidebarHeaderDescription>
+                                    {'Broadcast the incident status to an additional channel. All status posts will be shared automatically with both the incident and broadcast channel.'}
+                                </SidebarHeaderDescription>
+                            </SidebarHeaderText>
+                            <ChannelSelector
+                                searchChannels={searchChannels}
+                                onChannelSelected={handleBroadcastInput}
                                 playbook={playbook}
                             />
                         </SidebarBlock>

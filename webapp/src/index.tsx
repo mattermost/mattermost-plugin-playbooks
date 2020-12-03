@@ -34,6 +34,7 @@ import {
     handleWebsocketIncidentCreated,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
+    handleWebsocketPostEditedOrDeleted,
 } from './websocket_events';
 import {
     WEBSOCKET_INCIDENT_UPDATED,
@@ -79,6 +80,8 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
 
         // Listen for channel changes and open the RHS when appropriate.
         store.subscribe(makeRHSOpener(store));

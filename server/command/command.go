@@ -2,7 +2,7 @@ package command
 
 import (
 	"fmt"
-	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -40,11 +41,11 @@ const confirmPrompt = "CONFIRM"
 type Register func(*model.Command) error
 
 // RegisterCommands should be called by the plugin to register all necessary commands
-func RegisterCommands(registerFunc Register) error {
-	return registerFunc(getCommand())
+func RegisterCommands(registerFunc Register, addTestCommands bool) error {
+	return registerFunc(getCommand(addTestCommands))
 }
 
-func getCommand() *model.Command {
+func getCommand(addTestCommands bool) *model.Command {
 	return &model.Command{
 		Trigger:          "incident",
 		DisplayName:      "Incident",
@@ -52,11 +53,11 @@ func getCommand() *model.Command {
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: start, end, update, stage, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
-		AutocompleteData: getAutocompleteData(),
+		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
 }
 
-func getAutocompleteData() *model.AutocompleteData {
+func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
 		"Available commands: start, end, update, restart, check, announce, list, commander, info, stage")
 
@@ -111,6 +112,29 @@ func getAutocompleteData() *model.AutocompleteData {
 
 	info := model.NewAutocompleteData("info", "", "Shows a summary of the current incident")
 	slashIncident.AddCommand(info)
+
+	if addTestCommands {
+		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
+
+		testCreate := model.NewAutocompleteData("create-incident", "[playbook ID] [timestamp] [incident name]", "Create an incident with a specific creation date")
+		testCreate.AddDynamicListArgument("List of playbooks is downloading from your incident response plugin", "api/v0/playbooks/autocomplete", true)
+		testCreate.AddTextArgument("Date in format 2020-01-31", "Creation timestamp", `/[0-9]{4}-[0-9]{2}-[0-9]{2}/`)
+		testCreate.AddTextArgument("Name of the incident", "Incident name", "")
+		test.AddCommand(testCreate)
+
+		testData := model.NewAutocompleteData("bulk-data", "[ongoing] [ended] [begin] [end] [seed]", "Generate random test data in bulk")
+		testData.AddTextArgument("An integer indicating how many ongoing incidents will be generated.", "Number of ongoing incidents", "")
+		testData.AddTextArgument("An integer indicating how many ended incidents will be generated.", "Number of ended incidents", "")
+		testData.AddTextArgument("Date in format 2020-01-31", "First possible creation date", "")
+		testData.AddTextArgument("Date in format 2020-01-31", "Last possible creation date", "")
+		testData.AddTextArgument("An integer in case you need random, but reproducible, results", "Random seed (optional)", "")
+		test.AddCommand(testData)
+
+		testSelf := model.NewAutocompleteData("self", "", "DESTRUCTIVE ACTION - Perform a series of self tests to ensure everything works as expected.")
+		test.AddCommand(testSelf)
+
+		slashIncident.AddCommand(test)
+	}
 
 	return slashIncident
 }
@@ -426,7 +450,7 @@ func (r *Runner) actionList() {
 			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
 				{Title: "Stage:", Value: fmt.Sprintf("**%s**", theIncident.ActiveStageTitle)},
-				{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), now)},
+				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), now)},
 				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
 			},
 		}
@@ -444,7 +468,7 @@ func (r *Runner) actionList() {
 func (r *Runner) actionInfo() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if errors.Is(err, incident.ErrNotFound) {
-		r.postCommandResponse("You can only show the details of an incident from within the incident's channel.")
+		r.postCommandResponse("You can only see the details of an incident from within the incident's channel.")
 		return
 	} else if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
@@ -488,7 +512,7 @@ func (r *Runner) actionInfo() {
 		timestamp := ""
 		if item.State == playbook.ChecklistItemStateClosed {
 			icon = ":white_check_mark: "
-			timestamp = " (" + getTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
+			timestamp = " (" + timeutils.GetTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
 		}
 
 		tasks += icon + item.Title + timestamp + "\n"
@@ -496,7 +520,7 @@ func (r *Runner) actionInfo() {
 	attachment := &model.SlackAttachment{
 		Fields: []*model.SlackAttachmentField{
 			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
-			{Title: "Duration:", Value: durationString(getTimeForMillis(theIncident.CreateAt), time.Now())},
+			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())},
 			{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
 			{Title: "Stage:", Value: activeChecklist.Title},
 			{Title: "Tasks:", Value: tasks},
@@ -509,46 +533,6 @@ func (r *Runner) actionInfo() {
 		},
 	}
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
-}
-
-func getTimeForMillis(unixMillis int64) time.Time {
-	return time.Unix(0, unixMillis*int64(1000000))
-}
-
-func durationString(start, end time.Time) string {
-	duration := end.Sub(start).Round(time.Second)
-
-	if duration.Seconds() < 60 {
-		return "< 1m"
-	}
-
-	if duration.Minutes() < 60 {
-		return fmt.Sprintf("%.fm", math.Floor(duration.Minutes()))
-	}
-
-	if duration.Hours() < 24 {
-		hours := math.Floor(duration.Hours())
-		minutes := math.Mod(math.Floor(duration.Minutes()), 60)
-		if minutes == 0 {
-			return fmt.Sprintf("%.fh", hours)
-		}
-		return fmt.Sprintf("%.fh %.fm", hours, minutes)
-	}
-
-	days := math.Floor(duration.Hours() / 24)
-	duration %= 24 * time.Hour
-	hours := math.Floor(duration.Hours())
-	minutes := math.Mod(math.Floor(duration.Minutes()), 60)
-	if minutes == 0 {
-		if hours == 0 {
-			return fmt.Sprintf("%.fd", days)
-		}
-		return fmt.Sprintf("%.fd %.fh", days, hours)
-	}
-	if hours == 0 {
-		return fmt.Sprintf("%.fd %.fm", days, minutes)
-	}
-	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
 }
 
 func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentChannelName string) error {
@@ -768,7 +752,7 @@ func (r *Runner) actionRestart() {
 	}
 }
 
-func (r *Runner) actionSelftest(args []string) {
+func (r *Runner) actionTestSelf(args []string) {
 	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
 		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
 		r.postCommandResponse(helpText)
@@ -780,9 +764,9 @@ func (r *Runner) actionSelftest(args []string) {
 		return
 	}
 
-	if len(args) != 2 || args[0] != confirmPrompt || args[1] != "SELF-TEST" {
+	if len(args) != 3 || args[0] != confirmPrompt || args[1] != "TEST" || args[2] != "SELF" {
 		r.postCommandResponse("Are you sure you want to self-test (which will nuke the database and delete all data -- instances, configuration)? " +
-			"All incident data will be lost. To self-test, type `/incident st CONFIRM SELF-TEST`")
+			"All incident data will be lost. To self-test, type `/incident test self CONFIRM TEST SELF`")
 		return
 	}
 
@@ -937,8 +921,9 @@ And... yes, of course, we have emojis
 			TeamID:          r.args.TeamId,
 			CommanderUserID: r.args.UserId,
 		},
-		PlaybookID: gotplaybook.ID,
-		Checklists: gotplaybook.Checklists,
+		PlaybookID:         gotplaybook.ID,
+		Checklists:         gotplaybook.Checklists,
+		BroadcastChannelID: gotplaybook.BroadcastChannelID,
 	}, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
@@ -996,6 +981,348 @@ And... yes, of course, we have emojis
 	r.postCommandResponse("Self test success.")
 }
 
+func (r *Runner) actionTest(args []string) {
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
+		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
+		r.postCommandResponse("Setting `EnableTesting` must be set to `true` to run the test command.")
+		return
+	}
+
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+		r.postCommandResponse("Running the test command is restricted to system administrators.")
+		return
+	}
+
+	if len(args) < 1 {
+		r.postCommandResponse("The `/incident test` command needs at least one command.")
+		return
+	}
+
+	command := strings.ToLower(args[0])
+	var params = []string{}
+	if len(args) > 1 {
+		params = args[1:]
+	}
+
+	switch command {
+	case "create-incident":
+		r.actionTestCreate(params)
+		return
+	case "bulk-data":
+		r.actionTestData(params)
+	case "self":
+		r.actionTestSelf(params)
+	default:
+		r.postCommandResponse(fmt.Sprintf("Command '%s' unknown.", args[0]))
+		return
+	}
+}
+
+func (r *Runner) actionTestCreate(params []string) {
+	if len(params) < 3 {
+		r.postCommandResponse("The command expects three parameters: <playbook_id> <timestamp> <incident name>")
+		return
+	}
+
+	playbookID := params[0]
+	if !model.IsValidId(playbookID) {
+		r.postCommandResponse("The first parameter, <playbook_id>, must be a valid ID.")
+		return
+	}
+	thePlaybook, err := r.playbookService.Get(playbookID)
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("The playbook with ID '%s' does not exist.", playbookID))
+		return
+	}
+
+	creationTimestamp, err := time.Parse("2006-01-02", params[1])
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("Timestamp '%s' could not be parsed as a date. If you want the incident to start on January 2, 2006, the timestamp should be '2006-01-02'.", params[1]))
+		return
+	}
+
+	incidentName := strings.Join(params[2:], " ")
+
+	theIncident := &incident.Incident{
+		Header: incident.Header{
+			Name:            incidentName,
+			CommanderUserID: r.args.UserId,
+			TeamID:          r.args.TeamId,
+		},
+		PlaybookID: playbookID,
+		Checklists: thePlaybook.Checklists,
+	}
+
+	newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
+	if err != nil {
+		r.warnUserAndLogErrorf("unable to create incident: %v", err)
+		return
+	}
+
+	if err = r.incidentService.ChangeCreationDate(newIncident.ID, creationTimestamp); err != nil {
+		r.warnUserAndLogErrorf("unable to change date of recently created incident: %v", err)
+		return
+	}
+
+	channel, err := r.pluginAPI.Channel.Get(newIncident.ChannelID)
+	if err != nil {
+		r.warnUserAndLogErrorf("unable to retrieve information of incident's channel: %v", err)
+		return
+	}
+
+	r.postCommandResponse(fmt.Sprintf("Incident successfully created: ~%s.", channel.Name))
+}
+
+func (r *Runner) actionTestData(params []string) {
+	if len(params) < 4 {
+		r.postCommandResponse("`/incident test bulk-data` expects at least 4 arguments: [ongoing] [ended] [begin] [end]. Optionally, a fifth argument can be added: [seed].")
+		return
+	}
+
+	ongoing, err := strconv.Atoi(params[0])
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("The provided value for ongoing incidents, '%s', is not an integer.", params[0]))
+		return
+	}
+
+	ended, err := strconv.Atoi(params[1])
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("The provided value for ended incidents, '%s', is not an integer.", params[1]))
+		return
+	}
+
+	begin, err := time.Parse("2006-01-02", params[2])
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("The provided value for the first possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[2]))
+		return
+	}
+
+	end, err := time.Parse("2006-01-02", params[3])
+	if err != nil {
+		r.postCommandResponse(fmt.Sprintf("The provided value for the last possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[3]))
+		return
+	}
+
+	seed := time.Now().Unix()
+	if len(params) > 4 {
+		parsedSeed, err := strconv.ParseInt(params[4], 10, 0)
+		if err != nil {
+			r.postCommandResponse(fmt.Sprintf("The provided value for the random seed, '%s', is not an integer.", params[4]))
+			return
+		}
+
+		seed = parsedSeed
+	}
+
+	r.generateTestData(ongoing, ended, begin, end, seed)
+}
+
+var fakeCompanyNames = []string{
+	"Dach Inc",
+	"Schuster LLC",
+	"Kirlin Group",
+	"Kohler Group",
+	"Ruelas S.L.",
+	"Armenta S.L.",
+	"Vega S.A.",
+	"Delarosa S.A.",
+	"Sarabia S.A.",
+	"Torp - Reilly",
+	"Heathcote Inc",
+	"Swift - Bruen",
+	"Stracke - Lemke",
+	"Shields LLC",
+	"Bruen Group",
+	"Senger - Stehr",
+	"Krogh - Eide",
+	"Andresen BA",
+	"Hagen - Holm",
+	"Martinsen BA",
+	"Holm BA",
+	"Berg BA",
+	"Fossum RFH",
+	"Nordskaug - Torp",
+	"Gran - Lunde",
+	"Nordby BA",
+	"Ryan Gruppen",
+	"Karlsson AB",
+	"Nilsson HB",
+	"Karlsson Group",
+	"Miller - Harber",
+	"Yost Group",
+	"Leuschke Group",
+	"Mertz Group",
+	"Welch LLC",
+	"Baumbach Group",
+	"Ward - Schmitt",
+	"Romaguera Group",
+	"Hickle - Kemmer",
+	"Stewart Corp",
+}
+
+var incidentNames = []string{
+	"Cluster servers are down",
+	"API performance degradation",
+	"Customers unable to login",
+	"Deployment failed",
+	"Build failed",
+	"Build timeout failure",
+	"Server is unresponsive",
+	"Server is crashing on start-up",
+	"MM crashes on start-up",
+	"Provider is down",
+	"Database is unresponsive",
+	"Database servers are down",
+	"Database replica lag",
+	"LDAP fails to sync",
+	"LDAP account unable to login",
+	"Broken MFA process",
+	"MFA fails to login users",
+	"UI is unresponsive",
+	"Security threat",
+	"Security breach",
+	"Customers data breach",
+	"SLA broken",
+	"MySQL max connections error",
+	"Postgres max connections error",
+	"Elastic Search unresponsive",
+	"Posts deleted",
+	"Mentions deleted",
+	"Replies deleted",
+	"Cloud server is down",
+	"Cloud deployment failed",
+	"Cloud provisioner is down",
+	"Cloud running out of memory",
+	"Unable to create new users",
+	"Installations in crashloop",
+	"Compliance report timeout",
+	"RN crash",
+	"RN out of memory",
+	"RN performance issues",
+	"MM fails to start",
+	"MM HA sync errors",
+}
+
+// generateTestData generates `numActiveIncidents` ongoing incidents and
+// `numEndedIncidents` ended incidents, whose creation timestamp lies randomly
+// between the `begin` and `end` timestamps.
+// All incidents are created with a playbook randomly picked from the ones the
+// user is a member of, and the randomness is controlled by the `seed` parameter
+// to create reproducible results if needed.
+func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, begin, end time.Time, seed int64) {
+	rand.Seed(seed)
+
+	beginMillis := begin.Unix() * 1000
+	endMillis := end.Unix() * 1000
+
+	numIncidents := numActiveIncidents + numEndedIncidents
+
+	if numIncidents == 0 {
+		r.postCommandResponse("Zero incidents created.")
+		return
+	}
+
+	if !end.After(begin) {
+		r.postCommandResponse("`end` must be a later date than `begin`")
+		return
+	}
+
+	timestamps := make([]int64, 0, numIncidents)
+	for i := 0; i < numIncidents; i++ {
+		timestamp := rand.Int63n(endMillis-beginMillis) + beginMillis
+		timestamps = append(timestamps, timestamp)
+	}
+
+	requesterInfo := playbook.RequesterInfo{
+		UserID:          r.args.UserId,
+		TeamID:          r.args.TeamId,
+		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+		MemberOnly:      true,
+	}
+
+	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, playbook.Options{})
+	if err != nil {
+		r.warnUserAndLogErrorf("Error getting playbooks: %v", err)
+		return
+	}
+
+	if len(playbooksResult.Items) == 0 {
+		r.postCommandResponse("You are not a member of any playbook. Create at least one playbook before generating the test data.")
+		return
+	}
+
+	playbooks := make([]playbook.Playbook, 0, len(playbooksResult.Items))
+	for _, thePlaybook := range playbooksResult.Items {
+		wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error getting playbook: %v", err)
+			return
+		}
+
+		playbooks = append(playbooks, wholePlaybook)
+	}
+
+	tableMsg := "| Incident name | Created at | Status |\n|-	|-	|-	|\n"
+	incidents := make([]*incident.Incident, 0, numIncidents)
+	for i := 0; i < numIncidents; i++ {
+		thePlaybook := playbooks[rand.Intn(len(playbooks))]
+
+		incidentName := incidentNames[rand.Intn(len(incidentNames))]
+		// Give a company name to 1/3 of the incidents created
+		if rand.Intn(3) == 0 {
+			companyName := fakeCompanyNames[rand.Intn(len(fakeCompanyNames))]
+			incidentName = fmt.Sprintf("[%s] %s", companyName, incidentName)
+		}
+
+		theIncident := &incident.Incident{
+			Header: incident.Header{
+				Name:            incidentName,
+				CommanderUserID: r.args.UserId,
+				TeamID:          r.args.TeamId,
+			},
+			PlaybookID: thePlaybook.ID,
+			Checklists: thePlaybook.Checklists,
+		}
+
+		newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error creating incident: %v", err)
+			return
+		}
+
+		createAt := timeutils.GetTimeForMillis(timestamps[i])
+		err = r.incidentService.ChangeCreationDate(newIncident.ID, createAt)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error changing creation date: %v", err)
+			return
+		}
+
+		channel, err := r.pluginAPI.Channel.Get(newIncident.ChannelID)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error retrieveing incident's channel: %v", err)
+			return
+		}
+
+		status := "Ended"
+		if i >= numEndedIncidents {
+			status = "Ongoing"
+		}
+		tableMsg += fmt.Sprintf("|~%s|%s|%s|\n", channel.Name, createAt.Format("2006-01-02"), status)
+
+		incidents = append(incidents, newIncident)
+	}
+
+	for i := 0; i < numEndedIncidents; i++ {
+		err := r.incidentService.EndIncident(incidents[i].ID, r.args.UserId)
+		if err != nil {
+			r.warnUserAndLogErrorf("Error ending the incident: %v", err)
+			return
+		}
+	}
+
+	r.postCommandResponse(fmt.Sprintf("The test data was successfully generated:\n\n%s\n", tableMsg))
+}
+
 func (r *Runner) actionNukeDB(args []string) {
 	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
 		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
@@ -1015,7 +1342,8 @@ func (r *Runner) actionNukeDB(args []string) {
 	}
 
 	if err := r.incidentService.NukeDB(); err != nil {
-		r.postCommandResponse("There was an error while nuking db. Please contact your system administrator.")
+		r.warnUserAndLogErrorf("There was an error while nuking db: %v", err)
+		return
 	}
 	r.postCommandResponse("DB has been reset.")
 }
@@ -1064,8 +1392,8 @@ func (r *Runner) Execute() error {
 		r.actionInfo()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
-	case "st":
-		r.actionSelftest(parameters)
+	case "test":
+		r.actionTest(parameters)
 	default:
 		r.postCommandResponse(helpText)
 	}

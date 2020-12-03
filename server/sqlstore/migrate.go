@@ -42,3 +42,20 @@ func (sqlStore *SQLStore) migrate(migration Migration) (err error) {
 	}
 	return nil
 }
+
+// RunMigrations will run the migrations (if any). The caller should hold a cluster mutex if there
+// is a danger of this being run on multiple servers at once.
+func (sqlStore *SQLStore) RunMigrations() error {
+	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get the current schema version")
+	}
+
+	if currentSchemaVersion.LT(LatestVersion()) {
+		if err := sqlStore.Migrate(currentSchemaVersion); err != nil {
+			return errors.Wrapf(err, "failed to complete migrations")
+		}
+	}
+
+	return nil
+}
