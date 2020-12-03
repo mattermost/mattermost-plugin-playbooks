@@ -303,7 +303,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	}
 	// TODO: if there is no newestPost, use the message template: https://mattermost.atlassian.net/browse/MM-30519
 
-	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID)
+	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -378,6 +378,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	}
 
 	incidentToModify.StatusPostIDs = append(incidentToModify.StatusPostIDs, post.Id)
+	incidentToModify.PreviousReminder = options.Reminder
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
@@ -1057,7 +1058,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string) (*model.Dialog, error) {
+func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string, previousReminder time.Duration) (*model.Dialog, error) {
 	introductionText := "Update your incident status."
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
@@ -1122,7 +1123,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 				Type:        "select",
 				Options:     options,
 				Optional:    true,
-				Default:     "0",
+				Default:     fmt.Sprintf("%d", previousReminder/time.Second),
 			},
 		},
 		SubmitLabel:    "Update Status",

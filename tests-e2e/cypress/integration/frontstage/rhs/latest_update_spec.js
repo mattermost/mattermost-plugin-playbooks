@@ -130,6 +130,135 @@ describe('incident rhs > latest update', () => {
         });
     });
 
+    describe('the default reminder', () => {
+        it('shows \'none\' when we have not made a previous update', () => {
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', 'None');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: None', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, 'none');
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', 'None');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 15min', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '15');
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '15min');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 30min', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '30');
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '30min');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 60min', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '60');
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '60min');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 4hr', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '4');
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '4hr');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 24hr', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '24');
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '24hr');
+                });
+            });
+        });
+    });
+
     describe('shows the latest update', () => {
         describe('in a channel we are currently viewing', () => {
             it('when there is only one', () => {

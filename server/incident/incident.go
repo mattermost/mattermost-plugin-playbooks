@@ -25,6 +25,7 @@ type Incident struct {
 	StatusPostIDs      []string             `json:"status_post_ids"`
 	StatusPosts        []StatusPost         `json:"status_posts"`
 	ReminderPostID     string               `json:"reminder_post_id"`
+	PreviousReminder   time.Duration        `json:"previous_reminder"`
 	BroadcastChannelID string               `json:"broadcast_channel_id"`
 }
 
