@@ -1169,8 +1169,6 @@ describe('rhs incident list', () => {
             cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Click the incident icon
@@ -1240,18 +1238,8 @@ describe('rhs incident list', () => {
 
     describe('Last updated', () => {
         it('should update when in incident channel', () => {
-            // # delete all incidents
-            cy.endAllActiveIncidents(teamId);
-
-            // # Login as user-1
-            cy.apiLogin('user-1');
-
-            cy.apiGetCurrentUser().then((user) => {
-                expect(user.id).to.equal(userId);
-            });
-
             // # Navigate directly to a non-incident channel
-            cy.wait(1000).visit('/ad-1/channels/town-square');
+            cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -1283,11 +1271,13 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByText('Your Ongoing Incidents').should('exist');
 
+                cy.get('.scrollbar--view').scrollIntoView();
+
                 cy.findByText(incidentName).should('exist');
 
                 // * Verify the last updated is blank
-                cy.findByText('Last updated:').should('exist');
-                cy.findByText('Last updated:').next().should('have.text', '-');
+                cy.findAllByText('Last updated:').eq(0).should('exist')
+                    .next().should('have.text', '-');
             });
 
             // # Update the status
@@ -1297,27 +1287,19 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByText('Your Ongoing Incidents').should('exist');
 
+                cy.get('.scrollbar--view').scrollIntoView();
+
                 cy.findByText(incidentName).should('exist');
 
                 // * Verify the last updated is updated
-                cy.findByText('Last updated:').should('exist');
-                cy.findByText('Last updated:').next().should('have.text', '< 1m ago');
+                cy.findAllByText('Last updated:').eq(0).should('exist')
+                    .next().should('have.text', '< 1m ago');
             });
         });
 
         it('should update when in another incident channel', () => {
-            // # delete all incidents
-            cy.endAllActiveIncidents(teamId);
-
-            // # Login as user-1
-            cy.apiLogin('user-1');
-
-            cy.apiGetCurrentUser().then((user) => {
-                expect(user.id).to.equal(userId);
-            });
-
             // # Navigate directly to a non-incident channel
-            cy.wait(1000).visit('/ad-1/channels/town-square');
+            cy.visit('/ad-1/channels/town-square');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -1352,11 +1334,13 @@ describe('rhs incident list', () => {
                     cy.get('#rhsContainer').should('exist').within(() => {
                         cy.findByText('Your Ongoing Incidents').should('exist');
 
+                        cy.get('.scrollbar--view').scrollIntoView();
+
                         cy.findByText(incidentName).should('exist');
 
                         // * Verify the last updated is blank
-                        cy.findByText('Last updated:').should('exist');
-                        cy.findByText('Last updated:').next().should('have.text', '-');
+                        cy.findAllByText('Last updated:').eq(0).should('exist')
+                            .next().should('have.text', '-');
                     });
 
                     // # Update the status
@@ -1375,11 +1359,13 @@ describe('rhs incident list', () => {
                         cy.get('#rhsContainer').should('exist').within(() => {
                             cy.findByText('Your Ongoing Incidents').should('exist');
 
+                            cy.get('.scrollbar--view').scrollIntoView();
+
                             cy.findByText(incidentName).should('exist');
 
                             // * Verify the last updated is updated
-                            cy.findByText('Last updated:').should('exist');
-                            cy.findByText('Last updated:').next().should('have.text', '< 1m ago');
+                            cy.findAllByText('Last updated:').eq(0).should('exist')
+                                .next().should('have.text', '< 1m ago');
                         });
                     });
                 });
