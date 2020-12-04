@@ -132,7 +132,7 @@ describe('incident rhs > latest update', () => {
 
     describe('the default reminder', () => {
         it('shows \'none\' when we have not made a previous update', () => {
-            // # Run the /incident status slash command.
+            // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
@@ -151,7 +151,7 @@ describe('incident rhs > latest update', () => {
             // # Create a first status update
             cy.updateStatus(firstMessage, 'none');
 
-            // # Run the /incident status slash command.
+            // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
@@ -170,7 +170,7 @@ describe('incident rhs > latest update', () => {
             // # Create a first status update
             cy.updateStatus(firstMessage, '15');
 
-            // # Run the /incident status slash command.
+            // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
@@ -189,7 +189,7 @@ describe('incident rhs > latest update', () => {
             // # Create a first status update
             cy.updateStatus(firstMessage, '30');
 
-            // # Run the /incident status slash command.
+            // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
@@ -208,7 +208,7 @@ describe('incident rhs > latest update', () => {
             // # Create a first status update
             cy.updateStatus(firstMessage, '60');
 
-            // # Run the /incident status slash command.
+            // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
@@ -227,7 +227,7 @@ describe('incident rhs > latest update', () => {
             // # Create a first status update
             cy.updateStatus(firstMessage, '4');
 
-            // # Run the /incident status slash command.
+            // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
@@ -246,7 +246,7 @@ describe('incident rhs > latest update', () => {
             // # Create a first status update
             cy.updateStatus(firstMessage, '24');
 
-            // # Run the /incident status slash command.
+            // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
