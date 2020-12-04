@@ -26,7 +26,21 @@ func (sqlStore *SQLStore) getSystemValue(q queryer, key string) (string, error) 
 }
 
 // setSystemValue updates the IR_System table for the given key.
-func (sqlStore *SQLStore) setSystemValue(e execer, key, value string) error {
+func (sqlStore *SQLStore) setSystemValue(e queryExecer, key, value string) error {
+	var currentValue string
+	err := sqlStore.getBuilder(e, &currentValue,
+		sq.Select("SValue").From("IR_System").Where(sq.Eq{"SKey": key}))
+
+	// The value is already as specified, so do nothing
+	if err == nil && currentValue == value {
+		return nil
+	}
+
+	// There was an unexpected error querying for the IR_System table
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
 	result, err := sqlStore.execBuilder(e,
 		sq.Update("IR_System").
 			Set("SValue", value).
