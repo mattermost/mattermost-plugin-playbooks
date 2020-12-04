@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -33,6 +34,44 @@ var createPGIndex = func(indexName, tableName, columns string) string {
 		END
 		$$;
 	`, indexName, indexName, tableName, columns)
+}
+
+var addColumnToPGTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
+	_, err := e.Exec(fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			ALTER TABLE %s ADD %s %s;
+		EXCEPTION
+			WHEN duplicate_column THEN
+				RAISE NOTICE 'Ignoring ALTER TABLE statement. Column "%s" already exists in table "%s".';
+		END
+		$$;
+	`, tableName, columnName, columnType, columnName, tableName))
+
+	return err
+}
+
+var addColumnToMySQLTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
+	var result int
+	err := e.QueryRowx(
+		"SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND COLUMN_NAME = ?",
+		tableName,
+		columnName,
+	).Scan(&result)
+
+	// Column exists, so we don't need to alter the table
+	if err == nil {
+		return nil
+	}
+
+	if err != sql.ErrNoRows {
+		return err
+	}
+
+	_, alterErr := e.Exec(fmt.Sprintf("ALTER TABLE %s ADD %s %s", tableName, columnName, columnType))
+
+	return alterErr
 }
 
 var migrations = []Migration{
@@ -194,12 +233,12 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.3.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ActiveStageTitle VARCHAR(1024) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ActiveStageTitle", "VARCHAR(1024) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
 				}
 
 			} else {
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ActiveStageTitle TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Incident", "ActiveStageTitle", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
 				}
 			}
@@ -264,15 +303,15 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ReminderPostID VARCHAR(26)"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReminderPostID", "VARCHAR(26)"); err != nil {
 					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
 				}
 
@@ -295,15 +334,15 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating index IR_StatusPosts_PostID ")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ReminderPostID TEXT"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Incident", "ReminderPostID", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Incident", "BroadcastChannelID", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Playbook", "BroadcastChannelID", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
 				}
 			}
