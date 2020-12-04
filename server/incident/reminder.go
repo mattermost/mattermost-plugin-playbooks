@@ -15,6 +15,7 @@ type Reminder struct {
 	IncidentID string `json:"incident_id"`
 }
 
+// HandleReminder is the handler for all reminder events.
 func (s *ServiceImpl) HandleReminder(key string) {
 	incidentToModify, err := s.GetIncident(key)
 	if err != nil {
@@ -71,6 +72,8 @@ func (s *ServiceImpl) HandleReminder(key string) {
 	}
 }
 
+// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+// reminded to update the incident's status.
 func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
 	if _, err := s.scheduler.ScheduleOnce(incidentID, time.Now().Add(fromNow)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
@@ -79,6 +82,7 @@ func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) erro
 	return nil
 }
 
+// RemoveReminder removes the pending reminder for incidentID (if any).
 func (s *ServiceImpl) RemoveReminder(incidentID string) {
 	s.scheduler.Cancel(incidentID)
 }
