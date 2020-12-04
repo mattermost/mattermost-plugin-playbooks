@@ -30,6 +30,6 @@ func (sqlStore *SQLStore) GetCurrentVersion() (semver.Version, error) {
 	return currentSchemaVersion, nil
 }
 
-func (sqlStore *SQLStore) SetCurrentVersion(e execer, currentVersion semver.Version) error {
+func (sqlStore *SQLStore) SetCurrentVersion(e queryExecer, currentVersion semver.Version) error {
 	return sqlStore.setSystemValue(e, systemDatabaseVersionKey, currentVersion.String())
 }
