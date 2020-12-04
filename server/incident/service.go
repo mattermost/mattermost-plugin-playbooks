@@ -52,8 +52,8 @@ const DialogFieldDescriptionKey = "incidentDescription"
 // DialogFieldMessageKey is the key for the message textarea field used in UpdateIncidentDialog
 const DialogFieldMessageKey = "message"
 
-// DialogFieldReminderInMinutesKey is the key for the reminder select field used in UpdateIncidentDialog
-const DialogFieldReminderInMinutesKey = "reminder"
+// DialogFieldReminderInSecondsKey is the key for the reminder select field used in UpdateIncidentDialog
+const DialogFieldReminderInSecondsKey = "reminder"
 
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
@@ -305,7 +305,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	}
 	// TODO: if there is no newestPost, use the message template: https://mattermost.atlassian.net/browse/MM-30519
 
-	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID)
+	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -380,6 +380,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	}
 
 	incidentToModify.StatusPostIDs = append(incidentToModify.StatusPostIDs, post.Id)
+	incidentToModify.PreviousReminder = options.Reminder
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
@@ -1059,7 +1060,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string) (*model.Dialog, error) {
+func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string, previousReminder time.Duration) (*model.Dialog, error) {
 	introductionText := "Update your incident status."
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
@@ -1070,6 +1071,42 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 		}
 
 		introductionText += fmt.Sprintf(" This post will be broadcasted to [%s](/%s/channels/%s).", broadcastChannel.DisplayName, team.Name, broadcastChannel.Id)
+	}
+
+	options := []*model.PostActionOptions{
+		{
+			Text:  "None",
+			Value: "0",
+		},
+		{
+			Text:  "15min",
+			Value: "900",
+		},
+		{
+			Text:  "30min",
+			Value: "1800",
+		},
+		{
+			Text:  "60min",
+			Value: "3600",
+		},
+		{
+			Text:  "4hr",
+			Value: "14400",
+		},
+		{
+			Text:  "24hr",
+			Value: "86400",
+		},
+	}
+
+	if s.configService.IsConfiguredForDevelopmentAndTesting() {
+		options = append(options, nil)
+		copy(options[2:], options[1:])
+		options[1] = &model.PostActionOptions{
+			Text:  "10sec",
+			Value: "10",
+		}
 	}
 
 	return &model.Dialog{
@@ -1084,36 +1121,11 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 			},
 			{
 				DisplayName: "Reminder for next update",
-				Name:        DialogFieldReminderInMinutesKey,
+				Name:        DialogFieldReminderInSecondsKey,
 				Type:        "select",
-				Options: []*model.PostActionOptions{
-					{
-						Text:  "None",
-						Value: "0",
-					},
-					{
-						Text:  "15min",
-						Value: "15",
-					},
-					{
-						Text:  "30min",
-						Value: "30",
-					},
-					{
-						Text:  "60min",
-						Value: "60",
-					},
-					{
-						Text:  "4hr",
-						Value: "240",
-					},
-					{
-						Text:  "24hr",
-						Value: "1440",
-					},
-				},
-				Optional: true,
-				Default:  "0",
+				Options:     options,
+				Optional:    true,
+				Default:     fmt.Sprintf("%d", previousReminder/time.Second),
 			},
 		},
 		SubmitLabel:    "Update Status",

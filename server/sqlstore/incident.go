@@ -45,7 +45,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
-			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID", "BroadcastChannelID").
+			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID", "PreviousReminder", "BroadcastChannelID").
 		From("IR_Incident AS incident")
 
 	statusPostsSelect := sqlStore.builder.
@@ -229,6 +229,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"PlaybookID":         rawIncident.PlaybookID,
 			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
 			"ReminderPostID":     rawIncident.ReminderPostID,
+			"PreviousReminder":   rawIncident.PreviousReminder,
 			"BroadcastChannelID": rawIncident.BroadcastChannelID,
 		}))
 
@@ -282,6 +283,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
 			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
 			"ReminderPostID":     rawIncident.ReminderPostID,
+			"PreviousReminder":   rawIncident.PreviousReminder,
 			"BroadcastChannelID": rawIncident.BroadcastChannelID,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))

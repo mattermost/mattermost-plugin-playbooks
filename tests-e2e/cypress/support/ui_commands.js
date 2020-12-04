@@ -119,7 +119,7 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
  * @param {String} message - The new status.
  * @param {Boolean} isOngoing - Default to true. If false, the update will also end the incident.
  */
-Cypress.Commands.add('updateStatus', (message) => {
+Cypress.Commands.add('updateStatus', (message, reminder) => {
     // # Run the /incident status slash command.
     cy.executeSlashCommand('/incident update');
 
@@ -130,6 +130,12 @@ Cypress.Commands.add('updateStatus', (message) => {
 
         // # Type the new update in the text box.
         cy.findByTestId('messageinput').type(message);
+
+        if (reminder) {
+            cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.get('input').type(reminder, {delay: 200}).type('{enter}');
+            });
+        }
 
         // # Submit the dialog.
         cy.get('#interactiveDialogSubmit').click();

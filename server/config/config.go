@@ -26,4 +26,8 @@ type Service interface {
 
 	// GetManifest gets the plugin manifest.
 	GetManifest() *model.Manifest
+
+	// IsConfiguredForDevelopmentAndTesting returns true when the server has `EnableDeveloper` and
+	// `EnableTesting` configuration settings enabled.
+	IsConfiguredForDevelopmentAndTesting() bool
 }

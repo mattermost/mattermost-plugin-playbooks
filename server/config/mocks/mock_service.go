@@ -62,6 +62,20 @@ func (mr *MockServiceMockRecorder) GetManifest() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManifest", reflect.TypeOf((*MockService)(nil).GetManifest))
 }
 
+// IsConfiguredForDevelopmentAndTesting mocks base method
+func (m *MockService) IsConfiguredForDevelopmentAndTesting() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsConfiguredForDevelopmentAndTesting")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsConfiguredForDevelopmentAndTesting indicates an expected call of IsConfiguredForDevelopmentAndTesting
+func (mr *MockServiceMockRecorder) IsConfiguredForDevelopmentAndTesting() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConfiguredForDevelopmentAndTesting", reflect.TypeOf((*MockService)(nil).IsConfiguredForDevelopmentAndTesting))
+}
+
 // RegisterConfigChangeListener mocks base method
 func (m *MockService) RegisterConfigChangeListener(arg0 func()) string {
 	m.ctrl.T.Helper()
