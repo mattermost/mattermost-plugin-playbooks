@@ -60,18 +60,12 @@ var addColumnToMySQLTable = func(e sqlx.Ext, tableName, columnName, columnType s
 		columnName,
 	).Scan(&result)
 
-	// Column exists, so we don't need to alter the table
-	if err == nil {
-		return nil
+	// Only alter the table if we don't find the column
+	if err == sql.ErrNoRows {
+		_, err = e.Exec(fmt.Sprintf("ALTER TABLE %s ADD %s %s", tableName, columnName, columnType))
 	}
 
-	if err != sql.ErrNoRows {
-		return err
-	}
-
-	_, alterErr := e.Exec(fmt.Sprintf("ALTER TABLE %s ADD %s %s", tableName, columnName, columnType))
-
-	return alterErr
+	return err
 }
 
 var migrations = []Migration{
