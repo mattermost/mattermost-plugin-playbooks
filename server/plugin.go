@@ -129,23 +129,37 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed creating cluster mutex")
 	}
 
-	// Cluster lock: only one plugin will perform the migration when needed
-	if err = p.UpgradeDatabase(sqlStore, mutex); err != nil {
+	mutex.Lock()
+	if err = sqlStore.RunMigrations(); err != nil {
+		mutex.Unlock()
 		return errors.Wrapf(err, "failed to run migrations")
 	}
+	mutex.Unlock()
 
 	incidentStore := sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler()
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+
+	scheduler := cluster.GetJobOnceScheduler(p.API)
+
 	p.incidentService = incident.NewService(
 		pluginAPIClient,
 		incidentStore,
 		p.bot,
+		p.bot,
 		p.config,
+		scheduler,
 		telemetryClient,
 	)
+
+	if err = scheduler.SetCallback(p.incidentService.HandleReminder); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not add the incidentService's HandleReminder", "error", err.Error())
+	}
+	if err = scheduler.Start(); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
+	}
 
 	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
@@ -154,7 +168,12 @@ func (p *Plugin) OnActivate() error {
 	api.NewIncidentHandler(p.handler.APIRouter, p.incidentService, p.playbookService, pluginAPIClient, p.bot, p.bot)
 	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 
-	if err = command.RegisterCommands(p.API.RegisterCommand); err != nil {
+	isTestingEnabled := false
+	flag := p.API.GetConfig().ServiceSettings.EnableTesting
+	if flag != nil {
+		isTestingEnabled = *flag
+	}
+	if err = command.RegisterCommands(p.API.RegisterCommand, isTestingEnabled); err != nil {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
@@ -165,24 +184,6 @@ func (p *Plugin) OnActivate() error {
 		// Remove the prepackaged old version of the plugin
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
 	}()
-
-	return nil
-}
-
-func (p *Plugin) UpgradeDatabase(sqlStore *sqlstore.SQLStore, mutex *cluster.Mutex) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get the current schema version")
-	}
-
-	if currentSchemaVersion.LT(sqlstore.LatestVersion()) {
-		if err := sqlStore.Migrate(currentSchemaVersion); err != nil {
-			return errors.Wrapf(err, "failed to complete migrations")
-		}
-	}
 
 	return nil
 }

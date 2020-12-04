@@ -1,13 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {AnyAction, Dispatch} from 'redux';
+import qs from 'qs';
+
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
-import {AnyAction, Dispatch} from 'redux';
-import qs from 'qs';
-
+import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
@@ -16,16 +17,16 @@ import {CommanderInfo} from 'src/types/backstage';
 import {
     FetchIncidentsParams,
     FetchIncidentsReturn,
+    Incident,
+    isIncident,
     isMetadata,
     Metadata,
-    isIncident,
-    Incident,
 } from 'src/types/incident';
 import {
-    Playbook,
     ChecklistItem,
     ChecklistItemState,
     FetchPlaybooksNoChecklistReturn,
+    Playbook,
     PlaybookNoChecklist,
 } from 'src/types/playbook';
 
@@ -88,8 +89,13 @@ export function fetchIncidentChannels(teamID: string, userID: string) {
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
-    const currentChannel = getCurrentChannel(getState());
+    let currentChannel = getCurrentChannel(getState());
     const currentTeamId = getCurrentTeamId(getState());
+
+    // Default to town square if there is no current channel (i.e., if Mattermost has not yet loaded)
+    if (!currentChannel) {
+        currentChannel = await Client4.getChannelByName(currentTeamId, 'town-square');
+    }
 
     const args = {
         channel_id: currentChannel?.id,
@@ -105,9 +111,12 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
-export async function clientRunChecklistItemSlashCommand(incidentId: string, checklistNumber: number, itemNumber: number) {
+export async function clientRunChecklistItemSlashCommand(dispatch: Dispatch, incidentId: string, checklistNumber: number, itemNumber: number) {
     try {
-        await doPost(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNumber}/item/${itemNumber}/run`);
+        const data = await doPost(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNumber}/item/${itemNumber}/run`);
+        if (data.trigger_id) {
+            dispatch({type: IntegrationTypes.RECEIVED_DIALOG_TRIGGER_ID, data: data.trigger_id});
+        }
     } catch (error) {
         console.error(error); //eslint-disable-line no-console
     }
@@ -183,21 +192,18 @@ export async function setCommander(incidentId: string, commanderId: string) {
 export async function setAssignee(incidentId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
     const body = JSON.stringify({assignee_id: assigneeId});
     try {
-        const data = await doPut(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
-        return data;
+        return await doPut(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
     } catch (error) {
         return {error};
     }
 }
 
 export async function setChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
+    return doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
         JSON.stringify({
             new_state: newState,
         }),
     );
-
-    return data;
 }
 
 export async function clientAddChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {

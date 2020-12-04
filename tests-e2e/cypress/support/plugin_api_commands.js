@@ -6,8 +6,8 @@ import endpoints from './endpoints.json';
 const incidentsEndpoint = endpoints.incidents;
 
 /**
-* Get all incidents directly via API
-*/
+ * Get all incidents directly via API
+ */
 Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -21,8 +21,8 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
 });
 
 /**
-* Get all active incidents directly via API
-*/
+ * Get all active incidents directly via API
+ */
 Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -36,8 +36,8 @@ Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
 });
 
 /**
-* Get incident by name directly via API
-*/
+ * Get incident by name directly via API
+ */
 Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -51,10 +51,10 @@ Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
 });
 
 /**
-* Get an incident directly via API
-* @param {String} incidentId
-* All parameters required
-*/
+ * Get an incident directly via API
+ * @param {String} incidentId
+ * All parameters required
+ */
 Cypress.Commands.add('apiGetIncident', (incidentId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -166,7 +166,7 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
 });
 
 // Create a playbook programmatically.
-Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs}) => {
+Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs, broadcastChannelId}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
@@ -177,6 +177,7 @@ Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident,
             create_public_incident: createPublicIncident,
             checklists,
             member_ids: memberIDs,
+            broadcast_channel_id: broadcastChannelId,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
@@ -185,7 +186,7 @@ Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident,
 });
 
 // Create a test playbook programmatically.
-Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId}) => (
+Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId, broadcastChannelId}) => (
     cy.apiCreatePlaybook({
         teamId,
         title,
@@ -199,6 +200,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId}) => (
         memberIDs: [
             userId,
         ],
+        broadcastChannelId,
     })
 ));
 
@@ -216,3 +218,25 @@ Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
         assert.isDefined(playbook);
     })
 ));
+
+// Update an incident's status programmatically.
+Cypress.Commands.add('apiUpdateStatus', ({incidentId, userId, channelId, teamId, message}) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
+        method: 'POST',
+        body: {
+            type: 'dialog_submission',
+            callback_id: '',
+            state: '',
+            user_id: userId,
+            channel_id: channelId,
+            team_id: teamId,
+            submission: {message, reminder: '15'},
+            cancelled: false,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});

@@ -56,6 +56,23 @@ describe('backstage incident list', () => {
         cy.get('#root').findByText('What are Incidents?').should('be.visible');
     });
 
+    it('New incident works when the backstage is the first page loaded', () => {
+        // # Navigate to the incidents backstage of a team with no incidents.
+        cy.visit('/reiciendis-0/com.mattermost.plugin-incident-management/incidents');
+
+        // # Make sure that the Redux store is empty
+        cy.reload();
+
+        // # Click on New Incident button
+        cy.findByText('New Incident').click();
+
+        // * Verify that we are in the centre channel view, out of the backstage
+        cy.url().should('include', '/reiciendis-0/channels');
+
+        // * Verify that the interactive dialog modal to create an incident is visible
+        cy.get('#interactiveDialogModal').should('exist');
+    });
+
     it('has "Incidents" and team name in heading', () => {
         // # Start the incident
         const now = Date.now();

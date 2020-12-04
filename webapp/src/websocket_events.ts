@@ -4,10 +4,10 @@
 import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {Post} from 'mattermost-redux/types/posts';
 import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -16,7 +16,7 @@ import {
     receivedTeamIncidents,
 } from 'src/actions';
 import {fetchIncidentByChannel, fetchIncidentChannels} from 'src/client';
-import {clientId} from 'src/selectors';
+import {clientId, myIncidentsMap} from 'src/selectors';
 import {Incident, isIncident} from 'src/types/incident';
 
 export const websocketSubscribersToIncidentUpdate = new Set<(incident: Incident) => void>();
@@ -97,8 +97,35 @@ export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dis
     return (msg: WebSocketMessage) => {
         const currentUserId = getCurrentUserId(getState());
         if (currentUserId === msg.broadcast.user_id) {
-            const channel = getChannel(getState(), msg.data.channel_id);
-            dispatch(removedFromIncidentChannel(channel.team_id, channel.id));
+            dispatch(removedFromIncidentChannel(msg.data.channel_id));
         }
     };
 }
+
+async function getIncidentFromStatusUpdate(post: Post): Promise<Incident | null> {
+    let incident: Incident;
+    try {
+        incident = await fetchIncidentByChannel(post.channel_id);
+    } catch (err) {
+        return null;
+    }
+
+    if (incident.status_post_ids.includes(post.id)) {
+        return incident;
+    }
+
+    return null;
+}
+
+export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispatch: Dispatch) => {
+    return async (msg: WebSocketMessage) => {
+        const activeIncidents = myIncidentsMap(getState());
+        if (activeIncidents[msg.broadcast.channel_id]) {
+            const incident = await getIncidentFromStatusUpdate(JSON.parse(msg.data.post));
+            if (incident) {
+                dispatch(incidentUpdated(incident));
+                websocketSubscribersToIncidentUpdate.forEach((fn) => fn(incident));
+            }
+        }
+    };
+};

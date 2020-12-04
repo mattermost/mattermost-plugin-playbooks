@@ -87,7 +87,7 @@ describe('slash command > info', () => {
             cy.executeSlashCommand('/incident info');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('You can only show the details of an incident from within the incident\'s channel.');
+            cy.verifyEphemeralMessage('You can only see the details of an incident from within the incident\'s channel.');
         });
 
         it('should open the RHS when it is not open', () => {

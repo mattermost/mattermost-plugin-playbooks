@@ -9,7 +9,7 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
+import {fetchIncidentByChannel} from 'src/client';
 import {websocketSubscribersToIncidentUpdate} from 'src/websocket_events';
 import {Incident} from 'src/types/incident';
 

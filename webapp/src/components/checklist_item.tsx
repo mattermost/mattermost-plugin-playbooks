@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useRef, useState} from 'react';
-import {useDispatch, useStore, useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import moment from 'moment';
 import classNames from 'classnames';
 import {components, ControlProps} from 'react-select';
@@ -166,6 +166,7 @@ const ControlComponent = (ownProps: ControlProps<any>) => (
 );
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
+    const dispatch = useDispatch();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
@@ -279,7 +280,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         onClick={() => {
                             if (!running) {
                                 setRunning(true);
-                                clientRunChecklistItemSlashCommand(props.incidentId, props.checklistNum, props.itemNum);
+                                clientRunChecklistItemSlashCommand(dispatch, props.incidentId, props.checklistNum, props.itemNum);
                             }
                         }}
                     >

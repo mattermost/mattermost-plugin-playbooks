@@ -79,8 +79,8 @@ function verifyPlaybookCreationPageOpened(url, playbookName) {
     // * Verify the page url contains 'com.mattermost.plugin-incident-management/playbooks/new'
     cy.url().should('include', url);
 
-    // * Verify the playbook name is 'Untitled Playbook'
-    cy.get('#playbook-name').should('be.visible').within(() => {
+    // * Verify the playbook name matches the one provided
+    cy.get('#playbook-name').scrollIntoView().should('be.visible').within(() => {
         cy.findByText(playbookName).should('be.visible');
     });
 

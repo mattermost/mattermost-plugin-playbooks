@@ -36,6 +36,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
 	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
@@ -175,7 +176,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	opts, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to get playbooks", err)
+		HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
 		return
 	}
 
@@ -206,6 +207,41 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ReturnJSON(w, playbookResults, http.StatusOK)
+}
+
+func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	teamID := query.Get("team_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+		return
+	}
+
+	requesterInfo := playbook.RequesterInfo{
+		UserID:          userID,
+		TeamID:          teamID,
+		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		MemberOnly:      true,
+	}
+
+	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, playbook.Options{})
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	list := make([]model.AutocompleteListItem, 0)
+
+	for _, thePlaybook := range playbooksResult.Items {
+		list = append(list, model.AutocompleteListItem{
+			Item:     thePlaybook.ID,
+			HelpText: thePlaybook.Title,
+		})
+	}
+
+	ReturnJSON(w, list, http.StatusOK)
 }
 
 func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {

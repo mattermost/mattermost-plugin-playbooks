@@ -10,6 +10,7 @@ import (
 	playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
+	time "time"
 )
 
 // MockService is a mock of Service interface
@@ -76,6 +77,20 @@ func (m *MockService) ChangeCommander(arg0, arg1, arg2 string) error {
 func (mr *MockServiceMockRecorder) ChangeCommander(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeCommander", reflect.TypeOf((*MockService)(nil).ChangeCommander), arg0, arg1, arg2)
+}
+
+// ChangeCreationDate mocks base method
+func (m *MockService) ChangeCreationDate(arg0 string, arg1 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChangeCreationDate", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ChangeCreationDate indicates an expected call of ChangeCreationDate
+func (mr *MockServiceMockRecorder) ChangeCreationDate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeCreationDate", reflect.TypeOf((*MockService)(nil).ChangeCreationDate), arg0, arg1)
 }
 
 // CreateIncident mocks base method
@@ -152,6 +167,21 @@ func (mr *MockServiceMockRecorder) GetIncident(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncident", reflect.TypeOf((*MockService)(nil).GetIncident), arg0)
 }
 
+// GetIncidentFromRecentUpdatePost mocks base method
+func (m *MockService) GetIncidentFromRecentUpdatePost(arg0 *model.Post) (*incident.Incident, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncidentFromRecentUpdatePost", arg0)
+	ret0, _ := ret[0].(*incident.Incident)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIncidentFromRecentUpdatePost indicates an expected call of GetIncidentFromRecentUpdatePost
+func (mr *MockServiceMockRecorder) GetIncidentFromRecentUpdatePost(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidentFromRecentUpdatePost", reflect.TypeOf((*MockService)(nil).GetIncidentFromRecentUpdatePost), arg0)
+}
+
 // GetIncidentIDForChannel mocks base method
 func (m *MockService) GetIncidentIDForChannel(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
@@ -195,6 +225,18 @@ func (m *MockService) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.He
 func (mr *MockServiceMockRecorder) GetIncidents(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockService)(nil).GetIncidents), arg0, arg1)
+}
+
+// HandleReminder mocks base method
+func (m *MockService) HandleReminder(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "HandleReminder", arg0)
+}
+
+// HandleReminder indicates an expected call of HandleReminder
+func (mr *MockServiceMockRecorder) HandleReminder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReminder", reflect.TypeOf((*MockService)(nil).HandleReminder), arg0)
 }
 
 // IsCommander mocks base method
@@ -323,6 +365,32 @@ func (mr *MockServiceMockRecorder) RemoveChecklistItem(arg0, arg1, arg2, arg3 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveChecklistItem", reflect.TypeOf((*MockService)(nil).RemoveChecklistItem), arg0, arg1, arg2, arg3)
 }
 
+// RemoveReminder mocks base method
+func (m *MockService) RemoveReminder(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveReminder", arg0)
+}
+
+// RemoveReminder indicates an expected call of RemoveReminder
+func (mr *MockServiceMockRecorder) RemoveReminder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminder", reflect.TypeOf((*MockService)(nil).RemoveReminder), arg0)
+}
+
+// RemoveReminderPost mocks base method
+func (m *MockService) RemoveReminderPost(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveReminderPost", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveReminderPost indicates an expected call of RemoveReminderPost
+func (mr *MockServiceMockRecorder) RemoveReminderPost(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminderPost", reflect.TypeOf((*MockService)(nil).RemoveReminderPost), arg0)
+}
+
 // RenameChecklistItem mocks base method
 func (m *MockService) RenameChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5 string) error {
 	m.ctrl.T.Helper()
@@ -352,11 +420,12 @@ func (mr *MockServiceMockRecorder) RestartIncident(arg0, arg1 interface{}) *gomo
 }
 
 // RunChecklistItemSlashCommand mocks base method
-func (m *MockService) RunChecklistItemSlashCommand(arg0, arg1 string, arg2, arg3 int) error {
+func (m *MockService) RunChecklistItemSlashCommand(arg0, arg1 string, arg2, arg3 int) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunChecklistItemSlashCommand", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // RunChecklistItemSlashCommand indicates an expected call of RunChecklistItemSlashCommand
@@ -377,6 +446,20 @@ func (m *MockService) SetAssignee(arg0, arg1, arg2 string, arg3, arg4 int) error
 func (mr *MockServiceMockRecorder) SetAssignee(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAssignee", reflect.TypeOf((*MockService)(nil).SetAssignee), arg0, arg1, arg2, arg3, arg4)
+}
+
+// SetReminder mocks base method
+func (m *MockService) SetReminder(arg0 string, arg1 time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetReminder", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetReminder indicates an expected call of SetReminder
+func (mr *MockServiceMockRecorder) SetReminder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReminder", reflect.TypeOf((*MockService)(nil).SetReminder), arg0, arg1)
 }
 
 // ToggleCheckedState mocks base method

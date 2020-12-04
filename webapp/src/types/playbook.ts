@@ -9,6 +9,7 @@ export interface Playbook {
     create_public_incident: boolean;
     checklists: Checklist[];
     member_ids: string[];
+    broadcast_channel_id: string;
 }
 
 export interface PlaybookNoChecklist {
@@ -66,6 +67,7 @@ export function emptyPlaybook(): Playbook {
         create_public_incident: false,
         checklists: [emptyChecklist()],
         member_ids: [],
+        broadcast_channel_id: '',
     };
 }
 
@@ -101,7 +103,9 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.title === 'string' &&
         typeof arg.team_id === 'string' &&
         typeof arg.create_public_incident === 'boolean' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist);
+        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
+        arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
+        typeof arg.broadcast_channel_id === 'string';
 }
 
 // eslint-disable-next-line

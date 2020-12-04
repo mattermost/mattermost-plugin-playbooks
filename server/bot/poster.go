@@ -20,6 +20,21 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (string
 	return post.Id, nil
 }
 
+// PostMessage posts a message with slack attachments to channelID. Returns the post id if
+// posting was successful. Often used to include post actions.
+func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (createdPostID string, err error) {
+	post := &model.Post{
+		Message:   fmt.Sprintf(format, args...),
+		UserId:    b.botUserID,
+		ChannelId: channelID,
+	}
+	model.ParseSlackAttachment(post, attachments)
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return "", err
+	}
+	return post.Id, nil
+}
+
 // DM posts a simple Direct Message to the specified user
 func (b *Bot) DM(userID, format string, args ...interface{}) error {
 	return b.dm(userID, &model.Post{
