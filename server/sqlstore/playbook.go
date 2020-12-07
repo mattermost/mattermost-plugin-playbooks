@@ -40,7 +40,7 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID").
+			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID", "ReminderMessageTemplate", "ReminderTimerDefaultSeconds").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -79,17 +79,19 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Insert("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"ID":                   rawPlaybook.ID,
-			"Title":                rawPlaybook.Title,
-			"Description":          rawPlaybook.Description,
-			"TeamID":               rawPlaybook.TeamID,
-			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
-			"CreateAt":             rawPlaybook.CreateAt,
-			"DeleteAt":             rawPlaybook.DeleteAt,
-			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
-			"NumStages":            len(rawPlaybook.Checklists),
-			"NumSteps":             getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":   rawPlaybook.BroadcastChannelID,
+			"ID":                          rawPlaybook.ID,
+			"Title":                       rawPlaybook.Title,
+			"Description":                 rawPlaybook.Description,
+			"TeamID":                      rawPlaybook.TeamID,
+			"CreatePublicIncident":        rawPlaybook.CreatePublicIncident,
+			"CreateAt":                    rawPlaybook.CreateAt,
+			"DeleteAt":                    rawPlaybook.DeleteAt,
+			"ChecklistsJSON":              rawPlaybook.ChecklistsJSON,
+			"NumStages":                   len(rawPlaybook.Checklists),
+			"NumSteps":                    getSteps(rawPlaybook.Playbook),
+			"BroadcastChannelID":          rawPlaybook.BroadcastChannelID,
+			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
+			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -270,15 +272,17 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Update("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"Title":                rawPlaybook.Title,
-			"Description":          rawPlaybook.Description,
-			"TeamID":               rawPlaybook.TeamID,
-			"CreatePublicIncident": rawPlaybook.CreatePublicIncident,
-			"DeleteAt":             rawPlaybook.DeleteAt,
-			"ChecklistsJSON":       rawPlaybook.ChecklistsJSON,
-			"NumStages":            len(rawPlaybook.Checklists),
-			"NumSteps":             getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":   rawPlaybook.BroadcastChannelID,
+			"Title":                       rawPlaybook.Title,
+			"Description":                 rawPlaybook.Description,
+			"TeamID":                      rawPlaybook.TeamID,
+			"CreatePublicIncident":        rawPlaybook.CreatePublicIncident,
+			"DeleteAt":                    rawPlaybook.DeleteAt,
+			"ChecklistsJSON":              rawPlaybook.ChecklistsJSON,
+			"NumStages":                   len(rawPlaybook.Checklists),
+			"NumSteps":                    getSteps(rawPlaybook.Playbook),
+			"BroadcastChannelID":          rawPlaybook.BroadcastChannelID,
+			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
+			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

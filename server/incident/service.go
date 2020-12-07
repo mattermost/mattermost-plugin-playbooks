@@ -302,8 +302,9 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 			return errors.Wrap(err, "failed to find newest post")
 		}
 		message = post.Message
+	} else {
+		message = currentIncident.ReminderMessageTemplate
 	}
-	// TODO: if there is no newestPost, use the message template: https://mattermost.atlassian.net/browse/MM-30519
 
 	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.PreviousReminder)
 	if err != nil {
@@ -1060,7 +1061,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string, previousReminder time.Duration) (*model.Dialog, error) {
+func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string, reminderTimer time.Duration) (*model.Dialog, error) {
 	introductionText := "Update your incident status."
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
@@ -1125,7 +1126,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 				Type:        "select",
 				Options:     options,
 				Optional:    true,
-				Default:     fmt.Sprintf("%d", previousReminder/time.Second),
+				Default:     fmt.Sprintf("%d", reminderTimer/time.Second),
 			},
 		},
 		SubmitLabel:    "Update Status",

@@ -10,6 +10,8 @@ export interface Playbook {
     checklists: Checklist[];
     member_ids: string[];
     broadcast_channel_id: string;
+    reminder_message_template: string;
+    reminder_timer_default_seconds: number;
 }
 
 export interface PlaybookNoChecklist {
@@ -68,6 +70,8 @@ export function emptyPlaybook(): Playbook {
         checklists: [emptyChecklist()],
         member_ids: [],
         broadcast_channel_id: '',
+        reminder_message_template: '',
+        reminder_timer_default_seconds: 0,
     };
 }
 
