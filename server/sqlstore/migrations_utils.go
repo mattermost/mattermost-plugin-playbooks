@@ -41,7 +41,7 @@ var addColumnToPGTable = func(e sqlx.Ext, tableName, columnName, columnType stri
 var addColumnToMySQLTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
 	var result int
 	err := e.QueryRowx(
-		"SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND COLUMN_NAME = ?",
+		"SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
 		tableName,
 		columnName,
 	).Scan(&result)
