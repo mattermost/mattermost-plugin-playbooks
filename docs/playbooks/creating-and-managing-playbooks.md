@@ -21,7 +21,11 @@ A playbook must be defined before starting an incident.
 
 You can edit a playbook at any time. However, the changes will only be applied to future incidents - not the active incidents, or incidents that previously used that playbook.
 
-Navigate to **Main Menu > Playbooks & Incidents** and select the playbook you'd like to edit. You can:
+Navigate to **Main Menu > Playbooks & Incidents** and select the playbook you'd like to edit.
+
+### Tasks
+
+The tasks tab provides options to:
 
 - Change the channel type created with this playbook.
 - Share the playbook.
@@ -32,6 +36,20 @@ Navigate to **Main Menu > Playbooks & Incidents** and select the playbook you'd 
 - Add new stages and tasks.
 
 ![Edit a playbook](../assets/playbook_stage_edit.png)
+
+### Preferences
+
+You can
+
+Broadcast channel
+
+Reminder timer
+
+Message template
+
+### Automation
+
+### Resources
 
 ## Deleting a playbook
 
