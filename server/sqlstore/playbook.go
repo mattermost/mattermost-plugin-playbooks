@@ -40,7 +40,7 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID", "ReminderMessageTemplate", "ReminderTimerDefaultSeconds").
+			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID", "COALESCE(ReminderMessageTemplate, '')", "ReminderTimerDefaultSeconds").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
