@@ -46,7 +46,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
 			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
 			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID", "PreviousReminder", "BroadcastChannelID",
-			"COALESCE(ReminderMessageTemplate, '')").
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate").
 		From("IR_Incident AS incident")
 
 	statusPostsSelect := sqlStore.builder.
