@@ -193,6 +193,8 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.EndIncident(incdnt, userID)
 
+	s.RemoveReminder(incidentID)
+
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
