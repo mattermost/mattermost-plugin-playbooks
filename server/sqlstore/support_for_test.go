@@ -16,7 +16,7 @@ import (
 
 var driverNames = []string{model.DATABASE_DRIVER_POSTGRES, model.DATABASE_DRIVER_MYSQL}
 
-func setupTestDB(t testing.TB, driverName string) (*sqlx.DB, string) {
+func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
 
 	sqlSettings := storetest.MakeSqlSettings(driverName)
@@ -35,10 +35,10 @@ func setupTestDB(t testing.TB, driverName string) (*sqlx.DB, string) {
 		storetest.CleanupSqlSettings(sqlSettings)
 	})
 
-	return db, GetDBName(driverName, *sqlSettings.DataSource)
+	return db
 }
 
-func setupSQLStore(t testing.TB, db *sqlx.DB, dbName string) (bot.Logger, *SQLStore) {
+func setupSQLStore(t testing.TB, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
@@ -54,7 +54,6 @@ func setupSQLStore(t testing.TB, db *sqlx.DB, dbName string) (bot.Logger, *SQLSt
 	sqlStore := &SQLStore{
 		logger,
 		db,
-		dbName,
 		builder,
 		nil,
 	}

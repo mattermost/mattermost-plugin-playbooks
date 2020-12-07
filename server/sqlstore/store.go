@@ -2,11 +2,8 @@ package sqlstore
 
 import (
 	"database/sql"
-	"net/url"
-	"path"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -16,7 +13,6 @@ import (
 type SQLStore struct {
 	log                 bot.Logger
 	db                  *sqlx.DB
-	dbName              string
 	builder             sq.StatementBuilderType
 	cachedUnaccentCheck *bool
 }
@@ -29,11 +25,7 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	driverName := pluginAPI.Store.DriverName()
-	db = sqlx.NewDb(origDB, driverName)
-
-	dataSource := *pluginAPI.Configuration.GetUnsanitizedConfig().SqlSettings.DataSource
-	dbName := GetDBName(driverName, dataSource)
+	db = sqlx.NewDb(origDB, pluginAPI.Store.DriverName())
 
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
 	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
@@ -47,7 +39,6 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	return &SQLStore{
 		log,
 		db,
-		dbName,
 		builder,
 		nil,
 	}, nil
@@ -132,30 +123,4 @@ func (sqlStore *SQLStore) finalizeTransaction(tx *sqlx.Tx) {
 	if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
 		sqlStore.log.Errorf("Failed to rollback transaction; err: %v", err)
 	}
-}
-
-func GetDBName(driverName, dataSource string) string {
-	if driverName == model.DATABASE_DRIVER_MYSQL {
-		return mySQLDSNDatabase(dataSource)
-	}
-
-	return postgreSQLDSNDatabase(dataSource)
-}
-
-func mySQLDSNDatabase(dsn string) string {
-	cfg, err := mysql.ParseDSN(dsn)
-	if err != nil {
-		panic("failed to parse dsn " + dsn + ": " + err.Error())
-	}
-
-	return cfg.DBName
-}
-
-func postgreSQLDSNDatabase(dsn string) string {
-	dsnURL, err := url.Parse(dsn)
-	if err != nil {
-		panic("failed to parse dsn " + dsn + ": " + err.Error())
-	}
-
-	return path.Base(dsnURL.Path)
 }

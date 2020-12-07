@@ -139,8 +139,8 @@ var (
 
 func TestGetPlaybook(t *testing.T) {
 	for _, driverName := range driverNames {
-		db, dbName := setupTestDB(t, driverName)
-		playbookStore := setupPlaybookStore(t, db, dbName)
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run(driverName+" - id empty", func(t *testing.T) {
 			actual, err := playbookStore.Get("")
@@ -223,8 +223,8 @@ func TestGetPlaybooks(t *testing.T) {
 	}
 
 	for _, driverName := range driverNames {
-		db, dbName := setupTestDB(t, driverName)
-		playbookStore := setupPlaybookStore(t, db, dbName)
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run("zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
@@ -652,8 +652,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 	}
 
 	for _, driverName := range driverNames {
-		db, dbName := setupTestDB(t, driverName)
-		playbookStore := setupPlaybookStore(t, db, dbName)
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run("zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
@@ -661,7 +661,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			require.ElementsMatch(t, []playbook.Playbook{}, result)
 		})
 
-		_, store := setupSQLStore(t, db, dbName)
+		_, store := setupSQLStore(t, db)
 		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
@@ -704,8 +704,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 
 func TestUpdatePlaybook(t *testing.T) {
 	for _, driverName := range driverNames {
-		db, dbName := setupTestDB(t, driverName)
-		playbookStore := setupPlaybookStore(t, db, dbName)
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
 
 		tests := []struct {
 			name        string
@@ -875,8 +875,8 @@ func TestUpdatePlaybook(t *testing.T) {
 
 func TestDeletePlaybook(t *testing.T) {
 	for _, driverName := range driverNames {
-		db, dbName := setupTestDB(t, driverName)
-		playbookStore := setupPlaybookStore(t, db, dbName)
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run(driverName+" - id empty", func(t *testing.T) {
 			err := playbookStore.Delete("")
@@ -1019,7 +1019,7 @@ func (p *PlaybookBuilder) ToPlaybook() playbook.Playbook {
 	return *p.Playbook
 }
 
-func setupPlaybookStore(t *testing.T, db *sqlx.DB, dbName string) playbook.Store {
+func setupPlaybookStore(t *testing.T, db *sqlx.DB) playbook.Store {
 	mockCtrl := gomock.NewController(t)
 
 	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
@@ -1029,7 +1029,7 @@ func setupPlaybookStore(t *testing.T, db *sqlx.DB, dbName string) playbook.Store
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db, dbName)
+	logger, sqlStore := setupSQLStore(t, db)
 
 	return NewPlaybookStore(pluginAPIClient, logger, sqlStore)
 }
