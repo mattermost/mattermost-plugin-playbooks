@@ -100,7 +100,7 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
     const target = useRef(null);
     const popoverRef = useRef(null);
     useClickOutsideRef(popoverRef, () => {
-        setTimeout(() => setShowTooltip(false), 10);
+        setShowTooltip(false);
     });
     const markdownOptions = {
         atMentions: true,
