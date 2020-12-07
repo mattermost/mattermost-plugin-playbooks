@@ -178,7 +178,7 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.3.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if err := addColumnToMySQLTable(e, "IR_Incident", "ActiveStageTitle", "VARCHAR(1024) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, sqlStore.dbName, "IR_Incident", "ActiveStageTitle", "VARCHAR(1024) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
 				}
 
@@ -234,7 +234,6 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.3.0"),
 		toVersion:   semver.MustParse("0.4.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_StatusPosts (
@@ -248,15 +247,15 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
 				}
 
-				if err := addColumnToMySQLTable(e, "IR_Incident", "ReminderPostID", "VARCHAR(26)"); err != nil {
+				if err := addColumnToMySQLTable(e, sqlStore.dbName, "IR_Incident", "ReminderPostID", "VARCHAR(26)"); err != nil {
 					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
 				}
 
-				if err := addColumnToMySQLTable(e, "IR_Incident", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, sqlStore.dbName, "IR_Incident", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
 				}
 
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, sqlStore.dbName, "IR_Playbook", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
 				}
 
@@ -300,7 +299,7 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.5.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if err := addColumnToMySQLTable(e, "IR_Incident", "PreviousReminder", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+				if err := addColumnToMySQLTable(e, sqlStore.dbName, "IR_Incident", "PreviousReminder", "BIGINT NOT NULL DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column PreviousReminder to table IR_Incident")
 				}
 			} else {

@@ -46,3 +46,17 @@ func (mr *MockConfigurationAPIMockRecorder) GetConfig() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockConfigurationAPI)(nil).GetConfig))
 }
+
+// GetUnsanitizedConfig mocks base method
+func (m *MockConfigurationAPI) GetUnsanitizedConfig() *model.Config {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnsanitizedConfig")
+	ret0, _ := ret[0].(*model.Config)
+	return ret0
+}
+
+// GetUnsanitizedConfig indicates an expected call of GetUnsanitizedConfig
+func (mr *MockConfigurationAPIMockRecorder) GetUnsanitizedConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnsanitizedConfig", reflect.TypeOf((*MockConfigurationAPI)(nil).GetUnsanitizedConfig))
+}

@@ -862,10 +862,10 @@ func TestGetIncidents(t *testing.T) {
 	}
 
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
 
-		_, store := setupSQLStore(t, db)
+		_, store := setupSQLStore(t, db, dbName)
 		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
@@ -928,8 +928,8 @@ func TestGetIncidents(t *testing.T) {
 
 func TestCreateAndGetIncident(t *testing.T) {
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
 		setupPostsTable(t, db)
 
 		validIncidents := []struct {
@@ -1032,8 +1032,8 @@ func TestCreateAndGetIncident(t *testing.T) {
 // is tested in TestCreateAndGetIncident above.
 func TestGetIncident(t *testing.T) {
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
 
 		validIncidents := []struct {
 			Name        string
@@ -1066,9 +1066,9 @@ func TestGetIncident(t *testing.T) {
 
 func TestUpdateIncident(t *testing.T) {
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
-		_, store := setupSQLStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
+		_, store := setupSQLStore(t, db, dbName)
 
 		setupPostsTable(t, db)
 		savePosts(t, store, allPosts)
@@ -1208,9 +1208,9 @@ func TestStressTestGetIncidents(t *testing.T) {
 	verifyPages := []int{0, 2, 4, 6, 8}
 
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
-		_, store := setupSQLStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
+		_, store := setupSQLStore(t, db, dbName)
 
 		setupPostsTable(t, db)
 		teamID := model.NewId()
@@ -1265,9 +1265,9 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 	require.LessOrEqual(t, numReps*perPage, numIncidents)
 
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
-		_, store := setupSQLStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
+		_, store := setupSQLStore(t, db, dbName)
 
 		setupPostsTable(t, db)
 		teamID := model.NewId()
@@ -1339,8 +1339,8 @@ func newPost(deleted bool) *model.Post {
 
 func TestGetIncidentIDForChannel(t *testing.T) {
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
 
 		t.Run("retrieve existing incidentID", func(t *testing.T) {
 			incident1 := NewBuilder(t).ToIncident()
@@ -1447,10 +1447,10 @@ func TestGetCommanders(t *testing.T) {
 	}
 
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		incidentStore := setupIncidentStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db, dbName)
 
-		_, store := setupSQLStore(t, db)
+		_, store := setupSQLStore(t, db, dbName)
 		setupUsersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
 		setupTeamMembersTable(t, db)
@@ -1506,14 +1506,14 @@ func TestGetCommanders(t *testing.T) {
 
 func TestNukeDB(t *testing.T) {
 	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		_, store := setupSQLStore(t, db)
+		db, dbName := setupTestDB(t, driverName)
+		_, store := setupSQLStore(t, db, dbName)
 
 		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 
-		incidentStore := setupIncidentStore(t, db)
-		playbookStore := setupPlaybookStore(t, db)
+		incidentStore := setupIncidentStore(t, db, dbName)
+		playbookStore := setupPlaybookStore(t, db, dbName)
 
 		t.Run("nuke db with a few incidents in it", func(t *testing.T) {
 			for i := 0; i < 10; i++ {
@@ -1570,7 +1570,7 @@ func TestNukeDB(t *testing.T) {
 	}
 }
 
-func setupIncidentStore(t testing.TB, db *sqlx.DB) incident.Store {
+func setupIncidentStore(t testing.TB, db *sqlx.DB, dbName string) incident.Store {
 	mockCtrl := gomock.NewController(t)
 
 	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
@@ -1580,7 +1580,7 @@ func setupIncidentStore(t testing.TB, db *sqlx.DB) incident.Store {
 		Configuration: configAPI,
 	}
 
-	logger, sqlStore := setupSQLStore(t, db)
+	logger, sqlStore := setupSQLStore(t, db, dbName)
 
 	return NewIncidentStore(pluginAPIClient, logger, sqlStore)
 }

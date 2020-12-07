@@ -23,6 +23,7 @@ type KVAPI interface {
 
 type ConfigurationAPI interface {
 	GetConfig() *model.Config
+	GetUnsanitizedConfig() *model.Config
 }
 
 // PluginAPIClient is the struct combining the interfaces defined above, which is everything
