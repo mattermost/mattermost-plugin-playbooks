@@ -39,17 +39,11 @@ The tasks tab provides options to:
 
 ### Preferences
 
-You can
+#### Broadcast channel
 
-Broadcast channel
+#### Reminder timer
 
-Reminder timer
-
-Message template
-
-### Automation
-
-### Resources
+#### Message template
 
 ## Deleting a playbook
 
