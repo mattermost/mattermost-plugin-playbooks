@@ -300,6 +300,8 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		public = pb.CreatePublicIncident
 
 		newIncident.BroadcastChannelID = pb.BroadcastChannelID
+		newIncident.ReminderMessageTemplate = pb.ReminderMessageTemplate
+		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL

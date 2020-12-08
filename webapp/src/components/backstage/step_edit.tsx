@@ -5,6 +5,8 @@ import styled, {createGlobalStyle} from 'styled-components';
 import {ChecklistItem} from 'src/types/playbook';
 import {TertiaryButton} from 'src/components/assets/buttons';
 
+import {StyledTextarea} from './styles';
+
 export interface StepEditProps {
     step: ChecklistItem;
     onUpdate: (updatedStep: ChecklistItem) => void
@@ -60,25 +62,6 @@ const DescriptionContainer = styled.div`
     width: 100%;
     margin: 16px 0 0 0;
     line-height: 40px;
-`;
-
-const Description = styled.textarea`
-    -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
-    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
-    width: 100%;
-    resize: none;
-    height: 100px;
-    background-color: rgb(var(--center-channel-bg-rgb));
-    border: none;
-    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 4px;
-    padding: 10px 25px 0 16px;
-    font-size: 14px;
-    line-height: 20px;
-
-    &:focus {
-        box-shadow: inset 0 0 0 2px var(--button-bg);
-    }
 `;
 
 const AddDescription = styled.button`
@@ -207,7 +190,7 @@ const StepDescription: FC<StepDescriptionProps> = (props: StepDescriptionProps) 
     if (descriptionOpen) {
         descriptionBox = (
             <>
-                <Description
+                <StyledTextarea
                     ref={ref}
                     value={description}
                     onBlur={save}

@@ -19,14 +19,15 @@ const NoActiveStage = -1
 // that column needs to be added in the sqlstore code.
 type Incident struct {
 	Header
-	PostID             string               `json:"post_id"`
-	PlaybookID         string               `json:"playbook_id"`
-	Checklists         []playbook.Checklist `json:"checklists"`
-	StatusPostIDs      []string             `json:"status_post_ids"`
-	StatusPosts        []StatusPost         `json:"status_posts"`
-	ReminderPostID     string               `json:"reminder_post_id"`
-	PreviousReminder   time.Duration        `json:"previous_reminder"`
-	BroadcastChannelID string               `json:"broadcast_channel_id"`
+	PostID                  string               `json:"post_id"`
+	PlaybookID              string               `json:"playbook_id"`
+	Checklists              []playbook.Checklist `json:"checklists"`
+	StatusPostIDs           []string             `json:"status_post_ids"`
+	StatusPosts             []StatusPost         `json:"status_posts"`
+	ReminderPostID          string               `json:"reminder_post_id"`
+	PreviousReminder        time.Duration        `json:"previous_reminder"`
+	BroadcastChannelID      string               `json:"broadcast_channel_id"`
+	ReminderMessageTemplate string               `json:"reminder_message_template"`
 }
 
 func (i *Incident) Clone() *Incident {

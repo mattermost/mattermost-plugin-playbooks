@@ -303,12 +303,35 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Incident", "PreviousReminder", "BIGINT NOT NULL DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column PreviousReminder to table IR_Incident")
 				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ReminderMessageTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET ReminderMessageTemplate = '' WHERE ReminderMessageTemplate IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReminderMessageTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET ReminderMessageTemplate = '' WHERE ReminderMessageTemplate IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Playbook")
+				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Incident", "PreviousReminder", "BIGINT NOT NULL DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column PreviousReminder to table IR_Incident")
 				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ReminderMessageTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "ReminderMessageTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Playbook")
+				}
 			}
-
 			return nil
 		},
 	},

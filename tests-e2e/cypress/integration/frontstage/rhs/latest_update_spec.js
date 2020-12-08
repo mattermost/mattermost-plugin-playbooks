@@ -8,6 +8,7 @@
 
 describe('incident rhs > latest update', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
+    const defaultReminderMessage = '# Default reminder message';
     let teamId;
     let userId;
     let playbookId;
@@ -29,6 +30,8 @@ describe('incident rhs > latest update', () => {
                         title: playbookName,
                         userId,
                         broadcastChannelId: channel.id,
+                        reminderTimerDefaultSeconds: 3600,
+                        reminderMessageTemplate: defaultReminderMessage,
                     }).then((playbook) => {
                         playbookId = playbook.id;
                     });
@@ -70,7 +73,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 cy.get('#interactiveDialogModalIntroductionText')
-                  .contains('Update your incident status. This post will be broadcasted to Town Square.');
+                    .contains('Update your incident status. This post will be broadcasted to Town Square.');
             });
         });
 
@@ -101,15 +104,27 @@ describe('incident rhs > latest update', () => {
                 // # Get the interactive dialog modal.
                 cy.get('#interactiveDialogModal').within(() => {
                     cy.get('#interactiveDialogModalIntroductionText')
-                      .contains('Update your incident status.');
+                        .contains('Update your incident status.');
                     cy.get('#interactiveDialogModalIntroductionText')
-                      .should('not.contain', 'This post will be broadcasted');
+                        .should('not.contain', 'This post will be broadcasted');
                 });
             });
         });
     });
 
     describe('shows the last update in update message', () => {
+        it('shows the default when we have not made an update before', () => {
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the first message is there.
+                cy.findByTestId('messageinput').within(() => {
+                    cy.findByText(defaultReminderMessage).should('exist');
+                });
+            });
+        });
         it('when we have made a previous update', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
@@ -131,7 +146,7 @@ describe('incident rhs > latest update', () => {
     });
 
     describe('the default reminder', () => {
-        it('shows \'none\' when we have not made a previous update', () => {
+        it('shows the configured default when we have not made a previous update', () => {
             // # Run the /incident update slash command.
             cy.executeSlashCommand('/incident update');
 
@@ -139,7 +154,7 @@ describe('incident rhs > latest update', () => {
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
                 cy.findByTestId('autoCompleteSelector').within(() => {
-                    cy.get('input').should('have.value', 'None');
+                    cy.get('input').should('have.value', '60min');
                 });
             });
         });
@@ -432,7 +447,7 @@ describe('incident rhs > latest update', () => {
             it('in a brand new incident', () => {
                 // * Verify that the RHS shows that there are no updates.
                 cy.get('#incidentRHSUpdates')
-                  .contains('No recent updates. Click here to update status.');
+                    .contains('No recent updates. Click here to update status.');
             });
 
             it('when the only update is deleted', () => {
@@ -451,7 +466,7 @@ describe('incident rhs > latest update', () => {
 
                     // * Verify that the RHS shows that there are no updates.
                     cy.get('#incidentRHSUpdates')
-                      .contains('No recent updates. Click here to update status.');
+                        .contains('No recent updates. Click here to update status.');
                 });
             });
 
@@ -488,7 +503,7 @@ describe('incident rhs > latest update', () => {
 
                         // * Verify that the RHS shows that there are no updates.
                         cy.get('#incidentRHSUpdates')
-                          .contains('No recent updates. Click here to update status.');
+                            .contains('No recent updates. Click here to update status.');
                     });
                 });
             });
@@ -517,7 +532,7 @@ describe('incident rhs > latest update', () => {
 
                     // * Verify that the RHS shows that there are no updates.
                     cy.get('#incidentRHSUpdates')
-                      .contains('No recent updates. Click here to update status.');
+                        .contains('No recent updates. Click here to update status.');
                 });
             });
 
@@ -555,7 +570,7 @@ describe('incident rhs > latest update', () => {
 
                         // * Verify that the RHS shows that there are no updates.
                         cy.get('#incidentRHSUpdates')
-                          .contains('No recent updates. Click here to update status.');
+                            .contains('No recent updates. Click here to update status.');
                     });
                 });
             });

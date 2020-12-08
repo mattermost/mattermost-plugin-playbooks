@@ -15,7 +15,7 @@ import {
     removedFromIncidentChannel,
     receivedTeamIncidents,
 } from 'src/actions';
-import {fetchIncidentByChannel, fetchIncidentChannels} from 'src/client';
+import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
 import {clientId, myIncidentsMap} from 'src/selectors';
 import {Incident, isIncident} from 'src/types/incident';
 
@@ -25,7 +25,11 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
     return async (): Promise<void> => {
         const currentTeam = getCurrentTeam(getState());
         const currentUserId = getCurrentUserId(getState());
-        dispatch(receivedTeamIncidents(await fetchIncidentChannels(currentTeam.id, currentUserId)));
+        const fetched = await fetchIncidents({
+            team_id: currentTeam.id,
+            member_id: currentUserId,
+        });
+        dispatch(receivedTeamIncidents(fetched.items));
     };
 }
 
