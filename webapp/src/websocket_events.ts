@@ -5,7 +5,7 @@ import {Dispatch} from 'redux';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {Post} from 'mattermost-redux/types/posts';
-import {WebSocketMessage} from 'mattermost-redux/actions/websocket';
+import {WebSocketMessage} from 'mattermost-redux/types/websocket';
 import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
@@ -34,7 +34,7 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
 }
 
 export function handleWebsocketIncidentUpdated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage): void => {
+    return (msg: WebSocketMessage<{payload: string}>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -56,7 +56,7 @@ export function handleWebsocketIncidentUpdated(getState: GetStateFunc, dispatch:
 }
 
 export function handleWebsocketIncidentCreated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage): void => {
+    return (msg: WebSocketMessage<{payload:string}>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -87,7 +87,7 @@ export function handleWebsocketIncidentCreated(getState: GetStateFunc, dispatch:
 }
 
 export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispatch) {
-    return async (msg: WebSocketMessage) => {
+    return async (msg: WebSocketMessage<{team_id: string, user_id: string}>) => {
         const currentUserId = getCurrentUserId(getState());
         const currentTeamId = getCurrentTeamId(getState());
         if (currentUserId === msg.data.user_id && currentTeamId === msg.data.team_id) {
@@ -98,7 +98,7 @@ export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispa
 }
 
 export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage) => {
+    return (msg: WebSocketMessage<{channel_id: string, user_id: string}>) => {
         const currentUserId = getCurrentUserId(getState());
         if (currentUserId === msg.broadcast.user_id) {
             dispatch(removedFromIncidentChannel(msg.data.channel_id));
@@ -122,7 +122,7 @@ async function getIncidentFromStatusUpdate(post: Post): Promise<Incident | null>
 }
 
 export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispatch: Dispatch) => {
-    return async (msg: WebSocketMessage) => {
+    return async (msg: WebSocketMessage<{post: string}>) => {
         const activeIncidents = myIncidentsMap(getState());
         if (activeIncidents[msg.broadcast.channel_id]) {
             const incident = await getIncidentFromStatusUpdate(JSON.parse(msg.data.post));

@@ -60,6 +60,16 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if pbook.BroadcastChannelID != "" &&
+		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.BroadcastChannelID,
+		))
+		return
+	}
+
 	if !permissions.CanViewTeam(userID, pbook.TeamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to create playbook on teamID %s",
@@ -129,6 +139,17 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 			"userID %s does not have permission to update playbook on teamID %s",
 			userID,
 			oldPlaybook.TeamID,
+		))
+		return
+	}
+
+	if pbook.BroadcastChannelID != "" &&
+		pbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
+		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.BroadcastChannelID,
 		))
 		return
 	}
