@@ -39,7 +39,6 @@ const StartIncidentPostMenu: FC<Props> = (props: Props) => {
                     data-testid='incidentPostMenuIcon'
                     className='style--none'
                     role='presentation'
-                    onClick={handleClick}
                 >
                     <IncidentPostMenuIcon/>
                     {'Start incident'}
