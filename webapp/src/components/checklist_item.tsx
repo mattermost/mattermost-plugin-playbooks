@@ -18,7 +18,7 @@ import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/select
 import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {useTimeout} from 'src/hooks';
+import {useTimeout, useClickOutsideRef} from 'src/hooks';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
@@ -98,7 +98,10 @@ interface StepDescriptionProps {
 const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepDescriptionProps> => {
     const [showTooltip, setShowTooltip] = useState(false);
     const target = useRef(null);
-
+    const popoverRef = useRef(null);
+    useClickOutsideRef(popoverRef, () => {
+        setShowTooltip(false);
+    });
     const markdownOptions = {
         atMentions: true,
         team: props.team,
@@ -119,25 +122,29 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
                 target={target.current}
             >
                 <StyledPopover id='info-icon'>
-                    <CloseIcon
-                        className={'icon icon-close'}
-                        onClick={() => setShowTooltip(false)}
-                    />
-                    <DescriptionTitle>{'Step Description'}</DescriptionTitle>
-                    <Scrollbars
-                        autoHeight={true}
-                        autoHeightMax={200}
-                        renderThumbVertical={(thumbProps) => (
-                            <div
-                                {...thumbProps}
-                                className='scrollbar--vertical'
-                            />
-                        )}
+                    <div
+                        ref={popoverRef}
                     >
-                        <PaddedDiv>
-                            {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
-                        </PaddedDiv>
-                    </Scrollbars>
+                        <CloseIcon
+                            className={'icon icon-close'}
+                            onClick={() => setShowTooltip(false)}
+                        />
+                        <DescriptionTitle>{'Step Description'}</DescriptionTitle>
+                        <Scrollbars
+                            autoHeight={true}
+                            autoHeightMax={200}
+                            renderThumbVertical={(thumbProps) => (
+                                <div
+                                    {...thumbProps}
+                                    className='scrollbar--vertical'
+                                />
+                            )}
+                        >
+                            <PaddedDiv>
+                                {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
+                            </PaddedDiv>
+                        </Scrollbars>
+                    </div>
                 </StyledPopover>
             </Overlay>
         </>
