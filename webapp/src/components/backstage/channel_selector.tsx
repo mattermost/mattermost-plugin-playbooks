@@ -1,10 +1,9 @@
 import React, {FC} from 'react';
 import {OptionsType} from 'react-select';
-import {useDispatch, useSelector} from 'react-redux';
+import {useSelector} from 'react-redux';
+import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {ActionFunc} from 'mattermost-redux/types/actions';
 import {Channel} from 'mattermost-redux/types/channels';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {Playbook} from 'src/types/playbook';
@@ -12,15 +11,16 @@ import {Playbook} from 'src/types/playbook';
 import {StyledAsyncSelect} from './styles';
 
 export interface Props {
-    searchChannels: (term: string) => ActionFunc;
     onChannelSelected: (channelID: string | null) => void;
     playbook: Playbook;
     isClearable?: boolean;
 }
 
 const ChannelSelector: FC<Props> = (props: Props) => {
+    const selectableChannels = useSelector(getMyChannels);
+
     type GetChannelType = (channelID: string) => Channel
-    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID));
+    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
 
     const onChange = (channel: Channel | null) => {
         props.onChannelSelected(channel ? channel.id : null);
@@ -39,8 +39,7 @@ const ChannelSelector: FC<Props> = (props: Props) => {
     };
 
     const channelsLoader = (term: string, callback: (options: OptionsType<Channel>) => void) => {
-        // @ts-ignore
-        props.searchChannels(term.trim()).then(({data} : {data: Channel[]}) => callback(data));
+        callback(selectableChannels);
     };
 
     return (

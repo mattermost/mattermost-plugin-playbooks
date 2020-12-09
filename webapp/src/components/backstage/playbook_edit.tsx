@@ -7,7 +7,6 @@ import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {searchChannels as searchChannelsInTeam} from 'mattermost-redux/actions/channels';
 
 import {Team} from 'mattermost-redux/types/teams';
 
@@ -311,10 +310,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
     };
 
-    const searchChannels = (term: string) => {
-        return dispatch(searchChannelsInTeam(props.currentTeam.id, term));
-    };
-
     const handleBroadcastInput = (channelId: string | null) => {
         setPlaybook({
             ...playbook,
@@ -399,7 +394,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheaderText>
                                     <ChannelSelector
-                                        searchChannels={searchChannels}
                                         onChannelSelected={handleBroadcastInput}
                                         playbook={playbook}
                                         isClearable={true}
