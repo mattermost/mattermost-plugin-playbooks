@@ -3,16 +3,19 @@
 - [Mattermost Incident Management](README.md)
 - [Glossary](glossary.md)
 
-## Administrator's Guide
+## Overview
 
 - [Installing and Configuring Mattermost Incident Management](administrator-guide/installation-and-activation.md)
 - [Permissions](administrator-guide/permissions.md)
-
-## End User's Guide
-
 - [Playbooks and Incidents](playbooks/playbook-overview.md)
-- [Incident Management Slash Commands](administrator-guide/incident-response-slash-commands.md)
+
+## Playbooks
+
 - [Creating and Managing Playbooks](playbooks/creating-and-managing-playbooks.md)
+
+## Incidents
+
+- [Incident Management Slash Commands](administrator-guide/incident-response-slash-commands.md)
 - [Starting and Joining an Incident](incidents/starting-and-joining-an-incident.md)
 - [Ending and Restarting an Incident](incidents/ending-an-incident.md)
 - [Viewing Incident Details](incidents/viewing-incident-details.md)
