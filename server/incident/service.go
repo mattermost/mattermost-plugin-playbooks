@@ -1066,12 +1066,17 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
 	if err == nil {
-		team, err := s.pluginAPI.Team.Get(broadcastChannel.TeamId)
-		if err != nil {
-			return nil, err
+		if broadcastChannel.Type == model.CHANNEL_OPEN {
+			team, err := s.pluginAPI.Team.Get(broadcastChannel.TeamId)
+			if err != nil {
+				return nil, err
+			}
+
+			introductionText += fmt.Sprintf(" This post will be broadcasted to [%s](/%s/channels/%s).", broadcastChannel.DisplayName, team.Name, broadcastChannel.Id)
+		} else {
+			introductionText += " This post will be broadcasted to a private channel."
 		}
 
-		introductionText += fmt.Sprintf(" This post will be broadcasted to [%s](/%s/channels/%s).", broadcastChannel.DisplayName, team.Name, broadcastChannel.Id)
 	}
 
 	options := []*model.PostActionOptions{
