@@ -179,9 +179,9 @@ describe('backstage incident list', () => {
         });
 
         it('by commander', () => {
-            cy.get('.profile-dropdown').
-                click().
-                find('.IncidentProfile').first().parent().click({force: true});
+            cy.get('.profile-dropdown')
+                .click()
+                .find('.IncidentProfile').first().parent().click({force: true});
 
             // # Wait for the incident list to update.
             cy.wait(TINY);

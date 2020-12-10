@@ -23,8 +23,8 @@ function clickPostHeaderItem(postId, location, item) {
 Cypress.Commands.add('getLastPostId', () => {
     waitUntilPermanentPost();
 
-    cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':').
-        invoke('replace', 'post_', '');
+    cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
 });
 
 /**
