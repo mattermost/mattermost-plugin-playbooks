@@ -34,6 +34,17 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             return Promise.resolve({message: messageTrimmed, args});
         }
 
+        if (messageTrimmed && messageTrimmed.startsWith('/incident list')) {
+            const state = store.getState();
+
+            if (!isIncidentRHSOpen(state)) {          
+                //@ts-ignore thunk  
+                store.dispatch(toggleRHS());
+            }
+
+            return Promise.resolve({});
+        }
+
         return Promise.resolve({message, args});
     };
 }
