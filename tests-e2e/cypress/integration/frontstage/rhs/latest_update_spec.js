@@ -66,7 +66,7 @@ describe('incident rhs > latest update', () => {
     });
 
     describe('status update interactive dialog', () => {
-        it('shows the broadcast channel when there is one', () => {
+        it('shows the broadcast channel when it is public', () => {
             // # Run the /incident status slash command.
             cy.executeSlashCommand('/incident update');
 
@@ -74,6 +74,122 @@ describe('incident rhs > latest update', () => {
             cy.get('#interactiveDialogModal').within(() => {
                 cy.get('#interactiveDialogModalIntroductionText')
                     .contains('Update your incident status. This post will be broadcasted to Town Square.');
+            });
+        });
+
+        it('shows a generic message when the broadcast channel is private', () => {
+            // # Create a private channel
+            const now = Date.now();
+            const broadcastDisplayName = 'Private channel (' + now + ')';
+            const broadcastName = 'private-channel-' + now;
+            cy.apiCreateChannel(teamId, broadcastName, broadcastDisplayName, 'P').then(({channel}) => {
+                // # Create a playbook with a private broadcast channel configured
+                cy.apiCreateTestPlaybook({
+                    teamId,
+                    title: playbookName,
+                    userId,
+                    broadcastChannelId: channel.id,
+                }).then((playbook) => {
+                    // # Create a new incident
+                    const name = 'Incident (' + now + ')';
+                    const incidentChannelName = 'incident-' + now;
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName: name,
+                        commanderUserId: userId,
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                    // # Run the /incident status slash command.
+                    cy.executeSlashCommand('/incident update');
+
+                    // * Verify that the interactive dialog contains a generic message
+                    cy.get('#interactiveDialogModal').within(() => {
+                        cy.get('#interactiveDialogModalIntroductionText')
+                            .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                    });
+                });
+            });
+        });
+
+        it('shows a generic message when the broadcast channel is a direct message', () => {
+            // # Create a DM
+            cy.apiGetUsers(['user-1', 'douglas.daniels']).then((res) => {
+                const userIds = res.body.map((user) => user.id);
+                cy.apiCreateDM(userIds[0], userIds[1]).then(({channel}) => {
+                    // # Create a playbook with a private broadcast channel configured
+                    cy.apiCreateTestPlaybook({
+                        teamId,
+                        title: playbookName,
+                        userId,
+                        broadcastChannelId: channel.id,
+                    }).then((playbook) => {
+                        // # Create a new incident
+                        const now = Date.now();
+                        const name = 'Incident (' + now + ')';
+                        const incidentChannelName = 'incident-' + now;
+                        cy.apiStartIncident({
+                            teamId,
+                            playbookId: playbook.id,
+                            incidentName: name,
+                            commanderUserId: userId,
+                        });
+
+                        // # Navigate to the incident channel
+                        cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                        // # Run the /incident status slash command.
+                        cy.executeSlashCommand('/incident update');
+
+                        // * Verify that the interactive dialog contains a generic message
+                        cy.get('#interactiveDialogModal').within(() => {
+                            cy.get('#interactiveDialogModalIntroductionText')
+                                .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                        });
+                    });
+                });
+            });
+        });
+
+        it('shows a generic message when the broadcast channel is a group channel', () => {
+            // # Create a GM
+            cy.apiGetUsers(['user-1', 'douglas.daniels', 'christina.wilson']).then((res) => {
+                const userIds = res.body.map((user) => user.id);
+                cy.apiCreateGroup(userIds).then((resp) => {
+                    // # Create a playbook with a private broadcast channel configured
+                    cy.apiCreateTestPlaybook({
+                        teamId,
+                        title: playbookName,
+                        userId,
+                        broadcastChannelId: resp.body.id,
+                    }).then((playbook) => {
+                        // # Create a new incident
+                        const now = Date.now();
+                        const name = 'Incident (' + now + ')';
+                        const incidentChannelName = 'incident-' + now;
+                        cy.apiStartIncident({
+                            teamId,
+                            playbookId: playbook.id,
+                            incidentName: name,
+                            commanderUserId: userId,
+                        });
+
+                        // # Navigate to the incident channel
+                        cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                        // # Run the /incident status slash command.
+                        cy.executeSlashCommand('/incident update');
+
+                        // * Verify that the interactive dialog contains a generic message
+                        cy.get('#interactiveDialogModal').within(() => {
+                            cy.get('#interactiveDialogModalIntroductionText')
+                                .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                        });
+                    });
+                });
             });
         });
 

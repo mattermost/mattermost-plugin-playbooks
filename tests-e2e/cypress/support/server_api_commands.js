@@ -250,6 +250,25 @@ Cypress.Commands.add('apiCreateGroup', (userIds = []) => {
 });
 
 /**
+ * Creates a direct channel directly via API
+ * This API assume that the user is logged in and has cookie to access
+ * @param {String} userAID - ID of the first user in the DM
+ * @param {String} userBID - ID of the second user in the DM
+ * All parameters required except purpose and header
+ */
+Cypress.Commands.add('apiCreateDM', (userAID, userBID) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/channels/direct',
+        method: 'POST',
+        body: [userAID, userBID],
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        return cy.wrap({channel: response.body});
+    });
+});
+
+/**
  * Gets current user's teams
  */
 
