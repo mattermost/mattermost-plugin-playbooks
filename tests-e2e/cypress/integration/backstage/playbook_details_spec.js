@@ -84,4 +84,127 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Add a Slash Command').should('exist');
         });
     });
+
+    describe('preferences', () => {
+        const playbookName = 'Playbook (' + Date.now() + ')';
+        let teamId;
+        let playbookId;
+        let privateChannelId;
+        let privateChannelName;
+
+        before(() => {
+            // # Login as user-1
+            cy.apiLogin('user-1');
+
+            // # Create a playbook
+            cy.apiGetTeamByName('ad-1').then((team) => {
+                teamId = team.id;
+
+                cy.apiGetCurrentUser().then((user) => {
+                    cy.apiCreateTestPlaybook({
+                        teamId: team.id,
+                        title: playbookName,
+                        userId: user.id,
+                    }).then((playbook) => {
+                        playbookId = playbook.id;
+                    });
+
+                    cy.verifyPlaybookCreated(team.id, playbookName);
+                });
+
+                // # Create a private channel
+                cy.apiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
+                    privateChannelId = channel.id;
+                    privateChannelName = channel.name;
+                });
+            });
+        });
+
+        it('shows "Select a channel" when no broadcast channel configured', () => {
+            // # Visit the selected playbook
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
+
+            // * Verify placeholder text is present
+            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'Select a channel');
+        });
+
+        it('shows channel name when public broadcast channel configured', () => {
+            // # Visit the selected playbook
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
+
+            // # Open the broadcast channel widget and select a public channel
+            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('off-topic{enter}');
+
+            // # Save the playbook
+            cy.findByTestId('save_playbook').click();
+
+            // # Visit the selected playbook
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
+
+            // * Verify placeholder text is present
+            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'Off-Topic');
+        });
+
+        it('shows channel name when private broadcast channel configured and user is a member', () => {
+            // # Visit the selected playbook
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
+
+            // # Open the broadcast channel widget and select a public channel
+            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('autem-2{enter}');
+
+            // # Save the playbook
+            cy.findByTestId('save_playbook').click();
+
+            // # Visit the selected playbook
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
+
+            // * Verify placeholder text is present
+            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'commodi');
+        });
+
+        it('shows "Unknown channel" when private broadcast channel configured and user it not a member', () => {
+            // # Visit the selected playbook
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
+
+            // # Open the broadcast channel widget and select the private channel
+            cy.findByTestId('playbook-preferences-broadcast-channel').click().type(privateChannelId + '{enter}');
+
+            // # Save the playbook
+            cy.findByTestId('save_playbook').click();
+
+            // # Browse to the private channel
+            cy.visit('/ad-1/channels/' + privateChannelName);
+
+            // # Leave the private channel
+            cy.executeSlashCommand('/leave');
+            cy.get('#confirmModalButton').click();
+
+            // # Visit the selected playbook
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
+
+            // * Verify placeholder text is present
+            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'Unknown Channel');
+        });
+    });
 });

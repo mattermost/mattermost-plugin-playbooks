@@ -39,8 +39,19 @@ const ChannelSelector: FC<Props> = (props: Props) => {
     };
 
     const channelsLoader = (term: string, callback: (options: OptionsType<Channel>) => void) => {
-        callback(selectableChannels);
+        callback(selectableChannels.filter((channel) => {
+            if (term.trim().length === 0) {
+                return true;
+            }
+
+            // Implement rudimentary channel name searches.
+            return channel.name.toLowerCase().includes(term.toLowerCase()) ||
+                channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
+                channel.id.toLowerCase() === term.toLowerCase();
+        }));
     };
+
+    const value = props.playbook.broadcast_channel_id && getChannelFromID(props.playbook.broadcast_channel_id);
 
     return (
         <StyledAsyncSelect
@@ -55,7 +66,7 @@ const ChannelSelector: FC<Props> = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={props.isClearable}
-            value={getChannelFromID(props.playbook.broadcast_channel_id)}
+            value={value}
             placeholder={'Select a channel'}
             classNamePrefix='channel-selector'
         />

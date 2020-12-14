@@ -393,11 +393,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                             {'Broadcast the incident status to an additional channel. All status posts will be shared automatically with both the incident and broadcast channel.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheaderText>
-                                    <ChannelSelector
-                                        onChannelSelected={handleBroadcastInput}
-                                        playbook={playbook}
-                                        isClearable={true}
-                                    />
+                                    <div data-testid='playbook-preferences-broadcast-channel'>
+                                        <ChannelSelector
+                                            onChannelSelected={handleBroadcastInput}
+                                            playbook={playbook}
+                                            isClearable={true}
+                                        />
+                                    </div>
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheaderText>
