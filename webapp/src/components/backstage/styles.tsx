@@ -27,6 +27,7 @@ export const BackstageSubheader = styled.div`
     display: flex;
     align-items: center;
     height: 72px;
+    min-height: 72px;
     padding: 0 24px;
     font-weight: 600;
     font-size: 16px;

@@ -51,6 +51,7 @@ const EditView = styled.div`
 
 const TabsHeader = styled.div`
     height: 72px;
+    min-height: 72px;
     display: flex;
     padding: 0 32px;
     border-bottom: 1px solid var(--center-channel-color-16);
