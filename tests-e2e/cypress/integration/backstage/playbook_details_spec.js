@@ -139,7 +139,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // # Open the broadcast channel widget and select a public channel
-            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('off-topic{enter}');
+            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('off-topic{enter}', {delay: 200});
 
             // # Save the playbook
             cy.findByTestId('save_playbook').click();
@@ -162,7 +162,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // # Open the broadcast channel widget and select a public channel
-            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('autem-2{enter}');
+            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('autem-2{enter}', {delay: 200});
 
             // # Save the playbook
             cy.findByTestId('save_playbook').click();
@@ -185,7 +185,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // # Open the broadcast channel widget and select the private channel
-            cy.findByTestId('playbook-preferences-broadcast-channel').click().type(privateChannelId + '{enter}');
+            cy.findByTestId('playbook-preferences-broadcast-channel').click().type(privateChannelId + '{enter}', {delay: 200});
 
             // # Save the playbook
             cy.findByTestId('save_playbook').click();
