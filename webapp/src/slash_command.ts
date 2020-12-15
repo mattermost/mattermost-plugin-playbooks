@@ -32,11 +32,11 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
                 return Promise.resolve({});
             }
 
-            // if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingIncident) {
-            //     //@ts-ignore thunk
-            //     store.dispatch(setRHSViewingIncident());
-            //     return Promise.resolve({});
-            // }
+            if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingIncident) {
+                //@ts-ignore thunk
+                store.dispatch(setRHSViewingIncident());
+                return Promise.resolve({});
+            }
 
             return Promise.resolve({message: messageTrimmed, args});
         }
