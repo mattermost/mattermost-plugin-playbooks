@@ -33,7 +33,6 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             }
 
             if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingIncident) {
-                //@ts-ignore thunk
                 store.dispatch(setRHSViewingIncident());
                 return Promise.resolve({});
             }
