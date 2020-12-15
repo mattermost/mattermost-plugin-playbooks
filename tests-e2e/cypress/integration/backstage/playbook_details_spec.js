@@ -177,7 +177,7 @@ describe('backstage playbook details', () => {
             cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'commodi');
         });
 
-        it('shows "Unknown channel" when private broadcast channel configured and user it not a member', () => {
+        it('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
             // # Visit the selected playbook
             cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
 
