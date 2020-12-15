@@ -11,6 +11,7 @@ import {Playbook} from 'src/types/playbook';
 import {StyledAsyncSelect} from './styles';
 
 export interface Props {
+    id?: string;
     onChannelSelected: (channelID: string | null) => void;
     playbook: Playbook;
     isClearable?: boolean;
@@ -55,6 +56,7 @@ const ChannelSelector: FC<Props> = (props: Props) => {
 
     return (
         <StyledAsyncSelect
+            id={props.id}
             isMulti={false}
             controlShouldRenderValue={true}
             cacheOptions={false}

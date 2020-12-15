@@ -128,7 +128,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // * Verify placeholder text is present
-            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'Select a channel');
+            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'Select a channel');
         });
 
         it('shows channel name when public broadcast channel configured', () => {
@@ -139,7 +139,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // # Open the broadcast channel widget and select a public channel
-            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('saepe-5{enter}', {delay: 200});
+            cy.get('#playbook-preferences-broadcast-channel').click().type('saepe-5{enter}', {delay: 200});
 
             // # Save the playbook
             cy.findByTestId('save_playbook').click();
@@ -151,7 +151,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // * Verify placeholder text is present
-            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'doloremque');
+            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'doloremque');
         });
 
         it('shows channel name when private broadcast channel configured and user is a member', () => {
@@ -162,7 +162,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // # Open the broadcast channel widget and select a public channel
-            cy.findByTestId('playbook-preferences-broadcast-channel').click().type('autem-2{enter}', {delay: 200});
+            cy.get('#playbook-preferences-broadcast-channel').click().type('autem-2{enter}', {delay: 200});
 
             // # Save the playbook
             cy.findByTestId('save_playbook').click();
@@ -174,7 +174,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // * Verify placeholder text is present
-            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'commodi');
+            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'commodi');
         });
 
         it('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
@@ -185,7 +185,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // # Open the broadcast channel widget and select the private channel
-            cy.findByTestId('playbook-preferences-broadcast-channel').click().type(privateChannelId + '{enter}', {delay: 200});
+            cy.get('#playbook-preferences-broadcast-channel').click().type(privateChannelId + '{enter}', {delay: 200});
 
             // # Save the playbook
             cy.findByTestId('save_playbook').click();
@@ -204,7 +204,7 @@ describe('backstage playbook details', () => {
             cy.get('#root').findByText('Preferences').click();
 
             // * Verify placeholder text is present
-            cy.findByTestId('playbook-preferences-broadcast-channel').should('have.text', 'Unknown Channel');
+            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'Unknown Channel');
         });
     });
 });
