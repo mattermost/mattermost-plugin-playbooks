@@ -29,12 +29,10 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             if (inIncidentChannel(state) && !isIncidentRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
-                return Promise.resolve({});
             }
 
             if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingIncident) {
                 store.dispatch(setRHSViewingIncident());
-                return Promise.resolve({});
             }
 
             return Promise.resolve({message: messageTrimmed, args});
@@ -46,14 +44,13 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             if (!isIncidentRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
-                return Promise.resolve({});
             }
 
             if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingList) {
                 store.dispatch(setRHSViewingList());
-                return Promise.resolve({});
             }
-            return Promise.resolve({error: {message: 'The list of your incidents is already open in the RHS'}});
+
+            return Promise.resolve({message: messageTrimmed, args});
         }
 
         return Promise.resolve({message, args});
