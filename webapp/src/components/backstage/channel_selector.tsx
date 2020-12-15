@@ -39,16 +39,16 @@ const ChannelSelector: FC<Props> = (props: Props) => {
     };
 
     const channelsLoader = (term: string, callback: (options: OptionsType<Channel>) => void) => {
-        callback(selectableChannels.filter((channel) => {
-            if (term.trim().length === 0) {
-                return true;
-            }
-
+        if (term.trim().length === 0) {
+            callback(selectableChannels);
+        } else {
             // Implement rudimentary channel name searches.
-            return channel.name.toLowerCase().includes(term.toLowerCase()) ||
-                channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
-                channel.id.toLowerCase() === term.toLowerCase();
-        }));
+            callback(selectableChannels.filter((channel) => (
+                channel.name.toLowerCase().includes(term.toLowerCase()) ||
+                    channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
+                    channel.id.toLowerCase() === term.toLowerCase()
+            )));
+        }
     };
 
     const value = props.playbook.broadcast_channel_id && getChannelFromID(props.playbook.broadcast_channel_id);
