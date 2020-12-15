@@ -2,12 +2,14 @@ import {Store} from 'redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {generateId} from 'mattermost-redux/utils/helpers';
 
-import {toggleRHS, setClientId} from 'src/actions';
-import {inIncidentChannel, isIncidentRHSOpen} from 'src/selectors';
+import {toggleRHS, setClientId, setRHSViewingList, setRHSViewingIncident} from 'src/actions';
+import {inIncidentChannel, isIncidentRHSOpen, currentRHSState} from 'src/selectors';
+import {RHSState} from 'src/types/rhs';
 
 export function makeSlashCommandHook(store: Store<GlobalState>) {
     return (message: string, args = {}) => {
         let messageTrimmed;
+
         if (message) {
             messageTrimmed = message.trim();
         }
@@ -27,7 +29,12 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             if (inIncidentChannel(state) && !isIncidentRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
+                return Promise.resolve({});
+            }
 
+            if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingIncident) {
+                //@ts-ignore thunk
+                store.dispatch(setRHSViewingIncident());
                 return Promise.resolve({});
             }
 
@@ -40,9 +47,14 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             if (!isIncidentRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
+                return Promise.resolve({});
             }
 
-            return Promise.resolve({});
+            if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingList) {
+                store.dispatch(setRHSViewingList());
+                return Promise.resolve({});
+            }
+            return Promise.resolve({error: {message: 'The list of your incidents is already open in the RHS'}});
         }
 
         return Promise.resolve({message, args});
