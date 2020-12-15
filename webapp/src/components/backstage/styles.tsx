@@ -6,7 +6,7 @@ import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 
 export const BackstageHeader = styled.div`
-    padding: 24px 0 0 14px;
+    padding: 20px 0 0 31px;
 `;
 
 export const BackstageHeaderTitle = styled.div`
