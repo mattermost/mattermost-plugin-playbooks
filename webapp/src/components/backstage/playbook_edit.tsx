@@ -51,6 +51,7 @@ const EditView = styled.div`
 
 const TabsHeader = styled.div`
     height: 72px;
+    min-height: 72px;
     display: flex;
     padding: 0 32px;
     border-bottom: 1px solid var(--center-channel-color-16);
@@ -88,7 +89,7 @@ const EditableTexts = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding: 15px;
+    padding: 0 15px;
 `;
 
 const EditableTitleContainer = styled.div`
@@ -130,7 +131,7 @@ const OuterContainer = styled.div`
     background: var(center-channel-bg);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    min-height: 100vh;
 `;
 
 interface Props {

@@ -24,11 +24,9 @@ import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
 
 const BackstageContainer = styled.div`
-    overflow: hidden;
     background: var(--center-channel-bg);
-    display: flex;
-    flex-direction: column;
     height: 100%;
+    overflow-y: auto;
 `;
 
 export const BackstageNavbarIcon = styled.button`
@@ -37,8 +35,7 @@ export const BackstageNavbarIcon = styled.button`
     background: transparent;
     border-radius: 4px;
     font-size: 24px;
-    width: 40px;
-    height: 40px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -53,9 +50,13 @@ export const BackstageNavbarIcon = styled.button`
 `;
 
 export const BackstageNavbar = styled.div`
+    position: sticky;
+    width: 100%;
+    top: 0;
+    z-index: 2;
+
     display: flex;
     align-items: center;
-    height: 80px;
     padding: 28px 31px;
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
@@ -73,7 +74,7 @@ const BackstageTitlebarItem = styled(NavLink)`
         cursor: pointer;
         color: var(--center-channel-color);
         fill: var(--center-channel-color);
-        padding: 8px;
+        padding: 0 8px;
         margin-right: 39px;
         display: flex;
         align-items: center;
@@ -96,7 +97,6 @@ const BackstageBody = styled.div`
     z-index: 1;
     width: 100%;
     height: 100%;
-    overflow: auto;
     margin: 0 auto;
 `;
 

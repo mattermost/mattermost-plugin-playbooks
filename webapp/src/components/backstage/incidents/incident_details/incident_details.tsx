@@ -37,7 +37,7 @@ const OuterContainer = styled.div`
     background: var(center-channel-bg);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    min-height: 100vh;
 `;
 
 const Container = styled.div`
@@ -46,7 +46,7 @@ const Container = styled.div`
 `;
 
 const IncidentTitle = styled.div`
-    padding: 15px;
+    padding: 0 15px;
     font-size: 20px;
     line-height: 28px;
     color: var(--center-channel-color);
