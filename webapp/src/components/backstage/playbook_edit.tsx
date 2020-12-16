@@ -395,6 +395,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheaderText>
                                     <ChannelSelector
+                                        id='playbook-preferences-broadcast-channel'
                                         onChannelSelected={handleBroadcastInput}
                                         playbook={playbook}
                                         isClearable={true}

@@ -11,6 +11,7 @@ import {Playbook} from 'src/types/playbook';
 import {StyledAsyncSelect} from './styles';
 
 export interface Props {
+    id?: string;
     onChannelSelected: (channelID: string | null) => void;
     playbook: Playbook;
     isClearable?: boolean;
@@ -39,11 +40,23 @@ const ChannelSelector: FC<Props> = (props: Props) => {
     };
 
     const channelsLoader = (term: string, callback: (options: OptionsType<Channel>) => void) => {
-        callback(selectableChannels);
+        if (term.trim().length === 0) {
+            callback(selectableChannels);
+        } else {
+            // Implement rudimentary channel name searches.
+            callback(selectableChannels.filter((channel) => (
+                channel.name.toLowerCase().includes(term.toLowerCase()) ||
+                    channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
+                    channel.id.toLowerCase() === term.toLowerCase()
+            )));
+        }
     };
+
+    const value = props.playbook.broadcast_channel_id && getChannelFromID(props.playbook.broadcast_channel_id);
 
     return (
         <StyledAsyncSelect
+            id={props.id}
             isMulti={false}
             controlShouldRenderValue={true}
             cacheOptions={false}
@@ -55,7 +68,7 @@ const ChannelSelector: FC<Props> = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={props.isClearable}
-            value={getChannelFromID(props.playbook.broadcast_channel_id)}
+            value={value}
             placeholder={'Select a channel'}
             classNamePrefix='channel-selector'
         />
