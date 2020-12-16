@@ -15,11 +15,11 @@ const manifestStr = `
   "id": "com.mattermost.plugin-incident-management",
   "name": "Incident Management",
   "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
-  "homepage_url": "https://github.com/mattermost/mattermost-plugin-incident-response/",
-  "support_url": "https://github.com/mattermost/mattermost-plugin-incident-response/issues",
-  "release_notes_url": "https://github.com/mattermost/mattermost-plugin-incident-response/releases/tag/v1.1.1",
+  "homepage_url": "https://github.com/mattermost/mattermost-plugin-incident-management/",
+  "support_url": "https://github.com/mattermost/mattermost-plugin-incident-management/issues",
+  "release_notes_url": "https://github.com/mattermost/mattermost-plugin-incident-management/releases/tag/v1.2.0",
   "icon_path": "assets/incident_plugin_icon.svg",
-  "version": "1.2.0-alpha.2",
+  "version": "1.2.0",
   "min_server_version": "5.28.0",
   "server": {
     "executables": {
