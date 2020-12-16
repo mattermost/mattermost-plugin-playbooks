@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
 
 // NoActiveStage is the value of an incident's ActiveStage property when there are no stages.
@@ -371,4 +373,12 @@ type Telemetry interface {
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
 	RunTaskSlashCommand(incidentID, userID string)
+}
+
+type JobOnceScheduler interface {
+	Start() error
+	SetCallback(callback func(string)) error
+	ListScheduledJobs() ([]cluster.JobOnceMetadata, error)
+	ScheduleOnce(key string, runAt time.Time) (*cluster.JobOnce, error)
+	Cancel(key string)
 }

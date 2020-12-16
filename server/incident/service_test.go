@@ -4,21 +4,22 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-management/server/config/mocks"
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 func TestCreateIncident(t *testing.T) {
@@ -31,7 +32,7 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -59,7 +60,7 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -87,7 +88,7 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -132,7 +133,7 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
@@ -247,7 +248,7 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			logger := mock_bot.NewMockLogger(controller)
 			configService := mock_config.NewMockService(controller)
 			telemetryService := &telemetry.NoopTelemetry{}
-			scheduler := cluster.GetJobOnceScheduler(api)
+			scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 			service := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
 			tt.prepMocks(store, poster, api)
@@ -365,7 +366,7 @@ func TestChangeActiveStage(t *testing.T) {
 			logger := mock_bot.NewMockLogger(controller)
 			configService := mock_config.NewMockService(controller)
 			telemetryService := &telemetry.NoopTelemetry{}
-			scheduler := cluster.GetJobOnceScheduler(api)
+			scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 			service := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
 			tt.prepMocks(store, poster, api)
@@ -497,7 +498,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			logger := mock_bot.NewMockLogger(controller)
 			configService := mock_config.NewMockService(controller)
 			telemetryService := &telemetry.NoopTelemetry{}
-			scheduler := cluster.GetJobOnceScheduler(api)
+			scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 			service := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
 			tt.prepMocks(t, store, poster, api, configService)
@@ -509,4 +510,166 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEndIncident(t *testing.T) {
+	t.Run("error fetching", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			Header: incident.Header{
+				ID:     model.NewId(),
+				Name:   "###",
+				TeamID: teamID,
+			},
+		}
+
+		store.EXPECT().GetIncident(incdnt.Header.ID).Return(nil, errors.New("error"))
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.Header.ID, "testUserID")
+		require.Error(t, err)
+	})
+
+	t.Run("non-existent", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			Header: incident.Header{
+				ID:     model.NewId(),
+				Name:   "###",
+				TeamID: teamID,
+			},
+		}
+
+		store.EXPECT().GetIncident(incdnt.Header.ID).Return(nil, nil)
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.Header.ID, "testUserID")
+		require.Error(t, err)
+	})
+
+	t.Run("already ended", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			Header: incident.Header{
+				ID:       model.NewId(),
+				Name:     "###",
+				TeamID:   teamID,
+				IsActive: false,
+			},
+		}
+
+		store.EXPECT().GetIncident(incdnt.Header.ID).Return(incdnt, nil)
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.Header.ID, "testUserID")
+		require.Equal(t, incident.ErrIncidentNotActive, err)
+	})
+
+	t.Run("successful, no reminder", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			Header: incident.Header{
+				ID:        model.NewId(),
+				Name:      "###",
+				TeamID:    teamID,
+				IsActive:  true,
+				ChannelID: "channel_id",
+			},
+			ReminderPostID: "",
+		}
+
+		store.EXPECT().GetIncident(incdnt.Header.ID).Return(incdnt, nil)
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
+		scheduler.EXPECT().Cancel(incdnt.Header.ID)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+		poster.EXPECT().PostMessage("channel_id", "This incident has been closed by @%v", "username")
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.Header.ID, "user_id")
+		require.NoError(t, err)
+	})
+
+	t.Run("successful, reminder", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			Header: incident.Header{
+				ID:        model.NewId(),
+				Name:      "###",
+				TeamID:    teamID,
+				IsActive:  true,
+				ChannelID: "channel_id",
+			},
+			ReminderPostID: "post_id",
+		}
+
+		store.EXPECT().GetIncident(incdnt.Header.ID).Return(incdnt, nil)
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
+		scheduler.EXPECT().Cancel(incdnt.Header.ID)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+		pluginAPI.On("GetPost", "post_id").Return(&model.Post{Id: "post_id"}, nil)
+		pluginAPI.On("DeletePost", "post_id").Return(nil)
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PostMessage("channel_id", "This incident has been closed by @%v", "username")
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.Header.ID, "user_id")
+		require.NoError(t, err)
+	})
 }

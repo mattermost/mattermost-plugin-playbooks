@@ -94,6 +94,11 @@ func (s *ServiceImpl) RemoveReminderPost(incidentID string) error {
 		return errors.Wrapf(err, "failed to retrieve incident")
 	}
 
+	return s.removeReminderPost(incidentToModify)
+}
+
+// removeReminderPost will remove the reminder post in the incident channel (if any).
+func (s *ServiceImpl) removeReminderPost(incidentToModify *Incident) error {
 	if incidentToModify.ReminderPostID == "" {
 		return nil
 	}

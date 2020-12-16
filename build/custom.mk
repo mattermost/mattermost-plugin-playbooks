@@ -10,6 +10,7 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/bot/mocks/mock_poster.go github.com/mattermost/mattermost-plugin-incident-management/server/bot Poster
 	mockgen -destination server/incident/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-management/server/incident Service
 	mockgen -destination server/incident/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-management/server/incident Store
+	mockgen -destination server/incident/mocks/mock_job_once_scheduler.go github.com/mattermost/mattermost-plugin-incident-management/server/incident JobOnceScheduler
 	mockgen -destination server/playbook/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-management/server/playbook Service
 	mockgen -destination server/playbook/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-management/server/playbook Store
 	mockgen -destination server/pluginkvstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-incident-management/server/pluginkvstore KVAPI

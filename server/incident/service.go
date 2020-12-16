@@ -11,13 +11,13 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 const (
@@ -34,7 +34,7 @@ type ServiceImpl struct {
 	store         Store
 	poster        bot.Poster
 	logger        bot.Logger
-	scheduler     *cluster.JobOnceScheduler
+	scheduler     JobOnceScheduler
 	telemetry     Telemetry
 }
 
@@ -57,7 +57,7 @@ const DialogFieldReminderInSecondsKey = "reminder"
 
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler *cluster.JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
+	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
 	return &ServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
@@ -175,7 +175,9 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, p
 func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 	incdnt, err := s.store.GetIncident(incidentID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to end incident")
+		return errors.Wrapf(err, "failed to get incident %s to end", incidentID)
+	} else if incdnt == nil {
+		return errors.Errorf("failed to find incident %s", incidentID)
 	}
 
 	if !incdnt.IsActive {
@@ -187,13 +189,16 @@ func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
 	incdnt.EndAt = model.GetMillis()
 
 	if err = s.store.UpdateIncident(incdnt); err != nil {
-		return errors.Wrapf(err, "failed to end incident")
+		return errors.Wrapf(err, "failed to update incident %s while ending", incidentID)
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.EndIncident(incdnt, userID)
 
 	s.RemoveReminder(incidentID)
+	if err = s.removeReminderPost(incdnt); err != nil {
+		s.logger.Errorf("EndIncident: error removing reminder for incidentID: %s; error: %s", incidentID, err.Error())
+	}
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
@@ -410,7 +415,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		}
 	}
 
-	if err = s.RemoveReminderPost(incidentID); err != nil {
+	if err = s.removeReminderPost(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to remove reminder post")
 	}
 
