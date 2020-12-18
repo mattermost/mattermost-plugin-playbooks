@@ -3,29 +3,25 @@
 
 import React from 'react';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {IncidentFetchState, useCurrentIncident} from 'src/hooks';
 import {RHSContainer, RHSContent} from 'src/components/rhs/rhs_shared';
-import Spinner from 'src/components/assets/icons/spinner';
 import RHSTabView from 'src/components/rhs/rhs_tab_view';
 import {RHSTabState} from 'src/types/rhs';
-import {currentRHSTabState} from 'src/selectors';
+import {currentIncident, currentRHSTabState} from 'src/selectors';
 import RHSIncidentSummary from 'src/components/rhs/rhs_incident_summary';
 import RHSIncidentTasks from 'src/components/rhs/rhs_incident_tasks';
+import {Incident} from 'src/types/incident';
 
 const RHSDetailsView = () => {
-    const [incident, incidentFetchState] = useCurrentIncident();
+    const incident = useSelector<GlobalState, Incident | undefined>(currentIncident);
     const currentTabState = useSelector<GlobalState, RHSTabState>(currentRHSTabState);
 
-    if (incidentFetchState === IncidentFetchState.Loading) {
-        return spinner;
-    } else if (incidentFetchState === IncidentFetchState.NotFound || incident === null) {
-        // This should not happen--if incident is not found or null, we should be viewing the list.
-        // Returning the spinner so that if it ever happens, we at least show something.
-        return spinner;
+    // This shouldn't happen, because we're only rendering this view after calling inIncidentChannel,
+    // but we need to guard against the undefined that could be returned by currentIncident:
+    if (!incident) {
+        return <></>;
     }
 
     let currentView = <RHSIncidentSummary incident={incident}/>;
@@ -42,21 +38,5 @@ const RHSDetailsView = () => {
         </RHSContainer>
     );
 };
-
-export const SpinnerContainer = styled.div`
-    text-align: center;
-    padding: 20px;
-`;
-
-const spinner = (
-    <RHSContainer>
-        <RHSContent>
-            <SpinnerContainer>
-                <Spinner/>
-                <span>{'Loading...'}</span>
-            </SpinnerContainer>
-        </RHSContent>
-    </RHSContainer>
-);
 
 export default RHSDetailsView;
