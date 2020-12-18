@@ -18,10 +18,8 @@ const RHSDetailsView = () => {
     const incident = useSelector<GlobalState, Incident | undefined>(currentIncident);
     const currentTabState = useSelector<GlobalState, RHSTabState>(currentRHSTabState);
 
-    // This shouldn't happen, because we're only rendering this view after calling inIncidentChannel,
-    // but we need to guard against the undefined that could be returned by currentIncident:
     if (!incident) {
-        return <></>;
+        return null;
     }
 
     let currentView = <RHSIncidentSummary incident={incident}/>;
