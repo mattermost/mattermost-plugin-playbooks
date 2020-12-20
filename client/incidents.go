@@ -143,12 +143,8 @@ func (s *IncidentsService) GetByChannelID(ctx context.Context, channelID string)
 // Update an incident.
 func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts incident.UpdateOptions) (*Incident, error) {
 	incidentURL := fmt.Sprintf("incidents/%s", incidentID)
-	incidentUpdateRequest := Incident{
-		CommanderUserID: *opts.CommanderUserID,
-	}
 
-	req, err := s.client.NewRequest(http.MethodPatch, incidentURL, incidentUpdateRequest)
-	req.Header.Add("Mattermost-User-ID", *opts.CommanderUserID)
+	req, err := s.client.NewRequest(http.MethodPatch, incidentURL, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +158,7 @@ func (s *IncidentsService) Update(ctx context.Context, incidentID string, opts i
 }
 
 // List the incidents.
-func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (*IncidentList, error) {
+func (s *IncidentsService) List(ctx context.Context, opts incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
 	incidentURL := "incidents"
 	incidentURL, err := addOptions(incidentURL, opts)
 	if err != nil {
