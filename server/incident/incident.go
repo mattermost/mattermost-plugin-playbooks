@@ -124,7 +124,7 @@ type Metadata struct {
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
 // the HeaderFilterOptions, and the TotalCount of the matching incidents before paging was applied.
 type GetIncidentsResults struct {
-	url        string     `json:"url"`
+	URL        string     `json:"url"`
 	TotalCount int        `json:"total_count"`
 	PageCount  int        `json:"page_count"`
 	HasMore    bool       `json:"has_more"`
