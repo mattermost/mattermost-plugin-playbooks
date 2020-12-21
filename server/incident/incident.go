@@ -102,8 +102,7 @@ type StatusPost struct {
 }
 
 type UpdateOptions struct {
-	CommanderUserID *string `json:"commander_user_id"`
-	ActiveStage     *int    `json:"active_stage"`
+	ActiveStage *int `json:"active_stage"`
 }
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
@@ -124,7 +123,6 @@ type Metadata struct {
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
 // the HeaderFilterOptions, and the TotalCount of the matching incidents before paging was applied.
 type GetIncidentsResults struct {
-	URL        string     `json:"url"`
 	TotalCount int        `json:"total_count"`
 	PageCount  int        `json:"page_count"`
 	HasMore    bool       `json:"has_more"`
