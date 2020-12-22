@@ -414,7 +414,7 @@ func (r *Runner) actionList() {
 
 	if !session.IsMobileApp() {
 		// The RHS was opened by the webapp, so inform the user
-		r.postCommandResponse("The list of your incidents is already open in the right hand side of the channel.")
+		r.postCommandResponse("The list of your incidents is open in the right hand side of the channel.")
 		return
 	}
 
