@@ -406,6 +406,18 @@ func (r *Runner) actionList() {
 		return
 	}
 
+	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
+		return
+	}
+
+	if !session.IsMobileApp() {
+		// The RHS was opened by the webapp, so inform the user
+		r.postCommandResponse("The list of your incidents is open in the right hand side of the channel.")
+		return
+	}
+
 	requesterInfo := incident.RequesterInfo{
 		UserID:          r.args.UserId,
 		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
