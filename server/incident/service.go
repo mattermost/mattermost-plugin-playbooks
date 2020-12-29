@@ -984,6 +984,10 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		return nil, errors.Wrapf(err, "failed to add user to channel")
 	}
 
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.CommanderUserID, model.CHANNEL_ADMIN_ROLE_ID); err != nil {
+		return nil, errors.Wrapf(err, "failed to promote incident commander to channel_admin role")
+	}
+
 	return channel, nil
 }
 
