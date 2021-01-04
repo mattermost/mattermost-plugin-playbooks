@@ -97,10 +97,6 @@ const RHSListIncident = (props: Props) => {
         <IncidentContainer active={props.active}>
             <IncidentTitle>{props.incident.name}</IncidentTitle>
             <Row>
-                <Col1>{'Stage:'}</Col1>
-                <Col2>{props.incident.active_stage_title}</Col2>
-            </Row>
-            <Row>
                 <Col1>{'Duration:'}</Col1>
                 <Col2>
                     <Duration

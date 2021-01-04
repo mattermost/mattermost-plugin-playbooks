@@ -15,6 +15,7 @@ import {RHSTabState} from 'src/types/rhs';
 import {currentRHSTabState} from 'src/selectors';
 import RHSIncidentSummary from 'src/components/rhs/rhs_incident_summary';
 import RHSIncidentTasks from 'src/components/rhs/rhs_incident_tasks';
+import RHSFooterSummary from 'src/components/rhs/rhs_footer_summary';
 
 const RHSDetailsView = () => {
     const [incident, incidentFetchState] = useCurrentIncident();
@@ -38,6 +39,7 @@ const RHSDetailsView = () => {
             <RHSContent>
                 <RHSTabView/>
                 {currentView}
+                <RHSFooterSummary/>
             </RHSContent>
         </RHSContainer>
     );

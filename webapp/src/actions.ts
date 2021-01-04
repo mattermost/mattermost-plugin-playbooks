@@ -63,18 +63,6 @@ export function restartIncident() {
     };
 }
 
-export function nextStage() {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/incident stage next');
-    };
-}
-
-export function prevStage() {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/incident stage prev');
-    };
-}
-
 export function updateStatus() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, '/incident update');

@@ -50,7 +50,7 @@ func TestMigrationIdempotency(t *testing.T) {
 			}
 		})
 
-		t.Run("Run the whole set of migrations twice", func(t *testing.T) {
+		/*t.Run("Run the whole set of migrations twice", func(t *testing.T) {
 			sqlStore := &SQLStore{
 				logger,
 				setupTestDB(t, driver),
@@ -74,6 +74,6 @@ func TestMigrationIdempotency(t *testing.T) {
 					require.Equal(t, currentSchemaVersion, migration.toVersion)
 				}
 			}
-		})
+		})*/
 	}
 }

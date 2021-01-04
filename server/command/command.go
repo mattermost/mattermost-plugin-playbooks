@@ -25,7 +25,6 @@ const helpText = "###### Mattermost Incident Management Plugin - Slash Command H
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident update` - Update the incident's status and (if enabled) post the status update to the broadcast channel. \n" +
-	"* `/incident stage` - Move to the next or previous stage. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/incident commander [@username]` - Show or change the current commander. \n" +
 	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
@@ -51,7 +50,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Management Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, update, stage, restart, check, announce, list, commander, info",
+		AutoCompleteDesc: "Available commands: start, end, update, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -59,7 +58,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, update, restart, check, announce, list, commander, info, stage")
+		"Available commands: start, end, update, restart, check, announce, list, commander, info")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -71,19 +70,6 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	update := model.NewAutocompleteData("update", "",
 		"Update the current incident's status.")
 	slashIncident.AddCommand(update)
-
-	next := model.NewAutocompleteData("stage", "[next/prev]", "Move to the next or previous stage")
-	next.AddStaticListArgument("", true, []model.AutocompleteListItem{
-		{
-			Item:     "next",
-			HelpText: "Move to next stage",
-		},
-		{
-			Item:     "prev",
-			HelpText: "Move to previous stage",
-		},
-	})
-	slashIncident.AddCommand(next)
 
 	restart := model.NewAutocompleteData("restart", "",
 		"Restarts the incident associated with the current channel")
@@ -461,7 +447,6 @@ func (r *Runner) actionList() {
 		attachments[i] = &model.SlackAttachment{
 			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
-				{Title: "Stage:", Value: fmt.Sprintf("**%s**", theIncident.ActiveStageTitle)},
 				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), now)},
 				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
 			},
@@ -511,30 +496,24 @@ func (r *Runner) actionInfo() {
 		return
 	}
 
-	if theIncident.ActiveStage >= len(theIncident.Checklists) {
-		r.warnUserAndLogErrorf("Error retrieving current checklist: active stage is %d and the incident has %d checklists", theIncident.ActiveStage, len(theIncident.Checklists))
-		return
-	}
-
-	activeChecklist := theIncident.Checklists[theIncident.ActiveStage]
-
 	tasks := ""
-	for _, item := range activeChecklist.Items {
-		icon := ":white_large_square: "
-		timestamp := ""
-		if item.State == playbook.ChecklistItemStateClosed {
-			icon = ":white_check_mark: "
-			timestamp = " (" + timeutils.GetTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
-		}
+	for _, checklist := range theIncident.Checklists {
+		for _, item := range checklist.Items {
+			icon := ":white_large_square: "
+			timestamp := ""
+			if item.State == playbook.ChecklistItemStateClosed {
+				icon = ":white_check_mark: "
+				timestamp = " (" + timeutils.GetTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
+			}
 
-		tasks += icon + item.Title + timestamp + "\n"
+			tasks += icon + item.Title + timestamp + "\n"
+		}
 	}
 	attachment := &model.SlackAttachment{
 		Fields: []*model.SlackAttachmentField{
 			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
 			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())},
 			{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
-			{Title: "Stage:", Value: activeChecklist.Title},
 			{Title: "Tasks:", Value: tasks},
 		},
 	}
@@ -615,117 +594,6 @@ func (r *Runner) actionUpdate() {
 	case err != nil:
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
-	}
-}
-
-func (r *Runner) actionStage(args []string) {
-	if len(args) != 1 {
-		r.postCommandResponse("`/incident stage` expects one argument: either `next` or `prev`")
-		return
-	}
-
-	switch strings.ToLower(args[0]) {
-	case "next":
-		r.actionStageNext()
-	case "prev":
-		r.actionStagePrev()
-	default:
-		r.postCommandResponse("`/incident stage` expects the argument to be either `next` or `prev`")
-	}
-}
-
-func (r *Runner) actionStageNext() {
-	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
-			r.postCommandResponse("You can only change an incident stage from within the incident's channel.")
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	currentIncident, err := r.incidentService.GetIncident(incidentID)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	numChecklists := len(currentIncident.Checklists)
-	if numChecklists == 0 {
-		r.postCommandResponse("The incident contains no stages.")
-		return
-	}
-
-	if currentIncident.ActiveStage < 0 || currentIncident.ActiveStage >= numChecklists {
-		r.warnUserAndLogErrorf("ActiveStage %d is out of bounds: incident '%s' has %d stages", currentIncident.ActiveStage, incidentID, numChecklists)
-		return
-	}
-
-	if currentIncident.ActiveStage == numChecklists-1 {
-		r.postCommandResponse("The active stage is the last one. If you want to end the incident, run `/incident end`")
-		return
-	}
-
-	allCompleted := true
-	for _, item := range currentIncident.Checklists[currentIncident.ActiveStage].Items {
-		if item.State == playbook.ChecklistItemStateOpen {
-			allCompleted = false
-			break
-		}
-	}
-
-	if !allCompleted {
-		err = r.incidentService.OpenNextStageDialog(incidentID, currentIncident.ActiveStage+1, r.args.TriggerId)
-		if err != nil {
-			r.warnUserAndLogErrorf("Error: %v", err)
-		}
-
-		return
-	}
-
-	_, err = r.incidentService.ChangeActiveStage(incidentID, r.args.UserId, currentIncident.ActiveStage+1)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error changing active stage of incident '%s': %v", incidentID, err)
-	}
-}
-
-func (r *Runner) actionStagePrev() {
-	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
-			r.postCommandResponse("You can only change an incident stage from within the incident's channel.")
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	currentIncident, err := r.incidentService.GetIncident(incidentID)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	numChecklists := len(currentIncident.Checklists)
-	if numChecklists == 0 {
-		r.postCommandResponse("The incident contains no stages.")
-		return
-	}
-
-	if currentIncident.ActiveStage < 0 || currentIncident.ActiveStage >= numChecklists {
-		r.warnUserAndLogErrorf("ActiveStage %d is out of bounds: incident '%s' has %d stages", currentIncident.ActiveStage, incidentID, numChecklists)
-		return
-	}
-
-	if currentIncident.ActiveStage == 0 {
-		r.postCommandResponse("The active stage is the first one.")
-		return
-	}
-
-	_, err = r.incidentService.ChangeActiveStage(incidentID, r.args.UserId, currentIncident.ActiveStage-1)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error changing active stage of incident '%s': %v", incidentID, err)
 	}
 }
 
@@ -1388,8 +1256,6 @@ func (r *Runner) Execute() error {
 		r.actionEnd()
 	case "update":
 		r.actionUpdate()
-	case "stage":
-		r.actionStage(parameters)
 	case "check":
 		r.actionCheck(parameters)
 	case "restart":

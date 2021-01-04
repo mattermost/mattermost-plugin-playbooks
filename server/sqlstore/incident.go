@@ -44,7 +44,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
+			"CreateAt", "EndAt", "DeleteAt", "PostID", "PlaybookID",
 			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID", "PreviousReminder", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate").
 		From("IR_Incident AS incident")
@@ -187,8 +187,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	}, nil
 }
 
-// CreateIncident creates a new incident. It assumes that ActiveStage is correct
-// and that ActiveStageTitle is already synced.
+// CreateIncident creates a new incident.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
@@ -224,8 +223,6 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"CreateAt":                rawIncident.CreateAt,
 			"EndAt":                   rawIncident.EndAt,
 			"DeleteAt":                rawIncident.DeleteAt,
-			"ActiveStage":             rawIncident.ActiveStage,
-			"ActiveStageTitle":        rawIncident.ActiveStageTitle,
 			"PostID":                  rawIncident.PostID,
 			"PlaybookID":              rawIncident.PlaybookID,
 			"ChecklistsJSON":          rawIncident.ChecklistsJSON,
@@ -250,8 +247,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	return incidentCopy, nil
 }
 
-// UpdateIncident updates an incident. It assumes that ActiveStage is correct
-// and that ActiveStageTitle is already synced.
+// UpdateIncident updates an incident.
 func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if newIncident == nil {
 		return errors.New("incident is nil")
@@ -281,8 +277,6 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"CommanderUserID":    rawIncident.CommanderUserID,
 			"EndAt":              rawIncident.EndAt,
 			"DeleteAt":           rawIncident.DeleteAt,
-			"ActiveStage":        rawIncident.ActiveStage,
-			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
 			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
 			"ReminderPostID":     rawIncident.ReminderPostID,
 			"PreviousReminder":   rawIncident.PreviousReminder,
