@@ -1916,7 +1916,7 @@ func (ib *IncidentBuilder) WithChannel(channel *model.Channel) *IncidentBuilder 
 	ib.i.ChannelID = channel.Id
 
 	// Consider the incident name as authoritative.
-	channel.Name = ib.i.Name
+	channel.DisplayName = ib.i.Name
 
 	return ib
 }

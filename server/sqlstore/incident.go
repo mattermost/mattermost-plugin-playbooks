@@ -43,11 +43,12 @@ type incidentStatusPosts []struct {
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
-		Select("i.ID", "i.Name", "i.Description", "i.IsActive", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
+		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.IsActive", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.ActiveStage", "i.ActiveStageTitle", "i.PostID", "i.PlaybookID",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate").
-		From("IR_Incident AS i")
+		From("IR_Incident AS i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
 	statusPostsSelect := sqlStore.builder.
 		Select("sp.IncidentID", "sp.PostID").
@@ -81,6 +82,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident AS i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where(permissionsExpr).
 		Where(sq.Eq{"i.TeamID": options.TeamID}).
 		Where(sq.Eq{"i.DeleteAt": 0})
@@ -113,13 +115,13 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		column := "Name"
+		column := "c.DisplayName"
 		searchString := options.SearchTerm
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-			column = "LOWER(i.Name)"
+			column = "LOWER(c.DisplayName)"
 			searchString = strings.ToLower(options.SearchTerm)
 		}
 
@@ -275,7 +277,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":               rawIncident.Name,
+			"Name":               "",
 			"Description":        rawIncident.Description,
 			"IsActive":           rawIncident.IsActive,
 			"CommanderUserID":    rawIncident.CommanderUserID,

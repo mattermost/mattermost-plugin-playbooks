@@ -133,3 +133,22 @@ export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispa
         }
     };
 };
+
+export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: Dispatch) => {
+    return async (msg: WebSocketMessage<{channel: string}>) => {
+        const channel = JSON.parse(msg.data.channel);
+
+        // Ignore updates to non-incident channels.
+        const activeIncidents = myIncidentsMap(getState());
+        if (!activeIncidents[channel.id]) {
+            return;
+        }
+
+        // Fetch the updated incident, since some metadata (like incident name) comes directly
+        // from the channel, and the plugin cannot detect channel update events for itself.
+        const incident = await fetchIncidentByChannel(channel.id);
+        if (incident) {
+            dispatch(incidentUpdated(incident));
+        }
+    };
+};
