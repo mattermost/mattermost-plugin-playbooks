@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -448,19 +449,23 @@ func addUsersToChannels(t *testing.T, store *SQLStore, users []userInfo, channel
 	require.NoError(t, err)
 }
 
-func makeChannelsPublicOrPrivate(t *testing.T, store *SQLStore, channelIDs []string, makePublic bool) {
+func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	t.Helper()
 
-	channelType := "P"
-	if makePublic {
-		channelType = "O"
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "Name", "Type")
+
+	for _, channel := range channels {
+		insertBuilder = insertBuilder.Values(channel.Id, channel.Name, channel.Type)
 	}
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "Type")
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
 
-	for _, c := range channelIDs {
-		insertBuilder = insertBuilder.Values(c, channelType)
-	}
+func createIncidentChannel(t testing.TB, store *SQLStore, i *incident.Incident) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "Name").Values(i.ChannelID, i.Name)
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)
