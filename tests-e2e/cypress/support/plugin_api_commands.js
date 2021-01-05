@@ -144,7 +144,7 @@ Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDesc
         const returnedIncidents = JSON.parse(response.body);
         const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
-        assert.isTrue(incident.is_active);
+        assert.equal(incident.end_at, 0);
         assert.equal(incident.name, incidentName);
 
         // Only check the description if provided. The server may supply a default depending
@@ -161,7 +161,7 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
         const returnedIncidents = JSON.parse(response.body);
         const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
-        assert.isFalse(incident.is_active);
+        assert.notEqual(incident.end_at, 0);
     });
 });
 

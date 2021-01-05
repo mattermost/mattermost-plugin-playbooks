@@ -409,13 +409,13 @@ func (r *Runner) actionList() {
 		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
 	}
 
-	options := incident.HeaderFilterOptions{
+	options := incident.FilterOptions{
 		TeamID:    r.args.TeamId,
 		MemberID:  r.args.UserId,
 		PerPage:   10,
 		Sort:      incident.SortByCreateAt,
 		Direction: incident.DirectionDesc,
-		Status:    incident.Ongoing,
+		Status:    incident.StatusActive,
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
@@ -535,35 +535,7 @@ func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentCha
 }
 
 func (r *Runner) actionEnd() {
-	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
-			r.postCommandResponse("You can only end an incident from within the incident's channel.")
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	err = r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
-
-	switch {
-	case errors.Is(err, incident.ErrIncidentNotActive):
-		r.postCommandResponse("This incident has already been closed.")
-		return
-	case err != nil:
-		r.warnUserAndLogErrorf("Error: %v", err)
-		return
-	}
+	r.actionUpdate()
 }
 
 func (r *Runner) actionUpdate() {
@@ -598,38 +570,7 @@ func (r *Runner) actionUpdate() {
 }
 
 func (r *Runner) actionRestart() {
-	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
-			r.postCommandResponse("You can only restart an incident from within the incident's channel.")
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	err = r.incidentService.RestartIncident(incidentID, r.args.UserId)
-
-	switch {
-	case errors.Is(err, incident.ErrNotFound):
-		r.postCommandResponse("This channel is not associated with an incident.")
-		return
-	case errors.Is(err, incident.ErrIncidentActive):
-		r.postCommandResponse("This incident is already active.")
-		return
-	case err != nil:
-		r.warnUserAndLogErrorf("Error: %v", err)
-		return
-	}
+	r.actionUpdate()
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1187,7 +1128,10 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 	}
 
 	for i := 0; i < numEndedIncidents; i++ {
-		err := r.incidentService.EndIncident(incidents[i].ID, r.args.UserId)
+		err := r.incidentService.UpdateStatus(incidents[i].ID, r.args.UserId, incident.StatusUpdateOptions{
+			Status:  incident.StatusArchived,
+			Message: "This is now archived.",
+		})
 		if err != nil {
 			r.warnUserAndLogErrorf("Error ending the incident: %v", err)
 			return

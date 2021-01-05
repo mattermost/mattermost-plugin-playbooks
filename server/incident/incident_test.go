@@ -15,3 +15,202 @@ func TestIncident_MarshalJSON(t *testing.T) {
 	// Add your new nullable thing to one of the MarshalJSONs in incident/incident.go
 	require.NotContains(t, string(result), "null")
 }
+
+func TestIncident_CurrentStatus(t *testing.T) {
+	for name, tc := range map[string]struct {
+		inc      Incident
+		expected string
+	}{
+		"blank": {
+			inc: Incident{
+				StatusPosts: []StatusPost{},
+			},
+			expected: StatusReported,
+		},
+		"just active": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusActive,
+					},
+				},
+			},
+			expected: StatusActive,
+		},
+		"resolved": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 1,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 2,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: StatusResolved,
+		},
+		"resolved deleted": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 1,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 1,
+						CreateAt: 2,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: StatusActive,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.Equal(t, tc.expected, tc.inc.CurrentStatus())
+		})
+	}
+}
+
+func TestIncident_LastResovedAt(t *testing.T) {
+	for name, tc := range map[string]struct {
+		inc      Incident
+		expected int64
+	}{
+		"blank": {
+			inc: Incident{
+				StatusPosts: []StatusPost{},
+			},
+			expected: 0,
+		},
+		"just active": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusActive,
+					},
+				},
+			},
+			expected: 0,
+		},
+		"resolved": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 123,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: 123,
+		},
+		"resolved delted": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 23,
+						CreateAt: 123,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: 0,
+		},
+		"multiple resolution": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 123,
+						Status:   StatusResolved,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 456,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: 123,
+		},
+		"multiple resolution with break": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 123,
+						Status:   StatusResolved,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 223,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 456,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: 456,
+		},
+		"resolution but has active afterwards": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusActive,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 123,
+						Status:   StatusResolved,
+					},
+					{
+						DeleteAt: 0,
+						CreateAt: 223,
+						Status:   StatusActive,
+					},
+				},
+			},
+			expected: 0,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.Equal(t, tc.expected, tc.inc.LastResolvedAt())
+		})
+	}
+}

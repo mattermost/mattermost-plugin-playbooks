@@ -253,7 +253,6 @@ describe('slash command > test', () => {
 
                         // * Verify that the incident is active.
                         assert.isDefined(incident);
-                        assert.isTrue(incident.is_active);
 
                         // * Verify that the creation timestamp is correct.
                         assert.equal('2020-01-01', moment(incident.create_at).format('YYYY-MM-DD'));
