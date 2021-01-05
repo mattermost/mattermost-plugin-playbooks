@@ -355,7 +355,7 @@ describe('slash command > test', () => {
                     cy.executeSlashCommand('/incident test bulk-data 2 0 2020-01-01 2020-10-01 42');
 
                     // * Verify that the ephemeral message informs that the generation was successful.
-                    cy.verifyEphemeralMessage('The test data was successfully generated:');
+                    cy.verifyEphemeralMessage('The test data was successfully generated:', false, true);
 
                     // * Verify the number of created incidents is correct.
                     cy.getLastPostId().then((lastPostId) => {
@@ -370,7 +370,7 @@ describe('slash command > test', () => {
                     cy.executeSlashCommand('/incident test bulk-data 0 2 2020-01-01 2020-10-01 42');
 
                     // * Verify that the ephemeral message informs that the generation was successful.
-                    cy.verifyEphemeralMessage('The test data was successfully generated:');
+                    cy.verifyEphemeralMessage('The test data was successfully generated:', false, true);
 
                     // * Verify the number of created incidents is correct.
                     cy.getLastPostId().then((lastPostId) => {
@@ -385,7 +385,7 @@ describe('slash command > test', () => {
                     cy.executeSlashCommand('/incident test bulk-data 2 2 2020-01-01 2020-10-01 42');
 
                     // * Verify that the ephemeral message informs that the generation was successful
-                    cy.verifyEphemeralMessage('The test data was successfully generated:');
+                    cy.verifyEphemeralMessage('The test data was successfully generated:', false, true);
 
                     // * Verify the number of created incidents is correct.
                     cy.getLastPostId().then((lastPostId) => {
