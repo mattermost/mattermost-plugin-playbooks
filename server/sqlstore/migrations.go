@@ -335,17 +335,4 @@ var migrations = []Migration{
 			return nil
 		},
 	},
-	{
-		fromVersion: semver.MustParse("0.5.0"),
-		toVersion:   semver.MustParse("0.6.0"),
-		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if err := dropColumn(e, "IR_Incident", "ActiveStage"); err != nil {
-				return err
-			}
-			if err := dropColumn(e, "IR_Incident", "ActiveStageTitle"); err != nil {
-				return err
-			}
-			return nil
-		},
-	},
 }
