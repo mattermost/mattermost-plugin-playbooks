@@ -163,6 +163,9 @@ describe('slash command > test', () => {
                 // # Login as sysadmin.
                 cy.apiLogin('sysadmin');
 
+                // # Size the viewport to show the RHS without covering posts.
+                cy.viewport('macbook-13');
+
                 // # Navigate to a channel.
                 cy.visit('/ad-1/channels/town-square');
             });
