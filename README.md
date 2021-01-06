@@ -4,7 +4,7 @@
 [![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-incident-management/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-incident-management)
 [![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-incident-management)](https://github.com/mattermost/mattermost-plugin-incident-management/releases/latest)
 
-Mattermost Incident Management allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://mattermost.gitbook.io/mattermost-incident-management/).
+ Mattermost Incident Management allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html). 
 
 ![Mattermost Incident Management](docs/assets/incident_response_landing.png)
 
