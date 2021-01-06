@@ -91,8 +91,14 @@ export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispa
         const currentUserId = getCurrentUserId(getState());
         const currentTeamId = getCurrentTeamId(getState());
         if (currentUserId === msg.data.user_id && currentTeamId === msg.data.team_id) {
-            const incident = await fetchIncidentByChannel(msg.broadcast.channel_id);
-            dispatch(receivedTeamIncidents([incident]));
+            try {
+                const incident = await fetchIncidentByChannel(msg.broadcast.channel_id);
+                dispatch(receivedTeamIncidents([incident]));
+            } catch (error) {
+                if (error.status_code !== 404) {
+                    throw error;
+                }
+            }
         }
     };
 }
