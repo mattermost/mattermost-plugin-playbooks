@@ -136,7 +136,7 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 	ReturnJSON(w, &newIncident, http.StatusCreated)
 }
 
- // Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status. 
+// Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status.
 func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]

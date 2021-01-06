@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/pkg/errors"
 )
 
 // 'IF NOT EXISTS' syntax is not supported in Postgres 9.4, so we need
@@ -54,26 +52,4 @@ var addColumnToMySQLTable = func(e sqlx.Ext, tableName, columnName, columnType s
 	}
 
 	return err
-}
-
-func dropColumn(e sqlx.Ext, tableName, columnName string) error {
-	if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-		var result int
-		err := e.QueryRowx(
-			"SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
-			tableName,
-			columnName,
-		).Scan(&result)
-		if err == nil {
-			if _, err := e.Exec(fmt.Sprintf(`ALTER TABLE %s DROP COLUMN %s`, tableName, columnName)); err != nil {
-				return errors.Wrapf(err, "failed to drop column %s", columnName)
-			}
-		}
-	} else {
-		if _, err := e.Exec(fmt.Sprintf(`ALTER TABLE %s DROP COLUMN IF EXISTS %s`, tableName, columnName)); err != nil {
-			return errors.Wrapf(err, "failed to drop column %s", columnName)
-		}
-	}
-
-	return nil
 }
