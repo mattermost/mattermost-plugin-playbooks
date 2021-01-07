@@ -5,15 +5,14 @@ import React, {FC} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
-import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
-import {useCurrentIncident} from 'src/hooks';
-import {currentRHSState} from 'src/selectors';
+import {currentIncident, currentRHSState} from 'src/selectors';
 import StatusBadge from 'src/components/backstage/incidents/status_badge';
+import {Incident} from 'src/types/incident';
 
 const RHSTitleContainer = styled.div`
     display: flex;
@@ -37,7 +36,7 @@ const Button = styled.button`
 
 const RHSTitle: FC = () => {
     const dispatch = useDispatch();
-    const [incident] = useCurrentIncident();
+    const incident = useSelector<GlobalState, Incident | undefined>(currentIncident);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
 
     if (rhsState === RHSState.ViewingIncident) {

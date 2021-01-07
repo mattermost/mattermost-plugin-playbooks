@@ -17,7 +17,18 @@ import (
 // NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
 // that column needs to be added in the sqlstore code.
 type Incident struct {
-	Header
+	ID                      string               `json:"id"`
+	Name                    string               `json:"name"`
+	Description             string               `json:"description"`
+	IsActive                bool                 `json:"is_active"`
+	CommanderUserID         string               `json:"commander_user_id"`
+	TeamID                  string               `json:"team_id"`
+	ChannelID               string               `json:"channel_id"`
+	CreateAt                int64                `json:"create_at"`
+	EndAt                   int64                `json:"end_at"`
+	DeleteAt                int64                `json:"delete_at"`
+	ActiveStage             int                  `json:"active_stage"`
+	ActiveStageTitle        string               `json:"active_stage_title"`
 	PostID                  string               `json:"post_id"`
 	PlaybookID              string               `json:"playbook_id"`
 	Checklists              []playbook.Checklist `json:"checklists"`
@@ -69,20 +80,6 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(old)
-}
-
-// Header holds the summary information of an incident.
-type Header struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	IsActive        bool   `json:"is_active"`
-	CommanderUserID string `json:"commander_user_id"`
-	TeamID          string `json:"team_id"`
-	ChannelID       string `json:"channel_id"`
-	CreateAt        int64  `json:"create_at"`
-	EndAt           int64  `json:"end_at"`
-	DeleteAt        int64  `json:"delete_at"`
 }
 
 // StatusPost is information added to the incident when selecting from the db and sent to the

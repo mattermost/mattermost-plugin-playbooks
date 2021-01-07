@@ -796,11 +796,9 @@ And... yes, of course, we have emojis
 	}
 
 	createdIncident, err := r.incidentService.CreateIncident(&incident.Incident{
-		Header: incident.Header{
-			Name:            "Cloud Incident 4739",
-			TeamID:          r.args.TeamId,
-			CommanderUserID: r.args.UserId,
-		},
+		Name:               "Cloud Incident 4739",
+		TeamID:             r.args.TeamId,
+		CommanderUserID:    r.args.UserId,
 		PlaybookID:         gotplaybook.ID,
 		Checklists:         gotplaybook.Checklists,
 		BroadcastChannelID: gotplaybook.BroadcastChannelID,
@@ -924,13 +922,11 @@ func (r *Runner) actionTestCreate(params []string) {
 	incidentName := strings.Join(params[2:], " ")
 
 	theIncident := &incident.Incident{
-		Header: incident.Header{
-			Name:            incidentName,
-			CommanderUserID: r.args.UserId,
-			TeamID:          r.args.TeamId,
-		},
-		PlaybookID: playbookID,
-		Checklists: thePlaybook.Checklists,
+		Name:            incidentName,
+		CommanderUserID: r.args.UserId,
+		TeamID:          r.args.TeamId,
+		PlaybookID:      playbookID,
+		Checklists:      thePlaybook.Checklists,
 	}
 
 	newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
@@ -1155,13 +1151,11 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		}
 
 		theIncident := &incident.Incident{
-			Header: incident.Header{
-				Name:            incidentName,
-				CommanderUserID: r.args.UserId,
-				TeamID:          r.args.TeamId,
-			},
-			PlaybookID: thePlaybook.ID,
-			Checklists: thePlaybook.Checklists,
+			Name:            incidentName,
+			CommanderUserID: r.args.UserId,
+			TeamID:          r.args.TeamId,
+			PlaybookID:      thePlaybook.ID,
+			Checklists:      thePlaybook.Checklists,
 		}
 
 		newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)

@@ -37,6 +37,15 @@ export const inIncidentChannel = createSelector(
     },
 );
 
+export const currentIncident = createSelector(
+    getCurrentTeamId,
+    getCurrentChannelId,
+    myIncidentsByTeam,
+    (teamId, channelId, incidentMapByTeam) => {
+        return incidentMapByTeam[teamId]?.[channelId];
+    },
+);
+
 export const myActiveIncidentsList = createSelector(
     getCurrentTeamId,
     myIncidentsByTeam,

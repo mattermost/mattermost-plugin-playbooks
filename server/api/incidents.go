@@ -194,14 +194,12 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	payloadIncident := incident.Incident{
-		Header: incident.Header{
-			CommanderUserID: request.UserId,
-			TeamID:          request.TeamId,
-			Name:            name,
-			Description:     description,
-		},
-		PostID:     state.PostID,
-		PlaybookID: playbookID,
+		CommanderUserID: request.UserId,
+		TeamID:          request.TeamId,
+		Name:            name,
+		Description:     description,
+		PostID:          state.PostID,
+		PlaybookID:      playbookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
