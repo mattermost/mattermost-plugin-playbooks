@@ -10,8 +10,22 @@ import './server_api_commands';
 import './ui_commands';
 import './plugin_ui_commands';
 import './api/preference';
+import './api/user';
 
 require('cypress-terminal-report/src/installLogsCollector')();
+
+before(() => {
+    // Disable the tutorial, cloud onboarding, and whats new modal for specific users.
+    const userNames = ['sysadmin', 'user-1', 'user-2'];
+
+    cy.apiAdminLogin().then(() => {
+        cy.apiGetUsersByUsernames(userNames).then(({users}) => users.forEach((user) => {
+            cy.apiSaveTutorialStep(user.id, '999');
+            cy.apiSaveCloudOnboardingPreference(user.id, 'hide', 'true');
+            cy.apiHideSidebarWhatsNewModalPreference(user.id, 'true');
+        }));
+    });
+});
 
 // Add login cookies to whitelist to preserve it
 beforeEach(() => {

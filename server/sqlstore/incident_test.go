@@ -19,106 +19,72 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	team1id = model.NewId()
-	team2id = model.NewId()
-	team3id = model.NewId()
+func TestGetIncidents(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
 
-	commander1 = incident.CommanderInfo{
+	commander1 := incident.CommanderInfo{
 		UserID:   model.NewId(),
 		Username: "Commander 1",
 	}
-	commander2 = incident.CommanderInfo{
+	commander2 := incident.CommanderInfo{
 		UserID:   model.NewId(),
 		Username: "Commander 2",
 	}
-	commander3 = incident.CommanderInfo{
+	commander3 := incident.CommanderInfo{
 		UserID:   model.NewId(),
 		Username: "Commander 3",
 	}
-	commander4 = incident.CommanderInfo{
+	commander4 := incident.CommanderInfo{
 		UserID:   model.NewId(),
 		Username: "Commander 4",
 	}
 
-	commanders = []incident.CommanderInfo{commander1, commander2, commander3, commander4}
-
-	lucy = userInfo{
+	lucy := userInfo{
 		ID:   model.NewId(),
 		Name: "Lucy",
 	}
 
-	bob = userInfo{
+	bob := userInfo{
 		ID:   model.NewId(),
 		Name: "bob",
 	}
 
-	john = userInfo{
+	john := userInfo{
 		ID:   model.NewId(),
 		Name: "john",
 	}
 
-	jane = userInfo{
+	jane := userInfo{
 		ID:   model.NewId(),
 		Name: "jane",
 	}
 
-	alice = userInfo{
+	alice := userInfo{
 		ID:   model.NewId(),
 		Name: "alice",
 	}
 
-	charlotte = userInfo{
+	charlotte := userInfo{
 		ID:   model.NewId(),
 		Name: "Charlotte",
 	}
 
-	channelID01 = model.NewId()
-	channelID02 = model.NewId()
-	channelID03 = model.NewId()
-	channelID04 = model.NewId()
-	channelID05 = model.NewId()
-	channelID06 = model.NewId()
-	channelID07 = model.NewId()
-	channelID08 = model.NewId()
-	channelID09 = model.NewId()
+	channel01 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel02 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel03 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel04 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel05 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel06 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel07 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel08 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel09 := model.Channel{Id: model.NewId(), Type: "P"}
 
-	post1 = &model.Post{
-		Id:       model.NewId(),
-		CreateAt: 10000000,
-		DeleteAt: 0,
-	}
-	post2 = &model.Post{
-		Id:       model.NewId(),
-		CreateAt: 20000000,
-		DeleteAt: 0,
-	}
-	post3 = &model.Post{
-		Id:       model.NewId(),
-		CreateAt: 30000000,
-		DeleteAt: 0,
-	}
-	post4 = &model.Post{
-		Id:       model.NewId(),
-		CreateAt: 40000000,
-		DeleteAt: 40300000,
-	}
-	post5 = &model.Post{
-		Id:       model.NewId(),
-		CreateAt: 40000001,
-		DeleteAt: 0,
-	}
-	post6 = &model.Post{
-		Id:       model.NewId(),
-		CreateAt: 40000002,
-		DeleteAt: 0,
-	}
-	allPosts = []*model.Post{post1, post2, post3, post4, post5, post6}
-
-	inc01 = *NewBuilder(nil).
+	inc01 := *NewBuilder(nil).
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
-		WithChannelID(channelID01). // public
+		WithChannel(&channel01). // public
 		WithIsActive(true).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
@@ -127,9 +93,9 @@ var (
 		WithChecklists([]int{8}).
 		ToIncident()
 
-	inc02 = *NewBuilder(nil).
-		WithName("incident 2 - horse staple battery aliens shotgun mouse shotputmouse").
-		WithChannelID(channelID02). // public
+	inc02 := *NewBuilder(nil).
+		WithName("incident 2 - horse staple battery aliens shotgun mouse shotput").
+		WithChannel(&channel02). // public
 		WithIsActive(true).
 		WithCommanderUserID(commander2.UserID).
 		WithTeamID(team1id).
@@ -138,9 +104,9 @@ var (
 		WithChecklists([]int{7}).
 		ToIncident()
 
-	inc03 = *NewBuilder(nil).
-		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
-		WithChannelID(channelID03). // public
+	inc03 := *NewBuilder(nil).
+		WithName("incident 3 - Horse stapler battery shotgun mouse shotput").
+		WithChannel(&channel03). // public
 		WithIsActive(false).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
@@ -149,9 +115,9 @@ var (
 		WithChecklists([]int{6}).
 		ToIncident()
 
-	inc04 = *NewBuilder(nil).
+	inc04 := *NewBuilder(nil).
 		WithName("incident 4 - titanic terminatoraliens").
-		WithChannelID(channelID04). // private
+		WithChannel(&channel04). // private
 		WithIsActive(false).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team1id).
@@ -160,9 +126,9 @@ var (
 		WithChecklists([]int{5}).
 		ToIncident()
 
-	inc05 = *NewBuilder(nil).
+	inc05 := *NewBuilder(nil).
 		WithName("incident 5 - titanic terminator aliens mouse").
-		WithChannelID(channelID05). // private
+		WithChannel(&channel05). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team1id).
@@ -171,9 +137,9 @@ var (
 		WithChecklists([]int{1}).
 		ToIncident()
 
-	inc06 = *NewBuilder(nil).
+	inc06 := *NewBuilder(nil).
 		WithName("incident 6 - ubik high castle electric sheep").
-		WithChannelID(channelID06). // public
+		WithChannel(&channel06). // public
 		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
@@ -182,9 +148,9 @@ var (
 		WithChecklists([]int{4}).
 		ToIncident()
 
-	inc07 = *NewBuilder(nil).
+	inc07 := *NewBuilder(nil).
 		WithName("incident 7 - ubik high castle electric sheep").
-		WithChannelID(channelID07). // private
+		WithChannel(&channel07). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
@@ -193,9 +159,9 @@ var (
 		WithChecklists([]int{4}).
 		ToIncident()
 
-	inc08 = *NewBuilder(nil).
+	inc08 := *NewBuilder(nil).
 		WithName("incident 8 - ziggürat!").
-		WithChannelID(channelID08). // private
+		WithChannel(&channel08). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
@@ -204,9 +170,9 @@ var (
 		WithChecklists([]int{3}).
 		ToIncident()
 
-	inc09 = *NewBuilder(nil).
+	inc09 := *NewBuilder(nil).
 		WithName("incident 9 - Ziggürat!").
-		WithChannelID(channelID09). // private
+		WithChannel(&channel09). // private
 		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
@@ -215,17 +181,15 @@ var (
 		WithChecklists([]int{2}).
 		ToIncident()
 
-	incidents = []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
-)
+	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 
-func TestGetIncidents(t *testing.T) {
-	createIncidents := func(store incident.Store) {
+	createIncidents := func(store *SQLStore, incidentStore incident.Store) {
 		t.Helper()
 
 		createdIncidents := make([]incident.Incident, len(incidents))
 
 		for i := range incidents {
-			createdIncident, err := store.CreateIncident(&incidents[i])
+			createdIncident, err := incidentStore.CreateIncident(&incidents[i])
 			require.NoError(t, err)
 
 			createdIncidents[i] = *createdIncident
@@ -874,11 +838,10 @@ func TestGetIncidents(t *testing.T) {
 		addUsers(t, store, []userInfo{lucy, bob, john, jane})
 		addUsersToTeam(t, store, []userInfo{alice, charlotte, john, jane}, team1id)
 		addUsersToTeam(t, store, []userInfo{charlotte}, team2id)
-		addUsersToChannels(t, store, []userInfo{bob}, []string{channelID01, channelID02, channelID03, channelID04, channelID05, channelID06, channelID07, channelID08, channelID09})
-		addUsersToChannels(t, store, []userInfo{john}, []string{channelID01, channelID02, channelID03})
-		addUsersToChannels(t, store, []userInfo{jane}, []string{channelID03, channelID04, channelID05})
-		makeChannelsPublicOrPrivate(t, store, []string{channelID01, channelID02, channelID03, channelID06}, true)
-		makeChannelsPublicOrPrivate(t, store, []string{channelID04, channelID05, channelID07, channelID08, channelID09}, false)
+		createChannels(t, store, []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06, channel07, channel08, channel09})
+		addUsersToChannels(t, store, []userInfo{bob}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel05.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
+		addUsersToChannels(t, store, []userInfo{john}, []string{channel01.Id, channel02.Id, channel03.Id})
+		addUsersToChannels(t, store, []userInfo{jane}, []string{channel03.Id, channel04.Id, channel05.Id})
 		makeAdmin(t, store, lucy)
 
 		t.Run("zero incidents", func(t *testing.T) {
@@ -898,7 +861,7 @@ func TestGetIncidents(t *testing.T) {
 			require.Empty(t, result.Items)
 		})
 
-		createIncidents(incidentStore)
+		createIncidents(store, incidentStore)
 
 		for _, testCase := range testData {
 			t.Run(driverName+" - "+testCase.Name, func(t *testing.T) {
@@ -929,7 +892,9 @@ func TestGetIncidents(t *testing.T) {
 func TestCreateAndGetIncident(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
+		_, store := setupSQLStore(t, db)
 		incidentStore := setupIncidentStore(t, db)
+		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 
 		validIncidents := []struct {
@@ -1019,6 +984,8 @@ func TestCreateAndGetIncident(t *testing.T) {
 				require.True(t, model.IsValidId(returned.ID))
 				expectedIncident.ID = returned.ID
 
+				createIncidentChannel(t, store, testCase.Incident)
+
 				actualIncident, err := incidentStore.GetIncident(expectedIncident.ID)
 				require.NoError(t, err)
 
@@ -1034,6 +1001,7 @@ func TestGetIncident(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		incidentStore := setupIncidentStore(t, db)
+		setupChannelsTable(t, db)
 
 		validIncidents := []struct {
 			Name        string
@@ -1065,11 +1033,44 @@ func TestGetIncident(t *testing.T) {
 }
 
 func TestUpdateIncident(t *testing.T) {
+	post1 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 10000000,
+		DeleteAt: 0,
+	}
+	post2 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 20000000,
+		DeleteAt: 0,
+	}
+	post3 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 30000000,
+		DeleteAt: 0,
+	}
+	post4 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 40000000,
+		DeleteAt: 40300000,
+	}
+	post5 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 40000001,
+		DeleteAt: 0,
+	}
+	post6 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 40000002,
+		DeleteAt: 0,
+	}
+	allPosts := []*model.Post{post1, post2, post3, post4, post5, post6}
+
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		incidentStore := setupIncidentStore(t, db)
 		_, store := setupSQLStore(t, db)
 
+		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 		savePosts(t, store, allPosts)
 
@@ -1177,6 +1178,8 @@ func TestUpdateIncident(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				returned, err := incidentStore.CreateIncident(testCase.Incident)
 				require.NoError(t, err)
+				createIncidentChannel(t, store, testCase.Incident)
+
 				expected := testCase.Update(*returned)
 
 				err = incidentStore.UpdateIncident(expected)
@@ -1212,6 +1215,7 @@ func TestStressTestGetIncidents(t *testing.T) {
 		incidentStore := setupIncidentStore(t, db)
 		_, store := setupSQLStore(t, db)
 
+		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 		teamID := model.NewId()
 		withPosts := createIncidentsAndPosts(t, store, incidentStore, numIncidents, postsPerIncident, teamID)
@@ -1229,7 +1233,7 @@ func TestStressTestGetIncidents(t *testing.T) {
 				})
 				require.NoError(t, err)
 				numRet := min(perPage, len(withPosts))
-				assert.Equal(t, numRet, len(returned.Items))
+				require.Equal(t, numRet, len(returned.Items))
 				for i := 0; i < numRet; i++ {
 					idx := p*perPage + i
 					assert.ElementsMatch(t, withPosts[idx].StatusPosts, returned.Items[i].StatusPosts)
@@ -1269,6 +1273,7 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 		incidentStore := setupIncidentStore(t, db)
 		_, store := setupSQLStore(t, db)
 
+		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 		teamID := model.NewId()
 		_ = createIncidentsAndPosts(t, store, incidentStore, numIncidents, postsPerIncident, teamID)
@@ -1319,6 +1324,8 @@ func createIncidentsAndPosts(t testing.TB, store *SQLStore, incidentStore incide
 		ret, err := incidentStore.CreateIncident(inc)
 		require.NoError(t, err)
 		incidentsSorted = append(incidentsSorted, *ret)
+
+		createIncidentChannel(t, store, inc)
 	}
 
 	return incidentsSorted
@@ -1340,7 +1347,9 @@ func newPost(deleted bool) *model.Post {
 func TestGetIncidentIDForChannel(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
+		_, store := setupSQLStore(t, db)
 		incidentStore := setupIncidentStore(t, db)
+		setupChannelsTable(t, db)
 
 		t.Run("retrieve existing incidentID", func(t *testing.T) {
 			incident1 := NewBuilder(t).ToIncident()
@@ -1348,8 +1357,11 @@ func TestGetIncidentIDForChannel(t *testing.T) {
 
 			returned1, err := incidentStore.CreateIncident(incident1)
 			require.NoError(t, err)
+			createIncidentChannel(t, store, incident1)
+
 			returned2, err := incidentStore.CreateIncident(incident2)
 			require.NoError(t, err)
+			createIncidentChannel(t, store, incident2)
 
 			id1, err := incidentStore.GetIncidentIDForChannel(incident1.ChannelID)
 			require.NoError(t, err)
@@ -1369,6 +1381,163 @@ func TestGetIncidentIDForChannel(t *testing.T) {
 }
 
 func TestGetCommanders(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
+
+	commander1 := incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 1",
+	}
+	commander2 := incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 2",
+	}
+	commander3 := incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 3",
+	}
+	commander4 := incident.CommanderInfo{
+		UserID:   model.NewId(),
+		Username: "Commander 4",
+	}
+
+	commanders := []incident.CommanderInfo{commander1, commander2, commander3, commander4}
+
+	lucy := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucy",
+	}
+
+	bob := userInfo{
+		ID:   model.NewId(),
+		Name: "bob",
+	}
+
+	alice := userInfo{
+		ID:   model.NewId(),
+		Name: "alice",
+	}
+
+	charlotte := userInfo{
+		ID:   model.NewId(),
+		Name: "Charlotte",
+	}
+
+	channel01 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel02 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel03 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel04 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel05 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel06 := model.Channel{Id: model.NewId(), Type: "O"}
+	channel07 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel08 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel09 := model.Channel{Id: model.NewId(), Type: "P"}
+
+	channels := []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06, channel07, channel08, channel09}
+
+	inc01 := *NewBuilder(nil).
+		WithName("incident 1 - wheel cat aliens wheelbarrow").
+		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
+		WithChannel(&channel01). // public
+		WithIsActive(true).
+		WithCommanderUserID(commander1.UserID).
+		WithTeamID(team1id).
+		WithCreateAt(123).
+		WithEndAt(440).
+		WithChecklists([]int{8}).
+		ToIncident()
+
+	inc02 := *NewBuilder(nil).
+		WithName("incident 2 - horse staple battery aliens shotgun mouse shotputmouse").
+		WithChannel(&channel02). // public
+		WithIsActive(true).
+		WithCommanderUserID(commander2.UserID).
+		WithTeamID(team1id).
+		WithCreateAt(199).
+		WithEndAt(555).
+		WithChecklists([]int{7}).
+		ToIncident()
+
+	inc03 := *NewBuilder(nil).
+		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
+		WithChannel(&channel03). // public
+		WithIsActive(false).
+		WithCommanderUserID(commander1.UserID).
+		WithTeamID(team1id).
+		WithCreateAt(222).
+		WithEndAt(666).
+		WithChecklists([]int{6}).
+		ToIncident()
+
+	inc04 := *NewBuilder(nil).
+		WithName("incident 4 - titanic terminatoraliens").
+		WithChannel(&channel04). // private
+		WithIsActive(false).
+		WithCommanderUserID(commander3.UserID).
+		WithTeamID(team1id).
+		WithCreateAt(333).
+		WithEndAt(444).
+		WithChecklists([]int{5}).
+		ToIncident()
+
+	inc05 := *NewBuilder(nil).
+		WithName("incident 5 - titanic terminator aliens mouse").
+		WithChannel(&channel05). // private
+		WithIsActive(true).
+		WithCommanderUserID(commander3.UserID).
+		WithTeamID(team1id).
+		WithCreateAt(400).
+		WithEndAt(500).
+		WithChecklists([]int{1}).
+		ToIncident()
+
+	inc06 := *NewBuilder(nil).
+		WithName("incident 6 - ubik high castle electric sheep").
+		WithChannel(&channel06). // public
+		WithIsActive(true).
+		WithCommanderUserID(commander3.UserID).
+		WithTeamID(team2id).
+		WithCreateAt(444).
+		WithEndAt(550).
+		WithChecklists([]int{4}).
+		ToIncident()
+
+	inc07 := *NewBuilder(nil).
+		WithName("incident 7 - ubik high castle electric sheep").
+		WithChannel(&channel07). // private
+		WithIsActive(true).
+		WithCommanderUserID(commander3.UserID).
+		WithTeamID(team2id).
+		WithCreateAt(555).
+		WithEndAt(660).
+		WithChecklists([]int{4}).
+		ToIncident()
+
+	inc08 := *NewBuilder(nil).
+		WithName("incident 8 - ziggürat!").
+		WithChannel(&channel08). // private
+		WithIsActive(true).
+		WithCommanderUserID(commander4.UserID).
+		WithTeamID(team3id).
+		WithCreateAt(555).
+		WithEndAt(777).
+		WithChecklists([]int{3}).
+		ToIncident()
+
+	inc09 := *NewBuilder(nil).
+		WithName("incident 9 - Ziggürat!").
+		WithChannel(&channel09). // private
+		WithIsActive(true).
+		WithCommanderUserID(commander4.UserID).
+		WithTeamID(team3id).
+		WithCreateAt(556).
+		WithEndAt(778).
+		WithChecklists([]int{2}).
+		ToIncident()
+
+	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
+
 	cases := []struct {
 		Name          string
 		RequesterInfo incident.RequesterInfo
@@ -1461,9 +1630,7 @@ func TestGetCommanders(t *testing.T) {
 		makeAdmin(t, store, lucy)
 		addUsersToTeam(t, store, []userInfo{alice, charlotte}, team1id)
 		addUsersToTeam(t, store, []userInfo{charlotte}, team2id)
-		addUsersToChannels(t, store, []userInfo{bob}, []string{channelID01, channelID02, channelID03, channelID04, channelID05, channelID06, channelID07, channelID08, channelID09})
-		makeChannelsPublicOrPrivate(t, store, []string{channelID01, channelID02, channelID03, channelID06}, true)
-		makeChannelsPublicOrPrivate(t, store, []string{channelID04, channelID05, channelID07, channelID08, channelID09}, false)
+		addUsersToChannels(t, store, []userInfo{bob}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel05.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
 
 		queryBuilder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
 		if driverName == model.DATABASE_DRIVER_POSTGRES {
@@ -1485,6 +1652,8 @@ func TestGetCommanders(t *testing.T) {
 			require.NoError(t, err)
 		}
 
+		createChannels(t, store, channels)
+
 		for _, testCase := range cases {
 			t.Run(testCase.Name, func(t *testing.T) {
 				actual, actualErr := incidentStore.GetCommanders(testCase.RequesterInfo, testCase.Options)
@@ -1505,10 +1674,23 @@ func TestGetCommanders(t *testing.T) {
 }
 
 func TestNukeDB(t *testing.T) {
+	team1id := model.NewId()
+
+	alice := userInfo{
+		ID:   model.NewId(),
+		Name: "alice",
+	}
+
+	bob := userInfo{
+		ID:   model.NewId(),
+		Name: "bob",
+	}
+
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		_, store := setupSQLStore(t, db)
 
+		setupChannelsTable(t, db)
 		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 
@@ -1520,6 +1702,7 @@ func TestNukeDB(t *testing.T) {
 				newIncident := NewBuilder(t).ToIncident()
 				_, err := incidentStore.CreateIncident(newIncident)
 				require.NoError(t, err)
+				createIncidentChannel(t, store, newIncident)
 			}
 
 			var rows int64
@@ -1729,8 +1912,11 @@ func (ib *IncidentBuilder) WithIsActive(isActive bool) *IncidentBuilder {
 	return ib
 }
 
-func (ib *IncidentBuilder) WithChannelID(id string) *IncidentBuilder {
-	ib.i.ChannelID = id
+func (ib *IncidentBuilder) WithChannel(channel *model.Channel) *IncidentBuilder {
+	ib.i.ChannelID = channel.Id
+
+	// Consider the incident name as authoritative.
+	channel.DisplayName = ib.i.Name
 
 	return ib
 }
