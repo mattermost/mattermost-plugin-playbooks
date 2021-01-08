@@ -99,7 +99,7 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode, needsToS
     if (needsToScroll) {
         // # Scroll the ephemeral message into view
         cy.get('#postListContent').within(() => {
-            cy.get('.post-list__dynamic').scrollTo('bottom');
+            cy.get('.post-list__dynamic').scrollTo('bottom', {ensureScrollable: false});
         });
     }
 
