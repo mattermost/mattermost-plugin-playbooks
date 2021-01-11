@@ -24,7 +24,7 @@ describe('slash command > test', () => {
         cy.apiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
-                cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then((admin) => {
+                cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then(({user: admin}) => {
                     cy.apiCreatePlaybook({
                         teamId: team.id,
                         title: playbookName,
