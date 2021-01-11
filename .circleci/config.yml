@@ -217,7 +217,7 @@ jobs:
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
     environment:
-      MM_DOCKER_IMAGE_TAG: 5.30.1
+      MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
       PULL_REQUEST:
       BROWSER: chrome
