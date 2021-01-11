@@ -29,8 +29,37 @@ func multipleUserInfo(n int) []userInfo {
 	return list
 }
 
-var (
-	pb01 = NewPBBuilder().
+func TestGetPlaybook(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
+
+	jon := userInfo{
+		ID:   model.NewId(),
+		Name: "jon",
+	}
+
+	andrew := userInfo{
+		ID:   model.NewId(),
+		Name: "Andrew",
+	}
+
+	matt := userInfo{
+		ID:   model.NewId(),
+		Name: "Matt",
+	}
+
+	lucia := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucía",
+	}
+
+	desmond := userInfo{
+		ID:   model.NewId(),
+		Name: "Desmond",
+	}
+
+	pb01 := NewPBBuilder().
 		WithTitle("playbook 1").
 		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
 		WithTeamID(team1id).
@@ -39,7 +68,7 @@ var (
 		WithMembers([]userInfo{jon, andrew, matt}).
 		ToPlaybook()
 
-	pb02 = NewPBBuilder().
+	pb02 := NewPBBuilder().
 		WithTitle("playbook 2").
 		WithTeamID(team1id).
 		WithCreateAt(600).
@@ -48,7 +77,7 @@ var (
 		WithMembers([]userInfo{andrew, matt}).
 		ToPlaybook()
 
-	pb03 = NewPBBuilder().
+	pb03 := NewPBBuilder().
 		WithTitle("playbook 3").
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
@@ -56,7 +85,7 @@ var (
 		WithMembers([]userInfo{jon, matt, lucia}).
 		ToPlaybook()
 
-	pb04 = NewPBBuilder().
+	pb04 := NewPBBuilder().
 		WithTitle("playbook 4").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithTeamID(team1id).
@@ -65,7 +94,7 @@ var (
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
 
-	pb05 = NewPBBuilder().
+	pb05 := NewPBBuilder().
 		WithTitle("playbook 5").
 		WithTeamID(team2id).
 		WithCreateAt(1000).
@@ -73,7 +102,7 @@ var (
 		WithMembers([]userInfo{jon, andrew}).
 		ToPlaybook()
 
-	pb06 = NewPBBuilder().
+	pb06 := NewPBBuilder().
 		WithTitle("playbook 6").
 		WithTeamID(team2id).
 		WithCreateAt(1100).
@@ -81,7 +110,7 @@ var (
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
 
-	pb07 = NewPBBuilder().
+	pb07 := NewPBBuilder().
 		WithTitle("playbook 7").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
@@ -89,7 +118,7 @@ var (
 		WithMembers([]userInfo{andrew}).
 		ToPlaybook()
 
-	pb08 = NewPBBuilder().
+	pb08 := NewPBBuilder().
 		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
 		WithTeamID(team3id).
 		WithCreateAt(1300).
@@ -97,47 +126,8 @@ var (
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
 
-	pb = []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
+	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
 
-	jon = userInfo{
-		ID:   model.NewId(),
-		Name: "jon",
-	}
-
-	andrew = userInfo{
-		ID:   model.NewId(),
-		Name: "Andrew",
-	}
-
-	matt = userInfo{
-		ID:   model.NewId(),
-		Name: "Matt",
-	}
-
-	lucia = userInfo{
-		ID:   model.NewId(),
-		Name: "Lucía",
-	}
-
-	bill = userInfo{
-		ID:   model.NewId(),
-		Name: "Bill",
-	}
-
-	jen = userInfo{
-		ID:   model.NewId(),
-		Name: "Jen",
-	}
-
-	desmond = userInfo{
-		ID:   model.NewId(),
-		Name: "Desmond",
-	}
-
-	users = []userInfo{jon, andrew, matt, lucia, bill, jen, desmond}
-)
-
-func TestGetPlaybook(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookStore := setupPlaybookStore(t, db)
@@ -210,6 +200,104 @@ func TestGetPlaybook(t *testing.T) {
 }
 
 func TestGetPlaybooks(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
+
+	jon := userInfo{
+		ID:   model.NewId(),
+		Name: "jon",
+	}
+
+	andrew := userInfo{
+		ID:   model.NewId(),
+		Name: "Andrew",
+	}
+
+	matt := userInfo{
+		ID:   model.NewId(),
+		Name: "Matt",
+	}
+
+	lucia := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucía",
+	}
+
+	desmond := userInfo{
+		ID:   model.NewId(),
+		Name: "Desmond",
+	}
+
+	pb01 := NewPBBuilder().
+		WithTitle("playbook 1").
+		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
+		WithTeamID(team1id).
+		WithCreateAt(500).
+		WithChecklists([]int{1, 2}).
+		WithMembers([]userInfo{jon, andrew, matt}).
+		ToPlaybook()
+
+	pb02 := NewPBBuilder().
+		WithTitle("playbook 2").
+		WithTeamID(team1id).
+		WithCreateAt(600).
+		WithCreatePublic(true).
+		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
+		WithMembers([]userInfo{andrew, matt}).
+		ToPlaybook()
+
+	pb03 := NewPBBuilder().
+		WithTitle("playbook 3").
+		WithTeamID(team1id).
+		WithChecklists([]int{1, 2, 3}).
+		WithCreateAt(700).
+		WithMembers([]userInfo{jon, matt, lucia}).
+		ToPlaybook()
+
+	pb04 := NewPBBuilder().
+		WithTitle("playbook 4").
+		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
+		WithTeamID(team1id).
+		WithCreateAt(800).
+		WithChecklists([]int{20}).
+		WithMembers([]userInfo{matt}).
+		ToPlaybook()
+
+	pb05 := NewPBBuilder().
+		WithTitle("playbook 5").
+		WithTeamID(team2id).
+		WithCreateAt(1000).
+		WithChecklists([]int{1}).
+		WithMembers([]userInfo{jon, andrew}).
+		ToPlaybook()
+
+	pb06 := NewPBBuilder().
+		WithTitle("playbook 6").
+		WithTeamID(team2id).
+		WithCreateAt(1100).
+		WithChecklists([]int{1, 2, 3}).
+		WithMembers([]userInfo{matt}).
+		ToPlaybook()
+
+	pb07 := NewPBBuilder().
+		WithTitle("playbook 7").
+		WithTeamID(team3id).
+		WithCreateAt(1200).
+		WithChecklists([]int{1}).
+		WithMembers([]userInfo{andrew}).
+		ToPlaybook()
+
+	pb08 := NewPBBuilder().
+		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
+		WithTeamID(team3id).
+		WithCreateAt(1300).
+		WithChecklists([]int{1}).
+		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
+		ToPlaybook()
+
+	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
+
 	tests := []struct {
 		name        string
 		expected    []playbook.Playbook
@@ -288,6 +376,121 @@ func TestGetPlaybooks(t *testing.T) {
 }
 
 func TestGetPlaybooksForTeam(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
+
+	lucy := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucy",
+	}
+
+	jon := userInfo{
+		ID:   model.NewId(),
+		Name: "jon",
+	}
+
+	andrew := userInfo{
+		ID:   model.NewId(),
+		Name: "Andrew",
+	}
+
+	matt := userInfo{
+		ID:   model.NewId(),
+		Name: "Matt",
+	}
+
+	lucia := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucía",
+	}
+
+	bill := userInfo{
+		ID:   model.NewId(),
+		Name: "Bill",
+	}
+
+	jen := userInfo{
+		ID:   model.NewId(),
+		Name: "Jen",
+	}
+
+	desmond := userInfo{
+		ID:   model.NewId(),
+		Name: "Desmond",
+	}
+
+	users := []userInfo{jon, andrew, matt, lucia, bill, jen, desmond}
+
+	pb01 := NewPBBuilder().
+		WithTitle("playbook 1").
+		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
+		WithTeamID(team1id).
+		WithCreateAt(500).
+		WithChecklists([]int{1, 2}).
+		WithMembers([]userInfo{jon, andrew, matt}).
+		ToPlaybook()
+
+	pb02 := NewPBBuilder().
+		WithTitle("playbook 2").
+		WithTeamID(team1id).
+		WithCreateAt(600).
+		WithCreatePublic(true).
+		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
+		WithMembers([]userInfo{andrew, matt}).
+		ToPlaybook()
+
+	pb03 := NewPBBuilder().
+		WithTitle("playbook 3").
+		WithTeamID(team1id).
+		WithChecklists([]int{1, 2, 3}).
+		WithCreateAt(700).
+		WithMembers([]userInfo{jon, matt, lucia}).
+		ToPlaybook()
+
+	pb04 := NewPBBuilder().
+		WithTitle("playbook 4").
+		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
+		WithTeamID(team1id).
+		WithCreateAt(800).
+		WithChecklists([]int{20}).
+		WithMembers([]userInfo{matt}).
+		ToPlaybook()
+
+	pb05 := NewPBBuilder().
+		WithTitle("playbook 5").
+		WithTeamID(team2id).
+		WithCreateAt(1000).
+		WithChecklists([]int{1}).
+		WithMembers([]userInfo{jon, andrew}).
+		ToPlaybook()
+
+	pb06 := NewPBBuilder().
+		WithTitle("playbook 6").
+		WithTeamID(team2id).
+		WithCreateAt(1100).
+		WithChecklists([]int{1, 2, 3}).
+		WithMembers([]userInfo{matt}).
+		ToPlaybook()
+
+	pb07 := NewPBBuilder().
+		WithTitle("playbook 7").
+		WithTeamID(team3id).
+		WithCreateAt(1200).
+		WithChecklists([]int{1}).
+		WithMembers([]userInfo{andrew}).
+		ToPlaybook()
+
+	pb08 := NewPBBuilder().
+		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
+		WithTeamID(team3id).
+		WithCreateAt(1300).
+		WithChecklists([]int{1}).
+		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
+		ToPlaybook()
+
+	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
+
 	createPlaybooks := func(store playbook.Store) {
 		t.Helper()
 
@@ -703,6 +906,41 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 }
 
 func TestUpdatePlaybook(t *testing.T) {
+	bob := userInfo{
+		ID:   model.NewId(),
+		Name: "bob",
+	}
+
+	alice := userInfo{
+		ID:   model.NewId(),
+		Name: "alice",
+	}
+
+	jon := userInfo{
+		ID:   model.NewId(),
+		Name: "jon",
+	}
+
+	andrew := userInfo{
+		ID:   model.NewId(),
+		Name: "Andrew",
+	}
+
+	matt := userInfo{
+		ID:   model.NewId(),
+		Name: "Matt",
+	}
+
+	bill := userInfo{
+		ID:   model.NewId(),
+		Name: "Bill",
+	}
+
+	jen := userInfo{
+		ID:   model.NewId(),
+		Name: "Jen",
+	}
+
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookStore := setupPlaybookStore(t, db)
@@ -874,6 +1112,27 @@ func TestUpdatePlaybook(t *testing.T) {
 }
 
 func TestDeletePlaybook(t *testing.T) {
+	team1id := model.NewId()
+
+	andrew := userInfo{
+		ID:   model.NewId(),
+		Name: "Andrew",
+	}
+
+	matt := userInfo{
+		ID:   model.NewId(),
+		Name: "Matt",
+	}
+
+	pb02 := NewPBBuilder().
+		WithTitle("playbook 2").
+		WithTeamID(team1id).
+		WithCreateAt(600).
+		WithCreatePublic(true).
+		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
+		WithMembers([]userInfo{andrew, matt}).
+		ToPlaybook()
+
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookStore := setupPlaybookStore(t, db)

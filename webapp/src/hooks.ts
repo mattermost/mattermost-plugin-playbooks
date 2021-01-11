@@ -1,17 +1,11 @@
 import {useEffect, useState, MutableRefObject, useRef} from 'react';
 import {useSelector} from 'react-redux';
 
-import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-
-import {fetchIncidentByChannel} from 'src/client';
-import {websocketSubscribersToIncidentUpdate} from 'src/websocket_events';
-import {Incident} from 'src/types/incident';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -23,48 +17,6 @@ export enum IncidentFetchState {
     Loading,
     NotFound,
     Loaded,
-}
-
-export function useCurrentIncident(): [Incident | null, IncidentFetchState] {
-    const currentChannel = useSelector<GlobalState, Channel>(getCurrentChannel);
-    const [incident, setIncident] = useState<Incident | null>(null);
-    const [state, setState] = useState<IncidentFetchState>(IncidentFetchState.Loading);
-
-    const currentChannelId = currentChannel?.id;
-    useEffect(() => {
-        const fetchIncident = async () => {
-            if (!currentChannelId) {
-                setIncident(null);
-                return;
-            }
-
-            try {
-                setIncident(await fetchIncidentByChannel(currentChannelId));
-                setState(IncidentFetchState.Loaded);
-            } catch (err) {
-                if (err.status_code === 404) {
-                    setIncident(null);
-                    setState(IncidentFetchState.NotFound);
-                }
-            }
-        };
-        setState(IncidentFetchState.Loading);
-        fetchIncident();
-    }, [currentChannelId]);
-
-    useEffect(() => {
-        const doUpdate = (updatedIncident: Incident) => {
-            if (incident !== null && updatedIncident.id === incident.id) {
-                setIncident(updatedIncident);
-            }
-        };
-        websocketSubscribersToIncidentUpdate.add(doUpdate);
-        return () => {
-            websocketSubscribersToIncidentUpdate.delete(doUpdate);
-        };
-    }, [incident]);
-
-    return [incident, state];
 }
 
 /**

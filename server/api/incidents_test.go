@@ -74,12 +74,10 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: dialogRequest.UserId,
-				TeamID:          dialogRequest.TeamId,
-				Name:            "incidentName",
-			},
-			PlaybookID: "playbookid1",
+			CommanderUserID: dialogRequest.UserId,
+			TeamID:          dialogRequest.TeamId,
+			Name:            "incidentName",
+			PlaybookID:      "playbookid1",
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -129,14 +127,12 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: dialogRequest.UserId,
-				TeamID:          dialogRequest.TeamId,
-				Name:            "incidentName",
-				Description:     "description",
-			},
-			PlaybookID: withid.ID,
-			Checklists: withid.Checklists,
+			CommanderUserID: dialogRequest.UserId,
+			TeamID:          dialogRequest.TeamId,
+			Name:            "incidentName",
+			Description:     "description",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -185,13 +181,11 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: dialogRequest.UserId,
-				TeamID:          dialogRequest.TeamId,
-				Name:            "incidentName",
-			},
-			PlaybookID: withid.ID,
-			Checklists: withid.Checklists,
+			CommanderUserID: dialogRequest.UserId,
+			TeamID:          dialogRequest.TeamId,
+			Name:            "incidentName",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -249,13 +243,11 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: dialogRequest.UserId,
-				TeamID:          dialogRequest.TeamId,
-				Name:            "incidentName",
-			},
-			PlaybookID: withid.ID,
-			Checklists: withid.Checklists,
+			CommanderUserID: dialogRequest.UserId,
+			TeamID:          dialogRequest.TeamId,
+			Name:            "incidentName",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -313,13 +305,11 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: dialogRequest.UserId,
-				TeamID:          dialogRequest.TeamId,
-				Name:            "incidentName",
-			},
-			PlaybookID: withid.ID,
-			Checklists: withid.Checklists,
+			CommanderUserID: dialogRequest.UserId,
+			TeamID:          dialogRequest.TeamId,
+			Name:            "incidentName",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -472,13 +462,11 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-			},
-			PlaybookID: withid.ID,
-			Checklists: withid.Checklists,
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
 		}
 
 		playbookService.EXPECT().
@@ -521,11 +509,9 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-			},
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
 		}
 
 		retI := testIncident
@@ -563,10 +549,8 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				TeamID: "testTeamID",
-				Name:   "incidentName",
-			},
+			TeamID: "testTeamID",
+			Name:   "incidentName",
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
@@ -591,10 +575,8 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				CommanderUserID: "testUserID",
-				Name:            "incidentName",
-			},
+			CommanderUserID: "testUserID",
+			Name:            "incidentName",
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
@@ -617,11 +599,9 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				TeamID:    "testTeamID",
-				Name:      "incidentName",
-				ChannelID: "channelID",
-			},
+			TeamID:    "testTeamID",
+			Name:      "incidentName",
+			ChannelID: "channelID",
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
@@ -644,20 +624,16 @@ func TestIncidents(t *testing.T) {
 	t.Run("get incident by channel id", func(t *testing.T) {
 		reset()
 
-		testIncidentHeader := incident.Header{
+		testIncident := incident.Incident{
 			ID:              "incidentID",
 			CommanderUserID: "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
 			ActiveStage:     incident.NoActiveStage,
-		}
-
-		testIncident := incident.Incident{
-			Header:        testIncidentHeader,
-			Checklists:    []playbook.Checklist{},
-			StatusPostIDs: []string{},
-			StatusPosts:   []incident.StatusPost{},
+			Checklists:      []playbook.Checklist{},
+			StatusPostIDs:   []string{},
+			StatusPosts:     []incident.StatusPost{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -668,7 +644,7 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().GetIncident("incidentID").Return(&testIncident, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncidentHeader.ChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -687,7 +663,7 @@ func TestIncidents(t *testing.T) {
 		reset()
 		userID := "testUserID"
 
-		testIncidentHeader := incident.Header{
+		testIncident := incident.Incident{
 			ID:              "incidentID",
 			CommanderUserID: "testUserID",
 			TeamID:          "testTeamID",
@@ -700,10 +676,10 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
 		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("", incident.ErrNotFound)
-		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncidentHeader.ChannelID)
+		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncident.ChannelID)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncidentHeader.ChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", userID)
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -716,7 +692,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("get incident by channel id - not authorized", func(t *testing.T) {
 		reset()
 
-		testIncidentHeader := incident.Header{
+		testIncident := incident.Incident{
 			ID:              "incidentID",
 			CommanderUserID: "testUserID",
 			TeamID:          "testTeamID",
@@ -727,13 +703,13 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		incidentService.EXPECT().GetIncidentIDForChannel(testIncidentHeader.ChannelID).Return(testIncidentHeader.ID, nil)
-		incidentService.EXPECT().GetIncident(testIncidentHeader.ID).Return(&incident.Incident{Header: testIncidentHeader}, nil)
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncidentHeader.ChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -747,17 +723,15 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:     "",
-			PlaybookID: "",
-			Checklists: nil,
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      nil,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -787,19 +761,17 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:        "",
-			PlaybookID:    "",
-			Checklists:    []playbook.Checklist{},
-			StatusPostIDs: []string{},
-			StatusPosts:   []incident.StatusPost{},
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      []playbook.Checklist{},
+			StatusPostIDs:   []string{},
+			StatusPosts:     []incident.StatusPost{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -834,17 +806,15 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:     "",
-			PlaybookID: "",
-			Checklists: nil,
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      nil,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -876,19 +846,17 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:        "",
-			PlaybookID:    "",
-			Checklists:    []playbook.Checklist{},
-			StatusPostIDs: []string{},
-			StatusPosts:   []incident.StatusPost{},
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      []playbook.Checklist{},
+			StatusPostIDs:   []string{},
+			StatusPosts:     []incident.StatusPost{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -925,19 +893,17 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:        "",
-			PlaybookID:    "",
-			Checklists:    []playbook.Checklist{},
-			StatusPostIDs: []string{},
-			StatusPosts:   []incident.StatusPost{},
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      []playbook.Checklist{},
+			StatusPostIDs:   []string{},
+			StatusPosts:     []incident.StatusPost{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -972,17 +938,15 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:     "",
-			PlaybookID: "",
-			Checklists: nil,
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      nil,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1012,17 +976,15 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:     "",
-			PlaybookID: "",
-			Checklists: []playbook.Checklist{},
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      []playbook.Checklist{},
 		}
 
 		testIncidentMetadata := incident.Metadata{
@@ -1069,17 +1031,15 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:     "",
-			PlaybookID: "",
-			Checklists: nil,
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      nil,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1111,17 +1071,15 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			PostID:     "",
-			PlaybookID: "",
-			Checklists: []playbook.Checklist{},
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			ActiveStage:     incident.NoActiveStage,
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      []playbook.Checklist{},
 		}
 
 		testIncidentMetadata := incident.Metadata{
@@ -1170,16 +1128,14 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		testIncident := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID",
-				CommanderUserID: "testUserID",
-				TeamID:          "testTeamID",
-				Name:            "incidentName",
-				ChannelID:       "channelID",
-			},
-			PostID:     "",
-			PlaybookID: "",
-			Checklists: []playbook.Checklist{},
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+			PostID:          "",
+			PlaybookID:      "",
+			Checklists:      []playbook.Checklist{},
 		}
 
 		testIncidentMetadata := incident.Metadata{
@@ -1226,17 +1182,15 @@ func TestIncidents(t *testing.T) {
 		reset()
 
 		incident1 := incident.Incident{
-			Header: incident.Header{
-				ID:              "incidentID1",
-				CommanderUserID: "testUserID1",
-				TeamID:          "testTeamID1",
-				Name:            "incidentName1",
-				ChannelID:       "channelID1",
-				ActiveStage:     incident.NoActiveStage,
-			},
-			Checklists:    []playbook.Checklist{},
-			StatusPostIDs: []string{},
-			StatusPosts:   []incident.StatusPost{},
+			ID:              "incidentID1",
+			CommanderUserID: "testUserID1",
+			TeamID:          "testTeamID1",
+			Name:            "incidentName1",
+			ChannelID:       "channelID1",
+			ActiveStage:     incident.NoActiveStage,
+			Checklists:      []playbook.Checklist{},
+			StatusPostIDs:   []string{},
+			StatusPosts:     []incident.StatusPost{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -1291,7 +1245,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {
 		reset()
 
-		testIncidentHeader := incident.Header{
+		testIncident := incident.Incident{
 			ID:              "incidentID",
 			CommanderUserID: "testUserID",
 			TeamID:          "testTeamID",
@@ -1300,14 +1254,14 @@ func TestIncidents(t *testing.T) {
 			ActiveStage:     incident.NoActiveStage,
 		}
 
-		incidentService.EXPECT().GetIncidentIDForChannel(testIncidentHeader.ChannelID).Return(testIncidentHeader.ID, nil)
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		incidentService.EXPECT().GetIncident(testIncidentHeader.ID).Return(&incident.Incident{Header: testIncidentHeader}, nil)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/checklist-autocomplete?channel_id="+testIncidentHeader.ChannelID, nil)
+		testreq, err := http.NewRequest("GET", "/api/v0/incidents/checklist-autocomplete?channel_id="+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
@@ -1344,13 +1298,7 @@ func TestChangeActiveStage(t *testing.T) {
 		return &n
 	}
 
-	header := incident.Header{
-		ID:              "incidentid",
-		CommanderUserID: "userid",
-		TeamID:          "teamid",
-		Name:            "incidentName",
-		ActiveStage:     0,
-	}
+	testID := "incidentid"
 
 	playbookWithChecklists := func(num int) *playbook.Playbook {
 		checklists := make([]playbook.Checklist, num)
@@ -1381,11 +1329,15 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to a valid active stage",
 			oldIncident: incident.Incident{
-				Header:        header,
-				PlaybookID:    playbookWithChecklists(2).ID,
-				Checklists:    playbookWithChecklists(2).Checklists,
-				StatusPostIDs: []string{},
-				StatusPosts:   []incident.StatusPost{},
+				ID:              testID,
+				CommanderUserID: "userid",
+				TeamID:          "teamid",
+				Name:            "incidentName",
+				ActiveStage:     0,
+				PlaybookID:      playbookWithChecklists(2).ID,
+				Checklists:      playbookWithChecklists(2).Checklists,
+				StatusPostIDs:   []string{},
+				StatusPosts:     []incident.StatusPost{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(1)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1398,11 +1350,15 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to the same active stage",
 			oldIncident: incident.Incident{
-				Header:        header,
-				PlaybookID:    playbookWithChecklists(2).ID,
-				Checklists:    playbookWithChecklists(2).Checklists,
-				StatusPostIDs: []string{},
-				StatusPosts:   []incident.StatusPost{},
+				ID:              testID,
+				CommanderUserID: "userid",
+				TeamID:          "teamid",
+				Name:            "incidentName",
+				ActiveStage:     0,
+				PlaybookID:      playbookWithChecklists(2).ID,
+				Checklists:      playbookWithChecklists(2).Checklists,
+				StatusPostIDs:   []string{},
+				StatusPosts:     []incident.StatusPost{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(0)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
@@ -1414,33 +1370,41 @@ func TestChangeActiveStage(t *testing.T) {
 		{
 			testName: "change to an invalid stage",
 			oldIncident: incident.Incident{
-				Header:        header,
-				PlaybookID:    playbookWithChecklists(1).ID,
-				Checklists:    playbookWithChecklists(1).Checklists,
-				StatusPostIDs: []string{},
-				StatusPosts:   []incident.StatusPost{},
+				ID:              testID,
+				CommanderUserID: "userid",
+				TeamID:          "teamid",
+				Name:            "incidentName",
+				ActiveStage:     0,
+				PlaybookID:      playbookWithChecklists(1).ID,
+				Checklists:      playbookWithChecklists(1).Checklists,
+				StatusPostIDs:   []string{},
+				StatusPosts:     []incident.StatusPost{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: pInt(10)},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
 				return &old
 			},
-			changeActiveStageErr: errors.Errorf("index %d out of bounds: incident %s has %d stages", 10, header.ID, 1),
+			changeActiveStageErr: errors.Errorf("index %d out of bounds: incident %s has %d stages", 10, testID, 1),
 			expectedStatus:       http.StatusInternalServerError,
 		},
 		{
 			testName: "change with nil update value",
 			oldIncident: incident.Incident{
-				Header:        header,
-				PlaybookID:    playbookWithChecklists(1).ID,
-				Checklists:    playbookWithChecklists(1).Checklists,
-				StatusPostIDs: []string{},
-				StatusPosts:   []incident.StatusPost{},
+				ID:              testID,
+				CommanderUserID: "userid",
+				TeamID:          "teamid",
+				Name:            "incidentName",
+				ActiveStage:     0,
+				PlaybookID:      playbookWithChecklists(1).ID,
+				Checklists:      playbookWithChecklists(1).Checklists,
+				StatusPostIDs:   []string{},
+				StatusPosts:     []incident.StatusPost{},
 			},
 			updateOptions: incident.UpdateOptions{ActiveStage: nil},
 			getExpectedIncident: func(old incident.Incident) *incident.Incident {
 				return &old
 			},
-			changeActiveStageErr: errors.Errorf("index %d out of bounds: incident %s has %d stages", 10, header.ID, 1),
+			changeActiveStageErr: errors.Errorf("index %d out of bounds: incident %s has %d stages", 10, testID, 1),
 			expectedStatus:       http.StatusOK,
 		},
 	}
@@ -1574,10 +1538,8 @@ func TestEndIncident(t *testing.T) {
 					channelID := model.NewId()
 
 					incdnt := incident.Incident{
-						Header: incident.Header{
-							ID:        incidentID,
-							ChannelID: channelID,
-						},
+						ID:        incidentID,
+						ChannelID: channelID,
 					}
 
 					recorder := httptest.NewRecorder()
