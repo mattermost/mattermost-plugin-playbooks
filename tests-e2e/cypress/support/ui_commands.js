@@ -95,7 +95,14 @@ Cypress.Commands.add('verifyPostedMessage', (message) => {
 
 // verifyEphemeralMessage verifies the receipt of an ephemeral message containing the given
 // message substring. An exact match is avoided to simplify tests.
-Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
+Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode, needsToScroll) => {
+    if (needsToScroll) {
+        // # Scroll the ephemeral message into view
+        cy.get('#postListContent').within(() => {
+            cy.get('.post-list__dynamic').scrollTo('bottom', {ensureScrollable: false});
+        });
+    }
+
     // # Checking if we got the ephemeral message with the selection we made
     cy.wait(TIMEOUTS.TINY).getLastPostId().then((postId) => {
         cy.get(`#post_${postId}`).within(() => {

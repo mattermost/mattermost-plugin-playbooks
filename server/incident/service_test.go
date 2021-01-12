@@ -36,10 +36,8 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:   "###",
-				TeamID: teamID,
-			},
+			Name:   "###",
+			TeamID: teamID,
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -64,10 +62,8 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:   "###",
-				TeamID: teamID,
-			},
+			Name:   "###",
+			TeamID: teamID,
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -92,11 +88,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:            "###",
-				TeamID:          teamID,
-				CommanderUserID: "user_id",
-			},
+			Name:            "###",
+			TeamID:          teamID,
+			CommanderUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -138,11 +132,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:            "###",
-				TeamID:          teamID,
-				CommanderUserID: "user_id",
-			},
+			Name:            "###",
+			TeamID:          teamID,
+			CommanderUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -174,16 +166,14 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			},
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API) {
 				testIncident := incident.Incident{
-					Header: incident.Header{
-						ID:              "incidentID",
-						CommanderUserID: "testUserID",
-						TeamID:          "testTeamID",
-						Name:            "incidentName",
-						ChannelID:       "channelID",
-						IsActive:        false,
-					},
-					PostID:     "",
-					Checklists: nil,
+					ID:              "incidentID",
+					CommanderUserID: "testUserID",
+					TeamID:          "testTeamID",
+					Name:            "incidentName",
+					ChannelID:       "channelID",
+					IsActive:        false,
+					PostID:          "",
+					Checklists:      nil,
 				}
 
 				store.EXPECT().
@@ -220,16 +210,14 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			},
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API) {
 				testIncident := incident.Incident{
-					Header: incident.Header{
-						ID:              "incidentID",
-						CommanderUserID: "testUserID",
-						TeamID:          "testTeamID",
-						Name:            "incidentName",
-						ChannelID:       "channelID",
-						IsActive:        true,
-					},
-					PostID:     "",
-					Checklists: nil,
+					ID:              "incidentID",
+					CommanderUserID: "testUserID",
+					TeamID:          "testTeamID",
+					Name:            "incidentName",
+					ChannelID:       "channelID",
+					IsActive:        true,
+					PostID:          "",
+					Checklists:      nil,
 				}
 
 				store.EXPECT().
@@ -265,17 +253,15 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 
 func TestChangeActiveStage(t *testing.T) {
 	testIncident := incident.Incident{
-		Header: incident.Header{
-			ID:               "incidentID",
-			CommanderUserID:  "testUserID",
-			TeamID:           "testTeamID",
-			Name:             "incidentName",
-			ChannelID:        "channelID",
-			IsActive:         true,
-			ActiveStage:      0,
-			ActiveStageTitle: "Stage 2",
-		},
-		PostID: "",
+		ID:               "incidentID",
+		CommanderUserID:  "testUserID",
+		TeamID:           "testTeamID",
+		Name:             "incidentName",
+		ChannelID:        "channelID",
+		IsActive:         true,
+		ActiveStage:      0,
+		ActiveStageTitle: "Stage 2",
+		PostID:           "",
 		Checklists: []playbook.Checklist{
 			{Title: "Stage 1"},
 			{Title: "Stage 2"},
@@ -527,18 +513,16 @@ func TestEndIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				ID:     model.NewId(),
-				Name:   "###",
-				TeamID: teamID,
-			},
+			ID:     model.NewId(),
+			Name:   "###",
+			TeamID: teamID,
 		}
 
-		store.EXPECT().GetIncident(incdnt.Header.ID).Return(nil, errors.New("error"))
+		store.EXPECT().GetIncident(incdnt.ID).Return(nil, errors.New("error"))
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		err := s.EndIncident(incdnt.Header.ID, "testUserID")
+		err := s.EndIncident(incdnt.ID, "testUserID")
 		require.Error(t, err)
 	})
 
@@ -555,18 +539,16 @@ func TestEndIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				ID:     model.NewId(),
-				Name:   "###",
-				TeamID: teamID,
-			},
+			ID:     model.NewId(),
+			Name:   "###",
+			TeamID: teamID,
 		}
 
-		store.EXPECT().GetIncident(incdnt.Header.ID).Return(nil, nil)
+		store.EXPECT().GetIncident(incdnt.ID).Return(nil, nil)
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		err := s.EndIncident(incdnt.Header.ID, "testUserID")
+		err := s.EndIncident(incdnt.ID, "testUserID")
 		require.Error(t, err)
 	})
 
@@ -583,19 +565,17 @@ func TestEndIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				ID:       model.NewId(),
-				Name:     "###",
-				TeamID:   teamID,
-				IsActive: false,
-			},
+			ID:       model.NewId(),
+			Name:     "###",
+			TeamID:   teamID,
+			IsActive: false,
 		}
 
-		store.EXPECT().GetIncident(incdnt.Header.ID).Return(incdnt, nil)
+		store.EXPECT().GetIncident(incdnt.ID).Return(incdnt, nil)
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		err := s.EndIncident(incdnt.Header.ID, "testUserID")
+		err := s.EndIncident(incdnt.ID, "testUserID")
 		require.Equal(t, incident.ErrIncidentNotActive, err)
 	})
 
@@ -612,26 +592,24 @@ func TestEndIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				ID:        model.NewId(),
-				Name:      "###",
-				TeamID:    teamID,
-				IsActive:  true,
-				ChannelID: "channel_id",
-			},
+			ID:             model.NewId(),
+			Name:           "###",
+			TeamID:         teamID,
+			IsActive:       true,
+			ChannelID:      "channel_id",
 			ReminderPostID: "",
 		}
 
-		store.EXPECT().GetIncident(incdnt.Header.ID).Return(incdnt, nil)
+		store.EXPECT().GetIncident(incdnt.ID).Return(incdnt, nil)
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
-		scheduler.EXPECT().Cancel(incdnt.Header.ID)
+		scheduler.EXPECT().Cancel(incdnt.ID)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 		poster.EXPECT().PostMessage("channel_id", "This incident has been closed by @%v", "username")
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		err := s.EndIncident(incdnt.Header.ID, "user_id")
+		err := s.EndIncident(incdnt.ID, "user_id")
 		require.NoError(t, err)
 	})
 
@@ -648,20 +626,18 @@ func TestEndIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				ID:        model.NewId(),
-				Name:      "###",
-				TeamID:    teamID,
-				IsActive:  true,
-				ChannelID: "channel_id",
-			},
+			ID:             model.NewId(),
+			Name:           "###",
+			TeamID:         teamID,
+			IsActive:       true,
+			ChannelID:      "channel_id",
 			ReminderPostID: "post_id",
 		}
 
-		store.EXPECT().GetIncident(incdnt.Header.ID).Return(incdnt, nil)
+		store.EXPECT().GetIncident(incdnt.ID).Return(incdnt, nil)
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
-		scheduler.EXPECT().Cancel(incdnt.Header.ID)
+		scheduler.EXPECT().Cancel(incdnt.ID)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 		pluginAPI.On("GetPost", "post_id").Return(&model.Post{Id: "post_id"}, nil)
 		pluginAPI.On("DeletePost", "post_id").Return(nil)
@@ -670,7 +646,7 @@ func TestEndIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		err := s.EndIncident(incdnt.Header.ID, "user_id")
+		err := s.EndIncident(incdnt.ID, "user_id")
 		require.NoError(t, err)
 	})
 }
