@@ -2,7 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
 
 import {Footer, StyledFooterButton} from 'src/components/rhs/rhs_shared';
 import {updateStatus} from 'src/actions';
@@ -10,7 +12,10 @@ import {updateStatus} from 'src/actions';
 const RHSFooterSummary = () => {
     const dispatch = useDispatch();
 
-    return (
+    // Check if the channel is archived and if so disable the button
+    const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
+
+    return !isChannelArchived && (
         <Footer id='incidentRHSFooter'>
             <StyledFooterButton
                 primary={false}
