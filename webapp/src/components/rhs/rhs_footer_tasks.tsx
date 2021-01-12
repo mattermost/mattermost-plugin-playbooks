@@ -2,7 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React, {FC} from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
 
 import {Checklist, ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {endIncident, nextStage, prevStage, restartIncident} from 'src/actions';
@@ -21,6 +23,11 @@ interface NextStageButtonProps {
 }
 
 const NextStageButton: FC<NextStageButtonProps> = (props: NextStageButtonProps) => {
+    const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
+    if (isChannelArchived) {
+        return null;
+    }
+
     let text;
     let action;
     let primary;
@@ -89,7 +96,7 @@ const RHSFooterTasks = (props: Props) => {
 
     const dotMenu = (
         <DotMenu
-            icon={<HamburgerButton/>}
+            icon={<HamburgerButton />}
             top={true}
         >
             {dotMenuChildren}

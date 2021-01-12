@@ -13,6 +13,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
+import { isCurrentChannelArchived } from 'mattermost-redux/selectors/entities/channels';
 
 interface Option {
     value: string;
@@ -45,6 +46,11 @@ export default function ProfileSelector(props: Props) {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
 
     const [isOpen, setOpen] = useState(false);
+
+    const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
+    if (isChannelArchived) {
+        return null;
+    }
     const toggleOpen = () => {
         if (!isOpen) {
             fetchUsers();

@@ -12,7 +12,6 @@ import {updateStatus} from 'src/actions';
 const RHSFooterSummary = () => {
     const dispatch = useDispatch();
 
-    // Check if the channel is archived and if so disable the button
     const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
 
     return !isChannelArchived && (
