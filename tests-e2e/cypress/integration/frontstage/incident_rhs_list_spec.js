@@ -883,7 +883,8 @@ describe('rhs incident list', () => {
             });
         });
 
-        it('incident should be removed from list when the user closes incident and presses back button', () => {
+        /* TEMP disable, to be restored with alternate incident close method.
+         * it('incident should be removed from list when the user closes incident and presses back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -937,7 +938,7 @@ describe('rhs incident list', () => {
                 // * Verify we cannot see the ended incident
                 cy.findByText(incidentName).should('not.exist');
             });
-        });
+        });*/
 
         it('incident should be removed from list when another user closes incident', () => {
             // # Navigate directly to a non-incident channel

@@ -113,7 +113,6 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		require.Contains(t, properties, "CreateAt")
 		require.Contains(t, properties, "NumChecklists")
 		require.Contains(t, properties, "TotalChecklistItems")
-		require.Contains(t, properties, "ActiveStage")
 
 		return &incident.Incident{
 			ID:              properties["IncidentID"].(string),
@@ -309,7 +308,6 @@ func TestIncidentProperties(t *testing.T) {
 		"PostID":              dummyIncident.PostID,
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
-		"ActiveStage":         dummyIncident.ActiveStage,
 	}
 
 	require.Equal(t, expectedProperties, properties)

@@ -74,10 +74,6 @@ func (t *NoopTelemetry) DeletePlaybook(playbook.Playbook, string) {
 func (t *NoopTelemetry) ChangeCommander(*incident.Incident, string) {
 }
 
-// ChangeStage does nothing
-func (t *NoopTelemetry) ChangeStage(*incident.Incident, string) {
-}
-
 // RunTaskSlashCommand does nothing
 func (t *NoopTelemetry) RunTaskSlashCommand(string, string) {
 }

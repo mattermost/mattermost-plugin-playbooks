@@ -77,7 +77,7 @@ export function emptyPlaybook(): Playbook {
 
 export function emptyChecklist(): Checklist {
     return {
-        title: 'Default Stage',
+        title: 'Default Checklist',
         items: [emptyChecklistItem()],
     };
 }

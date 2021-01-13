@@ -44,7 +44,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.IsActive", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.ActiveStage", "i.ActiveStageTitle", "i.PostID", "i.PlaybookID",
+			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate").
 		From("IR_Incident AS i").
@@ -189,8 +189,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	}, nil
 }
 
-// CreateIncident creates a new incident. It assumes that ActiveStage is correct
-// and that ActiveStageTitle is already synced.
+// CreateIncident creates a new incident.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
@@ -216,18 +215,19 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	_, err = s.store.execBuilder(tx, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":                      rawIncident.ID,
-			"Name":                    rawIncident.Name,
-			"Description":             rawIncident.Description,
-			"IsActive":                rawIncident.IsActive,
-			"CommanderUserID":         rawIncident.CommanderUserID,
-			"TeamID":                  rawIncident.TeamID,
-			"ChannelID":               rawIncident.ChannelID,
-			"CreateAt":                rawIncident.CreateAt,
-			"EndAt":                   rawIncident.EndAt,
-			"DeleteAt":                rawIncident.DeleteAt,
-			"ActiveStage":             rawIncident.ActiveStage,
-			"ActiveStageTitle":        rawIncident.ActiveStageTitle,
+			"ID":              rawIncident.ID,
+			"Name":            rawIncident.Name,
+			"Description":     rawIncident.Description,
+			"IsActive":        rawIncident.IsActive,
+			"CommanderUserID": rawIncident.CommanderUserID,
+			"TeamID":          rawIncident.TeamID,
+			"ChannelID":       rawIncident.ChannelID,
+			"CreateAt":        rawIncident.CreateAt,
+			"EndAt":           rawIncident.EndAt,
+			"DeleteAt":        rawIncident.DeleteAt,
+			// Preserved for backwards compatibility with v1.2
+			"ActiveStage":             0,
+			"ActiveStageTitle":        "",
 			"PostID":                  rawIncident.PostID,
 			"PlaybookID":              rawIncident.PlaybookID,
 			"ChecklistsJSON":          rawIncident.ChecklistsJSON,
@@ -252,8 +252,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	return incidentCopy, nil
 }
 
-// UpdateIncident updates an incident. It assumes that ActiveStage is correct
-// and that ActiveStageTitle is already synced.
+// UpdateIncident updates an incident.
 func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if newIncident == nil {
 		return errors.New("incident is nil")
@@ -283,8 +282,6 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"CommanderUserID":    rawIncident.CommanderUserID,
 			"EndAt":              rawIncident.EndAt,
 			"DeleteAt":           rawIncident.DeleteAt,
-			"ActiveStage":        rawIncident.ActiveStage,
-			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
 			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
 			"ReminderPostID":     rawIncident.ReminderPostID,
 			"PreviousReminder":   rawIncident.PreviousReminder,

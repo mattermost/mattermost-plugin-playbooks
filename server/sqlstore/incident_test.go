@@ -1788,7 +1788,6 @@ func NewBuilder(t testing.TB) *IncidentBuilder {
 			CreateAt:        model.GetMillis(),
 			EndAt:           0,
 			DeleteAt:        0,
-			ActiveStage:     0,
 			PostID:          model.NewId(),
 			PlaybookID:      model.NewId(),
 			Checklists:      nil,
@@ -1847,10 +1846,6 @@ func makeStatusPostByID(posts []*model.Post, id string) incident.StatusPost {
 }
 
 func (ib *IncidentBuilder) ToIncident() *incident.Incident {
-	if len(ib.i.Checklists) > 0 {
-		ib.i.ActiveStageTitle = ib.i.Checklists[ib.i.ActiveStage].Title
-	}
-
 	return ib.i
 }
 

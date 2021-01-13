@@ -27,7 +27,6 @@ const (
 	actionCreate          = "create"
 	actionEnd             = "end"
 	actionRestart         = "restart"
-	actionChangeStage     = "change_stage"
 	actionChangeCommander = "change_commander"
 	actionUpdateStatus    = "update_status"
 
@@ -113,7 +112,6 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 		"PlaybookID":          incdnt.PlaybookID,
 		"NumChecklists":       len(incdnt.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
-		"ActiveStage":         incdnt.ActiveStage,
 	}
 }
 
@@ -143,13 +141,6 @@ func (t *RudderTelemetry) RestartIncident(incdnt *incident.Incident, userID stri
 func (t *RudderTelemetry) ChangeCommander(incdnt *incident.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionChangeCommander
-	t.track(eventIncident, properties)
-}
-
-// ChangeStage tracks changes in stage
-func (t *RudderTelemetry) ChangeStage(incdnt *incident.Incident, userID string) {
-	properties := incidentProperties(incdnt, userID)
-	properties["Action"] = actionChangeStage
 	t.track(eventIncident, properties)
 }
 
