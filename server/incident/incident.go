@@ -28,6 +28,7 @@ type Incident struct {
 	Name                    string               `json:"name"` // Retrieved from incident channel
 	Description             string               `json:"description"`
 	CommanderUserID         string               `json:"commander_user_id"`
+	ReporterUserID          string               `json:"reporter_user_id"`
 	TeamID                  string               `json:"team_id"`
 	ChannelID               string               `json:"channel_id"`
 	CreateAt                int64                `json:"create_at"` // Retrieved from incident channel

@@ -38,7 +38,7 @@ interface Props {
     defaultValue?: string;
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
-    onSelectedChange: (userId?: string) => void;
+    onSelectedChange?: (userId?: string) => void;
     customControlProps?: any;
 }
 
@@ -142,7 +142,9 @@ export default function ProfileSelector(props: Props) {
         if (value?.userId === selected?.userId) {
             return;
         }
-        props.onSelectedChange(value?.userId);
+        if (props.onSelectedChange) {
+            props.onSelectedChange(value?.userId);
+        }
     };
 
     let target;
