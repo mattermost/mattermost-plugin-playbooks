@@ -29,6 +29,7 @@ interface ChecklistItemDetailsProps {
     itemNum: number;
     channelId: string;
     incidentId: string;
+    disabled?: boolean;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
 }
@@ -233,6 +234,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             >
                 <ChecklistItemButton
                     item={props.checklistItem}
+                    disabled={props.disabled}
                     onChange={(item: ChecklistItemState) => {
                         if (props.onChange) {
                             props.onChange(item);
@@ -430,6 +432,7 @@ export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistIt
 interface ChecklistItemButtonProps {
     onChange: (item: ChecklistItemState) => void;
     item: ChecklistItem;
+    disabled?: boolean,
 }
 
 const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemButtonProps) => {
@@ -439,7 +442,7 @@ const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemB
         <input
             className='checkbox'
             type='checkbox'
-            checked={isChecked}
+            disabled={props.disabled}
             onChange={() => {
                 if (isChecked) {
                     props.onChange(ChecklistItemState.Open);

@@ -11,9 +11,10 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import './profile_selector.scss';
+import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
+
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import { isCurrentChannelArchived } from 'mattermost-redux/selectors/entities/channels';
 
 interface Option {
     value: string;

@@ -2,9 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import Scrollbars from 'react-custom-scrollbars';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
 
 import {toggleRHS} from 'src/actions';
 import {Incident} from 'src/types/incident';
@@ -45,6 +48,8 @@ const RHSIncidentTasks = (props: Props) => {
     const activeChecklistIdx = props.incident.active_stage;
     const activeChecklist = checklists[activeChecklistIdx] || {title: '', items: []};
 
+    const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
+
     return (
         <>
             <Scrollbars
@@ -71,6 +76,7 @@ const RHSIncidentTasks = (props: Props) => {
                                     itemNum={index}
                                     channelId={props.incident.channel_id}
                                     incidentId={props.incident.id}
+                                    disabled={isChannelArchived}
                                     onChange={(newState: ChecklistItemState) => {
                                         setChecklistItemState(props.incident.id, activeChecklistIdx, index, newState);
                                     }}
