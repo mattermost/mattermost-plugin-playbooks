@@ -234,6 +234,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
+	previousStatus := incidentToModify.CurrentStatus()
 
 	post := model.Post{
 		Message:   options.Message,
@@ -264,6 +265,19 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		Status:     options.Status,
 	}); err != nil {
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
+	}
+
+	if options.Status == StatusArchived {
+		s.pluginAPI.Channel.Delete(incidentToModify.ChannelID)
+	} else if previousStatus == StatusArchived {
+		if channel, err := s.pluginAPI.Channel.Get(incidentToModify.ChannelID); err != nil {
+			s.pluginAPI.Log.Warn("failed to get channel when updating status", "err", err)
+		} else {
+			channel.DeleteAt = 0
+			if err := s.pluginAPI.Channel.Update(channel); err != nil {
+				s.pluginAPI.Log.Warn("failed to unarchive channel when updating status", "err", err)
+			}
+		}
 	}
 
 	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
