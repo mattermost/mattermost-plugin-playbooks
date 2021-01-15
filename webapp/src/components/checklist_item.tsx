@@ -442,6 +442,7 @@ const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemB
         <input
             className='checkbox'
             type='checkbox'
+            checked={isChecked}
             disabled={props.disabled}
             onChange={() => {
                 if (isChecked) {
