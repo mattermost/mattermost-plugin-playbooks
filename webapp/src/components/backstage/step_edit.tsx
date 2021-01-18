@@ -1,10 +1,10 @@
 import React, {FC, useState, useRef, useEffect} from 'react';
 
 import styled, {createGlobalStyle} from 'styled-components';
-import uniqueId from 'lodash/uniqueId';
 
 import {ChecklistItem} from 'src/types/playbook';
 import {TertiaryButton} from 'src/components/assets/buttons';
+import {uniqueId} from 'src/utils';
 
 import {StyledTextarea} from './styles';
 
