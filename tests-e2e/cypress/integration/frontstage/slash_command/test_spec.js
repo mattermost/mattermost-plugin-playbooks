@@ -228,36 +228,6 @@ describe('slash command > test', () => {
                     // * Verify the ephemeral message warns about the parameter.
                     cy.verifyEphemeralMessage('Timestamp \'2020-1-1\' could not be parsed as a date. If you want the incident to start on January 2, 2006, the timestamp should be \'2006-01-02\'.');
                 });
-
-                it('creates an incident with the correct date in the past', () => {
-                    const now = Date.now();
-                    const incidentName = 'Incident (' + now + ')';
-
-                    // # Execute the create-incident command with correct arguments.
-                    cy.executeSlashCommand('/incident test create-incident ' + playbookId + ' 2020-01-01 ' + incidentName);
-
-                    // * Verify the ephemeral message informs that the incident was created.
-                    cy.verifyEphemeralMessage('Incident successfully created: ~' + incidentName);
-
-                    // # Click on the link to the created incident.
-                    cy.getLastPostId().then((lastPostId) => {
-                        cy.get(`#post_${lastPostId}`).within(() => {
-                            cy.get('a').click();
-                        });
-                    });
-
-                    // # Retrieve the incident via API.
-                    cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
-                        const returnedIncidents = JSON.parse(response.body);
-                        const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
-
-                        // * Verify that the incident is active.
-                        assert.isDefined(incident);
-
-                        // * Verify that the creation timestamp is correct.
-                        assert.equal('2020-01-01', moment(incident.create_at).format('YYYY-MM-DD'));
-                    });
-                });
             });
         });
     });

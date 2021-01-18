@@ -136,16 +136,17 @@ Cypress.Commands.add('updateStatus', (message, reminder, status) => {
         // # Type the new update in the text box.
         cy.findByTestId('messageinput').type(message);
 
-        if (status === '') {
-            status = 'Reported';
+        let actualStatus = status;
+        if (!actualStatus) {
+            actualStatus = 'Reported';
         }
 
-        cy.findByTestId('autoCompleteSelector').eq(0).within(() => {
-            cy.get('input').type(reminder, {delay: 200}).type('{enter}');
+        cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
+            cy.get('input').type(actualStatus, {delay: 200}).type('{enter}');
         });
 
         if (reminder) {
-            cy.findByTestId('autoCompleteSelector').eq(1).within(() => {
+            cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                 cy.get('input').type(reminder, {delay: 200}).type('{enter}');
             });
         }
