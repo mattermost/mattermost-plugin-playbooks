@@ -545,11 +545,19 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	}
 
 	var options incident.StatusUpdateOptions
-	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
-	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderInSecondsKey].(string)); err2 == nil {
-		options.Reminder = time.Duration(reminder) * time.Second
+	if message, ok := request.Submission[incident.DialogFieldMessageKey]; ok {
+		options.Message = message.(string)
 	}
-	options.Status = request.Submission[incident.DialogFieldStatusKey].(string)
+
+	if reminderI, ok := request.Submission[incident.DialogFieldReminderInSecondsKey]; ok {
+		if reminder, err2 := strconv.Atoi(reminderI.(string)); err2 == nil {
+			options.Reminder = time.Duration(reminder) * time.Second
+		}
+	}
+
+	if status, ok := request.Submission[incident.DialogFieldStatusKey]; ok {
+		options.Status = status.(string)
+	}
 
 	switch options.Status {
 	case incident.StatusActive:

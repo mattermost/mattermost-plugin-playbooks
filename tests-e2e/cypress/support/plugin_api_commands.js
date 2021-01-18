@@ -36,6 +36,21 @@ Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
 });
 
 /**
+ * Get all reported incidents directly via API
+ */
+Cypress.Commands.add('apiGetAllReportedIncidents', (teamId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, status: 'Reported'},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
  * Get incident by name directly via API
  */
 Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
@@ -99,9 +114,8 @@ Cypress.Commands.add('apiUpdateStatus', ({incidentId, userId, channelId, teamId,
             user_id: userId,
             channel_id: channelId,
             team_id: teamId,
-            submission: {message, reminder: '15'},
+            submission: {message, reminder: '15', status},
             cancelled: false,
-            status,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
