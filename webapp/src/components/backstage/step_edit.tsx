@@ -4,7 +4,7 @@ import styled, {createGlobalStyle} from 'styled-components';
 
 import {ChecklistItem} from 'src/types/playbook';
 import {TertiaryButton} from 'src/components/assets/buttons';
-import {uniqueId} from 'src/utils';
+import {useUniqueId} from 'src/utils';
 
 import {StyledTextarea} from './styles';
 
@@ -236,7 +236,7 @@ const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
     const [focus, setFocus] = useState(false);
     const [hover, setHover] = useState(false);
     const ref = useRef(null);
-    const [id] = useState(uniqueId('step-command-'));
+    const id = useUniqueId('step-command-');
 
     useEffect(() => {
         if (focus && ref && ref.current) {
