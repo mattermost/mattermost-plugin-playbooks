@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -95,17 +94,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 				Items: []playbook.ChecklistItem{},
 			},
 		}
-	}
-
-	// Make sure ActiveStage is correct and ActiveStageTitle is synced
-	numChecklists := len(incdnt.Checklists)
-	if numChecklists > 0 {
-		idx := incdnt.ActiveStage
-		if idx < 0 || idx >= numChecklists {
-			return nil, errors.Errorf("active stage %d out of bounds: incident %s has %d stages", idx, incdnt.ID, numChecklists)
-		}
-
-		incdnt.ActiveStageTitle = incdnt.Checklists[idx].Title
 	}
 
 	incdnt, err = s.store.CreateIncident(incdnt)
@@ -730,76 +718,6 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 	s.telemetry.RemoveTask(incidentID, userID)
-
-	return nil
-}
-
-// ChangeActiveStage processes a request from userID to change the active
-// stage of incidentID to stageIdx.
-func (s *ServiceImpl) ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error) {
-	incidentToModify, err := s.store.GetIncident(incidentID)
-	if err != nil {
-		return nil, err
-	}
-
-	if incidentToModify.ActiveStage == stageIdx {
-		return incidentToModify, nil
-	}
-
-	if stageIdx < 0 || stageIdx >= len(incidentToModify.Checklists) {
-		return nil, errors.Errorf("index %d out of bounds: incident %s has %d stages", stageIdx, incidentID, len(incidentToModify.Checklists))
-	}
-
-	oldActiveStage := incidentToModify.ActiveStage
-	incidentToModify.ActiveStage = stageIdx
-
-	if len(incidentToModify.Checklists) > 0 {
-		incidentToModify.ActiveStageTitle = incidentToModify.Checklists[stageIdx].Title
-	}
-
-	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return nil, errors.Wrapf(err, "failed to update incident")
-	}
-
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.ChangeStage(incidentToModify, userID)
-
-	modifyMessage := fmt.Sprintf("changed the active stage from **%s** to **%s**.",
-		incidentToModify.Checklists[oldActiveStage].Title,
-		incidentToModify.Checklists[stageIdx].Title,
-	)
-
-	mainChannelID := incidentToModify.ChannelID
-	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
-		return nil, err
-	}
-
-	return incidentToModify, nil
-}
-
-// OpenNextStageDialog opens an interactive dialog so the user can confirm
-// going to the next stage
-func (s *ServiceImpl) OpenNextStageDialog(incidentID string, nextStage int, triggerID string) error {
-	dialog := model.Dialog{
-		Title:            "Not all tasks in this stage are complete.",
-		IntroductionText: "Are you sure you want to advance to the next stage?",
-		SubmitLabel:      "Confirm",
-		NotifyOnCancel:   false,
-		State:            strconv.Itoa(nextStage),
-	}
-
-	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/next-stage-dialog",
-			s.configService.GetManifest().Id,
-			incidentID,
-		),
-		Dialog:    dialog,
-		TriggerId: triggerID,
-	}
-
-	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
-		return errors.Wrapf(err, "failed to open new incident dialog")
-	}
 
 	return nil
 }

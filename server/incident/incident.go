@@ -12,9 +12,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
 
-// NoActiveStage is the value of an incident's ActiveStage property when there are no stages.
-const NoActiveStage = -1
-
 // Incident holds the detailed information of an incident.
 //
 // NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
@@ -82,13 +79,6 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 		old.StatusPosts = []StatusPost{}
 	}
 
-	// Define consistent semantics for empty checklists and out-of-range active stages.
-	if len(old.Checklists) == 0 {
-		old.ActiveStage = NoActiveStage
-	} else if old.ActiveStage < 0 || old.ActiveStage >= len(old.Checklists) {
-		old.ActiveStage = 0
-	}
-
 	return json.Marshal(old)
 }
 
@@ -101,7 +91,6 @@ type StatusPost struct {
 }
 
 type UpdateOptions struct {
-	ActiveStage *int `json:"active_stage"`
 }
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
@@ -266,14 +255,6 @@ type Service interface {
 	// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
 	GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error)
 
-	// ChangeActiveStage processes a request from userID to change the active
-	// stage of incidentID to stageIdx.
-	ChangeActiveStage(incidentID, userID string, stageIdx int) (*Incident, error)
-
-	// OpenNextStageDialog opens an interactive dialog so the user can confirm
-	// going to the next stage
-	OpenNextStageDialog(incidentID string, nextStage int, triggerID string) error
-
 	// NukeDB removes all incident related data.
 	NukeDB() error
 
@@ -340,9 +321,6 @@ type Telemetry interface {
 
 	// ChangeCommander tracks changes in commander.
 	ChangeCommander(incident *Incident, userID string)
-
-	// ChangeStage tracks changes in stage
-	ChangeStage(incident *Incident, userID string)
 
 	// UpdateStatus tracks when an incident's status has been updated
 	UpdateStatus(incident *Incident, userID string)

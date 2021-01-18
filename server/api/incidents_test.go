@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -630,7 +629,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			Checklists:      []playbook.Checklist{},
 			StatusPostIDs:   []string{},
 			StatusPosts:     []incident.StatusPost{},
@@ -728,7 +726,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      nil,
@@ -766,7 +763,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
@@ -811,7 +807,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      nil,
@@ -851,7 +846,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
@@ -898,7 +892,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
@@ -943,7 +936,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      nil,
@@ -981,7 +973,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
@@ -1036,7 +1027,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      nil,
@@ -1076,7 +1066,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
@@ -1187,7 +1176,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID1",
 			Name:            "incidentName1",
 			ChannelID:       "channelID1",
-			ActiveStage:     incident.NoActiveStage,
 			Checklists:      []playbook.Checklist{},
 			StatusPostIDs:   []string{},
 			StatusPosts:     []incident.StatusPost{},
@@ -1251,7 +1239,6 @@ func TestIncidents(t *testing.T) {
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			ActiveStage:     incident.NoActiveStage,
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
@@ -1271,203 +1258,6 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 }
-
-func TestChangeActiveStage(t *testing.T) {
-	var mockCtrl *gomock.Controller
-	var handler *Handler
-	var poster *mock_poster.MockPoster
-	var logger *mock_poster.MockLogger
-	var playbookService *mock_playbook.MockService
-	var incidentService *mock_incident.MockService
-	var pluginAPI *plugintest.API
-	var client *pluginapi.Client
-
-	reset := func() {
-		mockCtrl = gomock.NewController(t)
-		handler = NewHandler()
-		poster = mock_poster.NewMockPoster(mockCtrl)
-		logger = mock_poster.NewMockLogger(mockCtrl)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
-		incidentService = mock_incident.NewMockService(mockCtrl)
-		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger)
-	}
-
-	pInt := func(n int) *int {
-		return &n
-	}
-
-	testID := "incidentid"
-
-	playbookWithChecklists := func(num int) *playbook.Playbook {
-		checklists := make([]playbook.Checklist, num)
-		for i := 0; i < num; i++ {
-			checklists[i] = playbook.Checklist{
-				Title: fmt.Sprintf("Title - %d", i),
-				Items: []playbook.ChecklistItem{},
-			}
-		}
-
-		return &playbook.Playbook{
-			ID:                   "playbookid",
-			Title:                "My Playbook",
-			TeamID:               "testTeamID",
-			CreatePublicIncident: true,
-			Checklists:           checklists,
-		}
-	}
-
-	testData := []struct {
-		testName             string
-		oldIncident          incident.Incident
-		updateOptions        incident.UpdateOptions
-		getExpectedIncident  func(incident.Incident) *incident.Incident
-		changeActiveStageErr error
-		expectedStatus       int
-	}{
-		{
-			testName: "change to a valid active stage",
-			oldIncident: incident.Incident{
-				ID:              testID,
-				CommanderUserID: "userid",
-				TeamID:          "teamid",
-				Name:            "incidentName",
-				ActiveStage:     0,
-				PlaybookID:      playbookWithChecklists(2).ID,
-				Checklists:      playbookWithChecklists(2).Checklists,
-				StatusPostIDs:   []string{},
-				StatusPosts:     []incident.StatusPost{},
-			},
-			updateOptions: incident.UpdateOptions{ActiveStage: pInt(1)},
-			getExpectedIncident: func(old incident.Incident) *incident.Incident {
-				old.ActiveStage = 1
-				return &old
-			},
-			changeActiveStageErr: nil,
-			expectedStatus:       http.StatusOK,
-		},
-		{
-			testName: "change to the same active stage",
-			oldIncident: incident.Incident{
-				ID:              testID,
-				CommanderUserID: "userid",
-				TeamID:          "teamid",
-				Name:            "incidentName",
-				ActiveStage:     0,
-				PlaybookID:      playbookWithChecklists(2).ID,
-				Checklists:      playbookWithChecklists(2).Checklists,
-				StatusPostIDs:   []string{},
-				StatusPosts:     []incident.StatusPost{},
-			},
-			updateOptions: incident.UpdateOptions{ActiveStage: pInt(0)},
-			getExpectedIncident: func(old incident.Incident) *incident.Incident {
-				return &old
-			},
-			changeActiveStageErr: nil,
-			expectedStatus:       http.StatusOK,
-		},
-		{
-			testName: "change to an invalid stage",
-			oldIncident: incident.Incident{
-				ID:              testID,
-				CommanderUserID: "userid",
-				TeamID:          "teamid",
-				Name:            "incidentName",
-				ActiveStage:     0,
-				PlaybookID:      playbookWithChecklists(1).ID,
-				Checklists:      playbookWithChecklists(1).Checklists,
-				StatusPostIDs:   []string{},
-				StatusPosts:     []incident.StatusPost{},
-			},
-			updateOptions: incident.UpdateOptions{ActiveStage: pInt(10)},
-			getExpectedIncident: func(old incident.Incident) *incident.Incident {
-				return &old
-			},
-			changeActiveStageErr: errors.Errorf("index %d out of bounds: incident %s has %d stages", 10, testID, 1),
-			expectedStatus:       http.StatusInternalServerError,
-		},
-		{
-			testName: "change with nil update value",
-			oldIncident: incident.Incident{
-				ID:              testID,
-				CommanderUserID: "userid",
-				TeamID:          "teamid",
-				Name:            "incidentName",
-				ActiveStage:     0,
-				PlaybookID:      playbookWithChecklists(1).ID,
-				Checklists:      playbookWithChecklists(1).Checklists,
-				StatusPostIDs:   []string{},
-				StatusPosts:     []incident.StatusPost{},
-			},
-			updateOptions: incident.UpdateOptions{ActiveStage: nil},
-			getExpectedIncident: func(old incident.Incident) *incident.Incident {
-				return &old
-			},
-			changeActiveStageErr: errors.Errorf("index %d out of bounds: incident %s has %d stages", 10, testID, 1),
-			expectedStatus:       http.StatusOK,
-		},
-	}
-
-	for _, data := range testData {
-		t.Run(data.testName, func(t *testing.T) {
-			reset()
-
-			// Mock underlying plugin API calls, granting all permissions
-			pluginAPI.On("GetChannel", mock.Anything).
-				Return(&model.Channel{}, nil)
-			pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-			pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).
-				Return(true)
-			pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).
-				Return(true)
-
-			// Verify that the websocket event is published and that the ephemeral post is sent
-			poster.EXPECT().
-				PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
-			poster.EXPECT().
-				EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
-
-			// Mock retrieval of the old incident
-			incidentService.EXPECT().
-				GetIncident(data.oldIncident.ID).
-				Return(&data.oldIncident, nil).
-				AnyTimes()
-
-			// Mock the main call to ChangeActiveStage iff the passed ActiveStage is set
-			expectedIncident := data.getExpectedIncident(data.oldIncident)
-			if data.updateOptions.ActiveStage != nil {
-				incidentService.EXPECT().
-					ChangeActiveStage(data.oldIncident.ID, "testUserID", *data.updateOptions.ActiveStage).
-					Return(expectedIncident, data.changeActiveStageErr).
-					Times(1)
-			}
-
-			// Finally, make the request with all data provided
-			testrecorder := httptest.NewRecorder()
-			updatesJSON, err := json.Marshal(data.updateOptions)
-			require.NoError(t, err)
-			testreq, err := http.NewRequest("PATCH", "/api/v0/incidents/"+data.oldIncident.ID, bytes.NewBuffer(updatesJSON))
-			testreq.Header.Add("Mattermost-User-ID", "testUserID")
-			require.NoError(t, err)
-			handler.ServeHTTP(testrecorder, testreq, "testpluginid")
-
-			// Read the response
-			resp := testrecorder.Result()
-			defer resp.Body.Close()
-			assert.Equal(t, data.expectedStatus, resp.StatusCode)
-
-			// Verify that the response equals the expected data in successful requests
-			if data.expectedStatus == http.StatusOK {
-				var returnedIncident incident.Incident
-				err = json.NewDecoder(resp.Body).Decode(&returnedIncident)
-				require.NoError(t, err)
-				assert.Equal(t, *expectedIncident, returnedIncident)
-			}
-		})
-	}
-}
-
 func TestEndIncident(t *testing.T) {
 	var mockCtrl *gomock.Controller
 	var handler *Handler
