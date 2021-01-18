@@ -12,20 +12,27 @@ import (
 	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
 
+const (
+	StatusReported = "Reported"
+	StatusActive   = "Active"
+	StatusResolved = "Resolved"
+	StatusArchived = "Archived"
+)
+
 // Incident holds the detailed information of an incident.
 //
 // NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
 // that column needs to be added in the sqlstore code.
 type Incident struct {
 	ID                      string               `json:"id"`
-	Name                    string               `json:"name"` // DB from channel
+	Name                    string               `json:"name"` // Retrieved from incident channel
 	Description             string               `json:"description"`
 	CommanderUserID         string               `json:"commander_user_id"`
 	TeamID                  string               `json:"team_id"`
 	ChannelID               string               `json:"channel_id"`
-	CreateAt                int64                `json:"create_at"` // DB from channel
+	CreateAt                int64                `json:"create_at"` // Retrieved from incident channel
 	EndAt                   int64                `json:"end_at"`
-	DeleteAt                int64                `json:"delete_at"` // DB from channel
+	DeleteAt                int64                `json:"delete_at"` // Retrieved from incidet channel
 	ActiveStage             int                  `json:"active_stage"`
 	ActiveStageTitle        string               `json:"active_stage_title"`
 	PostID                  string               `json:"post_id"`
@@ -79,7 +86,7 @@ func (i *Incident) CurrentStatus() string {
 		return StatusReported
 	}
 	if post.Status == "" {
-		// Backwards compatability with existing incidents
+		// Backwards compatibility with existing incidents
 		return StatusActive
 	}
 
@@ -91,7 +98,7 @@ func (i *Incident) IsActive() bool {
 	return currentStatus != StatusResolved && currentStatus != StatusArchived
 }
 
-func (i *Incident) LastResolvedAt() int64 {
+func (i *Incident) ResolvedAt() int64 {
 	var resolvedPost *StatusPost
 	for j := len(i.StatusPosts) - 1; j > 0; j-- {
 		if i.StatusPosts[j].DeleteAt != 0 {
@@ -110,15 +117,6 @@ func (i *Incident) LastResolvedAt() int64 {
 	return resolvedPost.CreateAt
 }
 
-const (
-	StatusReported = "Reported"
-	StatusActive   = "Active"
-	StatusResolved = "Resolved"
-	StatusArchived = "Archived"
-)
-
-// StatusPost is information added to the incident when selecting from the db and sent to the
-// client; it is not saved to the db.
 type StatusPost struct {
 	ID       string `json:"id"`
 	Status   string `json:"status"`
@@ -319,7 +317,7 @@ type Store interface {
 	// UpdateIncident updates an incident.
 	UpdateIncident(incdnt *Incident) error
 
-	// UpdateIncident updates an incident.
+	// UpdateStatus updates the status of an incident.
 	UpdateStatus(statusPost *SQLStatusPost) error
 
 	// GetIncident gets an incident by ID.

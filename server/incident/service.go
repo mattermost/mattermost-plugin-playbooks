@@ -215,13 +215,9 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 	}
 
 	duration := timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())
-	status := "Ongoing"
-	if !theIncident.IsActive() {
-		status = "Ended"
-	}
 
 	broadcastedMsg := fmt.Sprintf("# Incident Update: [%s](/%s/pl/%s)\n", incidentChannel.DisplayName, incidentTeam.Name, originalPostID)
-	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, status)
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, theIncident.CurrentStatus())
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
@@ -267,7 +263,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		PostID:     post.Id,
 		Status:     options.Status,
 	}); err != nil {
-		return errors.Wrap(err, "failed to write status post to store. There is now insconsistant state.")
+		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
 
 	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {

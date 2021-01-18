@@ -257,7 +257,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"ReminderPostID":     rawIncident.ReminderPostID,
 			"PreviousReminder":   rawIncident.PreviousReminder,
 			"BroadcastChannelID": rawIncident.BroadcastChannelID,
-			"EndAt":              rawIncident.LastResolvedAt(),
+			"EndAt":              rawIncident.ResolvedAt(),
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 

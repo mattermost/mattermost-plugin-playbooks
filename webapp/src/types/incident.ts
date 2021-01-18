@@ -107,7 +107,7 @@ export function incidentCurrentStatus(incident: Incident): string {
 
     if (currentPost) {
         if (currentPost.status === '') {
-            // Bakwards compatability with existing incidents.
+            // Backwards compatibility with existing incidents.
             status = 'Active';
         } else {
             status = currentPost.status;

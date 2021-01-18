@@ -50,7 +50,7 @@ const RHSTitle: FC = () => {
                 </Button><RHSTitleText data-testid='rhs-title'>{incident?.name || 'Incidents'}</RHSTitleText>
                 {incident && (
                     <StatusBadge
-                        isActive={incident && incidentIsActive((incident))}
+                        isActive={incident && incidentIsActive(incident)}
                         compact={true}
                     />
                 )}

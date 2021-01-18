@@ -267,24 +267,6 @@ func TestGetIncidents(t *testing.T) {
 			},
 			ExpectedErr: nil,
 		},
-		/*{
-			Name: "no paging, team2, sort by EndAt",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.FilterOptions{
-				TeamID: team2id,
-				Sort:   incident.SortByEndAt,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc06, inc07},
-			},
-			ExpectedErr: nil,
-		},*/
 		{
 			Name: "no options, team paged by 1, admin",
 			RequesterInfo: incident.RequesterInfo{
@@ -437,27 +419,6 @@ func TestGetIncidents(t *testing.T) {
 			},
 			ExpectedErr: nil,
 		},
-		/*{
-			Name: "team1 - sorted by ended, desc, page 1 by 2 - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.FilterOptions{
-				TeamID:    team1id,
-				Sort:      "end_at",
-				Direction: "desc",
-				Page:      1,
-				PerPage:   2,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 5,
-				PageCount:  3,
-				HasMore:    true,
-				Items:      []incident.Incident{inc05, inc04},
-			},
-			ExpectedErr: nil,
-		},*/
 		{
 			Name: "team1 - only active, page 1 by 2 - admin",
 			RequesterInfo: incident.RequesterInfo{
@@ -498,26 +459,6 @@ func TestGetIncidents(t *testing.T) {
 			},
 			ExpectedErr: nil,
 		},
-		/*{
-			Name: "team1 - commander1, desc, by end_at - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.FilterOptions{
-				TeamID:      team1id,
-				CommanderID: commander1.UserID,
-				Direction:   "desc",
-				Sort:        "end_at",
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc03, inc01},
-			},
-			ExpectedErr: nil,
-		},*/
 		{
 			Name: "team1 - search for horse - admin",
 			RequesterInfo: incident.RequesterInfo{
@@ -536,25 +477,6 @@ func TestGetIncidents(t *testing.T) {
 			},
 			ExpectedErr: nil,
 		},
-		/*{
-			Name: "team1 - search for mouse, endat - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.FilterOptions{
-				TeamID:     team1id,
-				SearchTerm: "mouse",
-				Sort:       "end_at",
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 3,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc05, inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},*/
 		{
 			Name: "team1 - search for aliens & commander3 - admin",
 			RequesterInfo: incident.RequesterInfo{

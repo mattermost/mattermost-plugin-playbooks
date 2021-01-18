@@ -340,17 +340,17 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.6.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if err := addColumnToMySQLTable(e, "IR_Incident", "CurrentStatus", "TEXT NOT NULL"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "CurrentStatus", "VARCHAR(1024) NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column CurrentStatus to table IR_Incident")
 				}
-				if err := addColumnToMySQLTable(e, "IR_StatusPosts", "Status", "TEXT NOT NULL"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_StatusPosts", "Status", "VARCHAR(1024) NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
 				}
 			} else {
-				if err := addColumnToPGTable(e, "IR_Incident", "CurrentStatus", "VARCHAR(1024) NOT NULL DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Incident", "CurrentStatus", "TEXT NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column CurrentStatus to table IR_Incident")
 				}
-				if err := addColumnToPGTable(e, "IR_StatusPosts", "Status", "VARCHAR(1024) NOT NULL DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_StatusPosts", "Status", "TEXT NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
 				}
 			}

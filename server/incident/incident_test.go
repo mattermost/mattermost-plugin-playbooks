@@ -108,7 +108,7 @@ func TestIncident_LastResovedAt(t *testing.T) {
 				StatusPosts: []StatusPost{
 					{
 						DeleteAt: 0,
-						CreateAt: 999,
+						CreateAt: 1,
 						Status:   StatusActive,
 					},
 					{
@@ -120,12 +120,12 @@ func TestIncident_LastResovedAt(t *testing.T) {
 			},
 			expected: 123,
 		},
-		"resolved delted": {
+		"resolved deleted": {
 			inc: Incident{
 				StatusPosts: []StatusPost{
 					{
 						DeleteAt: 0,
-						CreateAt: 999,
+						CreateAt: 1,
 						Status:   StatusActive,
 					},
 					{
@@ -142,7 +142,7 @@ func TestIncident_LastResovedAt(t *testing.T) {
 				StatusPosts: []StatusPost{
 					{
 						DeleteAt: 0,
-						CreateAt: 999,
+						CreateAt: 1,
 						Status:   StatusActive,
 					},
 					{
@@ -164,7 +164,7 @@ func TestIncident_LastResovedAt(t *testing.T) {
 				StatusPosts: []StatusPost{
 					{
 						DeleteAt: 0,
-						CreateAt: 999,
+						CreateAt: 1,
 						Status:   StatusActive,
 					},
 					{
@@ -191,7 +191,7 @@ func TestIncident_LastResovedAt(t *testing.T) {
 				StatusPosts: []StatusPost{
 					{
 						DeleteAt: 0,
-						CreateAt: 999,
+						CreateAt: 1,
 						Status:   StatusActive,
 					},
 					{
@@ -210,7 +210,7 @@ func TestIncident_LastResovedAt(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.inc.LastResolvedAt())
+			require.Equal(t, tc.expected, tc.inc.ResolvedAt())
 		})
 	}
 }
