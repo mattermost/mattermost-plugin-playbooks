@@ -18,9 +18,11 @@ interface Option {
 }
 
 const fixedOptions: Option[] = [
-    {value: 'active', label: 'Ongoing'},
-    {value: 'ended', label: 'Ended'},
-    {value: 'all', label: 'All'},
+    {value: '', label: 'All'},
+    {value: 'Reported', label: 'Reported'},
+    {value: 'Active', label: 'Active'},
+    {value: 'Resolved', label: 'Resolved'},
+    {value: 'Archived', label: 'Archived'},
 ];
 
 export function StatusFilter(props: Props) {
@@ -56,7 +58,7 @@ export function StatusFilter(props: Props) {
                     onClick={toggleOpen}
                     className='IncidentFilter-button'
                 >
-                    {selected.value === 'all' ? 'Status' : selected.label}
+                    {selected.value === '' ? 'Status' : selected.label}
                     {<i className='icon-chevron-down icon--small ml-2'/>}
                 </button>
             }
