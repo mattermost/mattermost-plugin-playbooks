@@ -125,7 +125,12 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiEndIncident(incident.id);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // # Navigate directly to the application and the incident channel
@@ -188,11 +193,16 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiEndIncident(incident.id);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click{force: true}();
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -240,7 +250,12 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiEndIncident(incident.id);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // # Navigate to a channel without an incident.

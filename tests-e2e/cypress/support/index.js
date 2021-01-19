@@ -53,35 +53,66 @@ Cypress.Commands.add('requireIncidentManagementPlugin', (version) => {
  */
 Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
     cy.apiLogin('sysadmin');
+    cy.apiGetCurrentUser().then((user) => {
+        cy.apiGetAllActiveIncidents(teamId).then((response) => {
+            const incidents = JSON.parse(response.body).items;
 
-    cy.apiGetAllActiveIncidents(teamId).then((response) => {
-        const incidents = JSON.parse(response.body).items;
-
-        incidents.forEach((incident) => {
-            cy.apiEndIncident(incident.id);
+            incidents.forEach((incident) => {
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId: user.id,
+                    teamId,
+                    status: 'Resolved',
+                });
+            });
         });
-    });
 
-    cy.apiGetAllReportedIncidents(teamId).then((response) => {
-        const incidents = JSON.parse(response.body).items;
+        cy.apiGetAllReportedIncidents(teamId).then((response) => {
+            const incidents = JSON.parse(response.body).items;
 
-        incidents.forEach((incident) => {
-            cy.apiEndIncident(incident.id);
+            incidents.forEach((incident) => {
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId: user.id,
+                    teamId,
+                    status: 'Resolved',
+                });
+            });
         });
-    });
 
-    cy.apiLogout();
+        cy.apiLogout();
+    });
 });
 
 /**
  * End all active incidents directly from API with current user.
  */
 Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
-    cy.apiGetAllActiveIncidents(teamId).then((response) => {
-        const incidents = JSON.parse(response.body).items;
+    cy.apiGetCurrentUser().then((user) => {
+        cy.apiGetAllActiveIncidents(teamId, user.id).then((response) => {
+            const incidents = JSON.parse(response.body).items;
 
-        incidents.forEach((incident) => {
-            cy.apiEndIncident(incident.id);
+            incidents.forEach((incident) => {
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId: user.id,
+                    teamId,
+                    status: 'Resolved',
+                });
+            });
+        });
+
+        cy.apiGetAllReportedIncidents(teamId, user.id).then((response) => {
+            const incidents = JSON.parse(response.body).items;
+
+            incidents.forEach((incident) => {
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId: user.id,
+                    teamId,
+                    status: 'Resolved',
+                });
+            });
         });
     });
 });

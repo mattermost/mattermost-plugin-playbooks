@@ -138,7 +138,12 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                cy.apiEndIncident(incidentId);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // * Verify we see the welcome screen when there are no incidents
@@ -339,7 +344,7 @@ describe('rhs incident list', () => {
             });
         });
 
-        it('of the current team, not another teams channels', () => {
+        it.only('of the current team, not another teams channels', () => {
             // # Remove all active incidents so that we can verify the number of incidents in the rhs list later
             cy.endAllMyActiveIncidents(teamId);
             cy.endAllMyActiveIncidents(teamIdMi);
@@ -982,7 +987,12 @@ describe('rhs incident list', () => {
                 });
 
                 // # User-2 closes the incident
-                cy.apiEndIncident(incidentId);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId: user2Id,
+                    teamId,
+                    status: 'Resolved',
+                });
 
                 // * Verify the incident is not listed
                 cy.get('#rhsContainer').should('exist').within(() => {
@@ -1027,7 +1037,12 @@ describe('rhs incident list', () => {
 
                 // # User-1 closes the incident
                 // TODO: Waiting here because of https://mattermost.atlassian.net/browse/MM-29617
-                cy.wait(500).apiEndIncident(incidentId);
+                cy.wait(500).cy.apiUpdateStatus({
+                    incidentId,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
                 cy.verifyIncidentEnded(teamId, incidentName);
 
                 // * Verify we cannot see the incident
@@ -1096,7 +1111,12 @@ describe('rhs incident list', () => {
                 });
 
                 // # User-2 closes the incident
-                cy.apiEndIncident(incidentId);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId: user2Id,
+                    teamId,
+                    status: 'Resolved',
+                });
 
                 // * Verify we cannot see the incident
                 cy.get('#rhsContainer').should('exist').within(() => {
