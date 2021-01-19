@@ -61,7 +61,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.ChannelActiveRequiredHandler(handler.updateStatusDialog)).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 
@@ -567,6 +567,25 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// ChannelActiveRequiredHandler returns a handler which checks if the channel is active and not archived
+func (h *IncidentHandler) ChannelActiveRequiredHandler(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		incidentID := vars["id"]
+		incidentToModify, err := h.incidentService.GetIncident(incidentID)
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+
+		// return an error if the channel is archived
+		if incidentToModify.DeleteAt > 0 {
+			HandleErrorWithCode(w, http.StatusBadRequest, "Channel is archived and cannot be modified", err)
+		}
+		next(w, r)
+	}
 }
 
 // nextStageDialog handles the interactive dialog submission when a user confirms they
