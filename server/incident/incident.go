@@ -43,6 +43,7 @@ type Incident struct {
 	PreviousReminder        time.Duration        `json:"previous_reminder"`
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
+	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -56,6 +57,10 @@ func (i *Incident) Clone() *Incident {
 	var newStatusPosts []StatusPost
 	newStatusPosts = append(newStatusPosts, i.StatusPosts...)
 	newIncident.StatusPosts = newStatusPosts
+
+	var newTimelineEvents []TimelineEvent
+	newTimelineEvents = append(newTimelineEvents, i.TimelineEvents...)
+	newIncident.TimelineEvents = newTimelineEvents
 
 	return &newIncident
 }
@@ -75,6 +80,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 	if old.StatusPosts == nil {
 		old.StatusPosts = []StatusPost{}
+	}
+	if old.TimelineEvents == nil {
+		old.TimelineEvents = []TimelineEvent{}
 	}
 
 	return json.Marshal(old)
@@ -141,6 +149,30 @@ type Metadata struct {
 	TeamName           string `json:"team_name"`
 	NumMembers         int64  `json:"num_members"`
 	TotalPosts         int64  `json:"total_posts"`
+}
+
+type timelineEvent string
+
+const (
+	incidentCreated   timelineEvent = "incident_created"
+	incidentEnded     timelineEvent = "incident_ended"
+	taskStateModified timelineEvent = "task_state_modified"
+	statusUpdated     timelineEvent = "status_updated"
+	commanderChanged  timelineEvent = "commander_changed"
+	assigneeChanged   timelineEvent = "assignee_changed"
+	ranSlashCommand   timelineEvent = "ran_slash_command"
+)
+
+type TimelineEvent struct {
+	ID         string        `json:"id"`
+	IncidentID string        `json:"incident_id"`
+	CreateAt   int64         `json:"create_at"`
+	DeleteAt   int64         `json:"delete_at"`
+	EventType  timelineEvent `json:"event_type"`
+	Summary    string        `json:"summary"`
+	Details    string        `json:"details"`
+	PostID     string        `json:"post_id"`
+	UserID     string        `json:"user_id"`
 }
 
 // GetIncidentsResults collects the results of the GetIncidents call: the list of Incidents matching
@@ -320,6 +352,12 @@ type Store interface {
 
 	// UpdateStatus updates the status of an incident.
 	UpdateStatus(statusPost *SQLStatusPost) error
+
+	// CreateTimelineEvent inserts the timeline event into the DB and returns the new event ID
+	CreateTimelineEvent(event TimelineEvent) (string, error)
+
+	// UpdateTimelineEvent updates an existing timeline event
+	UpdateTimelineEvent(event TimelineEvent) error
 
 	// GetIncident gets an incident by ID.
 	GetIncident(incidentID string) (*Incident, error)

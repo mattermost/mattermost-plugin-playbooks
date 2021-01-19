@@ -110,8 +110,24 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
 	}
 
-	if _, err = s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username); err != nil {
+	postID, err := s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username)
+	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
+	}
+
+	event := TimelineEvent{
+		IncidentID: incdnt.ID,
+		CreateAt:   incdnt.CreateAt,
+		DeleteAt:   0,
+		EventType:  incidentCreated,
+		Summary:    "",
+		Details:    "",
+		PostID:     postID,
+		UserID:     incdnt.CommanderUserID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return incdnt, errors.Wrap(err, "failed to create timeline event")
 	}
 
 	if incdnt.PostID == "" {
@@ -131,7 +147,8 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
-	if _, err := s.poster.PostMessage(channel.Id, postMessage); err != nil {
+	_, err = s.poster.PostMessage(channel.Id, postMessage)
+	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
@@ -288,6 +305,21 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to remove reminder post")
 	}
 
+	event := TimelineEvent{
+		IncidentID: incidentID,
+		CreateAt:   model.GetMillis(),
+		DeleteAt:   0,
+		EventType:  statusUpdated,
+		Summary:    "",
+		Details:    "",
+		PostID:     post.Id,
+		UserID:     userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
 	return nil
 }
 
@@ -383,8 +415,24 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
 		oldCommander.Username, newCommander.Username)
-	if _, err := s.modificationMessage(userID, mainChannelID, modifyMessage); err != nil {
+	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
+	if err != nil {
 		return err
+	}
+
+	event := TimelineEvent{
+		IncidentID: incidentID,
+		CreateAt:   model.GetMillis(),
+		DeleteAt:   0,
+		EventType:  commanderChanged,
+		Summary:    modifyMessage,
+		Details:    "",
+		PostID:     postID,
+		UserID:     userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
 	}
 
 	return nil
@@ -428,6 +476,21 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
+	}
+
+	event := TimelineEvent{
+		IncidentID: incidentID,
+		CreateAt:   model.GetMillis(),
+		DeleteAt:   0,
+		EventType:  taskStateModified,
+		Summary:    modifyMessage,
+		Details:    "",
+		PostID:     postID,
+		UserID:     userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
@@ -510,6 +573,21 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		return errors.Wrapf(err, "failed to update incident; it is now in an inconsistent state")
 	}
 
+	event := TimelineEvent{
+		IncidentID: incidentID,
+		CreateAt:   model.GetMillis(),
+		DeleteAt:   0,
+		EventType:  assigneeChanged,
+		Summary:    modifyMessage,
+		Details:    "",
+		PostID:     postID,
+		UserID:     userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
 	s.telemetry.SetAssignee(incidentID, userID)
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 
@@ -554,6 +632,21 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 	incident.Checklists[checklistNumber].Items[itemNumber].CommandLastRun = model.GetMillis()
 	if err = s.store.UpdateIncident(incident); err != nil {
 		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
+	}
+
+	event := TimelineEvent{
+		IncidentID: incidentID,
+		CreateAt:   model.GetMillis(),
+		DeleteAt:   0,
+		EventType:  ranSlashCommand,
+		Summary:    fmt.Sprintf("ran the slash command: `%s`", itemToRun.Command),
+		Details:    "",
+		PostID:     "",
+		UserID:     userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return "", errors.Wrap(err, "failed to create timeline event")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
@@ -702,7 +795,7 @@ func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (st
 
 	postID, err := s.poster.PostMessage(channelID, user.Username+" "+message)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to post end incident messsage")
+		return "", errors.Wrapf(err, "failed to post modification messsage")
 	}
 
 	return postID, nil

@@ -360,4 +360,58 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.6.0"),
+		toVersion:   semver.MustParse("0.7.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
+					(
+						ID         VARCHAR(26)   NOT NULL,
+						IncidentID VARCHAR(26)   NOT NULL REFERENCES IR_Incident(ID),
+						CreateAt   BIGINT        NOT NULL,
+						DeleteAt   BIGINT        NOT NULL DEFAULT 0,
+						EventType  VARCHAR(32)   NOT NULL DEFAULT '',
+						Summary    VARCHAR(256)  NOT NULL DEFAULT '',
+						Details    VARCHAR(4096) NOT NULL DEFAULT '',
+						PostID     VARCHAR(26)   NOT NULL DEFAULT '',
+                        UserID     VARCHAR(26)   NOT NULL DEFAULT '',
+						INDEX IR_TimelineEvent_ID (ID),
+						INDEX IR_TimelineEvent_IncidentID (IncidentID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
+				}
+
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
+					(
+						ID         TEXT   NOT NULL,
+						IncidentID TEXT   NOT NULL REFERENCES IR_Incident(ID),
+						CreateAt   BIGINT NOT NULL,
+					    DeleteAt   BIGINT NOT NULL DEFAULT 0,
+						EventType  TEXT   NOT NULL DEFAULT '',
+						Summary    TEXT   NOT NULL DEFAULT '',
+						Details    TEXT   NOT NULL DEFAULT '',
+						PostID     TEXT   NOT NULL DEFAULT '',
+					    UserID     TEXT   NOT NULL DEFAULT ''
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_TimelineEvent_ID", "IR_TimelineEvent", "ID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_StatusPosts_ID")
+				}
+				if _, err := e.Exec(createPGIndex("IR_TimelineEvent_IncidentID", "IR_TimelineEvent", "IncidentID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_StatusPosts_IncidentID")
+				}
+			}
+
+			return nil
+		},
+	},
 }
