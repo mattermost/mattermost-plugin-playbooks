@@ -344,7 +344,7 @@ describe('rhs incident list', () => {
             });
         });
 
-        it.only('of the current team, not another teams channels', () => {
+        it('of the current team, not another teams channels', () => {
             // # Remove all active incidents so that we can verify the number of incidents in the rhs list later
             cy.endAllMyActiveIncidents(teamId);
             cy.endAllMyActiveIncidents(teamIdMi);
@@ -988,7 +988,7 @@ describe('rhs incident list', () => {
 
                 // # User-2 closes the incident
                 cy.apiUpdateStatus({
-                    incidentId: incident.id,
+                    incidentId,
                     userId: user2Id,
                     teamId,
                     status: 'Resolved',
@@ -1037,7 +1037,7 @@ describe('rhs incident list', () => {
 
                 // # User-1 closes the incident
                 // TODO: Waiting here because of https://mattermost.atlassian.net/browse/MM-29617
-                cy.wait(500).cy.apiUpdateStatus({
+                cy.wait(500).apiUpdateStatus({
                     incidentId,
                     userId,
                     teamId,
