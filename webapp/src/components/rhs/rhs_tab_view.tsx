@@ -63,6 +63,13 @@ const RHSTabView = () => {
             >
                 {'Tasks'}
             </TabItem>
+            <TabItem
+                active={currentTabState === RHSTabState.ViewingTimeline}
+                onClick={() => setTabState(RHSTabState.ViewingTimeline)}
+                data-testid='timeline'
+            >
+                {'Timeline'}
+            </TabItem>
         </TabRow>
     );
 };

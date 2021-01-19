@@ -9,4 +9,5 @@ export enum RHSState {
 export enum RHSTabState {
     ViewingSummary,
     ViewingTasks,
+    ViewingTimeline,
 }
