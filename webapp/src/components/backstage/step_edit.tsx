@@ -4,6 +4,7 @@ import styled, {createGlobalStyle} from 'styled-components';
 
 import {ChecklistItem} from 'src/types/playbook';
 import {TertiaryButton} from 'src/components/assets/buttons';
+import {useUniqueId} from 'src/utils';
 
 import {StyledTextarea} from './styles';
 
@@ -235,6 +236,7 @@ const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
     const [focus, setFocus] = useState(false);
     const [hover, setHover] = useState(false);
     const ref = useRef(null);
+    const id = useUniqueId('step-command-');
 
     useEffect(() => {
         if (focus && ref && ref.current) {
@@ -273,6 +275,7 @@ const StepCommand: FC<StepCommandProps> = (props: StepCommandProps) => {
             <OverrideWebappStyle/>
             <AutocompleteWrapper>
                 <AutocompleteTextbox
+                    id={id}
                     ref={ref}
                     inputComponent={StepInput}
                     createMessage={'Slash Command'}
