@@ -60,12 +60,8 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut, http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
-<<<<<<< HEAD
 	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.ChannelActiveRequiredHandler(handler.updateStatusDialog)).Methods(http.MethodPost)
-=======
-	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
->>>>>>> master
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 
