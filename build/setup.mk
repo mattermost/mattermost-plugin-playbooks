@@ -4,8 +4,17 @@ ifeq ($(GO),)
     $(error "go is not available: see https://golang.org/doc/install")
 endif
 
+# Gather build variables to inject into the manifest tool
+BUILD_HASH_SHORT = $(shell git rev-parse --short HEAD)
+BUILD_TAG_LATEST = $(shell git describe --tags --abbrev=0)
+BUILD_TAG_CURRENT = $(shell git tag --points-at HEAD)
+LDFLAGS += -X "main.BuildHashShort=$(BUILD_HASH_SHORT)"
+LDFLAGS += -X "main.BuildTagLatest=$(BUILD_TAG_LATEST)"
+LDFLAGS += -X "main.BuildTagCurrent=$(BUILD_TAG_CURRENT)"
+GOBUILD = $(GO) build -ldflags '$(LDFLAGS)'
+
 # Ensure that the build tools are compiled. Go's caching makes this quick.
-$(shell cd build/manifest && $(GO) build -o ../bin/manifest)
+$(shell cd build/manifest && $(GOBUILD) -o ../bin/manifest)
 
 # Ensure that the deployment tools are compiled. Go's caching makes this quick.
 $(shell cd build/pluginctl && $(GO) build -o ../bin/pluginctl)

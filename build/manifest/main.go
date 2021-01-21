@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -42,6 +43,13 @@ export const id = manifest.id;
 export const version = manifest.version;
 export const pluginId = manifest.id;
 `
+
+// These build-time vars are read from shell commands and populated in ../setup.mk
+var (
+	BuildHashShort  string
+	BuildTagLatest  string
+	BuildTagCurrent string
+)
 
 func main() {
 	if len(os.Args) <= 1 {
@@ -101,6 +109,16 @@ func findManifest() (*model.Manifest, error) {
 		return nil, errors.Wrap(err, "failed to parse manifest")
 	}
 
+	// Update the manifest based on the state of the current commit
+	version := BuildTagCurrent
+	if version == "" {
+		version = BuildTagLatest + "+" + BuildHashShort
+	}
+	if strings.HasPrefix(version, "v") {
+		version = version[1:]
+	}
+	manifest.Version = version
+
 	return &manifest, nil
 }
 
@@ -152,6 +170,16 @@ func applyManifest(manifest *model.Manifest) error {
 		); err != nil {
 			return errors.Wrap(err, "failed to open webapp/src/manifest.js")
 		}
+	}
+
+	// finally, write the manifest file back to plugin.json
+	manifestBytes, err := json.MarshalIndent(manifest, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile("plugin.json", manifestBytes, 0600); err != nil {
+		return errors.Wrap(err, "failed to write plugin.json")
 	}
 
 	return nil
