@@ -244,14 +244,6 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     return data;
 }
 
-export async function setActiveStage(incidentId: string, activeStage: number) {
-    const data = await doPatch(`${apiUrl}/incidents/${incidentId}`, JSON.stringify({
-        active_stage: activeStage,
-    }));
-
-    return data;
-}
-
 export function exportChannelUrl(channelId: string) {
     const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 

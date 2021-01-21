@@ -11,7 +11,7 @@ import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/chan
 
 import {toggleRHS} from 'src/actions';
 import {Incident} from 'src/types/incident';
-import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItem, ChecklistItemState, Checklist} from 'src/types/playbook';
 import {setChecklistItemState} from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {isMobile} from 'src/mobile';
@@ -21,8 +21,6 @@ import {
     renderThumbVertical,
     renderView,
 } from 'src/components/rhs/rhs_shared';
-import Stage from 'src/components/rhs/stage';
-import RHSFooterTasks from 'src/components/rhs/rhs_footer_tasks';
 
 const Title = styled.div`
    display: flex;
@@ -45,54 +43,52 @@ const RHSIncidentTasks = (props: Props) => {
     const dispatch = useDispatch();
 
     const checklists = props.incident.checklists || [];
-    const activeChecklistIdx = props.incident.active_stage;
-    const activeChecklist = checklists[activeChecklistIdx] || {title: '', items: []};
 
     const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
 
     return (
-        <>
-            <Scrollbars
-                autoHide={true}
-                autoHideTimeout={500}
-                autoHideDuration={500}
-                renderThumbHorizontal={renderThumbHorizontal}
-                renderThumbVertical={renderThumbVertical}
-                renderView={renderView}
-                style={{position: 'absolute'}}
-            >
-                <div className='IncidentDetails'>
-                    <InnerContainer>
-                        <Stage incident={props.incident}/>
-                        <Title>
-                            {'Tasks'}
-                        </Title>
-                        <div className='checklist'>
-                            {activeChecklist.items.map((checklistItem: ChecklistItem, index: number) => (
-                                <ChecklistItemDetails
-                                    key={checklistItem.title + index}
-                                    checklistItem={checklistItem}
-                                    checklistNum={activeChecklistIdx}
-                                    itemNum={index}
-                                    channelId={props.incident.channel_id}
-                                    incidentId={props.incident.id}
-                                    disabled={isChannelArchived}
-                                    onChange={(newState: ChecklistItemState) => {
-                                        setChecklistItemState(props.incident.id, activeChecklistIdx, index, newState);
-                                    }}
-                                    onRedirect={() => {
-                                        if (isMobile()) {
-                                            dispatch(toggleRHS());
-                                        }
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </InnerContainer>
-                </div>
-            </Scrollbars>
-            <RHSFooterTasks incident={props.incident}/>
-        </>
+        <Scrollbars
+            autoHide={true}
+            autoHideTimeout={500}
+            autoHideDuration={500}
+            renderThumbHorizontal={renderThumbHorizontal}
+            renderThumbVertical={renderThumbVertical}
+            renderView={renderView}
+            style={{position: 'absolute'}}
+        >
+            <div className='IncidentDetails'>
+                <InnerContainer>
+                    {checklists.map((checklist: Checklist, checklistIndex: number) => (
+                        <>
+                            <Title>
+                                {checklist.title}
+                            </Title>
+                            <div className='checklist'>
+                                {checklist.items.map((checklistItem: ChecklistItem, index: number) => (
+                                    <ChecklistItemDetails
+                                        key={checklistItem.title + index}
+                                        checklistItem={checklistItem}
+                                        checklistNum={checklistIndex}
+                                        itemNum={index}
+                                        channelId={props.incident.channel_id}
+                                        incidentId={props.incident.id}
+                                        disabled={isChannelArchived}
+                                        onChange={(newState: ChecklistItemState) => {
+                                            setChecklistItemState(props.incident.id, checklistIndex, index, newState);
+                                        }}
+                                        onRedirect={() => {
+                                            if (isMobile()) {
+                                                dispatch(toggleRHS());
+                                            }
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </>
+                    ))}
+                </InnerContainer>
+            </div>
+        </Scrollbars>
     );
 };
 

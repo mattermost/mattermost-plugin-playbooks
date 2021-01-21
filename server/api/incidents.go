@@ -60,8 +60,12 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut, http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
+<<<<<<< HEAD
 	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.ChannelActiveRequiredHandler(handler.updateStatusDialog)).Methods(http.MethodPost)
+=======
+	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
+>>>>>>> master
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 
@@ -137,10 +141,11 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 	ReturnJSON(w, &newIncident, http.StatusCreated)
 }
 
+// Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status.
 func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	incidentID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
+	//userID := r.Header.Get("Mattermost-User-ID")
 
 	oldIncident, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
@@ -155,14 +160,6 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 	}
 
 	updatedIncident := oldIncident
-
-	if updates.ActiveStage != nil {
-		updatedIncident, err = h.incidentService.ChangeActiveStage(oldIncident.ID, userID, *updates.ActiveStage)
-		if err != nil {
-			HandleError(w, errors.Wrap(err, "unable to change active stage"))
-			return
-		}
-	}
 
 	ReturnJSON(w, updatedIncident, http.StatusOK)
 }
@@ -202,14 +199,12 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	payloadIncident := incident.Incident{
-		Header: incident.Header{
-			CommanderUserID: request.UserId,
-			TeamID:          request.TeamId,
-			Name:            name,
-			Description:     description,
-		},
-		PostID:     state.PostID,
-		PlaybookID: playbookID,
+		CommanderUserID: request.UserId,
+		TeamID:          request.TeamId,
+		Name:            name,
+		Description:     description,
+		PostID:          state.PostID,
+		PlaybookID:      playbookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
@@ -569,6 +564,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 }
 
+<<<<<<< HEAD
 // ChannelActiveRequiredHandler returns a handler which checks if the channel is active and not archived
 func (h *IncidentHandler) ChannelActiveRequiredHandler(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -615,6 +611,8 @@ func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 }
 
+=======
+>>>>>>> master
 // updateStatusDialog handles the POST /incidents/{id}/update-status-dialog endpoint, called when a
 // user submits the Update Status dialog.
 func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Request) {

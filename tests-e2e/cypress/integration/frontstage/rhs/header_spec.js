@@ -38,6 +38,63 @@ describe('incident rhs > header', () => {
         cy.apiLogin('user-1');
     });
 
+    describe('shows name', () => {
+        it('of active incident', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the title is displayed
+            cy.get('#rhsContainer').within(() => {
+                cy.get('.sidebar--right__title').contains(incidentName);
+            });
+        });
+
+        it('of renamed incident', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the existing title is displayed
+            cy.get('#rhsContainer').within(() => {
+                cy.get('.sidebar--right__title').contains(incidentName);
+            });
+
+            cy.apiGetChannelByName('ad-1', incidentChannelName).then(({channel}) => {
+                // # Rename the channel
+                cy.apiPatchChannel(channel.id, {
+                    id: channel.id,
+                    display_name: 'Updated',
+                });
+            });
+
+            // * Verify the updated title is displayed
+            cy.get('#rhsContainer').within(() => {
+                cy.get('.sidebar--right__title').contains('Updated');
+            });
+        });
+    });
+
     describe('shows status', () => {
         it('when ongoing', () => {
             // # Start the incident

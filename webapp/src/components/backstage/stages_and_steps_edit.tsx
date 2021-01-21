@@ -149,7 +149,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
         <>
             <BackstageHeader>
                 <BackstageHeaderTitle>{'Tasks'}</BackstageHeaderTitle>
-                <BackstageHeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</BackstageHeaderHelpText>
+                <BackstageHeaderHelpText>{'Checklists allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</BackstageHeaderHelpText>
             </BackstageHeader>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
@@ -195,15 +195,15 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                             onClick={onAddChecklist}
                         >
                             <i className='icon-plus icon-16'/>
-                            {'New Stage'}
+                            {'New Checklist'}
                         </NewStage>
                     </HorizontalBar>
                 </NewStageContainer>
                 <ConfirmModal
                     show={confirmRemoveChecklistNum >= 0}
-                    title={'Remove Stage'}
-                    message={'Are you sure you want to remove the stage? All steps will be removed.'}
-                    confirmButtonText={'Remove Stage'}
+                    title={'Remove Checklist'}
+                    message={'Are you sure you want to remove the checklist? All tasks will be removed.'}
+                    confirmButtonText={'Remove Checklist'}
                     onConfirm={() => {
                         onRemoveChecklist(confirmRemoveChecklistNum);
                         setConfirmRemoveChecklistNum(-1);

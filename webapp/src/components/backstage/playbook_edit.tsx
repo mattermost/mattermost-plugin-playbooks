@@ -156,7 +156,7 @@ const setPlaybookDefaults = (playbook: Playbook) => ({
     title: playbook.title.trim() || 'Untitled Playbook',
     checklists: playbook.checklists.map((checklist) => ({
         ...checklist,
-        title: checklist.title || 'Untitled Stage',
+        title: checklist.title || 'Untitled Checklist',
         items: checklist.items.map((item) => ({
             ...item,
             title: item.title || 'Untitled Step',

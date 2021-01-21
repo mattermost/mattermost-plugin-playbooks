@@ -94,9 +94,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // * Verify we see the welcome screen when there are no incidents
@@ -132,9 +129,6 @@ describe('rhs incident list', () => {
                 // # Click the incident icon
                 cy.get('#channel-header').within(() => {
                     cy.get('#incidentIcon').should('exist').click();
-
-                    // # Remove the Search dropdown that covers the rhs
-                    cy.get('#searchBox').click().type('{esc}');
                 });
 
                 // * Verify the rhs list is open the incident is visible.
@@ -167,9 +161,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # start 2 incidents
@@ -209,9 +200,6 @@ describe('rhs incident list', () => {
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Remove the Search dropdown that covers the rhs
-            cy.get('#searchBox').click().type('{esc}');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -273,9 +261,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // * Verify the rhs list is open and we can see the new incident
@@ -305,9 +290,6 @@ describe('rhs incident list', () => {
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Remove the Search dropdown that covers the rhs
-            cy.get('#searchBox').click().type('{esc}');
 
             // # Click the back button
             cy.get('#rhsContainer').within(() => {
@@ -347,9 +329,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // * Verify the rhs list is open and we can see the new incident
@@ -374,9 +353,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # start first incident
@@ -410,9 +386,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # start second incident
@@ -446,9 +419,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // * Verify the rhs list is open and only one incident is visible.
@@ -481,9 +451,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // * click on the first go-to-channel button.
@@ -523,9 +490,6 @@ describe('rhs incident list', () => {
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Remove the Search dropdown that covers the rhs
-            cy.get('#searchBox').click().type('{esc}');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -650,9 +614,6 @@ describe('rhs incident list', () => {
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Remove the Search dropdown that covers the rhs
-            cy.get('#searchBox').click().type('{esc}');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -808,9 +769,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # Login as user-2
@@ -858,9 +816,6 @@ describe('rhs incident list', () => {
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
-            // # Remove the Search dropdown that covers the rhs
-            cy.get('#searchBox').click().type('{esc}');
-
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
@@ -892,9 +847,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # Login as user-2
@@ -931,7 +883,8 @@ describe('rhs incident list', () => {
             });
         });
 
-        it('incident should be removed from list when the user closes incident and presses back button', () => {
+        /* TEMP disable, to be restored with alternate incident close method.
+         * it('incident should be removed from list when the user closes incident and presses back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -985,7 +938,7 @@ describe('rhs incident list', () => {
                 // * Verify we cannot see the ended incident
                 cy.findByText(incidentName).should('not.exist');
             });
-        });
+        });*/
 
         it('incident should be removed from list when another user closes incident', () => {
             // # Navigate directly to a non-incident channel
@@ -997,9 +950,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # Login as user-2
@@ -1053,9 +1003,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # start new incident
@@ -1113,9 +1060,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // * Verify we can see the incidents list
@@ -1231,9 +1175,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # click the Start Incident link
@@ -1258,9 +1199,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # click the Start Incident link
@@ -1285,9 +1223,6 @@ describe('rhs incident list', () => {
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
-
-                // # Remove the Search dropdown that covers the rhs
-                cy.get('#searchBox').click().type('{esc}');
             });
 
             // # click the Start Incident link
@@ -1322,9 +1257,6 @@ describe('rhs incident list', () => {
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Remove the Search dropdown that covers the rhs
-            cy.get('#searchBox').click().type('{esc}');
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -1388,9 +1320,6 @@ describe('rhs incident list', () => {
 
                     // # Ensure the channel is loaded before continuing (allows redux to sync).
                     cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-                    // # Remove the Search dropdown that covers the rhs
-                    cy.get('#searchBox').click().type('{esc}');
 
                     // * Verify the incident RHS is open.
                     cy.get('#rhsContainer').should('exist').within(() => {
