@@ -9,7 +9,7 @@ const manifest = JSON.parse(`
     "support_url": "https://github.com/mattermost/mattermost-plugin-incident-management/issues",
     "release_notes_url": "https://github.com/mattermost/mattermost-plugin-incident-management/releases/tag/v1.2.0",
     "icon_path": "assets/incident_plugin_icon.svg",
-    "version": "1.2.0+9fcd0b92",
+    "version": "1.2.0+90906253",
     "min_server_version": "5.28.0",
     "server": {
         "executables": {
