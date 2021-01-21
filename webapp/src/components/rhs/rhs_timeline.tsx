@@ -48,18 +48,9 @@ const Circle = styled.div`
     left: 80px;
     z-index: 3;
 
-    :before {
-        font-family: 'compass-icons';
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        content: '\\xf23b';
-        font-size: 12px;
-        font-weight: bold;
-        color: var(--button-bg);
-        transition: transform 0.15s;
-        transform: scale(0) rotate(90deg);
-        position: relative;
+    > .icon {
+        font-size: 14px;
+        margin: 5px 0 0 3px;
     }
 `;
 
@@ -202,7 +193,7 @@ const RHSTimeline = (props: Props) => {
             let user = selectUser(post.user_id) as UserProfile | undefined;
 
             if (!user) {
-                const ret = await getUserFn(post.user_id) as {data?: UserProfile, error?: any};
+                const ret = await getUserFn(post.user_id) as { data?: UserProfile, error?: any };
                 if (!ret.data) {
                     return Promise.reject(new Error('no user'));
                 }
@@ -242,7 +233,9 @@ const RHSTimeline = (props: Props) => {
                                 <TimeHours>{moment(event.create_at).format('HH:mm:ss')}</TimeHours>
                                 <TimeDay>{moment(event.create_at).format('MMM DD')}</TimeDay>
                             </TimeContainer>
-                            <Circle onClick={(e) => goToPost(e, event.post_id)}/>
+                            <Circle onClick={(e) => goToPost(e, event.post_id)}>
+                                <i className='icon icon-flag-outline'/>
+                            </Circle>
                             {/*<ClickableLine onClick={() => console.log('add an event')}/>*/}
                             {/*<Button className={'button'}>{'+'}</Button>*/}
                             <SummaryContainer onClick={(e) => goToPost(e, event.post_id)}>
