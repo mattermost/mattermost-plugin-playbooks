@@ -195,7 +195,7 @@ jobs:
           http.cors.allow-credentials: "true"
           transport.host: "127.0.0.1"
           ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      - image: mattermost/mattermost-enterprise-edition:$MM_DOCKER_IMAGE_TAG
+      - image: mattermost/mattermost-ee-test:$MM_DOCKER_IMAGE_TAG
         environment:
           DB_HOST: localhost
           DB_PORT_NUMBER: 5432
@@ -217,7 +217,7 @@ jobs:
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
     environment:
-      MM_DOCKER_IMAGE_TAG: master
+      MM_DOCKER_IMAGE_TAG: prerelease
       TYPE: NONE
       PULL_REQUEST:
       BROWSER: chrome
