@@ -107,51 +107,6 @@ const SummaryDetail = styled.div`
     color: var(--center-channel-color-64)
 `;
 
-// const ClickableLine = styled.div`
-//     position: absolute;
-//     width: 15px;
-//     height: 36px;
-//     left: 20%;
-//     top: 20px;
-//     margin: 0 0 0 -24px;
-//
-//     //background: lightblue;
-//     //opacity: 0.5;
-//
-//     z-index: 2;
-//
-//     :hover + button, button:hover {
-//         display: inline-flex;
-//     }
-// `;
-//
-// const Button = styled.button`
-//     display: none;
-//
-//     position: absolute;
-//     width: 20px;
-//     height: 15px;
-//     left: 20%;
-//     top: 20px;
-//     margin: 0 0 0 -26px;
-//
-//     align-items: center;
-//     background: var(--button-color);
-//     color: var(--button-bg);
-//     border-radius: 4px;
-//     border: 1px solid var(--button-bg);
-//     font-weight: 600;
-//     font-size: 10px;
-//
-//     &:active {
-//         background: rgba(var(--button-bg-rgb), 0.8);
-//     }
-//
-//     &:disabled {
-//         background: rgba(var(--button-bg-rgb), 0.4);
-//     }
-// `;
-
 type IdToPostFn = (postId: string) => Post;
 type IdToUserFn = (userId: string) => UserProfile;
 
@@ -236,8 +191,6 @@ const RHSTimeline = (props: Props) => {
                             <Circle onClick={(e) => goToPost(e, event.post_id)}>
                                 <i className='icon icon-flag-outline'/>
                             </Circle>
-                            {/*<ClickableLine onClick={() => console.log('add an event')}/>*/}
-                            {/*<Button className={'button'}>{'+'}</Button>*/}
                             <SummaryContainer onClick={(e) => goToPost(e, event.post_id)}>
                                 <SummaryTitle>{'Incident Status Update'}</SummaryTitle>
                                 <SummaryDetail>{event.display_name + ' updated incident to ' + event.status}</SummaryDetail>
