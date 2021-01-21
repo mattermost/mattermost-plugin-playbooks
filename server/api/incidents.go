@@ -60,7 +60,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut, http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/next-stage-dialog", handler.nextStageDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.channelActiveRequiredHandler(handler.updateStatusDialog)).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
@@ -105,7 +104,6 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 // ChannelActiveRequiredHandler returns a handler which checks if the channel is active and not archived
 func (h *IncidentHandler) channelActiveRequiredHandler(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cs := &pluginapi.ChannelService{}
 		vars := mux.Vars(r)
 		incidentID := vars["id"]
 
@@ -115,7 +113,7 @@ func (h *IncidentHandler) channelActiveRequiredHandler(next func(w http.Response
 			return
 		}
 
-		c, err := cs.Get(incidentToModify.ChannelID)
+		c, err := h.pluginAPI.Channel.Get(incidentToModify.ChannelID)
 		if err != nil {
 			HandleError(w, err)
 			return
@@ -581,33 +579,6 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 
 	if err := h.incidentService.ChangeCommander(vars["id"], userID, params.CommanderID); err != nil {
 		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-// nextStageDialog handles the interactive dialog submission when a user confirms they
-// want to go to the next stage.
-func (h *IncidentHandler) nextStageDialog(w http.ResponseWriter, r *http.Request) {
-	incidentID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	request := model.SubmitDialogRequestFromJson(r.Body)
-	if request == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
-		return
-	}
-
-	stageIdx, err := strconv.Atoi(request.State)
-	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse stage index", err)
-		return
-	}
-
-	_, err = h.incidentService.ChangeActiveStage(incidentID, userID, stageIdx)
-	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to change active stage"))
 		return
 	}
 
