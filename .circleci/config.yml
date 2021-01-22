@@ -407,6 +407,8 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+            branches:
+              ignore: master
       - e2e-cypress-tests-531:
           filters:
             tags:
