@@ -167,7 +167,7 @@ jobs:
           command: make test
       - *save_test_cache
 
-  e2e-cypress-tests-master:
+  e2e-cypress-tests-cloud:
     resource_class: large
     docker:
       - image: circleci/golang:1.14.1-node-browsers
@@ -223,6 +223,7 @@ jobs:
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
+          MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
     environment:
       MM_DOCKER_IMAGE_TAG: prerelease
       TYPE: NONE
@@ -409,7 +410,7 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - e2e-cypress-tests-master:
+      - e2e-cypress-tests-cloud:
           context: matterbuild-docker
           filters:
             tags:
