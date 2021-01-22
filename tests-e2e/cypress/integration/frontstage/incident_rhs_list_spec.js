@@ -1374,6 +1374,7 @@ describe('rhs incident list', () => {
                             channelId,
                             teamId,
                             message: 'Status update 2',
+                            status: 'Active',
                         });
 
                         // * verify the last updated time is updated

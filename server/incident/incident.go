@@ -156,6 +156,7 @@ type SQLStatusPost struct {
 	IncidentID string
 	PostID     string
 	Status     string
+	EndAt      int64
 }
 
 func (r GetIncidentsResults) Clone() GetIncidentsResults {
