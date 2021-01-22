@@ -90,7 +90,7 @@ func main() {
 }
 
 func findManifest() (*model.Manifest, error) {
-	_, manifestFilePath, err := model.FindManifest("build/")
+	_, manifestFilePath, err := model.FindManifest(".")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find manifest in current working directory")
 	}
@@ -178,7 +178,7 @@ func applyManifest(manifest *model.Manifest) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile("plugin.json", manifestBytes, 0600); err != nil {
+	if err := ioutil.WriteFile("build/plugin.json", manifestBytes, 0600); err != nil {
 		return errors.Wrap(err, "failed to write plugin.json")
 	}
 
