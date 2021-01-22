@@ -56,12 +56,12 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
-	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
-	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut, http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
-	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("", handler.channelActiveRequiredHandler(handler.updateIncident)).Methods(http.MethodPatch)
+	incidentRouterAuthorized.HandleFunc("/end", handler.channelActiveRequiredHandler(handler.endIncident)).Methods(http.MethodPut, http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/restart", handler.channelActiveRequiredHandler(handler.restartIncident)).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/commander", handler.channelActiveRequiredHandler(handler.changeCommander)).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.channelActiveRequiredHandler(handler.updateStatusDialog)).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.channelActiveRequiredHandler(handler.reminderButtonUpdate)).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
