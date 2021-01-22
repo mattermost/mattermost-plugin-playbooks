@@ -9,3 +9,5 @@ tests-e2e/cypress/videos
 .eslintcache
 
 plugin.json
+webapp/src/manifest.js
+server/manifest.go
