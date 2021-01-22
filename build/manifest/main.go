@@ -90,7 +90,7 @@ func main() {
 }
 
 func findManifest() (*model.Manifest, error) {
-	_, manifestFilePath, err := model.FindManifest(".")
+	_, manifestFilePath, err := model.FindManifest("build/")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find manifest in current working directory")
 	}
