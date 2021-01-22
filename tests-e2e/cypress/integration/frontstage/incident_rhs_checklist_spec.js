@@ -96,7 +96,7 @@ describe('incident rhs checklist', () => {
             cy.verifyEphemeralMessage('Failed to execute slash command /invalid');
         });
 
-        /*it('successfully runs a valid slash command', () => {
+        it('successfully runs a valid slash command', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the command has not yet been run.
                 cy.get('.run').eq(1).should('have.text', 'Run');
@@ -110,7 +110,7 @@ describe('incident rhs checklist', () => {
 
             // # Verify the expected output.
             cy.verifyPostedMessage('VALID');
-        });*/
+        });
 
         it('still shows slash commands as having been run after reload', () => {
             // # Navigate directly to the application and the incident channel
