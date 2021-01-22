@@ -198,7 +198,7 @@ jobs:
           http.cors.allow-credentials: "true"
           transport.host: "127.0.0.1"
           ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      - image: mattermost/mattermost-ee-test:$MM_DOCKER_IMAGE_TAG
+      - image: mattermost/mm-ee-test:$MM_DOCKER_IMAGE_TAG
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
