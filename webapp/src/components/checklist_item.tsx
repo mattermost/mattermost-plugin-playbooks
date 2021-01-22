@@ -15,13 +15,15 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee} from 'src/client';
+import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee, clientRemoveChecklistItem} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useTimeout, useClickOutsideRef} from 'src/hooks';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+
+import ConfirmModal from './widgets/confirmation_modal';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -87,6 +89,30 @@ const DescriptionTitle = styled.span`
 const StyledSpinner = styled(Spinner)`
     margin-left: 4px;
     padding-top: 3px;
+`;
+
+const HoverMenu = styled.div`
+    display: flex;
+    padding: 4px;
+    position: absolute;
+    right: 0;
+    top: -8px;
+    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
+    background-color: var(--center-channel-bg);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+`;
+
+const MenuButton = styled.i`
+    width: 28px;
+    height: 28px;
+`;
+
+const ItemContainer = styled.div`
+    padding-top: 2rem;
+    :first-child {
+        padding-top: 0.4rem;
+    }
 `;
 
 interface StepDescriptionProps {
@@ -181,6 +207,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 
     const [running, setRunning] = useState(false);
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
+    const [showMenu, setShowMenu] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
     if (props.checklistItem.command_last_run > lastRun) {
@@ -227,10 +255,23 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     }
 
     return (
-        <>
+        <ItemContainer
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+        >
             <div
                 className={'checkbox-container live'}
             >
+                {showMenu &&
+                    <HoverMenu>
+                        <MenuButton
+                            className={'icon-trash-can-outline icon-16 btn-icon'}
+                            onClick={() => {
+                                setShowDeleteConfirm(true);
+                            }}
+                        />
+                    </HoverMenu>
+                }
                 <ChecklistItemButton
                     item={props.checklistItem}
                     onChange={(item: ChecklistItemState) => {
@@ -310,7 +351,17 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     controlledOpenToggle={profileSelectorToggle}
                 />
             </div>
-        </>
+            <ConfirmModal
+                show={showDeleteConfirm}
+                title={'Confirm Task Delete'}
+                message={`Are you sure you want to delete this task? "${title}"?`}
+                confirmButtonText={'Delete Task'}
+                onConfirm={() =>
+                    clientRemoveChecklistItem(props.incidentId, props.checklistNum, props.itemNum)
+                }
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
+        </ItemContainer>
     );
 };
 

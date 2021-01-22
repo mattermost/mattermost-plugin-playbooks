@@ -5,14 +5,10 @@ $font-family: Open Sans;
 .checkbox-container {
     align-items: flex-start;
     display: flex;
-    padding: 2rem 0 0 0;
+    position: relative;
 
     live {
         height: 35px;
-    }
-
-    &:first-child {
-        padding-top: 0.4rem;
     }
 
     button {
