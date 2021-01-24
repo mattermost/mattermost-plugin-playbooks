@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect, useCallback} from 'react';
+import React, {FC, useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
@@ -11,8 +11,6 @@ import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users'
 import {Team} from 'mattermost-redux/types/teams';
 
 import styled from 'styled-components';
-
-import {ValueType} from 'react-select';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 
@@ -28,11 +26,10 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 
 import './playbook.scss';
-import StagesAndStepsIcon from './stages_and_steps_icon';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
-import {BackstageHeader, BackstageHeaderTitle, BackstageSubheader, BackstageSubheaderText, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledAsyncSelect, StyledSelect} from './styles';
+import {BackstageSubheader, BackstageSubheaderText, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledSelect} from './styles';
 
 const Container = styled.div`
     display: flex;
