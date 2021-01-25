@@ -128,7 +128,7 @@ describe('incident rhs checklist', () => {
             });
         });
 
-        it.only('delete task', () => {
+        it('delete task', () => {
             // Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
