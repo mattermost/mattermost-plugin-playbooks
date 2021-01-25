@@ -84,6 +84,11 @@ func main() {
 			panic("failed to apply manifest: " + err.Error())
 		}
 
+	case "dist":
+		if err := distManifest(manifest); err != nil {
+			panic("failed to write manifest to dist directory: " + err.Error())
+		}
+
 	default:
 		panic("unrecognized command: " + cmd)
 	}
@@ -172,13 +177,17 @@ func applyManifest(manifest *model.Manifest) error {
 		}
 	}
 
-	// finally, write the manifest file back to plugin.json
+	return nil
+}
+
+// distManifest writes the manifest file to the dist directory
+func distManifest(manifest *model.Manifest) error {
 	manifestBytes, err := json.MarshalIndent(manifest, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile("build/plugin.json", manifestBytes, 0600); err != nil {
+	if err := ioutil.WriteFile(fmt.Sprintf("dist/%s/plugin.json", manifest.Id), manifestBytes, 0600); err != nil {
 		return errors.Wrap(err, "failed to write plugin.json")
 	}
 
