@@ -18,7 +18,8 @@ import (
 
 type sqlIncident struct {
 	incident.Incident
-	ChecklistsJSON json.RawMessage
+	ChecklistsJSON             json.RawMessage
+	ConcatenatedInvitedUserIDs string
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -46,7 +47,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.IsActive", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate").
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -215,26 +216,27 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	_, err = s.store.execBuilder(tx, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":              rawIncident.ID,
-			"Name":            rawIncident.Name,
-			"Description":     rawIncident.Description,
-			"IsActive":        rawIncident.IsActive,
-			"CommanderUserID": rawIncident.CommanderUserID,
-			"TeamID":          rawIncident.TeamID,
-			"ChannelID":       rawIncident.ChannelID,
-			"CreateAt":        rawIncident.CreateAt,
-			"EndAt":           rawIncident.EndAt,
-			"DeleteAt":        rawIncident.DeleteAt,
+			"ID":                         rawIncident.ID,
+			"Name":                       rawIncident.Name,
+			"Description":                rawIncident.Description,
+			"IsActive":                   rawIncident.IsActive,
+			"CommanderUserID":            rawIncident.CommanderUserID,
+			"TeamID":                     rawIncident.TeamID,
+			"ChannelID":                  rawIncident.ChannelID,
+			"CreateAt":                   rawIncident.CreateAt,
+			"EndAt":                      rawIncident.EndAt,
+			"DeleteAt":                   rawIncident.DeleteAt,
+			"PostID":                     rawIncident.PostID,
+			"PlaybookID":                 rawIncident.PlaybookID,
+			"ChecklistsJSON":             rawIncident.ChecklistsJSON,
+			"ReminderPostID":             rawIncident.ReminderPostID,
+			"PreviousReminder":           rawIncident.PreviousReminder,
+			"BroadcastChannelID":         rawIncident.BroadcastChannelID,
+			"ReminderMessageTemplate":    rawIncident.ReminderMessageTemplate,
+			"ConcatenatedInvitedUserIDs": rawIncident.ConcatenatedInvitedUserIDs,
 			// Preserved for backwards compatibility with v1.2
-			"ActiveStage":             0,
-			"ActiveStageTitle":        "",
-			"PostID":                  rawIncident.PostID,
-			"PlaybookID":              rawIncident.PlaybookID,
-			"ChecklistsJSON":          rawIncident.ChecklistsJSON,
-			"ReminderPostID":          rawIncident.ReminderPostID,
-			"PreviousReminder":        rawIncident.PreviousReminder,
-			"BroadcastChannelID":      rawIncident.BroadcastChannelID,
-			"ReminderMessageTemplate": rawIncident.ReminderMessageTemplate,
+			"ActiveStage":      0,
+			"ActiveStageTitle": "",
 		}))
 
 	if err != nil {
@@ -276,16 +278,17 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":               "",
-			"Description":        rawIncident.Description,
-			"IsActive":           rawIncident.IsActive,
-			"CommanderUserID":    rawIncident.CommanderUserID,
-			"EndAt":              rawIncident.EndAt,
-			"DeleteAt":           rawIncident.DeleteAt,
-			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
-			"ReminderPostID":     rawIncident.ReminderPostID,
-			"PreviousReminder":   rawIncident.PreviousReminder,
-			"BroadcastChannelID": rawIncident.BroadcastChannelID,
+			"Name":                       "",
+			"Description":                rawIncident.Description,
+			"IsActive":                   rawIncident.IsActive,
+			"CommanderUserID":            rawIncident.CommanderUserID,
+			"EndAt":                      rawIncident.EndAt,
+			"DeleteAt":                   rawIncident.DeleteAt,
+			"ChecklistsJSON":             rawIncident.ChecklistsJSON,
+			"ReminderPostID":             rawIncident.ReminderPostID,
+			"PreviousReminder":           rawIncident.PreviousReminder,
+			"BroadcastChannelID":         rawIncident.BroadcastChannelID,
+			"ConcatenatedInvitedUserIDs": rawIncident.ConcatenatedInvitedUserIDs,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -483,6 +486,11 @@ func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident,
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: %s", rawIncident.ID)
 	}
 
+	i.InvitedUserIDs = []string(nil)
+	if rawIncident.ConcatenatedInvitedUserIDs != "" {
+		i.InvitedUserIDs = strings.Split(rawIncident.ConcatenatedInvitedUserIDs, ",")
+	}
+
 	return &i, nil
 }
 
@@ -528,8 +536,9 @@ func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
 	}
 
 	return &sqlIncident{
-		Incident:       origIncident,
-		ChecklistsJSON: checklistsJSON,
+		Incident:                   origIncident,
+		ChecklistsJSON:             checklistsJSON,
+		ConcatenatedInvitedUserIDs: strings.Join(origIncident.InvitedUserIDs, ","),
 	}, nil
 }
 

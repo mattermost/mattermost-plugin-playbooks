@@ -38,6 +38,7 @@ type Incident struct {
 	PreviousReminder        time.Duration        `json:"previous_reminder"`
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
+	InvitedUserIDs          []string             `json:"invited_user_ids"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -77,6 +78,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 	if old.StatusPosts == nil {
 		old.StatusPosts = []StatusPost{}
+	}
+	if old.InvitedUserIDs == nil {
+		old.InvitedUserIDs = []string{}
 	}
 
 	return json.Marshal(old)

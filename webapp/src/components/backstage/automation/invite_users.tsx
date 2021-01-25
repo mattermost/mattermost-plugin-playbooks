@@ -13,6 +13,8 @@ import {AutomationHeader, AutomationTitle} from 'src/components/backstage/automa
 import {Toggle} from 'src/components/backstage/automation/toggle';
 
 interface Props {
+    enabled: boolean;
+    onToggle: () => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
     userIds: string[];
@@ -21,21 +23,19 @@ interface Props {
 }
 
 export const InviteUsers: FC<Props> = (props: Props) => {
-    const [enabled, setEnabled] = useState(false);
-
     return (
         <>
             <AutomationHeader>
                 <AutomationTitle>
                     <Toggle
-                        isChecked={enabled}
-                        onChange={() => setEnabled((current: boolean) => !current)}
+                        isChecked={props.enabled}
+                        onChange={props.onToggle}
                     />
                     <div>{'Invite members'}</div>
                 </AutomationTitle>
                 <ProfileAutocompleteWrapper>
                     <ProfileAutocomplete
-                        isDisabled={!enabled}
+                        isDisabled={!props.enabled}
                         onAddUser={props.onAddUser}
                         userIds={props.userIds}
                         searchProfiles={props.searchProfiles}
@@ -46,7 +46,7 @@ export const InviteUsers: FC<Props> = (props: Props) => {
             <Users
                 userIds={props.userIds}
                 onRemoveUser={props.onRemoveUser}
-                isEnabled={enabled}
+                isEnabled={props.enabled}
             />
         </>
     );

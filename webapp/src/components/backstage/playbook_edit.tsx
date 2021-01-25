@@ -320,6 +320,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleInviteUsers = () => {
+        setPlaybook({
+            ...playbook,
+            invite_users_enabled: !playbook.invite_users_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -465,6 +473,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     searchProfiles={searchUsers}
                                     getProfiles={getUsers}
                                     userIds={playbook.invited_user_ids}
+                                    inviteUsersEnabled={playbook.invite_users_enabled}
+                                    onToggleInviteUsers={handleToggleInviteUsers}
                                     onAddUser={handleAddUserInvited}
                                     onRemoveUser={handleRemoveUserInvited}
                                 />

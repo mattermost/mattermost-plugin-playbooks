@@ -104,6 +104,38 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.CreateIncident(incdnt, userID, public)
 
+	usersFailedToInvite := []string{}
+	for _, userID := range incdnt.InvitedUserIDs {
+		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+
+		_, err = s.pluginAPI.Channel.AddMember(incdnt.ChannelID, userID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+	}
+
+	if len(usersFailedToInvite) != 0 {
+		usernames := make([]string, 0, len(usersFailedToInvite))
+		for _, userID := range usersFailedToInvite {
+			user, userErr := s.pluginAPI.User.Get(userID)
+			if userErr != nil {
+				// User may not exist anymore, ignore the error
+				continue
+			}
+
+			usernames = append(usernames, "@"+user.Username)
+		}
+
+		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s", strings.Join(usernames, ", ")); err != nil {
+			return nil, errors.Wrapf(err, "failed to post to incident channel")
+		}
+	}
+
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)

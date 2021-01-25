@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
@@ -15,7 +16,8 @@ import (
 
 type sqlPlaybook struct {
 	playbook.Playbook
-	ChecklistsJSON json.RawMessage
+	ChecklistsJSON             json.RawMessage
+	ConcatenatedInvitedUserIDs string
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -40,7 +42,7 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID", "COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds").
+			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID", "COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "ConcatenatedInvitedUserIDs", "InviteUsersEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -92,6 +94,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"BroadcastChannelID":          rawPlaybook.BroadcastChannelID,
 			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
 			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
+			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
+			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -283,6 +287,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"BroadcastChannelID":          rawPlaybook.BroadcastChannelID,
 			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
 			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
+			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
+			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -387,9 +393,12 @@ func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)
 	}
 
+	invitedUserIDs := strings.Join(origPlaybook.InvitedUserIDs, ",")
+
 	return &sqlPlaybook{
-		Playbook:       origPlaybook,
-		ChecklistsJSON: checklistsJSON,
+		Playbook:                   origPlaybook,
+		ChecklistsJSON:             checklistsJSON,
+		ConcatenatedInvitedUserIDs: invitedUserIDs,
 	}, nil
 }
 
@@ -397,6 +406,11 @@ func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
 	p := rawPlaybook.Playbook
 	if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
 		return playbook.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+	}
+
+	p.InvitedUserIDs = []string(nil)
+	if rawPlaybook.ConcatenatedInvitedUserIDs != "" {
+		p.InvitedUserIDs = strings.Split(rawPlaybook.ConcatenatedInvitedUserIDs, ",")
 	}
 
 	return p, nil

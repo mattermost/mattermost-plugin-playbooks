@@ -15,6 +15,8 @@ interface Props {
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
     userIds: string[];
+    inviteUsersEnabled: boolean;
+    onToggleInviteUsers: () => void;
     onAddUser: (userId: string) => void;
     onRemoveUser: (userId: string) => void;
 }
@@ -34,6 +36,8 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                 </SectionTitle>
                 <Setting>
                     <InviteUsers
+                        enabled={props.inviteUsersEnabled}
+                        onToggle={props.onToggleInviteUsers}
                         searchProfiles={props.searchProfiles}
                         getProfiles={props.getProfiles}
                         userIds={props.userIds}
