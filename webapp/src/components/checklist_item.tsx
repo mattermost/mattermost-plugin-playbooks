@@ -24,6 +24,7 @@ import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
 import ConfirmModal from './widgets/confirmation_modal';
+import Profile from './profile/profile';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -109,9 +110,29 @@ const MenuButton = styled.i`
 `;
 
 const ItemContainer = styled.div`
-    padding-top: 2rem;
+    padding-top: 1.3rem;
     :first-child {
         padding-top: 0.4rem;
+    }
+`;
+
+const ExtrasRow = styled.div`
+    display: flex;
+    margin: 4px 0 0 32px;
+    line-height: 16px;
+    >div {
+        margin: 0 5px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+        border-radius: 10px;
+        padding: 2px;
+        display: flex;
+    }
+`;
+
+const SmallProfile = styled(Profile)`
+    >.image {
+        width: 16px;
+        height: 16px;
     }
 `;
 
@@ -271,6 +292,25 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                 setShowDeleteConfirm(true);
                             }}
                         />
+                        <ProfileSelector
+                            selectedUserId={props.checklistItem.assignee_id}
+                            onlyPlaceholder={true}
+                            placeholder={
+                                <MenuButton
+                                    className={'icon-account-plus-outline icon-16 btn-icon'}
+                                />
+                            }
+                            enableEdit={true}
+                            getUsers={fetchUsers}
+                            onSelectedChange={onAssigneeChange}
+                            selfIsFirstOption={true}
+                            customControl={ControlComponent}
+                            customControlProps={{
+                                showCustomReset: Boolean(assignee_id),
+                                onCustomReset: resetAssignee,
+                            }}
+                            controlledOpenToggle={profileSelectorToggle}
+                        />
                     </HoverMenu>
                 }
                 <ChecklistItemButton
@@ -314,44 +354,33 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     {timestamp}
                 </a>
             </div>
-            {
-                props.checklistItem.command !== '' &&
-                <div className={'checklist-command-container'}>
-                    <div
-                        className={classNames('run', {running})}
-                        onClick={() => {
-                            if (!running) {
-                                setRunning(true);
-                                clientRunChecklistItemSlashCommand(dispatch, props.incidentId, props.checklistNum, props.itemNum);
-                            }
-                        }}
-                    >
-                        {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
-                    </div>
-                    <div className={'command'}>
-                        {props.checklistItem.command}
-                    </div>
-                    {running && <StyledSpinner/>}
-                </div>
-            }
-            <div className={'assignee-container'}>
-                <ProfileSelector
-                    selectedUserId={props.checklistItem.assignee_id}
-                    placeholder={'No Assignee'}
-                    placeholderButtonClass={'NoAssignee-button'}
-                    profileButtonClass={'Assigned-button'}
-                    enableEdit={true}
-                    getUsers={fetchUsers}
-                    onSelectedChange={onAssigneeChange}
-                    selfIsFirstOption={true}
-                    customControl={ControlComponent}
-                    customControlProps={{
-                        showCustomReset: Boolean(assignee_id),
-                        onCustomReset: resetAssignee,
-                    }}
-                    controlledOpenToggle={profileSelectorToggle}
+            <ExtrasRow>
+                {props.checklistItem.assignee_id &&
+                <SmallProfile
+                    userId={props.checklistItem.assignee_id}
                 />
-            </div>
+                }
+                {
+                    props.checklistItem.command !== '' &&
+                        <div>
+                            <div
+                                className={classNames('run', {running})}
+                                onClick={() => {
+                                    if (!running) {
+                                        setRunning(true);
+                                        clientRunChecklistItemSlashCommand(dispatch, props.incidentId, props.checklistNum, props.itemNum);
+                                    }
+                                }}
+                            >
+                                {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
+                            </div>
+                            <div className={'command'}>
+                                {props.checklistItem.command}
+                            </div>
+                            {running && <StyledSpinner/>}
+                        </div>
+                }
+            </ExtrasRow>
             <ConfirmModal
                 show={showDeleteConfirm}
                 title={'Confirm Task Delete'}

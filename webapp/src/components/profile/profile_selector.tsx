@@ -26,9 +26,10 @@ interface ActionObj {
 
 interface Props {
     selectedUserId?: string;
-    placeholder: string;
+    placeholder: JSX.Element;
     placeholderButtonClass?: string;
     profileButtonClass?: string;
+    onlyPlaceholder?: boolean;
     enableEdit: boolean;
     isClearable?: boolean;
     customControl?: (props: ControlProps<any>) => React.ReactElement;
@@ -164,6 +165,16 @@ export default function ProfileSelector(props: Props) {
                 {props.placeholder}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
             </button>
+        );
+    }
+
+    if (props.onlyPlaceholder) {
+        target = (
+            <div
+                onClick={toggleOpen}
+            >
+                {props.placeholder}
+            </div>
         );
     }
 
