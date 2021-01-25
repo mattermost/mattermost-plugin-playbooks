@@ -26,7 +26,7 @@ interface ActionObj {
 
 interface Props {
     selectedUserId?: string;
-    placeholder: JSX.Element;
+    placeholder: React.ReactNode;
     placeholderButtonClass?: string;
     profileButtonClass?: string;
     onlyPlaceholder?: boolean;
