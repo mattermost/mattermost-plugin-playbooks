@@ -12,6 +12,7 @@ export interface Playbook {
     broadcast_channel_id: string;
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
+    invited_user_ids: string[];
 }
 
 export interface PlaybookNoChecklist {
@@ -72,6 +73,7 @@ export function emptyPlaybook(): Playbook {
         broadcast_channel_id: '',
         reminder_message_template: '',
         reminder_timer_default_seconds: 0,
+        invited_user_ids: [],
     };
 }
 
@@ -109,7 +111,10 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.create_public_incident === 'boolean' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
-        typeof arg.broadcast_channel_id === 'string';
+        typeof arg.broadcast_channel_id === 'string' &&
+        typeof arg.reminder_message_template == 'string' &&
+        typeof arg.reminder_timer_default_seconds == 'number' &&
+        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.checklists.every((id: any) => typeof id === 'string');
 }
 
 // eslint-disable-next-line

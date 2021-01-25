@@ -24,6 +24,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
+import {AutomationSettings} from 'src/components/backstage/automation/settings';
 
 import './playbook.scss';
 import EditableText from './editable_text';
@@ -300,6 +301,25 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleAddUserInvited = (userId: string) => {
+        if (!playbook.invited_user_ids.includes(userId)) {
+            setPlaybook({
+                ...playbook,
+                invited_user_ids: [...playbook.invited_user_ids, userId],
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleRemoveUserInvited = (userId: string) => {
+        const idx = playbook.invited_user_ids.indexOf(userId);
+        setPlaybook({
+            ...playbook,
+            invited_user_ids: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -373,6 +393,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         >
                             {'Tasks'}
                             {'Preferences'}
+                            {'Automation'}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -407,7 +428,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     </BackstageSubheaderText>
                                     <StyledSelect
                                         value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: {label: string, value: number}) => {
+                                        onChange={(option: { label: string, value: number }) => {
                                             setPlaybook({
                                                 ...playbook,
                                                 reminder_timer_default_seconds: option ? option.value : option,
@@ -438,6 +459,15 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
+                            </TabContainer>
+                            <TabContainer>
+                                <AutomationSettings
+                                    searchProfiles={searchUsers}
+                                    getProfiles={getUsers}
+                                    userIds={playbook.invited_user_ids}
+                                    onAddUser={handleAddUserInvited}
+                                    onRemoveUser={handleRemoveUserInvited}
+                                />
                             </TabContainer>
                         </TabsContent>
                     </EditContent>
