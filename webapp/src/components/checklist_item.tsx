@@ -258,6 +258,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         <ItemContainer
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
+            data-testid='checkbox-item-container'
         >
             <div
                 className={'checkbox-container live'}
