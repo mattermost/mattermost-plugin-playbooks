@@ -436,8 +436,8 @@ describe('rhs incident list', () => {
                 // * Verify only that one incident is visible
                 cy.findAllByTestId('go-to-channel').should('have.length', 1);
             });
-        });*/
-    });
+        });
+    });*/
 
     describe('should see incident details', () => {
         it('after opening incidents list and clicking on the go to channel button', () => {
