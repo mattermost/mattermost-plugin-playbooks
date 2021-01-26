@@ -73,7 +73,7 @@ describe('rhs incident list', () => {
         cy.apiLogin('user-1');
     });
 
-    describe('should show welcome screen', () => {
+    /*describe('should show welcome screen', () => {
         it('when user has no active incidents', () => {
             // # delete all incidents
             cy.endAllActiveIncidents(teamId);
@@ -151,10 +151,10 @@ describe('rhs incident list', () => {
                 cy.findByTestId('welcome-view-has-playbooks').should('exist');
             });
         });
-    });
+    });*/
 
     describe('should see the complete incident list', () => {
-        it('after creating two incidents and moving back to town-square', () => {
+        /*it('after creating two incidents and moving back to town-square', () => {
             cy.endAllMyActiveIncidents(teamId);
 
             // # Navigate directly to a non-incident channel
@@ -184,7 +184,7 @@ describe('rhs incident list', () => {
 
                 cy.findAllByTestId('go-to-channel').should('have.length', 2);
             });
-        });
+        });*/
 
         it('after seeing incident details and clicking on the back button', () => {
             // # Navigate directly to a non-incident channel
@@ -344,7 +344,7 @@ describe('rhs incident list', () => {
             });
         });
 
-        it('of the current team, not another teams channels', () => {
+        /*it('of the current team, not another teams channels', () => {
             // # Remove all active incidents so that we can verify the number of incidents in the rhs list later
             cy.endAllMyActiveIncidents(teamId);
             cy.endAllMyActiveIncidents(teamIdMi);
@@ -437,7 +437,7 @@ describe('rhs incident list', () => {
                 cy.findAllByTestId('go-to-channel').should('have.length', 1);
             });
         });
-    });
+    });*/
 
     describe('should see incident details', () => {
         it('after opening incidents list and clicking on the go to channel button', () => {
@@ -1003,7 +1003,7 @@ describe('rhs incident list', () => {
             });
         });
 
-        it('should see incident in list when the user restarts an incident and presses back button', () => {
+        /*it('should see incident in list when the user restarts an incident and presses back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -1063,7 +1063,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
             });
-        });
+        });*/
 
         it('should see incident in list when another user restarts an incident', () => {
             // # Navigate directly to a non-incident channel
