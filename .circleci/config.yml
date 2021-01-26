@@ -167,7 +167,7 @@ jobs:
           command: make test
       - *save_test_cache
 
-  e2e-cypress-tests-master:
+  e2e-cypress-tests-cloud:
     resource_class: large
     docker:
       - image: circleci/golang:1.14.1-node-browsers
@@ -186,6 +186,9 @@ jobs:
           MINIO_SECRET_KEY: miniosecretkey
           MINIO_SSE_MASTER_KEY: "my-minio-key:6368616e676520746869732070617373776f726420746f206120736563726574"
       - image: mattermost/mattermost-elasticsearch-docker:6.5.1
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
         environment:
           http.host: "0.0.0.0"
           http.port: 9200
@@ -195,7 +198,10 @@ jobs:
           http.cors.allow-credentials: "true"
           transport.host: "127.0.0.1"
           ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      - image: mattermost/mattermost-enterprise-edition:$MM_DOCKER_IMAGE_TAG
+      - image: mattermost/mm-ee-test:$MM_DOCKER_IMAGE_TAG
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
         environment:
           DB_HOST: localhost
           DB_PORT_NUMBER: 5432
@@ -217,8 +223,9 @@ jobs:
           MM_SERVICESETTINGS_SITEURL: http://localhost:8065
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
+          MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
     environment:
-      MM_DOCKER_IMAGE_TAG: master
+      MM_DOCKER_IMAGE_TAG: prerelease
       TYPE: NONE
       PULL_REQUEST:
       BROWSER: chrome
@@ -403,7 +410,8 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - e2e-cypress-tests-master:
+      - e2e-cypress-tests-cloud:
+          context: matterbuild-docker
           filters:
             tags:
               only: /^v.*/
