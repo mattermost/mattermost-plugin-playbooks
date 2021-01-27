@@ -79,7 +79,11 @@ describe('rhs incident list', () => {
             cy.apiLogin('sysadmin');
             cy.apiGetCurrentUser().then((user) => {
                 cy.log('logged in with userId: ' + user.id);
+                cy.debugAllIncidents(teamId);
+                cy.debugReportedIncidents(teamId);
                 cy.debugActiveIncidents(teamId);
+                cy.debugResolvedIncidents(teamId);
+                cy.debugArchivedIncidents(teamId);
             });
 
             cy.endAllActiveIncidents(teamId);
@@ -87,7 +91,11 @@ describe('rhs incident list', () => {
             cy.apiLogin('sysadmin');
             cy.apiGetCurrentUser().then((user) => {
                 cy.log('logged in with userId: ' + user.id);
+                cy.debugAllIncidents(teamId);
+                cy.debugReportedIncidents(teamId);
                 cy.debugActiveIncidents(teamId);
+                cy.debugResolvedIncidents(teamId);
+                cy.debugArchivedIncidents(teamId);
             });
 
             // # Login as user-1
@@ -96,7 +104,11 @@ describe('rhs incident list', () => {
             cy.apiGetCurrentUser().then((user) => {
                 expect(user.id).to.equal(userId);
 
-                cy.debugActiveIncidents(teamId, userId);
+                cy.debugAllIncidents(teamId);
+                cy.debugReportedIncidents(teamId);
+                cy.debugActiveIncidents(teamId);
+                cy.debugResolvedIncidents(teamId);
+                cy.debugArchivedIncidents(teamId);
             });
 
             // # Navigate to a different team (so that redux is forced to load when returning to ad-1)

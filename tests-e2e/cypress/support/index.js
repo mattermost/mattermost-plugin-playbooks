@@ -76,7 +76,7 @@ function incidentCurrentStatus(incident) {
     return status;
 }
 
-Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
+Cypress.Commands.add('debugAllIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
@@ -90,6 +90,82 @@ Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
         incidents.forEach((i) => {
             delete i.checklists;
             cy.log(JSON.stringify(i));
+        });
+    });
+});
+
+Cypress.Commands.add('debugReportedIncidents', (teamId, userId = '') => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, status: 'Reported', member_id: userId},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const incidents = JSON.parse(response.body).items;
+        cy.log('debugReportedIncidents');
+        cy.log('# of incidents: ', incidents.length);
+        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
+        incidents.forEach((i) => {
+            delete i.checklists;
+            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
+        });
+    });
+});
+
+Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, status: 'Active', member_id: userId},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const incidents = JSON.parse(response.body).items;
+        cy.log('debugActiveIncidents');
+        cy.log('# of incidents: ', incidents.length);
+        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
+        incidents.forEach((i) => {
+            delete i.checklists;
+            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
+        });
+    });
+});
+
+Cypress.Commands.add('debugResolvedIncidents', (teamId, userId = '') => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, status: 'Resolved', member_id: userId},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const incidents = JSON.parse(response.body).items;
+        cy.log('debugResolvedIncidents');
+        cy.log('# of incidents: ', incidents.length);
+        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
+        incidents.forEach((i) => {
+            delete i.checklists;
+            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
+        });
+    });
+});
+
+Cypress.Commands.add('debugArchivedIncidents', (teamId, userId = '') => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, status: 'Resolved', member_id: userId},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const incidents = JSON.parse(response.body).items;
+        cy.log('debugArchivedIncidents');
+        cy.log('# of incidents: ', incidents.length);
+        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
+        incidents.forEach((i) => {
+            delete i.checklists;
+            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
         });
     });
 });
@@ -141,6 +217,8 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
         cy.apiLogout();
     });
 });
+
+
 
 /**
  * End all active incidents directly from API with current user.
