@@ -87,6 +87,10 @@ Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
         const incidents = JSON.parse(response.body).items;
         cy.log('# of incidents: ', incidents.length);
         cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
+        incidents.forEach((i) => {
+            delete i.checklists;
+            cy.log(i);
+        });
     });
 });
 
