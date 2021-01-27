@@ -78,7 +78,8 @@ describe('rhs incident list', () => {
             // # delete all incidents
             cy.apiLogin('sysadmin');
             cy.apiGetCurrentUser().then((user) => {
-                cy.debugActiveIncidents(teamId, user.id);
+                cy.log('logged in with userId: ' + user.id);
+                cy.debugActiveIncidents(teamId);
             });
 
             cy.endAllActiveIncidents(teamId);

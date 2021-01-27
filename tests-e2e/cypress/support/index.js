@@ -76,7 +76,7 @@ function incidentCurrentStatus(incident) {
     return status;
 }
 
-Cypress.Commands.add('debugActiveIncidents', (teamId, userId) => {
+Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
