@@ -81,26 +81,25 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
     });
 });
 
-/**
- * Start an incident directly via API.
- */
-Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId, description = ''}) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: incidentsEndpoint,
-        method: 'POST',
-        body: {
-            name: incidentName,
-            commander_user_id: commanderUserId,
-            team_id: teamId,
-            playbook_id: playbookId,
-            description,
-        },
-    }).then((response) => {
-        expect(response.status).to.equal(201);
-        cy.wrap(response.body);
-    });
-});
+// /**
+//  * Start an incident directly via API.
+//  */
+// Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId}) => {
+//     return cy.request({
+//         headers: {'X-Requested-With': 'XMLHttpRequest'},
+//         url: incidentsEndpoint,
+//         method: 'POST',
+//         body: {
+//             name: incidentName,
+//             commander_user_id: commanderUserId,
+//             team_id: teamId,
+//             playbook_id: playbookId,
+//         },
+//     }).then((response) => {
+//         expect(response.status).to.equal(201);
+//         cy.wrap(response.body);
+//     });
+// });
 
 // Update an incident's status programmatically.
 Cypress.Commands.add('apiUpdateStatus', ({

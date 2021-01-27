@@ -8,6 +8,20 @@
 
 describe('backstage', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
+    let testUser;
+    let testTeam;
+
+    before(() => {
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
+
+            cy.apiLogin(testUser);
+        });
+        cy.apiGetTeamByName(testTeam).then((team) => {
+            
+        });
+    });
 
     before(() => {
         // # Login as user-1
