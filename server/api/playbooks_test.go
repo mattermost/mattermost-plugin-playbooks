@@ -149,7 +149,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -171,7 +171,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(withBroadcastChannelNoID))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -194,7 +194,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -240,7 +240,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -273,7 +273,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -302,7 +302,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannel.BroadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -329,7 +329,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -356,7 +356,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
@@ -377,7 +377,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -394,7 +394,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -416,7 +416,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -433,7 +433,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -455,7 +455,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -469,7 +469,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(withid))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -492,7 +492,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(withMember, nil).
 			Times(1)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -518,7 +518,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(withMember, nil).
 			Times(1)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -549,7 +549,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -579,7 +579,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -607,7 +607,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
@@ -629,7 +629,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -672,7 +672,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -913,7 +913,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-			handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+			handler.ServeHTTP(testrecorder, testreq)
 			resp := testrecorder.Result()
 			defer resp.Body.Close()
 
@@ -1135,7 +1135,7 @@ func TestPagingPlaybooks(t *testing.T) {
 			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-			handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+			handler.ServeHTTP(testrecorder, testreq)
 			resp := testrecorder.Result()
 			defer resp.Body.Close()
 

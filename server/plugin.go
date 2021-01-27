@@ -43,9 +43,9 @@ type Plugin struct {
 	bot                 *bot.Bot
 }
 
-// ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
+// ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	p.handler.ServeHTTP(w, r, c.SourcePluginId)
+	p.handler.ServeHTTP(w, r)
 }
 
 // OnActivate Called when this plugin is activated.
