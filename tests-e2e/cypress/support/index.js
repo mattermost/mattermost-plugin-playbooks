@@ -49,6 +49,48 @@ Cypress.Commands.add('requireIncidentManagementPlugin', (version) => {
 });
 
 /**
+ * DEBUGGING
+ */
+function incidentCurrentStatusPost(incident) {
+    const sortedPosts = [...incident.status_posts]
+        .filter((a) => a.delete_at === 0)
+        .sort((a, b) => b.create_at - a.create_at);
+
+    return sortedPosts[0];
+}
+
+function incidentCurrentStatus(incident) {
+    let status = 'Reported';
+
+    const currentPost = incidentCurrentStatusPost(incident);
+
+    if (currentPost) {
+        if (currentPost.status === '') {
+            // Backwards compatibility with existing incidents.
+            status = 'Active';
+        } else {
+            status = currentPost.status;
+        }
+    }
+
+    return status;
+}
+
+Cypress.Commands.add('debugActiveIncidents', (teamId, userId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, member_id: userId},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        const incidents = JSON.parse(response.body).items;
+        cy.log('# of incidents: ', incidents.length);
+        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
+    });
+});
+
+/**
  * End all active incidents directly from API with sysadmin. Need to login after this.
  */
 Cypress.Commands.add('endAllActiveIncidents', (teamId) => {

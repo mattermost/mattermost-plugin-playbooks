@@ -83,6 +83,8 @@ describe('rhs incident list', () => {
 
             cy.apiGetCurrentUser().then((user) => {
                 expect(user.id).to.equal(userId);
+
+                cy.debugActiveIncidents(teamId, userId);
             });
 
             // # Navigate to a different team (so that redux is forced to load when returning to ad-1)
