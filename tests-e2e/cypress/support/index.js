@@ -96,6 +96,7 @@ Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
 Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
     cy.apiLogin('sysadmin');
     cy.apiGetCurrentUser().then((user) => {
+        cy.log('sysadmin getting all Active incidents to set to Resolved');
         cy.apiGetAllActiveIncidents(teamId).then((response) => {
             const incidents = JSON.parse(response.body).items;
 
@@ -109,6 +110,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
             });
         });
 
+        cy.log('sysadmin getting all Reported incidents to set to Resolved');
         cy.apiGetAllReportedIncidents(teamId).then((response) => {
             const incidents = JSON.parse(response.body).items;
 
