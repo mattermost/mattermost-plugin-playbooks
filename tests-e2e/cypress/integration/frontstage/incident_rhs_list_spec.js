@@ -76,6 +76,11 @@ describe('rhs incident list', () => {
     describe('should show welcome screen', () => {
         it('when user has no active incidents', () => {
             // # delete all incidents
+            cy.apiLogin('sysadmin');
+            cy.apiGetCurrentUser().then((user) => {
+                cy.debugActiveIncidents(teamId, user.id);
+            });
+
             cy.endAllActiveIncidents(teamId);
 
             // # Login as user-1
