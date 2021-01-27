@@ -79,12 +79,13 @@ function incidentCurrentStatus(incident) {
 Cypress.Commands.add('debugAllIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, member_id: userId},
+        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}`,
+        //qs: {team_id: teamId, member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
         const incidents = JSON.parse(response.body).items;
+        cy.log('debugAllIncidents');
         cy.log('# of incidents: ', incidents.length);
         cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
         incidents.forEach((i) => {
@@ -97,8 +98,8 @@ Cypress.Commands.add('debugAllIncidents', (teamId, userId = '') => {
 Cypress.Commands.add('debugReportedIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, status: 'Reported', member_id: userId},
+        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Reported`,
+        //qs: {team_id: teamId, status: 'Reported', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -116,8 +117,8 @@ Cypress.Commands.add('debugReportedIncidents', (teamId, userId = '') => {
 Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, status: 'Active', member_id: userId},
+        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Active`,
+        //qs: {team_id: teamId, status: 'Active', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -135,8 +136,8 @@ Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
 Cypress.Commands.add('debugResolvedIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, status: 'Resolved', member_id: userId},
+        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Resolved`,
+        //qs: {team_id: teamId, status: 'Resolved', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -154,8 +155,8 @@ Cypress.Commands.add('debugResolvedIncidents', (teamId, userId = '') => {
 Cypress.Commands.add('debugArchivedIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, status: 'Resolved', member_id: userId},
+        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Archived`,
+        //qs: {team_id: teamId, status: 'Archived', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
