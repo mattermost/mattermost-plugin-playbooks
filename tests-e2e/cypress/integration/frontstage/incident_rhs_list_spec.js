@@ -85,6 +85,12 @@ describe('rhs incident list', () => {
                 expect(user.id).to.equal(userId);
             });
 
+            // # Navigate to a different team (so that redux is forced to load when returning to ad-1)
+            cy.wait(1000).visit('/reiciendis-0/channels/town-square');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
             // # Navigate directly to a non-incident channel
             cy.wait(1000).visit('/ad-1/channels/town-square');
 
