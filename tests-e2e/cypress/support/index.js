@@ -80,6 +80,16 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
             });
         });
 
+        cy.apiGetAllActiveIncidents(teamId).then((response) => {
+            const incidents = JSON.parse(response.body).items;
+            expect(incidents.length).to.equal(0);
+        });
+
+        cy.apiGetAllReportedIncidents(teamId).then((response) => {
+            const incidents = JSON.parse(response.body).items;
+            expect(incidents.length).to.equal(0);
+        });
+
         cy.apiLogout();
     });
 });
