@@ -123,8 +123,9 @@ const ExtrasRow = styled.div`
     >div {
         margin: 0 5px;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-        border-radius: 10px;
-        padding: 2px;
+        border-radius: 13px;
+        padding: 2px 8px;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
         display: flex;
     }
 `;
