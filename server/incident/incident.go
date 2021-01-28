@@ -100,7 +100,7 @@ func (i *Incident) IsActive() bool {
 
 func (i *Incident) ResolvedAt() int64 {
 	var resolvedPost *StatusPost
-	for j := len(i.StatusPosts) - 1; j > 0; j-- {
+	for j := len(i.StatusPosts) - 1; j >= 0; j-- {
 		if i.StatusPosts[j].DeleteAt != 0 {
 			continue
 		}

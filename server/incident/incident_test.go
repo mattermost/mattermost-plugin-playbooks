@@ -39,6 +39,18 @@ func TestIncident_CurrentStatus(t *testing.T) {
 			},
 			expected: StatusActive,
 		},
+		"just resolved": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: StatusResolved,
+		},
 		"resolved": {
 			inc: Incident{
 				StatusPosts: []StatusPost{
@@ -102,6 +114,18 @@ func TestIncident_LastResovedAt(t *testing.T) {
 				},
 			},
 			expected: 0,
+		},
+		"just resolved": {
+			inc: Incident{
+				StatusPosts: []StatusPost{
+					{
+						DeleteAt: 0,
+						CreateAt: 999,
+						Status:   StatusResolved,
+					},
+				},
+			},
+			expected: 999,
 		},
 		"resolved": {
 			inc: Incident{
