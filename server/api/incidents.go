@@ -56,18 +56,21 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
-	incidentRouterAuthorized.HandleFunc("", handler.channelActiveRequiredHandler(handler.updateIncident)).Methods(http.MethodPatch)
-	incidentRouterAuthorized.HandleFunc("/end", handler.channelActiveRequiredHandler(handler.endIncident)).Methods(http.MethodPut, http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/restart", handler.channelActiveRequiredHandler(handler.restartIncident)).Methods(http.MethodPut)
-	incidentRouterAuthorized.HandleFunc("/commander", handler.channelActiveRequiredHandler(handler.changeCommander)).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.channelActiveRequiredHandler(handler.updateStatusDialog)).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.channelActiveRequiredHandler(handler.reminderButtonUpdate)).Methods(http.MethodPost)
+	incidentRouterAuthorized.Use(handler.checkChannelArchived)
+
+	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
+	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut, http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
+	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
 
 	checklistsRouter := incidentRouterAuthorized.PathPrefix("/checklists").Subrouter()
+	checklistsRouter.Use(handler.checkChannelArchived)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
@@ -101,30 +104,56 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 	})
 }
 
+func (h *IncidentHandler) checkChannelArchived(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		incidentID := vars["id"]
+
+		isArchived, err := h.isChannelArchived(incidentID)
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+
+		if isArchived {
+			HandleErrorWithCode(w, http.StatusForbidden, "Channel Archived", err)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // ChannelActiveRequiredHandler returns a handler which checks if the channel is active and not archived
 func (h *IncidentHandler) channelActiveRequiredHandler(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		incidentID := vars["id"]
 
-		incidentToModify, err := h.incidentService.GetIncident(incidentID)
-		if err != nil {
-			HandleError(w, err)
-			return
-		}
-
-		c, err := h.pluginAPI.Channel.Get(incidentToModify.ChannelID)
+		isArchived, err := h.isChannelArchived(incidentID)
 		if err != nil {
 			HandleError(w, err)
 			return
 		}
 
 		// return an error if the channel is archived
-		if c.DeleteAt > 0 {
+		if isArchived {
 			HandleErrorWithCode(w, http.StatusBadRequest, "Channel is archived and cannot be modified", err)
 		}
 		next(w, r)
 	}
+}
+
+func (h *IncidentHandler) isChannelArchived(incidentID string) (bool, error) {
+	incidentToModify, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		return false, err
+	}
+
+	c, err := h.pluginAPI.Channel.Get(incidentToModify.ChannelID)
+	if err != nil {
+		return false, err
+	}
+	return c.DeleteAt > 0, nil
 }
 
 // createIncidentFromPost handles the POST /incidents endpoint

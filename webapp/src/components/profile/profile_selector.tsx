@@ -4,14 +4,12 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import {css} from '@emotion/core';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import './profile_selector.scss';
-import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
 
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
@@ -41,6 +39,7 @@ interface Props {
     getUsers: () => Promise<UserProfile[]>;
     onSelectedChange: (userId?: string) => void;
     customControlProps?: any;
+    disabled?: boolean
 }
 
 export default function ProfileSelector(props: Props) {
@@ -48,10 +47,6 @@ export default function ProfileSelector(props: Props) {
 
     const [isOpen, setOpen] = useState(false);
 
-    const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
-    if (isChannelArchived) {
-        return null;
-    }
     const toggleOpen = () => {
         if (!isOpen) {
             fetchUsers();

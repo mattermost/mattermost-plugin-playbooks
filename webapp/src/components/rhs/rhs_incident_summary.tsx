@@ -3,6 +3,9 @@
 
 import React, {FC} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
+import {useSelector} from 'react-redux';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
 
 import {fetchUsersInChannel, setCommander} from 'src/client';
 import {Incident} from 'src/types/incident';
@@ -21,6 +24,8 @@ interface Props {
 }
 
 const RHSIncidentSummary: FC<Props> = (props: Props) => {
+    const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
+
     const fetchUsers = async () => {
         return fetchUsersInChannel(props.incident.channel_id);
     };
@@ -59,6 +64,7 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                             getUsers={fetchUsers}
                             onSelectedChange={onSelectedProfileChange}
                             selfIsFirstOption={true}
+                            disabled={isChannelArchived}
                         />
                     </div>
                     <div className='first-title'>
