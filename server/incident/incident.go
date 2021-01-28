@@ -360,6 +360,9 @@ type Telemetry interface {
 	// UpdateStatus tracks when an incident's status has been updated
 	UpdateStatus(incident *Incident, userID string)
 
+	// FrontendTelemetryForIncident tracks an event originating from the frontend
+	FrontendTelemetryForIncident(incdnt *Incident, userID, action string, props map[string]string)
+
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
 

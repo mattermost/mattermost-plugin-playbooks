@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -28,17 +29,19 @@ type IncidentHandler struct {
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 	log             bot.Logger
+	telemetry       incident.Telemetry
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
 func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
-	api *pluginapi.Client, poster bot.Poster, log bot.Logger) *IncidentHandler {
+	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		playbookService: playbookService,
 		pluginAPI:       api,
 		poster:          poster,
 		log:             log,
+		telemetry:       telemetry,
 	}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
@@ -78,6 +81,10 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
 
+	telemetryRouterAuthorized := router.PathPrefix("/telemetry").Subrouter()
+	telemetryRouterAuthorized.Use(handler.checkViewPermissions)
+	telemetryRouterAuthorized.HandleFunc("/incident/{id:[A-Za-z0-9]+}", handler.telemetryForIncident).Methods(http.MethodPost)
+
 	return handler
 }
 
@@ -87,6 +94,24 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 		userID := r.Header.Get("Mattermost-User-ID")
 
 		if err := permissions.EditIncident(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+			if errors.Is(err, permissions.ErrNoPermissions) {
+				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+				return
+			}
+			HandleError(w, err)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *IncidentHandler) checkViewPermissions(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := r.Header.Get("Mattermost-User-ID")
+
+		if err := permissions.ViewIncident(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
 				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -874,6 +899,44 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// telemetryForIncident handles the /telemetry/incident/{id}?action=the_action endpoint. The frontend
+// can use this endpoint to track events that occur in the context of an incident
+func (h *IncidentHandler) telemetryForIncident(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	action := r.URL.Query().Get("action")
+	if action == "" {
+		HandleError(w, errors.New("must provide action"))
+		return
+	}
+
+	incdnt, err := h.incidentService.GetIncident(id)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	var props map[string]string
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+	if len(b) > 0 {
+		if err = json.Unmarshal(b, &props); err != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, "error decoding props", err)
+			return
+		}
+	}
+
+	h.telemetry.FrontendTelemetryForIncident(incdnt, userID, action, props)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"OK"}`))
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {

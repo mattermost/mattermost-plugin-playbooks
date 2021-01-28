@@ -8,8 +8,10 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {RHSTabState} from 'src/types/rhs';
-import {currentRHSTabState} from 'src/selectors';
+import {currentIncident, currentRHSTabState} from 'src/selectors';
 import {setRHSTabState} from 'src/actions';
+import {Incident} from 'src/types/incident';
+import {telemetryEventForIncident} from 'src/client';
 
 const TabRow = styled.div`
     display: flex;
@@ -40,6 +42,7 @@ const RHSTabView = () => {
     const dispatch = useDispatch();
     const currentTabState = useSelector<GlobalState, RHSTabState>(currentRHSTabState);
     const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
+    const incident = useSelector<GlobalState, Incident>(currentIncident);
 
     const setTabState = (nextState: RHSTabState) => {
         if (currentTabState !== nextState) {
@@ -65,7 +68,10 @@ const RHSTabView = () => {
             </TabItem>
             <TabItem
                 active={currentTabState === RHSTabState.ViewingTimeline}
-                onClick={() => setTabState(RHSTabState.ViewingTimeline)}
+                onClick={() => {
+                    setTabState(RHSTabState.ViewingTimeline);
+                    telemetryEventForIncident(incident.id, 'timeline_tab_clicked');
+                }}
                 data-testid='timeline'
             >
                 {'Timeline'}

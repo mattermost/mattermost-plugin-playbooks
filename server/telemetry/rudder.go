@@ -42,6 +42,8 @@ const (
 	eventPlaybook = "playbook"
 	actionUpdate  = "update"
 	actionDelete  = "delete"
+
+	eventFrontend = "frontend"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -148,6 +150,15 @@ func (t *RudderTelemetry) UpdateStatus(incdnt *incident.Incident, userID string)
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionUpdateStatus
 	t.track(eventIncident, properties)
+}
+
+func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string, props map[string]string) {
+	properties := incidentProperties(incdnt, userID)
+	properties["Action"] = action
+	for k, v := range props {
+		properties[k] = v
+	}
+	t.track(eventFrontend, properties)
 }
 
 func taskProperties(incidentID, userID string) map[string]interface{} {

@@ -34,6 +34,10 @@ func (t *NoopTelemetry) RestartIncident(*incident.Incident, string) {
 func (t *NoopTelemetry) UpdateStatus(*incident.Incident, string) {
 }
 
+// FrontendTelemetryForIncident does nothing
+func (t *NoopTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string, props map[string]string) {
+}
+
 // AddTask does nothing.
 func (t *NoopTelemetry) AddTask(string, string) {
 }
