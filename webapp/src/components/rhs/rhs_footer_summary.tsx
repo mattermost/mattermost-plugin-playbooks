@@ -14,11 +14,12 @@ const RHSFooterSummary = () => {
 
     const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
 
-    return !isChannelArchived && (
+    return (
         <Footer id='incidentRHSFooter'>
             <StyledFooterButton
                 primary={false}
                 onClick={() => dispatch(updateStatus())}
+                disabled={isChannelArchived}
             >
                 {'Update Status'}
             </StyledFooterButton>
