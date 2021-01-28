@@ -918,7 +918,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
 	sort := u.Query().Get("sort")
 	direction := u.Query().Get("direction")
 
-	status := strings.ToLower(u.Query().Get("status"))
+	status := u.Query().Get("status")
 
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
