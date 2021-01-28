@@ -7,3 +7,6 @@ tests-e2e/node_modules
 tests-e2e/cypress/screenshots
 tests-e2e/cypress/videos
 .eslintcache
+
+webapp/src/manifest.js
+server/manifest.go
