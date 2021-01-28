@@ -936,7 +936,7 @@ func (h *IncidentHandler) telemetryForIncident(w http.ResponseWriter, r *http.Re
 	h.telemetry.FrontendTelemetryForIncident(incdnt, userID, action, props)
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"OK"}`))
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {

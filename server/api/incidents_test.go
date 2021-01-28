@@ -22,6 +22,7 @@ import (
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
 )
 
 func TestIncidents(t *testing.T) {
@@ -33,6 +34,7 @@ func TestIncidents(t *testing.T) {
 	var incidentService *mock_incident.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
+	telemetryService := &telemetry.NoopTelemetry{}
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
@@ -43,7 +45,8 @@ func TestIncidents(t *testing.T) {
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger)
+		telemetryService = &telemetry.NoopTelemetry{}
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService)
 	}
 
 	t.Run("create valid incident from dialog", func(t *testing.T) {
