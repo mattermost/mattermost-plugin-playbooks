@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe.only('incident rhs > footer', () => {
+describe('incident rhs > footer', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
     let userId;

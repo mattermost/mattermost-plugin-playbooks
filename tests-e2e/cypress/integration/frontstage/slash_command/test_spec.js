@@ -180,7 +180,7 @@ describe('slash command > test', () => {
                 });
             });
 
-            describe.only('with subcommand create', () => {
+            describe('with subcommand create', () => {
                 it('fails to run with no arguments', () => {
                     // # Execute the create-incident command with no arguments.
                     cy.executeSlashCommand('/incident test create-incident');
@@ -229,7 +229,7 @@ describe('slash command > test', () => {
                     cy.verifyEphemeralMessage('Timestamp \'2020-1-1\' could not be parsed as a date. If you want the incident to start on January 2, 2006, the timestamp should be \'2006-01-02\'.');
                 });
 
-                it.only('creates an incident with the correct date in the past', () => {
+                it('creates an incident with the correct date in the past', () => {
                     const now = Date.now();
                     const incidentName = 'Incident (' + now + ')';
 
