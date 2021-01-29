@@ -106,6 +106,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	usersFailedToInvite := []string{}
 	for _, userID := range incdnt.InvitedUserIDs {
+		// Check if the user is a member of the incident's team
 		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
@@ -121,17 +122,24 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	if len(usersFailedToInvite) != 0 {
 		usernames := make([]string, 0, len(usersFailedToInvite))
+		numDeletedUsers := 0
 		for _, userID := range usersFailedToInvite {
 			user, userErr := s.pluginAPI.User.Get(userID)
 			if userErr != nil {
-				// User may not exist anymore, ignore the error
+				// User does not exist anymore
+				numDeletedUsers++
 				continue
 			}
 
 			usernames = append(usernames, "@"+user.Username)
 		}
 
-		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s", strings.Join(usernames, ", ")); err != nil {
+		deletedUsersMsg := ""
+		if numDeletedUsers > 0 {
+			deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
+		}
+
+		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
 			return nil, errors.Wrapf(err, "failed to post to incident channel")
 		}
 	}
