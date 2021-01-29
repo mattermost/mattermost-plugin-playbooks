@@ -49,135 +49,11 @@ Cypress.Commands.add('requireIncidentManagementPlugin', (version) => {
 });
 
 /**
- * DEBUGGING
- */
-function incidentCurrentStatusPost(incident) {
-    const sortedPosts = [...incident.status_posts]
-        .filter((a) => a.delete_at === 0)
-        .sort((a, b) => b.create_at - a.create_at);
-
-    return sortedPosts[0];
-}
-
-function incidentCurrentStatus(incident) {
-    let status = 'Reported';
-
-    const currentPost = incidentCurrentStatusPost(incident);
-
-    if (currentPost) {
-        if (currentPost.status === '') {
-            // Backwards compatibility with existing incidents.
-            status = 'Active';
-        } else {
-            status = currentPost.status;
-        }
-    }
-
-    return status;
-}
-
-Cypress.Commands.add('debugAllIncidents', (teamId, userId = '') => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}`,
-        //qs: {team_id: teamId, member_id: userId},
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        const incidents = JSON.parse(response.body).items;
-        cy.log('debugAllIncidents');
-        cy.log('# of incidents: ', incidents.length);
-        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
-        incidents.forEach((i) => {
-            delete i.checklists;
-            cy.log(JSON.stringify(i));
-        });
-    });
-});
-
-Cypress.Commands.add('debugReportedIncidents', (teamId, userId = '') => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Reported`,
-        //qs: {team_id: teamId, status: 'Reported', member_id: userId},
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        const incidents = JSON.parse(response.body).items;
-        cy.log('debugReportedIncidents');
-        cy.log('# of incidents: ', incidents.length);
-        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
-        incidents.forEach((i) => {
-            delete i.checklists;
-            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
-        });
-    });
-});
-
-Cypress.Commands.add('debugActiveIncidents', (teamId, userId = '') => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Active`,
-        //qs: {team_id: teamId, status: 'Active', member_id: userId},
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        const incidents = JSON.parse(response.body).items;
-        cy.log('debugActiveIncidents');
-        cy.log('# of incidents: ', incidents.length);
-        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
-        incidents.forEach((i) => {
-            delete i.checklists;
-            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
-        });
-    });
-});
-
-Cypress.Commands.add('debugResolvedIncidents', (teamId, userId = '') => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Resolved`,
-        //qs: {team_id: teamId, status: 'Resolved', member_id: userId},
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        const incidents = JSON.parse(response.body).items;
-        cy.log('debugResolvedIncidents');
-        cy.log('# of incidents: ', incidents.length);
-        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
-        incidents.forEach((i) => {
-            delete i.checklists;
-            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
-        });
-    });
-});
-
-Cypress.Commands.add('debugArchivedIncidents', (teamId, userId = '') => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `/plugins/com.mattermost.plugin-incident-management/api/v0/incidents?team_id=${teamId}&status=Archived`,
-        //qs: {team_id: teamId, status: 'Archived', member_id: userId},
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        const incidents = JSON.parse(response.body).items;
-        cy.log('debugArchivedIncidents');
-        cy.log('# of incidents: ', incidents.length);
-        cy.log('incidents statuses: ', incidents.map((i) => incidentCurrentStatus(i)).toString());
-        incidents.forEach((i) => {
-            delete i.checklists;
-            cy.log('id: ' + i.id + ' status_posts: ' + JSON.stringify(i.status_posts));
-        });
-    });
-});
-
-/**
  * End all active incidents directly from API with sysadmin. Need to login after this.
  */
 Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
     cy.apiLogin('sysadmin');
     cy.apiGetCurrentUser().then((user) => {
-        cy.log('sysadmin getting all Active incidents to set to Resolved');
         cy.apiGetAllActiveIncidents(teamId).then((response) => {
             const incidents = JSON.parse(response.body).items;
 
@@ -191,7 +67,6 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
             });
         });
 
-        cy.log('sysadmin getting all Reported incidents to set to Resolved');
         cy.apiGetAllReportedIncidents(teamId).then((response) => {
             const incidents = JSON.parse(response.body).items;
 
@@ -218,8 +93,6 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
         cy.apiLogout();
     });
 });
-
-
 
 /**
  * End all active incidents directly from API with current user.
