@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -908,8 +907,15 @@ func (h *IncidentHandler) telemetryForIncident(w http.ResponseWriter, r *http.Re
 	id := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	action := r.URL.Query().Get("action")
-	if action == "" {
+	var params struct {
+		Action string `json:"action"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode post body", err)
+		return
+	}
+
+	if params.Action == "" {
 		HandleError(w, errors.New("must provide action"))
 		return
 	}
@@ -920,20 +926,7 @@ func (h *IncidentHandler) telemetryForIncident(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var props map[string]string
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-	if len(b) > 0 {
-		if err = json.Unmarshal(b, &props); err != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, "error decoding props", err)
-			return
-		}
-	}
-
-	h.telemetry.FrontendTelemetryForIncident(incdnt, userID, action, props)
+	h.telemetry.FrontendTelemetryForIncident(incdnt, userID, params.Action)
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))

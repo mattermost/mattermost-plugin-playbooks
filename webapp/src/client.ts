@@ -244,10 +244,9 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     return data;
 }
 
-export async function telemetryEventForIncident(incidentID: string, action: string, props?: Record<string, string>) {
-    const params = qs.stringify({action}, {addQueryPrefix: true});
-    const body = props ? JSON.stringify(props) : '';
-    await doPost(`${apiUrl}/telemetry/incident/${incidentID}${params}`, body);
+export async function telemetryEventForIncident(incidentID: string, action: string) {
+    const body = JSON.stringify({action});
+    await doPost(`${apiUrl}/telemetry/incident/${incidentID}`, body);
 }
 
 export function exportChannelUrl(channelId: string) {

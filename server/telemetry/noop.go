@@ -35,7 +35,7 @@ func (t *NoopTelemetry) UpdateStatus(*incident.Incident, string) {
 }
 
 // FrontendTelemetryForIncident does nothing
-func (t *NoopTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string, props map[string]string) {
+func (t *NoopTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string) {
 }
 
 // AddTask does nothing.

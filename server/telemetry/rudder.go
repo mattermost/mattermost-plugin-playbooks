@@ -152,12 +152,9 @@ func (t *RudderTelemetry) UpdateStatus(incdnt *incident.Incident, userID string)
 	t.track(eventIncident, properties)
 }
 
-func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string, props map[string]string) {
+func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = action
-	for k, v := range props {
-		properties[k] = v
-	}
 	t.track(eventFrontend, properties)
 }
 
