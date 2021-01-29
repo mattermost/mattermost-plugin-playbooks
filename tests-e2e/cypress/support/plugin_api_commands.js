@@ -27,7 +27,7 @@ Cypress.Commands.add('apiGetAllActiveIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, status: 'active', member_id: userId},
+        qs: {team_id: teamId, status: 'Active', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -42,7 +42,7 @@ Cypress.Commands.add('apiGetAllReportedIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, status: 'reported', member_id: userId},
+        qs: {team_id: teamId, status: 'Reported', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);

@@ -74,7 +74,7 @@ describe('rhs incident list', () => {
     });
 
     describe('should show welcome screen', () => {
-        /*it('when user has no active incidents', () => {
+        it('when user has no active incidents', () => {
             // # delete all incidents
             cy.endAllActiveIncidents(teamId);
 
@@ -100,9 +100,9 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('welcome-view-has-playbooks').should('exist');
             });
-        });*/
+        });
 
-        /*it('when in an incident, leaving to another channel, and ending the incident', () => {
+        it('when in an incident, leaving to another channel, and ending the incident', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/off-topic');
 
@@ -150,10 +150,10 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('welcome-view-has-playbooks').should('exist');
             });
-        });*/
+        });
     });
 
-    /*describe('should see the complete incident list', () => {
+    describe('should see the complete incident list', () => {
         it('after creating two incidents and moving back to town-square', () => {
             cy.endAllMyActiveIncidents(teamId);
 
@@ -437,7 +437,7 @@ describe('rhs incident list', () => {
                 cy.findAllByTestId('go-to-channel').should('have.length', 1);
             });
         });
-    });*/
+    });
 
     describe('should see incident details', () => {
         it('after opening incidents list and clicking on the go to channel button', () => {
@@ -476,7 +476,7 @@ describe('rhs incident list', () => {
             });
         });
 
-        /*it('after clicking back button then clicking on the go to channel button of same incident', () => {
+        it('after clicking back button then clicking on the go to channel button of same incident', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -525,9 +525,9 @@ describe('rhs incident list', () => {
                 // * Verify the title shows "Ongoing"
                 cy.get('.sidebar--right__title').contains('Ongoing');
             });
-        });*/
+        });
 
-        /*it('after going to an incident channel, closing rhs, and clicking on LHS of another incident channel', () => {
+        it('after going to an incident channel, closing rhs, and clicking on LHS of another incident channel', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -588,9 +588,9 @@ describe('rhs incident list', () => {
                 // * Verify the title shows "Ongoing"
                 cy.get('.sidebar--right__title').contains('Ongoing');
             });
-        });*/
+        });
 
-        /*it('highlights current incident', () => {
+        it('highlights current incident', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -645,9 +645,9 @@ describe('rhs incident list', () => {
                     .eq(1)
                     .should('have.css', 'box-shadow', 'rgba(61, 60, 64, 0.24) 0px -1px 0px 0px inset, rgb(22, 109, 224) 4px 0px 0px 0px inset');
             });
-        });*/
+        });
 
-        /*it('after going to incident, closing rhs, going to town-square, and clicking on same incident channel in LHS', () => {
+        it('after going to incident, closing rhs, going to town-square, and clicking on same incident channel in LHS', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -703,9 +703,9 @@ describe('rhs incident list', () => {
                 // * Verify the title shows "Ongoing"
                 cy.get('.sidebar--right__title').contains('Ongoing');
             });
-        });*/
+        });
 
-        /*it('after going to incident, go to town-square, then back', () => {
+        it('after going to incident, go to town-square, then back', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -760,7 +760,7 @@ describe('rhs incident list', () => {
                 // * Verify the title shows "Ongoing"
                 cy.get('.sidebar--right__title').contains('Ongoing');
             });
-        });*/
+        });
     });
 
     describe('websockets', () => {
@@ -801,7 +801,7 @@ describe('rhs incident list', () => {
             });
         });
 
-        /*it('should see incident in list when user creates new incident and presses back button', () => {
+        it('should see incident in list when user creates new incident and presses back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -840,7 +840,7 @@ describe('rhs incident list', () => {
 
                 cy.findByText(incidentName).should('exist');
             });
-        });*/
+        });
 
         it('incident should be removed from list when user is removed from channel', () => {
             // # Navigate directly to a non-incident channel
@@ -1003,7 +1003,7 @@ describe('rhs incident list', () => {
             });
         });
 
-        /*it('should see incident in list when the user restarts an incident and presses back button', () => {
+        it('should see incident in list when the user restarts an incident and presses back button', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -1063,7 +1063,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
             });
-        });*/
+        });
 
         it('should see incident in list when another user restarts an incident', () => {
             // # Navigate directly to a non-incident channel
@@ -1139,7 +1139,7 @@ describe('rhs incident list', () => {
     });
 
     describe('menu items', () => {
-        /*it('should be able to open start incident dialog', () => {
+        it('should be able to open start incident dialog', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -1183,7 +1183,7 @@ describe('rhs incident list', () => {
             cy.get('#interactiveDialogModal').should('exist').within(() => {
                 cy.findByText('Incident Details').should('exist');
             });
-        });*/
+        });
 
         it('should be able to create playbook from three dot menu', () => {
             // # Navigate directly to a non-incident channel
@@ -1258,7 +1258,7 @@ describe('rhs incident list', () => {
     });
 
     describe('Last updated', () => {
-        /*it('should update when in incident channel', () => {
+        it('should update when in incident channel', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -1316,9 +1316,9 @@ describe('rhs incident list', () => {
                 cy.findAllByText('Last updated:').eq(0).should('exist')
                     .next().should('have.text', '< 1m ago');
             });
-        });*/
+        });
 
-        /*it('should update when in another incident channel', () => {
+        it('should update when in another incident channel', () => {
             // # Navigate directly to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -1374,6 +1374,7 @@ describe('rhs incident list', () => {
                             channelId,
                             teamId,
                             message: 'Status update 2',
+                            status: 'Active',
                         });
 
                         // * verify the last updated time is updated
@@ -1390,6 +1391,6 @@ describe('rhs incident list', () => {
                         });
                     });
                 });
-        });*/
+        });
     });
 });

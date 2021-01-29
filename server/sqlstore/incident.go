@@ -296,6 +296,7 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"CurrentStatus": statusPost.Status,
+			"EndAt":         statusPost.EndAt,
 		}).
 		Where(sq.Eq{"ID": statusPost.IncidentID})); err != nil {
 		return errors.Wrap(err, "failed to update current status")

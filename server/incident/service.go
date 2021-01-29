@@ -262,6 +262,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		IncidentID: incidentToModify.ID,
 		PostID:     post.Id,
 		Status:     options.Status,
+		EndAt:      incidentToModify.ResolvedAt(),
 	}); err != nil {
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
