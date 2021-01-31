@@ -38,6 +38,7 @@ type Incident struct {
 	PreviousReminder        time.Duration        `json:"previous_reminder"`
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
+	BroadcastPostID         string               `json:"broadcast_post_id"`
 }
 
 func (i *Incident) Clone() *Incident {

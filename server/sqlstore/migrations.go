@@ -240,6 +240,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_StatusPosts (
 						IncidentID VARCHAR(26) NOT NULL REFERENCES IR_Incident(ID),
 						PostID VARCHAR(26) NOT NULL,
+						BroadcastPostID VARCHAR(26) NOT NULL DEFAULT '',
 						CONSTRAINT posts_unique UNIQUE (IncidentID, PostID),
 						INDEX IR_StatusPosts_IncidentID (IncidentID),
 						INDEX IR_StatusPosts_PostID (PostID)
@@ -265,6 +266,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_StatusPosts (
 						IncidentID TEXT NOT NULL REFERENCES IR_Incident(ID),
 						PostID TEXT NOT NULL,
+						BroadcastPostID TEXT NOT NULL DEFAULT '',
 						UNIQUE (IncidentID, PostID)
 					);
 				`); err != nil {

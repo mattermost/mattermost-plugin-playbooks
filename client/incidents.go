@@ -23,6 +23,7 @@ type Incident struct {
 	ChannelID       string `json:"channel_id"`
 	CreateAt        int64  `json:"create_at"`
 	EndAt           int64  `json:"end_at"`
+	BroadcastPostID string `json:"broadcast_post_id"`
 }
 
 // IncidentCreateOptions specifies the parameters for IncidentsService.Create method.

@@ -51,7 +51,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
 	statusPostsSelect := sqlStore.builder.
-		Select("sp.IncidentID", "sp.PostID").
+		Select("sp.IncidentID", "sp.PostID", "sp.BroadcastPostID").
 		From("IR_StatusPosts sp")
 
 	return &incidentStore{
@@ -164,7 +164,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	var statusPosts incidentStatusPosts
 
 	postInfoSelect := s.queryBuilder.
-		Select("sp.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
+		Select("sp.IncidentID", "p.ID", "sp.BroadcastPostID", "p.CreateAt", "p.DeleteAt").
 		From("IR_StatusPosts as sp").
 		Join("Posts as p ON sp.PostID = p.Id").
 		OrderBy("p.CreateAt").
@@ -235,6 +235,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"PreviousReminder":        rawIncident.PreviousReminder,
 			"BroadcastChannelID":      rawIncident.BroadcastChannelID,
 			"ReminderMessageTemplate": rawIncident.ReminderMessageTemplate,
+			"BroadcastPostID":         rawIncident.BroadcastPostID,
 		}))
 
 	if err != nil {
@@ -286,6 +287,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"ReminderPostID":     rawIncident.ReminderPostID,
 			"PreviousReminder":   rawIncident.PreviousReminder,
 			"BroadcastChannelID": rawIncident.BroadcastChannelID,
+			"BroadcastPostID":    rawIncident.BroadcastPostID,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -492,16 +494,16 @@ func (s *incidentStore) appendStatusPosts(q queryExecer, incidentToSave incident
 	}
 
 	insertExpr := `
-INSERT INTO IR_StatusPosts(IncidentID, PostID)
-    SELECT ?, ?
+INSERT INTO IR_StatusPosts(IncidentID, PostID, BroadcastPostID)
+    SELECT ?, ?, ?
     WHERE NOT EXISTS (
         SELECT 1 FROM IR_StatusPosts
             WHERE IncidentID = ? AND PostID = ?
     );`
 	if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
 		insertExpr = `
-INSERT INTO IR_StatusPosts(IncidentID, PostID)
-    SELECT ?, ? FROM DUAL
+INSERT INTO IR_StatusPosts(IncidentID, PostID, BroadcastPostID)
+    SELECT ?, ?, ? FROM DUAL
     WHERE NOT EXISTS (
         SELECT 1 FROM IR_StatusPosts
             WHERE IncidentID = ? AND PostID = ?
@@ -510,7 +512,7 @@ INSERT INTO IR_StatusPosts(IncidentID, PostID)
 
 	for _, p := range incidentToSave.StatusPostIDs {
 		rawInsert := sq.Expr(insertExpr,
-			incidentToSave.ID, p, incidentToSave.ID, p)
+			incidentToSave.ID, p, incidentToSave.BroadcastPostID, incidentToSave.ID, p)
 
 		if _, err := s.store.execBuilder(q, rawInsert); err != nil {
 			return err
