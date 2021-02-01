@@ -154,13 +154,12 @@ type Metadata struct {
 type timelineEvent string
 
 const (
-	incidentCreated   timelineEvent = "incident_created"
-	incidentEnded     timelineEvent = "incident_ended"
-	taskStateModified timelineEvent = "task_state_modified"
-	statusUpdated     timelineEvent = "status_updated"
-	commanderChanged  timelineEvent = "commander_changed"
-	assigneeChanged   timelineEvent = "assignee_changed"
-	ranSlashCommand   timelineEvent = "ran_slash_command"
+	IncidentCreated   timelineEvent = "incident_created"
+	TaskStateModified timelineEvent = "task_state_modified"
+	StatusUpdated     timelineEvent = "status_updated"
+	CommanderChanged  timelineEvent = "commander_changed"
+	AssigneeChanged   timelineEvent = "assignee_changed"
+	RanSlashCommand   timelineEvent = "ran_slash_command"
 )
 
 type TimelineEvent struct {

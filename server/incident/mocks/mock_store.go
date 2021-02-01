@@ -63,6 +63,21 @@ func (mr *MockStoreMockRecorder) CreateIncident(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockStore)(nil).CreateIncident), arg0)
 }
 
+// CreateTimelineEvent mocks base method
+func (m *MockStore) CreateTimelineEvent(arg0 incident.TimelineEvent) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTimelineEvent", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateTimelineEvent indicates an expected call of CreateTimelineEvent
+func (mr *MockStoreMockRecorder) CreateTimelineEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTimelineEvent", reflect.TypeOf((*MockStore)(nil).CreateTimelineEvent), arg0)
+}
+
 // GetAllIncidentMembersCount mocks base method
 func (m *MockStore) GetAllIncidentMembersCount(arg0 string) (int64, error) {
 	m.ctrl.T.Helper()
@@ -178,4 +193,18 @@ func (m *MockStore) UpdateStatus(arg0 *incident.SQLStatusPost) error {
 func (mr *MockStoreMockRecorder) UpdateStatus(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockStore)(nil).UpdateStatus), arg0)
+}
+
+// UpdateTimelineEvent mocks base method
+func (m *MockStore) UpdateTimelineEvent(arg0 incident.TimelineEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTimelineEvent", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTimelineEvent indicates an expected call of UpdateTimelineEvent
+func (mr *MockStoreMockRecorder) UpdateTimelineEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTimelineEvent", reflect.TypeOf((*MockStore)(nil).UpdateTimelineEvent), arg0)
 }

@@ -93,6 +93,7 @@ func TestCreateIncident(t *testing.T) {
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(incident.TimelineEvent{}))
 		pluginAPI.On("CreateChannel", &model.Channel{
 			TeamId:      teamID,
 			Type:        model.CHANNEL_PRIVATE,

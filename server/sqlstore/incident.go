@@ -444,9 +444,7 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 		out.StatusPosts = append(out.StatusPosts, p.StatusPost)
 	}
 
-	for _, te := range timelineEvents {
-		out.TimelineEvents = append(out.TimelineEvents, te)
-	}
+	out.TimelineEvents = append(out.TimelineEvents, timelineEvents...)
 
 	return out, nil
 }

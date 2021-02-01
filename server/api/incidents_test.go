@@ -634,6 +634,7 @@ func TestIncidents(t *testing.T) {
 			ChannelID:       "channelID",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -769,6 +770,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -851,6 +853,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -896,6 +899,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1177,6 +1181,7 @@ func TestIncidents(t *testing.T) {
 			ChannelID:       "channelID1",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
