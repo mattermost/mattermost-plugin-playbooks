@@ -105,8 +105,11 @@ interface DropdownProps {
 }
 
 const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
+
     <div
         className={`IncidentFilter status-filter-dropdown${isOpen ? ' IncidentFilter--active status-filter-dropdown--active' : ''}`}
+
+        // @ts-ignore
         css={{position: 'relative'}}
     >
         {target}
@@ -130,6 +133,8 @@ const Menu = (props: Record<string, any>) => {
 
 const Blanket = (props: Record<string, any>) => (
     <div
+
+        // @ts-ignore
         css={{
             bottom: 0,
             left: 0,

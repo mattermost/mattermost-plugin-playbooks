@@ -123,26 +123,6 @@ func (h *IncidentHandler) checkChannelArchived(next http.Handler) http.Handler {
 	})
 }
 
-// ChannelActiveRequiredHandler returns a handler which checks if the channel is active and not archived
-func (h *IncidentHandler) channelActiveRequiredHandler(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		incidentID := vars["id"]
-
-		isArchived, err := h.isChannelArchived(incidentID)
-		if err != nil {
-			HandleError(w, err)
-			return
-		}
-
-		// return an error if the channel is archived
-		if isArchived {
-			HandleErrorWithCode(w, http.StatusBadRequest, "Channel is archived and cannot be modified", err)
-		}
-		next(w, r)
-	}
-}
-
 func (h *IncidentHandler) isChannelArchived(incidentID string) (bool, error) {
 	incidentToModify, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
