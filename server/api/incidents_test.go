@@ -1285,6 +1285,7 @@ func TestEndIncident(t *testing.T) {
 	unauthorized := func(userID string, req *http.Request, incdnt incident.Incident, pluginAPI *plugintest.API, incidentService mock_incident.MockService) {
 		req.Header.Add("Mattermost-User-ID", userID)
 		pluginAPI.On("HasPermissionTo", userID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		incidentService.EXPECT().GetIncident(incdnt.ID).Return(&incdnt, nil).AnyTimes()
 		pluginAPI.On("HasPermissionToChannel", userID, incdnt.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(false)
@@ -1293,11 +1294,14 @@ func TestEndIncident(t *testing.T) {
 	authorizedAsSystemAdmin := func(userID string, req *http.Request, incdnt incident.Incident, pluginAPI *plugintest.API, incidentService mock_incident.MockService) {
 		req.Header.Add("Mattermost-User-ID", userID)
 		pluginAPI.On("HasPermissionTo", userID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		incidentService.EXPECT().GetIncident(incdnt.ID).Return(&incdnt, nil).AnyTimes()
 	}
 
 	authorizedAsUserWithPermissionToIncident := func(userID string, req *http.Request, incdnt incident.Incident, pluginAPI *plugintest.API, incidentService mock_incident.MockService) {
 		req.Header.Add("Mattermost-User-ID", userID)
 		pluginAPI.On("HasPermissionTo", userID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		incidentService.EXPECT().GetIncident(incdnt.ID).Return(&incdnt, nil).AnyTimes()
 		pluginAPI.On("HasPermissionToChannel", userID, incdnt.ChannelID, model.PERMISSION_READ_CHANNEL).
 			Return(true)
@@ -1342,8 +1346,11 @@ func TestEndIncident(t *testing.T) {
 
 					switch tc.ExpectedStatusCode {
 					case http.StatusOK:
+						incidentService.EXPECT().GetIncident(incidentID)
+
 						incidentService.EXPECT().EndIncident(incidentID, userID)
 					case http.StatusInternalServerError:
+						incidentService.EXPECT().GetIncident(incidentID)
 						incidentService.EXPECT().EndIncident(incidentID, userID).Return(errors.New("fake error"))
 					}
 
