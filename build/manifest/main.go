@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -43,6 +44,13 @@ export const version = manifest.version;
 export const pluginId = manifest.id;
 `
 
+// These build-time vars are read from shell commands and populated in ../setup.mk
+var (
+	BuildHashShort  string
+	BuildTagLatest  string
+	BuildTagCurrent string
+)
+
 func main() {
 	if len(os.Args) <= 1 {
 		panic("no cmd specified")
@@ -76,6 +84,11 @@ func main() {
 			panic("failed to apply manifest: " + err.Error())
 		}
 
+	case "dist":
+		if err := distManifest(manifest); err != nil {
+			panic("failed to write manifest to dist directory: " + err.Error())
+		}
+
 	default:
 		panic("unrecognized command: " + cmd)
 	}
@@ -100,6 +113,16 @@ func findManifest() (*model.Manifest, error) {
 	if err = decoder.Decode(&manifest); err != nil {
 		return nil, errors.Wrap(err, "failed to parse manifest")
 	}
+
+	// Update the manifest based on the state of the current commit
+	version := BuildTagCurrent
+	if version == "" {
+		version = BuildTagLatest + "+" + BuildHashShort
+	}
+	if strings.HasPrefix(version, "v") {
+		version = version[1:]
+	}
+	manifest.Version = version
 
 	return &manifest, nil
 }
@@ -152,6 +175,20 @@ func applyManifest(manifest *model.Manifest) error {
 		); err != nil {
 			return errors.Wrap(err, "failed to open webapp/src/manifest.js")
 		}
+	}
+
+	return nil
+}
+
+// distManifest writes the manifest file to the dist directory
+func distManifest(manifest *model.Manifest) error {
+	manifestBytes, err := json.MarshalIndent(manifest, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(fmt.Sprintf("dist/%s/plugin.json", manifest.Id), manifestBytes, 0600); err != nil {
+		return errors.Wrap(err, "failed to write plugin.json")
 	}
 
 	return nil
