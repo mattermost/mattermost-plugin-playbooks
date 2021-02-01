@@ -269,7 +269,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                     cy.get('input').should('have.value', '60min');
                 });
             });
@@ -288,7 +288,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                     cy.get('input').should('have.value', 'None');
                 });
             });
@@ -307,7 +307,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                     cy.get('input').should('have.value', '15min');
                 });
             });
@@ -326,7 +326,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                     cy.get('input').should('have.value', '30min');
                 });
             });
@@ -345,7 +345,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                     cy.get('input').should('have.value', '60min');
                 });
             });
@@ -364,7 +364,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                     cy.get('input').should('have.value', '4hr');
                 });
             });
@@ -383,7 +383,7 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                     cy.get('input').should('have.value', '24hr');
                 });
             });

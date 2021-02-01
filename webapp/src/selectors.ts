@@ -11,7 +11,7 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 
 import {pluginId} from 'src/manifest';
 import {RHSState, RHSTabState} from 'src/types/rhs';
-import {Incident} from 'src/types/incident';
+import {Incident, incidentIsActive} from 'src/types/incident';
 
 //@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
@@ -56,7 +56,7 @@ export const myActiveIncidentsList = createSelector(
 
         // return active incidents, sorted descending by create_at
         return Object.values(incidentMapByTeam[teamId])
-            .filter((i) => i.is_active)
+            .filter((i) => incidentIsActive(i))
             .sort((a, b) => b.create_at - a.create_at);
     },
 );

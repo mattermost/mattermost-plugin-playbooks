@@ -204,16 +204,5 @@ describe('backstage incident list', () => {
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
         });
-
-        it('by status', () => {
-            cy.get('.status-filter-dropdown').click();
-            cy.get('.status-filter-dropdown').findByText('Ongoing').parent().click();
-
-            // # Wait for the incident list to update.
-            cy.wait(TINY);
-
-            // * Verify "Previous" no longer shown
-            cy.findByText('Previous').should('not.exist');
-        });
     });
 });

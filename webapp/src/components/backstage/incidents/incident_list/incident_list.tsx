@@ -21,7 +21,7 @@ import {StatusFilter} from 'src/components/backstage/incidents/incident_list/sta
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/pagination_row';
-import {FetchIncidentsParams, Incident} from 'src/types/incident';
+import {FetchIncidentsParams, Incident, incidentIsActive} from 'src/types/incident';
 import {
     fetchCommandersInTeam,
     fetchIncidents,
@@ -359,7 +359,7 @@ const BackstageIncidentList: FC = () => {
                             />
                         </a>
                         <div className='col-sm-2'>
-                            <StatusBadge isActive={incident.is_active}/>
+                            <StatusBadge isActive={incidentIsActive(incident)}/>
                         </div>
                         <div
                             className='col-sm-2'
@@ -370,7 +370,7 @@ const BackstageIncidentList: FC = () => {
                         </div>
                         <div className='col-sm-2'>
                             {
-                                endedAt(incident.is_active, incident.end_at)
+                                endedAt(incidentIsActive(incident), incident.end_at)
                             }
                         </div>
                         <div className='col-sm-3'>

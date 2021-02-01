@@ -13,7 +13,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {fetchIncident, fetchIncidentMetadata} from 'src/client';
-import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
+import {Incident, Metadata as IncidentMetadata, incidentIsActive} from 'src/types/incident';
 import Profile from 'src/components/profile/profile';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
@@ -287,7 +287,7 @@ const BackstageIncidentDetails: FC = () => {
                 <IncidentTitle data-testid='incident-title'>
                     {`Incident ${incident.name}`}
                 </IncidentTitle>
-                <StatusBadge isActive={incident.is_active}/>
+                <StatusBadge isActive={incidentIsActive(incident)}/>
                 <NavbarPadding/>
                 <CommanderContainer>
                     <span className='label'>{'Commander:'}</span>
@@ -369,12 +369,13 @@ const BackstageIncidentDetails: FC = () => {
 };
 
 const duration = (incident: Incident) => {
-    if (!incident.is_active && moment(incident.end_at).isSameOrBefore('2020-01-01')) {
+    const isActive = incidentIsActive(incident);
+    if (!isActive && moment(incident.end_at).isSameOrBefore('2020-01-01')) {
         // No end datetime available to calculate duration
         return '--';
     }
 
-    const endTime = incident.is_active ? moment() : moment(incident.end_at);
+    const endTime = isActive ? moment() : moment(incident.end_at);
     const timeSinceCreation = moment.duration(endTime.diff(moment(incident.create_at)));
 
     return renderDuration(timeSinceCreation);
@@ -385,7 +386,7 @@ const timeFrameText = (incident: Incident) => {
 
     let endedText = 'Ongoing';
 
-    if (!incident.is_active) {
+    if (!incidentIsActive(incident)) {
         endedText = mom.isSameOrAfter('2020-01-01') ? mom.format('DD MMM h:mmA') : '--';
     }
 
