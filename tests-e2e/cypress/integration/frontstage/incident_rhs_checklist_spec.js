@@ -50,7 +50,7 @@ describe('incident rhs checklist', () => {
         cy.apiLogin('user-1');
     });
 
-    describe('with slash commands', () => {
+    describe('rhs stuff', () => {
         let incidentName;
         let incidentChannelName;
 
@@ -126,6 +126,20 @@ describe('incident rhs checklist', () => {
                 // * Verify the valid command has been run.
                 cy.get('.run').eq(1).should('have.text', 'Rerun');
             });
+        });
+
+        it('delete task', () => {
+            // Hover over the checklist item
+            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
+
+            // Click the trash
+            cy.get('.icon-trash-can-outline').click();
+
+            // Press the delete task button
+            cy.findByText('Delete Task').click();
+
+            // Verify the first task is gone
+            cy.findByText('Step 1').should('not.exist');
         });
     });
 });
