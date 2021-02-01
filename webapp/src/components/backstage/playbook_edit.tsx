@@ -7,11 +7,12 @@ import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {searchChannels as searchChannelsInTeam} from 'mattermost-redux/actions/channels';
 
 import {Team} from 'mattermost-redux/types/teams';
 
 import styled from 'styled-components';
+
+import {ValueType} from 'react-select';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 
@@ -31,6 +32,7 @@ import StagesAndStepsIcon from './stages_and_steps_icon';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
+import {BackstageHeader, BackstageHeaderTitle, BackstageSubheader, BackstageSubheaderText, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledAsyncSelect, StyledSelect} from './styles';
 
 const Container = styled.div`
     display: flex;
@@ -49,6 +51,7 @@ const EditView = styled.div`
 
 const TabsHeader = styled.div`
     height: 72px;
+    min-height: 72px;
     display: flex;
     padding: 0 32px;
     border-bottom: 1px solid var(--center-channel-color-16);
@@ -72,27 +75,6 @@ const SidebarBlock = styled.div`
     margin: 0 0 40px;
 `;
 
-const SidebarHeader = styled.div`
-    display: flex;
-    align-items: center;
-    height: 72px;
-    padding: 0 24px;
-    font-weight: 600;
-    font-size: 16px;
-    border-bottom: 1px solid var(--center-channel-color-16);
-`;
-
-const SidebarHeaderText = styled.div`
-    font-weight: 600;
-    margin: 0 0 16px;
-`;
-
-const SidebarHeaderDescription = styled.div`
-    margin: 8px 0 0;
-    font-weight: 400;
-    color: var(--center-channel-color-64);
-`;
-
 const SidebarContent = styled.div`
     background: var(--center-channel-bg);
     flex-grow: 1;
@@ -107,7 +89,7 @@ const EditableTexts = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding: 15px;
+    padding: 0 15px;
 `;
 
 const EditableTitleContainer = styled.div`
@@ -149,7 +131,7 @@ const OuterContainer = styled.div`
     background: var(center-channel-bg);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    min-height: 100vh;
 `;
 
 interface Props {
@@ -174,13 +156,21 @@ const setPlaybookDefaults = (playbook: Playbook) => ({
     title: playbook.title.trim() || 'Untitled Playbook',
     checklists: playbook.checklists.map((checklist) => ({
         ...checklist,
-        title: checklist.title || 'Untitled Stage',
+        title: checklist.title || 'Untitled Checklist',
         items: checklist.items.map((item) => ({
             ...item,
             title: item.title || 'Untitled Step',
         })),
     })),
 });
+
+const timerOptions = [
+    {value: 900, label: '15min'},
+    {value: 1800, label: '30min'},
+    {value: 3600, label: '60min'},
+    {value: 14400, label: '4hr'},
+    {value: 86400, label: '24hr'},
+];
 
 const PlaybookEdit: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
@@ -321,14 +311,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
     };
 
-    const searchChannels = (term: string) => {
-        return dispatch(searchChannelsInTeam(props.currentTeam.id, term));
-    };
-
-    const handleBroadcastInput = (channelId: string) => {
+    const handleBroadcastInput = (channelId: string | null) => {
         setPlaybook({
             ...playbook,
-            broadcast_channel_id: channelId,
+            broadcast_channel_id: channelId || '',
         });
         setChangesMade(true);
     };
@@ -400,24 +386,79 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 checklists={playbook.checklists}
                                 onChange={updateChecklist}
                             />
-                            {'TODO MM-30519 implement preferences.'}
+                            <TabContainer>
+                                <SidebarBlock>
+                                    <BackstageSubheaderText>
+                                        {'Broadcast Channel'}
+                                        <BackstageSubheaderDescription>
+                                            {'Broadcast the incident status to an additional channel. All status posts will be shared automatically with both the incident and broadcast channel.'}
+                                        </BackstageSubheaderDescription>
+                                    </BackstageSubheaderText>
+                                    <ChannelSelector
+                                        id='playbook-preferences-broadcast-channel'
+                                        onChannelSelected={handleBroadcastInput}
+                                        playbook={playbook}
+                                        isClearable={true}
+                                    />
+                                </SidebarBlock>
+                                <SidebarBlock>
+                                    <BackstageSubheaderText>
+                                        {'Reminder Timer'}
+                                        <BackstageSubheaderDescription>
+                                            {'Prompts the commander at a specified interval to update the status of the Incident.'}
+                                        </BackstageSubheaderDescription>
+                                    </BackstageSubheaderText>
+                                    <StyledSelect
+                                        value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
+                                        onChange={(option: {label: string, value: number}) => {
+                                            setPlaybook({
+                                                ...playbook,
+                                                reminder_timer_default_seconds: option ? option.value : option,
+                                            });
+                                            setChangesMade(true);
+                                        }}
+                                        classNamePrefix='channel-selector'
+                                        options={timerOptions}
+                                        isClearable={true}
+                                    />
+                                </SidebarBlock>
+                                <SidebarBlock>
+                                    <BackstageSubheaderText>
+                                        {'Message Template'}
+                                        <BackstageSubheaderDescription>
+                                            {'Add a templated message to give you a headstart. This can be modified at the Incident level.'}
+                                        </BackstageSubheaderDescription>
+                                    </BackstageSubheaderText>
+                                    <StyledTextarea
+                                        placeholder={'Enter message template'}
+                                        value={playbook.reminder_message_template}
+                                        onChange={(e) => {
+                                            setPlaybook({
+                                                ...playbook,
+                                                reminder_message_template: e.target.value,
+                                            });
+                                            setChangesMade(true);
+                                        }}
+                                    />
+                                </SidebarBlock>
+                            </TabContainer>
                         </TabsContent>
                     </EditContent>
                 </EditView>
                 <Sidebar
                     data-testid='playbook-sidebar'
                 >
-                    <SidebarHeader>
+                    <BackstageSubheader>
                         {'Permissions'}
-                    </SidebarHeader>
+                    </BackstageSubheader>
                     <SidebarContent>
                         <SidebarBlock>
-                            <SidebarHeaderText>
+                            <BackstageSubheaderText>
                                 {'Channel access'}
-                                <SidebarHeaderDescription>
+                                <BackstageSubheaderDescription>
                                     {'Determine the type of incident channel this playbook creates when starting an incident.'}
-                                </SidebarHeaderDescription>
-                            </SidebarHeaderText>
+                                </BackstageSubheaderDescription>
+                            </BackstageSubheaderText>
                             <RadioContainer>
                                 <RadioLabel>
                                     <RadioInput
@@ -442,30 +483,17 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             </RadioContainer>
                         </SidebarBlock>
                         <SidebarBlock>
-                            <SidebarHeaderText>
+                            <BackstageSubheaderText>
                                 {'Playbook access'}
-                                <SidebarHeaderDescription>
+                                <BackstageSubheaderDescription>
                                     {'Only people who you share with can create an incident from this playbook.'}
-                                </SidebarHeaderDescription>
-                            </SidebarHeaderText>
+                                </BackstageSubheaderDescription>
+                            </BackstageSubheaderText>
                             <SharePlaybook
                                 onAddUser={handleUsersInput}
                                 onRemoveUser={handleRemoveUser}
                                 searchProfiles={searchUsers}
                                 getProfiles={getUsers}
-                                playbook={playbook}
-                            />
-                        </SidebarBlock>
-                        <SidebarBlock>
-                            <SidebarHeaderText>
-                                {'Broadcast Channel'}
-                                <SidebarHeaderDescription>
-                                    {'Broadcast the incident status to an additional channel. All status posts will be shared automatically with both the incident and broadcast channel.'}
-                                </SidebarHeaderDescription>
-                            </SidebarHeaderText>
-                            <ChannelSelector
-                                searchChannels={searchChannels}
-                                onChannelSelected={handleBroadcastInput}
                                 playbook={playbook}
                             />
                         </SidebarBlock>

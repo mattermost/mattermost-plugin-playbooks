@@ -1,24 +1,26 @@
 package incident_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-management/server/config/mocks"
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 func TestCreateIncident(t *testing.T) {
@@ -31,14 +33,12 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:   "###",
-				TeamID: teamID,
-			},
+			Name:   "###",
+			TeamID: teamID,
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -59,14 +59,12 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:   "###",
-				TeamID: teamID,
-			},
+			Name:   "###",
+			TeamID: teamID,
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -87,15 +85,13 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:            "###",
-				TeamID:          teamID,
-				CommanderUserID: "user_id",
-			},
+			Name:            "###",
+			TeamID:          teamID,
+			CommanderUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -111,6 +107,7 @@ func TestCreateIncident(t *testing.T) {
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id"}, nil)
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, nil)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
@@ -132,15 +129,13 @@ func TestCreateIncident(t *testing.T) {
 		logger := mock_bot.NewMockLogger(controller)
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
-		scheduler := cluster.GetJobOnceScheduler(pluginAPI)
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Header: incident.Header{
-				Name:            "###",
-				TeamID:          teamID,
-				CommanderUserID: "user_id",
-			},
+			Name:            "###",
+			TeamID:          teamID,
+			CommanderUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -172,16 +167,14 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			},
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API) {
 				testIncident := incident.Incident{
-					Header: incident.Header{
-						ID:              "incidentID",
-						CommanderUserID: "testUserID",
-						TeamID:          "testTeamID",
-						Name:            "incidentName",
-						ChannelID:       "channelID",
-						IsActive:        false,
-					},
-					PostID:     "",
-					Checklists: nil,
+					ID:              "incidentID",
+					CommanderUserID: "testUserID",
+					TeamID:          "testTeamID",
+					Name:            "incidentName",
+					ChannelID:       "channelID",
+					IsActive:        false,
+					PostID:          "",
+					Checklists:      nil,
 				}
 
 				store.EXPECT().
@@ -218,16 +211,14 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			},
 			prepMocks: func(store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API) {
 				testIncident := incident.Incident{
-					Header: incident.Header{
-						ID:              "incidentID",
-						CommanderUserID: "testUserID",
-						TeamID:          "testTeamID",
-						Name:            "incidentName",
-						ChannelID:       "channelID",
-						IsActive:        true,
-					},
-					PostID:     "",
-					Checklists: nil,
+					ID:              "incidentID",
+					CommanderUserID: "testUserID",
+					TeamID:          "testTeamID",
+					Name:            "incidentName",
+					ChannelID:       "channelID",
+					IsActive:        true,
+					PostID:          "",
+					Checklists:      nil,
 				}
 
 				store.EXPECT().
@@ -247,7 +238,7 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 			logger := mock_bot.NewMockLogger(controller)
 			configService := mock_config.NewMockService(controller)
 			telemetryService := &telemetry.NoopTelemetry{}
-			scheduler := cluster.GetJobOnceScheduler(api)
+			scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 			service := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
 			tt.prepMocks(store, poster, api)
@@ -257,127 +248,6 @@ func TestServiceImpl_RestartIncident(t *testing.T) {
 				t.Errorf("RestartIncident() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-		})
-	}
-}
-
-func TestChangeActiveStage(t *testing.T) {
-	testIncident := incident.Incident{
-		Header: incident.Header{
-			ID:               "incidentID",
-			CommanderUserID:  "testUserID",
-			TeamID:           "testTeamID",
-			Name:             "incidentName",
-			ChannelID:        "channelID",
-			IsActive:         true,
-			ActiveStage:      0,
-			ActiveStageTitle: "Stage 2",
-		},
-		PostID: "",
-		Checklists: []playbook.Checklist{
-			{Title: "Stage 1"},
-			{Title: "Stage 2"},
-		},
-	}
-
-	type args struct {
-		incidentID string
-		userID     string
-	}
-	tests := []struct {
-		name      string
-		args      args
-		prepMocks func(store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API)
-		wantErr   bool
-	}{
-		{
-			name: "ongoing incident",
-			args: args{
-				incidentID: "incidentID",
-				userID:     "userID1",
-			},
-			prepMocks: func(store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API) {
-				store.EXPECT().
-					GetIncident("incidentID").
-					Return(&testIncident, nil).Times(1)
-
-				updatedIncident := testIncident
-				updatedIncident.ActiveStage = 1
-
-				store.EXPECT().
-					UpdateIncident(&updatedIncident).
-					Return(nil).Times(1)
-
-				poster.EXPECT().
-					PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channelID").
-					Times(1)
-
-				api.On("GetUser", "userID1").
-					Return(&model.User{Username: "testuser"}, nil)
-
-				poster.EXPECT().
-					PostMessage("channelID", "testuser changed the active stage from **Stage 1** to **Stage 2**.").
-					Return("messageID", nil).
-					Times(1)
-			},
-			wantErr: false,
-		},
-		{
-			name: "ended incident",
-			args: args{
-				incidentID: "incidentID",
-				userID:     "userID1",
-			},
-			prepMocks: func(store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API) {
-				store.EXPECT().
-					GetIncident("incidentID").
-					Return(&testIncident, nil).Times(1)
-
-				updatedIncident := testIncident
-				updatedIncident.ActiveStage = 1
-
-				store.EXPECT().
-					UpdateIncident(&updatedIncident).
-					Return(nil).Times(1)
-
-				poster.EXPECT().
-					PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channelID").
-					Times(1)
-
-				api.On("GetUser", "userID1").
-					Return(&model.User{Username: "testuser"}, nil)
-
-				poster.EXPECT().
-					PostMessage("channelID", "testuser changed the active stage from **Stage 1** to **Stage 2**.").
-					Return("messageID", nil).
-					Times(1)
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			controller := gomock.NewController(t)
-			api := &plugintest.API{}
-			client := pluginapi.NewClient(api)
-			store := mock_incident.NewMockStore(controller)
-			poster := mock_bot.NewMockPoster(controller)
-			logger := mock_bot.NewMockLogger(controller)
-			configService := mock_config.NewMockService(controller)
-			telemetryService := &telemetry.NoopTelemetry{}
-			scheduler := cluster.GetJobOnceScheduler(api)
-			service := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
-
-			tt.prepMocks(store, poster, api)
-
-			changedIncident, err := service.ChangeActiveStage(tt.args.incidentID, tt.args.userID, 1)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ChangeActiveStage() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			require.Equal(t, changedIncident.ActiveStage, 1)
-			require.Equal(t, changedIncident.ActiveStageTitle, "Stage 2")
 		})
 	}
 }
@@ -497,7 +367,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			logger := mock_bot.NewMockLogger(controller)
 			configService := mock_config.NewMockService(controller)
 			telemetryService := &telemetry.NoopTelemetry{}
-			scheduler := cluster.GetJobOnceScheduler(api)
+			scheduler := mock_incident.NewMockJobOnceScheduler(controller)
 			service := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
 			tt.prepMocks(t, store, poster, api, configService)
@@ -509,4 +379,156 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEndIncident(t *testing.T) {
+	t.Run("error fetching", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:     model.NewId(),
+			Name:   "###",
+			TeamID: teamID,
+		}
+
+		store.EXPECT().GetIncident(incdnt.ID).Return(nil, errors.New("error"))
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.ID, "testUserID")
+		require.Error(t, err)
+	})
+
+	t.Run("non-existent", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:     model.NewId(),
+			Name:   "###",
+			TeamID: teamID,
+		}
+
+		store.EXPECT().GetIncident(incdnt.ID).Return(nil, nil)
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.ID, "testUserID")
+		require.Error(t, err)
+	})
+
+	t.Run("already ended", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:       model.NewId(),
+			Name:     "###",
+			TeamID:   teamID,
+			IsActive: false,
+		}
+
+		store.EXPECT().GetIncident(incdnt.ID).Return(incdnt, nil)
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.ID, "testUserID")
+		require.Equal(t, incident.ErrIncidentNotActive, err)
+	})
+
+	t.Run("successful, no reminder", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:             model.NewId(),
+			Name:           "###",
+			TeamID:         teamID,
+			IsActive:       true,
+			ChannelID:      "channel_id",
+			ReminderPostID: "",
+		}
+
+		store.EXPECT().GetIncident(incdnt.ID).Return(incdnt, nil)
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
+		scheduler.EXPECT().Cancel(incdnt.ID)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+		poster.EXPECT().PostMessage("channel_id", "This incident has been closed by @%v", "username")
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.ID, "user_id")
+		require.NoError(t, err)
+	})
+
+	t.Run("successful, reminder", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:             model.NewId(),
+			Name:           "###",
+			TeamID:         teamID,
+			IsActive:       true,
+			ChannelID:      "channel_id",
+			ReminderPostID: "post_id",
+		}
+
+		store.EXPECT().GetIncident(incdnt.ID).Return(incdnt, nil)
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
+		scheduler.EXPECT().Cancel(incdnt.ID)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+		pluginAPI.On("GetPost", "post_id").Return(&model.Post{Id: "post_id"}, nil)
+		pluginAPI.On("DeletePost", "post_id").Return(nil)
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PostMessage("channel_id", "This incident has been closed by @%v", "username")
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.EndIncident(incdnt.ID, "user_id")
+		require.NoError(t, err)
+	})
 }

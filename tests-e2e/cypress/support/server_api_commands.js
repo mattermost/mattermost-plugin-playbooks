@@ -17,28 +17,12 @@ import timeouts from '../fixtures/timeouts';
  * @param {String} username - username
  * @param {String} password - password
  */
-Cypress.Commands.add('apiLogin', (username = 'user-1', password = null) => {
+Cypress.Commands.add('legacyApiLogin', (username = 'user-1', password = null) => {
     cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/users/login',
         method: 'POST',
         body: {login_id: users[username].username, password: password || users[username].password},
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        return cy.wrap(response);
-    });
-});
-
-/**
- * Logout a user directly via API
- */
-Cypress.Commands.add('apiLogout', () => {
-    cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/api/v4/users/logout',
-        method: 'POST',
-        log: false,
-        timeout: timeouts.HUGE,
     }).then((response) => {
         expect(response.status).to.equal(200);
         return cy.wrap(response);
@@ -72,7 +56,7 @@ Cypress.Commands.add('apiCreateTeam', (name, displayName, type = 'O') => {
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
-        cy.wrap(response);
+        cy.wrap({team: response.body});
     });
 });
 
@@ -114,22 +98,6 @@ Cypress.Commands.add('apiAddUserToTeam', (teamId, userId) => {
 // Users
 // https://api.mattermost.com/#tag/users
 // *****************************************************************************
-
-/**
- * Get user by email directly via API
- * This API assume that the user is logged in and has permission to access
- * @param {String} email
- * All parameter required
- */
-Cypress.Commands.add('apiGetUserByEmail', (email) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/api/v4/users/email/' + email,
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        cy.wrap(response.body);
-    });
-});
 
 // *****************************************************************************
 // Channels
@@ -211,6 +179,18 @@ Cypress.Commands.add('apiCreateChannel', (teamId, name, displayName, type = 'O',
     });
 });
 
+Cypress.Commands.add('apiPatchChannel', (channelId, channelData) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        method: 'PUT',
+        url: `/api/v4/channels/${channelId}/patch`,
+        body: channelData,
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap({channel: response.body});
+    });
+});
+
 // *****************************************************************************
 // Plugins
 // https://api.mattermost.com/#tag/plugins
@@ -246,6 +226,25 @@ Cypress.Commands.add('apiCreateGroup', (userIds = []) => {
     }).then((response) => {
         expect(response.status).to.equal(201);
         return cy.wrap(response);
+    });
+});
+
+/**
+ * Creates a direct channel directly via API
+ * This API assume that the user is logged in and has cookie to access
+ * @param {String} userAID - ID of the first user in the DM
+ * @param {String} userBID - ID of the second user in the DM
+ * All parameters required except purpose and header
+ */
+Cypress.Commands.add('apiCreateDM', (userAID, userBID) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/api/v4/channels/direct',
+        method: 'POST',
+        body: [userAID, userBID],
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        return cy.wrap({channel: response.body});
     });
 });
 

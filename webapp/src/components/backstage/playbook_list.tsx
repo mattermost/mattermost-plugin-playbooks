@@ -237,7 +237,7 @@ const PlaybookList: FC = () => {
                                 </div>
                                 <div className='col-sm-2'>
                                     <SortableColHeader
-                                        name={'Stages'}
+                                        name={'Checklists'}
                                         direction={fetchParams.direction}
                                         active={fetchParams.sort === 'stages'}
                                         onClick={() => colHeaderClicked('stages')}

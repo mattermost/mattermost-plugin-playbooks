@@ -21,6 +21,7 @@ interface Props {
     className?: string;
     extra?: JSX.Element;
     withoutProfilePic?: boolean;
+    withoutName?: boolean;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
 }
 
@@ -55,7 +56,9 @@ const Profile: FC<Props> = (props: Props) => {
                     src={profileUri || ''}
                 />
             }
-            <div className='name'>{name}</div>
+            { !props.withoutName &&
+                <div className='name'>{name}</div>
+            }
             {props.extra}
         </div>
     );

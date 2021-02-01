@@ -24,7 +24,7 @@ describe('slash command > test', () => {
         cy.apiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
-                cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then((admin) => {
+                cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then(({user: admin}) => {
                     cy.apiCreatePlaybook({
                         teamId: team.id,
                         title: playbookName,
@@ -163,6 +163,9 @@ describe('slash command > test', () => {
                 // # Login as sysadmin.
                 cy.apiLogin('sysadmin');
 
+                // # Size the viewport to show the RHS without covering posts.
+                cy.viewport('macbook-13');
+
                 // # Navigate to a channel.
                 cy.visit('/ad-1/channels/town-square');
             });
@@ -254,141 +257,6 @@ describe('slash command > test', () => {
 
                         // * Verify that the creation timestamp is correct.
                         assert.equal('2020-01-01', moment(incident.create_at).format('YYYY-MM-DD'));
-                    });
-                });
-            });
-
-            describe('with subcommand bulk-data', () => {
-                it('fails to run with no arguments', () => {
-                    // # Execute the bulk-data command with no arguments.
-                    cy.executeSlashCommand('/incident test bulk-data');
-
-                    // * Verify that the ephemeral message contains a help message about the arguments.
-                    cy.verifyEphemeralMessage('/incident test bulk-data expects at least 4 arguments: [ongoing] [ended] [begin] [end]. Optionally, a fifth argument can be added: [seed].');
-                });
-
-                it('fails to run with one argument', () => {
-                    // # Execute the bulk-data command with one argument.
-                    cy.executeSlashCommand('/incident test bulk-data 10');
-
-                    // * Verify that the ephemeral message contains a help message about the arguments.
-                    cy.verifyEphemeralMessage('/incident test bulk-data expects at least 4 arguments: [ongoing] [ended] [begin] [end]. Optionally, a fifth argument can be added: [seed].');
-                });
-
-                it('fails to run with two arguments', () => {
-                    // # Execute the bulk-data command with two arguments.
-                    cy.executeSlashCommand('/incident test bulk-data 10 5');
-
-                    // * Verify that the ephemeral message contains a help message about the arguments.
-                    cy.verifyEphemeralMessage('/incident test bulk-data expects at least 4 arguments: [ongoing] [ended] [begin] [end]. Optionally, a fifth argument can be added: [seed].');
-                });
-
-                it('fails to run with three arguments', () => {
-                    // # Execute the bulk-data command with three arguments.
-                    cy.executeSlashCommand('/incident test bulk-data 10 5 2020-01-01');
-
-                    // * Verify that the ephemeral message contains a help message about the arguments.
-                    cy.verifyEphemeralMessage('/incident test bulk-data expects at least 4 arguments: [ongoing] [ended] [begin] [end]. Optionally, a fifth argument can be added: [seed].');
-                });
-
-                it('fails to run with malformed number of ongoing incidents', () => {
-                    // # Execute the bulk-data command with all arguments, but a malformed number of ongoing incidents.
-                    cy.executeSlashCommand('/incident test bulk-data aa 5 2020-01-01 2020-10-10');
-
-                    // * Verify that the ephemeral message informs of the specific parsing error.
-                    cy.verifyEphemeralMessage('The provided value for ongoing incidents, \'aa\', is not an integer.');
-                });
-
-                it('fails to run with malformed number of ended incidents', () => {
-                    // # Execute the bulk-data command with all arguments, but a malformed number of ended incidents.
-                    cy.executeSlashCommand('/incident test bulk-data 10 10.5 2020-01-01 2020-10-10');
-
-                    // * Verify that the ephemeral message informs of the specific parsing error.
-                    cy.verifyEphemeralMessage('The provided value for ended incidents, \'10.5\', is not an integer.');
-                });
-
-                it('fails to run with malformed begin date', () => {
-                    // # Execute the bulk-data command with all arguments, but a malformed begin date.
-                    cy.executeSlashCommand('/incident test bulk-data 10 5 2020-1-1 2020-10-10');
-
-                    // * Verify that the ephemeral message informs of the specific parsing error.
-                    cy.verifyEphemeralMessage('The provided value for the first possible date, \'2020-1-1\', is not a valid date. It needs to be in the format 2020-01-31.');
-                });
-
-                it('fails to run with malformed end date', () => {
-                    // # Execute the bulk-data command with all arguments, but a malformed end date.
-                    cy.executeSlashCommand('/incident test bulk-data 10 5 2020-01-01 2020');
-
-                    // * Verify that the ephemeral message informs of the specific parsing error.
-                    cy.verifyEphemeralMessage('The provided value for the last possible date, \'2020\', is not a valid date. It needs to be in the format 2020-01-31.');
-                });
-
-                it('fails to run with end date before begin date', () => {
-                    // # Execute the bulk-data command with begin date after end date.
-                    cy.executeSlashCommand('/incident test bulk-data 10 5 2020-01-01 2019-01-01');
-
-                    // * Verify that the ephemeral message informs of the specific logic error.
-                    cy.verifyEphemeralMessage('end must be a later date than begin');
-                });
-
-                it('fails to run with end date equal to begin date', () => {
-                    // # Execute the bulk-data command with begin date equal to end date.
-                    cy.executeSlashCommand('/incident test bulk-data 10 5 2020-01-01 2020-01-01');
-
-                    // * Verify that the ephemeral message informs of the specific logic error.
-                    cy.verifyEphemeralMessage('end must be a later date than begin');
-                });
-
-                it('creates no incidents when both ongoing and ended parameters are zero', () => {
-                    // # Execute the bulk-data command for creating zero incidents.
-                    cy.executeSlashCommand('/incident test bulk-data 0 0 2020-01-01 2020-10-01');
-
-                    // * Verify that the ephemeral message informs that no incidents were created.
-                    cy.verifyEphemeralMessage('Zero incidents created.');
-                });
-
-                it('creates only ongoing incidents', () => {
-                    // # Execute the bulk-data command with only ongoing incidents.
-                    cy.executeSlashCommand('/incident test bulk-data 2 0 2020-01-01 2020-10-01 42');
-
-                    // * Verify that the ephemeral message informs that the generation was successful.
-                    cy.verifyEphemeralMessage('The test data was successfully generated:');
-
-                    // * Verify the number of created incidents is correct.
-                    cy.getLastPostId().then((lastPostId) => {
-                        cy.get(`#post_${lastPostId}`).within(() => {
-                            cy.get('a').should('have.length', 2);
-                        });
-                    });
-                });
-
-                it('creates only ended incidents', () => {
-                    // # Execute the bulk-data command with only ended incidents.
-                    cy.executeSlashCommand('/incident test bulk-data 0 2 2020-01-01 2020-10-01 42');
-
-                    // * Verify that the ephemeral message informs that the generation was successful.
-                    cy.verifyEphemeralMessage('The test data was successfully generated:');
-
-                    // * Verify the number of created incidents is correct.
-                    cy.getLastPostId().then((lastPostId) => {
-                        cy.get(`#post_${lastPostId}`).within(() => {
-                            cy.get('a').should('have.length', 2);
-                        });
-                    });
-                });
-
-                it('creates ongoing and ended incidents', () => {
-                    // # Execute the bulk-data command with both ongoing and ended incidents.
-                    cy.executeSlashCommand('/incident test bulk-data 2 2 2020-01-01 2020-10-01 42');
-
-                    // * Verify that the ephemeral message informs that the generation was successful
-                    cy.verifyEphemeralMessage('The test data was successfully generated:');
-
-                    // * Verify the number of created incidents is correct.
-                    cy.getLastPostId().then((lastPostId) => {
-                        cy.get(`#post_${lastPostId}`).within(() => {
-                            cy.get('a').should('have.length', 4);
-                        });
                     });
                 });
             });

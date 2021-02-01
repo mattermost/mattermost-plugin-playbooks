@@ -43,14 +43,16 @@ type incidentStatusPosts []struct {
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
-		Select("ID", "Name", "Description", "IsActive", "CommanderUserID", "TeamID", "ChannelID",
-			"CreateAt", "EndAt", "DeleteAt", "ActiveStage", "ActiveStageTitle", "PostID", "PlaybookID",
-			"ChecklistsJSON", "COALESCE(ReminderPostID, '') ReminderPostID", "BroadcastChannelID").
-		From("IR_Incident AS incident")
+		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.IsActive", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
+			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID",
+			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate").
+		From("IR_Incident AS i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
 	statusPostsSelect := sqlStore.builder.
-		Select("IncidentID", "PostID").
-		From("IR_StatusPosts")
+		Select("sp.IncidentID", "sp.PostID").
+		From("IR_StatusPosts sp")
 
 	return &incidentStore{
 		pluginAPI:         pluginAPI,
@@ -72,29 +74,30 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	queryForResults := s.incidentSelect.
 		Where(permissionsExpr).
-		Where(sq.Eq{"TeamID": options.TeamID}).
-		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"i.TeamID": options.TeamID}).
+		Where(sq.Eq{"i.DeleteAt": 0}).
 		Offset(uint64(options.Page * options.PerPage)).
 		Limit(uint64(options.PerPage))
 
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
-		From("IR_Incident AS incident").
+		From("IR_Incident AS i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where(permissionsExpr).
-		Where(sq.Eq{"TeamID": options.TeamID}).
-		Where(sq.Eq{"DeleteAt": 0})
+		Where(sq.Eq{"i.TeamID": options.TeamID}).
+		Where(sq.Eq{"i.DeleteAt": 0})
 
 	if options.Status == incident.Ongoing {
-		queryForResults = queryForResults.Where(sq.Eq{"IsActive": true})
-		queryForTotal = queryForTotal.Where(sq.Eq{"IsActive": true})
+		queryForResults = queryForResults.Where(sq.Eq{"i.IsActive": true})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.IsActive": true})
 	} else if options.Status == incident.Ended {
-		queryForResults = queryForResults.Where(sq.Eq{"IsActive": false})
-		queryForTotal = queryForTotal.Where(sq.Eq{"IsActive": false})
+		queryForResults = queryForResults.Where(sq.Eq{"i.IsActive": false})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.IsActive": false})
 	}
 
 	if options.CommanderID != "" {
-		queryForResults = queryForResults.Where(sq.Eq{"CommanderUserID": options.CommanderID})
-		queryForTotal = queryForTotal.Where(sq.Eq{"CommanderUserID": options.CommanderID})
+		queryForResults = queryForResults.Where(sq.Eq{"i.CommanderUserID": options.CommanderID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.CommanderUserID": options.CommanderID})
 	}
 
 	if options.MemberID != "" {
@@ -102,7 +105,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 			Select("1").
 			Prefix("EXISTS(").
 			From("ChannelMembers AS cm").
-			Where("cm.ChannelId = incident.ChannelID").
+			Where("cm.ChannelId = i.ChannelID").
 			Where(sq.Eq{"cm.UserId": strings.ToLower(options.MemberID)}).
 			Suffix(")")
 
@@ -112,13 +115,13 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
-		column := "Name"
+		column := "c.DisplayName"
 		searchString := options.SearchTerm
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
-			column = "LOWER(Name)"
+			column = "LOWER(c.DisplayName)"
 			searchString = strings.ToLower(options.SearchTerm)
 		}
 
@@ -161,11 +164,11 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	var statusPosts incidentStatusPosts
 
 	postInfoSelect := s.queryBuilder.
-		Select("ir.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
-		From("IR_StatusPosts as ir").
-		Join("Posts as p ON ir.PostID = p.Id").
+		Select("sp.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
+		From("IR_StatusPosts as sp").
+		Join("Posts as p ON sp.PostID = p.Id").
 		OrderBy("p.CreateAt").
-		Where(sq.Eq{"ir.IncidentID": incidentIDs})
+		Where(sq.Eq{"sp.IncidentID": incidentIDs})
 
 	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
@@ -186,8 +189,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	}, nil
 }
 
-// CreateIncident creates a new incident. It assumes that ActiveStage is correct
-// and that ActiveStageTitle is already synced.
+// CreateIncident creates a new incident.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
@@ -213,23 +215,26 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	_, err = s.store.execBuilder(tx, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":                 rawIncident.ID,
-			"Name":               rawIncident.Name,
-			"Description":        rawIncident.Description,
-			"IsActive":           rawIncident.IsActive,
-			"CommanderUserID":    rawIncident.CommanderUserID,
-			"TeamID":             rawIncident.TeamID,
-			"ChannelID":          rawIncident.ChannelID,
-			"CreateAt":           rawIncident.CreateAt,
-			"EndAt":              rawIncident.EndAt,
-			"DeleteAt":           rawIncident.DeleteAt,
-			"ActiveStage":        rawIncident.ActiveStage,
-			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
-			"PostID":             rawIncident.PostID,
-			"PlaybookID":         rawIncident.PlaybookID,
-			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
-			"ReminderPostID":     rawIncident.ReminderPostID,
-			"BroadcastChannelID": rawIncident.BroadcastChannelID,
+			"ID":              rawIncident.ID,
+			"Name":            rawIncident.Name,
+			"Description":     rawIncident.Description,
+			"IsActive":        rawIncident.IsActive,
+			"CommanderUserID": rawIncident.CommanderUserID,
+			"TeamID":          rawIncident.TeamID,
+			"ChannelID":       rawIncident.ChannelID,
+			"CreateAt":        rawIncident.CreateAt,
+			"EndAt":           rawIncident.EndAt,
+			"DeleteAt":        rawIncident.DeleteAt,
+			// Preserved for backwards compatibility with v1.2
+			"ActiveStage":             0,
+			"ActiveStageTitle":        "",
+			"PostID":                  rawIncident.PostID,
+			"PlaybookID":              rawIncident.PlaybookID,
+			"ChecklistsJSON":          rawIncident.ChecklistsJSON,
+			"ReminderPostID":          rawIncident.ReminderPostID,
+			"PreviousReminder":        rawIncident.PreviousReminder,
+			"BroadcastChannelID":      rawIncident.BroadcastChannelID,
+			"ReminderMessageTemplate": rawIncident.ReminderMessageTemplate,
 		}))
 
 	if err != nil {
@@ -247,8 +252,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	return incidentCopy, nil
 }
 
-// UpdateIncident updates an incident. It assumes that ActiveStage is correct
-// and that ActiveStageTitle is already synced.
+// UpdateIncident updates an incident.
 func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	if newIncident == nil {
 		return errors.New("incident is nil")
@@ -272,16 +276,15 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":               rawIncident.Name,
+			"Name":               "",
 			"Description":        rawIncident.Description,
 			"IsActive":           rawIncident.IsActive,
 			"CommanderUserID":    rawIncident.CommanderUserID,
 			"EndAt":              rawIncident.EndAt,
 			"DeleteAt":           rawIncident.DeleteAt,
-			"ActiveStage":        rawIncident.ActiveStage,
-			"ActiveStageTitle":   rawIncident.ActiveStageTitle,
 			"ChecklistsJSON":     rawIncident.ChecklistsJSON,
 			"ReminderPostID":     rawIncident.ReminderPostID,
+			"PreviousReminder":   rawIncident.PreviousReminder,
 			"BroadcastChannelID": rawIncident.BroadcastChannelID,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
@@ -314,7 +317,7 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 	defer s.store.finalizeTransaction(tx)
 
 	var rawIncident sqlIncident
-	err = s.store.getBuilder(tx, &rawIncident, s.incidentSelect.Where(sq.Eq{"ID": incidentID}))
+	err = s.store.getBuilder(tx, &rawIncident, s.incidentSelect.Where(sq.Eq{"i.ID": incidentID}))
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {
@@ -328,10 +331,10 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 	var statusPosts incidentStatusPosts
 
 	postInfoSelect := s.queryBuilder.
-		Select("ir.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
-		From("IR_StatusPosts as ir").
-		Join("Posts as p ON ir.PostID = p.Id").
-		Where(sq.Eq{"IncidentID": incidentID}).
+		Select("sp.IncidentID", "p.ID", "p.CreateAt", "p.DeleteAt").
+		From("IR_StatusPosts as sp").
+		Join("Posts as p ON sp.PostID = p.Id").
+		Where(sq.Eq{"sp.IncidentID": incidentID}).
 		OrderBy("p.CreateAt")
 
 	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
@@ -354,9 +357,9 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 // GetIncidentIDForChannel gets the incidentID associated with the given channelID.
 func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error) {
 	query := s.queryBuilder.
-		Select("ID").
-		From("IR_Incident").
-		Where(sq.Eq{"ChannelID": channelID})
+		Select("i.ID").
+		From("IR_Incident i").
+		Where(sq.Eq{"i.ChannelID": channelID})
 
 	var id string
 	err := s.store.getBuilder(s.store.db, &id, query)
@@ -373,10 +376,10 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 // beginning of the incident, excluding bots.
 func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, error) {
 	query := s.queryBuilder.
-		Select("COUNT(DISTINCT UserId)").
-		From("ChannelMemberHistory AS u").
-		Where(sq.Eq{"ChannelId": channelID}).
-		Where(sq.Expr("u.UserId NOT IN (SELECT UserId FROM Bots)"))
+		Select("COUNT(DISTINCT cmh.UserId)").
+		From("ChannelMemberHistory AS cmh").
+		Where(sq.Eq{"cmh.ChannelId": channelID}).
+		Where(sq.Expr("cmh.UserId NOT IN (SELECT UserId FROM Bots)"))
 
 	var numMembers int64
 	err := s.store.getBuilder(s.store.db, &numMembers, query)
@@ -398,9 +401,9 @@ func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, opti
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
 		Select("DISTINCT u.Id AS UserID", "u.Username").
-		From("IR_Incident AS incident").
-		Join("Users AS u ON incident.CommanderUserID = u.Id").
-		Where(sq.Eq{"TeamID": options.TeamID}).
+		From("IR_Incident AS i").
+		Join("Users AS u ON i.CommanderUserID = u.Id").
+		Where(sq.Eq{"i.TeamID": options.TeamID}).
 		Where(permissionsExpr)
 
 	var commanders []incident.CommanderInfo
@@ -464,12 +467,12 @@ func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sql
 			  -- If requester is a channel member
 			  EXISTS(SELECT 1
 						 FROM ChannelMembers as cm
-						 WHERE cm.ChannelId = incident.ChannelID
+						 WHERE cm.ChannelId = i.ChannelID
 						   AND cm.UserId = ?)
 			  -- Or if channel is public
 			  OR EXISTS(SELECT 1
 							FROM Channels as c
-							WHERE c.Id = incident.ChannelID
+							WHERE c.Id = i.ChannelID
 							  AND c.Type = 'O')
 		  )`, info.UserID)
 }

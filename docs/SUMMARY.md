@@ -10,7 +10,7 @@
 
 ## End User's Guide
 
-- [Playbooks and Incidents](/playbooks/playbook-overview.md)
+- [Playbooks and Incidents](playbooks/playbook-overview.md)
 - [Incident Management Slash Commands](administrator-guide/incident-response-slash-commands.md)
 - [Creating and Managing Playbooks](playbooks/creating-and-managing-playbooks.md)
 - [Starting and Joining an Incident](incidents/starting-and-joining-an-incident.md)

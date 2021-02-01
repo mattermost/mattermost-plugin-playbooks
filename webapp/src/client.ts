@@ -89,8 +89,13 @@ export function fetchIncidentChannels(teamID: string, userID: string) {
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
-    const currentChannel = getCurrentChannel(getState());
+    let currentChannel = getCurrentChannel(getState());
     const currentTeamId = getCurrentTeamId(getState());
+
+    // Default to town square if there is no current channel (i.e., if Mattermost has not yet loaded)
+    if (!currentChannel) {
+        currentChannel = await Client4.getChannelByName(currentTeamId, 'town-square');
+    }
 
     const args = {
         channel_id: currentChannel?.id,
@@ -235,14 +240,6 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
             new_location: newLocation,
         }),
     );
-
-    return data;
-}
-
-export async function setActiveStage(incidentId: string, activeStage: number) {
-    const data = await doPatch(`${apiUrl}/incidents/${incidentId}`, JSON.stringify({
-        active_stage: activeStage,
-    }));
 
     return data;
 }

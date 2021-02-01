@@ -21,24 +21,7 @@ import ConfirmModal from '../widgets/confirmation_modal';
 
 import {StageEditor} from './stage_edit';
 import DragHandle from './drag_handle';
-
-const Header = styled.div`
-    padding: 24px 0 0 14px;
-`;
-
-const HeaderTitle = styled.div`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
-`;
-
-const HeaderHelpText = styled.div`
-    font-weight: normal;
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-`;
+import {BackstageHeader, BackstageHeaderTitle, BackstageHeaderHelpText} from './styles';
 
 const NewStage = styled.button`
     border: none;
@@ -164,10 +147,10 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
 
     return (
         <>
-            <Header>
-                <HeaderTitle>{'Tasks'}</HeaderTitle>
-                <HeaderHelpText>{'Stages allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</HeaderHelpText>
-            </Header>
+            <BackstageHeader>
+                <BackstageHeaderTitle>{'Tasks'}</BackstageHeaderTitle>
+                <BackstageHeaderHelpText>{'Checklists allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</BackstageHeaderHelpText>
+            </BackstageHeader>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
                     droppableId='columns'
@@ -212,15 +195,15 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                             onClick={onAddChecklist}
                         >
                             <i className='icon-plus icon-16'/>
-                            {'New Stage'}
+                            {'New Checklist'}
                         </NewStage>
                     </HorizontalBar>
                 </NewStageContainer>
                 <ConfirmModal
                     show={confirmRemoveChecklistNum >= 0}
-                    title={'Remove Stage'}
-                    message={'Are you sure you want to remove the stage? All steps will be removed.'}
-                    confirmButtonText={'Remove Stage'}
+                    title={'Remove Checklist'}
+                    message={'Are you sure you want to remove the checklist? All tasks will be removed.'}
+                    confirmButtonText={'Remove Checklist'}
                     onConfirm={() => {
                         onRemoveChecklist(confirmRemoveChecklistNum);
                         setConfirmRemoveChecklistNum(-1);

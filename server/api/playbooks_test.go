@@ -84,6 +84,39 @@ func TestPlaybooks(t *testing.T) {
 	}
 	withMemberBytes, err := json.Marshal(&withMember)
 	require.NoError(t, err)
+	withBroadcastChannel := playbook.Playbook{
+		ID:     "testplaybookid",
+		Title:  "My Playbook",
+		TeamID: "testteamid",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Do these things",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this",
+					},
+				},
+			},
+		},
+		MemberIDs:          []string{},
+		BroadcastChannelID: "nonemptychannelid",
+	}
+	withBroadcastChannelNoID := playbook.Playbook{
+		Title:  "My Playbook",
+		TeamID: "testteamid",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Do these things",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Do this",
+					},
+				},
+			},
+		},
+		MemberIDs:          []string{},
+		BroadcastChannelID: "nonemptychannelid",
+	}
 
 	var mockCtrl *gomock.Controller
 	var handler *Handler
@@ -121,6 +154,28 @@ func TestPlaybooks(t *testing.T) {
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	})
+
+	t.Run("create playbook, no premissions to broadcast channel", func(t *testing.T) {
+		reset()
+
+		playbookService.EXPECT().
+			Create(playbooktest, "testuserid").
+			Return(model.NewId(), nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannelNoID.BroadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(withBroadcastChannelNoID))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
 	t.Run("get playbook", func(t *testing.T) {
@@ -212,6 +267,62 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().
 			Update(withid, "testuserid").
+			Return(nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("update playbook but no premissions in broadcast channel", func(t *testing.T) {
+		reset()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(withBroadcastChannel))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Get("testplaybookid").
+			Return(playbooktest, nil).
+			Times(1)
+
+		playbookService.EXPECT().
+			Update(withid, "testuserid").
+			Return(nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannel.BroadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("update playbook but no premissions in broadcast channel, but no edit", func(t *testing.T) {
+		reset()
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(withBroadcastChannel))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Get("testplaybookid").
+			Return(withBroadcastChannel, nil).
+			Times(1)
+
+		playbookService.EXPECT().
+			Update(withBroadcastChannel, "testuserid").
 			Return(nil).
 			Times(1)
 

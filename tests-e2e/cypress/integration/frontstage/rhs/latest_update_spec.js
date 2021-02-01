@@ -8,6 +8,7 @@
 
 describe('incident rhs > latest update', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
+    const defaultReminderMessage = '# Default reminder message';
     let teamId;
     let userId;
     let playbookId;
@@ -29,6 +30,8 @@ describe('incident rhs > latest update', () => {
                         title: playbookName,
                         userId,
                         broadcastChannelId: channel.id,
+                        reminderTimerDefaultSeconds: 3600,
+                        reminderMessageTemplate: defaultReminderMessage,
                     }).then((playbook) => {
                         playbookId = playbook.id;
                     });
@@ -63,14 +66,130 @@ describe('incident rhs > latest update', () => {
     });
 
     describe('status update interactive dialog', () => {
-        it('shows the broadcast channel when there is one', () => {
+        it('shows the broadcast channel when it is public', () => {
             // # Run the /incident status slash command.
             cy.executeSlashCommand('/incident update');
 
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 cy.get('#interactiveDialogModalIntroductionText')
-                  .contains('Update your incident status. This post will be broadcasted to Town Square.');
+                    .contains('Update your incident status. This post will be broadcasted to Town Square.');
+            });
+        });
+
+        it('shows a generic message when the broadcast channel is private', () => {
+            // # Create a private channel
+            const now = Date.now();
+            const broadcastDisplayName = 'Private channel (' + now + ')';
+            const broadcastName = 'private-channel-' + now;
+            cy.apiCreateChannel(teamId, broadcastName, broadcastDisplayName, 'P').then(({channel}) => {
+                // # Create a playbook with a private broadcast channel configured
+                cy.apiCreateTestPlaybook({
+                    teamId,
+                    title: playbookName,
+                    userId,
+                    broadcastChannelId: channel.id,
+                }).then((playbook) => {
+                    // # Create a new incident
+                    const name = 'Incident (' + now + ')';
+                    const incidentChannelName = 'incident-' + now;
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName: name,
+                        commanderUserId: userId,
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                    // # Run the /incident status slash command.
+                    cy.executeSlashCommand('/incident update');
+
+                    // * Verify that the interactive dialog contains a generic message
+                    cy.get('#interactiveDialogModal').within(() => {
+                        cy.get('#interactiveDialogModalIntroductionText')
+                            .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                    });
+                });
+            });
+        });
+
+        it('shows a generic message when the broadcast channel is a direct message', () => {
+            // # Create a DM
+            cy.apiGetUsers(['user-1', 'douglas.daniels']).then((res) => {
+                const userIds = res.body.map((user) => user.id);
+                cy.apiCreateDM(userIds[0], userIds[1]).then(({channel}) => {
+                    // # Create a playbook with a private broadcast channel configured
+                    cy.apiCreateTestPlaybook({
+                        teamId,
+                        title: playbookName,
+                        userId,
+                        broadcastChannelId: channel.id,
+                    }).then((playbook) => {
+                        // # Create a new incident
+                        const now = Date.now();
+                        const name = 'Incident (' + now + ')';
+                        const incidentChannelName = 'incident-' + now;
+                        cy.apiStartIncident({
+                            teamId,
+                            playbookId: playbook.id,
+                            incidentName: name,
+                            commanderUserId: userId,
+                        });
+
+                        // # Navigate to the incident channel
+                        cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                        // # Run the /incident status slash command.
+                        cy.executeSlashCommand('/incident update');
+
+                        // * Verify that the interactive dialog contains a generic message
+                        cy.get('#interactiveDialogModal').within(() => {
+                            cy.get('#interactiveDialogModalIntroductionText')
+                                .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                        });
+                    });
+                });
+            });
+        });
+
+        it('shows a generic message when the broadcast channel is a group channel', () => {
+            // # Create a GM
+            cy.apiGetUsers(['user-1', 'douglas.daniels', 'christina.wilson']).then((res) => {
+                const userIds = res.body.map((user) => user.id);
+                cy.apiCreateGroup(userIds).then((resp) => {
+                    // # Create a playbook with a private broadcast channel configured
+                    cy.apiCreateTestPlaybook({
+                        teamId,
+                        title: playbookName,
+                        userId,
+                        broadcastChannelId: resp.body.id,
+                    }).then((playbook) => {
+                        // # Create a new incident
+                        const now = Date.now();
+                        const name = 'Incident (' + now + ')';
+                        const incidentChannelName = 'incident-' + now;
+                        cy.apiStartIncident({
+                            teamId,
+                            playbookId: playbook.id,
+                            incidentName: name,
+                            commanderUserId: userId,
+                        });
+
+                        // # Navigate to the incident channel
+                        cy.visit('/ad-1/channels/' + incidentChannelName);
+
+                        // # Run the /incident status slash command.
+                        cy.executeSlashCommand('/incident update');
+
+                        // * Verify that the interactive dialog contains a generic message
+                        cy.get('#interactiveDialogModal').within(() => {
+                            cy.get('#interactiveDialogModalIntroductionText')
+                                .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                        });
+                    });
+                });
             });
         });
 
@@ -101,15 +220,27 @@ describe('incident rhs > latest update', () => {
                 // # Get the interactive dialog modal.
                 cy.get('#interactiveDialogModal').within(() => {
                     cy.get('#interactiveDialogModalIntroductionText')
-                      .contains('Update your incident status.');
+                        .contains('Update your incident status.');
                     cy.get('#interactiveDialogModalIntroductionText')
-                      .should('not.contain', 'This post will be broadcasted');
+                        .should('not.contain', 'This post will be broadcasted');
                 });
             });
         });
     });
 
     describe('shows the last update in update message', () => {
+        it('shows the default when we have not made an update before', () => {
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the first message is there.
+                cy.findByTestId('messageinput').within(() => {
+                    cy.findByText(defaultReminderMessage).should('exist');
+                });
+            });
+        });
         it('when we have made a previous update', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
@@ -125,6 +256,135 @@ describe('incident rhs > latest update', () => {
                 // * Verify the first message is there.
                 cy.findByTestId('messageinput').within(() => {
                     cy.findByText(firstMessage).should('exist');
+                });
+            });
+        });
+    });
+
+    describe('the default reminder', () => {
+        it('shows the configured default when we have not made a previous update', () => {
+            // # Run the /incident update slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '60min');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: None', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, 'none');
+
+            // # Run the /incident update slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', 'None');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 15min', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '15');
+
+            // # Run the /incident update slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '15min');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 30min', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '30');
+
+            // # Run the /incident update slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '30min');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 60min', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '60');
+
+            // # Run the /incident update slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '60min');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 4hr', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '4');
+
+            // # Run the /incident update slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '4hr');
+                });
+            });
+        });
+
+        it('shows the last reminder we typed in: 24hr', () => {
+            const now = Date.now();
+            const firstMessage = 'Update - ' + now;
+
+            // # Create a first status update
+            cy.updateStatus(firstMessage, '24');
+
+            // # Run the /incident update slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // * Verify the default is as expected
+                cy.findByTestId('autoCompleteSelector').within(() => {
+                    cy.get('input').should('have.value', '24hr');
                 });
             });
         });
@@ -303,7 +563,7 @@ describe('incident rhs > latest update', () => {
             it('in a brand new incident', () => {
                 // * Verify that the RHS shows that there are no updates.
                 cy.get('#incidentRHSUpdates')
-                  .contains('No recent updates. Click here to update status.');
+                    .contains('No recent updates. Click here to update status.');
             });
 
             it('when the only update is deleted', () => {
@@ -322,7 +582,7 @@ describe('incident rhs > latest update', () => {
 
                     // * Verify that the RHS shows that there are no updates.
                     cy.get('#incidentRHSUpdates')
-                      .contains('No recent updates. Click here to update status.');
+                        .contains('No recent updates. Click here to update status.');
                 });
             });
 
@@ -359,7 +619,7 @@ describe('incident rhs > latest update', () => {
 
                         // * Verify that the RHS shows that there are no updates.
                         cy.get('#incidentRHSUpdates')
-                          .contains('No recent updates. Click here to update status.');
+                            .contains('No recent updates. Click here to update status.');
                     });
                 });
             });
@@ -388,7 +648,7 @@ describe('incident rhs > latest update', () => {
 
                     // * Verify that the RHS shows that there are no updates.
                     cy.get('#incidentRHSUpdates')
-                      .contains('No recent updates. Click here to update status.');
+                        .contains('No recent updates. Click here to update status.');
                 });
             });
 
@@ -426,7 +686,7 @@ describe('incident rhs > latest update', () => {
 
                         // * Verify that the RHS shows that there are no updates.
                         cy.get('#incidentRHSUpdates')
-                          .contains('No recent updates. Click here to update status.');
+                            .contains('No recent updates. Click here to update status.');
                     });
                 });
             });

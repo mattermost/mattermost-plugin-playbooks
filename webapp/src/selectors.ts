@@ -37,6 +37,15 @@ export const inIncidentChannel = createSelector(
     },
 );
 
+export const currentIncident = createSelector(
+    getCurrentTeamId,
+    getCurrentChannelId,
+    myIncidentsByTeam,
+    (teamId, channelId, incidentMapByTeam) => {
+        return incidentMapByTeam[teamId]?.[channelId];
+    },
+);
+
 export const myActiveIncidentsList = createSelector(
     getCurrentTeamId,
     myIncidentsByTeam,
@@ -51,6 +60,11 @@ export const myActiveIncidentsList = createSelector(
             .sort((a, b) => b.create_at - a.create_at);
     },
 );
+
+// myActiveIncidentsMap returns a map indexed by channelId->incident for the current team
+export const myIncidentsMap = (state: GlobalState) => {
+    return myIncidentsByTeam(state)[getCurrentTeamId(state)] || {};
+};
 
 export const isExportLicensed = (state: GlobalState): boolean => {
     const license = getLicense(state);

@@ -81,17 +81,15 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 }
 
 var dummyIncident = &incident.Incident{
-	Header: incident.Header{
-		ID:              "id",
-		Name:            "name",
-		IsActive:        true,
-		CommanderUserID: "commander_user_id",
-		TeamID:          "team_id",
-		CreateAt:        1234,
-		ChannelID:       "channel_id_1",
-	},
-	PostID:     "post_id",
-	PlaybookID: "playbookID1",
+	ID:              "id",
+	Name:            "name",
+	IsActive:        true,
+	CommanderUserID: "commander_user_id",
+	TeamID:          "team_id",
+	CreateAt:        1234,
+	ChannelID:       "channel_id_1",
+	PostID:          "post_id",
+	PlaybookID:      "playbookID1",
 	Checklists: []playbook.Checklist{
 		{
 			Title: "Checklist",
@@ -115,21 +113,18 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		require.Contains(t, properties, "CreateAt")
 		require.Contains(t, properties, "NumChecklists")
 		require.Contains(t, properties, "TotalChecklistItems")
-		require.Contains(t, properties, "ActiveStage")
 
 		return &incident.Incident{
-			Header: incident.Header{
-				ID:              properties["IncidentID"].(string),
-				Name:            dummyIncident.Name, // not included in the tracked event
-				IsActive:        properties["IsActive"].(bool),
-				CommanderUserID: properties["CommanderUserID"].(string),
-				TeamID:          properties["TeamID"].(string),
-				CreateAt:        int64(properties["CreateAt"].(float64)),
-				ChannelID:       "channel_id_1",
-			},
-			PostID:     properties["PostID"].(string),
-			PlaybookID: dummyIncident.PlaybookID,
-			Checklists: dummyIncident.Checklists, // not included as self in tracked event
+			ID:              properties["IncidentID"].(string),
+			Name:            dummyIncident.Name, // not included in the tracked event
+			IsActive:        properties["IsActive"].(bool),
+			CommanderUserID: properties["CommanderUserID"].(string),
+			TeamID:          properties["TeamID"].(string),
+			CreateAt:        int64(properties["CreateAt"].(float64)),
+			ChannelID:       "channel_id_1",
+			PostID:          properties["PostID"].(string),
+			PlaybookID:      dummyIncident.PlaybookID,
+			Checklists:      dummyIncident.Checklists, // not included as self in tracked event
 		}
 	}
 
@@ -313,7 +308,6 @@ func TestIncidentProperties(t *testing.T) {
 		"PostID":              dummyIncident.PostID,
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
-		"ActiveStage":         dummyIncident.ActiveStage,
 	}
 
 	require.Equal(t, expectedProperties, properties)

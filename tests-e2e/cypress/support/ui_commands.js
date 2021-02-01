@@ -23,8 +23,8 @@ function clickPostHeaderItem(postId, location, item) {
 Cypress.Commands.add('getLastPostId', () => {
     waitUntilPermanentPost();
 
-    cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':').
-        invoke('replace', 'post_', '');
+    cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
 });
 
 /**
@@ -95,7 +95,14 @@ Cypress.Commands.add('verifyPostedMessage', (message) => {
 
 // verifyEphemeralMessage verifies the receipt of an ephemeral message containing the given
 // message substring. An exact match is avoided to simplify tests.
-Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
+Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode, needsToScroll) => {
+    if (needsToScroll) {
+        // # Scroll the ephemeral message into view
+        cy.get('#postListContent').within(() => {
+            cy.get('.post-list__dynamic').scrollTo('bottom', {ensureScrollable: false});
+        });
+    }
+
     // # Checking if we got the ephemeral message with the selection we made
     cy.wait(TIMEOUTS.TINY).getLastPostId().then((postId) => {
         cy.get(`#post_${postId}`).within(() => {
@@ -119,7 +126,7 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode) => {
  * @param {String} message - The new status.
  * @param {Boolean} isOngoing - Default to true. If false, the update will also end the incident.
  */
-Cypress.Commands.add('updateStatus', (message) => {
+Cypress.Commands.add('updateStatus', (message, reminder) => {
     // # Run the /incident status slash command.
     cy.executeSlashCommand('/incident update');
 
@@ -130,6 +137,12 @@ Cypress.Commands.add('updateStatus', (message) => {
 
         // # Type the new update in the text box.
         cy.findByTestId('messageinput').type(message);
+
+        if (reminder) {
+            cy.findByTestId('autoCompleteSelector').within(() => {
+                cy.get('input').type(reminder, {delay: 200}).type('{enter}');
+            });
+        }
 
         // # Submit the dialog.
         cy.get('#interactiveDialogSubmit').click();
@@ -181,7 +194,11 @@ Cypress.Commands.add('editPost', (postId, newMessage) => {
  * @param {String} channelName - Display name of the channel.
  */
 Cypress.Commands.add('uiSwitchChannel', (channelName) => {
-    cy.get('body').type('{ctrl}k');
+    if (Cypress.platform === 'darwin') {
+        cy.get('body').type('{cmd}k');
+    } else {
+        cy.get('body').type('{ctrl}k');
+    }
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);

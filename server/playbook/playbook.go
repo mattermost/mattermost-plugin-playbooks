@@ -11,18 +11,20 @@ var ErrNotFound = errors.New("not found")
 
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
-	ID                   string      `json:"id"`
-	Title                string      `json:"title"`
-	Description          string      `json:"description"`
-	TeamID               string      `json:"team_id"`
-	CreatePublicIncident bool        `json:"create_public_incident"`
-	CreateAt             int64       `json:"create_at"`
-	DeleteAt             int64       `json:"delete_at"`
-	NumStages            int64       `json:"num_stages"`
-	NumSteps             int64       `json:"num_steps"`
-	Checklists           []Checklist `json:"checklists"`
-	MemberIDs            []string    `json:"member_ids"`
-	BroadcastChannelID   string      `json:"broadcast_channel_id"`
+	ID                          string      `json:"id"`
+	Title                       string      `json:"title"`
+	Description                 string      `json:"description"`
+	TeamID                      string      `json:"team_id"`
+	CreatePublicIncident        bool        `json:"create_public_incident"`
+	CreateAt                    int64       `json:"create_at"`
+	DeleteAt                    int64       `json:"delete_at"`
+	NumStages                   int64       `json:"num_stages"`
+	NumSteps                    int64       `json:"num_steps"`
+	Checklists                  []Checklist `json:"checklists"`
+	MemberIDs                   []string    `json:"member_ids"`
+	BroadcastChannelID          string      `json:"broadcast_channel_id"`
+	ReminderMessageTemplate     string      `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
 }
 
 func (p Playbook) Clone() Playbook {

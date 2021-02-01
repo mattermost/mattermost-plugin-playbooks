@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"encoding/json"
-	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
@@ -19,21 +18,6 @@ type Migration struct {
 }
 
 const MySQLCharset = "DEFAULT CHARACTER SET utf8mb4"
-
-// 'IF NOT EXISTS' syntax is not supported in Postgres 9.4, so we need
-// this workaround to make the migration idempotent
-var createPGIndex = func(indexName, tableName, columns string) string {
-	return fmt.Sprintf(`
-		DO
-		$$
-		BEGIN
-			IF to_regclass('%s') IS NULL THEN
-				CREATE INDEX %s ON %s (%s);
-			END IF;
-		END
-		$$;
-	`, indexName, indexName, tableName, columns)
-}
 
 var migrations = []Migration{
 	{
@@ -194,12 +178,12 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.3.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ActiveStageTitle VARCHAR(1024) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ActiveStageTitle", "VARCHAR(1024) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
 				}
 
 			} else {
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ActiveStageTitle TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Incident", "ActiveStageTitle", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
 				}
 			}
@@ -264,15 +248,15 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ReminderPostID VARCHAR(26)"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReminderPostID", "VARCHAR(26)"); err != nil {
 					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID VARCHAR(26) DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "BroadcastChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
 				}
 
@@ -295,19 +279,59 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating index IR_StatusPosts_PostID ")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD ReminderPostID TEXT"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Incident", "ReminderPostID", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ReminderPostID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Incident ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Incident", "BroadcastChannelID", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Incident")
 				}
 
-				if _, err := e.Exec("ALTER TABLE IR_Playbook ADD BroadcastChannelID TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToPGTable(e, "IR_Playbook", "BroadcastChannelID", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column BroadcastChannelID to table IR_Playbook")
 				}
 			}
 
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.4.0"),
+		toVersion:   semver.MustParse("0.5.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "PreviousReminder", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column PreviousReminder to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ReminderMessageTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET ReminderMessageTemplate = '' WHERE ReminderMessageTemplate IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReminderMessageTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET ReminderMessageTemplate = '' WHERE ReminderMessageTemplate IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "PreviousReminder", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column PreviousReminder to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ReminderMessageTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "ReminderMessageTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Playbook")
+				}
+			}
 			return nil
 		},
 	},
