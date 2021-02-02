@@ -25,7 +25,7 @@ export interface Incident {
 
 export interface StatusPost {
     id: string;
-    status: string;
+    status: IncidentStatus;
     create_at: number;
     delete_at: number;
 }
@@ -50,6 +50,7 @@ export enum IncidentStatus {
     Active = 'Active',
     Resolved = 'Resolved',
     Archived = 'Archived',
+    Old = '',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,18 +101,24 @@ export function incidentCurrentStatusPost(incident: Incident): StatusPost | unde
     return sortedPosts[0];
 }
 
-export function incidentCurrentStatus(incident: Incident): string {
-    let status = 'Reported';
+export function incidentCurrentStatus(incident: Incident): IncidentStatus {
+    let status = IncidentStatus.Reported;
 
     const currentPost = incidentCurrentStatusPost(incident);
 
-    if (currentPost) {
-        if (currentPost.status === '') {
-            // Backwards compatibility with existing incidents.
-            status = 'Active';
+    if (!currentPost || currentPost.status === IncidentStatus.Old) {
+        // Backwards compatibility with existing incidents.
+        if (incident.end_at === 0) {
+            if (currentPost) {
+                status = IncidentStatus.Active;
+            } else {
+                status = IncidentStatus.Reported;
+            }
         } else {
-            status = currentPost.status;
+            status = IncidentStatus.Resolved;
         }
+    } else {
+        status = currentPost.status;
     }
 
     return status;

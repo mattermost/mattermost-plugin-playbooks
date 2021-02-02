@@ -131,4 +131,20 @@ describe('incidents can be started', () => {
         cy.startIncidentWithSlashCommand(playbookName, incidentName, incidentDescription);
         cy.verifyIncidentActive(teamId, incidentName, incidentDescription);
     });
+
+    it('always as channel admin', () => {
+        // # Visit a public channel: off-topic
+        cy.visit('/ad-1/channels/off-topic');
+
+        // # Start an incident with a slash command
+        const incidentName = 'Public ' + Date.now();
+        cy.startIncidentWithSlashCommand(playbookName, incidentName);
+        cy.verifyIncidentActive(teamId, incidentName);
+
+        // # Open the channel header
+        cy.get('#channelHeaderTitle').click();
+
+        // * Verify the ability to edit the channel header exists
+        cy.get('#channelEditHeader').should('exist');
+    });
 });

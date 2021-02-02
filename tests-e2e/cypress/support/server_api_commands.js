@@ -56,7 +56,7 @@ Cypress.Commands.add('apiCreateTeam', (name, displayName, type = 'O') => {
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
-        cy.wrap(response);
+        cy.wrap({team: response.body});
     });
 });
 
