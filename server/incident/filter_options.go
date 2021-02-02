@@ -47,6 +47,7 @@ const (
 	SortByCommanderUserID = "commander_user_id"
 	SortByTeamID          = "team_id"
 	SortByEndAt           = "end_at"
+	SortByStatus          = "status"
 
 	DirectionAsc  = "asc"
 	DirectionDesc = "desc"
@@ -93,6 +94,8 @@ func ValidateOptions(options *FilterOptions) error {
 		options.Sort = "TeamID"
 	case SortByEndAt:
 		options.Sort = "EndAt"
+	case SortByStatus:
+		options.Sort = "CurrentStatus"
 	default:
 		return errors.New("bad parameter 'sort'")
 	}
