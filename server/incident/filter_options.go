@@ -9,22 +9,8 @@ import (
 
 const PerPageDefault = 1000
 
-// Status is the type used to specify the activity status of the incident.
-type Status int
-
-const (
-	// All are all incidents (active and ended).
-	All Status = iota
-
-	// Ongoing are incidents that are currently under way.
-	Ongoing
-
-	// Ended are incidents that are finished.
-	Ended
-)
-
-// HeaderFilterOptions specifies the optional parameters when getting headers.
-type HeaderFilterOptions struct {
+// FilterOptions specifies the optional parameters when getting headers.
+type FilterOptions struct {
 	// Gets all the headers with this TeamID.
 	TeamID string
 
@@ -39,8 +25,8 @@ type HeaderFilterOptions struct {
 	// Direction orders by Asc (ascending), or Desc (descending); defaults to desc.
 	Direction string
 
-	// Status filters by All, Ongoing, or Ended; defaults to All.
-	Status Status
+	// Status filters by current status
+	Status string
 
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
 	CommanderID string
@@ -61,7 +47,6 @@ const (
 	SortByCommanderUserID = "commander_user_id"
 	SortByTeamID          = "team_id"
 	SortByEndAt           = "end_at"
-	SortByIsActive        = "is_active"
 
 	DirectionAsc  = "asc"
 	DirectionDesc = "desc"
@@ -74,8 +59,7 @@ func IsValidSortBy(sortBy string) bool {
 		SortByName,
 		SortByCommanderUserID,
 		SortByTeamID,
-		SortByEndAt,
-		SortByIsActive:
+		SortByEndAt:
 		return true
 	}
 
@@ -86,7 +70,7 @@ func IsValidDirection(direction string) bool {
 	return direction == DirectionAsc || direction == DirectionDesc
 }
 
-func ValidateOptions(options *HeaderFilterOptions) error {
+func ValidateOptions(options *FilterOptions) error {
 	if options.PerPage == 0 {
 		options.PerPage = PerPageDefault
 	}
@@ -109,8 +93,6 @@ func ValidateOptions(options *HeaderFilterOptions) error {
 		options.Sort = "TeamID"
 	case SortByEndAt:
 		options.Sort = "EndAt"
-	case SortByIsActive:
-		options.Sort = "IsActive"
 	default:
 		return errors.New("bad parameter 'sort'")
 	}

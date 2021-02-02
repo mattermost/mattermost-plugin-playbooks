@@ -12,7 +12,7 @@ import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
 import Profile from 'src/components/profile/profile';
 import Duration from 'src/components/duration';
-import {Incident} from 'src/types/incident';
+import {Incident, incidentCurrentStatus} from 'src/types/incident';
 import {lastUpdatedByIncidentId} from 'src/selectors';
 
 const IncidentContainer = styled.div<IncidentContainerProps>`
@@ -103,6 +103,12 @@ const RHSListIncident = (props: Props) => {
                         from={props.incident.create_at}
                         to={props.incident.end_at}
                     />
+                </Col2>
+            </Row>
+            <Row>
+                <Col1>{'Status:'}</Col1>
+                <Col2>
+                    {incidentCurrentStatus(props.incident)}
                 </Col2>
             </Row>
             <Row>
