@@ -559,7 +559,7 @@ describe('rhs incident list', () => {
             cy.verifyIncidentActive(teamId, secondIncidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${secondIncidentChannelName}`).click();
+            cy.uiSwitchChannel(secondIncidentChannelName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -580,7 +580,7 @@ describe('rhs incident list', () => {
             });
 
             // # Open the first incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentChannelName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -621,7 +621,7 @@ describe('rhs incident list', () => {
             cy.verifyIncidentActive(teamId, secondIncidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentChannelName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
