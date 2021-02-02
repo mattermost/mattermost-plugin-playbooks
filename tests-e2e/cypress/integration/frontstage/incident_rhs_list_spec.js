@@ -174,9 +174,15 @@ describe('rhs incident list', () => {
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
+            cy.log('test 2');
+
             incidentName = 'Private ' + Date.now();
+            cy.log('test 3');
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
+            cy.log('test 4');
             cy.verifyIncidentActive(teamId, incidentName);
+
+            cy.log('test 5');
 
             // * Verify the rhs list is still open and two go-to-channel buttons are visible.
             cy.get('#rhsContainer').should('exist').within(() => {
