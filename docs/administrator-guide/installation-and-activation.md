@@ -1,6 +1,6 @@
-## Installing Mattermost Incident Management for Self-Managed Deployments
+## Installing Mattermost Incident Collaboration for Self-Managed Deployments
 
-Mattermost Incident Management is available in the Plugin Marketplace. You can download and install the plugin from Mattermost.
+Mattermost Incident Collaboration is available in the Plugin Marketplace. You can download and install the plugin from Mattermost.
 
 1. Open **System Console > Plugin Management**.
 2. Search for **Incident Response** using the search bar or scroll through the list manually.
@@ -11,6 +11,6 @@ Mattermost Incident Management is available in the Plugin Marketplace. You can d
 
 When you open the Main Menu, **Playbooks & Incidents** is available as a menu item.
 
-## Activating Mattermost Incident Management for Cloud Deployments
+## Activating Mattermost Incident Collaboration for Cloud Deployments
 
-Mattermost Incident Management is included in the Mattermost Cloud workspace and is enabled by default.
+Mattermost Incident Collaboration is included in the Mattermost Cloud workspace and is enabled by default.

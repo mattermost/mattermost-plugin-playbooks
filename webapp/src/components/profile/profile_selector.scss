@@ -11,6 +11,11 @@
         .incident-user-select__container {
             z-index: 2;
             position: absolute;
+        }
+    }
+
+    .profile-dropdown.show-on-right {
+        .incident-user-select__container {
             right: 0;
         }
     }

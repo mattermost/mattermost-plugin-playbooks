@@ -10,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -737,7 +737,7 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
-	channelHeader := "The channel was created by the Incident Management plugin."
+	channelHeader := "The channel was created by the Incident Collaboration plugin."
 
 	if incdnt.Description != "" {
 		channelHeader = incdnt.Description
