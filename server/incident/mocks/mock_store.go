@@ -64,10 +64,10 @@ func (mr *MockStoreMockRecorder) CreateIncident(arg0 interface{}) *gomock.Call {
 }
 
 // CreateTimelineEvent mocks base method
-func (m *MockStore) CreateTimelineEvent(arg0 incident.TimelineEvent) (string, error) {
+func (m *MockStore) CreateTimelineEvent(arg0 *incident.TimelineEvent) (*incident.TimelineEvent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTimelineEvent", arg0)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*incident.TimelineEvent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -196,7 +196,7 @@ func (mr *MockStoreMockRecorder) UpdateStatus(arg0 interface{}) *gomock.Call {
 }
 
 // UpdateTimelineEvent mocks base method
-func (m *MockStore) UpdateTimelineEvent(arg0 incident.TimelineEvent) error {
+func (m *MockStore) UpdateTimelineEvent(arg0 *incident.TimelineEvent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateTimelineEvent", arg0)
 	ret0, _ := ret[0].(error)

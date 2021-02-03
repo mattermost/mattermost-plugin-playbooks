@@ -369,45 +369,49 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
 					(
-						ID         VARCHAR(26)   NOT NULL,
-						IncidentID VARCHAR(26)   NOT NULL REFERENCES IR_Incident(ID),
-						CreateAt   BIGINT        NOT NULL,
-						DeleteAt   BIGINT        NOT NULL DEFAULT 0,
-						EventType  VARCHAR(32)   NOT NULL DEFAULT '',
-						Summary    VARCHAR(256)  NOT NULL DEFAULT '',
-						Details    VARCHAR(4096) NOT NULL DEFAULT '',
-						PostID     VARCHAR(26)   NOT NULL DEFAULT '',
-                        UserID     VARCHAR(26)   NOT NULL DEFAULT '',
+						ID            VARCHAR(26)   NOT NULL,
+						IncidentID    VARCHAR(26)   NOT NULL REFERENCES IR_Incident(ID),
+						CreateAt      BIGINT        NOT NULL,
+						DeleteAt      BIGINT        NOT NULL DEFAULT 0,
+						EventAt       BIGINT        NOT NULL,
+						EventType     VARCHAR(32)   NOT NULL DEFAULT '',
+						Summary       VARCHAR(256)  NOT NULL DEFAULT '',
+						Details       VARCHAR(4096) NOT NULL DEFAULT '',
+						PostID        VARCHAR(26)   NOT NULL DEFAULT '',
+                        SubjectUserID VARCHAR(26)   NOT NULL DEFAULT '',
+                        CreatorUserID VARCHAR(26)   NOT NULL DEFAULT '',
 						INDEX IR_TimelineEvent_ID (ID),
 						INDEX IR_TimelineEvent_IncidentID (IncidentID)
 					)
 				` + MySQLCharset); err != nil {
-					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
+					return errors.Wrapf(err, "failed creating table IR_TimelineEvent")
 				}
 
 			} else {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
 					(
-						ID         TEXT   NOT NULL,
-						IncidentID TEXT   NOT NULL REFERENCES IR_Incident(ID),
-						CreateAt   BIGINT NOT NULL,
-					    DeleteAt   BIGINT NOT NULL DEFAULT 0,
-						EventType  TEXT   NOT NULL DEFAULT '',
-						Summary    TEXT   NOT NULL DEFAULT '',
-						Details    TEXT   NOT NULL DEFAULT '',
-						PostID     TEXT   NOT NULL DEFAULT '',
-					    UserID     TEXT   NOT NULL DEFAULT ''
+						ID            TEXT   NOT NULL,
+						IncidentID    TEXT   NOT NULL REFERENCES IR_Incident(ID),
+						CreateAt      BIGINT NOT NULL,
+					    DeleteAt      BIGINT NOT NULL DEFAULT 0,
+						EventAt       BIGINT NOT NULL,
+						EventType     TEXT   NOT NULL DEFAULT '',
+						Summary       TEXT   NOT NULL DEFAULT '',
+						Details       TEXT   NOT NULL DEFAULT '',
+						PostID        TEXT   NOT NULL DEFAULT '',
+					    SubjectUserID TEXT   NOT NULL DEFAULT '',
+					    CreatorUserID TEXT   NOT NULL DEFAULT ''
 					)
 				`); err != nil {
-					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
+					return errors.Wrapf(err, "failed creating table IR_TimelineEvent")
 				}
 
 				if _, err := e.Exec(createPGIndex("IR_TimelineEvent_ID", "IR_TimelineEvent", "ID")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_StatusPosts_ID")
+					return errors.Wrapf(err, "failed creating index IR_TimelineEvent_ID")
 				}
 				if _, err := e.Exec(createPGIndex("IR_TimelineEvent_IncidentID", "IR_TimelineEvent", "IncidentID")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_StatusPosts_IncidentID")
+					return errors.Wrapf(err, "failed creating index IR_TimelineEvent_IncidentID")
 				}
 			}
 

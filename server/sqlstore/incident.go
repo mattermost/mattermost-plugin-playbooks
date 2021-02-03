@@ -57,8 +57,9 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Join("Posts as p ON sp.PostID = p.Id")
 
 	timelineEventsSelect := sqlStore.builder.
-		Select("te.ID", "te.IncidentID", "te.CreateAt", "te.DeleteAt", "te.EventType",
-			"te.Summary", "te.Details", "te.PostID", "te.UserID").
+		Select("te.ID", "te.IncidentID", "te.CreateAt", "te.DeleteAt", "te.EventAt",
+			"te.EventType", "te.Summary", "te.Details", "te.PostID", "te.SubjectUserID",
+			"te.CreatorUserID").
 		From("IR_TimelineEvent as te")
 
 	return &incidentStore{
@@ -178,8 +179,8 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	var timelineEvents []incident.TimelineEvent
 
 	timelineEventsSelect := s.timelineEventsSelect.
-		OrderBy("te.CreateAt").
-		Where(sq.Eq{"te.IncidentID": incidentIDs})
+		OrderBy("te.CreateAt ASC").
+		Where(sq.And{sq.Eq{"te.IncidentID": incidentIDs}, sq.Eq{"te.DeleteAt": 0}})
 
 	err = s.store.selectBuilder(tx, &timelineEvents, timelineEventsSelect)
 	if err != nil && err != sql.ErrNoRows {
@@ -325,12 +326,12 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 }
 
 // UpdateTimelineEvent updates (or inserts) the timeline event
-func (s *incidentStore) CreateTimelineEvent(event incident.TimelineEvent) (string, error) {
+func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*incident.TimelineEvent, error) {
 	if event.IncidentID == "" {
-		return "", errors.New("needs incident ID")
+		return nil, errors.New("needs incident ID")
 	}
 	if event.EventType == "" {
-		return "", errors.New("needs event type")
+		return nil, errors.New("needs event type")
 	}
 	if event.CreateAt == 0 {
 		event.CreateAt = model.GetMillis()
@@ -340,25 +341,27 @@ func (s *incidentStore) CreateTimelineEvent(event incident.TimelineEvent) (strin
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_TimelineEvent").
 		SetMap(map[string]interface{}{
-			"ID":         event.ID,
-			"IncidentID": event.IncidentID,
-			"CreateAt":   event.CreateAt,
-			"DeleteAt":   event.DeleteAt,
-			"EventType":  event.EventType,
-			"Summary":    event.Summary,
-			"Details":    event.Details,
-			"PostID":     event.PostID,
-			"UserID":     event.UserID,
+			"ID":            event.ID,
+			"IncidentID":    event.IncidentID,
+			"CreateAt":      event.CreateAt,
+			"DeleteAt":      event.DeleteAt,
+			"EventAt":       event.EventAt,
+			"EventType":     event.EventType,
+			"Summary":       event.Summary,
+			"Details":       event.Details,
+			"PostID":        event.PostID,
+			"SubjectUserID": event.SubjectUserID,
+			"CreatorUserID": event.CreatorUserID,
 		}))
 
 	if err != nil {
-		return "", errors.Wrap(err, "failed to insert timeline event")
+		return nil, errors.Wrap(err, "failed to insert timeline event")
 	}
 
-	return event.ID, nil
+	return event, nil
 }
 
-func (s *incidentStore) UpdateTimelineEvent(event incident.TimelineEvent) error {
+func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error {
 	if event.ID == "" {
 		return errors.New("needs event ID")
 	}
@@ -372,14 +375,16 @@ func (s *incidentStore) UpdateTimelineEvent(event incident.TimelineEvent) error 
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_TimelineEvent").
 		SetMap(map[string]interface{}{
-			"IncidentID": event.IncidentID,
-			"CreateAt":   event.CreateAt,
-			"DeleteAt":   event.DeleteAt,
-			"EventType":  event.EventType,
-			"Summary":    event.Summary,
-			"Details":    event.Details,
-			"PostID":     event.PostID,
-			"UserID":     event.UserID,
+			"IncidentID":    event.IncidentID,
+			"CreateAt":      event.CreateAt,
+			"DeleteAt":      event.DeleteAt,
+			"EventAt":       event.EventAt,
+			"EventType":     event.EventType,
+			"Summary":       event.Summary,
+			"Details":       event.Details,
+			"PostID":        event.PostID,
+			"SubjectUserID": event.SubjectUserID,
+			"CreatorUserID": event.CreatorUserID,
 		}).
 		Where(sq.Eq{"ID": event.ID}))
 

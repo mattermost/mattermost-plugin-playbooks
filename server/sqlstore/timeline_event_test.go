@@ -32,58 +32,70 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 
 			createIncidentChannel(t, store, inc01)
 
-			event1 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt,
-				EventType:  incident.IncidentCreated,
-				PostID:     "testpostID",
-				UserID:     "testuserID",
+			event1 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt,
+				EventAt:       1234,
+				EventType:     incident.IncidentCreated,
+				Summary:       "this is a summary",
+				Details:       "these are the details",
+				PostID:        "testpostID",
+				SubjectUserID: "testuserID",
+				CreatorUserID: "testUserID2",
 			}
-			id, err := iStore.CreateTimelineEvent(event1)
+			_, err = iStore.CreateTimelineEvent(event1)
 			require.NoError(t, err)
-			event1.ID = id
 
-			event2 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt + 1,
-				EventType:  incident.AssigneeChanged,
-				PostID:     "testpostID2",
-				UserID:     "testuserID",
+			event2 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt + 1,
+				EventAt:       1235,
+				EventType:     incident.AssigneeChanged,
+				Summary:       "this is a summary",
+				Details:       "these are the details",
+				PostID:        "testpostID2",
+				SubjectUserID: "testuserID",
+				CreatorUserID: "testUserID2",
 			}
-			id, err = iStore.CreateTimelineEvent(event2)
+			_, err = iStore.CreateTimelineEvent(event2)
 			require.NoError(t, err)
-			event2.ID = id
 
-			event3 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt + 2,
-				EventType:  incident.StatusUpdated,
-				PostID:     "testpostID3",
-				UserID:     "testuserID",
+			event3 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt + 2,
+				EventAt:       1236,
+				EventType:     incident.StatusUpdated,
+				Summary:       "this is a summary",
+				Details:       "these are the details",
+				PostID:        "testpostID3",
+				SubjectUserID: "testuserID",
+				CreatorUserID: "testUserID2",
 			}
-			id, err = iStore.CreateTimelineEvent(event3)
+			_, err = iStore.CreateTimelineEvent(event3)
 			require.NoError(t, err)
-			event3.ID = id
 
-			event4 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt + 3,
-				EventType:  incident.StatusUpdated,
-				PostID:     "testpostID4",
-				UserID:     "testuserID",
+			event4 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt + 3,
+				EventAt:       123734,
+				EventType:     incident.StatusUpdated,
+				Summary:       "this is a summary",
+				Details:       "these are the details",
+				PostID:        "testpostID4",
+				SubjectUserID: "testuserID",
+				CreatorUserID: "testUserID2",
 			}
-			id, err = iStore.CreateTimelineEvent(event4)
+			_, err = iStore.CreateTimelineEvent(event4)
 			require.NoError(t, err)
-			event4.ID = id
 
 			retIncident, err := iStore.GetIncident(incdnt.ID)
 			require.NoError(t, err)
 
 			require.Len(t, retIncident.TimelineEvents, 4)
-			require.Equal(t, event1, retIncident.TimelineEvents[0])
-			require.Equal(t, event2, retIncident.TimelineEvents[1])
-			require.Equal(t, event3, retIncident.TimelineEvents[2])
-			require.Equal(t, event4, retIncident.TimelineEvents[3])
+			require.Equal(t, *event1, retIncident.TimelineEvents[0])
+			require.Equal(t, *event2, retIncident.TimelineEvents[1])
+			require.Equal(t, *event3, retIncident.TimelineEvents[2])
+			require.Equal(t, *event4, retIncident.TimelineEvents[3])
 		})
 	}
 }
@@ -109,60 +121,67 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 
 			createIncidentChannel(t, store, inc01)
 
-			event1 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt,
-				EventType:  incident.IncidentCreated,
-				PostID:     "testpostID",
-				UserID:     "testuserID",
+			event1 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt,
+				EventType:     incident.IncidentCreated,
+				PostID:        "testpostID",
+				SubjectUserID: "testuserID",
 			}
-			id, err := iStore.CreateTimelineEvent(event1)
+			_, err = iStore.CreateTimelineEvent(event1)
 			require.NoError(t, err)
-			event1.ID = id
 
-			event2 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt + 1,
-				EventType:  incident.AssigneeChanged,
-				PostID:     "testpostID2",
-				UserID:     "testuserID",
+			event2 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt + 1,
+				EventType:     incident.AssigneeChanged,
+				PostID:        "testpostID2",
+				SubjectUserID: "testuserID",
 			}
-			id, err = iStore.CreateTimelineEvent(event2)
+			_, err = iStore.CreateTimelineEvent(event2)
 			require.NoError(t, err)
-			event2.ID = id
 
-			event3 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt + 2,
-				EventType:  incident.StatusUpdated,
-				PostID:     "testpostID3",
-				UserID:     "testuserID",
+			event3 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt + 2,
+				EventAt:       1236,
+				EventType:     incident.StatusUpdated,
+				Summary:       "this is a summary",
+				Details:       "these are the details",
+				PostID:        "testpostID3",
+				SubjectUserID: "testuserID",
+				CreatorUserID: "testUserID2",
 			}
-			id, err = iStore.CreateTimelineEvent(event3)
+			_, err = iStore.CreateTimelineEvent(event3)
 			require.NoError(t, err)
-			event3.ID = id
 
-			event4 := incident.TimelineEvent{
-				IncidentID: incdnt.ID,
-				CreateAt:   createAt + 3,
-				EventType:  incident.StatusUpdated,
-				PostID:     "testpostID4",
-				UserID:     "testuserID",
+			event4 := &incident.TimelineEvent{
+				IncidentID:    incdnt.ID,
+				CreateAt:      createAt + 3,
+				EventType:     incident.StatusUpdated,
+				PostID:        "testpostID4",
+				SubjectUserID: "testuserID",
 			}
-			id, err = iStore.CreateTimelineEvent(event4)
+			_, err = iStore.CreateTimelineEvent(event4)
 			require.NoError(t, err)
-			event4.ID = id
 
 			retIncident, err := iStore.GetIncident(incdnt.ID)
 			require.NoError(t, err)
 
 			require.Len(t, retIncident.TimelineEvents, 4)
-			require.Equal(t, event1, retIncident.TimelineEvents[0])
-			require.Equal(t, event2, retIncident.TimelineEvents[1])
-			require.Equal(t, event3, retIncident.TimelineEvents[2])
-			require.Equal(t, event4, retIncident.TimelineEvents[3])
+			require.Equal(t, *event1, retIncident.TimelineEvents[0])
+			require.Equal(t, *event2, retIncident.TimelineEvents[1])
+			require.Equal(t, *event3, retIncident.TimelineEvents[2])
+			require.Equal(t, *event4, retIncident.TimelineEvents[3])
 
 			event3.DeleteAt = model.GetMillis()
+			event3.EventAt = 34089143
+			event3.EventType = incident.AssigneeChanged
+			event3.Summary = "new summary"
+			event3.Details = "new details"
+			event3.PostID = "23abc34"
+			event3.SubjectUserID = "23409agbcef"
+			event3.CreatorUserID = "someoneelse"
 			err = iStore.UpdateTimelineEvent(event3)
 			require.NoError(t, err)
 
@@ -174,10 +193,10 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			require.Len(t, retIncident.TimelineEvents, 4)
-			require.Equal(t, event1, retIncident.TimelineEvents[0])
-			require.Equal(t, event2, retIncident.TimelineEvents[1])
-			require.Equal(t, event3, retIncident.TimelineEvents[2])
-			require.Equal(t, event4, retIncident.TimelineEvents[3])
+			require.Equal(t, *event1, retIncident.TimelineEvents[0])
+			require.Equal(t, *event2, retIncident.TimelineEvents[1])
+			require.Equal(t, *event3, retIncident.TimelineEvents[2])
+			require.Equal(t, *event4, retIncident.TimelineEvents[3])
 		})
 	}
 }

@@ -115,15 +115,13 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
-	event := TimelineEvent{
-		IncidentID: incdnt.ID,
-		CreateAt:   incdnt.CreateAt,
-		DeleteAt:   0,
-		EventType:  IncidentCreated,
-		Summary:    "",
-		Details:    "",
-		PostID:     postID,
-		UserID:     incdnt.CommanderUserID,
+	event := &TimelineEvent{
+		IncidentID:    incdnt.ID,
+		CreateAt:      incdnt.CreateAt,
+		EventAt:       incdnt.CreateAt,
+		EventType:     IncidentCreated,
+		PostID:        postID,
+		SubjectUserID: incdnt.CommanderUserID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -305,15 +303,13 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to remove reminder post")
 	}
 
-	event := TimelineEvent{
-		IncidentID: incidentID,
-		CreateAt:   model.GetMillis(),
-		DeleteAt:   0,
-		EventType:  StatusUpdated,
-		Summary:    "",
-		Details:    "",
-		PostID:     post.Id,
-		UserID:     userID,
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      post.CreateAt,
+		EventAt:       post.CreateAt,
+		EventType:     StatusUpdated,
+		PostID:        post.Id,
+		SubjectUserID: userID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -420,15 +416,15 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return err
 	}
 
-	event := TimelineEvent{
-		IncidentID: incidentID,
-		CreateAt:   model.GetMillis(),
-		DeleteAt:   0,
-		EventType:  CommanderChanged,
-		Summary:    modifyMessage,
-		Details:    "",
-		PostID:     postID,
-		UserID:     userID,
+	eventTime := model.GetMillis()
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      eventTime,
+		EventAt:       eventTime,
+		EventType:     CommanderChanged,
+		Summary:       modifyMessage,
+		PostID:        postID,
+		SubjectUserID: userID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -478,15 +474,14 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
-	event := TimelineEvent{
-		IncidentID: incidentID,
-		CreateAt:   model.GetMillis(),
-		DeleteAt:   0,
-		EventType:  TaskStateModified,
-		Summary:    modifyMessage,
-		Details:    "",
-		PostID:     postID,
-		UserID:     userID,
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      itemToCheck.StateModified,
+		EventAt:       itemToCheck.StateModified,
+		EventType:     TaskStateModified,
+		Summary:       modifyMessage,
+		PostID:        postID,
+		SubjectUserID: userID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -573,15 +568,14 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		return errors.Wrapf(err, "failed to update incident; it is now in an inconsistent state")
 	}
 
-	event := TimelineEvent{
-		IncidentID: incidentID,
-		CreateAt:   model.GetMillis(),
-		DeleteAt:   0,
-		EventType:  AssigneeChanged,
-		Summary:    modifyMessage,
-		Details:    "",
-		PostID:     postID,
-		UserID:     userID,
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      itemToCheck.AssigneeModified,
+		EventAt:       itemToCheck.AssigneeModified,
+		EventType:     AssigneeChanged,
+		Summary:       modifyMessage,
+		PostID:        postID,
+		SubjectUserID: userID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -634,15 +628,14 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
 	}
 
-	event := TimelineEvent{
-		IncidentID: incidentID,
-		CreateAt:   model.GetMillis(),
-		DeleteAt:   0,
-		EventType:  RanSlashCommand,
-		Summary:    fmt.Sprintf("ran the slash command: `%s`", itemToRun.Command),
-		Details:    "",
-		PostID:     "",
-		UserID:     userID,
+	eventTime := model.GetMillis()
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      eventTime,
+		EventAt:       eventTime,
+		EventType:     RanSlashCommand,
+		Summary:       fmt.Sprintf("ran the slash command: `%s`", itemToRun.Command),
+		SubjectUserID: userID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
