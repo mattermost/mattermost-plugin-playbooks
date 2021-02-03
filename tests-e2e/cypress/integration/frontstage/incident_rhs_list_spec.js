@@ -117,7 +117,6 @@ describe('rhs incident list', () => {
                 incidentName,
                 commanderUserId: userId
             }).then((incident) => {
-                //const incidentId = incident.id;
                 cy.verifyIncidentActive(teamId, incidentName);
 
                 // # move to non-incident channel
@@ -534,14 +533,12 @@ describe('rhs incident list', () => {
             let now = Date.now();
             const incidentName = 'Incident (' + now + ')';
 
-            //const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             now = Date.now() + 1;
             const secondIncidentName = 'Incident (' + now + ')';
 
-            //const secondIncidentChannelName = 'incident-' + now;
             cy.apiStartIncident({
                 teamId,
                 playbookId,
@@ -599,7 +596,6 @@ describe('rhs incident list', () => {
             let now = Date.now();
             const incidentName = 'Incident (' + now + ')';
 
-            //const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
