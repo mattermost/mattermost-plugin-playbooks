@@ -41,6 +41,7 @@ import {
     WEBSOCKET_INCIDENT_UPDATED,
     WEBSOCKET_INCIDENT_CREATED,
 } from './types/websocket_events';
+import LHS from './components/lhs';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
@@ -93,6 +94,8 @@ export default class Plugin {
 
         registry.registerNeedsTeamRoute('/error', ErrorPage);
         registry.registerNeedsTeamRoute('/', Backstage);
+
+        registry.registerLeftSidebarCategoryComponent(LHS);
     }
 }
 
