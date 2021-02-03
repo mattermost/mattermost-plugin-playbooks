@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-plugin-incident-management
+module github.com/mattermost/mattermost-plugin-incident-collaboration
 
 go 1.14
 
@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattermost/mattermost-plugin-api v0.0.13-0.20201210154933-631fdc447dbe
+	github.com/mattermost/mattermost-plugin-incident-management v1.3.0
 	github.com/mattermost/mattermost-server/v5 v5.28.0
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
@@ -17,4 +18,4 @@ require (
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
 )
 
-replace github.com/mattermost/mattermost-plugin-incident-management/client => ./client
+replace github.com/mattermost/mattermost-plugin-incident-collaboration/client => ./client

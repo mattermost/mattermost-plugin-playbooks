@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   version: 0.6.0
-  title: Incident Management API
+  title: Incident Collaboration API
   contact:
     name: Mattermost
     url: https://mattermost.com/
@@ -78,7 +78,7 @@ paths:
           example: active
           schema:
             type: string
-            default: 
+            default:
             enum:
               - Reported
               - Active
