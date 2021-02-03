@@ -27,6 +27,20 @@ Cypress.Commands.add('getLastPostId', () => {
         .invoke('replace', 'post_', '');
 });
 
+Cypress.Commands.add('getFirstPostId', () => {
+    waitUntilPermanentPost();
+
+    cy.findAllByTestId('postView').first().should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
+});
+
+Cypress.Commands.add('getNthPostId', (n) => {
+    waitUntilPermanentPost();
+
+    cy.findAllByTestId('postView').eq(n).should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
+});
+
 /**
  * Click dot menu by post ID or to most recent post (if post ID is not provided)
  * @param {String} postId - Post ID
@@ -198,4 +212,8 @@ Cypress.Commands.add('uiSwitchChannel', (channelName) => {
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);
+});
+
+Cypress.Commands.add('getStyledComponent', (className) => {
+    cy.get(`[class^="${className}"]`);
 });

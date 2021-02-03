@@ -79,6 +79,17 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	for _, userID := range pbook.InvitedUserIDs {
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+				"invited user with ID %s does not have permission to playbook's team %s",
+				userID,
+				pbook.TeamID,
+			))
+			return
+		}
+	}
+
 	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
@@ -152,6 +163,16 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 			pbook.BroadcastChannelID,
 		))
 		return
+	}
+
+	for _, userID := range pbook.InvitedUserIDs {
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+				"invited user with ID %s does not have permission to playbook's team",
+				userID,
+			))
+			return
+		}
 	}
 
 	err = h.playbookService.Update(pbook, userID)

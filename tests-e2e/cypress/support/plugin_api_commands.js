@@ -166,7 +166,7 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
 });
 
 // Create a playbook programmatically.
-Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs, broadcastChannelId, reminderMessageTemplate, reminderTimerDefaultSeconds}) => {
+Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs, broadcastChannelId, reminderMessageTemplate, reminderTimerDefaultSeconds, invitedUserIds, inviteUsersEnabled}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
@@ -180,6 +180,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident,
             broadcast_channel_id: broadcastChannelId,
             reminder_message_template: reminderMessageTemplate,
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
+            invited_user_ids: invitedUserIds,
+            invite_users_enabled: inviteUsersEnabled,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

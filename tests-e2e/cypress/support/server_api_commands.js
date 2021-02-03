@@ -5,7 +5,6 @@ import merge from 'deepmerge';
 
 import {getRandomInt, getRandomId} from '../utils';
 import users from '../fixtures/users.json';
-import timeouts from '../fixtures/timeouts';
 
 // *****************************************************************************
 // Authentication
@@ -94,10 +93,62 @@ Cypress.Commands.add('apiAddUserToTeam', (teamId, userId) => {
     });
 });
 
+/**
+ * Remove a User from a Team directly via API
+ * @param {String} teamID - The team ID
+ * @param {String} userId - The user ID
+ * All parameter required
+ */
+Cypress.Commands.add('apiRemoveUserFromTeam', (teamId, userId) => {
+    cy.request({
+        method: 'DELETE',
+        url: `/api/v4/teams/${teamId}/members/${userId}`,
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap(response);
+    });
+});
+
 // *****************************************************************************
 // Users
 // https://api.mattermost.com/#tag/users
 // *****************************************************************************
+
+function generateRandomUser(prefix = 'user') {
+    const randomId = getRandomId();
+
+    return {
+        email: `${prefix}${randomId}@sample.mattermost.com`,
+        username: `${prefix}${randomId}`,
+        password: 'passwd',
+        first_name: `First${randomId}`,
+        last_name: `Last${randomId}`,
+        nickname: `Nickname${randomId}`,
+    };
+}
+
+Cypress.Commands.add('apiCreateUser', ({
+    prefix = 'user',
+    user = null,
+} = {}) => {
+    const newUser = user || generateRandomUser(prefix);
+
+    const createUserOption = {
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        method: 'POST',
+        url: '/api/v4/users',
+        body: newUser,
+    };
+
+    return cy.request(createUserOption).then((userRes) => {
+        expect(userRes.status).to.equal(201);
+
+        const createdUser = userRes.body;
+
+        return cy.wrap({user: {...createdUser, password: newUser.password}});
+    });
+});
 
 // *****************************************************************************
 // Channels

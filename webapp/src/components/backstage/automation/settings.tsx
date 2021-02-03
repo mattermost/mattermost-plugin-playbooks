@@ -34,7 +34,7 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                 <SectionTitle>
                     {'When an incident starts'}
                 </SectionTitle>
-                <Setting>
+                <Setting id={'invite-users'}>
                     <InviteUsers
                         enabled={props.inviteUsersEnabled}
                         onToggle={props.onToggleInviteUsers}

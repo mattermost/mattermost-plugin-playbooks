@@ -115,3 +115,13 @@ Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
         cy.get('#suggestionList').contains(playbookName).click({force: true});
     });
 });
+
+Cypress.Commands.add('addInvitedUser', (userName) => {
+    cy.findByText('Add People').click({force: true});
+
+    cy.get('.profile-autocomplete__menu').within(() => {
+        cy.findByText(userName).click({force: true});
+        cy.wait(500);
+        cy.get('.profile-autocomplete__menu').should('not.exist');
+    });
+});

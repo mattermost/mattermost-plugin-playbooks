@@ -20,68 +20,70 @@ describe('backstage playbook details', () => {
         cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/error?type=playbooks');
     });
 
-    describe('slash command', () => {
-        it('autocompletes after clicking Add a Slash Command', () => {
-            // # Visit the playbook backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+    describe('tasks', () => {
+        describe('slash command', () => {
+            it('autocompletes after clicking Add a Slash Command', () => {
+                // # Visit the playbook backstage
+                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
 
-            // # Start a blank playbook
-            cy.get('#root').findByText('Blank Playbook').click();
+                // # Start a blank playbook
+                cy.get('#root').findByText('Blank Playbook').click();
 
-            // # Add a slash command to a step
-            cy.get('#root').findByText('Add a Slash Command').click();
+                // # Add a slash command to a step
+                cy.get('#root').findByText('Add a Slash Command').click();
 
-            // * Verify the slash command input field now has focus
-            cy.get('#root').findByPlaceholderText('Slash Command').should('have.focus');
+                // * Verify the slash command input field now has focus
+                cy.get('#root').findByPlaceholderText('Slash Command').should('have.focus');
 
-            // * Verify the slash command input field is pre-populated with a leading slash
-            cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
+                // * Verify the slash command input field is pre-populated with a leading slash
+                cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
 
-            // * Verify the autocomplete prompt is open
-            cy.get('#suggestionList').should('exist');
-        });
+                // * Verify the autocomplete prompt is open
+                cy.get('#suggestionList').should('exist');
+            });
 
-        it('removes the input prompt when blurring with an empty slash command', () => {
-            // # Visit the playbook backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+            it('removes the input prompt when blurring with an empty slash command', () => {
+                // # Visit the playbook backstage
+                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
 
-            // # Start a blank playbook
-            cy.get('#root').findByText('Blank Playbook').click();
+                // # Start a blank playbook
+                cy.get('#root').findByText('Blank Playbook').click();
 
-            // # Add a slash command to a step
-            cy.get('#root').findByText('Add a Slash Command').click();
+                // # Add a slash command to a step
+                cy.get('#root').findByText('Add a Slash Command').click();
 
-            // * Verify only the leading slash is in the input field.
-            cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
+                // * Verify only the leading slash is in the input field.
+                cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
 
-            // # Backspace even the slash in the input.
-            cy.get('#root').findByPlaceholderText('Slash Command').type('{backspace}');
+                // # Backspace even the slash in the input.
+                cy.get('#root').findByPlaceholderText('Slash Command').type('{backspace}');
 
-            // # Blur the slash command input field
-            cy.get('#root').findByPlaceholderText('Slash Command').blur();
+                // # Blur the slash command input field
+                cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
-            // # Verify the Add a Slash Command button returns
-            cy.get('#root').findByText('Add a Slash Command').should('exist');
-        });
+                // # Verify the Add a Slash Command button returns
+                cy.get('#root').findByText('Add a Slash Command').should('exist');
+            });
 
-        it('removes the input prompt when blurring with an invalid slash command', () => {
-            // # Visit the playbook backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+            it('removes the input prompt when blurring with an invalid slash command', () => {
+                // # Visit the playbook backstage
+                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
 
-            // # Start a blank playbook
-            cy.get('#root').findByText('Blank Playbook').click();
+                // # Start a blank playbook
+                cy.get('#root').findByText('Blank Playbook').click();
 
-            // # Add a slash command to a step
-            cy.get('#root').findByText('Add a Slash Command').click();
+                // # Add a slash command to a step
+                cy.get('#root').findByText('Add a Slash Command').click();
 
-            // * Verify only the leading slash is in the input field.
-            cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
+                // * Verify only the leading slash is in the input field.
+                cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
 
-            // # Blur the slash command without having typed anything more
-            cy.get('#root').findByPlaceholderText('Slash Command').blur();
+                // # Blur the slash command without having typed anything more
+                cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
-            // * Verify the Add a Slash Command button returns
-            cy.get('#root').findByText('Add a Slash Command').should('exist');
+                // * Verify the Add a Slash Command button returns
+                cy.get('#root').findByText('Add a Slash Command').should('exist');
+            });
         });
     });
 
@@ -205,6 +207,242 @@ describe('backstage playbook details', () => {
 
             // * Verify placeholder text is present
             cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'Unknown Channel');
+        });
+    });
+
+    describe('automation', () => {
+        const playbookName = 'Playbook (' + Date.now() + ')';
+        let playbookId;
+
+        before(() => {
+            // # Login as user-1
+            cy.apiLogin('user-1');
+
+            // # Create a playbook
+            cy.apiGetTeamByName('ad-1').then((team) => {
+                cy.apiGetCurrentUser().then((user) => {
+                    cy.apiCreateTestPlaybook({
+                        teamId: team.id,
+                        title: playbookName,
+                        userId: user.id,
+                    }).then((playbook) => {
+                        playbookId = playbook.id;
+                    });
+
+                    cy.verifyPlaybookCreated(team.id, playbookName);
+                });
+            });
+        });
+
+        describe('when an incident starts', () => {
+            describe('invite members setting', () => {
+                it('is disabled in a new playbook', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('#invite-users label input').should('not.be.checked');
+                });
+
+                it('can be enabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#invite-users').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('be.checked');
+                    });
+                });
+
+                it('does not let add users when disabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('#invite-users label input').should('not.be.checked');
+
+                    // * Verify that the menu is disabled
+                    cy.getStyledComponent('StyledAsyncSelect').should('have.class', 'profile-autocomplete--is-disabled');
+                });
+
+                it('allows adding users when enabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#invite-users').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Add one user
+                        cy.addInvitedUser('aaron.medina');
+
+                        // * Verify that the user invited is in the list of invited users
+                        cy.getStyledComponent('UserPic').should('have.length', 1).within(() => {
+                            cy.get('.name').contains('aaron.medina');
+                        });
+                    });
+                });
+
+                it('allows adding new users to an already populated list', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#invite-users').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Add one user
+                        cy.addInvitedUser('aaron.medina');
+
+                        // * Verify that the user invited is in the list of invited users
+                        cy.getStyledComponent('UserPic').should('have.length', 1).within(() => {
+                            cy.get('.name').contains('aaron.medina');
+                        });
+
+                        // # Add a new user
+                        cy.addInvitedUser('alice.johnston');
+
+                        // * Verify that there are two users added
+                        cy.getStyledComponent('UserPic').should('have.length', 2);
+
+                        // * Verify that the first user invited is in the list of invited users
+                        cy.getStyledComponent('UserPic').eq(0).within(() => {
+                            cy.get('.name').contains('aaron.medina');
+                        });
+
+                        // * Verify that the second user invited is in the list of invited users
+                        cy.getStyledComponent('UserPic').eq(1).within(() => {
+                            cy.get('.name').contains('alice.johnston');
+                        });
+                    });
+                });
+
+                it('allows removing users', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#invite-users').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Add a couple of users
+                        cy.addInvitedUser('aaron.medina');
+                        cy.addInvitedUser('alice.johnston');
+
+                        // * Verify that there are two users added
+                        cy.getStyledComponent('UserPic').should('have.length', 2);
+
+                        // # Remove the first users added
+                        cy.getStyledComponent('UserPic').eq(0).within(() => {
+                            cy.getStyledComponent('Cross').click({force: true});
+                        });
+
+                        // * Verify that there is only one user, the one not removed
+                        cy.getStyledComponent('UserPic').should('have.length', 1);
+                        cy.getStyledComponent('UserPic').eq(0).within(() => {
+                            cy.get('.name').contains('alice.johnston');
+                        });
+                    });
+                });
+
+                it('persists the list of users persists even if the toggle is off', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#invite-users').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Add a couple of userse
+                        cy.addInvitedUser('aaron.medina');
+                        cy.addInvitedUser('alice.johnston');
+
+                        // * Verify that the users invited are in the list of invited users
+                        cy.getStyledComponent('UserPic').should('have.length', 2);
+
+                        // # Click on the toggle to disable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+                    });
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Navigate again to the playbook
+                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#invite-users').within(() => {
+                        // * Verify that there are two users added
+                        cy.getStyledComponent('UserPic').should('have.length', 2);
+
+                        // * Verify that the first user invited is in the list of invited users
+                        cy.getStyledComponent('UserPic').eq(0).within(() => {
+                            cy.get('.name').contains('aaron.medina');
+                        });
+
+                        // * Verify that the second user invited is in the list of invited users
+                        cy.getStyledComponent('UserPic').eq(1).within(() => {
+                            cy.get('.name').contains('alice.johnston');
+                        });
+                    });
+                });
+            });
         });
     });
 });
