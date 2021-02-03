@@ -201,7 +201,11 @@ Cypress.Commands.add('editPost', (postId, newMessage) => {
  * @param {String} channelName - Display name of the channel.
  */
 Cypress.Commands.add('uiSwitchChannel', (channelName) => {
-    cy.get('body').type('{ctrl}k');
+    if (Cypress.platform === 'darwin') {
+        cy.get('body').type('{cmd}k');
+    } else {
+        cy.get('body').type('{ctrl}k');
+    }
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);

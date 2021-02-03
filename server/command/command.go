@@ -854,7 +854,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		return
 	}
 
-	creationTimestamp, err := time.Parse("2006-01-02", params[1])
+	creationTimestamp, err := time.ParseInLocation("2006-01-02", params[1], time.Now().Location())
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("Timestamp '%s' could not be parsed as a date. If you want the incident to start on January 2, 2006, the timestamp should be '2006-01-02'.", params[1]))
 		return
@@ -908,13 +908,13 @@ func (r *Runner) actionTestData(params []string) {
 		return
 	}
 
-	begin, err := time.Parse("2006-01-02", params[2])
+	begin, err := time.ParseInLocation("2006-01-02", params[2], time.Now().Location())
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("The provided value for the first possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[2]))
 		return
 	}
 
-	end, err := time.Parse("2006-01-02", params[3])
+	end, err := time.ParseInLocation("2006-01-02", params[3], time.Now().Location())
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("The provided value for the last possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[3]))
 		return

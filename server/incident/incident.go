@@ -90,6 +90,9 @@ func (i *Incident) CurrentStatus() string {
 	}
 	if post.Status == "" {
 		// Backwards compatibility with existing incidents
+		if i.EndAt != 0 {
+			return StatusResolved
+		}
 		return StatusActive
 	}
 
@@ -102,6 +105,11 @@ func (i *Incident) IsActive() bool {
 }
 
 func (i *Incident) ResolvedAt() int64 {
+	// Backwards compatibility for incidents with old status updates
+	if len(i.StatusPosts) > 0 && i.StatusPosts[len(i.StatusPosts)-1].Status == "" {
+		return i.EndAt
+	}
+
 	var resolvedPost *StatusPost
 	for j := len(i.StatusPosts) - 1; j >= 0; j-- {
 		if i.StatusPosts[j].DeleteAt != 0 {
@@ -110,6 +118,7 @@ func (i *Incident) ResolvedAt() int64 {
 		if i.StatusPosts[j].Status != StatusResolved && i.StatusPosts[j].Status != StatusArchived {
 			break
 		}
+
 		resolvedPost = &i.StatusPosts[j]
 	}
 

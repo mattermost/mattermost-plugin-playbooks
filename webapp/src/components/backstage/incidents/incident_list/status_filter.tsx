@@ -36,7 +36,7 @@ export function StatusFilter(props: Props) {
         if (defaultOption) {
             return defaultOption;
         }
-        return fixedOptions[2];
+        return fixedOptions[0];
     };
 
     const [selected, setSelected] = useState(getDefault());

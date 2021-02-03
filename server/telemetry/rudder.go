@@ -149,6 +149,7 @@ func (t *RudderTelemetry) ChangeCommander(incdnt *incident.Incident, userID stri
 func (t *RudderTelemetry) UpdateStatus(incdnt *incident.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionUpdateStatus
+	properties["ReminderTimerSeconds"] = int(incdnt.PreviousReminder)
 	t.track(eventIncident, properties)
 }
 
@@ -236,14 +237,17 @@ func playbookProperties(pbook playbook.Playbook, userID string) map[string]inter
 	}
 
 	return map[string]interface{}{
-		"UserActualID":        userID,
-		"PlaybookID":          pbook.ID,
-		"TeamID":              pbook.TeamID,
-		"NumChecklists":       len(pbook.Checklists),
-		"TotalChecklistItems": totalChecklistItems,
-		"IsPublic":            pbook.CreatePublicIncident,
-		"NumMembers":          len(pbook.MemberIDs),
-		"NumSlashCommands":    totalChecklistItemsWithCommands,
+		"UserActualID":                userID,
+		"PlaybookID":                  pbook.ID,
+		"TeamID":                      pbook.TeamID,
+		"NumChecklists":               len(pbook.Checklists),
+		"TotalChecklistItems":         totalChecklistItems,
+		"IsPublic":                    pbook.CreatePublicIncident,
+		"NumMembers":                  len(pbook.MemberIDs),
+		"NumSlashCommands":            totalChecklistItemsWithCommands,
+		"ReminderTimerDefaultSeconds": pbook.ReminderTimerDefaultSeconds,
+		"BroadcastChannelID":          pbook.BroadcastChannelID,
+		"UsesReminderMessageTemplate": pbook.ReminderMessageTemplate != "",
 	}
 }
 
