@@ -4,7 +4,6 @@
 import React, {FC, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import moment from 'moment';
-import classNames from 'classnames';
 import {components, ControlProps} from 'react-select';
 import styled from 'styled-components';
 import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
@@ -135,6 +134,182 @@ const SmallProfile = styled(Profile)`
         width: 16px;
         height: 16px;
     }
+`;
+
+const CheckboxContainer = styled.div`
+    align-items: flex-start;
+    display: flex;
+    position: relative;
+
+    live {
+        height: 35px;
+    }
+
+    button {
+        width: 53px;
+        height: 29px;
+        border: 1px solid #166DE0;
+        box-sizing: border-box;
+        border-radius: 4px;
+        font-family: Open Sans;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 17px;
+        text-align: center;
+        background: #ffffff;
+        color: #166DE0;
+        cursor: pointer;
+        margin-right: 13px;
+    }
+
+    button:disabled {
+        border: 0px;
+        color: var(--button-color);
+        background: var(--center-channel-color-56);
+        cursor: default;
+    }
+
+    &:hover {
+        .checkbox-container__close {
+            opacity: 1;
+        }
+    }
+
+    .icon-bars {
+        padding: 0 0.8rem 0 0;
+    }
+
+    .timestamp {
+        color: var(--center-channel-color-56);
+        flex-shrink: 0;
+    }
+
+    input[type="checkbox"] {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 20px;
+        min-width: 20px;
+        height: 20px;
+        background: #ffffff;
+        border: 2px solid var(--center-channel-color-24);
+        border-radius: 4px;
+        margin: 0;
+        cursor: pointer;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    input[type="checkbox"]:checked {
+        background: var(--button-bg);
+        border: 1px solid var(--button-bg);
+        box-sizing: border-box;
+    }
+
+    input[type="checkbox"]::before {
+        font-family: 'compass-icons', mattermosticons;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        content: "\f12c";
+        font-size: 12px;
+        font-weight: bold;
+        color: #ffffff;
+        transition: transform 0.15s;
+        transform: scale(0) rotate(90deg);
+        position: relative;
+    }
+
+    input[type="checkbox"]:checked::before {
+        transform: scale(1) rotate(0deg);
+    }
+
+    label {
+        font-weight: normal;
+        word-break: break-word;
+        display: inline;
+        margin: 0;
+        margin-right: 8px;
+        flex-grow: 1;
+    }
+`;
+
+const CloseContainer = styled.span`
+    cursor: pointer;
+    opacity: 0;
+    width: 3.2rem;
+    height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--error-text);
+
+    &:hover {
+        opacity: 1;
+    }
+`;
+
+const CheckboxTextboxes = styled.div`
+    width: 100%;
+
+    .form-control {
+        margin-top: 5px;
+        min-width: 320px;
+    }
+
+    .custom-textarea {
+        border-radius: 2px;
+        border: 1px solid var(--center-channel-color-16);
+        min-height: unset;
+        height: 34px;
+
+        &:focus {
+            border-radius: 2px;
+            border: 1px solid var(--center-channel-color-40);
+            padding: 6px 12px;
+        }
+    }
+`;
+
+const Command = styled.div`
+    word-break: break-word;
+    display: inline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 11px;
+`;
+
+interface RunProps {
+    running: boolean;
+}
+
+const Run = styled.div<RunProps>`
+    font-size: 12px;
+    font-weight: bold;
+    display: inline;
+    color: var(--link-color);
+    cursor: pointer;
+    margin: 2px 4px 0 0;
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    ${({running}) => running && `
+        color: var(--center-channel-color-64);
+        cursor: default;
+
+        &:hover {
+            text-decoration: none;
+        }
+    `}
 `;
 
 interface StepDescriptionProps {
@@ -282,8 +457,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             onMouseLeave={() => setShowMenu(false)}
             data-testid='checkbox-item-container'
         >
-            <div
-                className={'checkbox-container live'}
+            <CheckboxContainer
+                className={'live'}
             >
                 {showMenu &&
                     <HoverMenu>
@@ -354,7 +529,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 >
                     {timestamp}
                 </a>
-            </div>
+            </CheckboxContainer>
             <ExtrasRow>
                 {props.checklistItem.assignee_id &&
                 <SmallProfile
@@ -364,8 +539,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 {
                     props.checklistItem.command !== '' &&
                         <div>
-                            <div
-                                className={classNames('run', {running})}
+                            <Run
+                                running={running}
                                 onClick={() => {
                                     if (!running) {
                                         setRunning(true);
@@ -374,10 +549,10 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                 }}
                             >
                                 {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
-                            </div>
-                            <div className={'command'}>
+                            </Run>
+                            <Command>
                                 {props.checklistItem.command}
-                            </div>
+                            </Command>
                             {running && <StyledSpinner/>}
                         </div>
                 }
@@ -429,13 +604,11 @@ export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistIt
     const suggestionListStyle = suggestionsOnBottom ? 'bottom' : 'top';
 
     return (
-        <div
-            className='checkbox-container'
-        >
+        <CheckboxContainer>
             <i
                 className='icon icon-menu pr-2'
             />
-            <div className='checkbox-textboxes'>
+            <CheckboxTextboxes>
                 <input
                     className='form-control'
                     type='text'
@@ -498,14 +671,13 @@ export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistIt
                         setDescription(e.target.value);
                     }}
                 />
-            </div>
-            <span
+            </CheckboxTextboxes>
+            <CloseContainer
                 onClick={onRemove}
-                className='checkbox-container__close'
             >
                 <i className='icon icon-close'/>
-            </span>
-        </div>
+            </CloseContainer>
+        </CheckboxContainer>
     );
 };
 
