@@ -11,11 +11,10 @@ import (
 )
 
 type SQLStore struct {
-	log                 bot.Logger
-	database            *database
-	db                  *sqlx.DB
-	builder             sq.StatementBuilderType
-	cachedUnaccentCheck *bool
+	log      bot.Logger
+	database *database
+	db       *sqlx.DB
+	builder  sq.StatementBuilderType
 }
 
 // New constructs a new instance of SQLStore.

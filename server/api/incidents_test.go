@@ -18,6 +18,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
@@ -30,6 +31,7 @@ func TestIncidents(t *testing.T) {
 	var handler *Handler
 	var poster *mock_poster.MockPoster
 	var logger *mock_poster.MockLogger
+	var configService *mock_config.MockService
 	var playbookService *mock_playbook.MockService
 	var incidentService *mock_incident.MockService
 	var pluginAPI *plugintest.API
@@ -38,7 +40,8 @@ func TestIncidents(t *testing.T) {
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
-		handler = NewHandler()
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
@@ -47,7 +50,61 @@ func TestIncidents(t *testing.T) {
 		client = pluginapi.NewClient(pluginAPI)
 		telemetryService = &telemetry.NoopTelemetry{}
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(true)
 	}
+
+	t.Run("create valid incident, unlicensed", func(t *testing.T) {
+		mockCtrl = gomock.NewController(t)
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
+		poster = mock_poster.NewMockPoster(mockCtrl)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
+		incidentService = mock_incident.NewMockService(mockCtrl)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(false)
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+		}
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
+		}
+
+		retI := testIncident
+		retI.ID = "incidentID"
+		retI.ChannelID = "channelID"
+
+		incidentJSON, err := json.Marshal(testIncident)
+		require.NoError(t, err)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
 	t.Run("create valid incident from dialog", func(t *testing.T) {
 		reset()

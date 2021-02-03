@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/pluginkvstore"
@@ -50,7 +51,12 @@ func TestCreateSubscription(t *testing.T) {
 
 		client := pluginapi.NewClient(pluginAPI)
 
-		handler := NewHandler()
+		configService := mock_config.NewMockService(mockCtrl)
+		configService.EXPECT().
+			IsLicensed().
+			Return(true)
+
+		handler := NewHandler(configService)
 		NewSubscriptionHandler(handler.APIRouter, subscriptionService, playbookService, client)
 
 		return playbookService, handler

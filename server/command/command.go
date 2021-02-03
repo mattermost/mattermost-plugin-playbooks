@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
@@ -134,11 +135,12 @@ type Runner struct {
 	poster          bot.Poster
 	incidentService incident.Service
 	playbookService playbook.Service
+	configService   config.Service
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service, configService config.Service) *Runner {
 	return &Runner{
 		context:         ctx,
 		args:            args,
@@ -147,6 +149,7 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		poster:          poster,
 		incidentService: incidentService,
 		playbookService: playbookService,
+		configService:   configService,
 	}
 }
 
@@ -1170,6 +1173,11 @@ func (r *Runner) actionNukeDB(args []string) {
 func (r *Runner) Execute() error {
 	if err := r.isValid(); err != nil {
 		return err
+	}
+
+	if !r.configService.IsLicensed() {
+		r.postCommandResponse("Incident Collaboration requires a Mattermost Cloud or Mattermost E20 License.")
+		return nil
 	}
 
 	split := strings.Fields(r.args.Command)

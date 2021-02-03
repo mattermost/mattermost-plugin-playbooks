@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +26,10 @@ func TestAPI(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			handler := NewHandler()
+			mockCtrl := gomock.NewController(t)
+			configService := mock_config.NewMockService(mockCtrl)
+			handler := NewHandler(configService)
+
 			writer := httptest.NewRecorder()
 			tc.test(t, handler, writer)
 		})

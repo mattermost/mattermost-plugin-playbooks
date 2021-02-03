@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -121,19 +122,50 @@ func TestPlaybooks(t *testing.T) {
 	var mockCtrl *gomock.Controller
 	var handler *Handler
 	var logger *mock_poster.MockLogger
+	var configService *mock_config.MockService
 	var playbookService *mock_playbook.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
-		handler = NewHandler()
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(true)
 	}
+
+	t.Run("create playbook, unlicensed", func(t *testing.T) {
+		mockCtrl = gomock.NewController(t)
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(false)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
 	t.Run("create playbook", func(t *testing.T) {
 		reset()
@@ -829,18 +861,24 @@ func TestSortingPlaybooks(t *testing.T) {
 	var mockCtrl *gomock.Controller
 	var handler *Handler
 	var logger *mock_poster.MockLogger
+	var configService *mock_config.MockService
 	var playbookService *mock_playbook.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
-		handler = NewHandler()
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(true)
 	}
 
 	testData := []struct {
@@ -1011,6 +1049,7 @@ func TestPagingPlaybooks(t *testing.T) {
 
 	var mockCtrl *gomock.Controller
 	var handler *Handler
+	var configService *mock_config.MockService
 	var logger *mock_poster.MockLogger
 	var playbookService *mock_playbook.MockService
 	var pluginAPI *plugintest.API
@@ -1018,12 +1057,17 @@ func TestPagingPlaybooks(t *testing.T) {
 
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
-		handler = NewHandler()
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(true)
 	}
 
 	testData := []struct {
