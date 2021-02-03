@@ -137,10 +137,8 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode, needsToS
 
 /**
  * Update the status of the current incident through the slash command.
- * @param {String} message - The new status.
- * @param {Boolean} isOngoing - Default to true. If false, the update will also end the incident.
  */
-Cypress.Commands.add('updateStatus', (message, reminder) => {
+Cypress.Commands.add('updateStatus', (message, reminder, status) => {
     // # Run the /incident status slash command.
     cy.executeSlashCommand('/incident update');
 
@@ -152,8 +150,17 @@ Cypress.Commands.add('updateStatus', (message, reminder) => {
         // # Type the new update in the text box.
         cy.findByTestId('messageinput').type(message);
 
+        let actualStatus = status;
+        if (!actualStatus) {
+            actualStatus = 'Reported';
+        }
+
+        cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
+            cy.get('input').type(actualStatus, {delay: 200}).type('{enter}');
+        });
+
         if (reminder) {
-            cy.findByTestId('autoCompleteSelector').within(() => {
+            cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
                 cy.get('input').type(reminder, {delay: 200}).type('{enter}');
             });
         }
@@ -208,7 +215,11 @@ Cypress.Commands.add('editPost', (postId, newMessage) => {
  * @param {String} channelName - Display name of the channel.
  */
 Cypress.Commands.add('uiSwitchChannel', (channelName) => {
-    cy.get('body').type('{ctrl}k');
+    if (Cypress.platform === 'darwin') {
+        cy.get('body').type('{cmd}k');
+    } else {
+        cy.get('body').type('{ctrl}k');
+    }
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);

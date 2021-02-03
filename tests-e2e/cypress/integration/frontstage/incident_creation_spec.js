@@ -74,45 +74,6 @@ describe('incidents can be started', () => {
             cy.startIncidentWithSlashCommand(playbookName, incidentName);
             cy.verifyIncidentActive(teamId, incidentName);
         });
-
-        it('while viewing a group message channel', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a GM channel and visit channel
-            cy.startGroupMessage(['anne.stone', 'diana.wells']);
-
-            // * Verify that incident can be started with slash command
-            const incidentName = 'Public ' + Date.now();
-            cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
-
-        it('while viewing a direct message channel with another user', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a DM channel and visit channel
-            cy.startDirectMessage('douglas.daniels');
-
-            // * Verify that incident can be started with slash command
-            const incidentName = 'Public ' + Date.now();
-            cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
-
-        it('while viewing a direct message channel with self', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a DM channel and visit channel
-            cy.startDirectMessage('Victor Welch', true, 'user-1');
-
-            // * Verify that incident can be started with slash command
-            const incidentName = 'Public ' + Date.now();
-            cy.startIncidentWithSlashCommand(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
     });
 
     describe('via RHS', () => {
@@ -133,45 +94,6 @@ describe('incidents can be started', () => {
             // * Verify that incident can be started from incident RHS
             const incidentName = 'Private - ' + Date.now();
             cy.startIncidentFromRHS(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
-
-        it('while viewing a group message channel', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a GM channel and visit channel
-            cy.startGroupMessage(['anne.stone', 'diana.wells']);
-
-            // * Verify that incident can be started from incident RHS
-            const incidentName = 'GM - ' + Date.now();
-            cy.startIncidentFromRHS(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
-
-        it('while viewing a direct message channel with another user', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a DM channel and visit channel
-            cy.startDirectMessage('douglas.daniels');
-
-            // * Verify that incident can be started from incident RHS
-            const incidentName = 'DM - ' + Date.now();
-            cy.startIncidentFromRHS(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
-
-        it('while viewing a direct message channel with self', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a DM with the test user himself and visit channel
-            cy.startDirectMessage('Victor Welch', true, 'user-1');
-
-            // * Verify that incident can be started with slash command
-            const incidentName = 'Self DM ' + Date.now();
-            cy.startIncidentWithSlashCommand(playbookName, incidentName);
             cy.verifyIncidentActive(teamId, incidentName);
         });
     });
@@ -196,45 +118,6 @@ describe('incidents can be started', () => {
             cy.startIncidentFromPostMenu(playbookName, incidentName);
             cy.verifyIncidentActive(teamId, incidentName);
         });
-
-        it('while viewing a group message channel', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a GM channel and visit channel
-            cy.startGroupMessage(['anne.stone', 'diana.wells']);
-
-            // * Verify that incident can be started from post menu
-            const incidentName = 'GM - ' + Date.now();
-            cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
-
-        it('while viewing a direct message channel with another user', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a DM channel and visit channel
-            cy.startDirectMessage('douglas.daniels');
-
-            // * Verify that incident can be started from post menu
-            const incidentName = 'DM - ' + Date.now();
-            cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
-
-        it('while viewing a direct message channel with self', () => {
-            // # Navigate to the application
-            cy.visit('/');
-
-            // # Create a DM with the test user himself and visit channel
-            cy.startDirectMessage('Victor Welch', true, 'user-1');
-
-            // * Verify that incident can be started from post menu
-            const incidentName = 'Self DM - ' + Date.now();
-            cy.startIncidentFromPostMenu(playbookName, incidentName);
-            cy.verifyIncidentActive(teamId, incidentName);
-        });
     });
 
     it('with a description', () => {
@@ -247,5 +130,21 @@ describe('incidents can be started', () => {
         const incidentDescription = 'Description - ' + now;
         cy.startIncidentWithSlashCommand(playbookName, incidentName, incidentDescription);
         cy.verifyIncidentActive(teamId, incidentName, incidentDescription);
+    });
+
+    it('always as channel admin', () => {
+        // # Visit a public channel: off-topic
+        cy.visit('/ad-1/channels/off-topic');
+
+        // # Start an incident with a slash command
+        const incidentName = 'Public ' + Date.now();
+        cy.startIncidentWithSlashCommand(playbookName, incidentName);
+        cy.verifyIncidentActive(teamId, incidentName);
+
+        // # Open the channel header
+        cy.get('#channelHeaderTitle').click();
+
+        // * Verify the ability to edit the channel header exists
+        cy.get('#channelEditHeader').should('exist');
     });
 });

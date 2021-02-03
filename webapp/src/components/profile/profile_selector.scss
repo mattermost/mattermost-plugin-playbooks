@@ -14,6 +14,12 @@
         }
     }
 
+    .profile-dropdown.show-on-right {
+        .incident-user-select__container {
+            right: 0;
+        }
+    }
+
     .incident-user-select__menu-list {
         padding: 0 0 12px;
         border: none;

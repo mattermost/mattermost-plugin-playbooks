@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   version: 0.6.0
-  title: Incident Management API
+  title: Incident Collaboration API
   contact:
     name: Mattermost
     url: https://mattermost.com/
@@ -78,11 +78,12 @@ paths:
           example: active
           schema:
             type: string
-            default: all
+            default:
             enum:
-              - all
-              - active
-              - ended
+              - Reported
+              - Active
+              - Resolved
+              - Archived
         - name: commander_user_id
           in: query
           description: The returned list will contain only the incidents commanded by this user.
@@ -337,7 +338,6 @@ paths:
             enum:
               - id
               - name
-              - is_active
               - create_at
               - end_at
               - team_id

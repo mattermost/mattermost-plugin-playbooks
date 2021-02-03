@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 

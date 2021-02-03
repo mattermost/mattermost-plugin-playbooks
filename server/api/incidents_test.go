@@ -17,11 +17,11 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 )
 
 func TestIncidents(t *testing.T) {
@@ -641,7 +641,6 @@ func TestIncidents(t *testing.T) {
 			Name:            "incidentName",
 			ChannelID:       "channelID",
 			Checklists:      []playbook.Checklist{},
-			StatusPostIDs:   []string{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
 		}
@@ -778,7 +777,6 @@ func TestIncidents(t *testing.T) {
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
-			StatusPostIDs:   []string{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
 		}
@@ -863,7 +861,6 @@ func TestIncidents(t *testing.T) {
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
-			StatusPostIDs:   []string{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
 		}
@@ -910,7 +907,6 @@ func TestIncidents(t *testing.T) {
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
-			StatusPostIDs:   []string{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
 		}
@@ -1193,7 +1189,6 @@ func TestIncidents(t *testing.T) {
 			Name:            "incidentName1",
 			ChannelID:       "channelID1",
 			Checklists:      []playbook.Checklist{},
-			StatusPostIDs:   []string{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
 		}
@@ -1274,102 +1269,4 @@ func TestIncidents(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
-}
-func TestEndIncident(t *testing.T) {
-	var mockCtrl *gomock.Controller
-	var handler *Handler
-	var poster *mock_poster.MockPoster
-	var logger *mock_poster.MockLogger
-	var playbookService *mock_playbook.MockService
-	var incidentService *mock_incident.MockService
-	var pluginAPI *plugintest.API
-	var client *pluginapi.Client
-
-	reset := func() {
-		mockCtrl = gomock.NewController(t)
-		handler = NewHandler()
-		poster = mock_poster.NewMockPoster(mockCtrl)
-		logger = mock_poster.NewMockLogger(mockCtrl)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
-		incidentService = mock_incident.NewMockService(mockCtrl)
-		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger)
-	}
-
-	type authorizationFunc func(userID string, req *http.Request, incdnt incident.Incident, pluginAPI *plugintest.API, incidentService mock_incident.MockService)
-
-	unauthorized := func(userID string, req *http.Request, incdnt incident.Incident, pluginAPI *plugintest.API, incidentService mock_incident.MockService) {
-		req.Header.Add("Mattermost-User-ID", userID)
-		pluginAPI.On("HasPermissionTo", userID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		incidentService.EXPECT().GetIncident(incdnt.ID).Return(&incdnt, nil).AnyTimes()
-		pluginAPI.On("HasPermissionToChannel", userID, incdnt.ChannelID, model.PERMISSION_READ_CHANNEL).
-			Return(false)
-	}
-
-	authorizedAsSystemAdmin := func(userID string, req *http.Request, incdnt incident.Incident, pluginAPI *plugintest.API, incidentService mock_incident.MockService) {
-		req.Header.Add("Mattermost-User-ID", userID)
-		pluginAPI.On("HasPermissionTo", userID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
-	}
-
-	authorizedAsUserWithPermissionToIncident := func(userID string, req *http.Request, incdnt incident.Incident, pluginAPI *plugintest.API, incidentService mock_incident.MockService) {
-		req.Header.Add("Mattermost-User-ID", userID)
-		pluginAPI.On("HasPermissionTo", userID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		incidentService.EXPECT().GetIncident(incdnt.ID).Return(&incdnt, nil).AnyTimes()
-		pluginAPI.On("HasPermissionToChannel", userID, incdnt.ChannelID, model.PERMISSION_READ_CHANNEL).
-			Return(true)
-	}
-
-	methods := []string{http.MethodPut, http.MethodPost}
-	testCases := []struct {
-		Description        string
-		AuthorizationFunc  authorizationFunc
-		ExpectedStatusCode int
-	}{
-		{"not logged in request", nil, http.StatusUnauthorized},
-		{"unauthorized request", unauthorized, http.StatusForbidden},
-		{"successful request as system admin", authorizedAsSystemAdmin, http.StatusOK},
-		{"successful request", authorizedAsUserWithPermissionToIncident, http.StatusOK},
-		{"failed request", authorizedAsUserWithPermissionToIncident, http.StatusInternalServerError},
-		{"failed request as system admin", authorizedAsSystemAdmin, http.StatusInternalServerError},
-	}
-
-	for _, method := range methods {
-		t.Run(method, func(t *testing.T) {
-			for _, tc := range testCases {
-				t.Run(tc.Description, func(t *testing.T) {
-					reset()
-
-					userID := model.NewId()
-					incidentID := model.NewId()
-					channelID := model.NewId()
-
-					incdnt := incident.Incident{
-						ID:        incidentID,
-						ChannelID: channelID,
-					}
-
-					recorder := httptest.NewRecorder()
-					req, err := http.NewRequest(method, "/api/v0/incidents/"+incidentID+"/end", nil)
-					require.NoError(t, err)
-
-					if tc.AuthorizationFunc != nil {
-						tc.AuthorizationFunc(userID, req, incdnt, pluginAPI, *incidentService)
-					}
-
-					switch tc.ExpectedStatusCode {
-					case http.StatusOK:
-						incidentService.EXPECT().EndIncident(incidentID, userID)
-					case http.StatusInternalServerError:
-						incidentService.EXPECT().EndIncident(incidentID, userID).Return(errors.New("fake error"))
-					}
-
-					handler.ServeHTTP(recorder, req, "testpluginid")
-					resp := recorder.Result()
-					defer resp.Body.Close()
-					assert.Equal(t, tc.ExpectedStatusCode, resp.StatusCode)
-				})
-			}
-		})
-	}
 }

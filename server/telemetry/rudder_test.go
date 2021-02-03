@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	rudder "github.com/rudderlabs/analytics-go"
 	"github.com/stretchr/testify/require"
 )
@@ -83,7 +83,6 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 var dummyIncident = &incident.Incident{
 	ID:              "id",
 	Name:            "name",
-	IsActive:        true,
 	CommanderUserID: "commander_user_id",
 	TeamID:          "team_id",
 	CreateAt:        1234,
@@ -107,7 +106,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		require.Contains(t, properties, "PostID")
 
 		require.Contains(t, properties, "IncidentID")
-		require.Contains(t, properties, "IsActive")
+		require.Contains(t, properties, "CurrentStatus")
 		require.Contains(t, properties, "CommanderUserID")
 		require.Contains(t, properties, "TeamID")
 		require.Contains(t, properties, "CreateAt")
@@ -117,7 +116,6 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		return &incident.Incident{
 			ID:              properties["IncidentID"].(string),
 			Name:            dummyIncident.Name, // not included in the tracked event
-			IsActive:        properties["IsActive"].(bool),
 			CommanderUserID: properties["CommanderUserID"].(string),
 			TeamID:          properties["TeamID"].(string),
 			CreateAt:        int64(properties["CreateAt"].(float64)),
@@ -300,12 +298,12 @@ func TestIncidentProperties(t *testing.T) {
 	expectedProperties := map[string]interface{}{
 		"UserActualID":        dummyUserID,
 		"IncidentID":          dummyIncident.ID,
-		"IsActive":            dummyIncident.IsActive,
 		"CommanderUserID":     dummyIncident.CommanderUserID,
 		"TeamID":              dummyIncident.TeamID,
 		"CreateAt":            dummyIncident.CreateAt,
 		"PlaybookID":          dummyIncident.PlaybookID,
 		"PostID":              dummyIncident.PostID,
+		"CurrentStatus":       dummyIncident.CurrentStatus(),
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
 	}

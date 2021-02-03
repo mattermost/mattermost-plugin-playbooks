@@ -17,7 +17,7 @@ import {
 } from 'src/actions';
 import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
 import {clientId, myIncidentsMap} from 'src/selectors';
-import {Incident, isIncident} from 'src/types/incident';
+import {Incident, isIncident, StatusPost} from 'src/types/incident';
 
 export const websocketSubscribersToIncidentUpdate = new Set<(incident: Incident) => void>();
 
@@ -120,7 +120,7 @@ async function getIncidentFromStatusUpdate(post: Post): Promise<Incident | null>
         return null;
     }
 
-    if (incident.status_post_ids.includes(post.id)) {
+    if (incident.status_posts.find((value: StatusPost) => post.id === value.id)) {
         return incident;
     }
 

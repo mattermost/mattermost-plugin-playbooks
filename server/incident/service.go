@@ -10,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -54,6 +54,9 @@ const DialogFieldMessageKey = "message"
 // DialogFieldReminderInSecondsKey is the key for the reminder select field used in UpdateIncidentDialog
 const DialogFieldReminderInSecondsKey = "reminder"
 
+// DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
+const DialogFieldStatusKey = "status"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -69,7 +72,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error) {
+func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options FilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(requesterInfo, options)
 }
 
@@ -81,8 +84,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, err
 	}
 
-	// New incidents are always active
-	incdnt.IsActive = true
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
 
@@ -198,132 +199,10 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, p
 	return nil
 }
 
-// EndIncident completes the incident. It returns an ErrIncidentNotActive if the caller tries to
-// end an incident which is not active.
-func (s *ServiceImpl) EndIncident(incidentID, userID string) error {
-	incdnt, err := s.store.GetIncident(incidentID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get incident %s to end", incidentID)
-	} else if incdnt == nil {
-		return errors.Errorf("failed to find incident %s", incidentID)
-	}
-
-	if !incdnt.IsActive {
-		return ErrIncidentNotActive
-	}
-
-	// Close the incident
-	incdnt.IsActive = false
-	incdnt.EndAt = model.GetMillis()
-
-	if err = s.store.UpdateIncident(incdnt); err != nil {
-		return errors.Wrapf(err, "failed to update incident %s while ending", incidentID)
-	}
-
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
-	s.telemetry.EndIncident(incdnt, userID)
-
-	s.RemoveReminder(incidentID)
-	if err = s.removeReminderPost(incdnt); err != nil {
-		s.logger.Errorf("EndIncident: error removing reminder for incidentID: %s; error: %s", incidentID, err.Error())
-	}
-
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", userID)
-	}
-
-	// Post in the  main incident channel that @user has ended the incident.
-	// Main channel is the only channel in the incident for now.
-	if _, err := s.poster.PostMessage(incdnt.ChannelID, "This incident has been closed by @%v", user.Username); err != nil {
-		return errors.Wrap(err, "failed to post end incident messsage")
-	}
-
-	return nil
-}
-
-// RestartIncident restarts the incident with the given ID by the given user.
-func (s *ServiceImpl) RestartIncident(incidentID, userID string) error {
-	currentIncident, err := s.store.GetIncident(incidentID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve incident")
-	}
-
-	if currentIncident.IsActive {
-		return ErrIncidentActive
-	}
-
-	currentIncident.IsActive = true
-	currentIncident.EndAt = 0
-
-	if err = s.store.UpdateIncident(currentIncident); err != nil {
-		return errors.Wrapf(err, "failed to restart incident")
-	}
-
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, currentIncident,
-		currentIncident.ChannelID)
-	s.telemetry.RestartIncident(currentIncident, userID)
-
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", userID)
-	}
-
-	// Post in the  main incident channel that @user has restarted the incident.
-	// Main channel is the only channel in the incident for now.
-	if _, err := s.poster.PostMessage(currentIncident.ChannelID,
-		"This incident has been restarted by @%v", user.Username); err != nil {
-		return errors.Wrap(err, "failed to post restart incident messsage")
-	}
-
-	return nil
-}
-
-// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
-// be ended.
-func (s *ServiceImpl) OpenEndIncidentDialog(incidentID, triggerID string) error {
-	currentIncident, err := s.store.GetIncident(incidentID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve incident")
-	}
-
-	if !currentIncident.IsActive {
-		return ErrIncidentNotActive
-	}
-
-	dialog := model.Dialog{
-		Title:            "Confirm End Incident",
-		SubmitLabel:      "Confirm",
-		IntroductionText: "Ending the incident stops the duration timer and notifies the channel that the incident has ended. It remains possible to change stages and complete steps, or even restart the incident.",
-		NotifyOnCancel:   false,
-		State:            incidentID,
-	}
-
-	dialogRequest := model.OpenDialogRequest{
-		URL: fmt.Sprintf(
-			"/plugins/%s/api/v0/incidents/%s/end",
-			s.configService.GetManifest().Id,
-			incidentID,
-		),
-		Dialog:    dialog,
-		TriggerId: triggerID,
-	}
-
-	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
-		return errors.Wrapf(err, "failed to open new incident dialog")
-	}
-
-	return nil
-}
-
 func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string) error {
 	currentIncident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
-	}
-
-	if !currentIncident.IsActive {
-		return ErrIncidentNotActive
 	}
 
 	message := ""
@@ -339,7 +218,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		message = currentIncident.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.PreviousReminder)
+	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.CurrentStatus(), currentIncident.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -376,13 +255,9 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 	}
 
 	duration := timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())
-	status := "Ongoing"
-	if !theIncident.IsActive {
-		status = "Ended"
-	}
 
 	broadcastedMsg := fmt.Sprintf("# Incident Update: [%s](/%s/pl/%s)\n", incidentChannel.DisplayName, incidentTeam.Name, originalPostID)
-	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, status)
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, theIncident.CurrentStatus())
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
@@ -400,10 +275,6 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
-	if !incidentToModify.IsActive {
-		return ErrIncidentNotActive
-	}
-
 	post := model.Post{
 		Message:   options.Message,
 		UserId:    userID,
@@ -413,22 +284,32 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
-	incidentToModify.StatusPostIDs = append(incidentToModify.StatusPostIDs, post.Id)
+	// Add the status manually for the broadcasts
+	incidentToModify.StatusPosts = append(incidentToModify.StatusPosts,
+		StatusPost{
+			ID:       post.Id,
+			Status:   options.Status,
+			CreateAt: post.CreateAt,
+			DeleteAt: post.DeleteAt,
+		})
+
 	incidentToModify.PreviousReminder = options.Reminder
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
 
+	if err = s.store.UpdateStatus(&SQLStatusPost{
+		IncidentID: incidentToModify.ID,
+		PostID:     post.Id,
+		Status:     options.Status,
+		EndAt:      incidentToModify.ResolvedAt(),
+	}); err != nil {
+		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
+	}
+
 	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
-
-	incidentToModify.StatusPosts = append(incidentToModify.StatusPosts,
-		StatusPost{
-			ID:       post.Id,
-			CreateAt: post.CreateAt,
-			DeleteAt: post.DeleteAt,
-		})
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
 
@@ -497,7 +378,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 }
 
 // GetCommanders returns all the commanders of the incidents selected by options
-func (s *ServiceImpl) GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error) {
+func (s *ServiceImpl) GetCommanders(requesterInfo RequesterInfo, options FilterOptions) ([]CommanderInfo, error) {
 	return s.store.GetCommanders(requesterInfo, options)
 }
 
@@ -896,7 +777,7 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
-	channelHeader := "The channel was created by the Incident Management plugin."
+	channelHeader := "The channel was created by the Incident Collaboration plugin."
 
 	if incdnt.Description != "" {
 		channelHeader = incdnt.Description
@@ -940,6 +821,10 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrapf(err, "failed to add user to channel")
+	}
+
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.CommanderUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
+		return nil, errors.Wrapf(err, "failed to promote incident commander to channel_admin role")
 	}
 
 	return channel, nil
@@ -1024,7 +909,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string, reminderTimer time.Duration) (*model.Dialog, error) {
+func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID, status string, reminderTimer time.Duration) (*model.Dialog, error) {
 	introductionText := "Update your incident status."
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
@@ -1042,7 +927,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 
 	}
 
-	options := []*model.PostActionOptions{
+	reminderOptions := []*model.PostActionOptions{
 		{
 			Text:  "None",
 			Value: "0",
@@ -1069,10 +954,29 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 		},
 	}
 
+	statusOptions := []*model.PostActionOptions{
+		{
+			Text:  "Reported",
+			Value: "Reported",
+		},
+		{
+			Text:  "Active",
+			Value: "Active",
+		},
+		{
+			Text:  "Resolved",
+			Value: "Resolved",
+		},
+		{
+			Text:  "Archived",
+			Value: "Archived",
+		},
+	}
+
 	if s.configService.IsConfiguredForDevelopmentAndTesting() {
-		options = append(options, nil)
-		copy(options[2:], options[1:])
-		options[1] = &model.PostActionOptions{
+		reminderOptions = append(reminderOptions, nil)
+		copy(reminderOptions[2:], reminderOptions[1:])
+		reminderOptions[1] = &model.PostActionOptions{
 			Text:  "10sec",
 			Value: "10",
 		}
@@ -1083,6 +987,14 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 		IntroductionText: introductionText,
 		Elements: []model.DialogElement{
 			{
+				DisplayName: "Status",
+				Name:        DialogFieldStatusKey,
+				Type:        "select",
+				Options:     statusOptions,
+				Optional:    false,
+				Default:     status,
+			},
+			{
 				DisplayName: "Message",
 				Name:        DialogFieldMessageKey,
 				Type:        "textarea",
@@ -1092,7 +1004,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID string
 				DisplayName: "Reminder for next update",
 				Name:        DialogFieldReminderInSecondsKey,
 				Type:        "select",
-				Options:     options,
+				Options:     reminderOptions,
 				Optional:    true,
 				Default:     fmt.Sprintf("%d", reminderTimer/time.Second),
 			},
@@ -1138,15 +1050,21 @@ func addRandomBits(name string) string {
 	return fmt.Sprintf("%s-%s", name, randBits[:4])
 }
 
-func findNewestNonDeletedPostID(posts []StatusPost) string {
+func findNewestNonDeletedStatusPost(posts []StatusPost) *StatusPost {
 	var newest *StatusPost
 	for i, p := range posts {
 		if p.DeleteAt == 0 && (newest == nil || p.CreateAt > newest.CreateAt) {
 			newest = &posts[i]
 		}
 	}
+	return newest
+}
+
+func findNewestNonDeletedPostID(posts []StatusPost) string {
+	newest := findNewestNonDeletedStatusPost(posts)
 	if newest == nil {
 		return ""
 	}
+
 	return newest.ID
 }

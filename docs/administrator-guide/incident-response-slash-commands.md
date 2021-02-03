@@ -4,7 +4,7 @@ Slash commands are shortcuts used to perform actions in Mattermost. To view the 
 
 ## Using slash commands
 
-Mattermost Incident Management includes built-in slash commands:
+Mattermost Incident Collaboration includes built-in slash commands:
 
 - `/incident start` - Start a new incident.
 - `/incident end` - Close the incident of that channel.

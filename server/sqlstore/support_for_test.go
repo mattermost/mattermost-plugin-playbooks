@@ -7,9 +7,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -452,10 +452,10 @@ func addUsersToChannels(t *testing.T, store *SQLStore, users []userInfo, channel
 func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	t.Helper()
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "Type")
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "Type", "CreateAt", "DeleteAt")
 
 	for _, channel := range channels {
-		insertBuilder = insertBuilder.Values(channel.Id, channel.DisplayName, channel.Type)
+		insertBuilder = insertBuilder.Values(channel.Id, channel.DisplayName, channel.Type, channel.CreateAt, channel.DeleteAt)
 	}
 
 	_, err := store.execBuilder(store.db, insertBuilder)
@@ -465,7 +465,11 @@ func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 func createIncidentChannel(t testing.TB, store *SQLStore, i *incident.Incident) {
 	t.Helper()
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName").Values(i.ChannelID, i.Name)
+	if i.CreateAt == 0 {
+		i.CreateAt = model.GetMillis()
+	}
+
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "CreateAt", "DeleteAt").Values(i.ChannelID, i.Name, i.CreateAt, 0)
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)

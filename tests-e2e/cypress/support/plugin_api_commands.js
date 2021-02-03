@@ -23,11 +23,26 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
 /**
  * Get all active incidents directly via API
  */
-Cypress.Commands.add('apiGetAllActiveIncidents', (teamId) => {
+Cypress.Commands.add('apiGetAllActiveIncidents', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: {team_id: teamId, status: 'active'},
+        qs: {team_id: teamId, status: 'Active', member_id: userId},
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Get all reported incidents directly via API
+ */
+Cypress.Commands.add('apiGetAllReportedIncidents', (teamId, userId = '') => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        qs: {team_id: teamId, status: 'Reported', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -86,19 +101,25 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
     });
 });
 
-/**
- * Delete an incident directly via API
- * @param {String} incidentId
- * All parameters required
- */
-Cypress.Commands.add('apiEndIncident', (incidentId) => {
+// Update an incident's status programmatically.
+Cypress.Commands.add('apiUpdateStatus', ({incidentId, userId, channelId, teamId, message, status}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: incidentsEndpoint + '/' + incidentId + '/end',
-        method: 'PUT',
+        url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
+        method: 'POST',
+        body: {
+            type: 'dialog_submission',
+            callback_id: '',
+            state: '',
+            user_id: userId,
+            channel_id: channelId,
+            team_id: teamId,
+            submission: {message, reminder: '15', status},
+            cancelled: false,
+        },
     }).then((response) => {
         expect(response.status).to.equal(200);
-        cy.wrap(response);
+        cy.wrap(response.body);
     });
 });
 
@@ -108,13 +129,14 @@ Cypress.Commands.add('apiEndIncident', (incidentId) => {
  * All parameters required
  */
 Cypress.Commands.add('apiRestartIncident', (incidentId) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: incidentsEndpoint + '/' + incidentId + '/restart',
-        method: 'PUT',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        cy.wrap(response);
+    return cy.apiUpdateStatus({
+        incidentId,
+        userId: '',
+        channelId: '',
+        teamId: '',
+        reminder: '',
+        message: 'reopen',
+        status: 'Active',
     });
 });
 
@@ -144,7 +166,7 @@ Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDesc
         const returnedIncidents = JSON.parse(response.body);
         const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
-        assert.isTrue(incident.is_active);
+        assert.equal(incident.end_at, 0);
         assert.equal(incident.name, incidentName);
 
         // Only check the description if provided. The server may supply a default depending
@@ -161,7 +183,7 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
         const returnedIncidents = JSON.parse(response.body);
         const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
-        assert.isFalse(incident.is_active);
+        assert.notEqual(incident.end_at, 0);
     });
 });
 
@@ -224,25 +246,3 @@ Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
         assert.isDefined(playbook);
     })
 ));
-
-// Update an incident's status programmatically.
-Cypress.Commands.add('apiUpdateStatus', ({incidentId, userId, channelId, teamId, message}) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
-        method: 'POST',
-        body: {
-            type: 'dialog_submission',
-            callback_id: '',
-            state: '',
-            user_id: userId,
-            channel_id: channelId,
-            team_id: teamId,
-            submission: {message, reminder: '15'},
-            cancelled: false,
-        },
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        cy.wrap(response.body);
-    });
-});

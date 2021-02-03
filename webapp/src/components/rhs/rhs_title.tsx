@@ -12,7 +12,7 @@ import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
 import {currentIncident, currentRHSState} from 'src/selectors';
 import StatusBadge from 'src/components/backstage/incidents/status_badge';
-import {Incident} from 'src/types/incident';
+import {Incident, incidentIsActive} from 'src/types/incident';
 
 const RHSTitleContainer = styled.div`
     display: flex;
@@ -50,7 +50,7 @@ const RHSTitle: FC = () => {
                 </Button><RHSTitleText data-testid='rhs-title'>{incident?.name || 'Incidents'}</RHSTitleText>
                 {incident && (
                     <StatusBadge
-                        isActive={incident?.is_active}
+                        isActive={incident && incidentIsActive(incident)}
                         compact={true}
                     />
                 )}

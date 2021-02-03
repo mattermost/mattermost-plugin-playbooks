@@ -1,12 +1,12 @@
-# Mattermost Incident Management
+# Mattermost Incident Collaboration
 
-[![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-incident-management/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-incident-management)
-[![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-incident-management/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-incident-management)
-[![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-incident-management)](https://github.com/mattermost/mattermost-plugin-incident-management/releases/latest)
+[![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-incident-collaboration/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-incident-collaboration)
+[![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-incident-collaboration/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-incident-collaboration)
+[![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-incident-collaboration)](https://github.com/mattermost/mattermost-plugin-incident-collaboration/releases/latest)
 
- Mattermost Incident Management allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html). 
+ Mattermost Incident Collaboration allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html). 
 
-![Mattermost Incident Management](docs/assets/incident_response_landing.png)
+![Mattermost Incident Collaboration](docs/assets/incident_response_landing.png)
 
 ## License
 
@@ -22,4 +22,4 @@ This plugin contains both a server and web app portion. Read our documentation a
 
 For more information about contributing to Mattermost, and the different ways you can contribute, see https://www.mattermost.org/contribute-to-mattermost.
 
-Please visit the [Mattermost Incident Management developer docs](https://mattermost.gitbook.io/mattermost-incident-management/development/contributing) to learn more about contributing.
+Please visit the [Mattermost Incident Collaboration developer docs](https://mattermost.gitbook.io/mattermost-incident-collaboration/development/contributing) to learn more about contributing.
