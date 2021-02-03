@@ -17,11 +17,11 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 )
 
 func TestIncidents(t *testing.T) {
