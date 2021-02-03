@@ -315,8 +315,8 @@ const BackstageIncidentList: FC = () => {
                             <SortableColHeader
                                 name={'Status'}
                                 direction={fetchParams.direction ? fetchParams.direction : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'is_active' : false}
-                                onClick={() => colHeaderClicked('is_active')}
+                                active={fetchParams.sort ? fetchParams.sort === 'status' : false}
+                                onClick={() => colHeaderClicked('status')}
                             />
                         </div>
                         <div className='col-sm-2'>
