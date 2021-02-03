@@ -169,16 +169,11 @@ Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDesc
         assert.equal(incident.end_at, 0);
         assert.equal(incident.name, incidentName);
 
-        cy.log('test 1');
-
         // Only check the description if provided. The server may supply a default depending
         // on how the incident was started.
         if (incidentDescription) {
-            cy.log('test 1.5');
             assert.equal(incident.description, incidentDescription);
         }
-
-        cy.log('test 1.6');
     });
 });
 
