@@ -8,7 +8,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
 
 import {fetchUsersInChannel, setCommander} from 'src/client';
-import {Incident} from 'src/types/incident';
+import {Incident, incidentCurrentStatus} from 'src/types/incident';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import Duration from '../duration';
 import './incident_details.scss';
@@ -73,6 +73,12 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                             from={props.incident.create_at}
                             to={props.incident.end_at}
                         />
+                    </div>
+                </div>
+                <div className='side-by-side'>
+                    <div className='inner-container first-container'>
+                        <div className='first-title'>{'Status'}</div>
+                        <div>{incidentCurrentStatus(props.incident)}</div>
                     </div>
                 </div>
                 <div id={'incidentRHSUpdates'}>

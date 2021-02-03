@@ -129,7 +129,12 @@ describe('incident rhs > header', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiEndIncident(incident.id);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // # Navigate directly to the application and the incident channel

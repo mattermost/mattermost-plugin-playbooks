@@ -15,10 +15,10 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 )
 
 // IncidentHandler is the API handler.
@@ -59,8 +59,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.Use(handler.checkChannelArchived)
 
 	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
-	incidentRouterAuthorized.HandleFunc("/end", handler.endIncident).Methods(http.MethodPut, http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/restart", handler.restartIncident).Methods(http.MethodPut)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
@@ -293,10 +291,6 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident channel already has created at date")
 	}
 
-	if newIncident.EndAt != 0 {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident channel already has ended at date")
-	}
-
 	if newIncident.TeamID == "" {
 		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing team id of incident")
 	}
@@ -455,38 +449,6 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	ReturnJSON(w, incidentToGet, http.StatusOK)
 }
 
-// endIncident handles the /incidents/{id}/end api endpoint.
-//
-// In addition to being reachable directly via the REST API, the POST version of this endpoint is
-// also used as the target of the interactive dialog spawned by `/incident end`.
-func (h *IncidentHandler) endIncident(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	incidentID := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	err := h.incidentService.EndIncident(incidentID, userID)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-// restartIncident handles the /incidents/{id}/restart api endpoint.
-func (h *IncidentHandler) restartIncident(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	err := h.incidentService.RestartIncident(vars["id"], userID)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
 // getCommanders handles the /incidents/commanders api endpoint.
 func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
@@ -504,7 +466,7 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	options := incident.HeaderFilterOptions{
+	options := incident.FilterOptions{
 		TeamID: teamID,
 	}
 
@@ -618,9 +580,29 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	}
 
 	var options incident.StatusUpdateOptions
-	options.Message = request.Submission[incident.DialogFieldMessageKey].(string)
-	if reminder, err2 := strconv.Atoi(request.Submission[incident.DialogFieldReminderInSecondsKey].(string)); err2 == nil {
-		options.Reminder = time.Duration(reminder) * time.Second
+	if message, ok := request.Submission[incident.DialogFieldMessageKey]; ok {
+		options.Message = message.(string)
+	}
+
+	if reminderI, ok := request.Submission[incident.DialogFieldReminderInSecondsKey]; ok {
+		if reminder, err2 := strconv.Atoi(reminderI.(string)); err2 == nil {
+			options.Reminder = time.Duration(reminder) * time.Second
+		}
+	}
+
+	if status, ok := request.Submission[incident.DialogFieldStatusKey]; ok {
+		options.Status = status.(string)
+	}
+
+	switch options.Status {
+	case incident.StatusActive:
+	case incident.StatusArchived:
+	case incident.StatusReported:
+	case incident.StatusResolved:
+		break
+	default:
+		HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
+		return
 	}
 
 	err = h.incidentService.UpdateStatus(incidentID, userID, options)
@@ -944,7 +926,7 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 }
 
 // parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.
-func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, error) {
+func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
 	teamID := u.Query().Get("team_id")
 	if teamID == "" {
 		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
@@ -971,25 +953,14 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.HeaderFilterOptions, err
 	sort := u.Query().Get("sort")
 	direction := u.Query().Get("direction")
 
-	statusParam := strings.ToLower(u.Query().Get("status"))
-	var status incident.Status
-	switch statusParam {
-	case "all", "": // default
-		status = incident.All
-	case "active":
-		status = incident.Ongoing
-	case "ended":
-		status = incident.Ended
-	default:
-		return nil, errors.Errorf("bad status parameter '%s'", statusParam)
-	}
+	status := u.Query().Get("status")
 
 	commanderID := u.Query().Get("commander_user_id")
 	searchTerm := u.Query().Get("search_term")
 
 	memberID := u.Query().Get("member_id")
 
-	return &incident.HeaderFilterOptions{
+	return &incident.FilterOptions{
 		TeamID:      teamID,
 		Page:        page,
 		PerPage:     perPage,

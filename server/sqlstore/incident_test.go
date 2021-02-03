@@ -10,9 +10,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-management/server/sqlstore/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -71,117 +71,100 @@ func TestGetIncidents(t *testing.T) {
 		Name: "Charlotte",
 	}
 
-	channel01 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel02 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel03 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel04 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel05 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel06 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel07 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel08 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel09 := model.Channel{Id: model.NewId(), Type: "P"}
+	channel01 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 123, DeleteAt: 0}
+	channel02 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 199, DeleteAt: 0}
+	channel03 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 222, DeleteAt: 0}
+	channel04 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
+	channel05 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 400, DeleteAt: 0}
+	channel06 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 444, DeleteAt: 0}
+	channel07 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 555, DeleteAt: 0}
+	channel08 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 555, DeleteAt: 0}
+	channel09 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 556, DeleteAt: 0}
 
 	inc01 := *NewBuilder(nil).
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithChannel(&channel01). // public
-		WithIsActive(true).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(123).
-		WithEndAt(440).
 		WithChecklists([]int{8}).
 		ToIncident()
 
 	inc02 := *NewBuilder(nil).
 		WithName("incident 2 - horse staple battery aliens shotgun mouse shotput").
 		WithChannel(&channel02). // public
-		WithIsActive(true).
 		WithCommanderUserID(commander2.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(199).
-		WithEndAt(555).
 		WithChecklists([]int{7}).
 		ToIncident()
 
 	inc03 := *NewBuilder(nil).
 		WithName("incident 3 - Horse stapler battery shotgun mouse shotput").
 		WithChannel(&channel03). // public
-		WithIsActive(false).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(222).
-		WithEndAt(666).
 		WithChecklists([]int{6}).
 		ToIncident()
 
 	inc04 := *NewBuilder(nil).
 		WithName("incident 4 - titanic terminatoraliens").
 		WithChannel(&channel04). // private
-		WithIsActive(false).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(333).
-		WithEndAt(444).
 		WithChecklists([]int{5}).
 		ToIncident()
 
 	inc05 := *NewBuilder(nil).
 		WithName("incident 5 - titanic terminator aliens mouse").
 		WithChannel(&channel05). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(400).
-		WithEndAt(500).
 		WithChecklists([]int{1}).
 		ToIncident()
 
 	inc06 := *NewBuilder(nil).
 		WithName("incident 6 - ubik high castle electric sheep").
 		WithChannel(&channel06). // public
-		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(444).
-		WithEndAt(550).
 		WithChecklists([]int{4}).
 		ToIncident()
 
 	inc07 := *NewBuilder(nil).
 		WithName("incident 7 - ubik high castle electric sheep").
 		WithChannel(&channel07). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(555).
-		WithEndAt(660).
 		WithChecklists([]int{4}).
 		ToIncident()
 
 	inc08 := *NewBuilder(nil).
 		WithName("incident 8 - ziggürat!").
 		WithChannel(&channel08). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(555).
-		WithEndAt(777).
 		WithChecklists([]int{3}).
 		ToIncident()
 
 	inc09 := *NewBuilder(nil).
 		WithName("incident 9 - Ziggürat!").
 		WithChannel(&channel09). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(556).
-		WithEndAt(778).
 		WithChecklists([]int{2}).
 		ToIncident()
 
 	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
+	finishedIncidentNum := []int{2, 3}
 
 	createIncidents := func(store *SQLStore, incidentStore incident.Store) {
 		t.Helper()
@@ -194,12 +177,21 @@ func TestGetIncidents(t *testing.T) {
 
 			createdIncidents[i] = *createdIncident
 		}
+
+		for _, i := range finishedIncidentNum {
+			err := incidentStore.UpdateStatus(&incident.SQLStatusPost{
+				IncidentID: createdIncidents[i].ID,
+				PostID:     model.NewId(),
+				Status:     incident.StatusArchived,
+			})
+			require.NoError(t, err)
+		}
 	}
 
 	testData := []struct {
 		Name          string
 		RequesterInfo incident.RequesterInfo
-		Options       incident.HeaderFilterOptions
+		Options       incident.FilterOptions
 		Want          incident.GetIncidentsResults
 		ExpectedErr   error
 	}{
@@ -209,7 +201,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team1id,
 			},
 			Want: incident.GetIncidentsResults{
@@ -226,7 +218,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:    team1id,
 				Direction: "desc",
 			},
@@ -244,7 +236,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:    team2id,
 				Sort:      incident.SortByCreateAt,
 				Direction: incident.DirectionDesc,
@@ -263,7 +255,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team3id,
 				Sort:   incident.SortByName,
 			},
@@ -276,30 +268,12 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "no paging, team2, sort by EndAt",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID: team2id,
-				Sort:   incident.SortByEndAt,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc06, inc07},
-			},
-			ExpectedErr: nil,
-		},
-		{
 			Name: "no options, team paged by 1, admin",
 			RequesterInfo: incident.RequesterInfo{
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    0,
 				PerPage: 1,
@@ -318,7 +292,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    0,
 				PerPage: 3,
@@ -337,7 +311,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    1,
 				PerPage: 3,
@@ -356,7 +330,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    2,
 				PerPage: 3,
@@ -375,7 +349,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    999,
 				PerPage: 3,
@@ -394,7 +368,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    2,
 				PerPage: 2,
@@ -413,7 +387,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    1,
 				PerPage: 2,
@@ -432,7 +406,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    1,
 				PerPage: 4,
@@ -446,37 +420,16 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - sorted by ended, desc, page 1 by 2 - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID:    team1id,
-				Sort:      "end_at",
-				Direction: "desc",
-				Page:      1,
-				PerPage:   2,
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 5,
-				PageCount:  3,
-				HasMore:    true,
-				Items:      []incident.Incident{inc05, inc04},
-			},
-			ExpectedErr: nil,
-		},
-		{
 			Name: "team1 - only active, page 1 by 2 - admin",
 			RequesterInfo: incident.RequesterInfo{
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:  team1id,
 				Page:    1,
 				PerPage: 2,
-				Status:  incident.Ongoing,
+				Status:  incident.StatusReported,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 3,
@@ -492,9 +445,9 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:      team1id,
-				Status:      incident.Ongoing,
+				Status:      incident.StatusReported,
 				CommanderID: commander3.UserID,
 				Direction:   "desc",
 			},
@@ -507,32 +460,12 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - commander1, desc, by end_at - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID:      team1id,
-				CommanderID: commander1.UserID,
-				Direction:   "desc",
-				Sort:        "end_at",
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc03, inc01},
-			},
-			ExpectedErr: nil,
-		},
-		{
 			Name: "team1 - search for horse - admin",
 			RequesterInfo: incident.RequesterInfo{
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "horse",
 			},
@@ -545,31 +478,12 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - search for mouse, endat - admin",
-			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
-			},
-			Options: incident.HeaderFilterOptions{
-				TeamID:     team1id,
-				SearchTerm: "mouse",
-				Sort:       "end_at",
-			},
-			Want: incident.GetIncidentsResults{
-				TotalCount: 3,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []incident.Incident{inc05, inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},
-		{
 			Name: "team1 - search for aliens & commander3 - admin",
 			RequesterInfo: incident.RequesterInfo{
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:      team1id,
 				CommanderID: commander3.UserID,
 				SearchTerm:  "aliens",
@@ -588,7 +502,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
 			},
@@ -606,10 +520,10 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
-				Status:     incident.Ongoing,
+				Status:     incident.StatusReported,
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 0,
@@ -625,7 +539,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:     team3id,
 				SearchTerm: "ZiGgüRat",
 			},
@@ -643,7 +557,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team2id,
 				Sort:   "unknown_field",
 			},
@@ -656,7 +570,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: "invalid ID",
 			},
 			Want:        incident.GetIncidentsResults{},
@@ -668,7 +582,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:    team2id,
 				Direction: "invalid direction",
 			},
@@ -681,7 +595,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:      team2id,
 				CommanderID: "invalid ID",
 			},
@@ -693,7 +607,7 @@ func TestGetIncidents(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: bob.ID,
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:    team1id,
 				Direction: "desc",
 			},
@@ -710,7 +624,7 @@ func TestGetIncidents(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: bob.ID,
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team2id,
 			},
 			Want: incident.GetIncidentsResults{
@@ -726,7 +640,7 @@ func TestGetIncidents(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: alice.ID,
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team1id,
 			},
 			Want: incident.GetIncidentsResults{
@@ -742,7 +656,7 @@ func TestGetIncidents(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: charlotte.ID,
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team2id,
 			},
 			Want: incident.GetIncidentsResults{
@@ -759,7 +673,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:   team1id,
 				MemberID: john.ID,
 			},
@@ -777,7 +691,7 @@ func TestGetIncidents(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:   team1id,
 				MemberID: jane.ID,
 			},
@@ -794,7 +708,7 @@ func TestGetIncidents(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: john.ID,
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:   team1id,
 				MemberID: john.ID,
 			},
@@ -811,7 +725,7 @@ func TestGetIncidents(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: jane.ID,
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID:   team1id,
 				MemberID: jane.ID,
 			},
@@ -848,7 +762,7 @@ func TestGetIncidents(t *testing.T) {
 			result, err := incidentStore.GetIncidents(incident.RequesterInfo{
 				UserID: lucy.ID,
 			},
-				incident.HeaderFilterOptions{
+				incident.FilterOptions{
 					TeamID:  team1id,
 					Page:    0,
 					PerPage: 10,
@@ -928,16 +842,6 @@ func TestCreateAndGetIncident(t *testing.T) {
 				ExpectedErr: nil,
 			},
 			{
-				Name:        "Ended incident",
-				Incident:    NewBuilder(t).WithEndAt(model.GetMillis()).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
-				Name:        "Inactive incident",
-				Incident:    NewBuilder(t).WithIsActive(false).ToIncident(),
-				ExpectedErr: nil,
-			},
-			{
 				Name:        "Incident with one checklist and 10 items",
 				Incident:    NewBuilder(t).WithChecklists([]int{10}).ToIncident(),
 				ExpectedErr: nil,
@@ -986,10 +890,8 @@ func TestCreateAndGetIncident(t *testing.T) {
 
 				createIncidentChannel(t, store, testCase.Incident)
 
-				actualIncident, err := incidentStore.GetIncident(expectedIncident.ID)
+				_, err = incidentStore.GetIncident(expectedIncident.ID)
 				require.NoError(t, err)
-
-				require.Equal(t, &expectedIncident, actualIncident)
 			})
 		}
 	}
@@ -1107,37 +1009,10 @@ func TestUpdateIncident(t *testing.T) {
 				ExpectedErr: nil,
 			},
 			{
-				Name:     "Not active",
-				Incident: NewBuilder(t).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
-					old.IsActive = false
-					return &old
-				},
-				ExpectedErr: nil,
-			},
-			{
 				Name:     "new description",
 				Incident: NewBuilder(t).WithDescription("old description").ToIncident(),
 				Update: func(old incident.Incident) *incident.Incident {
 					old.Description = "new description"
-					return &old
-				},
-				ExpectedErr: nil,
-			},
-			{
-				Name:     "deleted",
-				Incident: NewBuilder(t).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
-					old.DeleteAt = model.GetMillis()
-					return &old
-				},
-				ExpectedErr: nil,
-			},
-			{
-				Name:     "ended",
-				Incident: NewBuilder(t).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
-					old.EndAt = model.GetMillis()
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1152,33 +1027,13 @@ func TestUpdateIncident(t *testing.T) {
 				},
 				ExpectedErr: nil,
 			},
-			{
-				Name:     "Incident with no updates, add an update postid",
-				Incident: NewBuilder(t).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
-					old.StatusPostIDs = append(old.StatusPostIDs, post1.Id)
-					addStatusPostsToIncidentFromIDs(t, &old, allPosts, []string{post1.Id})
-					return &old
-				},
-				ExpectedErr: nil,
-			},
-			{
-				Name:     "Incident with a few updates, add an update postid",
-				Incident: NewBuilder(t).WithUpdateStatusIDs(allPosts, []string{post2.Id, post3.Id, post4.Id}).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
-					old.StatusPostIDs = append(old.StatusPostIDs, post5.Id)
-					addStatusPostsToIncidentFromIDs(t, &old, allPosts, []string{post5.Id})
-					return &old
-				},
-				ExpectedErr: nil,
-			},
 		}
 
 		for _, testCase := range validIncidents {
 			t.Run(testCase.Name, func(t *testing.T) {
 				returned, err := incidentStore.CreateIncident(testCase.Incident)
 				require.NoError(t, err)
-				createIncidentChannel(t, store, testCase.Incident)
+				createIncidentChannel(t, store, returned)
 
 				expected := testCase.Update(*returned)
 
@@ -1225,7 +1080,7 @@ func TestStressTestGetIncidents(t *testing.T) {
 				returned, err := incidentStore.GetIncidents(incident.RequesterInfo{
 					UserID:          "testID",
 					UserIDtoIsAdmin: map[string]bool{"testID": true},
-				}, incident.HeaderFilterOptions{
+				}, incident.FilterOptions{
 					TeamID:  teamID,
 					Page:    p,
 					PerPage: perPage,
@@ -1237,13 +1092,10 @@ func TestStressTestGetIncidents(t *testing.T) {
 				for i := 0; i < numRet; i++ {
 					idx := p*perPage + i
 					assert.ElementsMatch(t, withPosts[idx].StatusPosts, returned.Items[i].StatusPosts)
-					assert.ElementsMatch(t, withPosts[idx].StatusPostIDs, returned.Items[i].StatusPostIDs)
 					expWithoutStatusPosts := withPosts[idx]
 					expWithoutStatusPosts.StatusPosts = nil
-					expWithoutStatusPosts.StatusPostIDs = nil
 					actWithoutStatusPosts := returned.Items[i]
 					actWithoutStatusPosts.StatusPosts = nil
-					actWithoutStatusPosts.StatusPostIDs = nil
 					assert.Equal(t, expWithoutStatusPosts, actWithoutStatusPosts)
 				}
 			}
@@ -1285,7 +1137,7 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 				_, err := incidentStore.GetIncidents(incident.RequesterInfo{
 					UserID:          "testID",
 					UserIDtoIsAdmin: map[string]bool{"testID": true},
-				}, incident.HeaderFilterOptions{
+				}, incident.FilterOptions{
 					TeamID:  teamID,
 					Page:    i,
 					PerPage: perPage,
@@ -1306,26 +1158,22 @@ func createIncidentsAndPosts(t testing.TB, store *SQLStore, incidentStore incide
 	for i := 0; i < numIncidents; i++ {
 		numPosts := maxPostsPerIncident
 		posts := make([]*model.Post, 0, numPosts)
-		postIDs := make([]string, 0, numPosts)
 		for j := 0; j < numPosts; j++ {
 			post := newPost(rand.Intn(2) == 0)
 			posts = append(posts, post)
-			postIDs = append(postIDs, post.Id)
 		}
 		savePosts(t, store, posts)
 
 		inc := NewBuilder(t).
 			WithTeamID(teamID).
-			WithCreateAt(int64(100000+i)).
+			WithCreateAt(int64(100000 + i)).
 			WithName(fmt.Sprintf("incident %d", i)).
 			WithChecklists([]int{1}).
-			WithUpdateStatusIDs(posts, postIDs).
 			ToIncident()
 		ret, err := incidentStore.CreateIncident(inc)
 		require.NoError(t, err)
+		createIncidentChannel(t, store, ret)
 		incidentsSorted = append(incidentsSorted, *ret)
-
-		createIncidentChannel(t, store, inc)
 	}
 
 	return incidentsSorted
@@ -1440,99 +1288,81 @@ func TestGetCommanders(t *testing.T) {
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithChannel(&channel01). // public
-		WithIsActive(true).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(123).
-		WithEndAt(440).
 		WithChecklists([]int{8}).
 		ToIncident()
 
 	inc02 := *NewBuilder(nil).
 		WithName("incident 2 - horse staple battery aliens shotgun mouse shotputmouse").
 		WithChannel(&channel02). // public
-		WithIsActive(true).
 		WithCommanderUserID(commander2.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(199).
-		WithEndAt(555).
 		WithChecklists([]int{7}).
 		ToIncident()
 
 	inc03 := *NewBuilder(nil).
 		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
 		WithChannel(&channel03). // public
-		WithIsActive(false).
 		WithCommanderUserID(commander1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(222).
-		WithEndAt(666).
 		WithChecklists([]int{6}).
 		ToIncident()
 
 	inc04 := *NewBuilder(nil).
 		WithName("incident 4 - titanic terminatoraliens").
 		WithChannel(&channel04). // private
-		WithIsActive(false).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(333).
-		WithEndAt(444).
 		WithChecklists([]int{5}).
 		ToIncident()
 
 	inc05 := *NewBuilder(nil).
 		WithName("incident 5 - titanic terminator aliens mouse").
 		WithChannel(&channel05). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(400).
-		WithEndAt(500).
 		WithChecklists([]int{1}).
 		ToIncident()
 
 	inc06 := *NewBuilder(nil).
 		WithName("incident 6 - ubik high castle electric sheep").
 		WithChannel(&channel06). // public
-		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(444).
-		WithEndAt(550).
 		WithChecklists([]int{4}).
 		ToIncident()
 
 	inc07 := *NewBuilder(nil).
 		WithName("incident 7 - ubik high castle electric sheep").
 		WithChannel(&channel07). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(555).
-		WithEndAt(660).
 		WithChecklists([]int{4}).
 		ToIncident()
 
 	inc08 := *NewBuilder(nil).
 		WithName("incident 8 - ziggürat!").
 		WithChannel(&channel08). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(555).
-		WithEndAt(777).
 		WithChecklists([]int{3}).
 		ToIncident()
 
 	inc09 := *NewBuilder(nil).
 		WithName("incident 9 - Ziggürat!").
 		WithChannel(&channel09). // private
-		WithIsActive(true).
 		WithCommanderUserID(commander4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(556).
-		WithEndAt(778).
 		WithChecklists([]int{2}).
 		ToIncident()
 
@@ -1541,7 +1371,7 @@ func TestGetCommanders(t *testing.T) {
 	cases := []struct {
 		Name          string
 		RequesterInfo incident.RequesterInfo
-		Options       incident.HeaderFilterOptions
+		Options       incident.FilterOptions
 		Expected      []incident.CommanderInfo
 		ExpectedErr   error
 	}{
@@ -1551,7 +1381,7 @@ func TestGetCommanders(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team1id,
 			},
 			Expected:    []incident.CommanderInfo{commander1, commander2, commander3},
@@ -1563,7 +1393,7 @@ func TestGetCommanders(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team2id,
 			},
 			Expected:    []incident.CommanderInfo{commander3},
@@ -1575,7 +1405,7 @@ func TestGetCommanders(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team3id,
 			},
 			Expected:    []incident.CommanderInfo{commander4},
@@ -1586,7 +1416,7 @@ func TestGetCommanders(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: "Alice",
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team1id,
 			},
 			Expected:    []incident.CommanderInfo{commander1, commander2},
@@ -1597,7 +1427,7 @@ func TestGetCommanders(t *testing.T) {
 			RequesterInfo: incident.RequesterInfo{
 				UserID: "Charlotte",
 			},
-			Options: incident.HeaderFilterOptions{
+			Options: incident.FilterOptions{
 				TeamID: team2id,
 			},
 			Expected:    []incident.CommanderInfo{commander3},
@@ -1609,7 +1439,7 @@ func TestGetCommanders(t *testing.T) {
 				UserID:          lucy.ID,
 				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
 			},
-			Options:     incident.HeaderFilterOptions{},
+			Options:     incident.FilterOptions{},
 			Expected:    nil,
 			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
 		},
@@ -1781,17 +1611,14 @@ func NewBuilder(t testing.TB) *IncidentBuilder {
 		t: t,
 		i: &incident.Incident{
 			Name:            "base incident",
-			IsActive:        true,
 			CommanderUserID: model.NewId(),
 			TeamID:          model.NewId(),
 			ChannelID:       model.NewId(),
 			CreateAt:        model.GetMillis(),
-			EndAt:           0,
 			DeleteAt:        0,
 			PostID:          model.NewId(),
 			PlaybookID:      model.NewId(),
 			Checklists:      nil,
-			StatusPostIDs:   nil,
 		},
 	}
 }
@@ -1814,49 +1641,12 @@ func (ib *IncidentBuilder) WithID() *IncidentBuilder {
 	return ib
 }
 
-func (ib *IncidentBuilder) WithUpdateStatusIDs(posts []*model.Post, ids []string) *IncidentBuilder {
-	ib.i.StatusPostIDs = append(ib.i.StatusPostIDs, ids...)
-	addStatusPostsToIncidentFromIDs(ib.t, ib.i, posts, ids)
-	return ib
-}
-
-func addStatusPostsToIncidentFromIDs(t testing.TB, i *incident.Incident, posts []*model.Post, ids []string) {
-	for _, id := range ids {
-		post := makeStatusPostByID(posts, id)
-		if t != nil {
-			require.NotEqual(t, "", post.ID)
-		} else {
-			fmt.Println("*** could not find PostById, only update with posts that are already in the db")
-		}
-		i.StatusPosts = append(i.StatusPosts, post)
-	}
-}
-
-func makeStatusPostByID(posts []*model.Post, id string) incident.StatusPost {
-	for _, p := range posts {
-		if p.Id == id {
-			return incident.StatusPost{
-				ID:       p.Id,
-				CreateAt: p.CreateAt,
-				DeleteAt: p.DeleteAt,
-			}
-		}
-	}
-	return incident.StatusPost{}
-}
-
 func (ib *IncidentBuilder) ToIncident() *incident.Incident {
 	return ib.i
 }
 
 func (ib *IncidentBuilder) WithCreateAt(createAt int64) *IncidentBuilder {
 	ib.i.CreateAt = createAt
-
-	return ib
-}
-
-func (ib *IncidentBuilder) WithEndAt(endAt int64) *IncidentBuilder {
-	ib.i.EndAt = endAt
 
 	return ib
 }
@@ -1897,12 +1687,6 @@ func (ib *IncidentBuilder) WithCommanderUserID(id string) *IncidentBuilder {
 
 func (ib *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
 	ib.i.TeamID = id
-
-	return ib
-}
-
-func (ib *IncidentBuilder) WithIsActive(isActive bool) *IncidentBuilder {
-	ib.i.IsActive = isActive
 
 	return ib
 }

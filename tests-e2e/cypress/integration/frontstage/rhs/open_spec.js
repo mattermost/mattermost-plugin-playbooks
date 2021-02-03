@@ -44,7 +44,7 @@ describe('incident rhs', () => {
             cy.visit('/');
 
             // # Select a channel without an incident.
-            cy.get('#sidebarItem_off-topic').click();
+            cy.get('#sidebarItem_off-topic').click({force: true});
 
             // # Wait until the channel loads enough to show the post textbox.
             cy.get('#post-create').should('exist');
@@ -61,7 +61,7 @@ describe('incident rhs', () => {
             cy.visit('/');
 
             // # Select a channel without an incident.
-            cy.get('#sidebarItem_off-topic').click();
+            cy.get('#sidebarItem_off-topic').click({force: true});
 
             // # Start the incident after loading the application
             const now = Date.now();
@@ -75,10 +75,10 @@ describe('incident rhs', () => {
             });
 
             // # Open the flagged posts RHS
-            cy.get('#channelHeaderFlagButton').click();
+            cy.get('#channelHeaderFlagButton').click({force: true});
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
 
             // # Wait until the channel loads enough to show the post textbox.
             cy.get('#post-create').should('exist');
@@ -125,7 +125,12 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiEndIncident(incident.id);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // # Navigate directly to the application and the incident channel
@@ -145,7 +150,7 @@ describe('incident rhs', () => {
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Select a channel without an incident.
-            cy.get('#sidebarItem_off-topic').click();
+            cy.get('#sidebarItem_off-topic').click({force: true});
 
             // # Start the incident after loading the application
             const now = Date.now();
@@ -159,7 +164,7 @@ describe('incident rhs', () => {
             });
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -175,7 +180,7 @@ describe('incident rhs', () => {
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Select a channel without an incident.
-            cy.get('#sidebarItem_off-topic').click();
+            cy.get('#sidebarItem_off-topic').click({force: true});
 
             // # Start the incident after loading the application
             const now = Date.now();
@@ -188,11 +193,16 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiEndIncident(incident.id);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -219,7 +229,7 @@ describe('incident rhs', () => {
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -240,7 +250,12 @@ describe('incident rhs', () => {
                 commanderUserId: userId,
             }).then((incident) => {
                 // # End the incident
-                cy.apiEndIncident(incident.id);
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Resolved',
+                });
             });
 
             // # Navigate to a channel without an incident.
@@ -250,7 +265,7 @@ describe('incident rhs', () => {
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -286,7 +301,7 @@ describe('incident rhs', () => {
 
             // # Click the incident icon
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click();
+                cy.get('#incidentIcon').should('exist').click({force: true});
             });
 
             // * Verify the incident RHS is open.
@@ -296,7 +311,7 @@ describe('incident rhs', () => {
 
             // # Click the incident icon again
             cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click();
+                cy.get('#incidentIcon').should('exist').click({force: true});
             });
 
             // * Verify the incident RHS is no longer open.

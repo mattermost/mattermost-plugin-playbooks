@@ -7,7 +7,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
-	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
+	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/stretchr/testify/require"
 )

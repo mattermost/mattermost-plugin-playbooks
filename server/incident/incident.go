@@ -7,9 +7,16 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 
 	"github.com/mattermost/mattermost-plugin-api/cluster"
+)
+
+const (
+	StatusReported = "Reported"
+	StatusActive   = "Active"
+	StatusResolved = "Resolved"
+	StatusArchived = "Archived"
 )
 
 // Incident holds the detailed information of an incident.
@@ -18,21 +25,19 @@ import (
 // that column needs to be added in the sqlstore code.
 type Incident struct {
 	ID                      string               `json:"id"`
-	Name                    string               `json:"name"`
+	Name                    string               `json:"name"` // Retrieved from incident channel
 	Description             string               `json:"description"`
-	IsActive                bool                 `json:"is_active"`
 	CommanderUserID         string               `json:"commander_user_id"`
 	TeamID                  string               `json:"team_id"`
 	ChannelID               string               `json:"channel_id"`
-	CreateAt                int64                `json:"create_at"`
+	CreateAt                int64                `json:"create_at"` // Retrieved from incident channel
 	EndAt                   int64                `json:"end_at"`
-	DeleteAt                int64                `json:"delete_at"`
+	DeleteAt                int64                `json:"delete_at"` // Retrieved from incidet channel
 	ActiveStage             int                  `json:"active_stage"`
 	ActiveStageTitle        string               `json:"active_stage_title"`
 	PostID                  string               `json:"post_id"`
 	PlaybookID              string               `json:"playbook_id"`
 	Checklists              []playbook.Checklist `json:"checklists"`
-	StatusPostIDs           []string             `json:"status_post_ids"`
 	StatusPosts             []StatusPost         `json:"status_posts"`
 	ReminderPostID          string               `json:"reminder_post_id"`
 	PreviousReminder        time.Duration        `json:"previous_reminder"`
@@ -47,10 +52,6 @@ func (i *Incident) Clone() *Incident {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newIncident.Checklists = newChecklists
-
-	var newStatusPostsIDs []string
-	newStatusPostsIDs = append(newStatusPostsIDs, i.StatusPostIDs...)
-	newIncident.StatusPostIDs = newStatusPostsIDs
 
 	var newStatusPosts []StatusPost
 	newStatusPosts = append(newStatusPosts, i.StatusPosts...)
@@ -72,9 +73,6 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 			old.Checklists[j].Items = []playbook.ChecklistItem{}
 		}
 	}
-	if old.StatusPostIDs == nil {
-		old.StatusPostIDs = []string{}
-	}
 	if old.StatusPosts == nil {
 		old.StatusPosts = []StatusPost{}
 	}
@@ -82,10 +80,55 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
-// StatusPost is information added to the incident when selecting from the db and sent to the
-// client; it is not saved to the db.
+func (i *Incident) CurrentStatus() string {
+	post := findNewestNonDeletedStatusPost(i.StatusPosts)
+	if post == nil {
+		return StatusReported
+	}
+	if post.Status == "" {
+		// Backwards compatibility with existing incidents
+		if i.EndAt != 0 {
+			return StatusResolved
+		}
+		return StatusActive
+	}
+
+	return post.Status
+}
+
+func (i *Incident) IsActive() bool {
+	currentStatus := i.CurrentStatus()
+	return currentStatus != StatusResolved && currentStatus != StatusArchived
+}
+
+func (i *Incident) ResolvedAt() int64 {
+	// Backwards compatibility for incidents with old status updates
+	if len(i.StatusPosts) > 0 && i.StatusPosts[len(i.StatusPosts)-1].Status == "" {
+		return i.EndAt
+	}
+
+	var resolvedPost *StatusPost
+	for j := len(i.StatusPosts) - 1; j >= 0; j-- {
+		if i.StatusPosts[j].DeleteAt != 0 {
+			continue
+		}
+		if i.StatusPosts[j].Status != StatusResolved && i.StatusPosts[j].Status != StatusArchived {
+			break
+		}
+
+		resolvedPost = &i.StatusPosts[j]
+	}
+
+	if resolvedPost == nil {
+		return 0
+	}
+
+	return resolvedPost.CreateAt
+}
+
 type StatusPost struct {
 	ID       string `json:"id"`
+	Status   string `json:"status"`
 	CreateAt int64  `json:"create_at"`
 	DeleteAt int64  `json:"delete_at"`
 }
@@ -95,6 +138,7 @@ type UpdateOptions struct {
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
 type StatusUpdateOptions struct {
+	Status   string
 	Message  string
 	Reminder time.Duration
 }
@@ -115,6 +159,13 @@ type GetIncidentsResults struct {
 	PageCount  int        `json:"page_count"`
 	HasMore    bool       `json:"has_more"`
 	Items      []Incident `json:"items"`
+}
+
+type SQLStatusPost struct {
+	IncidentID string
+	PostID     string
+	Status     string
+	EndAt      int64
 }
 
 func (r GetIncidentsResults) Clone() GetIncidentsResults {
@@ -182,23 +233,13 @@ var ErrMalformedIncident = errors.New("incident active")
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
-
-	// EndIncident completes the incident with the given ID by the given user.
-	EndIncident(incidentID string, userID string) error
-
-	// RestartIncident restarts the incident with the given ID by the given user.
-	RestartIncident(incidentID, userID string) error
-
-	// OpenEndIncidentDialog opens a interactive dialog so the user can confirm an incident should
-	// be ended.
-	OpenEndIncidentDialog(incidentID, triggerID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
 	OpenUpdateStatusDialog(incidentID, triggerID string) error
@@ -217,7 +258,7 @@ type Service interface {
 	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetCommanders returns all the commanders of incidents selected
-	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
+	GetCommanders(requesterInfo RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
@@ -278,13 +319,16 @@ type Service interface {
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(requesterInfo RequesterInfo, options HeaderFilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
 	UpdateIncident(incdnt *Incident) error
+
+	// UpdateStatus updates the status of an incident.
+	UpdateStatus(statusPost *SQLStatusPost) error
 
 	// GetIncident gets an incident by ID.
 	GetIncident(incidentID string) (*Incident, error)
@@ -298,7 +342,7 @@ type Store interface {
 	GetAllIncidentMembersCount(channelID string) (int64, error)
 
 	// GetCommanders returns the commanders of the incidents selected by options
-	GetCommanders(requesterInfo RequesterInfo, options HeaderFilterOptions) ([]CommanderInfo, error)
+	GetCommanders(requesterInfo RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

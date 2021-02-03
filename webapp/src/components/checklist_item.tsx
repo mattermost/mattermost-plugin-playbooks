@@ -312,6 +312,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                 onCustomReset: resetAssignee,
                             }}
                             controlledOpenToggle={profileSelectorToggle}
+                            showOnRight={true}
                         />
                     </HoverMenu>
                 }
