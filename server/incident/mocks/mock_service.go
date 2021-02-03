@@ -50,21 +50,6 @@ func (mr *MockServiceMockRecorder) AddChecklistItem(arg0, arg1, arg2, arg3 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChecklistItem", reflect.TypeOf((*MockService)(nil).AddChecklistItem), arg0, arg1, arg2, arg3)
 }
 
-// ChangeActiveStage mocks base method
-func (m *MockService) ChangeActiveStage(arg0, arg1 string, arg2 int) (*incident.Incident, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeActiveStage", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*incident.Incident)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ChangeActiveStage indicates an expected call of ChangeActiveStage
-func (mr *MockServiceMockRecorder) ChangeActiveStage(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeActiveStage", reflect.TypeOf((*MockService)(nil).ChangeActiveStage), arg0, arg1, arg2)
-}
-
 // ChangeCommander mocks base method
 func (m *MockService) ChangeCommander(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
@@ -108,20 +93,6 @@ func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1, arg2 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1, arg2)
 }
 
-// EndIncident mocks base method
-func (m *MockService) EndIncident(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EndIncident", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// EndIncident indicates an expected call of EndIncident
-func (mr *MockServiceMockRecorder) EndIncident(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndIncident", reflect.TypeOf((*MockService)(nil).EndIncident), arg0, arg1)
-}
-
 // GetChecklistAutocomplete mocks base method
 func (m *MockService) GetChecklistAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
 	m.ctrl.T.Helper()
@@ -138,7 +109,7 @@ func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockService) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockService) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -198,7 +169,7 @@ func (mr *MockServiceMockRecorder) GetIncidentMetadata(arg0 interface{}) *gomock
 }
 
 // GetIncidents mocks base method
-func (m *MockService) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.HeaderFilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockService) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)
@@ -294,34 +265,6 @@ func (mr *MockServiceMockRecorder) OpenCreateIncidentDialog(arg0, arg1, arg2, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreateIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenCreateIncidentDialog), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
-// OpenEndIncidentDialog mocks base method
-func (m *MockService) OpenEndIncidentDialog(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenEndIncidentDialog", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// OpenEndIncidentDialog indicates an expected call of OpenEndIncidentDialog
-func (mr *MockServiceMockRecorder) OpenEndIncidentDialog(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenEndIncidentDialog", reflect.TypeOf((*MockService)(nil).OpenEndIncidentDialog), arg0, arg1)
-}
-
-// OpenNextStageDialog mocks base method
-func (m *MockService) OpenNextStageDialog(arg0 string, arg1 int, arg2 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenNextStageDialog", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// OpenNextStageDialog indicates an expected call of OpenNextStageDialog
-func (mr *MockServiceMockRecorder) OpenNextStageDialog(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenNextStageDialog", reflect.TypeOf((*MockService)(nil).OpenNextStageDialog), arg0, arg1, arg2)
-}
-
 // OpenUpdateStatusDialog mocks base method
 func (m *MockService) OpenUpdateStatusDialog(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -388,20 +331,6 @@ func (m *MockService) RenameChecklistItem(arg0, arg1 string, arg2, arg3 int, arg
 func (mr *MockServiceMockRecorder) RenameChecklistItem(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklistItem", reflect.TypeOf((*MockService)(nil).RenameChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5)
-}
-
-// RestartIncident mocks base method
-func (m *MockService) RestartIncident(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RestartIncident", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RestartIncident indicates an expected call of RestartIncident
-func (mr *MockServiceMockRecorder) RestartIncident(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestartIncident", reflect.TypeOf((*MockService)(nil).RestartIncident), arg0, arg1)
 }
 
 // RunChecklistItemSlashCommand mocks base method
