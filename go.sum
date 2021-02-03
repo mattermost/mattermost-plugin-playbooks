@@ -424,8 +424,6 @@ github.com/mattermost/logr v1.0.13 h1:6F/fM3csvH6Oy5sUpJuW7YyZSzZZAhJm5VcgKMxA2P
 github.com/mattermost/logr v1.0.13/go.mod h1:Mt4DPu1NXMe6JxPdwCC0XBoxXmN9eXOIRPoZarU2PXs=
 github.com/mattermost/mattermost-plugin-api v0.0.13-0.20201210154933-631fdc447dbe h1:W2xmEgcHWQd5Qwe6xzGOX0yBEbXLG+yVnEjzNUBlINA=
 github.com/mattermost/mattermost-plugin-api v0.0.13-0.20201210154933-631fdc447dbe/go.mod h1:2P5T6ixjcDquVrhVdPZ1ASBWiilsxbdK6yYaqdKN/dI=
-github.com/mattermost/mattermost-plugin-incident-management v1.3.0 h1:yzEmCSTMq9jvL59+EvZhl4lOLXudYSXxi6SBBe0Eqx0=
-github.com/mattermost/mattermost-plugin-incident-management v1.3.0/go.mod h1:0jBlqSxfmcjtO6G+XaeyPbrGDzWRBPJHVdhqSRU9ki8=
 github.com/mattermost/mattermost-server/v5 v5.3.2-0.20200731154015-c5c6a5ce5399 h1:Yz2Oo+ysCfNZ1lLe9MDXsB+jNXivpCEWyWgli0MOeyQ=
 github.com/mattermost/mattermost-server/v5 v5.3.2-0.20200731154015-c5c6a5ce5399/go.mod h1:1udHoNFxLFYZuS9g6/NkJkNQniAcQYVqVEbDPHSumE0=
 github.com/mattermost/mattermost-server/v5 v5.28.0 h1:BU0cfZ3UdSh7DhbdF1XtS0Cj0HMGSJT8B6MsUKgPjks=
