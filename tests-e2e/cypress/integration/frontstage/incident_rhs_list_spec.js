@@ -202,12 +202,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -245,12 +244,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -292,12 +290,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -492,12 +489,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -666,12 +662,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -698,7 +693,7 @@ describe('rhs incident list', () => {
             cy.get('#rhsContainer').should('not.exist');
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -724,12 +719,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -755,7 +749,7 @@ describe('rhs incident list', () => {
             });
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -820,12 +814,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -1159,12 +1152,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // * Verify the incident RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -1277,12 +1269,11 @@ describe('rhs incident list', () => {
             // # start new incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
             cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
-            cy.get(`#sidebarItem_${incidentChannelName}`).click();
+            cy.uiSwitchChannel(incidentName);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -1345,7 +1336,7 @@ describe('rhs incident list', () => {
                     cy.verifyIncidentActive(teamId, incidentName);
 
                     // # Open the incident channel from the LHS.
-                    cy.get(`#sidebarItem_${incidentChannelName}`).click();
+                    cy.uiSwitchChannel(incidentName);
 
                     // # Ensure the channel is loaded before continuing (allows redux to sync).
                     cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
