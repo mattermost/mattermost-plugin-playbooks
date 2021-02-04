@@ -378,8 +378,8 @@ var migrations = []Migration{
 						Summary       VARCHAR(256)  NOT NULL DEFAULT '',
 						Details       VARCHAR(4096) NOT NULL DEFAULT '',
 						PostID        VARCHAR(26)   NOT NULL DEFAULT '',
-                        SubjectUserID VARCHAR(26)   NOT NULL DEFAULT '',
-                        CreatorUserID VARCHAR(26)   NOT NULL DEFAULT '',
+						SubjectUserID VARCHAR(26)   NOT NULL DEFAULT '',
+						CreatorUserID VARCHAR(26)   NOT NULL DEFAULT '',
 						INDEX IR_TimelineEvent_ID (ID),
 						INDEX IR_TimelineEvent_IncidentID (IncidentID)
 					)
