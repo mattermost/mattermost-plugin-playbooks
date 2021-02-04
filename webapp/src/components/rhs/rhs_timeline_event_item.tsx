@@ -18,7 +18,6 @@ const Circle = styled.div`
     background: #EFF1F5;
     border-radius: 50%;
     left: 80px;
-    z-index: 3;
 
     > .icon {
         font-size: 14px;

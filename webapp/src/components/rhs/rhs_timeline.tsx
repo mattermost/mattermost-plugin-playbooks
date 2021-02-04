@@ -4,6 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector, useStore} from 'react-redux';
 import styled from 'styled-components';
+import Scrollbars from 'react-custom-scrollbars';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -16,9 +17,14 @@ import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {Incident} from 'src/types/incident';
 import {TimelineEvent} from 'src/types/rhs';
 import RHSTimelineEventItem from 'src/components/rhs/rhs_timeline_event_item';
+import {
+    renderThumbHorizontal,
+    renderThumbVertical,
+    renderView,
+} from 'src/components/rhs/rhs_shared';
 
 const Timeline = styled.ul`
-    margin: 10px 0 0 0;
+    margin: 10px 0 150px 0;
     padding: 0;
     list-style: none;
     position: relative;
@@ -70,18 +76,28 @@ const RHSTimeline = (props: Props) => {
     }, [props.incident.status_posts, displayPreference]);
 
     return (
-        <Timeline>
-            {
-                events.map((event) => {
-                    return (
-                        <RHSTimelineEventItem
-                            key={event.id}
-                            event={event}
-                        />
-                    );
-                })
-            }
-        </Timeline>
+        <Scrollbars
+            autoHide={true}
+            autoHideTimeout={500}
+            autoHideDuration={500}
+            renderThumbHorizontal={renderThumbHorizontal}
+            renderThumbVertical={renderThumbVertical}
+            renderView={renderView}
+            style={{position: 'absolute'}}
+        >
+            <Timeline>
+                {
+                    events.map((event) => {
+                        return (
+                            <RHSTimelineEventItem
+                                key={event.id}
+                                event={event}
+                            />
+                        );
+                    })
+                }
+            </Timeline>
+        </Scrollbars>
     );
 };
 
