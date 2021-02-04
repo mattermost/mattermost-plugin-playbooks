@@ -110,7 +110,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
 	}
 
-	postID, err := s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username)
+	newPost, err := s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
@@ -120,7 +120,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		CreateAt:      incdnt.CreateAt,
 		EventAt:       incdnt.CreateAt,
 		EventType:     IncidentCreated,
-		PostID:        postID,
+		PostID:        newPost.Id,
 		SubjectUserID: incdnt.CommanderUserID,
 	}
 
@@ -411,19 +411,18 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
 		oldCommander.Username, newCommander.Username)
-	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
+	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
 	}
 
-	eventTime := model.GetMillis()
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
-		CreateAt:      eventTime,
-		EventAt:       eventTime,
+		CreateAt:      post.CreateAt,
+		EventAt:       post.CreateAt,
 		EventType:     CommanderChanged,
 		Summary:       modifyMessage,
-		PostID:        postID,
+		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
 
@@ -460,14 +459,14 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	if newState == playbook.ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
+	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
 	}
 
 	itemToCheck.State = newState
 	itemToCheck.StateModified = model.GetMillis()
-	itemToCheck.StateModifiedPostID = postID
+	itemToCheck.StateModifiedPostID = post.Id
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
@@ -480,7 +479,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		EventAt:       itemToCheck.StateModified,
 		EventType:     TaskStateModified,
 		Summary:       modifyMessage,
-		PostID:        postID,
+		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
 
@@ -554,14 +553,14 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
-	postID, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
+	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
 	}
 
 	itemToCheck.AssigneeID = assigneeID
 	itemToCheck.AssigneeModified = model.GetMillis()
-	itemToCheck.AssigneeModifiedPostID = postID
+	itemToCheck.AssigneeModifiedPostID = post.Id
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
@@ -574,7 +573,7 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		EventAt:       itemToCheck.AssigneeModified,
 		EventType:     AssigneeChanged,
 		Summary:       modifyMessage,
-		PostID:        postID,
+		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
 
@@ -780,18 +779,18 @@ func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklist
 	return incidentToModify, nil
 }
 
-func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (string, error) {
+func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (*model.Post, error) {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to to resolve user %s", userID)
+		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	postID, err := s.poster.PostMessage(channelID, user.Username+" "+message)
+	post, err := s.poster.PostMessage(channelID, user.Username+" "+message)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to post modification messsage")
+		return nil, errors.Wrapf(err, "failed to post modification messsage")
 	}
 
-	return postID, nil
+	return post, nil
 }
 
 func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, checklistNumber, itemNumber int) (*Incident, error) {
