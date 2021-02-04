@@ -124,6 +124,9 @@ func findManifest() (*model.Manifest, error) {
 	}
 	manifest.Version = version
 
+	// Update the release notes url to point at the latest tag.
+	manifest.ReleaseNotesURL = manifest.HomepageURL + "releases/tag/" + BuildTagLatest
+
 	return &manifest, nil
 }
 
