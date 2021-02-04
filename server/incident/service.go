@@ -102,7 +102,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to create incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incdnt, incdnt.ChannelID)
 	s.telemetry.CreateIncident(incdnt, userID, public)
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
@@ -127,6 +126,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return incdnt, errors.Wrap(err, "failed to create timeline event")
 	}
+	incdnt.TimelineEvents = append(incdnt.TimelineEvents, *event)
 
 	if incdnt.PostID == "" {
 		return incdnt, nil
@@ -286,10 +286,6 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
 
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-
-	s.telemetry.UpdateStatus(incidentToModify, userID)
-
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(incidentID)
 
@@ -315,6 +311,12 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	s.telemetry.UpdateStatus(incidentToModify, userID)
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
 	}
 
 	return nil
@@ -406,9 +408,6 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.ChangeCommander(incidentToModify, userID)
-
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
 		oldCommander.Username, newCommander.Username)
@@ -429,6 +428,12 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	s.telemetry.ChangeCommander(incidentToModify, userID)
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
 	}
 
 	return nil
@@ -488,7 +493,9 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -583,7 +590,10 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	}
 
 	s.telemetry.SetAssignee(incidentID, userID)
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -642,8 +652,11 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		return "", errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incident, incident.ChannelID)
 	s.telemetry.RunTaskSlashCommand(incidentID, userID)
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return "", err
+	}
 
 	return cmdResponse.TriggerId, nil
 }
@@ -1058,6 +1071,17 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID, statu
 		SubmitLabel:    "Update Status",
 		NotifyOnCancel: false,
 	}, nil
+}
+
+func (s *ServiceImpl) sendIncidentToClient(incidentID string) error {
+	incidentToSend, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToSend, incidentToSend.ChannelID)
+
+	return nil
 }
 
 func getUserDisplayName(user *model.User) string {

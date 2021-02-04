@@ -6,9 +6,6 @@ import {useDispatch, useSelector, useStore} from 'react-redux';
 import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {Post} from 'mattermost-redux/types/posts';
-import {getPost} from 'mattermost-redux/selectors/entities/posts';
-import {getPost as getPostAction} from 'mattermost-redux/actions/posts';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -17,7 +14,7 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 
 import {Incident} from 'src/types/incident';
-import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
+import {TimelineEvent} from 'src/types/rhs';
 import RHSTimelineEventItem from 'src/components/rhs/rhs_timeline_event_item';
 
 const Timeline = styled.ul`
@@ -37,7 +34,6 @@ const Timeline = styled.ul`
     }
 `;
 
-type IdToPostFn = (postId: string) => Post;
 type IdToUserFn = (userId: string) => UserProfile;
 
 interface Props {
@@ -64,7 +60,10 @@ const RHSTimeline = (props: Props) => {
                 }
                 user = ret.data;
             }
-            return {...e, subject_display_name: displayUsername(user, displayPreference)} as TimelineEvent;
+            return {
+                ...e,
+                subject_display_name: displayUsername(user, displayPreference),
+            } as TimelineEvent;
         })).then((eventArray) => {
             setEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
