@@ -97,15 +97,37 @@ const RHSTimelineEventItem = (props: Props) => {
     let summaryTitle = '';
     let summaryDetail: JSX.Element | null = null;
 
-    switch (props.event.type) {
+    switch (props.event.event_type) {
     case TimelineEventType.IncidentCreated:
         iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = 'Incident Created';
+        summaryTitle = 'Incident Reported';
+        summaryDetail = <SummaryDetail>{'Incident reported by ' + props.event.subject_display_name}</SummaryDetail>;
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
         summaryTitle = 'Incident Status Update';
-        summaryDetail = <SummaryDetail>{props.event.display_name + ' updated incident to ' + props.event.status}</SummaryDetail>;
+        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' updated incident to ' + props.event.details}</SummaryDetail>;
+        break;
+    case TimelineEventType.TaskStateModified:
+        iconClass = 'icon icon-format-list-bulleted';
+        summaryTitle = 'Task Modified';
+        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        break;
+    case TimelineEventType.CommanderChanged:
+        iconClass = 'icon icon-pencil-outline';
+        summaryTitle = 'Commander Changed';
+        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        break;
+    case TimelineEventType.AssigneeChanged:
+        iconClass = 'icon icon-pencil-outline';
+        summaryTitle = 'Assignee Changed';
+        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        break;
+    case TimelineEventType.RanSlashCommand:
+        iconClass = 'icon icon-pencil-outline';
+        summaryTitle = 'Slash Command Executed';
+        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        break;
     }
 
     return (

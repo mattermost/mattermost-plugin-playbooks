@@ -308,6 +308,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		CreateAt:      post.CreateAt,
 		EventAt:       post.CreateAt,
 		EventType:     StatusUpdated,
+		Details:       options.Status,
 		PostID:        post.Id,
 		SubjectUserID: userID,
 	}

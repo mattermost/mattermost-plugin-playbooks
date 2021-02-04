@@ -48,44 +48,23 @@ const RHSTimeline = (props: Props) => {
     const dispatch = useDispatch();
     const displayPreference = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || 'username';
     const getStateFn = useStore().getState;
-    const getPostFn = (postId: string) => getPostAction(postId)(dispatch as DispatchFunc, getStateFn);
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
-
-    const selectPost = useSelector<GlobalState, IdToPostFn>((state) => (postId: string) => getPost(state, postId));
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
-
     const [events, setEvents] = useState<TimelineEvent[]>([]);
 
     useEffect(() => {
-        Promise.all(props.incident.status_posts.map(async (p) => {
-            let post = selectPost(p.id) as Post | undefined;
-
-            if (!post) {
-                const ret = await getPostFn(p.id);
-                if (!ret.data) {
-                    return null;
-                }
-                post = ret.data;
-            }
-
-            let user = selectUser(post.user_id) as UserProfile | undefined;
+        Promise.all(props.incident.timeline_events.map(async (e) => {
+            let user = selectUser(e.subject_user_id) as UserProfile | undefined;
 
             if (!user) {
-                const ret = await getUserFn(post.user_id) as { data?: UserProfile, error?: any };
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const ret = await getUserFn(e.subject_user_id) as { data?: UserProfile, error?: any };
                 if (!ret.data) {
                     return null;
                 }
                 user = ret.data;
             }
-
-            const displayName = displayUsername(user, displayPreference);
-            return {
-                type: TimelineEventType.StatusUpdated,
-                create_at: p.create_at,
-                post_id: p.id,
-                display_name: displayName,
-                status: p.status || 'unset',
-            } as TimelineEvent;
+            return {...e, subject_display_name: displayUsername(user, displayPreference)} as TimelineEvent;
         })).then((eventArray) => {
             setEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
@@ -93,17 +72,11 @@ const RHSTimeline = (props: Props) => {
 
     return (
         <Timeline>
-            <RHSTimelineEventItem
-                event={{
-                    type: TimelineEventType.IncidentCreated,
-                    create_at: props.incident.create_at,
-                }}
-            />
             {
                 events.map((event) => {
                     return (
                         <RHSTimelineEventItem
-                            key={event.post_id}
+                            key={event.id}
                             event={event}
                         />
                     );
