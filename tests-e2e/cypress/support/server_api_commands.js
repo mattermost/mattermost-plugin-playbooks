@@ -111,46 +111,6 @@ Cypress.Commands.add('apiRemoveUserFromTeam', (teamId, userId) => {
 });
 
 // *****************************************************************************
-// Users
-// https://api.mattermost.com/#tag/users
-// *****************************************************************************
-
-function generateRandomUser(prefix = 'user') {
-    const randomId = getRandomId();
-
-    return {
-        email: `${prefix}${randomId}@sample.mattermost.com`,
-        username: `${prefix}${randomId}`,
-        password: 'passwd',
-        first_name: `First${randomId}`,
-        last_name: `Last${randomId}`,
-        nickname: `Nickname${randomId}`,
-    };
-}
-
-Cypress.Commands.add('apiCreateUser', ({
-    prefix = 'user',
-    user = null,
-} = {}) => {
-    const newUser = user || generateRandomUser(prefix);
-
-    const createUserOption = {
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        method: 'POST',
-        url: '/api/v4/users',
-        body: newUser,
-    };
-
-    return cy.request(createUserOption).then((userRes) => {
-        expect(userRes.status).to.equal(201);
-
-        const createdUser = userRes.body;
-
-        return cy.wrap({user: {...createdUser, password: newUser.password}});
-    });
-});
-
-// *****************************************************************************
 // Channels
 // https://api.mattermost.com/#tag/channels
 // *****************************************************************************
