@@ -21,5 +21,3 @@ On startup, the plugin checks for a valid Mattermost Enterprise Edition E20 lice
 This plugin contains both a server and web app portion. Read our documentation about the [Developer Workflow](https://developers.mattermost.com/extend/plugins/developer-workflow/) and [Developer Setup](https://developers.mattermost.com/extend/plugins/developer-setup/) for more information about developing and extending plugins.
 
 For more information about contributing to Mattermost, and the different ways you can contribute, see https://www.mattermost.org/contribute-to-mattermost.
-
-Please visit the [Mattermost Incident Collaboration developer docs](https://mattermost.gitbook.io/mattermost-incident-collaboration/development/contributing) to learn more about contributing.
