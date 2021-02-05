@@ -109,13 +109,11 @@ const RHSTimelineEventItem = (props: Props) => {
     switch (props.event.event_type) {
     case TimelineEventType.IncidentCreated:
         iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = 'Incident Reported';
-        summary = 'Incident reported by ' + props.event.subject_display_name;
+        summaryTitle = 'Incident Reported by ' + props.event.subject_display_name;
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
-        summaryTitle = 'Incident Status Update';
-        summary = props.event.subject_display_name + ' updated incident to ' + props.event.details;
+        summaryTitle = props.event.subject_display_name + ' changed status to ' + props.event.details;
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
