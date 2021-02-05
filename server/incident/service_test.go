@@ -145,6 +145,44 @@ func TestCreateIncident(t *testing.T) {
 		_, err := s.CreateIncident(incdnt, "user_id", true)
 		require.EqualError(t, err, "failed to create incident channel: : , ")
 	})
+
+	t.Run("channel admin fails promotion fails", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			Name:            "###",
+			TeamID:          teamID,
+			CommanderUserID: "user_id",
+		}
+
+		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
+		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id"}, nil)
+		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, &model.AppError{Id: "api.channel.update_channel_member_roles.scheme_role.app_error"})
+		pluginAPI.On("LogWarn", "failed to promote commander to admin", "ChannelID", "channel_id", "CommanderUserID", "user_id", "err", ": , ")
+		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username")
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		_, err := s.CreateIncident(incdnt, "user_id", true)
+		require.NoError(t, err)
+	})
 }
 
 func TestOpenCreateIncidentDialog(t *testing.T) {
