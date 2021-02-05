@@ -111,7 +111,7 @@ const RHSTimeline = (props: Props) => {
             renderView={renderView}
             style={{position: 'absolute'}}
         >
-            <Timeline>
+            <Timeline data-testid='timeline-view'>
                 {
                     events.map((event) => {
                         return (

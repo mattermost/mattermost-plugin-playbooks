@@ -107,6 +107,7 @@ const RHSTimelineEventItem = (props: Props) => {
     let iconClass = '';
     let summaryTitle = '';
     let summary = '';
+    let testid = '';
     const diff = duration(moment(props.event.event_at).diff(moment(props.reportedAt)));
     let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + renderDuration(diff)}</TimeDay>;
 
@@ -115,6 +116,7 @@ const RHSTimelineEventItem = (props: Props) => {
         iconClass = 'icon icon-shield-alert-outline';
         summaryTitle = 'Incident Reported by ' + props.event.subject_display_name;
         timeSince = null;
+        testid = TimelineEventType.IncidentCreated;
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
@@ -123,30 +125,35 @@ const RHSTimelineEventItem = (props: Props) => {
         } else {
             summaryTitle = props.event.subject_display_name + ' changed status from ' + props.event.summary;
         }
+        testid = TimelineEventType.StatusUpdated;
         break;
     case TimelineEventType.CommanderChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Commander changed from ' + props.event.summary;
+        testid = TimelineEventType.CommanderChanged;
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
         summaryTitle = 'Task Modified';
         summary = props.event.subject_display_name + ' ' + props.event.summary;
+        testid = TimelineEventType.TaskStateModified;
         break;
     case TimelineEventType.AssigneeChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Assignee Changed';
         summary = props.event.subject_display_name + ' ' + props.event.summary;
+        testid = TimelineEventType.AssigneeChanged;
         break;
     case TimelineEventType.RanSlashCommand:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Slash Command Executed';
         summary = props.event.subject_display_name + ' ' + props.event.summary;
+        testid = TimelineEventType.RanSlashCommand;
         break;
     }
 
     return (
-        <TimelineItem>
+        <TimelineItem data-testid={testid}>
             <TimeContainer>
                 <TimeHours>{moment(props.event.event_at).format('MMM DD HH:mm')}</TimeHours>
                 {timeSince}

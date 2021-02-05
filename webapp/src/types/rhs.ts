@@ -14,10 +14,10 @@ export enum RHSTabState {
 
 export enum TimelineEventType {
     IncidentCreated = 'incident_created',
-    TaskStateModified = 'task_state_modified',
     StatusUpdated = 'status_updated',
     CommanderChanged = 'commander_changed',
     AssigneeChanged = 'assignee_changed',
+    TaskStateModified = 'task_state_modified',
     RanSlashCommand = 'ran_slash_command',
 }
 
