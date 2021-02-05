@@ -784,7 +784,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 	}
 
 	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.CommanderUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
-		return nil, errors.Wrapf(err, "failed to promote incident commander to channel_admin role")
+		s.pluginAPI.Log.Warn("failed to promote commander to admin", "ChannelID", channel.Id, "CommanderUserID", incdnt.CommanderUserID, "err", err.Error())
 	}
 
 	return channel, nil
