@@ -250,6 +250,8 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
+	previousStatus := incidentToModify.CurrentStatus()
+
 	post := model.Post{
 		Message:   options.Message,
 		UserId:    userID,
@@ -299,12 +301,16 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to remove reminder post")
 	}
 
+	summary := ""
+	if previousStatus != options.Status {
+		summary = fmt.Sprintf("%s to %s", previousStatus, options.Status)
+	}
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
 		CreateAt:      post.CreateAt,
 		EventAt:       post.CreateAt,
 		EventType:     StatusUpdated,
-		Details:       options.Status,
+		Summary:       summary,
 		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
@@ -421,7 +427,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		CreateAt:      post.CreateAt,
 		EventAt:       post.CreateAt,
 		EventType:     CommanderChanged,
-		Summary:       modifyMessage,
+		Summary:       fmt.Sprintf("@%s to @%s", oldCommander.Username, newCommander.Username),
 		PostID:        post.Id,
 		SubjectUserID: userID,
 	}

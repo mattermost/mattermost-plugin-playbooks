@@ -62,14 +62,15 @@ const RHSTimeline = (props: Props) => {
     const [events, setEvents] = useState<TimelineEvent[]>([]);
     const [reportedAt, setReportedAt] = useState(moment());
 
-    function ignoredEvent(e: TimelineEvent) {
+    const ignoredEvent = (e: TimelineEvent) => {
         switch (e.event_type) {
         case TimelineEventType.AssigneeChanged:
         case TimelineEventType.TaskStateModified:
+        case TimelineEventType.RanSlashCommand:
             return true;
         }
         return false;
-    }
+    };
 
     useEffect(() => {
         Promise.all(props.incident.timeline_events.map(async (e) => {

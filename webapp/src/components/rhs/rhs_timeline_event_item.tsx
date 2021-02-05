@@ -12,6 +12,7 @@ import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {messageHtmlToComponent, formatText} from 'src/components/shared';
+import {renderDuration} from 'src/components/duration';
 
 const Circle = styled.div`
     position: absolute;
@@ -105,37 +106,42 @@ const RHSTimelineEventItem = (props: Props) => {
 
     let iconClass = '';
     let summaryTitle = '';
+    let summary = '';
     const diff = duration(moment(props.event.event_at).diff(moment(props.reportedAt)));
-    let timeSince: JSX.Element | null = <TimeDay>{'+' + diff.humanize()}</TimeDay>;
-    let summary = props.event.subject_display_name + ' ' + props.event.summary;
+    let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + renderDuration(diff)}</TimeDay>;
 
     switch (props.event.event_type) {
     case TimelineEventType.IncidentCreated:
         iconClass = 'icon icon-shield-alert-outline';
         summaryTitle = 'Incident Reported by ' + props.event.subject_display_name;
         timeSince = null;
-        summary = '';
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
-        summaryTitle = props.event.subject_display_name + ' changed status to ' + props.event.details;
-        summary = '';
+        if (props.event.summary === '') {
+            summaryTitle = props.event.subject_display_name + ' posted a status update';
+        } else {
+            summaryTitle = props.event.subject_display_name + ' changed status from ' + props.event.summary;
+        }
+        break;
+    case TimelineEventType.CommanderChanged:
+        iconClass = 'icon icon-pencil-outline';
+        summaryTitle = 'Commander changed from ' + props.event.summary;
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
         summaryTitle = 'Task Modified';
-        break;
-    case TimelineEventType.CommanderChanged:
-        iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Commander Changed';
+        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.AssigneeChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Assignee Changed';
+        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.RanSlashCommand:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Slash Command Executed';
+        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     }
 
