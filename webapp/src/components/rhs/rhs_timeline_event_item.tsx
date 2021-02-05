@@ -4,7 +4,7 @@
 import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
-import moment from 'moment';
+import moment, {duration, Moment} from 'moment';
 import {Team} from 'mattermost-redux/types/teams';
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
@@ -20,11 +20,11 @@ const Circle = styled.div`
     color: var(--button-bg);
     background: #EFF1F5;
     border-radius: 50%;
-    left: 80px;
+    left: 86px;
 
     > .icon {
         font-size: 14px;
-        margin: 5px 0 0 3px;
+        margin: 5px 0 0 2px;
     }
 `;
 
@@ -35,7 +35,7 @@ const TimelineItem = styled.li`
 
 const TimeContainer = styled.div`
     position: absolute;
-    width: 60px;
+    width: 75px;
     line-height: 16px;
     text-align: right;
     left: 4px;
@@ -76,6 +76,7 @@ const SummaryDetail = styled.div`
 
 interface Props {
     event: TimelineEvent;
+    reportedAt: Moment;
     channelNames: ChannelNamesMap;
     team: Team;
 }
@@ -104,44 +105,45 @@ const RHSTimelineEventItem = (props: Props) => {
 
     let iconClass = '';
     let summaryTitle = '';
-    let summary = '';
+    const diff = duration(moment(props.event.event_at).diff(moment(props.reportedAt)));
+    let timeSince: JSX.Element | null = <TimeDay>{'+' + diff.humanize()}</TimeDay>;
+    let summary = props.event.subject_display_name + ' ' + props.event.summary;
 
     switch (props.event.event_type) {
     case TimelineEventType.IncidentCreated:
         iconClass = 'icon icon-shield-alert-outline';
         summaryTitle = 'Incident Reported by ' + props.event.subject_display_name;
+        timeSince = null;
+        summary = '';
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
         summaryTitle = props.event.subject_display_name + ' changed status to ' + props.event.details;
+        summary = '';
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
         summaryTitle = 'Task Modified';
-        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.CommanderChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Commander Changed';
-        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.AssigneeChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Assignee Changed';
-        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.RanSlashCommand:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Slash Command Executed';
-        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     }
 
     return (
         <TimelineItem>
             <TimeContainer>
-                <TimeHours>{moment(props.event.create_at).format('HH:mm:ss')}</TimeHours>
-                <TimeDay>{moment(props.event.create_at).format('MMM DD')}</TimeDay>
+                <TimeHours>{moment(props.event.event_at).format('MMM DD HH:mm')}</TimeHours>
+                {timeSince}
             </TimeContainer>
             <Circle>
                 <i className={iconClass}/>

@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector, useStore} from 'react-redux';
 import styled from 'styled-components';
 import Scrollbars from 'react-custom-scrollbars';
+import moment, {Moment} from 'moment';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -38,7 +39,7 @@ const Timeline = styled.ul`
         position: absolute;
         top: 5px;
         bottom: -10px;
-        left: 92px;
+        left: 97px;
         width: 1px;
         background: #EFF1F5;
     }
@@ -59,6 +60,7 @@ const RHSTimeline = (props: Props) => {
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
     const [events, setEvents] = useState<TimelineEvent[]>([]);
+    const [reportedAt, setReportedAt] = useState(moment());
 
     function ignoredEvent(e: TimelineEvent) {
         switch (e.event_type) {
@@ -71,6 +73,10 @@ const RHSTimeline = (props: Props) => {
 
     useEffect(() => {
         Promise.all(props.incident.timeline_events.map(async (e) => {
+            if (e.event_type === TimelineEventType.IncidentCreated) {
+                setReportedAt(moment(e.event_at));
+            }
+
             if (ignoredEvent(e)) {
                 return null;
             }
@@ -111,6 +117,7 @@ const RHSTimeline = (props: Props) => {
                             <RHSTimelineEventItem
                                 key={event.id}
                                 event={event}
+                                reportedAt={reportedAt}
                                 channelNames={channelNamesMap}
                                 team={team}
                             />
