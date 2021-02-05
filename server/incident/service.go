@@ -756,6 +756,10 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		Header:      channelHeader,
 	}
 
+	if channel.Name == "" {
+		channel.Name = model.NewId()
+	}
+
 	// Prefer the channel name the user chose. But if it already exists, add some random bits
 	// and try exactly once more.
 	err := s.pluginAPI.Channel.Create(channel)
