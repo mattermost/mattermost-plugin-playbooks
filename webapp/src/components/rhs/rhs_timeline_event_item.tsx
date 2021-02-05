@@ -5,10 +5,13 @@ import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import moment from 'moment';
+import {Team} from 'mattermost-redux/types/teams';
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
+import {ChannelNamesMap} from 'src/types/backstage';
+import {messageHtmlToComponent, formatText} from 'src/components/shared';
 
 const Circle = styled.div`
     position: absolute;
@@ -28,10 +31,6 @@ const Circle = styled.div`
 const TimelineItem = styled.li`
     position: relative;
     margin: 20px 0 0 0;
-
-    :hover {
-        cursor: pointer;
-    }
 `;
 
 const TimeContainer = styled.div`
@@ -63,6 +62,10 @@ const SummaryContainer = styled.div`
 const SummaryTitle = styled.div`
     font-size: 12px;
     font-weight: 600;
+
+    :hover {
+        cursor: pointer;
+    }
 `;
 
 const SummaryDetail = styled.div`
@@ -73,10 +76,17 @@ const SummaryDetail = styled.div`
 
 interface Props {
     event: TimelineEvent;
+    channelNames: ChannelNamesMap;
+    team: Team;
 }
 
 const RHSTimelineEventItem = (props: Props) => {
     const dispatch = useDispatch();
+    const markdownOptions = {
+        atMentions: true,
+        team: props.team,
+        channelNamesMap: props.channelNames,
+    };
 
     const goToPost = (e: React.MouseEvent<Element, MouseEvent>, postId?: string) => {
         e.preventDefault();
@@ -94,43 +104,43 @@ const RHSTimelineEventItem = (props: Props) => {
 
     let iconClass = '';
     let summaryTitle = '';
-    let summaryDetail: JSX.Element | null = null;
+    let summary = '';
 
     switch (props.event.event_type) {
     case TimelineEventType.IncidentCreated:
         iconClass = 'icon icon-shield-alert-outline';
         summaryTitle = 'Incident Reported';
-        summaryDetail = <SummaryDetail>{'Incident reported by ' + props.event.subject_display_name}</SummaryDetail>;
+        summary = 'Incident reported by ' + props.event.subject_display_name;
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
         summaryTitle = 'Incident Status Update';
-        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' updated incident to ' + props.event.details}</SummaryDetail>;
+        summary = props.event.subject_display_name + ' updated incident to ' + props.event.details;
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
         summaryTitle = 'Task Modified';
-        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.CommanderChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Commander Changed';
-        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.AssigneeChanged:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Assignee Changed';
-        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     case TimelineEventType.RanSlashCommand:
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Slash Command Executed';
-        summaryDetail = <SummaryDetail>{props.event.subject_display_name + ' ' + props.event.summary}</SummaryDetail>;
+        summary = props.event.subject_display_name + ' ' + props.event.summary;
         break;
     }
 
     return (
-        <TimelineItem onClick={(e) => goToPost(e, props.event.post_id)}>
+        <TimelineItem>
             <TimeContainer>
                 <TimeHours>{moment(props.event.create_at).format('HH:mm:ss')}</TimeHours>
                 <TimeDay>{moment(props.event.create_at).format('MMM DD')}</TimeDay>
@@ -139,8 +149,10 @@ const RHSTimelineEventItem = (props: Props) => {
                 <i className={iconClass}/>
             </Circle>
             <SummaryContainer>
-                <SummaryTitle>{summaryTitle}</SummaryTitle>
-                {summaryDetail}
+                <SummaryTitle onClick={(e) => goToPost(e, props.event.post_id)}>
+                    {summaryTitle}
+                </SummaryTitle>
+                <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
         </TimelineItem>
     );

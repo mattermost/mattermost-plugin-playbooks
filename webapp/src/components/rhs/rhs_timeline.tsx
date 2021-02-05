@@ -13,15 +13,19 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
+import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {Team} from 'mattermost-redux/types/teams';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Incident} from 'src/types/incident';
-import {TimelineEvent} from 'src/types/rhs';
+import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import RHSTimelineEventItem from 'src/components/rhs/rhs_timeline_event_item';
 import {
     renderThumbHorizontal,
     renderThumbVertical,
     renderView,
 } from 'src/components/rhs/rhs_shared';
+import {ChannelNamesMap} from 'src/types/backstage';
 
 const Timeline = styled.ul`
     margin: 10px 0 150px 0;
@@ -48,14 +52,29 @@ interface Props {
 
 const RHSTimeline = (props: Props) => {
     const dispatch = useDispatch();
+    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const displayPreference = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || 'username';
     const getStateFn = useStore().getState;
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
     const [events, setEvents] = useState<TimelineEvent[]>([]);
 
+    function ignoredEvent(e: TimelineEvent) {
+        switch (e.event_type) {
+        case TimelineEventType.AssigneeChanged:
+        case TimelineEventType.TaskStateModified:
+            return true;
+        }
+        return false;
+    }
+
     useEffect(() => {
         Promise.all(props.incident.timeline_events.map(async (e) => {
+            if (ignoredEvent(e)) {
+                return null;
+            }
+
             let user = selectUser(e.subject_user_id) as UserProfile | undefined;
 
             if (!user) {
@@ -92,6 +111,8 @@ const RHSTimeline = (props: Props) => {
                             <RHSTimelineEventItem
                                 key={event.id}
                                 event={event}
+                                channelNames={channelNamesMap}
+                                team={team}
                             />
                         );
                     })
