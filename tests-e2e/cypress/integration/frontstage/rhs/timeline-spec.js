@@ -84,6 +84,9 @@ describe('timeline', () => {
             cy.findByTestId('timeline-view').within(() => {
                 // * Verify incident created message is visible in the timeline
                 cy.findAllByTestId('incident_created').should('have.length', 1);
+                cy.findByTestId('incident_created')
+                    .contains('Incident Reported by user-1')
+                    .should('be.visible');
             });
 
             // # Post an update that doesn't change the incident status
@@ -92,6 +95,9 @@ describe('timeline', () => {
             // * Verify we can see the update in the timeline
             cy.findByTestId('timeline-view').within(() => {
                 cy.findAllByTestId('status_updated').should('have.length', 1);
+                cy.findByTestId('status_updated')
+                    .contains('user-1 posted a status update')
+                    .should('be.visible');
             });
 
             // # Change commander
@@ -100,6 +106,9 @@ describe('timeline', () => {
             // * Verify we can see the change commander in the timeline
             cy.findByTestId('timeline-view').within(() => {
                 cy.findAllByTestId('commander_changed').should('have.length', 1);
+                cy.findByTestId('commander_changed')
+                    .contains('Commander changed from @user-1 to @aaron.peterson')
+                    .should('be.visible');
             });
 
             // # Post an update that changes the incident status
@@ -108,6 +117,9 @@ describe('timeline', () => {
             // * Verify we can see the update in the timeline
             cy.findByTestId('timeline-view').within(() => {
                 cy.findAllByTestId('status_updated').should('have.length', 2);
+                cy.findAllByTestId('status_updated').eq(1)
+                    .contains('Reported to Active')
+                    .should('be.visible');
             });
 
             // # Change commander
@@ -116,6 +128,9 @@ describe('timeline', () => {
             // * Verify we can see the change commander in the timeline
             cy.findByTestId('timeline-view').within(() => {
                 cy.findAllByTestId('commander_changed').should('have.length', 2);
+                cy.findAllByTestId('commander_changed').eq(1)
+                    .contains('changed from @aaron.peterson to @user-1')
+                    .should('be.visible');
             });
         });
     });
