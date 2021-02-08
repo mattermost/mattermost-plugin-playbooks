@@ -4,24 +4,32 @@
 import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector, useStore} from 'react-redux';
 import styled from 'styled-components';
+import Scrollbars from 'react-custom-scrollbars';
+import moment, {Moment} from 'moment';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {Post} from 'mattermost-redux/types/posts';
-import {getPost} from 'mattermost-redux/selectors/entities/posts';
-import {getPost as getPostAction} from 'mattermost-redux/actions/posts';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
+import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {Team} from 'mattermost-redux/types/teams';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {Incident} from 'src/types/incident';
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import RHSTimelineEventItem from 'src/components/rhs/rhs_timeline_event_item';
+import {
+    renderThumbHorizontal,
+    renderThumbVertical,
+    renderView,
+} from 'src/components/rhs/rhs_shared';
+import {ChannelNamesMap} from 'src/types/backstage';
 
 const Timeline = styled.ul`
-    margin: 10px 0 0 0;
+    margin: 10px 0 150px 0;
     padding: 0;
     list-style: none;
     position: relative;
@@ -31,13 +39,12 @@ const Timeline = styled.ul`
         position: absolute;
         top: 5px;
         bottom: -10px;
-        left: 92px;
+        left: 97px;
         width: 1px;
         background: #EFF1F5;
     }
 `;
 
-type IdToPostFn = (postId: string) => Post;
 type IdToUserFn = (userId: string) => UserProfile;
 
 interface Props {
@@ -46,45 +53,48 @@ interface Props {
 
 const RHSTimeline = (props: Props) => {
     const dispatch = useDispatch();
+    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const displayPreference = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || 'username';
     const getStateFn = useStore().getState;
-    const getPostFn = (postId: string) => getPostAction(postId)(dispatch as DispatchFunc, getStateFn);
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
-
-    const selectPost = useSelector<GlobalState, IdToPostFn>((state) => (postId: string) => getPost(state, postId));
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
-
     const [events, setEvents] = useState<TimelineEvent[]>([]);
+    const [reportedAt, setReportedAt] = useState(moment());
+
+    const ignoredEvent = (e: TimelineEvent) => {
+        switch (e.event_type) {
+        case TimelineEventType.AssigneeChanged:
+        case TimelineEventType.TaskStateModified:
+        case TimelineEventType.RanSlashCommand:
+            return true;
+        }
+        return false;
+    };
 
     useEffect(() => {
-        Promise.all(props.incident.status_posts.map(async (p) => {
-            let post = selectPost(p.id) as Post | undefined;
-
-            if (!post) {
-                const ret = await getPostFn(p.id);
-                if (!ret.data) {
-                    return null;
-                }
-                post = ret.data;
+        Promise.all(props.incident.timeline_events.map(async (e) => {
+            if (e.event_type === TimelineEventType.IncidentCreated) {
+                setReportedAt(moment(e.event_at));
             }
 
-            let user = selectUser(post.user_id) as UserProfile | undefined;
+            if (ignoredEvent(e)) {
+                return null;
+            }
+
+            let user = selectUser(e.subject_user_id) as UserProfile | undefined;
 
             if (!user) {
-                const ret = await getUserFn(post.user_id) as { data?: UserProfile, error?: any };
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const ret = await getUserFn(e.subject_user_id) as { data?: UserProfile, error?: any };
                 if (!ret.data) {
                     return null;
                 }
                 user = ret.data;
             }
-
-            const displayName = displayUsername(user, displayPreference);
             return {
-                type: TimelineEventType.StatusUpdated,
-                create_at: p.create_at,
-                post_id: p.id,
-                display_name: displayName,
-                status: p.status || 'unset',
+                ...e,
+                subject_display_name: displayUsername(user, displayPreference),
             } as TimelineEvent;
         })).then((eventArray) => {
             setEvents(eventArray.filter((e) => e) as TimelineEvent[]);
@@ -92,24 +102,29 @@ const RHSTimeline = (props: Props) => {
     }, [props.incident.status_posts, displayPreference]);
 
     return (
-        <Timeline>
-            <RHSTimelineEventItem
-                event={{
-                    type: TimelineEventType.IncidentCreated,
-                    create_at: props.incident.create_at,
-                }}
-            />
-            {
-                events.map((event) => {
-                    return (
+        <Scrollbars
+            autoHide={true}
+            autoHideTimeout={500}
+            autoHideDuration={500}
+            renderThumbHorizontal={renderThumbHorizontal}
+            renderThumbVertical={renderThumbVertical}
+            renderView={renderView}
+            style={{position: 'absolute'}}
+        >
+            <Timeline data-testid='timeline-view'>
+                {
+                    events.map((event) => (
                         <RHSTimelineEventItem
-                            key={event.post_id}
+                            key={event.id}
                             event={event}
+                            reportedAt={reportedAt}
+                            channelNames={channelNamesMap}
+                            team={team}
                         />
-                    );
-                })
-            }
-        </Timeline>
+                    ))
+                }
+            </Timeline>
+        </Scrollbars>
     );
 };
 
