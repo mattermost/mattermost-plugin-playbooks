@@ -360,6 +360,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		if pb.InviteUsersEnabled {
 			newIncident.InvitedUserIDs = pb.InvitedUserIDs
 		}
+
+		if pb.DefaultCommanderEnabled {
+			newIncident.DefaultCommanderID = pb.DefaultCommanderID
+		}
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL

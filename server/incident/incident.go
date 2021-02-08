@@ -46,6 +46,7 @@ type Incident struct {
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
 	InvitedUserIDs          []string             `json:"invited_user_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
+	DefaultCommanderID      string               `json:"default_commander_id"`
 }
 
 func (i *Incident) Clone() *Incident {

@@ -84,6 +84,16 @@ func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options FilterOp
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
+	if incdnt.DefaultCommanderID != "" {
+		if s.pluginAPI.User.HasPermissionToTeam(incdnt.DefaultCommanderID, incdnt.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
+			incdnt.CommanderUserID = incdnt.DefaultCommanderID
+		} else {
+			s.pluginAPI.Log.Warn("default commander specified, but it does not have permissions to incident's team", "userID", incdnt.DefaultCommanderID, "teamID", incdnt.TeamID)
+		}
+	}
+
+	incdnt.ReporterUserID = userID
+
 	// Try to create the channel first
 	channel, err := s.createIncidentChannel(incdnt, public)
 	if err != nil {
@@ -92,7 +102,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
-	incdnt.ReporterUserID = userID
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
@@ -151,12 +160,22 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		}
 	}
 
-	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+	reporter, err := s.pluginAPI.User.Get(incdnt.ReporterUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
 	}
 
-	newPost, err := s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username)
+	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
+	if incdnt.CommanderUserID != incdnt.ReporterUserID {
+		commander, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
+		}
+
+		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, commander.Username)
+	}
+
+	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
@@ -1024,8 +1043,14 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add user to channel")
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
+	}
+
+	if incdnt.CommanderUserID != incdnt.ReporterUserID {
+		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+			return nil, errors.Wrapf(err, "failed to add commander to channel")
+		}
 	}
 
 	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.CommanderUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
