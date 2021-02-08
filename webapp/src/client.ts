@@ -171,6 +171,10 @@ export async function fetchUsersInChannel(channelId: string): Promise<UserProfil
     return Client4.getProfilesInChannel(channelId, 0, 200);
 }
 
+export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
+    return Client4.getProfilesInTeam(teamId, 0, 200);
+}
+
 export async function fetchCommandersInTeam(teamId: string): Promise<CommanderInfo[]> {
     const queryParams = qs.stringify({team_id: teamId}, {addQueryPrefix: true});
 
