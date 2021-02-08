@@ -226,9 +226,9 @@ describe('backstage playbook details', () => {
                 cy.apiGetCurrentUser().then((user) => {
                     userId = user.id;
                     cy.apiCreateTestPlaybook({
-                        teamId: teamId,
+                        teamId,
                         title: playbookName,
-                        userId: userId,
+                        userId,
                     }).then((playbook) => {
                         playbookId = playbook.id;
                     });
