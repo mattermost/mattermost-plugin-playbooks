@@ -213,6 +213,8 @@ describe('backstage playbook details', () => {
     describe('automation', () => {
         const playbookName = 'Playbook (' + Date.now() + ')';
         let playbookId;
+        let teamId;
+        let userId;
 
         before(() => {
             // # Login as user-1
@@ -220,16 +222,18 @@ describe('backstage playbook details', () => {
 
             // # Create a playbook
             cy.apiGetTeamByName('ad-1').then((team) => {
+                teamId = team.id;
                 cy.apiGetCurrentUser().then((user) => {
+                    userId = user.id;
                     cy.apiCreateTestPlaybook({
-                        teamId: team.id,
+                        teamId: teamId,
                         title: playbookName,
-                        userId: user.id,
+                        userId: userId,
                     }).then((playbook) => {
                         playbookId = playbook.id;
                     });
 
-                    cy.verifyPlaybookCreated(team.id, playbookName);
+                    cy.verifyPlaybookCreated(teamId, playbookName);
                 });
             });
         });
@@ -440,6 +444,64 @@ describe('backstage playbook details', () => {
                         cy.getStyledComponent('UserPic').eq(1).within(() => {
                             cy.get('.name').contains('alice.johnston');
                         });
+                    });
+                });
+
+                it('removes invitation from users that are no longer in the team', () => {
+                    let userToRemove;
+
+                    // # Create a playbook with a user that is later removed from the team
+                    cy.apiLogin('sysadmin').then(() => {
+                        // # We need to increase the maximum number of users per team; otherwise,
+                        // adding a new member to the team fails in CI
+                        cy.apiUpdateConfig({
+                            TeamSettings: {
+                                MaxUsersPerTeam: 1000,
+                            },
+                        });
+
+                        cy.apiCreateUser().then((result) => {
+                            userToRemove = result.user;
+                            cy.apiAddUserToTeam(teamId, userToRemove.id);
+
+                            // # Create a playbook with the user that will be removed from the team.
+                            cy.apiCreatePlaybook({
+                                teamId,
+                                title: 'Playbook (' + Date.now() + ')',
+                                createPublicIncident: true,
+                                memberIDs: [userId],
+                                invitedUserIds: [userToRemove.id],
+                                inviteUsersEnabled: true,
+                            }).then((playbook) => {
+                                playbookId = playbook.id;
+                            });
+
+                            // # Remove user from the team
+                            cy.apiRemoveUserFromTeam(teamId, userToRemove.id);
+                        });
+                    }).then(() => {
+                        cy.apiLogin('user-1');
+
+                        // # Navigate again to the playbook
+                        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                        // # Switch to Automation tab
+                        cy.get('#root').findByText('Automation').click();
+
+                        // # Save the playbook
+                        cy.findByTestId('save_playbook').click();
+
+                        // * Make sure the playbook is correctly saved
+                        cy.url().should('not.include', playbookId);
+
+                        // # Navigate again to the playbook
+                        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
+
+                        // # Switch to Automation tab
+                        cy.get('#root').findByText('Automation').click();
+
+                        // * Verify that there are no users added
+                        cy.getStyledComponent('UserPic').should('not.exist');
                     });
                 });
             });
