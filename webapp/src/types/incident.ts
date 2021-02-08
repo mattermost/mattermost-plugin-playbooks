@@ -101,7 +101,6 @@ export function isMetadata(arg: any): arg is Metadata {
 export function isTimelineEvent(arg: any): arg is TimelineEvent {
     return Boolean(arg &&
         typeof arg.id === 'string' &&
-        typeof arg.id === 'string' &&
         typeof arg.create_at === 'number' &&
         typeof arg.delete_at === 'number' &&
         typeof arg.event_at === 'number' &&

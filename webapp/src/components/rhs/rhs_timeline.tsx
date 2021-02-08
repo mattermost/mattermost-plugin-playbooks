@@ -113,17 +113,15 @@ const RHSTimeline = (props: Props) => {
         >
             <Timeline data-testid='timeline-view'>
                 {
-                    events.map((event) => {
-                        return (
-                            <RHSTimelineEventItem
-                                key={event.id}
-                                event={event}
-                                reportedAt={reportedAt}
-                                channelNames={channelNamesMap}
-                                team={team}
-                            />
-                        );
-                    })
+                    events.map((event) => (
+                        <RHSTimelineEventItem
+                            key={event.id}
+                            event={event}
+                            reportedAt={reportedAt}
+                            channelNames={channelNamesMap}
+                            team={team}
+                        />
+                    ))
                 }
             </Timeline>
         </Scrollbars>
