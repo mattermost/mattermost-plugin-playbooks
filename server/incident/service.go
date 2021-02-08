@@ -129,7 +129,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 			continue
 		}
 
-		_, err = s.pluginAPI.Channel.AddMember(incdnt.ChannelID, userID)
+		_, err = s.pluginAPI.Channel.AddUser(incdnt.ChannelID, userID, s.configService.GetConfiguration().BotUserID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue

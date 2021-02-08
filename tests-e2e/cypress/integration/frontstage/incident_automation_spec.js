@@ -108,9 +108,13 @@ describe('incident automation', () => {
 
                     // * Verify that the users were invited
                     cy.getFirstPostId().then((id) => {
+                        cy.get(`#postMessageText_${id}`).within(() => {
+                            cy.findByText('2 others').click();
+                        });
+
                         cy.get(`#postMessageText_${id}`).contains('@aaron.medina');
                         cy.get(`#postMessageText_${id}`).contains('@alice.johnston');
-                        cy.get(`#postMessageText_${id}`).contains('joined the channel.');
+                        cy.get(`#postMessageText_${id}`).contains('added to the channel by @incident.');
                     });
                 });
             });
