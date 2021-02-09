@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   version: 0.6.0
-  title: Incident Management API
+  title: Incident Collaboration API
   contact:
     name: Mattermost
     url: https://mattermost.com/
@@ -78,7 +78,7 @@ paths:
           example: active
           schema:
             type: string
-            default: 
+            default:
             enum:
               - Reported
               - Active
@@ -1227,6 +1227,14 @@ paths:
             enum:
               - desc
               - asc
+        - name: member_only
+          in: query
+          description: Limit to playbooks of which the current user is a member. No effect unless the requesting user is a system administrator.
+          required: false
+          example: true
+          schema:
+            type: bool
+            default: false
       x-codeSamples:
         - lang: curl
           source: |
