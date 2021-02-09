@@ -6,10 +6,17 @@ import (
 )
 
 func (sqlStore *SQLStore) Migrate(originalSchemaVersion semver.Version) error {
+	currentSchemaVersion := originalSchemaVersion
 	for _, migration := range migrations {
+		if !currentSchemaVersion.EQ(migration.fromVersion) {
+			continue
+		}
+
 		if err := sqlStore.migrate(migration); err != nil {
 			return err
 		}
+
+		currentSchemaVersion = migration.toVersion
 	}
 
 	return nil
@@ -44,8 +51,10 @@ func (sqlStore *SQLStore) RunMigrations() error {
 		return errors.Wrapf(err, "failed to get the current schema version")
 	}
 
-	if err := sqlStore.Migrate(currentSchemaVersion); err != nil {
-		return errors.Wrapf(err, "failed to complete migrations")
+	if currentSchemaVersion.LT(LatestVersion()) {
+		if err := sqlStore.Migrate(currentSchemaVersion); err != nil {
+			return errors.Wrapf(err, "failed to complete migrations")
+		}
 	}
 
 	return nil

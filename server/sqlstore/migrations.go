@@ -346,9 +346,6 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_StatusPosts", "Status", "VARCHAR(1024) NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
 				}
-				if err := addColumnToMySQLTable(e, "IR_Incident", "ReporterUserID", "varchar(26) NOT NULL DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
-				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Incident", "CurrentStatus", "TEXT NOT NULL DEFAULT 'Active'"); err != nil {
 					return errors.Wrapf(err, "failed adding column CurrentStatus to table IR_Incident")
@@ -356,15 +353,28 @@ var migrations = []Migration{
 				if err := addColumnToPGTable(e, "IR_StatusPosts", "Status", "TEXT NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
 				}
+			}
+			if _, err := e.Exec("UPDATE IR_Incident SET CurrentStatus = 'Resolved' WHERE EndAt != 0"); err != nil {
+				return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Incident")
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.6.0"),
+		toVersion:   semver.MustParse("0.7.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReporterUserID", "varchar(26) NOT NULL DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
+				}
+			} else {
 				if err := addColumnToPGTable(e, "IR_Incident", "ReporterUserID", "TEXT NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
 				}
 			}
 			if _, err := e.Exec(`UPDATE IR_Incident SET ReporterUserID = CommanderUserID WHERE ReporterUserID = ''`); err != nil {
 				return errors.Wrapf(err, "Failed to migrate ReporterUserID")
-			}
-			if _, err := e.Exec("UPDATE IR_Incident SET CurrentStatus = 'Resolved' WHERE EndAt != 0"); err != nil {
-				return errors.Wrapf(err, "failed adding column ReminderMessageTemplate to table IR_Incident")
 			}
 			return nil
 		},
