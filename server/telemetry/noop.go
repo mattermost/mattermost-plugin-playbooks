@@ -1,8 +1,8 @@
 package telemetry
 
 import (
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 )
 
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.
@@ -32,6 +32,10 @@ func (t *NoopTelemetry) RestartIncident(*incident.Incident, string) {
 
 // UpdateStatus does nothing
 func (t *NoopTelemetry) UpdateStatus(*incident.Incident, string) {
+}
+
+// FrontendTelemetryForIncident does nothing
+func (t *NoopTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string) {
 }
 
 // AddTask does nothing.

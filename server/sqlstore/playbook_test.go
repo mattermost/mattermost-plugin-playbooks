@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-management/server/sqlstore/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"

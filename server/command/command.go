@@ -9,11 +9,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -21,7 +21,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-const helpText = "###### Mattermost Incident Management Plugin - Slash Command Help\n" +
+const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident update` - Update the incident's status and (if enabled) post the status update to the broadcast channel. \n" +
@@ -48,7 +48,7 @@ func getCommand(addTestCommands bool) *model.Command {
 	return &model.Command{
 		Trigger:          "incident",
 		DisplayName:      "Incident",
-		Description:      "Incident Management Plugin",
+		Description:      "Incident Collaboration Plugin",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: start, end, update, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
@@ -78,7 +78,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	checklist := model.NewAutocompleteData("check", "[checklist item]",
 		"Checks or unchecks a checklist item.")
 	checklist.AddDynamicListArgument(
-		"List of checklist items is downloading from your Incident Management plugin",
+		"List of checklist items is downloading from your Incident Collaboration plugin",
 		"api/v0/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 

@@ -60,15 +60,15 @@ describe('playbook creation button', () => {
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('opens Incident Management Playbook page from its template option', () => {
-        const url = 'playbooks/new?template_title=Incident%20Management%20Playbook';
-        const playbookName = 'Incident Management Playbook';
+    it('opens Incident Collaboration Playbook page from its template option', () => {
+        const url = 'playbooks/new?template_title=Incident%20Collaboration%20Playbook';
+        const playbookName = 'Incident Collaboration Playbook';
 
         // # Open backstage
         cy.openBackstage();
 
-        // # Click 'Incident Management Playbook'
-        cy.findByText('Incident Management Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        // # Click 'Incident Collaboration Playbook'
+        cy.findByText('Incident Collaboration Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         //Verify a new 'Incident Response Playbook' creation page is opened
         verifyPlaybookCreationPageOpened(url, playbookName);

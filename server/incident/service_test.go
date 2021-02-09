@@ -5,19 +5,19 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/telemetry"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	mock_bot "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
-	mock_config "github.com/mattermost/mattermost-plugin-incident-management/server/config/mocks"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-management/server/incident/mocks"
+	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
+	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -94,12 +94,13 @@ func TestCreateIncident(t *testing.T) {
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&incident.TimelineEvent{}))
 		pluginAPI.On("CreateChannel", &model.Channel{
 			TeamId:      teamID,
 			Type:        model.CHANNEL_PRIVATE,
 			DisplayName: "###",
 			Name:        "",
-			Header:      "The channel was created by the Incident Management plugin.",
+			Header:      "The channel was created by the Incident Collaboration plugin.",
 		}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
@@ -111,7 +112,8 @@ func TestCreateIncident(t *testing.T) {
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
-		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username")
+		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username").
+			Return(&model.Post{Id: "testId"}, nil)
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
