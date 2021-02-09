@@ -14,7 +14,6 @@ describe('rhs incident list', () => {
     let playbookId1;
     let playbookId2;
     let playbookIdTeam2;
-    let privateChannelId;
     let privateChannelName;
 
     before(() => {
@@ -33,7 +32,6 @@ describe('rhs incident list', () => {
                 // # Create a private channel
                 cy.apiCreateChannel(team.id, 'private-channel', 'Private Channel', 'P')
                     .then(({channel}) => {
-                        privateChannelId = channel.id;
                         privateChannelName = channel.name;
 
                         // # Add user-1 to that channel
