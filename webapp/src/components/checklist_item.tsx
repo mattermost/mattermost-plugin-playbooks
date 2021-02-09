@@ -540,6 +540,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     props.checklistItem.command !== '' &&
                         <div>
                             <Run
+                                data-testid={'run'}
                                 running={running}
                                 onClick={() => {
                                     if (!running) {
