@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-management/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-management/server/playbook/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
@@ -230,6 +230,55 @@ func TestPlaybooks(t *testing.T) {
 					UserID:          "testuserid",
 					TeamID:          "testteamid",
 					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+				},
+				"testteamid",
+				gomock.Any(),
+			).
+			Return(playbookResult, nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		result, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		playbooksBytes, err := json.Marshal(&playbookResult)
+		require.NoError(t, err)
+		assert.Equal(t, playbooksBytes, result)
+	})
+
+	t.Run("get playbooks, member only", func(t *testing.T) {
+		reset()
+
+		playbookResult := struct {
+			TotalCount int                 `json:"total_count"`
+			PageCount  int                 `json:"page_count"`
+			HasMore    bool                `json:"has_more"`
+			Items      []playbook.Playbook `json:"items"`
+		}{
+			TotalCount: 2,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []playbook.Playbook{playbooktest, playbooktest},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid&member_only=true", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			GetPlaybooksForTeam(
+				playbook.RequesterInfo{
+					UserID:          "testuserid",
+					TeamID:          "testteamid",
+					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					MemberOnly:      true,
 				},
 				"testteamid",
 				gomock.Any(),

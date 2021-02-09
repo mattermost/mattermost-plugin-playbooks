@@ -21,11 +21,11 @@ export const PresetTemplates: PresetTemplate[] = [
         template: emptyPlaybook(),
     },
     {
-        title: 'Incident Management Playbook',
+        title: 'Incident Collaboration Playbook',
         icon: <AlertIcon/>,
         template: {
             ...emptyPlaybook(),
-            title: 'Incident Management Playbook',
+            title: 'Incident Collaboration Playbook',
             checklists: [
                 {
                     title: 'Triage',

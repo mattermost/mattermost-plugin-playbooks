@@ -159,3 +159,12 @@ export interface FetchIncidentsParams {
     search_term?: string;
     member_id?: string;
 }
+
+export interface FetchPlaybooksParams {
+    team_id?: string;
+    page?: number;
+    per_page?: number;
+    sort?: string;
+    direction?: string;
+    member_only?: boolean;
+}

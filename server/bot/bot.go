@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"github.com/mattermost/mattermost-plugin-incident-management/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
