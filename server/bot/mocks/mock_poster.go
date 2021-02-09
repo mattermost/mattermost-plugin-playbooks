@@ -84,14 +84,14 @@ func (mr *MockPosterMockRecorder) EphemeralPost(arg0, arg1, arg2 interface{}) *g
 }
 
 // PostMessage mocks base method
-func (m *MockPoster) PostMessage(arg0, arg1 string, arg2 ...interface{}) (string, error) {
+func (m *MockPoster) PostMessage(arg0, arg1 string, arg2 ...interface{}) (*model.Post, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "PostMessage", varargs...)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*model.Post)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -104,14 +104,14 @@ func (mr *MockPosterMockRecorder) PostMessage(arg0, arg1 interface{}, arg2 ...in
 }
 
 // PostMessageWithAttachments mocks base method
-func (m *MockPoster) PostMessageWithAttachments(arg0 string, arg1 []*model.SlackAttachment, arg2 string, arg3 ...interface{}) (string, error) {
+func (m *MockPoster) PostMessageWithAttachments(arg0 string, arg1 []*model.SlackAttachment, arg2 string, arg3 ...interface{}) (*model.Post, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "PostMessageWithAttachments", varargs...)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*model.Post)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

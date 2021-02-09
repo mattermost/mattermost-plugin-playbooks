@@ -94,6 +94,7 @@ func TestCreateIncident(t *testing.T) {
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&incident.TimelineEvent{}))
 		pluginAPI.On("CreateChannel", &model.Channel{
 			TeamId:      teamID,
 			Type:        model.CHANNEL_PRIVATE,
@@ -111,7 +112,8 @@ func TestCreateIncident(t *testing.T) {
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
-		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username")
+		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username").
+			Return(&model.Post{Id: "testId"}, nil)
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 

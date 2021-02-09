@@ -22,6 +22,7 @@ import {useTimeout, useClickOutsideRef} from 'src/hooks';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {messageHtmlToComponent, formatText} from 'src/components/shared';
 
 import ConfirmModal from './widgets/confirmation_modal';
 import Profile from './profile/profile';
@@ -37,9 +38,6 @@ interface ChecklistItemDetailsProps {
 }
 
 const RunningTimeout = 1000;
-
-// @ts-ignore
-const {formatText, messageHtmlToComponent} = window.PostUtils;
 
 const HoverableIcon = styled.i`
     color: var(--center-channel-color-56);

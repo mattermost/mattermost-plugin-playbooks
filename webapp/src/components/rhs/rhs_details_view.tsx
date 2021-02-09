@@ -14,6 +14,7 @@ import RHSIncidentSummary from 'src/components/rhs/rhs_incident_summary';
 import RHSIncidentTasks from 'src/components/rhs/rhs_incident_tasks';
 import RHSFooter from 'src/components/rhs/rhs_footer';
 import {Incident} from 'src/types/incident';
+import RHSTimeline from 'src/components/rhs/rhs_timeline';
 
 const RHSDetailsView = () => {
     const incident = useSelector<GlobalState, Incident | undefined>(currentIncident);
@@ -23,9 +24,17 @@ const RHSDetailsView = () => {
         return null;
     }
 
-    let currentView = <RHSIncidentSummary incident={incident}/>;
-    if (currentTabState === RHSTabState.ViewingTasks) {
+    let currentView;
+    switch (currentTabState) {
+    case RHSTabState.ViewingSummary:
+        currentView = <RHSIncidentSummary incident={incident}/>;
+        break;
+    case RHSTabState.ViewingTasks:
         currentView = <RHSIncidentTasks incident={incident}/>;
+        break;
+    case RHSTabState.ViewingTimeline:
+        currentView = <RHSTimeline incident={incident}/>;
+        break;
     }
 
     return (
