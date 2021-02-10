@@ -8,6 +8,8 @@ describe('timeline', () => {
     let userId;
     let playbookId;
     let incidentName;
+    let channelName;
+    let channelId;
 
     before(() => {
         // # Login as the sysadmin
@@ -56,12 +58,16 @@ describe('timeline', () => {
         // # Create a new incident
         const now = Date.now();
         incidentName = 'Incident (' + now + ')';
-        const channelName = 'incident-' + now;
+        channelName = 'incident-' + now;
         cy.apiStartIncident({
             teamId,
             playbookId,
             incidentName,
             commanderUserId: userId,
+        });
+
+        cy.apiGetChannelByName(teamName, channelName).then(({channel}) => {
+            channelId = channel.id;
         });
 
         // # Navigate directly to the application and the incident channel
@@ -79,59 +85,114 @@ describe('timeline', () => {
         });
     });
 
-    describe('the timeline', () => {
-        it('shows the incident created, status updated, and commander changed events', () => {
-            cy.findByTestId('timeline-view').within(() => {
-                // * Verify incident created message is visible in the timeline
-                cy.findAllByTestId('incident_created').should('have.length', 1);
-                cy.findByTestId('incident_created')
-                    .contains('Incident Reported by user-1')
-                    .should('be.visible');
-            });
+    describe('timeline updates', () => {
+        it('show the incident created, status updated, and commander changed events', () => {
+            // * Verify incident created message is visible in the timeline
+            verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
 
             // # Post an update that doesn't change the incident status
             cy.updateStatus('this is a status update');
 
             // * Verify we can see the update in the timeline
-            cy.findByTestId('timeline-view').within(() => {
-                cy.findAllByTestId('status_updated').should('have.length', 1);
-                cy.findByTestId('status_updated')
-                    .contains('user-1 posted a status update')
-                    .should('be.visible');
-            });
+            verifyTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
 
             // # Change commander
             cy.executeSlashCommand('/incident commander @aaron.peterson');
 
             // * Verify we can see the change commander in the timeline
-            cy.findByTestId('timeline-view').within(() => {
-                cy.findAllByTestId('commander_changed').should('have.length', 1);
-                cy.findByTestId('commander_changed')
-                    .contains('Commander changed from @user-1 to @aaron.peterson')
-                    .should('be.visible');
-            });
+            verifyTimelineEvent('commander_changed', 1, 0, 'Commander changed from @user-1 to @aaron.peterson');
 
             // # Post an update that changes the incident status
             cy.updateStatus('this is a status update', 0, 'Active');
 
             // * Verify we can see the update in the timeline
-            cy.findByTestId('timeline-view').within(() => {
-                cy.findAllByTestId('status_updated').should('have.length', 2);
-                cy.findAllByTestId('status_updated').eq(1)
-                    .contains('Reported to Active')
-                    .should('be.visible');
-            });
+            verifyTimelineEvent('status_updated', 2, 1, 'Reported to Active');
 
             // # Change commander
             cy.executeSlashCommand('/incident commander @user-1');
 
             // * Verify we can see the change commander in the timeline
-            cy.findByTestId('timeline-view').within(() => {
-                cy.findAllByTestId('commander_changed').should('have.length', 2);
-                cy.findAllByTestId('commander_changed').eq(1)
-                    .contains('changed from @aaron.peterson to @user-1')
-                    .should('be.visible');
+            verifyTimelineEvent('commander_changed', 2, 1, 'changed from @aaron.peterson to @user-1');
+        });
+    });
+
+    describe('events from posts in the incident channel ', () => {
+        it('show up at the end and in the middle of the timeline', () => {
+            // # Post the first message we'll click on
+            cy.apiCreatePost(channelId, 'this is the first post').then(({post}) => {
+                // # Change commander, to create a timeline event
+                cy.executeSlashCommand('/incident commander @aaron.peterson');
+
+                // * Verify we can see the change commander in the timeline
+                verifyTimelineEvent('commander_changed', 1, 0, 'Commander changed from @user-1 to @aaron.peterson');
+
+                // # Post the second message we'll click on
+                cy.createPost('this is the second post we\'ll click on');
+
+                // # Add a timeline event from a post at the end of the incident
+                const summary1 = 'This is the incident summary 1';
+                cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
+
+                // * Verify we can see the new timeline event
+                verifyTimelineEvent('event_from_post', 1, 0, summary1);
+
+                // # Add a timeline event from a post near the start of the incident
+                const summary2 = 'This is the incident summary 2';
+                cy.addPostToTimelineUsingPostMenu(incidentName, summary2, post.id);
+
+                // * Verify we can see the new timeline event
+                verifyTimelineEvent('event_from_post', 2, 0, summary2);
             });
         });
     });
+
+    describe('events from posts in another channel ', () => {
+        it('show up at the end and in the middle of the timeline', () => {
+            const summary1 = 'This is the incident summary 1';
+            const summary2 = 'This is the incident summary 2';
+
+            cy.apiCreateChannel(teamId, 'test-channel', 'Test Channel', 'O').then(({channel}) => {
+                // # Navigate to our new channel
+                cy.visit(`/${teamName}/channels/${channel.name}`);
+
+                cy.apiCreatePost(channel.id, 'this is the first post').then(({post}) => {
+                    // # Post the second message we'll click on
+                    cy.createPost('this is the second post we\'ll click on');
+
+                    // # Add a timeline event from a post at the end of the incident
+                    cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
+
+                    // # Add a timeline event from a post near the start of the incident
+                    cy.addPostToTimelineUsingPostMenu(incidentName, summary2, post.id);
+                });
+            });
+
+            // # Navigate back to the incident channel
+            cy.visit(`/${teamName}/channels/${channelName}`);
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(incidentName).should('exist');
+
+                // # Select the timeline tab
+                cy.findByTestId('timeline').click();
+            });
+
+            // * Verify we can see the new timeline event
+            verifyTimelineEvent('event_from_post', 2, 1, summary1);
+
+            // * Verify we can see the new timeline event
+            verifyTimelineEvent('event_from_post', 2, 0, summary2);
+        });
+    });
 });
+
+const verifyTimelineEvent = (expectedEventType, expectedNumberOfEvents, expectedEventIndex, expectedEventSummary) => {
+    cy.findByTestId('timeline-view').within(() => {
+        cy.findAllByTestId(expectedEventType).should('have.length', expectedNumberOfEvents);
+        cy.findAllByTestId(expectedEventType)
+            .eq(expectedEventIndex)
+            .contains(expectedEventSummary)
+            .should('be.visible');
+    });
+};
