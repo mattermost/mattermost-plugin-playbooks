@@ -94,6 +94,10 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		Where(permissionsExpr).
 		Where(sq.Eq{"i.TeamID": options.TeamID})
 
+	if options.Status != "" && len(options.Statuses) != 0 {
+		return nil, errors.New("options Status and Statuses cannot both be set")
+	}
+
 	if options.Status != "" {
 		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Status})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Status})
