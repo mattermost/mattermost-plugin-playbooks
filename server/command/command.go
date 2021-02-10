@@ -573,6 +573,29 @@ func (r *Runner) actionRestart() {
 	r.actionUpdate()
 }
 
+func (r *Runner) actionAdd(args []string) {
+	if len(args) != 1 {
+		r.postCommandResponse("Need to provide a postId")
+		return
+	}
+
+	postID := args[0]
+	if postID == "" {
+		r.postCommandResponse("Need to provide a postId")
+		return
+	}
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:          r.args.UserId,
+		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+	}
+
+	if err := r.incidentService.OpenAddToTimelineDialog(requesterInfo, postID, r.args.TeamId, r.args.TriggerId); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+}
+
 func (r *Runner) actionTestSelf(args []string) {
 	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
 		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
@@ -1206,6 +1229,8 @@ func (r *Runner) Execute() error {
 		r.actionList()
 	case "info":
 		r.actionInfo()
+	case "add":
+		r.actionAdd(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":

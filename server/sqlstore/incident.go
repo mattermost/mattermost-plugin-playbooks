@@ -99,6 +99,11 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Status})
 	}
 
+	if len(options.Statuses) != 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
+	}
+
 	if options.CommanderID != "" {
 		queryForResults = queryForResults.Where(sq.Eq{"i.CommanderUserID": options.CommanderID})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CommanderUserID": options.CommanderID})
@@ -179,7 +184,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	var timelineEvents []incident.TimelineEvent
 
 	timelineEventsSelect := s.timelineEventsSelect.
-		OrderBy("te.CreateAt ASC").
+		OrderBy("te.EventAt ASC").
 		Where(sq.And{sq.Eq{"te.IncidentID": incidentIDs}, sq.Eq{"te.DeleteAt": 0}})
 
 	err = s.store.selectBuilder(tx, &timelineEvents, timelineEventsSelect)
@@ -433,7 +438,7 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 	var timelineEvents []incident.TimelineEvent
 
 	timelineEventsSelect := s.timelineEventsSelect.
-		OrderBy("te.CreateAt").
+		OrderBy("te.EventAt ASC").
 		Where(sq.Eq{"te.IncidentID": incidentID})
 
 	err = s.store.selectBuilder(tx, &timelineEvents, timelineEventsSelect)

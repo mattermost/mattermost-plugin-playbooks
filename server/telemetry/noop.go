@@ -35,7 +35,11 @@ func (t *NoopTelemetry) UpdateStatus(*incident.Incident, string) {
 }
 
 // FrontendTelemetryForIncident does nothing
-func (t *NoopTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string) {
+func (t *NoopTelemetry) FrontendTelemetryForIncident(*incident.Incident, string, string) {
+}
+
+// AddTimelineEventFromPost does nothing
+func (t *NoopTelemetry) AddPostToTimeline(*incident.Incident, string) {
 }
 
 // AddTask does nothing.

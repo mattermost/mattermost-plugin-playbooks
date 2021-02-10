@@ -164,6 +164,7 @@ const (
 	CommanderChanged  timelineEventType = "commander_changed"
 	AssigneeChanged   timelineEventType = "assignee_changed"
 	RanSlashCommand   timelineEventType = "ran_slash_command"
+	EventFromPost     timelineEventType = "event_from_post"
 )
 
 type TimelineEvent struct {
@@ -233,6 +234,10 @@ type DialogState struct {
 	ClientID string `json:"client_id"`
 }
 
+type DialogStateAddToTimeline struct {
+	PostID string `json:"post_id"`
+}
+
 // RequesterInfo holds the userID and teamID that this request is regarding, and permissions
 // for the user making the request
 type RequesterInfo struct {
@@ -271,6 +276,12 @@ type Service interface {
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
 	OpenUpdateStatusDialog(incidentID, triggerID string) error
+
+	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the incident timeline.
+	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
+
+	// AddPostToTimeline adds an event based on a post to an incident's timeline.
+	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -405,6 +416,9 @@ type Telemetry interface {
 
 	// FrontendTelemetryForIncident tracks an event originating from the frontend
 	FrontendTelemetryForIncident(incdnt *Incident, userID, action string)
+
+	// AddPostToTimeline tracks userID creating a timeline event from a post.
+	AddPostToTimeline(incdnt *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
