@@ -366,11 +366,11 @@ var migrations = []Migration{
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "ReporterUserID", "varchar(26) NOT NULL DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
 				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Incident", "ReporterUserID", "TEXT NOT NULL DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column Status to table IR_StatusPosts")
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
 				}
 			}
 			if _, err := e.Exec(`UPDATE IR_Incident SET ReporterUserID = CommanderUserID WHERE ReporterUserID = ''`); err != nil {
