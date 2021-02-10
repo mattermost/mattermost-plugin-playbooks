@@ -139,10 +139,6 @@ const CheckboxContainer = styled.div`
     display: flex;
     position: relative;
 
-    live {
-        height: 35px;
-    }
-
     button {
         width: 53px;
         height: 29px;
@@ -233,6 +229,10 @@ const CheckboxContainer = styled.div`
         margin-right: 8px;
         flex-grow: 1;
     }
+`;
+
+const CheckboxContainerLive = styled(CheckboxContainer)`
+    height: 35px;
 `;
 
 const CloseContainer = styled.span`
@@ -455,9 +455,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             onMouseLeave={() => setShowMenu(false)}
             data-testid='checkbox-item-container'
         >
-            <CheckboxContainer
-                className={'live'}
-            >
+            <CheckboxContainerLive>
                 {showMenu &&
                     <HoverMenu>
                         <MenuButton
@@ -528,7 +526,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 >
                     {timestamp}
                 </a>
-            </CheckboxContainer>
+            </CheckboxContainerLive>
             <ExtrasRow>
                 {props.checklistItem.assignee_id &&
                 <SmallProfile
