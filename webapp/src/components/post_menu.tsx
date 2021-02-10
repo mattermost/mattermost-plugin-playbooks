@@ -72,7 +72,7 @@ export const AttachToIncidentPostMenu: FC<Props> = (props: Props) => {
                     role='presentation'
                 >
                     <IncidentPostMenuIcon/>
-                    {'Add to an Incident Timeline'}
+                    {'Add to Incident Timeline'}
                 </button>
             </li>
         </React.Fragment>
