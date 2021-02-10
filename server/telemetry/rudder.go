@@ -160,7 +160,7 @@ func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident
 	t.track(eventFrontend, properties)
 }
 
-// AddEventFromPost tracks userID creating a timeline event from a post.
+// AddPostToTimeline tracks userID creating a timeline event from a post.
 func (t *RudderTelemetry) AddPostToTimeline(incdnt *incident.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionAddTimelineEventFromPost
