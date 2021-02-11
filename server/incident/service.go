@@ -1184,6 +1184,11 @@ func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string
 		}
 	}
 
+	defaultIncidentID, err := s.GetIncidentIDForChannel(post.ChannelId)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return nil, errors.Wrapf(err, "failed to get incidentID for channel")
+	}
+
 	return &model.Dialog{
 		Title: "Add to Incident Timeline",
 		Elements: []model.DialogElement{
@@ -1192,6 +1197,7 @@ func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string
 				Name:        DialogFieldIncidentKey,
 				Type:        "select",
 				Options:     options,
+				Default:     defaultIncidentID,
 			},
 			{
 				DisplayName: "Summary",
