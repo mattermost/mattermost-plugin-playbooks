@@ -133,7 +133,7 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (incidentName, summary, p
         });
 
         // # Type incident name
-        cy.findByTestId('summaryinput').type(summary, {force: true});
+        cy.findByTestId('summaryinput').clear().type(summary, {force: true});
 
         // # Submit
         cy.get('#interactiveDialogSubmit').click();
