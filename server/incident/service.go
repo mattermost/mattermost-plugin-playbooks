@@ -1171,6 +1171,19 @@ func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
 	}
 
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
+	}
+	defaultSummary := ""
+	if len(post.Message) > 0 {
+		end := min(40, len(post.Message))
+		defaultSummary = post.Message[:end]
+		if len(post.Message) > end {
+			defaultSummary += "..."
+		}
+	}
+
 	return &model.Dialog{
 		Title: "Add to Incident Timeline",
 		Elements: []model.DialogElement{
@@ -1186,6 +1199,7 @@ func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string
 				Type:        "text",
 				MaxLength:   64,
 				Placeholder: "Short summary shown in the timeline",
+				Default:     defaultSummary,
 				HelpText:    "Max 64 chars",
 			},
 		},
@@ -1259,4 +1273,11 @@ func findNewestNonDeletedPostID(posts []StatusPost) string {
 	}
 
 	return newest.ID
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
