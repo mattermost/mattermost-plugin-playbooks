@@ -57,7 +57,10 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
                 {props.playbook.member_ids.map((userId) => (
                     <UserLine key={userId}>
                         <SharePlaybookProfile userId={userId}/>
-                        <RemoveLink onClick={() => props.onRemoveUser(userId)} >{'Remove'}</RemoveLink>
+                        {
+                            props.playbook.member_ids.length > 1 &&
+                            <RemoveLink onClick={() => props.onRemoveUser(userId)}>{'Remove'}</RemoveLink>
+                        }
                     </UserLine>
                 ))}
             </UserList>
