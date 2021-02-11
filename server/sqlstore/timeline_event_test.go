@@ -194,11 +194,9 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			retIncident, err = iStore.GetIncident(incdnt.ID)
 			require.NoError(t, err)
 
-			require.Len(t, retIncident.TimelineEvents, 4)
+			require.Len(t, retIncident.TimelineEvents, 2)
 			require.Equal(t, *event1, retIncident.TimelineEvents[0])
 			require.Equal(t, *event2, retIncident.TimelineEvents[1])
-			require.Equal(t, *event3, retIncident.TimelineEvents[2])
-			require.Equal(t, *event4, retIncident.TimelineEvents[3])
 		})
 	}
 }
