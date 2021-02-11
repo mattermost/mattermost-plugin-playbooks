@@ -12,6 +12,7 @@ import (
 
 type SQLStore struct {
 	log                 bot.Logger
+	database            *database
 	db                  *sqlx.DB
 	builder             sq.StatementBuilderType
 	cachedUnaccentCheck *bool
@@ -21,7 +22,9 @@ type SQLStore struct {
 func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	var db *sqlx.DB
 
-	origDB, err := pluginAPI.Store.GetMasterDB()
+	database := newDatabase(pluginAPI)
+
+	origDB, err := database.GetMasterDB()
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +40,10 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	}
 
 	return &SQLStore{
-		log,
-		db,
-		builder,
-		nil,
+		log:      log,
+		database: database,
+		db:       db,
+		builder:  builder,
 	}, nil
 }
 
