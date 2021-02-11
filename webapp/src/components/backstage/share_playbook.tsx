@@ -55,7 +55,10 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
             />
             <UserList>
                 {props.playbook.member_ids.map((userId) => (
-                    <UserLine key={userId}>
+                    <UserLine
+                        data-testid='user-line'
+                        key={userId}
+                    >
                         <SharePlaybookProfile userId={userId}/>
                         {
                             props.playbook.member_ids.length > 1 &&
