@@ -404,9 +404,10 @@ func (r *Runner) actionList() {
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          r.args.UserId,
-		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+	requesterInfo, err := permissions.GetRequesterInfo(r.args.UserId, r.pluginAPI)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error resolving permissions: %v", err)
+		return
 	}
 
 	options := incident.FilterOptions{
