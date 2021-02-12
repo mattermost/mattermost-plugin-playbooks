@@ -153,6 +153,21 @@ func (mr *MockStoreMockRecorder) GetIncidents(arg0, arg1 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockStore)(nil).GetIncidents), arg0, arg1)
 }
 
+// GetTimelineEvent mocks base method
+func (m *MockStore) GetTimelineEvent(arg0, arg1 string) (*incident.TimelineEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTimelineEvent", arg0, arg1)
+	ret0, _ := ret[0].(*incident.TimelineEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTimelineEvent indicates an expected call of GetTimelineEvent
+func (mr *MockStoreMockRecorder) GetTimelineEvent(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimelineEvent", reflect.TypeOf((*MockStore)(nil).GetTimelineEvent), arg0, arg1)
+}
+
 // NukeDB mocks base method
 func (m *MockStore) NukeDB() error {
 	m.ctrl.T.Helper()

@@ -468,6 +468,23 @@ func (s *incidentStore) getTimelineEventsForIncident(q sqlx.Queryer, incidentIDs
 	return timelineEvents, nil
 }
 
+// GetTimelineEvent returns the timeline event for incidentID by the timeline event ID.
+func (s *incidentStore) GetTimelineEvent(incidentID, eventID string) (*incident.TimelineEvent, error) {
+	var event incident.TimelineEvent
+
+	timelineEventSelect := s.timelineEventsSelect.
+		Where(sq.And{sq.Eq{"te.IncidentID": incidentID}, sq.Eq{"te.ID": eventID}})
+
+	err := s.store.getBuilder(s.store.db, &event, timelineEventSelect)
+	if err == sql.ErrNoRows {
+		return nil, errors.Wrapf(incident.ErrNotFound, "timeline event with id (%s) does not exist for incident with id (%s)", eventID, incidentID)
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get timeline event with id (%s) for incident with id (%s)", eventID, incidentID)
+	}
+
+	return &event, nil
+}
+
 // GetIncidentIDForChannel gets the incidentID associated with the given channelID.
 func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error) {
 	query := s.queryBuilder.

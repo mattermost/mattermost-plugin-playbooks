@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import moment, {duration, Moment} from 'moment';
@@ -13,6 +13,8 @@ import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {messageHtmlToComponent, formatText} from 'src/components/shared';
 import {renderDuration} from 'src/components/duration';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {clientRemoveTimelineEvent} from 'src/client';
 
 const Circle = styled.div`
     position: absolute;
@@ -75,6 +77,24 @@ const SummaryDetail = styled.div`
     color: var(--center-channel-color-64)
 `;
 
+const HoverMenu = styled.div`
+    display: flex;
+    padding: 4px;
+    position: absolute;
+    right: 0;
+    top: -8px;
+    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
+    background-color: var(--center-channel-bg);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+    z-index: 2;
+`;
+
+const MenuButton = styled.i`
+    width: 28px;
+    height: 28px;
+`;
+
 interface Props {
     event: TimelineEvent;
     reportedAt: Moment;
@@ -84,6 +104,8 @@ interface Props {
 
 const RHSTimelineEventItem = (props: Props) => {
     const dispatch = useDispatch();
+    const [showMenu, setShowMenu] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const markdownOptions = {
         atMentions: true,
         team: props.team,
@@ -162,7 +184,21 @@ const RHSTimelineEventItem = (props: Props) => {
     }
 
     return (
-        <TimelineItem data-testid={testid}>
+        <TimelineItem
+            data-testid={testid}
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+        >
+            {showMenu &&
+            <HoverMenu>
+                <MenuButton
+                    className={'icon-trash-can-outline icon-16 btn-icon'}
+                    onClick={() => {
+                        setShowDeleteConfirm(true);
+                    }}
+                />
+            </HoverMenu>
+            }
             <TimeContainer>
                 <TimeHours>{moment(props.event.event_at).format('MMM DD HH:mm')}</TimeHours>
                 {timeSince}
@@ -176,6 +212,16 @@ const RHSTimelineEventItem = (props: Props) => {
                 </SummaryTitle>
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
+            <ConfirmModal
+                show={showDeleteConfirm}
+                title={'Confirm Entry Delete'}
+                message={`Are you sure you want to delete this timeline entry? "${summaryTitle}"?`}
+                confirmButtonText={'Delete Entry'}
+                onConfirm={() =>
+                    clientRemoveTimelineEvent(props.event.incident_id, props.event.id)
+                }
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </TimelineItem>
     );
 };
