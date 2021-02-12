@@ -46,11 +46,14 @@ func requireErrorWithStatusCode(t *testing.T, err error, statusCode int) {
 	require.Equal(t, statusCode, errResponse.StatusCode)
 }
 
-func toApiIncident(internalIncident incident.Incident) icClient.Incident {
+func toAPIIncident(internalIncident incident.Incident) icClient.Incident {
 	var apiIncident icClient.Incident
 
 	incidentBytes, _ := json.Marshal(internalIncident)
-	json.Unmarshal(incidentBytes, &apiIncident)
+	err := json.Unmarshal(incidentBytes, &apiIncident)
+	if err != nil {
+		panic(err)
+	}
 
 	return apiIncident
 }
@@ -59,25 +62,22 @@ func toInternalIncident(apiIncident icClient.Incident) incident.Incident {
 	var internalIncident incident.Incident
 
 	incidentBytes, _ := json.Marshal(apiIncident)
-	json.Unmarshal(incidentBytes, &internalIncident)
+	err := json.Unmarshal(incidentBytes, &internalIncident)
+	if err != nil {
+		panic(err)
+	}
 
 	return internalIncident
-}
-
-func toApiIncidentMetadata(internalIncidentMetadata incident.Metadata) icClient.IncidentMetadata {
-	var apiIncidentMetadata icClient.IncidentMetadata
-
-	incidentBytes, _ := json.Marshal(internalIncidentMetadata)
-	json.Unmarshal(incidentBytes, &apiIncidentMetadata)
-
-	return apiIncidentMetadata
 }
 
 func toInternalIncidentMetadata(apiIncidentMetadata icClient.IncidentMetadata) incident.Metadata {
 	var internalIncidentMetadata incident.Metadata
 
 	incidentBytes, _ := json.Marshal(apiIncidentMetadata)
-	json.Unmarshal(incidentBytes, &internalIncidentMetadata)
+	err := json.Unmarshal(incidentBytes, &internalIncidentMetadata)
+	if err != nil {
+		panic(err)
+	}
 
 	return internalIncidentMetadata
 }

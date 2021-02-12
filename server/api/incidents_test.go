@@ -1053,7 +1053,7 @@ func TestIncidents(t *testing.T) {
 			TotalCount: 100,
 			PageCount:  200,
 			HasMore:    true,
-			Items:      []icClient.Incident{toApiIncident(incident1)},
+			Items:      []icClient.Incident{toAPIIncident(incident1)},
 		}
 		assert.Equal(t, expectedList, actualList)
 	})
