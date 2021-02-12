@@ -246,6 +246,11 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     return data;
 }
 
+export async function telemetryEventForIncident(incidentID: string, action: string) {
+    const body = JSON.stringify({action});
+    await doPost(`${apiUrl}/telemetry/incident/${incidentID}`, body);
+}
+
 export function exportChannelUrl(channelId: string) {
     const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 
