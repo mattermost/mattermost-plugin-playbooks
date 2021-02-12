@@ -230,8 +230,8 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Exclude guest users
-	if isGuest, err := permissions.IsGuest(userID, h.pluginAPI); err != nil {
-		HandleError(w, err)
+	if isGuest, errg := permissions.IsGuest(userID, h.pluginAPI); errg != nil {
+		HandleError(w, errg)
 		return
 	} else if isGuest {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
