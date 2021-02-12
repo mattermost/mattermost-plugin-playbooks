@@ -105,8 +105,7 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
 
         //@ts-ignore
         profiles.then(({data}) => {
-            const profilesWithoutAlreadyAdded = data.filter((profile: UserProfile) => !props.userIds.includes(profile.id));
-            callback(profilesWithoutAlreadyAdded);
+            callback(data);
         }).catch(() => {
             // eslint-disable-next-line no-console
             console.error('Error searching user profiles in custom attribute settings dropdown.');
@@ -131,6 +130,7 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
             cacheOptions={false}
             defaultOptions={true}
             loadOptions={usersLoader}
+            filterOption={({data}: { data: UserProfile }) => !props.userIds.includes(data.id)}
             onChange={onChange}
             getOptionValue={getOptionValue}
             formatOptionLabel={formatOptionLabel}
