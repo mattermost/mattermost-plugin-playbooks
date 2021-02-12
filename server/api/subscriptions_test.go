@@ -137,7 +137,7 @@ func TestCreateSubscription(t *testing.T) {
 			request.Header.Add("Mattermost-User-ID", test.requestUser)
 
 			recorder := httptest.NewRecorder()
-			handler.ServeHTTP(recorder, request, "testpluginid")
+			handler.ServeHTTP(recorder, request)
 
 			resp := recorder.Result()
 			defer resp.Body.Close()
