@@ -9,9 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/pluginkvstore"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/subscription"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
@@ -35,12 +33,11 @@ var (
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	handler             *api.Handler
-	config              *config.ServiceImpl
-	incidentService     incident.Service
-	playbookService     playbook.Service
-	subscriptionService subscription.Service
-	bot                 *bot.Bot
+	handler         *api.Handler
+	config          *config.ServiceImpl
+	incidentService incident.Service
+	playbookService playbook.Service
+	bot             *bot.Bot
 }
 
 // ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
@@ -162,7 +159,6 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
-	p.subscriptionService = subscription.NewService(pluginkvstore.NewSubscriptionStore(&pluginAPIClient.KV))
 
 	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot)
 	api.NewIncidentHandler(
@@ -174,7 +170,6 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		telemetryClient,
 	)
-	api.NewSubscriptionHandler(p.handler.APIRouter, p.subscriptionService, p.playbookService, pluginAPIClient)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
