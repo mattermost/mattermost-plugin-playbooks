@@ -71,7 +71,10 @@ describe('playbook creation button', () => {
         cy.openBackstage();
 
         // # Click 'Incident Collaboration Playbook'
-        cy.findByText('Incident Collaboration Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Incident Collaboration Playbook')
+            .should('be.visible')
+            .click()
+            .wait(TIMEOUTS.TINY);
 
         // * Verify a new 'Incident Response Playbook' creation page is opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -90,7 +93,7 @@ describe('playbook creation button', () => {
             cy.findAllByTestId('user-line').eq(0).within(() => {
                 cy.get('a').should('not.exist');
             });
-           
+
             // # Add a new user
             cy.get('.profile-autocomplete__input > input')
                 .type('anne stone', {force: true, delay: 100}).wait(100)
