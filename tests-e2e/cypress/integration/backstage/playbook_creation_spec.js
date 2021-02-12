@@ -77,7 +77,7 @@ describe('playbook creation button', () => {
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('shows remove beside members when > 2 members', () => {
+    it('shows remove beside members when > 1 member', () => {
         // # Open backstage
         cy.openBackstage();
 
