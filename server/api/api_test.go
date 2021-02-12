@@ -1,11 +1,16 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAPI(t *testing.T) {
@@ -29,4 +34,50 @@ func TestAPI(t *testing.T) {
 			tc.test(t, handler, writer)
 		})
 	}
+}
+
+func requireErrorWithStatusCode(t *testing.T, err error, statusCode int) {
+	t.Helper()
+
+	require.Error(t, err)
+
+	var errResponse *icClient.ErrorResponse
+	require.True(t, errors.As(err, &errResponse))
+	require.Equal(t, statusCode, errResponse.StatusCode)
+}
+
+func toApiIncident(internalIncident incident.Incident) icClient.Incident {
+	var apiIncident icClient.Incident
+
+	incidentBytes, _ := json.Marshal(internalIncident)
+	json.Unmarshal(incidentBytes, &apiIncident)
+
+	return apiIncident
+}
+
+func toInternalIncident(apiIncident icClient.Incident) incident.Incident {
+	var internalIncident incident.Incident
+
+	incidentBytes, _ := json.Marshal(apiIncident)
+	json.Unmarshal(incidentBytes, &internalIncident)
+
+	return internalIncident
+}
+
+func toApiIncidentMetadata(internalIncidentMetadata incident.Metadata) icClient.IncidentMetadata {
+	var apiIncidentMetadata icClient.IncidentMetadata
+
+	incidentBytes, _ := json.Marshal(internalIncidentMetadata)
+	json.Unmarshal(incidentBytes, &apiIncidentMetadata)
+
+	return apiIncidentMetadata
+}
+
+func toInternalIncidentMetadata(apiIncidentMetadata icClient.IncidentMetadata) incident.Metadata {
+	var internalIncidentMetadata incident.Metadata
+
+	incidentBytes, _ := json.Marshal(apiIncidentMetadata)
+	json.Unmarshal(incidentBytes, &internalIncidentMetadata)
+
+	return internalIncidentMetadata
 }

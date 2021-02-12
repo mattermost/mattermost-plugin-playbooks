@@ -289,7 +289,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
