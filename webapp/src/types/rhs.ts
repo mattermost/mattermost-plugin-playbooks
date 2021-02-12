@@ -24,7 +24,7 @@ export enum TimelineEventType {
 
 export interface TimelineEvent {
     id: string;
-    incidentID: string;
+    incident_id: string;
     create_at: number;
     delete_at: number;
     event_at: number;

@@ -246,6 +246,15 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     return data;
 }
 
+export async function clientRemoveTimelineEvent(incidentID: string, entryID: string) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
+        method: 'delete',
+        body: '',
+    });
+
+    return data;
+}
+
 export async function telemetryEventForIncident(incidentID: string, action: string) {
     const body = JSON.stringify({action});
     await doPost(`${apiUrl}/telemetry/incident/${incidentID}`, body);

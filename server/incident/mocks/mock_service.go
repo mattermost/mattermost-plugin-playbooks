@@ -347,6 +347,20 @@ func (mr *MockServiceMockRecorder) RemoveReminderPost(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminderPost", reflect.TypeOf((*MockService)(nil).RemoveReminderPost), arg0)
 }
 
+// RemoveTimelineEvent mocks base method
+func (m *MockService) RemoveTimelineEvent(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveTimelineEvent", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveTimelineEvent indicates an expected call of RemoveTimelineEvent
+func (mr *MockServiceMockRecorder) RemoveTimelineEvent(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTimelineEvent", reflect.TypeOf((*MockService)(nil).RemoveTimelineEvent), arg0, arg1)
+}
+
 // RenameChecklistItem mocks base method
 func (m *MockService) RenameChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5 string) error {
 	m.ctrl.T.Helper()
