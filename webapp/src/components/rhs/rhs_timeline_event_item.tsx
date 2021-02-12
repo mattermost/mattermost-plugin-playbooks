@@ -15,6 +15,7 @@ import {messageHtmlToComponent, formatText} from 'src/components/shared';
 import {renderDuration} from 'src/components/duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {clientRemoveTimelineEvent} from 'src/client';
+import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 const Circle = styled.div`
     position: absolute;
@@ -75,24 +76,6 @@ const SummaryDetail = styled.div`
     font-size: 11px;
     margin: 4px 0 0 0;
     color: var(--center-channel-color-64)
-`;
-
-const HoverMenu = styled.div`
-    display: flex;
-    padding: 4px;
-    position: absolute;
-    right: 0;
-    top: -8px;
-    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
-    background-color: var(--center-channel-bg);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 4px;
-    z-index: 2;
-`;
-
-const MenuButton = styled.i`
-    width: 28px;
-    height: 28px;
 `;
 
 interface Props {
@@ -191,7 +174,7 @@ const RHSTimelineEventItem = (props: Props) => {
         >
             {showMenu &&
             <HoverMenu>
-                <MenuButton
+                <HoverMenuButton
                     className={'icon-trash-can-outline icon-16 btn-icon'}
                     onClick={() => {
                         setShowDeleteConfirm(true);
