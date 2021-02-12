@@ -85,15 +85,18 @@ describe('playbook creation button', () => {
         cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         cy.findByTestId('playbook-sidebar').within(() => {
+            // * Verify that there is no Remove link when there is one member
             cy.findAllByTestId('user-line').should('have.length', 1);
             cy.findAllByTestId('user-line').eq(0).within(() => {
                 cy.get('a').should('not.exist');
             });
-
+           
+            // # Add a new user
             cy.get('.profile-autocomplete__input > input')
                 .type('anne stone', {force: true, delay: 100}).wait(100)
                 .type('{enter}');
 
+            // * Verify that there is a Remove link when there is more than one member
             cy.findAllByTestId('user-line').should('have.length', 2);
             cy.findAllByTestId('user-line').eq(0).within(() => {
                 cy.get('a').contains('Remove').should('exist');
