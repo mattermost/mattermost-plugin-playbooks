@@ -102,7 +102,14 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
 });
 
 // Update an incident's status programmatically.
-Cypress.Commands.add('apiUpdateStatus', ({incidentId, userId, channelId, teamId, message, status}) => {
+Cypress.Commands.add('apiUpdateStatus', ({
+                                             incidentId,
+                                             userId,
+                                             channelId,
+                                             teamId,
+                                             message,
+                                             status
+                                         }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
@@ -169,6 +176,8 @@ Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDesc
         assert.equal(incident.end_at, 0);
         assert.equal(incident.name, incidentName);
 
+        cy.log('test 1');
+
         // Only check the description if provided. The server may supply a default depending
         // on how the incident was started.
         if (incidentDescription) {
@@ -188,7 +197,16 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
 });
 
 // Create a playbook programmatically.
-Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident, checklists, memberIDs, broadcastChannelId, reminderMessageTemplate, reminderTimerDefaultSeconds}) => {
+Cypress.Commands.add('apiCreatePlaybook', ({
+                                               teamId,
+                                               title,
+                                               createPublicIncident,
+                                               checklists,
+                                               memberIDs,
+                                               broadcastChannelId,
+                                               reminderMessageTemplate,
+                                               reminderTimerDefaultSeconds
+                                           }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
@@ -210,7 +228,14 @@ Cypress.Commands.add('apiCreatePlaybook', ({teamId, title, createPublicIncident,
 });
 
 // Create a test playbook programmatically.
-Cypress.Commands.add('apiCreateTestPlaybook', ({teamId, title, userId, broadcastChannelId, reminderMessageTemplate, reminderTimerDefaultSeconds}) => (
+Cypress.Commands.add('apiCreateTestPlaybook', ({
+                                                   teamId,
+                                                   title,
+                                                   userId,
+                                                   broadcastChannelId,
+                                                   reminderMessageTemplate,
+                                                   reminderTimerDefaultSeconds
+                                               }) => (
     cy.apiCreatePlaybook({
         teamId,
         title,
