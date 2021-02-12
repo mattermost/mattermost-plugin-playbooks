@@ -12,7 +12,6 @@ import {ChecklistItem, ChecklistItemState, Checklist} from 'src/types/playbook';
 import {setChecklistItemState} from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {isMobile} from 'src/mobile';
-import 'src/components/checklist.scss';
 import {
     renderThumbHorizontal,
     renderThumbVertical,
