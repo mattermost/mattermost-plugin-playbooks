@@ -9,11 +9,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/timeutils"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -21,7 +21,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-const helpText = "###### Mattermost Incident Management Plugin - Slash Command Help\n" +
+const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Command Help\n" +
 	"* `/incident start` - Start a new incident. \n" +
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident update` - Update the incident's status and (if enabled) post the status update to the broadcast channel. \n" +
@@ -48,7 +48,7 @@ func getCommand(addTestCommands bool) *model.Command {
 	return &model.Command{
 		Trigger:          "incident",
 		DisplayName:      "Incident",
-		Description:      "Incident Management Plugin",
+		Description:      "Incident Collaboration Plugin",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: start, end, update, restart, check, announce, list, commander, info",
 		AutoCompleteHint: "[command]",
@@ -78,7 +78,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	checklist := model.NewAutocompleteData("check", "[checklist item]",
 		"Checks or unchecks a checklist item.")
 	checklist.AddDynamicListArgument(
-		"List of checklist items is downloading from your Incident Management plugin",
+		"List of checklist items is downloading from your Incident Collaboration plugin",
 		"api/v0/incidents/checklist-autocomplete", true)
 	slashIncident.AddCommand(checklist)
 
@@ -409,13 +409,13 @@ func (r *Runner) actionList() {
 		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
 	}
 
-	options := incident.HeaderFilterOptions{
+	options := incident.FilterOptions{
 		TeamID:    r.args.TeamId,
 		MemberID:  r.args.UserId,
 		PerPage:   10,
 		Sort:      incident.SortByCreateAt,
 		Direction: incident.DirectionDesc,
-		Status:    incident.Ongoing,
+		Status:    incident.StatusActive,
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
@@ -535,35 +535,7 @@ func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentCha
 }
 
 func (r *Runner) actionEnd() {
-	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
-			r.postCommandResponse("You can only end an incident from within the incident's channel.")
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	err = r.incidentService.OpenEndIncidentDialog(incidentID, r.args.TriggerId)
-
-	switch {
-	case errors.Is(err, incident.ErrIncidentNotActive):
-		r.postCommandResponse("This incident has already been closed.")
-		return
-	case err != nil:
-		r.warnUserAndLogErrorf("Error: %v", err)
-		return
-	}
+	r.actionUpdate()
 }
 
 func (r *Runner) actionUpdate() {
@@ -598,38 +570,7 @@ func (r *Runner) actionUpdate() {
 }
 
 func (r *Runner) actionRestart() {
-	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
-			r.postCommandResponse("You can only restart an incident from within the incident's channel.")
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
-			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
-			return
-		}
-		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
-		return
-	}
-
-	err = r.incidentService.RestartIncident(incidentID, r.args.UserId)
-
-	switch {
-	case errors.Is(err, incident.ErrNotFound):
-		r.postCommandResponse("This channel is not associated with an incident.")
-		return
-	case errors.Is(err, incident.ErrIncidentActive):
-		r.postCommandResponse("This incident is already active.")
-		return
-	case err != nil:
-		r.warnUserAndLogErrorf("Error: %v", err)
-		return
-	}
+	r.actionUpdate()
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1187,7 +1128,10 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 	}
 
 	for i := 0; i < numEndedIncidents; i++ {
-		err := r.incidentService.EndIncident(incidents[i].ID, r.args.UserId)
+		err := r.incidentService.UpdateStatus(incidents[i].ID, r.args.UserId, incident.StatusUpdateOptions{
+			Status:  incident.StatusArchived,
+			Message: "This is now archived.",
+		})
 		if err != nil {
 			r.warnUserAndLogErrorf("Error ending the incident: %v", err)
 			return

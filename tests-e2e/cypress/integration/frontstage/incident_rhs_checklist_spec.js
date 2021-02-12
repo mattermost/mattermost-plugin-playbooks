@@ -83,13 +83,13 @@ describe('incident rhs checklist', () => {
         it('shows an ephemeral error when running an invalid slash command', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the command has not yet been run.
-                cy.get('.run').eq(0).should('have.text', 'Run');
+                cy.findAllByTestId('run').eq(0).should('have.text', 'Run');
 
                 // * Run the /invalid slash command
-                cy.get('.run').eq(0).click();
+                cy.findAllByTestId('run').eq(0).click();
 
                 // * Verify the command still has not yet been run.
-                cy.get('.run').eq(0).should('have.text', 'Run');
+                cy.findAllByTestId('run').eq(0).should('have.text', 'Run');
             });
 
             // * Verify the expected error message.
@@ -99,13 +99,13 @@ describe('incident rhs checklist', () => {
         it('successfully runs a valid slash command', () => {
             cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the command has not yet been run.
-                cy.get('.run').eq(1).should('have.text', 'Run');
+                cy.findAllByTestId('run').eq(1).should('have.text', 'Run');
 
                 // * Run the /invalid slash command
-                cy.get('.run').eq(1).click();
+                cy.findAllByTestId('run').eq(1).click();
 
                 // * Verify the command has now been run.
-                cy.get('.run').eq(1).should('have.text', 'Rerun');
+                cy.findAllByTestId('run').eq(1).should('have.text', 'Rerun');
             });
 
             // # Verify the expected output.
@@ -121,10 +121,10 @@ describe('incident rhs checklist', () => {
                 cy.findByTestId('tasks').click();
 
                 // * Verify the invalid command still has not yet been run.
-                cy.get('.run').eq(0).should('have.text', 'Run');
+                cy.findAllByTestId('run').eq(0).should('have.text', 'Run');
 
                 // * Verify the valid command has been run.
-                cy.get('.run').eq(1).should('have.text', 'Rerun');
+                cy.findAllByTestId('run').eq(1).should('have.text', 'Rerun');
             });
         });
 

@@ -3,8 +3,8 @@ package telemetry
 import (
 	"sync"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-management/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/pkg/errors"
 	rudder "github.com/rudderlabs/analytics-go"
 )
@@ -42,6 +42,8 @@ const (
 	eventPlaybook = "playbook"
 	actionUpdate  = "update"
 	actionDelete  = "delete"
+
+	eventFrontend = "frontend"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -104,7 +106,7 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 	return map[string]interface{}{
 		"UserActualID":        userID,
 		"IncidentID":          incdnt.ID,
-		"IsActive":            incdnt.IsActive,
+		"CurrentStatus":       incdnt.CurrentStatus(),
 		"CommanderUserID":     incdnt.CommanderUserID,
 		"TeamID":              incdnt.TeamID,
 		"CreateAt":            incdnt.CreateAt,
@@ -147,7 +149,14 @@ func (t *RudderTelemetry) ChangeCommander(incdnt *incident.Incident, userID stri
 func (t *RudderTelemetry) UpdateStatus(incdnt *incident.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionUpdateStatus
+	properties["ReminderTimerSeconds"] = int(incdnt.PreviousReminder)
 	t.track(eventIncident, properties)
+}
+
+func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string) {
+	properties := incidentProperties(incdnt, userID)
+	properties["Action"] = action
+	t.track(eventFrontend, properties)
 }
 
 func taskProperties(incidentID, userID string) map[string]interface{} {
@@ -228,14 +237,17 @@ func playbookProperties(pbook playbook.Playbook, userID string) map[string]inter
 	}
 
 	return map[string]interface{}{
-		"UserActualID":        userID,
-		"PlaybookID":          pbook.ID,
-		"TeamID":              pbook.TeamID,
-		"NumChecklists":       len(pbook.Checklists),
-		"TotalChecklistItems": totalChecklistItems,
-		"IsPublic":            pbook.CreatePublicIncident,
-		"NumMembers":          len(pbook.MemberIDs),
-		"NumSlashCommands":    totalChecklistItemsWithCommands,
+		"UserActualID":                userID,
+		"PlaybookID":                  pbook.ID,
+		"TeamID":                      pbook.TeamID,
+		"NumChecklists":               len(pbook.Checklists),
+		"TotalChecklistItems":         totalChecklistItems,
+		"IsPublic":                    pbook.CreatePublicIncident,
+		"NumMembers":                  len(pbook.MemberIDs),
+		"NumSlashCommands":            totalChecklistItemsWithCommands,
+		"ReminderTimerDefaultSeconds": pbook.ReminderTimerDefaultSeconds,
+		"BroadcastChannelID":          pbook.BroadcastChannelID,
+		"UsesReminderMessageTemplate": pbook.ReminderMessageTemplate != "",
 	}
 }
 

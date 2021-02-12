@@ -40,6 +40,7 @@ interface Props {
     getUsers: () => Promise<UserProfile[]>;
     onSelectedChange: (userId?: string) => void;
     customControlProps?: any;
+    showOnRight?: boolean;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -186,6 +187,7 @@ export default function ProfileSelector(props: Props) {
             isOpen={isOpen}
             onClose={toggleOpen}
             target={target}
+            showOnRight={props.showOnRight}
         >
             <ReactSelect
                 autoFocus={true}
@@ -228,13 +230,14 @@ const selectStyles: StylesConfig = {
 interface DropdownProps {
     children: JSX.Element;
     isOpen: boolean;
+    showOnRight?: boolean;
     target: JSX.Element;
     onClose: () => void;
 }
 
-const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
+const Dropdown = ({children, isOpen, showOnRight, target, onClose}: DropdownProps) => (
     <div
-        className={`IncidentFilter profile-dropdown${isOpen ? ' IncidentFilter--active profile-dropdown--active' : ''}`}
+        className={`IncidentFilter profile-dropdown${isOpen ? ' IncidentFilter--active profile-dropdown--active' : ''} ${showOnRight && 'show-on-right'}`}
         css={{position: 'relative'}}
     >
         {target}

@@ -5,7 +5,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
-	"github.com/mattermost/mattermost-plugin-incident-management/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
