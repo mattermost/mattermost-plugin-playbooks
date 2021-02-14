@@ -116,12 +116,12 @@ Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     });
 });
 
-Cypress.Commands.add('addInvitedUser', (userName) => {
-    cy.findByText('Add People').click({force: true});
+Cypress.Commands.add('openInvitedUsersSelector', () => {
+    cy.findByText('Search for member').click({force: true});
+});
 
-    cy.get('.profile-autocomplete__menu').within(() => {
+Cypress.Commands.add('addInvitedUser', (userName) => {
+    cy.get('.invite-users-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
-        cy.wait(500);
-        cy.get('.profile-autocomplete__menu').should('not.exist');
     });
 });

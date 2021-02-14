@@ -281,7 +281,7 @@ describe('backstage playbook details', () => {
                     cy.get('#invite-users label input').should('not.be.checked');
 
                     // * Verify that the menu is disabled
-                    cy.getStyledComponent('StyledAsyncSelect').should('have.class', 'profile-autocomplete--is-disabled');
+                    cy.getStyledComponent('StyledReactSelect').should('have.class', 'invite-users-selector--is-disabled');
                 });
 
                 it('allows adding users when enabled', () => {
@@ -301,12 +301,20 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
+                        // # Open the invited users selector
+                        cy.openInvitedUsersSelector();
+
                         // # Add one user
                         cy.addInvitedUser('aaron.medina');
 
-                        // * Verify that the user invited is in the list of invited users
-                        cy.getStyledComponent('UserPic').should('have.length', 1).within(() => {
-                            cy.get('.name').contains('aaron.medina');
+                        // * Verify that the badge in the selector shows the correct number of members
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '1 MEMBER');
+
+                        // * Verify that the user shows in the group of invited members
+                        cy.findByText('INVITED MEMBERS').parent().within(() => {
+                            cy.findByText('aaron.medina');
                         });
                     });
                 });
@@ -328,28 +336,29 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
+                        // # Open the invited users selector
+                        cy.openInvitedUsersSelector();
+
                         // # Add one user
                         cy.addInvitedUser('aaron.medina');
 
-                        // * Verify that the user invited is in the list of invited users
-                        cy.getStyledComponent('UserPic').should('have.length', 1).within(() => {
-                            cy.get('.name').contains('aaron.medina');
+                        // * Verify that the user shows in the group of invited members
+                        cy.findByText('INVITED MEMBERS').parent().within(() => {
+                            cy.findByText('aaron.medina');
                         });
 
                         // # Add a new user
                         cy.addInvitedUser('alice.johnston');
 
-                        // * Verify that there are two users added
-                        cy.getStyledComponent('UserPic').should('have.length', 2);
+                        // * Verify that the badge in the selector shows the correct number of members
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '2 MEMBERS');
 
-                        // * Verify that the first user invited is in the list of invited users
-                        cy.getStyledComponent('UserPic').eq(0).within(() => {
-                            cy.get('.name').contains('aaron.medina');
-                        });
-
-                        // * Verify that the second user invited is in the list of invited users
-                        cy.getStyledComponent('UserPic').eq(1).within(() => {
-                            cy.get('.name').contains('alice.johnston');
+                        // * Verify that the user shows in the group of invited members
+                        cy.findByText('INVITED MEMBERS').parent().within(() => {
+                            cy.findByText('aaron.medina');
+                            cy.findByText('alice.johnston');
                         });
                     });
                 });
@@ -371,22 +380,32 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
+                        // # Open the invited users selector
+                        cy.openInvitedUsersSelector();
+
                         // # Add a couple of users
                         cy.addInvitedUser('aaron.medina');
                         cy.addInvitedUser('alice.johnston');
 
-                        // * Verify that there are two users added
-                        cy.getStyledComponent('UserPic').should('have.length', 2);
+                        // * Verify that the badge in the selector shows the correct number of members
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '2 MEMBERS');
 
                         // # Remove the first users added
-                        cy.getStyledComponent('UserPic').eq(0).within(() => {
-                            cy.getStyledComponent('Cross').click({force: true});
+                        cy.get('.invite-users-selector__option').eq(0).within(() => {
+                            cy.findByText('Remove').click();
                         });
 
                         // * Verify that there is only one user, the one not removed
-                        cy.getStyledComponent('UserPic').should('have.length', 1);
-                        cy.getStyledComponent('UserPic').eq(0).within(() => {
-                            cy.get('.name').contains('alice.johnston');
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '1 MEMBER');
+
+                        cy.findByText('INVITED MEMBERS').parent().within(() => {
+                            cy.get('.invite-users-selector__option')
+                                .should('have.length', 1)
+                                .contains('alice.johnston');
                         });
                     });
                 });
@@ -408,12 +427,17 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
-                        // # Add a couple of userse
+                        // # Open the invited users selector
+                        cy.openInvitedUsersSelector();
+
+                        // # Add a couple of users
                         cy.addInvitedUser('aaron.medina');
                         cy.addInvitedUser('alice.johnston');
 
-                        // * Verify that the users invited are in the list of invited users
-                        cy.getStyledComponent('UserPic').should('have.length', 2);
+                        // * Verify that the badge in the selector shows the correct number of members
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '2 MEMBERS');
 
                         // # Click on the toggle to disable the setting
                         cy.get('label input').click({force: true});
@@ -432,17 +456,27 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Automation').click();
 
                     cy.get('#invite-users').within(() => {
-                        // * Verify that there are two users added
-                        cy.getStyledComponent('UserPic').should('have.length', 2);
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
 
-                        // * Verify that the first user invited is in the list of invited users
-                        cy.getStyledComponent('UserPic').eq(0).within(() => {
-                            cy.get('.name').contains('aaron.medina');
-                        });
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
 
-                        // * Verify that the second user invited is in the list of invited users
-                        cy.getStyledComponent('UserPic').eq(1).within(() => {
-                            cy.get('.name').contains('alice.johnston');
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // * Verify that the badge in the selector shows the correct number of members
+                        cy.get('.invite-users-selector__control')
+                            .after('content')
+                            .should('eq', '2 MEMBERS');
+
+                        // # Open the invited users selector
+                        cy.openInvitedUsersSelector();
+
+                        // * Verify that the user shows in the group of invited members
+                        cy.findByText('INVITED MEMBERS').parent().within(() => {
+                            cy.findByText('aaron.medina');
+                            cy.findByText('alice.johnston');
                         });
                     });
                 });
@@ -500,8 +534,11 @@ describe('backstage playbook details', () => {
                         // # Switch to Automation tab
                         cy.get('#root').findByText('Automation').click();
 
-                        // * Verify that there are no users added
-                        cy.getStyledComponent('UserPic').should('not.exist');
+                        // # Open the invited users selector
+                        cy.openInvitedUsersSelector();
+
+                        // * Verify that there are no invited members
+                        cy.findByText('INVITED MEMBERS').should('not.exist');
                     });
                 });
             });
