@@ -24,15 +24,16 @@ type sqlIncident struct {
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
 type incidentStore struct {
-	pluginAPI         PluginAPIClient
-	log               bot.Logger
-	store             *SQLStore
-	queryBuilder      sq.StatementBuilderType
-	incidentSelect    sq.SelectBuilder
-	statusPostsSelect sq.SelectBuilder
+	pluginAPI            PluginAPIClient
+	log                  bot.Logger
+	store                *SQLStore
+	queryBuilder         sq.StatementBuilderType
+	incidentSelect       sq.SelectBuilder
+	statusPostsSelect    sq.SelectBuilder
+	timelineEventsSelect sq.SelectBuilder
 }
 
-// Ensure playbookStore implements the playbook.Store interface.
+// Ensure incidentStore implements the incident.Store interface.
 var _ incident.Store = (*incidentStore)(nil)
 
 type incidentStatusPosts []struct {
@@ -56,13 +57,20 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		From("IR_StatusPosts as sp").
 		Join("Posts as p ON sp.PostID = p.Id")
 
+	timelineEventsSelect := sqlStore.builder.
+		Select("te.ID", "te.IncidentID", "te.CreateAt", "te.DeleteAt", "te.EventAt",
+			"te.EventType", "te.Summary", "te.Details", "te.PostID", "te.SubjectUserID",
+			"te.CreatorUserID").
+		From("IR_TimelineEvent as te")
+
 	return &incidentStore{
-		pluginAPI:         pluginAPI,
-		log:               log,
-		store:             sqlStore,
-		queryBuilder:      sqlStore.builder,
-		incidentSelect:    incidentSelect,
-		statusPostsSelect: statusPostsSelect,
+		pluginAPI:            pluginAPI,
+		log:                  log,
+		store:                sqlStore,
+		queryBuilder:         sqlStore.builder,
+		incidentSelect:       incidentSelect,
+		statusPostsSelect:    statusPostsSelect,
+		timelineEventsSelect: timelineEventsSelect,
 	}
 }
 
@@ -166,7 +174,18 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 
 	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, errors.Wrapf(err, "failed to get incidentStatusPosts")
+		return nil, errors.Wrap(err, "failed to get incidentStatusPosts")
+	}
+
+	var timelineEvents []incident.TimelineEvent
+
+	timelineEventsSelect := s.timelineEventsSelect.
+		OrderBy("te.CreateAt ASC").
+		Where(sq.And{sq.Eq{"te.IncidentID": incidentIDs}, sq.Eq{"te.DeleteAt": 0}})
+
+	err = s.store.selectBuilder(tx, &timelineEvents, timelineEventsSelect)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrap(err, "failed to get timelineEvents")
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -174,6 +193,7 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 	}
 
 	addStatusPostsToIncidents(statusPosts, incidents)
+	addTimelineEventsToIncidents(timelineEvents, incidents)
 
 	return &incident.GetIncidentsResults{
 		TotalCount: total,
@@ -308,6 +328,76 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 	return nil
 }
 
+// UpdateTimelineEvent updates (or inserts) the timeline event
+func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*incident.TimelineEvent, error) {
+	if event.IncidentID == "" {
+		return nil, errors.New("needs incident ID")
+	}
+	if event.EventType == "" {
+		return nil, errors.New("needs event type")
+	}
+	if event.CreateAt == 0 {
+		event.CreateAt = model.GetMillis()
+	}
+	event.ID = model.NewId()
+
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Insert("IR_TimelineEvent").
+		SetMap(map[string]interface{}{
+			"ID":            event.ID,
+			"IncidentID":    event.IncidentID,
+			"CreateAt":      event.CreateAt,
+			"DeleteAt":      event.DeleteAt,
+			"EventAt":       event.EventAt,
+			"EventType":     event.EventType,
+			"Summary":       event.Summary,
+			"Details":       event.Details,
+			"PostID":        event.PostID,
+			"SubjectUserID": event.SubjectUserID,
+			"CreatorUserID": event.CreatorUserID,
+		}))
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to insert timeline event")
+	}
+
+	return event, nil
+}
+
+func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error {
+	if event.ID == "" {
+		return errors.New("needs event ID")
+	}
+	if event.IncidentID == "" {
+		return errors.New("needs incident ID")
+	}
+	if event.EventType == "" {
+		return errors.New("needs event type")
+	}
+
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_TimelineEvent").
+		SetMap(map[string]interface{}{
+			"IncidentID":    event.IncidentID,
+			"CreateAt":      event.CreateAt,
+			"DeleteAt":      event.DeleteAt,
+			"EventAt":       event.EventAt,
+			"EventType":     event.EventType,
+			"Summary":       event.Summary,
+			"Details":       event.Details,
+			"PostID":        event.PostID,
+			"SubjectUserID": event.SubjectUserID,
+			"CreatorUserID": event.CreatorUserID,
+		}).
+		Where(sq.Eq{"ID": event.ID}))
+
+	if err != nil {
+		return errors.Wrap(err, "failed to update timeline event")
+	}
+
+	return nil
+}
+
 // GetIncident gets an incident by ID.
 func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, err error) {
 	if incidentID == "" {
@@ -343,6 +433,17 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 		return out, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
 	}
 
+	var timelineEvents []incident.TimelineEvent
+
+	timelineEventsSelect := s.timelineEventsSelect.
+		OrderBy("te.CreateAt").
+		Where(sq.Eq{"te.IncidentID": incidentID})
+
+	err = s.store.selectBuilder(tx, &timelineEvents, timelineEventsSelect)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrap(err, "failed to get timelineEvents")
+	}
+
 	if err = tx.Commit(); err != nil {
 		return out, errors.Wrap(err, "could not commit transaction")
 	}
@@ -350,6 +451,8 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 	for _, p := range statusPosts {
 		out.StatusPosts = append(out.StatusPosts, p.StatusPost)
 	}
+
+	out.TimelineEvents = append(out.TimelineEvents, timelineEvents...)
 
 	return out, nil
 }
@@ -423,7 +526,7 @@ func (s *incidentStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System, IR_TimelineEvent"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
@@ -544,5 +647,15 @@ func addStatusPostsToIncidents(statusIDs incidentStatusPosts, incidents []incide
 	}
 	for i, incdnt := range incidents {
 		incidents[i].StatusPosts = iToPosts[incdnt.ID]
+	}
+}
+
+func addTimelineEventsToIncidents(timelineEvents []incident.TimelineEvent, incidents []incident.Incident) {
+	iToTe := make(map[string][]incident.TimelineEvent)
+	for _, te := range timelineEvents {
+		iToTe[te.IncidentID] = append(iToTe[te.IncidentID], te)
+	}
+	for i, incdnt := range incidents {
+		incidents[i].TimelineEvents = iToTe[incdnt.ID]
 	}
 }

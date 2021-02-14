@@ -16,6 +16,7 @@ import {setTriggerId} from 'src/actions';
 import {CommanderInfo} from 'src/types/backstage';
 import {
     FetchIncidentsParams,
+    FetchPlaybooksParams,
     FetchIncidentsReturn,
     Incident,
     isIncident,
@@ -122,7 +123,7 @@ export async function clientRunChecklistItemSlashCommand(dispatch: Dispatch, inc
     }
 }
 
-export function clientFetchPlaybooks(teamID: string, params: FetchIncidentsParams) {
+export function clientFetchPlaybooks(teamID: string, params: FetchPlaybooksParams) {
     const queryParams = qs.stringify({
         team_id: teamID,
         ...params,
@@ -134,6 +135,7 @@ const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
     const result = await clientFetchPlaybooks(teamID, {
         page: 0,
         per_page: 1,
+        member_only: true,
     }) as FetchPlaybooksNoChecklistReturn;
 
     return result.items?.length > 0;
@@ -242,6 +244,11 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     );
 
     return data;
+}
+
+export async function telemetryEventForIncident(incidentID: string, action: string) {
+    const body = JSON.stringify({action});
+    await doPost(`${apiUrl}/telemetry/incident/${incidentID}`, body);
 }
 
 export function exportChannelUrl(channelId: string) {
