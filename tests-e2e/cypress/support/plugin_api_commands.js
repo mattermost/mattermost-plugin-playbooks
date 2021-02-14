@@ -10,9 +10,9 @@ const incidentsEndpoint = endpoints.incidents;
  */
 Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: { team_id: teamId, per_page: 10000 },
+        qs: {team_id: teamId, per_page: 10000},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -25,9 +25,9 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
  */
 Cypress.Commands.add('apiGetAllActiveIncidents', (teamId, userId = '') => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: { team_id: teamId, status: 'Active', member_id: userId },
+        qs: {team_id: teamId, status: 'Active', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -40,9 +40,9 @@ Cypress.Commands.add('apiGetAllActiveIncidents', (teamId, userId = '') => {
  */
 Cypress.Commands.add('apiGetAllReportedIncidents', (teamId, userId = '') => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: { team_id: teamId, status: 'Reported', member_id: userId },
+        qs: {team_id: teamId, status: 'Reported', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -55,9 +55,9 @@ Cypress.Commands.add('apiGetAllReportedIncidents', (teamId, userId = '') => {
  */
 Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
-        qs: { team_id: teamId, search_term: name },
+        qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -72,7 +72,7 @@ Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
  */
 Cypress.Commands.add('apiGetIncident', (incidentId) => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `${incidentsEndpoint}/${incidentId}`,
         method: 'GET',
     }).then((response) => {
@@ -84,9 +84,9 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
 /**
  * Start an incident directly via API.
  */
-Cypress.Commands.add('apiStartIncident', ({ teamId, playbookId, incidentName, commanderUserId }) => {
+Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId}) => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint,
         method: 'POST',
         body: {
@@ -111,7 +111,7 @@ Cypress.Commands.add('apiUpdateStatus', ({
     status
 }) => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
         method: 'POST',
         body: {
@@ -121,7 +121,7 @@ Cypress.Commands.add('apiUpdateStatus', ({
             user_id: userId,
             channel_id: channelId,
             team_id: teamId,
-            submission: { message, reminder: '15', status },
+            submission: {message, reminder: '15', status},
             cancelled: false,
         },
     }).then((response) => {
@@ -155,7 +155,7 @@ Cypress.Commands.add('apiRestartIncident', (incidentId) => {
  */
 Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint + '/' + incidentId + '/commander',
         method: 'POST',
         body: {
@@ -210,7 +210,7 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     inviteUsersEnabled,
 }) => {
     return cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
         method: 'POST',
         body: {
@@ -246,8 +246,8 @@ Cypress.Commands.add('apiCreateTestPlaybook', ({
         checklists: [{
             title: 'Stage 1',
             items: [
-                { title: 'Step 1' },
-                { title: 'Step 2' },
+                {title: 'Step 1'},
+                {title: 'Step 2'},
             ],
         }],
         memberIDs: [
@@ -262,9 +262,9 @@ Cypress.Commands.add('apiCreateTestPlaybook', ({
 // Verify that the playbook was created
 Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
     cy.request({
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
-        qs: { team_id: teamId, sort: 'title', direction: 'asc' },
+        qs: {team_id: teamId, sort: 'title', direction: 'asc'},
         method: 'GET'
     }).then((response) => {
         expect(response.status).to.equal(200);
