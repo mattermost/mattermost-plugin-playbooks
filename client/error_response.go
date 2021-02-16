@@ -22,5 +22,5 @@ func (r *ErrorResponse) Unwrap() error {
 
 // Error describes the error from the API request.
 func (r *ErrorResponse) Error() string {
-	return fmt.Sprintf("%v %v [%d]: %v", r.Method, r.URL, r.StatusCode, r.Err)
+	return fmt.Sprintf("%s %s [%d]: %v", r.Method, r.URL, r.StatusCode, r.Err)
 }
