@@ -32,9 +32,8 @@ type Client struct {
 	// User agent used when communicating with the workflows API. Defaults to go-client.
 	UserAgent string
 
-	Incidents          *IncidentsService
-	Playbooks          *PlaybooksService
-	EventSubscriptions *EventSubscriptionsService
+	Incidents *IncidentsService
+	Playbooks *PlaybooksService
 }
 
 // ErrorResponse reports an error caused by an API request.
@@ -94,7 +93,6 @@ func NewClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c := &Client{client: httpClient, BaseURL: siteURL, UserAgent: userAgent}
 	c.Incidents = &IncidentsService{c}
 	c.Playbooks = &PlaybooksService{c}
-	c.EventSubscriptions = &EventSubscriptionsService{c}
 	return c, nil
 }
 
