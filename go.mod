@@ -10,7 +10,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattermost/mattermost-plugin-api v0.0.13-0.20201210154933-631fdc447dbe
 	github.com/mattermost/mattermost-plugin-incident-collaboration/client v0.3.1
-	github.com/mattermost/mattermost-server/v5 v5.31.0
+	github.com/mattermost/mattermost-server/v5 v5.28.0
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
 	github.com/sirupsen/logrus v1.7.0
