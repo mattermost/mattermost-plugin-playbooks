@@ -54,19 +54,14 @@ func (s *ServiceImpl) HandleReminder(key string) {
 		},
 	}
 
-	post := &model.Post{
-		Message: fmt.Sprintf("@%s, please provide an update on this incident's progress.", commander.Username),
-	}
-	model.ParseSlackAttachment(post, attachments)
-
-	id, err := s.poster.PostMessageWithAttachments(incidentToModify.ChannelID, attachments,
+	post, err := s.poster.PostMessageWithAttachments(incidentToModify.ChannelID, attachments,
 		"@%s, please provide an update on this incident's progress.", commander.Username)
 	if err != nil {
 		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
 		return
 	}
 
-	incidentToModify.ReminderPostID = id
+	incidentToModify.ReminderPostID = post.Id
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, incident id: %s", incidentToModify.ID).Error())
 	}

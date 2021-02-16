@@ -1227,6 +1227,14 @@ paths:
             enum:
               - desc
               - asc
+        - name: member_only
+          in: query
+          description: Limit to playbooks of which the current user is a member. No effect unless the requesting user is a system administrator.
+          required: false
+          example: true
+          schema:
+            type: bool
+            default: false
       x-codeSamples:
         - lang: curl
           source: |

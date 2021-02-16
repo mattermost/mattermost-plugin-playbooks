@@ -252,6 +252,55 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, playbooksBytes, result)
 	})
 
+	t.Run("get playbooks, member only", func(t *testing.T) {
+		reset()
+
+		playbookResult := struct {
+			TotalCount int                 `json:"total_count"`
+			PageCount  int                 `json:"page_count"`
+			HasMore    bool                `json:"has_more"`
+			Items      []playbook.Playbook `json:"items"`
+		}{
+			TotalCount: 2,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []playbook.Playbook{playbooktest, playbooktest},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid&member_only=true", nil)
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			GetPlaybooksForTeam(
+				playbook.RequesterInfo{
+					UserID:          "testuserid",
+					TeamID:          "testteamid",
+					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					MemberOnly:      true,
+				},
+				"testteamid",
+				gomock.Any(),
+			).
+			Return(playbookResult, nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		result, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		playbooksBytes, err := json.Marshal(&playbookResult)
+		require.NoError(t, err)
+		assert.Equal(t, playbooksBytes, result)
+	})
+
 	t.Run("update playbook", func(t *testing.T) {
 		reset()
 
