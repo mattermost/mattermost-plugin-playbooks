@@ -100,8 +100,8 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 		return nil, err
 	}
 
-	i := new(Incident)
-	resp, err := s.client.do(ctx, req, i)
+	incident := new(Incident)
+	resp, err := s.client.do(ctx, req, incident)
 	if err != nil {
 		return nil, err
 	}
@@ -111,5 +111,5 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 		return nil, fmt.Errorf("expected status code %d", http.StatusCreated)
 	}
 
-	return i, nil
+	return incident, nil
 }
