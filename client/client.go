@@ -26,13 +26,13 @@ const (
 	userAgent  = "go-client/" + apiVersion
 )
 
-// Client manages communication with the Incident Management API.
+// Client manages communication with the Incident Collaboration API.
 type Client struct {
 	// client is the underlying HTTP client used to make API requests.
 	client *http.Client
-	// BaseURL is the base HTTP endpoint for the Incident Management plugin.
+	// BaseURL is the base HTTP endpoint for the Incident Collaboration plugin.
 	BaseURL *url.URL
-	// User agent used when communicating with the workflows API.
+	// User agent used when communicating with the Incident Collaboration API.
 	UserAgent string
 
 	// Incidents is a collection of methods used to interact with incidents.

@@ -10,7 +10,7 @@ import (
 )
 
 // IncidentsService handles communication with the incident related
-// methods of the workflows API.
+// methods of the Incident Collaboration API.
 type IncidentsService struct {
 	client *Client
 }
