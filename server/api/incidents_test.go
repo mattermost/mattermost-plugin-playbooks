@@ -88,10 +88,6 @@ func TestIncidents(t *testing.T) {
 			Checklists:      withid.Checklists,
 		}
 
-		retI := testIncident
-		retI.ID = "incidentID"
-		retI.ChannelID = "channelID"
-
 		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
 
