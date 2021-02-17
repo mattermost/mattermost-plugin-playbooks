@@ -365,7 +365,7 @@ const BackstageIncidentList: FC = () => {
                             className='col-sm-2'
                         >
                             {
-                                moment(incident.create_at).format('MMM DD LT')
+                                createdAt(incident.create_at)
                             }
                         </div>
                         <div className='col-sm-2'>
@@ -391,6 +391,14 @@ const BackstageIncidentList: FC = () => {
         <LeftDots/>
         <LeftFade/>
     </>);
+};
+
+const createdAt = (time: number) => {
+    const mom = moment(time);
+    if (mom.isSame(moment(), 'year')) {
+        return mom.format('MMM DD LT');
+    }
+    return mom.format('MMM DD YYYY LT');
 };
 
 const endedAt = (isActive: boolean, time: number) => {
