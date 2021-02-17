@@ -115,7 +115,15 @@ func findManifest() (*model.Manifest, error) {
 	}
 
 	// Update the manifest based on the state of the current commit
-	version := BuildTagCurrent
+	// Use the first version we find (to prevent causing errors)
+	var version string
+	tags := strings.Fields(BuildTagCurrent)
+	for _, t := range tags {
+		if strings.HasPrefix(t, "v") {
+			version = t
+			break
+		}
+	}
 	if version == "" {
 		version = BuildTagLatest + "+" + BuildHashShort
 	}
