@@ -1169,6 +1169,42 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
+  /incidents/{id}/timeline/{event-id}/:
+    delete:
+      summary: Remove a timeline event from the incident
+      operationId: removeTimelineEvent
+      security:
+        - BearerAuth: []
+      tags:
+        - Timeline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the incident whose timeline event will be modified.
+          example: zjy2q2iy2jafl0lo2oddos5xn7
+          schema:
+            type: string
+        - name: event-id
+          in: path
+          required: true
+          description: ID of the timeline event to be deleted
+          example: craxgf4r4trgzrtues3a1t74ac
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/zjy2q2iy2jafl0lo2oddos5xn7/timeline/craxgf4r4trgzrtues3a1t74ac' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        204:
+          description: Item successfully deleted.
+        400:
+          $ref: "#/components/schemas/400"
+        500:
+          $ref: "#/components/schemas/500"
+
   /playbooks:
     get:
       summary: List all playbooks
