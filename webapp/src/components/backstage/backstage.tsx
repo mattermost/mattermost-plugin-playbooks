@@ -23,6 +23,8 @@ import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/br
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
 
+import StatsView from './stats';
+
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     height: 100%;
@@ -151,6 +153,16 @@ const Backstage: FC = () => {
                                 </span>
                                 {'Incidents'}
                             </BackstageTitlebarItem>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/stats`}
+                                activeClassName={'active'}
+                                data-testid='incidentsLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <IncidentIcon/>
+                                </span>
+                                {'Stats'}
+                            </BackstageTitlebarItem>
                         </div>
                         <BackstageNavbarIcon
                             className='icon-close close-icon'
@@ -183,6 +195,9 @@ const Backstage: FC = () => {
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
+                    </Route>
+                    <Route path={`${match.url}/stats`}>
+                        <StatsView/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>

@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Stats} from 'fs';
+
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
@@ -253,6 +255,15 @@ export async function clientRemoveTimelineEvent(incidentID: string, entryID: str
     });
 
     return data;
+}
+
+export async function fetchStats(): Promise<Stats | null> {
+    const data = await doGet(`${apiUrl}/stats`);
+    if (!data) {
+        return null;
+    }
+
+    return data as Stats;
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {
