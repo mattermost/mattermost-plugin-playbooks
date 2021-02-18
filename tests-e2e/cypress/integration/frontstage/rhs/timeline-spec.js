@@ -73,8 +73,10 @@ describe('timeline', () => {
         // # Navigate directly to the application and the incident channel
         cy.visit(`/${teamName}/channels/${channelName}`);
 
-        // # Add a second user
-        cy.executeSlashCommand('/invite @aaron.peterson');
+        // # Add @aaron.peterson
+        cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user: aaron}) => {
+            cy.apiAddUserToChannel(channelId, aaron.id);
+        });
 
         // * Verify the incident RHS is open.
         cy.get('#rhsContainer').should('exist').within(() => {
