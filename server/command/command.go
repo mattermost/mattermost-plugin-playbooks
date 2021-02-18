@@ -30,6 +30,7 @@ const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Comman
 	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
 	"* `/incident list` - List all your incidents. \n" +
 	"* `/incident info` - Show a summary of the current incident. \n" +
+	"* `/incident timeline` - Show the timeline for the current incident. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -58,7 +59,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, update, restart, check, announce, list, commander, info")
+		"Available commands: start, end, update, restart, check, announce, list, commander, info, timeline")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -98,6 +99,9 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 
 	info := model.NewAutocompleteData("info", "", "Shows a summary of the current incident")
 	slashIncident.AddCommand(info)
+
+	timeline := model.NewAutocompleteData("timeline", "", "Shows the timeline for the current incident")
+	slashIncident.AddCommand(timeline)
 
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
@@ -594,6 +598,86 @@ func (r *Runner) actionAdd(args []string) {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
+}
+
+func (r *Runner) actionTimeline() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only run the timeline command from within an incident channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	incidentToRead, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	if len(incidentToRead.TimelineEvents) == 0 {
+		r.postCommandResponse("There are no timeline events to display.")
+		return
+	}
+
+	message := "Timeline for **" + incidentToRead.Name + "**:\n\n" +
+		"|Event Time | Since Reported | Event |\n" +
+		"|:----------|:---------------|:------|\n"
+
+	var reported time.Time
+	for _, e := range incidentToRead.TimelineEvents {
+		if e.EventType == incident.IncidentCreated {
+			reported = timeutils.GetTimeForMillis(e.EventAt)
+			break
+		}
+	}
+	for _, e := range incidentToRead.TimelineEvents {
+		message += "|" + timeutils.GetTimeForMillis(e.EventAt).Format("Jan 2 15:04") +
+			"|" + r.timeSince(e, reported) + "|" + r.summaryMessage(e) + "|\n"
+	}
+
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{Message: message})
+}
+
+func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
+	var username string
+	user, err := r.pluginAPI.User.Get(event.SubjectUserID)
+	if err == nil {
+		username = user.Username
+	}
+
+	switch event.EventType {
+	case incident.IncidentCreated:
+		return "Incident Reported by @" + username
+	case incident.StatusUpdated:
+		if event.Summary == "" {
+			return "@" + username + " posted a status update"
+		}
+		return "@" + username + " changed status from " + event.Summary
+	case incident.CommanderChanged:
+		return "Commander changes from " + event.Summary
+	case incident.TaskStateModified:
+		return "@" + username + " " + event.Summary
+	case incident.AssigneeChanged:
+		return "@" + username + " " + event.Summary
+	case incident.RanSlashCommand:
+		return "@" + username + " " + event.Summary
+	default:
+		return event.Summary
+	}
+}
+
+func (r *Runner) timeSince(event incident.TimelineEvent, reported time.Time) string {
+	if event.EventType == incident.IncidentCreated {
+		return ""
+	}
+	eventAt := timeutils.GetTimeForMillis(event.EventAt)
+	if reported.Before(eventAt) {
+		return timeutils.DurationString(reported, eventAt)
+	}
+	return "-" + timeutils.DurationString(eventAt, reported)
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1231,6 +1315,8 @@ func (r *Runner) Execute() error {
 		r.actionInfo()
 	case "add":
 		r.actionAdd(parameters)
+	case "timeline":
+		r.actionTimeline()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":
