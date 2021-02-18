@@ -66,8 +66,8 @@ describe('timeline', () => {
 
         // # Add @aaron.peterson
         cy.apiGetChannelByName(teamName, channelName).then(({channel}) => {
-            cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user: aaron}) => {
-                cy.apiAddUserToChannel(channel.id, aaron.id);
+            cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user}) => {
+                cy.apiAddUserToChannel(channel.id, user.id);
             });
         });
 
