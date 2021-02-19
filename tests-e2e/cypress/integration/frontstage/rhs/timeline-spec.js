@@ -72,7 +72,7 @@ describe('timeline', () => {
         });
 
         // # Navigate directly to the application and the incident channel
-        cy.visit(`/${teamName}/channels/${channelName}`);
+        cy.wait(2000).visit(`/${teamName}/channels/${channelName}`);
 
         // * Verify the incident RHS is open.
         cy.get('#rhsContainer').should('exist').within(() => {
