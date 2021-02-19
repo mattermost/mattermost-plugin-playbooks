@@ -34,6 +34,7 @@ type Stats struct {
 	AverageDurationActiveIncidentsMinutes             int                    `json:"average_duration_active_incidents_minutes"`
 	AverageReportedToActiveTimeActiveIncidentsMinutes int                    `json:"average_reported_to_active_time_minutes"`
 	PlaybookUses                                      []sqlstore.PlaybookUse `json:"playbook_uses"`
+	ActiveIncidentsOverTime                           []int                  `json:"active_incidents_over_time"`
 }
 
 func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +43,8 @@ func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 		TotalActiveParticipants:                           h.statsStore.GetTotalActiveParticipants(),
 		AverageDurationActiveIncidentsMinutes:             h.statsStore.GetAverageDurationActiveIncidentsMinutes(),
 		AverageReportedToActiveTimeActiveIncidentsMinutes: 20,
-		PlaybookUses: h.statsStore.GetPlaybookUses(),
+		PlaybookUses:            h.statsStore.GetPlaybookUses(),
+		ActiveIncidentsOverTime: h.statsStore.GetActiveIncidentsOverTime(),
 	}
 
 	ReturnJSON(w, stats, http.StatusOK)

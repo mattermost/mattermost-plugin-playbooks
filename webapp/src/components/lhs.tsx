@@ -71,6 +71,29 @@ const LHS: FC<Props> = (props: Props) => {
                     </div>
                 </Link>
             </li>
+            <li
+                className={'SidebarChannel'}
+                role='listitem'
+            >
+                <Link
+                    className={'SidebarLink ' + ((match.params.section === 'stats') ? 'selected' : '')}
+                    id={'sidebarItem_ir_stats'}
+                    to={'/rrrr/com.mattermost.plugin-incident-management/stats'}
+                >
+                    <Icon>
+                        <div className={'fa fa-line-chart'}/>
+                    </Icon>
+                    <div
+                        className={'SidebarChannelLinkLabel_wrapper'}
+                    >
+                        <span
+                            className={'SidebarChannelLinkLabel'}
+                        >
+                            {'Statistics'}
+                        </span>
+                    </div>
+                </Link>
+            </li>
         </>
     );
 };

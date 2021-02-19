@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
@@ -59,13 +60,13 @@ func (s *StatsStore) GetAverageDurationActiveIncidentsMinutes() int {
 		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where("i.EndAt = 0")
 
-	var averageCreateAt int64
+	var averageCreateAt float64
 	if err := s.store.getBuilder(s.store.db, &averageCreateAt, query); err != nil {
 		// TODO: Error properly
 		return -1
 	}
 
-	return int((model.GetMillis() - averageCreateAt) / 60000)
+	return int((float64(model.GetMillis()) - averageCreateAt) / 60000)
 }
 
 type PlaybookUse struct {
@@ -90,21 +91,29 @@ func (s *StatsStore) GetPlaybookUses() []PlaybookUse {
 	return uses
 }
 
-/*func (s *StatsStore) GetActiveIncidentsOverTime() {
+func (s *StatsStore) GetActiveIncidentsOverTime() []int {
 	now := model.GetMillis()
-	dayInMS := 86400
+	dayInMS := int64(86400)
 
-	query := s.store.builder.
-		Select("COUNT(Id)").
-		From("IR_Incident as i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
-		Where(sq.Expr(`c.CreateAt < ?`, now-dayInMS))
+	windowStart := now - dayInMS
+	windowEnd := now
+	numIncidents := []int{}
+	for i := int64(0); i < 14; i++ {
+		query := s.store.builder.
+			Select("COUNT(i.Id)").
+			From("IR_Incident as i").
+			Join("Channels AS c ON (c.Id = i.ChannelId)").
+			Where(sq.Expr(`c.CreateAt < ? AND i.EndAt > ?`, windowEnd-(i*dayInMS), windowStart-(i*dayInMS)))
 
-	var numActiveOnDay
-	if err := s.store.getBuilder(s.store.db, &uses, query); err != nil {
-		// TODO: Error properly
-		fmt.Println(err)
-		return []PlaybookUse{}
+		var numActiveOnDay int
+		if err := s.store.getBuilder(s.store.db, &numActiveOnDay, query); err != nil {
+			// TODO: Error properly
+			fmt.Println(err)
+			return numIncidents
+		}
+
+		numIncidents = append(numIncidents, numActiveOnDay)
 	}
 
-}*/
+	return numIncidents
+}

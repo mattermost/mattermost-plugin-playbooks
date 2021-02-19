@@ -62,84 +62,97 @@ const StatsView: FC = () => {
     const playbookValues = stats?.playbook_uses.map((pbUse) => pbUse.num_uses);
 
     return (
-        <div className='wrapper--fixed team_statistics'>
-            <div className='admin-console__wrapper'>
-                <div className='admin-console__content'/>
-                <div>
-                    <StatisticCount
-                        id={'AverageDuration'}
-                        title={'Average Duration'}
-                        icon={'fa-clock-o'}
-                        count={renderDuration(moment.duration(stats?.average_duration_active_incidents_minutes, 'minutes'))}
-                    />
-                    <StatisticCount
-                        id={'AverageReportedToActive'}
-                        title={'Average Reported to Active'}
-                        icon={'fa-clock-o'}
-                        count={renderDuration(moment.duration(stats?.average_reported_to_active_time_minutes, 'minutes'))}
-                    />
-                    <StatisticCount
-                        id={'TotalActiveIncidents'}
-                        title={'Total Active Incidents'}
-                        icon={'fa-exclamation-triangle'}
-                        count={stats?.total_active_incidents}
-                    />
-                    <StatisticCount
-                        id={'TotalActiveParticipants'}
-                        title={'Total Active Participants'}
-                        icon={'fa-users'}
-                        count={stats?.total_active_participants}
-                    />
+        <div className='IncidentList container-medium'>
+            <div className='Backstage__header'>
+                <div
+                    className='title'
+                    data-testid='titleIncident'
+                >
+                    {'Statistics'}
+                    <div className='light'>
+                        {'(Serverwide)'}
+                    </div>
                 </div>
-                <GraphBox>
-                    <Line
-                        legend={{display: false}}
-                        options={{
-                            title: {
-                                display: true,
-                                text: 'Total Active Incidents',
-                            },
-                        }}
-                        data={{
-                            labels: ['Feb 15', 'Feb 16', 'Yesterday', 'Today'] as string[],
-                            datasets: [{
-                                fill: true,
-                                backgroundColor: 'rgba(151,187,205,0.2)',
-                                borderColor: 'rgba(151,187,205,1)',
-                                pointBackgroundColor: 'rgba(151,187,205,1)',
-                                pointBorderColor: '#fff',
-                                pointHoverBackgroundColor: '#fff',
-                                pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                data: [10, 14, 5, 23] as any,
-                            }],
-                        }}
-                    />
-                </GraphBox>
-                <GraphBox>
-                    <Bar
-                        legend={{display: false}}
-                        options={{
-                            title: {
-                                display: true,
-                                text: 'Playbook Uses (Last 6 Weeks)',
-                            },
-                        }}
-                        data={{
-                            labels: playbookLabels,
-                            datasets: [{
-                                fill: true,
-                                backgroundColor: 'rgba(151,187,205,0.2)',
-                                borderColor: 'rgba(151,187,205,1)',
-                                pointBackgroundColor: 'rgba(151,187,205,1)',
-                                pointBorderColor: '#fff',
-                                pointHoverBackgroundColor: '#fff',
-                                pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                data: playbookValues,
-                            }],
-                        }}
-                    />
-                </GraphBox>
-                <div/>
+            </div>
+            <div className='wrapper--fixed team_statistics'>
+                <div className='admin-console__wrapper'>
+                    <div className='admin-console__content'/>
+                    <div>
+                        <StatisticCount
+                            id={'AverageDuration'}
+                            title={'Average Duration'}
+                            icon={'fa-clock-o'}
+                            count={renderDuration(moment.duration(stats?.average_duration_active_incidents_minutes, 'minutes'))}
+                        />
+                        <StatisticCount
+                            id={'AverageReportedToActive'}
+                            title={'Average Reported to Active'}
+                            icon={'fa-clock-o'}
+                            count={renderDuration(moment.duration(stats?.average_reported_to_active_time_minutes, 'minutes'))}
+                        />
+                        <StatisticCount
+                            id={'TotalActiveIncidents'}
+                            title={'Total Active Incidents'}
+                            icon={'fa-exclamation-triangle'}
+                            count={stats?.total_active_incidents}
+                        />
+                        <StatisticCount
+                            id={'TotalActiveParticipants'}
+                            title={'Total Active Participants'}
+                            icon={'fa-users'}
+                            count={stats?.total_active_participants}
+                        />
+                    </div>
+                    <GraphBox>
+                        <Line
+                            legend={{display: false}}
+                            options={{
+                                title: {
+                                    display: true,
+                                    text: 'Total Active Incidents',
+                                },
+                            }}
+                            data={{
+                                labels: ['Feb 15', 'Feb 16', 'Yesterday', 'Today'] as string[],
+                                datasets: [{
+                                    fill: true,
+                                    backgroundColor: 'rgba(151,187,205,0.2)',
+                                    borderColor: 'rgba(151,187,205,1)',
+                                    pointBackgroundColor: 'rgba(151,187,205,1)',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: 'rgba(151,187,205,1)',
+                                    data: [10, 14, 5, 23] as any,
+                                }],
+                            }}
+                        />
+                    </GraphBox>
+                    <GraphBox>
+                        <Bar
+                            legend={{display: false}}
+                            options={{
+                                title: {
+                                    display: true,
+                                    text: 'Playbook Uses (Last 6 Weeks)',
+                                },
+                            }}
+                            data={{
+                                labels: playbookLabels,
+                                datasets: [{
+                                    fill: true,
+                                    backgroundColor: 'rgba(151,187,205,0.2)',
+                                    borderColor: 'rgba(151,187,205,1)',
+                                    pointBackgroundColor: 'rgba(151,187,205,1)',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: 'rgba(151,187,205,1)',
+                                    data: playbookValues,
+                                }],
+                            }}
+                        />
+                    </GraphBox>
+                    <div/>
+                </div>
             </div>
         </div>
     );
