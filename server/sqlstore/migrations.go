@@ -433,6 +433,8 @@ var migrations = []Migration{
 			if _, err := e.Exec(`UPDATE IR_Incident SET ReporterUserID = CommanderUserID WHERE ReporterUserID = ''`); err != nil {
 				return errors.Wrapf(err, "Failed to migrate ReporterUserID")
 			}
+
+			return nil
 		},
 	},
 }
