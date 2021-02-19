@@ -634,8 +634,11 @@ func (r *Runner) actionTimeline() {
 		}
 	}
 	for _, e := range incidentToRead.TimelineEvents {
-		message += "|" + timeutils.GetTimeForMillis(e.EventAt).Format("Jan 2 15:04") +
-			"|" + r.timeSince(e, reported) + "|" + r.summaryMessage(e) + "|\n"
+		timeLink := timeutils.GetTimeForMillis(e.EventAt).Format("Jan 2 15:04")
+		if e.PostID != "" {
+			timeLink = " [" + timeLink + "](/_redirect/pl/" + e.PostID + ") "
+		}
+		message += "|" + timeLink + "|" + r.timeSince(e, reported) + "|" + r.summaryMessage(e) + "|\n"
 	}
 
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{Message: message})
