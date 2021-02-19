@@ -11,19 +11,16 @@ import (
 )
 
 type SQLStore struct {
-	log      bot.Logger
-	database *database
-	db       *sqlx.DB
-	builder  sq.StatementBuilderType
+	log     bot.Logger
+	db      *sqlx.DB
+	builder sq.StatementBuilderType
 }
 
 // New constructs a new instance of SQLStore.
 func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	var db *sqlx.DB
 
-	database := newDatabase(pluginAPI)
-
-	origDB, err := database.GetMasterDB()
+	origDB, err := pluginAPI.Store.GetMasterDB()
 	if err != nil {
 		return nil, err
 	}
@@ -39,10 +36,9 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	}
 
 	return &SQLStore{
-		log:      log,
-		database: database,
-		db:       db,
-		builder:  builder,
+		log,
+		db,
+		builder,
 	}, nil
 }
 

@@ -26,9 +26,9 @@ func TestMigrationIdempotency(t *testing.T) {
 
 		t.Run("Run every migration twice", func(t *testing.T) {
 			sqlStore := &SQLStore{
-				log:     logger,
-				db:      setupTestDB(t, driver),
-				builder: builder,
+				logger,
+				setupTestDB(t, driver),
+				builder,
 			}
 
 			// Make sure we start from scratch
@@ -51,9 +51,9 @@ func TestMigrationIdempotency(t *testing.T) {
 
 		t.Run("Run the whole set of migrations twice", func(t *testing.T) {
 			sqlStore := &SQLStore{
-				log:     logger,
-				db:      setupTestDB(t, driver),
-				builder: builder,
+				logger,
+				setupTestDB(t, driver),
+				builder,
 			}
 
 			// Make sure we start from scratch
