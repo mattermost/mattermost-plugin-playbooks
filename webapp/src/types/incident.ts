@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
+
 import {Checklist, isChecklist} from './playbook';
 
 export interface Incident {
@@ -22,6 +24,7 @@ export interface Incident {
     status_posts: StatusPost[];
     reminder_post_id: string;
     broadcast_channel_id: string;
+    timeline_events: TimelineEvent[];
 }
 
 export interface StatusPost {
@@ -74,9 +77,11 @@ export function isIncident(arg: any): arg is Incident {
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
         typeof arg.reminder_post_id === 'string' &&
-        typeof arg.broadcast_channel_id === 'string');
+        typeof arg.broadcast_channel_id === 'string' &&
+        arg.timeline_events && Array.isArray(arg.timeline_events) && arg.timeline_events.every(isTimelineEvent));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isStatusPost(arg: any): arg is StatusPost {
     return Boolean(arg &&
         arg.id && typeof arg.id === 'string' &&
@@ -93,6 +98,20 @@ export function isMetadata(arg: any): arg is Metadata {
         arg.team_name && typeof arg.team_name === 'string' &&
         typeof arg.num_members === 'number' &&
         typeof arg.total_posts === 'number');
+}
+
+export function isTimelineEvent(arg: any): arg is TimelineEvent {
+    return Boolean(arg &&
+        typeof arg.id === 'string' &&
+        typeof arg.create_at === 'number' &&
+        typeof arg.delete_at === 'number' &&
+        typeof arg.event_at === 'number' &&
+        typeof arg.event_type === 'string' && Object.values(TimelineEventType).includes(arg.event_type) &&
+        typeof arg.summary === 'string' &&
+        typeof arg.details === 'string' &&
+        typeof arg.post_id === 'string' &&
+        typeof arg.subject_user_id === 'string' &&
+        typeof arg.creator_user_id === 'string');
 }
 
 export function incidentCurrentStatusPost(incident: Incident): StatusPost | undefined {

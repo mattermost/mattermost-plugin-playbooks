@@ -25,6 +25,9 @@ describe('playbook creation button', () => {
     });
 
     beforeEach(() => {
+        // # Size the viewport to show playbooks without weird scrolling issues
+        cy.viewport('macbook-13');
+
         // # Login as user-1
         cy.apiLogin('user-1');
 
@@ -68,10 +71,43 @@ describe('playbook creation button', () => {
         cy.openBackstage();
 
         // # Click 'Incident Collaboration Playbook'
-        cy.findByText('Incident Collaboration Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Incident Collaboration Playbook')
+            .should('be.visible')
+            .click()
+            .wait(TIMEOUTS.TINY);
 
-        //Verify a new 'Incident Response Playbook' creation page is opened
+        // * Verify a new 'Incident Response Playbook' creation page is opened
         verifyPlaybookCreationPageOpened(url, playbookName);
+    });
+
+    it('shows remove beside members when > 1 member', () => {
+        // # Open backstage
+        cy.openBackstage();
+
+        // # Click 'New Playbook' button
+        cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+
+        cy.findByTestId('playbook-sidebar').within(() => {
+            // * Verify that there is no Remove link when there is one member
+            cy.findAllByTestId('user-line').should('have.length', 1);
+            cy.findAllByTestId('user-line').eq(0).within(() => {
+                cy.get('a').should('not.exist');
+            });
+
+            // # Add a new user
+            cy.get('.profile-autocomplete__input > input')
+                .type('anne stone', {force: true, delay: 100}).wait(100)
+                .type('{enter}');
+
+            // * Verify that there is a Remove link when there is more than one member
+            cy.findAllByTestId('user-line').should('have.length', 2);
+            cy.findAllByTestId('user-line').eq(0).within(() => {
+                cy.get('a').contains('Remove').should('exist');
+            });
+            cy.findAllByTestId('user-line').eq(1).within(() => {
+                cy.get('a').contains('Remove').should('exist');
+            });
+        });
     });
 });
 
