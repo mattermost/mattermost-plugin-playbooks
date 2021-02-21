@@ -45,7 +45,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
-			"c.CreateAt", "i.EndAt", "c.DeleteAt", "i.PostID", "i.PlaybookID",
+			"c.CreateAt", "i.EndAt", "c.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate").
 		From("IR_Incident AS i").
@@ -226,6 +226,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"Name":                    rawIncident.Name,
 			"Description":             rawIncident.Description,
 			"CommanderUserID":         rawIncident.CommanderUserID,
+			"ReporterUserID":          rawIncident.ReporterUserID,
 			"TeamID":                  rawIncident.TeamID,
 			"ChannelID":               rawIncident.ChannelID,
 			"PostID":                  rawIncident.PostID,

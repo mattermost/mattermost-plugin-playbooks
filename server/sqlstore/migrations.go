@@ -364,7 +364,6 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.6.0"),
 		toVersion:   semver.MustParse("0.7.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
@@ -413,6 +412,26 @@ var migrations = []Migration{
 				if _, err := e.Exec(createPGIndex("IR_TimelineEvent_IncidentID", "IR_TimelineEvent", "IncidentID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_TimelineEvent_IncidentID")
 				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.7.0"),
+		toVersion:   semver.MustParse("0.8.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReporterUserID", "varchar(26) NOT NULL DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ReporterUserID", "TEXT NOT NULL DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
+				}
+			}
+			if _, err := e.Exec(`UPDATE IR_Incident SET ReporterUserID = CommanderUserID WHERE ReporterUserID = ''`); err != nil {
+				return errors.Wrapf(err, "Failed to migrate ReporterUserID")
 			}
 
 			return nil
