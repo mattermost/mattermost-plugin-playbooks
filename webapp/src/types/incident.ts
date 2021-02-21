@@ -145,7 +145,7 @@ export function incidentCurrentStatus(incident: Incident): IncidentStatus {
 
 export function incidentIsActive(incident: Incident): boolean {
     const currentStatus = incidentCurrentStatus(incident);
-    return currentStatus !== IncidentStatus.Archived && currentStatus !== IncidentStatus.Resolved;
+    return currentStatus !== IncidentStatus.Archived;
 }
 
 export interface FetchIncidentsParams {

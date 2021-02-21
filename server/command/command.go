@@ -415,7 +415,7 @@ func (r *Runner) actionList() {
 		PerPage:   10,
 		Sort:      incident.SortByCreateAt,
 		Direction: incident.DirectionDesc,
-		Status:    incident.StatusActive,
+		Statuses:  []string{incident.StatusReported, incident.StatusActive, incident.StatusResolved},
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
