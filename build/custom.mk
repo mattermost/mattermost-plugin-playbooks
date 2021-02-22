@@ -13,8 +13,6 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/incident/mocks/mock_job_once_scheduler.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident JobOnceScheduler
 	mockgen -destination server/playbook/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook Service
 	mockgen -destination server/playbook/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook Store
-	mockgen -destination server/pluginkvstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/pluginkvstore KVAPI
-	mockgen -destination server/pluginkvstore/mocks/serverpluginapi/mock_plugin.go github.com/mattermost/mattermost-server/v5/plugin API
 	mockgen -destination server/sqlstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore KVAPI
 	mockgen -destination server/sqlstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore StoreAPI
 	mockgen -destination server/sqlstore/mocks/mock_configurationapi.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore ConfigurationAPI

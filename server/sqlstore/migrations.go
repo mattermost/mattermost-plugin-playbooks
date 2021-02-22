@@ -422,6 +422,27 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.8.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReporterUserID", "varchar(26) NOT NULL DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ReporterUserID", "TEXT NOT NULL DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
+				}
+			}
+			if _, err := e.Exec(`UPDATE IR_Incident SET ReporterUserID = CommanderUserID WHERE ReporterUserID = ''`); err != nil {
+				return errors.Wrapf(err, "Failed to migrate ReporterUserID")
+			}
+
+			return nil
+		},
+	},
+	{
+		
+		fromVersion: semver.MustParse("0.8.0"),
+		toVersion:   semver.MustParse("0.9.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedInvitedUserIDs", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedUserIDs to table IR_Incident")
 				}
@@ -450,8 +471,5 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column InviteUsersEnabled to table IR_Playbook")
 				}
 			}
-
-			return nil
-		},
 	},
 }

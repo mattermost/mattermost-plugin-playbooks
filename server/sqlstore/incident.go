@@ -46,7 +46,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
-			"c.CreateAt", "i.EndAt", "c.DeleteAt", "i.PostID", "i.PlaybookID",
+			"c.CreateAt", "i.EndAt", "c.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs").
 		From("IR_Incident AS i").
@@ -227,6 +227,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"Name":                       rawIncident.Name,
 			"Description":                rawIncident.Description,
 			"CommanderUserID":            rawIncident.CommanderUserID,
+			"ReporterUserID":             rawIncident.ReporterUserID,
 			"TeamID":                     rawIncident.TeamID,
 			"ChannelID":                  rawIncident.ChannelID,
 			"PostID":                     rawIncident.PostID,
@@ -560,8 +561,18 @@ func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp 
 }
 
 func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sqlizer {
-	if info.UserIDtoIsAdmin[info.UserID] {
+	if info.IsAdmin {
 		return nil
+	}
+
+	// Guests must be channel members
+	if info.IsGuest {
+		return sq.Expr(`
+			  EXISTS(SELECT 1
+						 FROM ChannelMembers as cm
+						 WHERE cm.ChannelId = i.ChannelID
+						   AND cm.UserId = ?)
+		`, info.UserID)
 	}
 
 	// is the requester a channel member, or is the channel public?
