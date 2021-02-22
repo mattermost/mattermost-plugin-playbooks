@@ -558,8 +558,18 @@ func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp 
 }
 
 func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sqlizer {
-	if info.UserIDtoIsAdmin[info.UserID] {
+	if info.IsAdmin {
 		return nil
+	}
+
+	// Guests must be channel members
+	if info.IsGuest {
+		return sq.Expr(`
+			  EXISTS(SELECT 1
+						 FROM ChannelMembers as cm
+						 WHERE cm.ChannelId = i.ChannelID
+						   AND cm.UserId = ?)
+		`, info.UserID)
 	}
 
 	// is the requester a channel member, or is the channel public?

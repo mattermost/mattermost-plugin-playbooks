@@ -79,6 +79,19 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Exclude guest users
+	if isGuest, err := permissions.IsGuest(userID, h.pluginAPI); err != nil {
+		HandleError(w, err)
+		return
+	} else if isGuest {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create playbook on teamID %s because they are a guest",
+			userID,
+			pbook.TeamID,
+		))
+		return
+	}
+
 	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
@@ -210,6 +223,19 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
+			userID,
+			teamID,
+		))
+		return
+	}
+
+	// Exclude guest users
+	if isGuest, errg := permissions.IsGuest(userID, h.pluginAPI); errg != nil {
+		HandleError(w, errg)
+		return
+	} else if isGuest {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to get playbooks on teamID %s because they are a guest",
 			userID,
 			teamID,
 		))
