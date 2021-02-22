@@ -393,12 +393,16 @@ const BackstageIncidentList: FC = () => {
     </>);
 };
 
-const createdAt = (time: number) => {
-    const mom = moment(time);
+const formatDate = (mom: moment.Moment) => {
     if (mom.isSame(moment(), 'year')) {
         return mom.format('MMM DD LT');
     }
     return mom.format('MMM DD YYYY LT');
+};
+
+const createdAt = (time: number) => {
+    const mom = moment(time);
+    return formatDate(mom);
 };
 
 const endedAt = (isActive: boolean, time: number) => {
@@ -408,7 +412,7 @@ const endedAt = (isActive: boolean, time: number) => {
 
     const mom = moment(time);
     if (mom.isSameOrAfter('2020-01-01')) {
-        return mom.format('MMM DD LT');
+        return formatDate(mom);
     }
     return '--';
 };
