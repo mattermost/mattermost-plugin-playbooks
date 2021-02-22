@@ -634,6 +634,12 @@ func (r *Runner) actionTimeline() {
 		}
 	}
 	for _, e := range incidentToRead.TimelineEvents {
+		if e.EventType == incident.AssigneeChanged ||
+			e.EventType == incident.TaskStateModified ||
+			e.EventType == incident.RanSlashCommand {
+			continue
+		}
+
 		timeLink := timeutils.GetTimeForMillis(e.EventAt).Format("Jan 2 15:04")
 		if e.PostID != "" {
 			timeLink = " [" + timeLink + "](/_redirect/pl/" + e.PostID + ") "
