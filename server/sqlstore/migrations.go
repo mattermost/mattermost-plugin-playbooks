@@ -438,7 +438,7 @@ var migrations = []Migration{
 		},
 	},
 	{
-		
+
 		fromVersion: semver.MustParse("0.8.0"),
 		toVersion:   semver.MustParse("0.9.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
@@ -471,5 +471,8 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column InviteUsersEnabled to table IR_Playbook")
 				}
 			}
+
+			return nil
+		},
 	},
 }
