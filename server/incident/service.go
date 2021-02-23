@@ -57,6 +57,12 @@ const DialogFieldReminderInSecondsKey = "reminder"
 // DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
 const DialogFieldStatusKey = "status"
 
+// DialogFieldIncidentKey is the key for the incident chosen in AddToTimelineDialog
+const DialogFieldIncidentKey = "incident"
+
+// DialogFieldSummary is the key for the summary in AddToTimelineDialog
+const DialogFieldSummary = "summary"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -249,6 +255,76 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error {
+	options := FilterOptions{
+		TeamID:    teamID,
+		MemberID:  requesterInfo.UserID,
+		Sort:      SortByCreateAt,
+		Direction: DirectionDesc,
+		Statuses:  []string{StatusReported, StatusActive, StatusResolved},
+	}
+
+	result, err := s.GetIncidents(requesterInfo, options)
+	if err != nil {
+		return errors.Wrap(err, "Error retrieving the incidents: %v")
+	}
+
+	dialog, err := s.newAddToTimelineDialog(result.Items, postID)
+	if err != nil {
+		return errors.Wrap(err, "failed to create add to timeline dialog")
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/add-to-timeline-dialog",
+			s.configService.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary string) error {
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return errors.Wrap(err, "failed to find post")
+	}
+
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      model.GetMillis(),
+		DeleteAt:      0,
+		EventAt:       post.CreateAt,
+		EventType:     EventFromPost,
+		Summary:       summary,
+		Details:       "",
+		PostID:        postID,
+		SubjectUserID: post.UserId,
+		CreatorUserID: userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	incidentModified, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	s.telemetry.AddPostToTimeline(incidentModified, userID)
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
 	}
 
 	return nil
@@ -1124,6 +1200,66 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID, statu
 	}, nil
 }
 
+func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string) (*model.Dialog, error) {
+	var options []*model.PostActionOptions
+	for _, i := range incidents {
+		options = append(options, &model.PostActionOptions{
+			Text:  i.Name,
+			Value: i.ID,
+		})
+	}
+
+	state, err := json.Marshal(DialogStateAddToTimeline{
+		PostID: postID,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
+	}
+
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
+	}
+	defaultSummary := ""
+	if len(post.Message) > 0 {
+		end := min(40, len(post.Message))
+		defaultSummary = post.Message[:end]
+		if len(post.Message) > end {
+			defaultSummary += "..."
+		}
+	}
+
+	defaultIncidentID, err := s.GetIncidentIDForChannel(post.ChannelId)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return nil, errors.Wrapf(err, "failed to get incidentID for channel")
+	}
+
+	return &model.Dialog{
+		Title: "Add to Incident Timeline",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Incident",
+				Name:        DialogFieldIncidentKey,
+				Type:        "select",
+				Options:     options,
+				Default:     defaultIncidentID,
+			},
+			{
+				DisplayName: "Summary",
+				Name:        DialogFieldSummary,
+				Type:        "text",
+				MaxLength:   64,
+				Placeholder: "Short summary shown in the timeline",
+				Default:     defaultSummary,
+				HelpText:    "Max 64 chars",
+			},
+		},
+		SubmitLabel:    "Add to Timeline",
+		NotifyOnCancel: false,
+		State:          string(state),
+	}, nil
+}
+
 func (s *ServiceImpl) sendIncidentToClient(incidentID string) error {
 	incidentToSend, err := s.store.GetIncident(incidentID)
 	if err != nil {
@@ -1188,4 +1324,11 @@ func findNewestNonDeletedPostID(posts []StatusPost) string {
 	}
 
 	return newest.ID
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

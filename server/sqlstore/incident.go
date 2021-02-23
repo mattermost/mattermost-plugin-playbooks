@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
@@ -95,9 +97,18 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		Where(permissionsExpr).
 		Where(sq.Eq{"i.TeamID": options.TeamID})
 
+	if options.Status != "" && len(options.Statuses) != 0 {
+		return nil, errors.New("options Status and Statuses cannot both be set")
+	}
+
 	if options.Status != "" {
 		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Status})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Status})
+	}
+
+	if len(options.Statuses) != 0 {
+		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
 	}
 
 	if options.CommanderID != "" {
@@ -177,15 +188,9 @@ func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, optio
 		return nil, errors.Wrap(err, "failed to get incidentStatusPosts")
 	}
 
-	var timelineEvents []incident.TimelineEvent
-
-	timelineEventsSelect := s.timelineEventsSelect.
-		OrderBy("te.CreateAt ASC").
-		Where(sq.And{sq.Eq{"te.IncidentID": incidentIDs}, sq.Eq{"te.DeleteAt": 0}})
-
-	err = s.store.selectBuilder(tx, &timelineEvents, timelineEventsSelect)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, errors.Wrap(err, "failed to get timelineEvents")
+	timelineEvents, err := s.getTimelineEventsForIncident(tx, incidentIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -434,15 +439,9 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 		return out, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
 	}
 
-	var timelineEvents []incident.TimelineEvent
-
-	timelineEventsSelect := s.timelineEventsSelect.
-		OrderBy("te.CreateAt").
-		Where(sq.Eq{"te.IncidentID": incidentID})
-
-	err = s.store.selectBuilder(tx, &timelineEvents, timelineEventsSelect)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, errors.Wrap(err, "failed to get timelineEvents")
+	timelineEvents, err := s.getTimelineEventsForIncident(tx, []string{incidentID})
+	if err != nil {
+		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -456,6 +455,21 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 	out.TimelineEvents = append(out.TimelineEvents, timelineEvents...)
 
 	return out, nil
+}
+
+func (s *incidentStore) getTimelineEventsForIncident(q sqlx.Queryer, incidentIDs []string) ([]incident.TimelineEvent, error) {
+	var timelineEvents []incident.TimelineEvent
+
+	timelineEventsSelect := s.timelineEventsSelect.
+		OrderBy("te.EventAt ASC").
+		Where(sq.And{sq.Eq{"te.IncidentID": incidentIDs}, sq.Eq{"te.DeleteAt": 0}})
+
+	err := s.store.selectBuilder(q, &timelineEvents, timelineEventsSelect)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrap(err, "failed to get timelineEvents")
+	}
+
+	return timelineEvents, nil
 }
 
 // GetIncidentIDForChannel gets the incidentID associated with the given channelID.

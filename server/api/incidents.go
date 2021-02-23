@@ -48,6 +48,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
 
 	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("/add-to-timeline-dialog", handler.addToTimelineDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
@@ -265,6 +266,49 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", newIncident.ID))
 	w.WriteHeader(http.StatusCreated)
+}
+
+// addToTimelineDialog handles the interactive dialog submission when a user clicks the post action
+// menu option "Add to incident timeline".
+func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	request := model.SubmitDialogRequestFromJson(r.Body)
+	if request == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		return
+	}
+
+	if userID != request.UserId {
+		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		return
+	}
+
+	var incidentID, summary string
+	if rawIncidentID, ok := request.Submission[incident.DialogFieldIncidentKey].(string); ok {
+		incidentID = rawIncidentID
+	}
+	if rawSummary, ok := request.Submission[incident.DialogFieldSummary].(string); ok {
+		summary = rawSummary
+	}
+
+	if err := permissions.EditIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		return
+	}
+
+	var state incident.DialogStateAddToTimeline
+	err := json.Unmarshal([]byte(request.State), &state)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
+		return
+	}
+
+	if err = h.incidentService.AddPostToTimeline(incidentID, userID, state.PostID, summary); err != nil {
+		HandleError(w, errors.Wrap(err, "failed to add post to timeline"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID string) (*incident.Incident, error) {

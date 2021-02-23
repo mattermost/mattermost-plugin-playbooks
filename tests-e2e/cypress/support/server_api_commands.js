@@ -345,7 +345,7 @@ Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token 
     if (token !== '') {
         headers.Authorization = `Bearer ${token}`;
     }
-    return cy.request({
+    cy.request({
         headers,
         failOnStatusCode,
         url: '/api/v4/posts',
@@ -356,6 +356,9 @@ Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token 
             message,
             props,
         },
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        return cy.wrap({post: response.body});
     });
 });
 

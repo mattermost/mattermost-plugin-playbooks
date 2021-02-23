@@ -113,7 +113,7 @@ describe('incident rhs', () => {
             });
         });
 
-        it('when navigating directly to an ended incident channel', () => {
+        it('when navigating directly to a resolved incident channel', () => {
             // # Start the incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -130,6 +130,35 @@ describe('incident rhs', () => {
                     userId,
                     teamId,
                     status: 'Resolved',
+                });
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(incidentName).should('exist');
+            });
+        });
+
+        it('when navigating directly to an archived incident channel', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Archived',
                 });
             });
 
@@ -172,7 +201,7 @@ describe('incident rhs', () => {
             });
         });
 
-        it('for a new, ended incident channel opened from the lhs', () => {
+        it('for a new, resolved incident channel opened from the lhs', () => {
             // # Navigate to the application.
             cy.visit('/');
 
@@ -198,6 +227,44 @@ describe('incident rhs', () => {
                     userId,
                     teamId,
                     status: 'Resolved',
+                });
+            });
+
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(incidentName).should('exist');
+            });
+        });
+
+        it('for a new, archived incident channel opened from the lhs', () => {
+            // # Navigate to the application.
+            cy.visit('/');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Select a channel without an incident.
+            cy.get('#sidebarItem_off-topic').click({force: true});
+
+            // # Start the incident after loading the application
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Archived',
                 });
             });
 
@@ -237,7 +304,7 @@ describe('incident rhs', () => {
             });
         });
 
-        it('for an existing, ended incident channel opened from the lhs', () => {
+        it('for an existing, resolved incident channel opened from the lhs', () => {
             // # Start the incident before loading the application
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -255,6 +322,42 @@ describe('incident rhs', () => {
                     userId,
                     teamId,
                     status: 'Resolved',
+                });
+            });
+
+            // # Navigate to a channel without an incident.
+            cy.visit('/ad-1/channels/off-topic');
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Open the incident channel from the LHS.
+            cy.get(`#sidebarItem_${incidentChannelName}`).click({force: true});
+
+            // * Verify the incident RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(incidentName).should('exist');
+            });
+        });
+
+        it('for an existing, archived incident channel opened from the lhs', () => {
+            // # Start the incident before loading the application
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    status: 'Archived',
                 });
             });
 
