@@ -113,7 +113,7 @@ describe('incident rhs > header', () => {
 
             // * Verify the title shows "Ongoing"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -163,7 +163,7 @@ describe('incident rhs > header', () => {
 
             // * Verify the title shows "Ongoing"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
     });

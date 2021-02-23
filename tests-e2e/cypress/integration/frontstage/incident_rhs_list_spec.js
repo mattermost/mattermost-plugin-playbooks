@@ -217,7 +217,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # bring up the incident list
@@ -474,7 +474,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -504,7 +504,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
                 cy.findByTestId('back-button').should('exist').click();
@@ -524,7 +524,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -566,7 +566,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # Close the RHS
@@ -587,7 +587,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -701,7 +701,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -757,7 +757,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
     });
@@ -826,7 +826,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
                 cy.findByTestId('back-button').should('exist').click();
@@ -911,7 +911,7 @@ describe('rhs incident list', () => {
                 });
 
                 // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # End incident and go to incident list
