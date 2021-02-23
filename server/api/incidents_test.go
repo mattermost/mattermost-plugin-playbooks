@@ -58,6 +58,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -80,6 +81,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
 			PlaybookID:      "playbookid1",
+			InvitedUserIDs:  []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -110,6 +112,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -135,6 +138,7 @@ func TestIncidents(t *testing.T) {
 			Description:     "description",
 			PlaybookID:      withid.ID,
 			Checklists:      withid.Checklists,
+			InvitedUserIDs:  []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -165,6 +169,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -227,6 +232,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: false,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -289,6 +295,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -375,6 +382,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -418,6 +426,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"some_other_id"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -461,6 +470,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		testIncident := incident.Incident{
@@ -469,6 +479,7 @@ func TestIncidents(t *testing.T) {
 			Name:            "incidentName",
 			PlaybookID:      withid.ID,
 			Checklists:      withid.Checklists,
+			InvitedUserIDs:  []string{},
 		}
 
 		playbookService.EXPECT().
@@ -634,6 +645,7 @@ func TestIncidents(t *testing.T) {
 			ChannelID:       "channelID",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -770,6 +782,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -813,6 +826,7 @@ func TestIncidents(t *testing.T) {
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      nil,
+			InvitedUserIDs:  []string{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -853,6 +867,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -899,6 +914,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -1181,6 +1197,7 @@ func TestIncidents(t *testing.T) {
 			ChannelID:       "channelID1",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 

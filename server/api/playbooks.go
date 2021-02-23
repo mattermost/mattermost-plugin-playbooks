@@ -79,6 +79,17 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	for _, userID := range pbook.InvitedUserIDs {
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+				"invited user with ID %s does not have permission to playbook's team %s",
+				userID,
+				pbook.TeamID,
+			))
+			return
+		}
+	}
+
 	// Exclude guest users
 	if isGuest, err := permissions.IsGuest(userID, h.pluginAPI); err != nil {
 		HandleError(w, err)
@@ -166,6 +177,16 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		))
 		return
 	}
+
+	filteredUsers := []string{}
+	for _, userID := range pbook.InvitedUserIDs {
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			h.pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
+			continue
+		}
+		filteredUsers = append(filteredUsers, userID)
+	}
+	pbook.InvitedUserIDs = filteredUsers
 
 	err = h.playbookService.Update(pbook, userID)
 	if err != nil {

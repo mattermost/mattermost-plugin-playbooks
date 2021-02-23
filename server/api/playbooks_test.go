@@ -45,7 +45,8 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs: []string{},
+		MemberIDs:      []string{},
+		InvitedUserIDs: []string{},
 	}
 	withid := playbook.Playbook{
 		ID:     "testplaybookid",
@@ -61,7 +62,8 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs: []string{},
+		MemberIDs:      []string{},
+		InvitedUserIDs: []string{},
 	}
 	withidBytes, err := json.Marshal(&withid)
 	require.NoError(t, err)
@@ -80,7 +82,8 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs: []string{"testuserid"},
+		MemberIDs:      []string{"testuserid"},
+		InvitedUserIDs: []string{},
 	}
 	withMemberBytes, err := json.Marshal(&withMember)
 	require.NoError(t, err)
@@ -100,6 +103,7 @@ func TestPlaybooks(t *testing.T) {
 		},
 		MemberIDs:          []string{},
 		BroadcastChannelID: "nonemptychannelid",
+		InvitedUserIDs:     []string{},
 	}
 	withBroadcastChannelNoID := playbook.Playbook{
 		Title:  "My Playbook",
@@ -116,6 +120,7 @@ func TestPlaybooks(t *testing.T) {
 		},
 		MemberIDs:          []string{},
 		BroadcastChannelID: "nonemptychannelid",
+		InvitedUserIDs:     []string{},
 	}
 
 	var mockCtrl *gomock.Controller
@@ -172,7 +177,7 @@ func TestPlaybooks(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -313,7 +318,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Roles: "system_guest"}, nil)
 
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1062,22 +1067,25 @@ func TestSortingPlaybooks(t *testing.T) {
 
 func TestPagingPlaybooks(t *testing.T) {
 	playbooktest1 := playbook.Playbook{
-		Title:      "A",
-		TeamID:     "testteamid",
-		Checklists: []playbook.Checklist{},
-		MemberIDs:  []string{},
+		Title:          "A",
+		TeamID:         "testteamid",
+		Checklists:     []playbook.Checklist{},
+		MemberIDs:      []string{},
+		InvitedUserIDs: []string{},
 	}
 	playbooktest2 := playbook.Playbook{
-		Title:      "B",
-		TeamID:     "testteamid",
-		Checklists: []playbook.Checklist{},
-		MemberIDs:  []string{},
+		Title:          "B",
+		TeamID:         "testteamid",
+		Checklists:     []playbook.Checklist{},
+		MemberIDs:      []string{},
+		InvitedUserIDs: []string{},
 	}
 	playbooktest3 := playbook.Playbook{
-		Title:      "C",
-		TeamID:     "testteamid",
-		Checklists: []playbook.Checklist{},
-		MemberIDs:  []string{},
+		Title:          "C",
+		TeamID:         "testteamid",
+		Checklists:     []playbook.Checklist{},
+		MemberIDs:      []string{},
+		InvitedUserIDs: []string{},
 	}
 
 	var mockCtrl *gomock.Controller

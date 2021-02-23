@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import moment from 'moment';
-
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -10,7 +8,6 @@ import moment from 'moment';
 
 describe('slash command > test', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
     let playbookId;
 
     before(() => {
@@ -22,7 +19,6 @@ describe('slash command > test', () => {
 
         // # Create a playbook.
         cy.apiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
             cy.apiGetCurrentUser().then((user) => {
                 cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then(({user: admin}) => {
                     cy.apiCreatePlaybook({
