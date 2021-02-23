@@ -48,17 +48,6 @@ const HoverableIcon = styled.i`
     }
 `;
 
-const InfoIcon = styled(HoverableIcon)`
-    position: relative;
-    top: 2px;
-`;
-
-const CloseIcon = styled(HoverableIcon)`
-    position: absolute;
-    right: 13px;
-    top: 13px;
-`;
-
 const StyledPopover = styled(Popover)<PopoverProps>`
     min-width: 180px;
     border-radius: 8px;
@@ -310,9 +299,9 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
 
     return (
         <>
-            <InfoIcon
+            <HoverMenuButton
                 tabIndex={0}
-                className={'icon icon-information-outline'}
+                className={'icon-information-outline icon-16 btn-icon'}
                 ref={target}
                 onClick={() => setShowTooltip(!showTooltip)}
             />
@@ -325,10 +314,6 @@ const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepD
                     <div
                         ref={popoverRef}
                     >
-                        <CloseIcon
-                            className={'icon icon-close'}
-                            onClick={() => setShowTooltip(false)}
-                        />
                         <DescriptionTitle>{'Step Description'}</DescriptionTitle>
                         <Scrollbars
                             autoHeight={true}
@@ -427,6 +412,13 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             <CheckboxContainerLive>
                 {showMenu &&
                     <HoverMenu>
+                        {props.checklistItem.description !== '' &&
+                        <StepDescription
+                            text={props.checklistItem.description}
+                            channelNames={channelNamesMap}
+                            team={team}
+                        />
+                        }
                         <HoverMenuButton
                             className={'icon-trash-can-outline icon-16 btn-icon'}
                             onClick={() => {
@@ -468,13 +460,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                     >
                         {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
-                        {props.checklistItem.description !== '' &&
-                            <StepDescription
-                                text={props.checklistItem.description}
-                                channelNames={channelNamesMap}
-                                team={team}
-                            />
-                        }
                     </div>
                 </label>
             </CheckboxContainerLive>
