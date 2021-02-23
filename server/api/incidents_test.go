@@ -58,6 +58,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -80,12 +81,13 @@ func TestIncidents(t *testing.T) {
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
 			PlaybookID:      "playbookid1",
+			InvitedUserIDs:  []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
@@ -94,7 +96,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -110,6 +112,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -135,12 +138,13 @@ func TestIncidents(t *testing.T) {
 			Description:     "description",
 			PlaybookID:      withid.ID,
 			Checklists:      withid.Checklists,
+			InvitedUserIDs:  []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
@@ -149,7 +153,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -165,6 +169,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -192,14 +197,14 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -227,6 +232,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: false,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -254,14 +260,14 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -289,6 +295,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -320,7 +327,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -353,13 +360,13 @@ func TestIncidents(t *testing.T) {
 			).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -375,6 +382,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -394,7 +402,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
 
@@ -402,7 +410,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -418,6 +426,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"some_other_id"},
+			InvitedUserIDs:       []string{},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -437,7 +446,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
 
@@ -445,7 +454,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -461,6 +470,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
+			InvitedUserIDs:       []string{},
 		}
 
 		testIncident := incident.Incident{
@@ -469,6 +479,7 @@ func TestIncidents(t *testing.T) {
 			Name:            "incidentName",
 			PlaybookID:      withid.ID,
 			Checklists:      withid.Checklists,
+			InvitedUserIDs:  []string{},
 		}
 
 		playbookService.EXPECT().
@@ -481,7 +492,7 @@ func TestIncidents(t *testing.T) {
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -495,7 +506,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -521,7 +532,7 @@ func TestIncidents(t *testing.T) {
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -535,7 +546,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -557,7 +568,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 
 		incidentJSON, err := json.Marshal(testIncident)
 		require.NoError(t, err)
@@ -566,7 +577,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -590,7 +601,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -616,7 +627,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -634,6 +645,7 @@ func TestIncidents(t *testing.T) {
 			ChannelID:       "channelID",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -648,7 +660,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -683,7 +695,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", userID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -713,7 +725,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -750,7 +762,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -770,6 +782,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -789,7 +802,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -813,6 +826,7 @@ func TestIncidents(t *testing.T) {
 			PostID:          "",
 			PlaybookID:      "",
 			Checklists:      nil,
+			InvitedUserIDs:  []string{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -833,7 +847,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -853,6 +867,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -874,7 +889,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -899,6 +914,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -918,7 +934,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -960,7 +976,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1009,7 +1025,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1053,7 +1069,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1104,7 +1120,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1158,7 +1174,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1181,12 +1197,14 @@ func TestIncidents(t *testing.T) {
 			ChannelID:       "channelID1",
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
+			InvitedUserIDs:  []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(true)
+		pluginAPI.On("GetUser", "testUserID").Return(&model.User{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
 		result := &incident.GetIncidentsResults{
 			TotalCount: 100,
 			PageCount:  200,
@@ -1199,7 +1217,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents?team_id=testTeamID1", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1220,13 +1238,13 @@ func TestIncidents(t *testing.T) {
 	t.Run("get empty list of incidents", func(t *testing.T) {
 		reset()
 
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_LIST_TEAM_CHANNELS).Return(false)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents?team_id=non-existent", nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
@@ -1254,7 +1272,7 @@ func TestIncidents(t *testing.T) {
 		testreq, err := http.NewRequest("GET", "/api/v0/incidents/checklist-autocomplete?channel_id="+testIncident.ChannelID, nil)
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq, "testpluginid")
+		handler.ServeHTTP(testrecorder, testreq)
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()

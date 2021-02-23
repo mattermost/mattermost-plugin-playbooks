@@ -19,6 +19,7 @@ export enum TimelineEventType {
     AssigneeChanged = 'assignee_changed',
     TaskStateModified = 'task_state_modified',
     RanSlashCommand = 'ran_slash_command',
+    EventFromPost = 'event_from_post',
 }
 
 export interface TimelineEvent {

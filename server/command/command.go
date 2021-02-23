@@ -404,9 +404,10 @@ func (r *Runner) actionList() {
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          r.args.UserId,
-		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+	requesterInfo, err := permissions.GetRequesterInfo(r.args.UserId, r.pluginAPI)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error resolving permissions: %v", err)
+		return
 	}
 
 	options := incident.FilterOptions{
@@ -415,7 +416,7 @@ func (r *Runner) actionList() {
 		PerPage:   10,
 		Sort:      incident.SortByCreateAt,
 		Direction: incident.DirectionDesc,
-		Status:    incident.StatusActive,
+		Statuses:  []string{incident.StatusReported, incident.StatusActive, incident.StatusResolved},
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
@@ -571,6 +572,36 @@ func (r *Runner) actionUpdate() {
 
 func (r *Runner) actionRestart() {
 	r.actionUpdate()
+}
+
+func (r *Runner) actionAdd(args []string) {
+	if len(args) != 1 {
+		r.postCommandResponse("Need to provide a postId")
+		return
+	}
+
+	postID := args[0]
+	if postID == "" {
+		r.postCommandResponse("Need to provide a postId")
+		return
+	}
+
+	isGuest, err := permissions.IsGuest(r.args.UserId, r.pluginAPI)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:  r.args.UserId,
+		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsGuest: isGuest,
+	}
+
+	if err := r.incidentService.OpenAddToTimelineDialog(requesterInfo, postID, r.args.TeamId, r.args.TriggerId); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1206,6 +1237,8 @@ func (r *Runner) Execute() error {
 		r.actionList()
 	case "info":
 		r.actionInfo()
+	case "add":
+		r.actionAdd(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":

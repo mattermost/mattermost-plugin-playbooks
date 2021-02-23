@@ -124,6 +124,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			event1 := &incident.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt,
+				EventAt:       createAt,
 				EventType:     incident.IncidentCreated,
 				PostID:        "testpostID",
 				SubjectUserID: "testuserID",
@@ -134,6 +135,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			event2 := &incident.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 1,
+				EventAt:       createAt + 1,
 				EventType:     incident.AssigneeChanged,
 				PostID:        "testpostID2",
 				SubjectUserID: "testuserID",
@@ -144,7 +146,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			event3 := &incident.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 2,
-				EventAt:       1236,
+				EventAt:       createAt + 2,
 				EventType:     incident.StatusUpdated,
 				Summary:       "this is a summary",
 				Details:       "these are the details",
@@ -158,6 +160,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			event4 := &incident.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 3,
+				EventAt:       createAt + 3,
 				EventType:     incident.StatusUpdated,
 				PostID:        "testpostID4",
 				SubjectUserID: "testuserID",
@@ -175,7 +178,6 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			require.Equal(t, *event4, retIncident.TimelineEvents[3])
 
 			event3.DeleteAt = model.GetMillis()
-			event3.EventAt = 34089143
 			event3.EventType = incident.AssigneeChanged
 			event3.Summary = "new summary"
 			event3.Details = "new details"
@@ -192,11 +194,9 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			retIncident, err = iStore.GetIncident(incdnt.ID)
 			require.NoError(t, err)
 
-			require.Len(t, retIncident.TimelineEvents, 4)
+			require.Len(t, retIncident.TimelineEvents, 2)
 			require.Equal(t, *event1, retIncident.TimelineEvents[0])
 			require.Equal(t, *event2, retIncident.TimelineEvents[1])
-			require.Equal(t, *event3, retIncident.TimelineEvents[2])
-			require.Equal(t, *event4, retIncident.TimelineEvents[3])
 		})
 	}
 }

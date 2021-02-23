@@ -28,6 +28,7 @@ type Incident struct {
 	Name                    string               `json:"name"` // Retrieved from incident channel
 	Description             string               `json:"description"`
 	CommanderUserID         string               `json:"commander_user_id"`
+	ReporterUserID          string               `json:"reporter_user_id"`
 	TeamID                  string               `json:"team_id"`
 	ChannelID               string               `json:"channel_id"`
 	CreateAt                int64                `json:"create_at"` // Retrieved from incident channel
@@ -43,6 +44,7 @@ type Incident struct {
 	PreviousReminder        time.Duration        `json:"previous_reminder"`
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
+	InvitedUserIDs          []string             `json:"invited_user_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 }
 
@@ -75,6 +77,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 	if old.StatusPosts == nil {
 		old.StatusPosts = []StatusPost{}
+	}
+	if old.InvitedUserIDs == nil {
+		old.InvitedUserIDs = []string{}
 	}
 	if old.TimelineEvents == nil {
 		old.TimelineEvents = []TimelineEvent{}
@@ -164,6 +169,7 @@ const (
 	CommanderChanged  timelineEventType = "commander_changed"
 	AssigneeChanged   timelineEventType = "assignee_changed"
 	RanSlashCommand   timelineEventType = "ran_slash_command"
+	EventFromPost     timelineEventType = "event_from_post"
 )
 
 type TimelineEvent struct {
@@ -233,11 +239,16 @@ type DialogState struct {
 	ClientID string `json:"client_id"`
 }
 
+type DialogStateAddToTimeline struct {
+	PostID string `json:"post_id"`
+}
+
 // RequesterInfo holds the userID and teamID that this request is regarding, and permissions
 // for the user making the request
 type RequesterInfo struct {
-	UserID          string
-	UserIDtoIsAdmin map[string]bool
+	UserID  string
+	IsAdmin bool
+	IsGuest bool
 }
 
 // ErrNotFound used to indicate entity not found.
@@ -271,6 +282,12 @@ type Service interface {
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
 	OpenUpdateStatusDialog(incidentID, triggerID string) error
+
+	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the incident timeline.
+	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
+
+	// AddPostToTimeline adds an event based on a post to an incident's timeline.
+	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -405,6 +422,9 @@ type Telemetry interface {
 
 	// FrontendTelemetryForIncident tracks an event originating from the frontend
 	FrontendTelemetryForIncident(incdnt *Incident, userID, action string)
+
+	// AddPostToTimeline tracks userID creating a timeline event from a post.
+	AddPostToTimeline(incdnt *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
