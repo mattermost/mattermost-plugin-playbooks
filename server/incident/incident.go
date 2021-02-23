@@ -289,6 +289,9 @@ type Service interface {
 	// AddPostToTimeline adds an event based on a post to an incident's timeline.
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
+	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
+	RemoveTimelineEvent(incidentID, eventID string) error
+
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
 
@@ -374,6 +377,9 @@ type Store interface {
 
 	// UpdateStatus updates the status of an incident.
 	UpdateStatus(statusPost *SQLStatusPost) error
+
+	// GetTimelineEvent returns the timeline event for incidentID by the timeline event ID.
+	GetTimelineEvent(incidentID, eventID string) (*TimelineEvent, error)
 
 	// CreateTimelineEvent inserts the timeline event into the DB and returns the new event ID
 	CreateTimelineEvent(event *TimelineEvent) (*TimelineEvent, error)

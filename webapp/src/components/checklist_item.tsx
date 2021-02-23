@@ -22,6 +22,7 @@ import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/components/shared';
+import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 import ConfirmModal from './widgets/confirmation_modal';
 import Profile from './profile/profile';
@@ -87,23 +88,6 @@ const DescriptionTitle = styled.span`
 const StyledSpinner = styled(Spinner)`
     margin-left: 4px;
     padding-top: 3px;
-`;
-
-const HoverMenu = styled.div`
-    display: flex;
-    padding: 4px;
-    position: absolute;
-    right: 0;
-    top: -8px;
-    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
-    background-color: var(--center-channel-bg);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 4px;
-`;
-
-const MenuButton = styled.i`
-    width: 28px;
-    height: 28px;
 `;
 
 const ItemContainer = styled.div`
@@ -443,7 +427,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             <CheckboxContainerLive>
                 {showMenu &&
                     <HoverMenu>
-                        <MenuButton
+                        <HoverMenuButton
                             className={'icon-trash-can-outline icon-16 btn-icon'}
                             onClick={() => {
                                 setShowDeleteConfirm(true);
@@ -453,7 +437,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             selectedUserId={props.checklistItem.assignee_id}
                             onlyPlaceholder={true}
                             placeholder={
-                                <MenuButton
+                                <HoverMenuButton
                                     className={'icon-account-plus-outline icon-16 btn-icon'}
                                 />
                             }
