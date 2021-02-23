@@ -10,6 +10,7 @@ export interface Incident {
     name: string;
     description: string;
     commander_user_id: string;
+    reporter_user_id: string;
     team_id: string;
     channel_id: string;
     create_at: number;
@@ -63,6 +64,7 @@ export function isIncident(arg: any): arg is Incident {
         arg.name && typeof arg.name === 'string' &&
         typeof arg.description === 'string' &&
         arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
+        arg.reporter_user_id && typeof arg.reporter_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
         arg.channel_id && typeof arg.channel_id === 'string' &&
         typeof arg.create_at === 'number' &&
@@ -146,7 +148,7 @@ export function incidentCurrentStatus(incident: Incident): IncidentStatus {
 
 export function incidentIsActive(incident: Incident): boolean {
     const currentStatus = incidentCurrentStatus(incident);
-    return currentStatus !== IncidentStatus.Archived && currentStatus !== IncidentStatus.Resolved;
+    return currentStatus !== IncidentStatus.Archived;
 }
 
 export interface FetchIncidentsParams {

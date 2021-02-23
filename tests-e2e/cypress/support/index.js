@@ -62,7 +62,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    status: 'Archived',
                 });
             });
         });
@@ -75,7 +75,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    status: 'Archived',
                 });
             });
         });
@@ -107,7 +107,7 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    status: 'Archived',
                 });
             });
         });
@@ -120,7 +120,7 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    status: 'Archived',
                 });
             });
         });

@@ -198,8 +198,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options - team1 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID: team1id,
@@ -213,10 +213,44 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name: "no options - team1 - guest - no channels",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  lucy.ID,
+				IsGuest: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID: team1id,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      []incident.Incident{},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "no options - team1 - guest - has channels",
+			RequesterInfo: incident.RequesterInfo{
+				UserID:  john.ID,
+				IsGuest: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID: team1id,
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc01, inc02, inc03},
+			},
+			ExpectedErr: nil,
+		},
+		{
 			Name: "team1 - desc - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:    team1id,
@@ -233,8 +267,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team2 - sort by CreateAt desc - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:    team2id,
@@ -252,8 +286,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no paging, team3, sort by Name",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID: team3id,
@@ -270,8 +304,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team paged by 1, admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -289,8 +323,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team1 - paged by 3, page 0 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -308,8 +342,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team1 - paged by 3, page 1 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -327,8 +361,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team1 - paged by 3, page 2 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -346,8 +380,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team1 - paged by 3, page 999 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -365,8 +399,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team1 - page 2 by 2 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -384,8 +418,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team1 - page 1 by 2 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -403,8 +437,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "no options, team1 - page 1 by 4 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -422,8 +456,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team1 - only active, page 1 by 2 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:  team1id,
@@ -442,8 +476,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team1 - active, commander3, desc - admin ",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:      team1id,
@@ -462,8 +496,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team1 - search for horse - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:     team1id,
@@ -480,8 +514,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team1 - search for aliens & commander3 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:      team1id,
@@ -499,8 +533,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "fuzzy search using starting characters -- not implemented",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:     team1id,
@@ -517,8 +551,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "fuzzy search using starting characters, active -- not implemented",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:     team1id,
@@ -536,8 +570,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team3 - case-insensitive and unicode characters - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:     team3id,
@@ -554,8 +588,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "bad parameter sort",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID: team2id,
@@ -567,8 +601,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "bad team id",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID: "invalid ID",
@@ -579,8 +613,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "bad parameter direction by",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:    team2id,
@@ -592,8 +626,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "bad commander id",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:      team2id,
@@ -670,8 +704,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team1 - Admin gets incidents with John as member",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:   team1id,
@@ -688,8 +722,8 @@ func TestGetIncidents(t *testing.T) {
 		{
 			Name: "team1 - Admin gets incidents with Jane as member",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID:   team1id,
@@ -1078,8 +1112,8 @@ func TestStressTestGetIncidents(t *testing.T) {
 		t.Run("stress test status posts retrieval", func(t *testing.T) {
 			for _, p := range verifyPages {
 				returned, err := incidentStore.GetIncidents(incident.RequesterInfo{
-					UserID:          "testID",
-					UserIDtoIsAdmin: map[string]bool{"testID": true},
+					UserID:  "testID",
+					IsAdmin: true,
 				}, incident.FilterOptions{
 					TeamID:  teamID,
 					Page:    p,
@@ -1135,8 +1169,8 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 			for i := 0; i < numReps; i++ {
 				start := time.Now()
 				_, err := incidentStore.GetIncidents(incident.RequesterInfo{
-					UserID:          "testID",
-					UserIDtoIsAdmin: map[string]bool{"testID": true},
+					UserID:  "testID",
+					IsAdmin: true,
 				}, incident.FilterOptions{
 					TeamID:  teamID,
 					Page:    i,
@@ -1378,8 +1412,8 @@ func TestGetCommanders(t *testing.T) {
 		{
 			Name: "team 1 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID: team1id,
@@ -1390,8 +1424,8 @@ func TestGetCommanders(t *testing.T) {
 		{
 			Name: "team 2 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID: team2id,
@@ -1402,8 +1436,8 @@ func TestGetCommanders(t *testing.T) {
 		{
 			Name: "team 3 - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
 				TeamID: team3id,
@@ -1436,8 +1470,8 @@ func TestGetCommanders(t *testing.T) {
 		{
 			Name: "no team - admin",
 			RequesterInfo: incident.RequesterInfo{
-				UserID:          lucy.ID,
-				UserIDtoIsAdmin: map[string]bool{lucy.ID: true},
+				UserID:  lucy.ID,
+				IsAdmin: true,
 			},
 			Options:     incident.FilterOptions{},
 			Expected:    nil,

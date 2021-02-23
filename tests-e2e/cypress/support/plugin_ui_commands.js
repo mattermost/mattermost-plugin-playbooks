@@ -141,3 +141,13 @@ Cypress.Commands.add('addPostToTimelineUsingPostMenu', (incidentName, summary, p
 
     cy.get('#interactiveDialogModal').should('not.exist');
 });
+
+Cypress.Commands.add('openInvitedUsersSelector', () => {
+    cy.findByText('Search for member').click({force: true});
+});
+
+Cypress.Commands.add('addInvitedUser', (userName) => {
+    cy.get('.invite-users-selector__menu').within(() => {
+        cy.findByText(userName).click({force: true});
+    });
+});
