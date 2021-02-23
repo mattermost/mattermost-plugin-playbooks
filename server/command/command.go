@@ -586,9 +586,16 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
+	isGuest, err := permissions.IsGuest(r.args.UserId, r.pluginAPI)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
 	requesterInfo := incident.RequesterInfo{
-		UserID:          r.args.UserId,
-		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+		UserID:  r.args.UserId,
+		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsGuest: isGuest,
 	}
 
 	if err := r.incidentService.OpenAddToTimelineDialog(requesterInfo, postID, r.args.TeamId, r.args.TriggerId); err != nil {
