@@ -530,11 +530,9 @@ workflows:
               only: /^v.*/
       - e2e-cypress-tests-master:
           filters:
-            # remove this branches statement to include e2e on master
+            # remove this branches statement to include e2e tests on master for a PR branch
             branches:
               ignore: /.*/
-            tags:
-              only: /^v.*/
       - e2e-cypress-tests-531:
           filters:
             tags:

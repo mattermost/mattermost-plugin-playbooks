@@ -354,6 +354,11 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		newIncident.BroadcastChannelID = pb.BroadcastChannelID
 		newIncident.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+
+		newIncident.InvitedUserIDs = []string{}
+		if pb.InviteUsersEnabled {
+			newIncident.InvitedUserIDs = pb.InvitedUserIDs
+		}
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -378,6 +383,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	return h.incidentService.CreateIncident(&newIncident, userID, public)
 }
 
+func (h *IncidentHandler) getRequesterInfo(userID string) (incident.RequesterInfo, error) {
+	return permissions.GetRequesterInfo(userID, h.pluginAPI)
+}
+
 // getIncidents handles the GET /incidents endpoint.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
@@ -387,15 +396,17 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
+	// More detailed permissions checked on DB level.
 	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          userID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		HandleError(w, err)
+		return
 	}
 
 	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
@@ -503,9 +514,10 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		TeamID: teamID,
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          userID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		HandleError(w, err)
+		return
 	}
 
 	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
@@ -538,9 +550,10 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          userID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		HandleError(w, err)
+		return
 	}
 
 	incidents, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)

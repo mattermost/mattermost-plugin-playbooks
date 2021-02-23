@@ -14,7 +14,6 @@ describe('backstage incident list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
     let newTeamName;
-    let newTeamId;
     let userId;
     let playbookId;
 

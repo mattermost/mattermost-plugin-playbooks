@@ -174,11 +174,6 @@ const CheckboxContainer = styled.div`
         padding: 0 0.8rem 0 0;
     }
 
-    .timestamp {
-        color: var(--center-channel-color-56);
-        flex-shrink: 0;
-    }
-
     input[type="checkbox"] {
         -webkit-appearance: none;
         -moz-appearance: none;
@@ -432,22 +427,12 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
 
-    let timestamp = '';
     const title = props.checklistItem.title;
 
     const resetAssignee = () => {
         onAssigneeChange();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
-
-    if (props.checklistItem.state === ChecklistItemState.Closed && props.checklistItem.state_modified) {
-        const stateModified = moment(props.checklistItem.state_modified);
-
-        // Avoid times before 2020 since those are errors
-        if (stateModified.isSameOrAfter('2020-01-01')) {
-            timestamp = '(' + stateModified.calendar(undefined, {sameDay: 'LT'}) + ')'; //eslint-disable-line no-undefined
-        }
-    }
 
     return (
         <ItemContainer
@@ -508,24 +493,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         }
                     </div>
                 </label>
-                <a
-                    className={'timestamp small'}
-                    href={`/_redirect/pl/${props.checklistItem.state_modified_post_id}`}
-                    onClick={(e) => {
-                        e.preventDefault();
-                        if (!props.checklistItem.state_modified_post_id) {
-                            return;
-                        }
-
-                        // @ts-ignore
-                        window.WebappUtils.browserHistory.push(`/_redirect/pl/${props.checklistItem.state_modified_post_id}`);
-                        if (props.onRedirect) {
-                            props.onRedirect();
-                        }
-                    }}
-                >
-                    {timestamp}
-                </a>
             </CheckboxContainerLive>
             <ExtrasRow>
                 {props.checklistItem.assignee_id &&

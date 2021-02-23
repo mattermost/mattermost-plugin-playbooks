@@ -187,6 +187,49 @@ func TestCreateIncident(t *testing.T) {
 		_, err := s.CreateIncident(incdnt, "user_id", true)
 		require.NoError(t, err)
 	})
+
+	t.Run("channel name has multibyte characters", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			Name:            "ททททท",
+			TeamID:          teamID,
+			CommanderUserID: "user_id",
+		}
+
+		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&incident.TimelineEvent{}))
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
+		pluginAPI.On("CreateChannel", mock.MatchedBy(func(channel *model.Channel) bool {
+			return channel.Name != ""
+		})).Return(&model.Channel{Id: "channel_id"}, nil)
+
+		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, nil)
+		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+		poster.EXPECT().PostMessage("channel_id", "This incident has been started by @%s", "username").
+			Return(&model.Post{Id: "testId"}, nil)
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		_, err := s.CreateIncident(incdnt, "user_id", true)
+		pluginAPI.AssertExpectations(t)
+		require.NoError(t, err)
+	})
 }
 
 func TestOpenCreateIncidentDialog(t *testing.T) {

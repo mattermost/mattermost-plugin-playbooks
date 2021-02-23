@@ -28,6 +28,7 @@ type Incident struct {
 	Name                    string               `json:"name"` // Retrieved from incident channel
 	Description             string               `json:"description"`
 	CommanderUserID         string               `json:"commander_user_id"`
+	ReporterUserID          string               `json:"reporter_user_id"`
 	TeamID                  string               `json:"team_id"`
 	ChannelID               string               `json:"channel_id"`
 	CreateAt                int64                `json:"create_at"` // Retrieved from incident channel
@@ -43,6 +44,7 @@ type Incident struct {
 	PreviousReminder        time.Duration        `json:"previous_reminder"`
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
+	InvitedUserIDs          []string             `json:"invited_user_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 }
 
@@ -75,6 +77,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 	if old.StatusPosts == nil {
 		old.StatusPosts = []StatusPost{}
+	}
+	if old.InvitedUserIDs == nil {
+		old.InvitedUserIDs = []string{}
 	}
 	if old.TimelineEvents == nil {
 		old.TimelineEvents = []TimelineEvent{}
@@ -241,8 +246,9 @@ type DialogStateAddToTimeline struct {
 // RequesterInfo holds the userID and teamID that this request is regarding, and permissions
 // for the user making the request
 type RequesterInfo struct {
-	UserID          string
-	UserIDtoIsAdmin map[string]bool
+	UserID  string
+	IsAdmin bool
+	IsGuest bool
 }
 
 // ErrNotFound used to indicate entity not found.
