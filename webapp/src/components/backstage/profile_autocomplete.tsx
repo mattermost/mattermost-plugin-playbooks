@@ -76,6 +76,7 @@ interface Props {
     onAddUser: (userid: string) => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
+    isDisabled?: boolean;
 }
 
 const ProfileAutocomplete: FC<Props> = (props: Props) => {
@@ -126,6 +127,7 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
 
     return (
         <StyledAsyncSelect
+            isDisabled={props.isDisabled}
             isMulti={false}
             controlShouldRenderValue={false}
             cacheOptions={false}

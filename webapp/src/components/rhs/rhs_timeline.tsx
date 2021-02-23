@@ -99,7 +99,7 @@ const RHSTimeline = (props: Props) => {
         })).then((eventArray) => {
             setEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
-    }, [props.incident.status_posts, displayPreference]);
+    }, [props.incident.timeline_events, displayPreference]);
 
     return (
         <Scrollbars

@@ -5,7 +5,6 @@ import merge from 'deepmerge';
 
 import {getRandomInt, getRandomId} from '../utils';
 import users from '../fixtures/users.json';
-import timeouts from '../fixtures/timeouts';
 
 // *****************************************************************************
 // Authentication
@@ -94,10 +93,22 @@ Cypress.Commands.add('apiAddUserToTeam', (teamId, userId) => {
     });
 });
 
-// *****************************************************************************
-// Users
-// https://api.mattermost.com/#tag/users
-// *****************************************************************************
+/**
+ * Remove a User from a Team directly via API
+ * @param {String} teamID - The team ID
+ * @param {String} userId - The user ID
+ * All parameter required
+ */
+Cypress.Commands.add('apiRemoveUserFromTeam', (teamId, userId) => {
+    cy.request({
+        method: 'DELETE',
+        url: `/api/v4/teams/${teamId}/members/${userId}`,
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        return cy.wrap(response);
+    });
+});
 
 // *****************************************************************************
 // Channels
@@ -334,7 +345,7 @@ Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token 
     if (token !== '') {
         headers.Authorization = `Bearer ${token}`;
     }
-    return cy.request({
+    cy.request({
         headers,
         failOnStatusCode,
         url: '/api/v4/posts',
@@ -345,6 +356,9 @@ Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token 
             message,
             props,
         },
+    }).then((response) => {
+        expect(response.status).to.equal(201);
+        return cy.wrap({post: response.body});
     });
 });
 

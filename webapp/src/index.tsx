@@ -21,7 +21,7 @@ import {pluginId} from './manifest';
 import ChannelHeaderButton from './components/assets/icons/channel_header_button';
 import RightHandSidebar from './components/rhs/rhs_main';
 import RHSTitle from './components/rhs/rhs_title';
-import StartIncidentPostMenu from './components/post_menu';
+import {AttachToIncidentPostMenu, StartIncidentPostMenu} from './components/post_menu';
 import Backstage from './components/backstage/backstage';
 import ErrorPage from './components/error_page';
 import {
@@ -82,6 +82,7 @@ export default class Plugin {
 
             r.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, 'Incidents', 'Incidents');
             r.registerPostDropdownMenuComponent(StartIncidentPostMenu);
+            r.registerPostDropdownMenuComponent(AttachToIncidentPostMenu);
 
             r.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdated(store.getState, store.dispatch));

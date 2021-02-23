@@ -83,12 +83,22 @@ func EditIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incide
 
 // CanViewTeam returns true if the userID has permissions to view teamID
 func CanViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) bool {
-	return pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_LIST_TEAM_CHANNELS)
+	return pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM)
 }
 
 // IsAdmin returns true if the userID is a system admin
 func IsAdmin(userID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+}
+
+// IsGuest returns true if the userID is a system guest
+func IsGuest(userID string, pluginAPI *pluginapi.Client) (bool, error) {
+	user, err := pluginAPI.User.Get(userID)
+	if err != nil {
+		return false, errors.Wrapf(err, "Unable to get user to determine permissions, user id `%s`", userID)
+	}
+
+	return user.IsGuest(), nil
 }
 
 func MemberOfChannelID(userID, channelID string, pluginAPI *pluginapi.Client) bool {
@@ -97,4 +107,19 @@ func MemberOfChannelID(userID, channelID string, pluginAPI *pluginapi.Client) bo
 
 func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_CREATE_POST)
+}
+
+func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (incident.RequesterInfo, error) {
+	isAdmin := IsAdmin(userID, pluginAPI)
+
+	isGuest, err := IsGuest(userID, pluginAPI)
+	if err != nil {
+		return incident.RequesterInfo{}, err
+	}
+
+	return incident.RequesterInfo{
+		UserID:  userID,
+		IsAdmin: isAdmin,
+		IsGuest: isGuest,
+	}, nil
 }
