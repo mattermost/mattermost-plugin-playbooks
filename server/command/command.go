@@ -630,6 +630,13 @@ func (r *Runner) actionTimeline() {
 		return
 	}
 
+	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving team: %v", err)
+		return
+	}
+	postURL := fmt.Sprintf("/%s/pl/", team.Name)
+
 	message := "Timeline for **" + incidentToRead.Name + "**:\n\n" +
 		"|Event Time | Since Reported | Event |\n" +
 		"|:----------|:---------------|:------|\n"
@@ -650,7 +657,7 @@ func (r *Runner) actionTimeline() {
 
 		timeLink := timeutils.GetTimeForMillis(e.EventAt).Format("Jan 2 15:04")
 		if e.PostID != "" {
-			timeLink = " [" + timeLink + "](/_redirect/pl/" + e.PostID + ") "
+			timeLink = " [" + timeLink + "](" + postURL + e.PostID + ") "
 		}
 		message += "|" + timeLink + "|" + r.timeSince(e, reported) + "|" + r.summaryMessage(e) + "|\n"
 	}
