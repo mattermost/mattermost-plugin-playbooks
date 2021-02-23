@@ -13,7 +13,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {fetchIncident, fetchIncidentMetadata} from 'src/client';
-import {Incident, Metadata as IncidentMetadata, incidentIsActive} from 'src/types/incident';
+import {Incident, Metadata as IncidentMetadata, incidentIsActive, incidentCurrentStatus} from 'src/types/incident';
 import Profile from 'src/components/profile/profile';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
@@ -287,7 +287,7 @@ const BackstageIncidentDetails: FC = () => {
                 <IncidentTitle data-testid='incident-title'>
                     {`Incident ${incident.name}`}
                 </IncidentTitle>
-                <StatusBadge isActive={incidentIsActive(incident)}/>
+                <StatusBadge status={incidentCurrentStatus(incident)}/>
                 <NavbarPadding/>
                 <CommanderContainer>
                     <span className='label'>{'Commander:'}</span>

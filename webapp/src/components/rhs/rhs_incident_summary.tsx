@@ -15,6 +15,7 @@ import {
     renderView,
 } from 'src/components/rhs/rhs_shared';
 import LatestUpdate from 'src/components/rhs/latest_update';
+import StatusBadge from '../backstage/incidents/status_badge';
 
 interface Props {
     incident: Incident;
@@ -72,7 +73,9 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                 <div className='side-by-side'>
                     <div className='inner-container first-container'>
                         <div className='first-title'>{'Status'}</div>
-                        <div>{incidentCurrentStatus(props.incident)}</div>
+                        <div>
+                            <StatusBadge status={incidentCurrentStatus(props.incident)}/>
+                        </div>
                     </div>
                 </div>
                 <div id={'incidentRHSUpdates'}>
