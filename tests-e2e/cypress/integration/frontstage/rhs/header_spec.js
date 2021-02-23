@@ -140,9 +140,9 @@ describe('incident rhs > header', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            // * Verify the title shows "Ended"
+            // * Verify the title shows "Resolved"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ended');
+                cy.get('.sidebar--right__title').contains('Resolved');
             });
         });
 
