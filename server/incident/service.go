@@ -92,6 +92,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
+	incdnt.ReporterUserID = userID
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
@@ -109,6 +110,46 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	}
 
 	s.telemetry.CreateIncident(incdnt, userID, public)
+
+	usersFailedToInvite := []string{}
+	for _, userID := range incdnt.InvitedUserIDs {
+		// Check if the user is a member of the incident's team
+		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+
+		_, err = s.pluginAPI.Channel.AddMember(incdnt.ChannelID, userID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+	}
+
+	if len(usersFailedToInvite) != 0 {
+		usernames := make([]string, 0, len(usersFailedToInvite))
+		numDeletedUsers := 0
+		for _, userID := range usersFailedToInvite {
+			user, userErr := s.pluginAPI.User.Get(userID)
+			if userErr != nil {
+				// User does not exist anymore
+				numDeletedUsers++
+				continue
+			}
+
+			usernames = append(usernames, "@"+user.Username)
+		}
+
+		deletedUsersMsg := ""
+		if numDeletedUsers > 0 {
+			deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
+		}
+
+		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
+			return nil, errors.Wrapf(err, "failed to post to incident channel")
+		}
+	}
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
@@ -386,7 +427,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(incidentID)
 
-	if options.Reminder != 0 {
+	if options.Reminder != 0 && options.Status != StatusArchived {
 		if err = s.SetReminder(incidentID, options.Reminder); err != nil {
 			return errors.Wrap(err, "failed to set the reminder for incident")
 		}
@@ -954,6 +995,10 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		DisplayName: incdnt.Name,
 		Name:        cleanChannelName(incdnt.Name),
 		Header:      channelHeader,
+	}
+
+	if channel.Name == "" {
+		channel.Name = model.NewId()
 	}
 
 	// Prefer the channel name the user chose. But if it already exists, add some random bits

@@ -27,6 +27,20 @@ Cypress.Commands.add('getLastPostId', () => {
         .invoke('replace', 'post_', '');
 });
 
+Cypress.Commands.add('getFirstPostId', () => {
+    waitUntilPermanentPost();
+
+    cy.findAllByTestId('postView').first().should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
+});
+
+Cypress.Commands.add('getNthPostId', (n) => {
+    waitUntilPermanentPost();
+
+    cy.findAllByTestId('postView').eq(n).should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
+});
+
 /**
  * Click dot menu by post ID or to most recent post (if post ID is not provided)
  * @param {String} postId - Post ID
@@ -209,4 +223,37 @@ Cypress.Commands.add('uiSwitchChannel', (channelName) => {
     cy.get('#quickSwitchInput').type(channelName);
     cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
     cy.get('#channelHeaderTitle').contains(channelName);
+});
+
+Cypress.Commands.add('getStyledComponent', (className) => {
+    cy.get(`[class^="${className}"]`);
+});
+
+/**
+ * Get the provided pseudo-class from the previous element and return the property passed as argument
+ * @param {String} pseudoClass - CSS pseudo class to get.
+ * @param {String} property - Property that will be returned.
+ *
+ * Stolen from https://stackoverflow.com/questions/55516990/cypress-testing-pseudo-css-class-before
+ */
+Cypress.Commands.add('cssPseudoClass', {prevSubject: 'element'}, (el, pseudoClass, property) => {
+    const win = el[0].ownerDocument.defaultView;
+    const pseudoElem = win.getComputedStyle(el[0], pseudoClass);
+    return pseudoElem.getPropertyValue(property).replace(/(^")|("$)/g, '');
+});
+
+/**
+ * Get the :before pseudo-class from the previous element and return the property passed as argument
+ * @param {String} property - Property that will be returned.
+ */
+Cypress.Commands.add('before', {prevSubject: 'element'}, (el, property) => {
+    return cy.wrap(el).cssPseudoClass('before', property);
+});
+
+/**
+ * Get the :after pseudo-class from the previous element and return the property passed as argument
+ * @param {String} property - Property that will be returned.
+ */
+Cypress.Commands.add('after', {prevSubject: 'element'}, (el, property) => {
+    return cy.wrap(el).cssPseudoClass('after', property);
 });

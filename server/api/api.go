@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -9,11 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
-
-type contextKey string
-
-// PluginIDContextKey Key used to store the sourcePluginID for http requests.
-const PluginIDContextKey = "plugin_id"
 
 // Handler Root API handler.
 type Handler struct {
@@ -37,8 +31,8 @@ func NewHandler() *Handler {
 	return handler
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePluginID string) {
-	h.root.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), contextKey(PluginIDContextKey), sourcePluginID)))
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.root.ServeHTTP(w, r)
 }
 
 // ReturnJSON writes the given pointer to object as json with a success response
@@ -93,12 +87,6 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Header.Get("Mattermost-User-ID")
 		if userID != "" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		pluginID, ok := r.Context().Value(PluginIDContextKey).(string)
-		if ok && pluginID != "" {
 			next.ServeHTTP(w, r)
 			return
 		}
