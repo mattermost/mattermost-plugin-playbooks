@@ -3,13 +3,12 @@
 
 import React, {useEffect, FC} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
-import {useSelector, useDispatch} from 'react-redux';
+import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {selectChannel} from 'mattermost-redux/actions/channels';
 import {Team} from 'mattermost-redux/types/teams';
 
 import PlaybookList from 'src/components/backstage/playbook_list';
@@ -30,7 +29,6 @@ const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     height: 100%;
     overflow-y: auto;
-    margin-left: 240px;
 `;
 
 export const BackstageNavbarIcon = styled.button`
@@ -126,12 +124,6 @@ const Backstage: FC = () => {
     const goToPlaybooks = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
-
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        dispatch(selectChannel(''));
-    });
 
     return (
         <BackstageContainer>
