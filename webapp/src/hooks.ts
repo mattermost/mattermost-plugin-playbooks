@@ -1,4 +1,4 @@
-import {useEffect, useState, MutableRefObject, useRef} from 'react';
+import {useEffect, useState, MutableRefObject, useRef, useCallback} from 'react';
 import {useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
@@ -94,4 +94,16 @@ export function useTimeout(callback: () => void, delay: number | null) {
 
     // In case you want to manually clear the timeout from the consuming component...:
     return timeoutRef;
+}
+
+export function useClientRect() {
+    const [rect, setRect] = useState(null);
+
+    const ref = useCallback((node) => {
+        if (node !== null) {
+            setRect(node.getBoundingClientRect());
+        }
+    }, []);
+
+    return [rect, ref];
 }

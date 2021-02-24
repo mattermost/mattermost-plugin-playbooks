@@ -4,6 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
+import classNames from 'classnames';
 import {css} from '@emotion/core';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -13,10 +14,11 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
+import {useClientRect} from 'src/hooks';
 
 interface Option {
     value: string;
-    label: JSX.Element|string;
+    label: JSX.Element | string;
     userId: string;
 }
 
@@ -182,7 +184,10 @@ export default function ProfileSelector(props: Props) {
     }
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
-    const components = props.customControl ? {...noDropdown, Control: props.customControl} : noDropdown;
+    const components = props.customControl ? {
+        ...noDropdown,
+        Control: props.customControl,
+    } : noDropdown;
 
     return (
         <Dropdown
@@ -237,22 +242,49 @@ interface DropdownProps {
     onClose: () => void;
 }
 
-const Dropdown = ({children, isOpen, showOnRight, target, onClose}: DropdownProps) => (
-    <div
-        className={`IncidentFilter profile-dropdown${isOpen ? ' IncidentFilter--active profile-dropdown--active' : ''} ${showOnRight && 'show-on-right'}`}
-        css={{position: 'relative'}}
-    >
-        {target}
-        {isOpen ? <Menu className='IncidentFilter-select incident-user-select__container'>
-            {children}
-        </Menu> : null}
-        {isOpen ? <Blanket onClick={onClose}/> : null}
-    </div>
-);
+const Dropdown = ({children, isOpen, showOnRight, target, onClose}: DropdownProps) => {
+    const [rect, ref] = useClientRect();
+    const [showOnTop, setShowOnTop] = useState(false);
 
-const Menu = (props: Record<string, any>) => {
+    useEffect(() => {
+        if (!rect) {
+            setShowOnTop(false);
+            return;
+        }
+
+        const windowHeight = window.innerHeight;
+        setShowOnTop(rect.bottom > windowHeight);
+    }, [rect]);
+
+    if (!isOpen) {
+        return target;
+    }
+
+    const classes = classNames('IncidentFilter', 'profile-dropdown',
+        'IncidentFilter--active', 'profile-dropdown--active', {
+            'show-on-right': showOnRight,
+            'show-on-top': showOnTop,
+        });
+
+    const click = () => {
+        onClose();
+        setShowOnTop(false);
+    };
+
     return (
-        <div {...props}/>
+        <div
+            className={classes}
+            css={{position: 'relative'}}
+        >
+            {target}
+            <div
+                ref={ref}
+                className='IncidentFilter-select incident-user-select__container'
+            >
+                {children}
+            </div>
+            <Blanket onClick={click}/>
+        </div>
     );
 };
 
