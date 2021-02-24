@@ -243,6 +243,22 @@ describe('timeline', () => {
             removeTimelineEvent('commander_changed', 1, 0, 'Commander changed from @aaron.peterson to @user-1');
         });
     });
+
+    describe('timeline notice', () => {
+        it('shows when there are no events', () => {
+            // * Verify incident created message is visible in the timeline
+            verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+
+            // * Delete the incident created event
+            removeTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+
+            // * Verify notice is shown
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText('Timeline events are displayed here as they occur. Hover over an event to remove it.')
+                    .should('exist');
+            });
+        });
+    });
 });
 
 const verifyTimelineEvent = (expectedEventType, expectedNumberOfEvents, expectedEventIndex, expectedEventSummary) => {
