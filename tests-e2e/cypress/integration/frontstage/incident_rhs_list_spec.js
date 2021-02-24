@@ -264,7 +264,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
 
@@ -541,7 +541,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
         });
@@ -576,7 +576,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
@@ -596,7 +596,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
         });
@@ -643,7 +643,7 @@ describe('rhs incident list', () => {
                     cy.findByText(secondIncidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
 
@@ -664,7 +664,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
         });
@@ -788,7 +788,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
         });
@@ -849,7 +849,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
         });
@@ -928,7 +928,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
@@ -1018,7 +1018,7 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
+                // * Verify the title shows "Reported"
                 cy.get('.sidebar--right__title').contains('Reported');
             });
 
