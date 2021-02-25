@@ -27,6 +27,7 @@ interface ActionObj {
 }
 
 interface Props {
+    testId?:string
     selectedUserId?: string;
     placeholder: React.ReactNode;
     placeholderButtonClass?: string;
@@ -202,7 +203,14 @@ export default function ProfileSelector(props: Props) {
             </div>
         );
     }
-    const targetWrapped = <div ref={ref}>{target}</div>;
+    const targetWrapped = (
+        <div
+            data-testid={props.testId}
+            ref={ref}
+        >
+            {target}
+        </div>
+    );
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
     const components = props.customControl ? {

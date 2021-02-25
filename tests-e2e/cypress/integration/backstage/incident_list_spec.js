@@ -52,6 +52,9 @@ describe('backstage incident list', () => {
     });
 
     beforeEach(() => {
+        // # Size the viewport to show all of the backstage.
+        cy.viewport('macbook-13');
+
         // # Login as user-1
         cy.apiLogin('user-1');
     });
@@ -192,9 +195,12 @@ describe('backstage incident list', () => {
             cy.findByText('Previous').should('not.exist');
         });
 
-        it('by commander', () => {
-            cy.get('.profile-dropdown')
-                .click()
+        it.only('by commander', () => {
+            // # Expose the commander list
+            cy.findByTestId('commander-filter').click();
+
+            // # Find the list and chose the first commander in the list
+            cy.get('.incident-user-select__container')
                 .find('.IncidentProfile').first().parent().click({force: true});
 
             // # Wait for the incident list to update.
