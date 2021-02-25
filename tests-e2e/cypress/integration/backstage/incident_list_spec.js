@@ -195,7 +195,7 @@ describe('backstage incident list', () => {
             cy.findByText('Previous').should('not.exist');
         });
 
-        it.only('by commander', () => {
+        it('by commander', () => {
             // # Expose the commander list
             cy.findByTestId('commander-filter').click();
 
