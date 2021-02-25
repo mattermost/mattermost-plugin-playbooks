@@ -150,6 +150,26 @@ export default function ProfileSelector(props: Props) {
         }
     };
 
+    // Decide where to open the profile selector
+    const [rect, ref] = useClientRect();
+    const [moveUp, setMoveUp] = useState(0);
+
+    useEffect(() => {
+        if (!rect) {
+            setMoveUp(0);
+            return;
+        }
+
+        const innerHeight = window.innerHeight;
+        const numProfilesShown = Math.min(6, userOptions.length);
+        const spacePerProfile = 48;
+        const dropdownYShift = 27;
+        const dropdownReqSpace = 80;
+        const extraSpace = 10;
+        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
+        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
+    }, [rect, userOptions]);
+
     let target;
     if (props.selectedUserId) {
         target = (
@@ -182,6 +202,7 @@ export default function ProfileSelector(props: Props) {
             </div>
         );
     }
+    const targetWrapped = <div ref={ref}>{target}</div>;
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
     const components = props.customControl ? {
@@ -193,8 +214,9 @@ export default function ProfileSelector(props: Props) {
         <Dropdown
             isOpen={isOpen}
             onClose={toggleOpen}
-            target={target}
+            target={targetWrapped}
             showOnRight={props.showOnRight}
+            moveUp={moveUp}
         >
             <ReactSelect
                 autoFocus={true}
@@ -238,39 +260,20 @@ interface DropdownProps {
     children: JSX.Element;
     isOpen: boolean;
     showOnRight?: boolean;
+    moveUp?: number;
     target: JSX.Element;
     onClose: () => void;
 }
 
-const Dropdown = ({children, isOpen, showOnRight, target, onClose}: DropdownProps) => {
-    const [rect, ref] = useClientRect();
-    const [showOnTop, setShowOnTop] = useState(false);
-
-    useEffect(() => {
-        if (!rect) {
-            setShowOnTop(false);
-            return;
-        }
-
-        const windowHeight = window.innerHeight;
-        setShowOnTop(rect.bottom > windowHeight);
-    }, [rect]);
-
+const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
     if (!isOpen) {
         return target;
     }
 
     const classes = classNames('IncidentFilter', 'profile-dropdown',
-        'IncidentFilter--active', 'profile-dropdown--active', {
-            'show-on-right': showOnRight,
-            'show-on-top': showOnTop,
-        });
+        'IncidentFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
 
-    const click = () => {
-        onClose();
-        setShowOnTop(false);
-    };
-
+    const top = 27 - (moveUp || 0);
     return (
         <div
             className={classes}
@@ -278,12 +281,12 @@ const Dropdown = ({children, isOpen, showOnRight, target, onClose}: DropdownProp
         >
             {target}
             <div
-                ref={ref}
                 className='IncidentFilter-select incident-user-select__container'
+                css={{top: top + 'px'}}
             >
                 {children}
             </div>
-            <Blanket onClick={click}/>
+            <Blanket onClick={onClose}/>
         </div>
     );
 };

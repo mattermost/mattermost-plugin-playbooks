@@ -97,7 +97,7 @@ export function useTimeout(callback: () => void, delay: number | null) {
 }
 
 export function useClientRect() {
-    const [rect, setRect] = useState(null);
+    const [rect, setRect] = useState(new DOMRect());
 
     const ref = useCallback((node) => {
         if (node !== null) {
@@ -105,5 +105,5 @@ export function useClientRect() {
         }
     }, []);
 
-    return [rect, ref];
+    return [rect, ref] as const;
 }
