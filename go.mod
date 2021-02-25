@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible // indirect
-	github.com/mattermost/mattermost-plugin-api v0.0.13-0.20210203140922-cd302a7195a0
+	github.com/mattermost/mattermost-plugin-api v0.0.14
 	github.com/mattermost/mattermost-server/v5 v5.3.2-0.20210120031517-5a7759f4d63b
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
