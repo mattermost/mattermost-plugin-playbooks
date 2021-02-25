@@ -18,6 +18,7 @@ const Badge = styled.div<BadgeProps>`
     border-radius: 4px;
     padding: 0 8px;
     font-weight: 600;
+    margin: 2px;
 
     color: var(--sidebar-text);
 
@@ -50,8 +51,8 @@ const Badge = styled.div<BadgeProps>`
     line-height: 24px;
 
     ${(props) => props.compact && css`
-        line-height: 21px;
-        height: 21px;
+        line-height: 20px;
+        height: 20px;
     `}
 `;
 
