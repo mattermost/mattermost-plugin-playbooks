@@ -69,6 +69,12 @@ export function updateStatus() {
     };
 }
 
+export function addToTimeline(postId: string) {
+    return async (dispatch: Dispatch, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, `/incident add ${postId}`);
+    };
+}
+
 export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,

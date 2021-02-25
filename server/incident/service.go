@@ -57,6 +57,12 @@ const DialogFieldReminderInSecondsKey = "reminder"
 // DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
 const DialogFieldStatusKey = "status"
 
+// DialogFieldIncidentKey is the key for the incident chosen in AddToTimelineDialog
+const DialogFieldIncidentKey = "incident"
+
+// DialogFieldSummary is the key for the summary in AddToTimelineDialog
+const DialogFieldSummary = "summary"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -86,6 +92,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
+	incdnt.ReporterUserID = userID
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
@@ -103,6 +110,46 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	}
 
 	s.telemetry.CreateIncident(incdnt, userID, public)
+
+	usersFailedToInvite := []string{}
+	for _, userID := range incdnt.InvitedUserIDs {
+		// Check if the user is a member of the incident's team
+		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+
+		_, err = s.pluginAPI.Channel.AddMember(incdnt.ChannelID, userID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+	}
+
+	if len(usersFailedToInvite) != 0 {
+		usernames := make([]string, 0, len(usersFailedToInvite))
+		numDeletedUsers := 0
+		for _, userID := range usersFailedToInvite {
+			user, userErr := s.pluginAPI.User.Get(userID)
+			if userErr != nil {
+				// User does not exist anymore
+				numDeletedUsers++
+				continue
+			}
+
+			usernames = append(usernames, "@"+user.Username)
+		}
+
+		deletedUsersMsg := ""
+		if numDeletedUsers > 0 {
+			deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
+		}
+
+		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
+			return nil, errors.Wrapf(err, "failed to post to incident channel")
+		}
+	}
 
 	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
@@ -213,6 +260,76 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	return nil
 }
 
+func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error {
+	options := FilterOptions{
+		TeamID:    teamID,
+		MemberID:  requesterInfo.UserID,
+		Sort:      SortByCreateAt,
+		Direction: DirectionDesc,
+		Statuses:  []string{StatusReported, StatusActive, StatusResolved},
+	}
+
+	result, err := s.GetIncidents(requesterInfo, options)
+	if err != nil {
+		return errors.Wrap(err, "Error retrieving the incidents: %v")
+	}
+
+	dialog, err := s.newAddToTimelineDialog(result.Items, postID)
+	if err != nil {
+		return errors.Wrap(err, "failed to create add to timeline dialog")
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/add-to-timeline-dialog",
+			s.configService.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary string) error {
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return errors.Wrap(err, "failed to find post")
+	}
+
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      model.GetMillis(),
+		DeleteAt:      0,
+		EventAt:       post.CreateAt,
+		EventType:     EventFromPost,
+		Summary:       summary,
+		Details:       "",
+		PostID:        postID,
+		SubjectUserID: post.UserId,
+		CreatorUserID: userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	incidentModified, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	s.telemetry.AddPostToTimeline(incidentModified, userID)
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, authorID, originalPostID string) error {
 	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
 	if err != nil {
@@ -291,7 +408,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(incidentID)
 
-	if options.Reminder != 0 {
+	if options.Reminder != 0 && options.Status != StatusArchived {
 		if err = s.SetReminder(incidentID, options.Reminder); err != nil {
 			return errors.Wrap(err, "failed to set the reminder for incident")
 		}
@@ -861,6 +978,10 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		Header:      channelHeader,
 	}
 
+	if channel.Name == "" {
+		channel.Name = model.NewId()
+	}
+
 	// Prefer the channel name the user chose. But if it already exists, add some random bits
 	// and try exactly once more.
 	err := s.pluginAPI.Channel.Create(channel)
@@ -1079,6 +1200,66 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID, statu
 	}, nil
 }
 
+func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string) (*model.Dialog, error) {
+	var options []*model.PostActionOptions
+	for _, i := range incidents {
+		options = append(options, &model.PostActionOptions{
+			Text:  i.Name,
+			Value: i.ID,
+		})
+	}
+
+	state, err := json.Marshal(DialogStateAddToTimeline{
+		PostID: postID,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
+	}
+
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
+	}
+	defaultSummary := ""
+	if len(post.Message) > 0 {
+		end := min(40, len(post.Message))
+		defaultSummary = post.Message[:end]
+		if len(post.Message) > end {
+			defaultSummary += "..."
+		}
+	}
+
+	defaultIncidentID, err := s.GetIncidentIDForChannel(post.ChannelId)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return nil, errors.Wrapf(err, "failed to get incidentID for channel")
+	}
+
+	return &model.Dialog{
+		Title: "Add to Incident Timeline",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Incident",
+				Name:        DialogFieldIncidentKey,
+				Type:        "select",
+				Options:     options,
+				Default:     defaultIncidentID,
+			},
+			{
+				DisplayName: "Summary",
+				Name:        DialogFieldSummary,
+				Type:        "text",
+				MaxLength:   64,
+				Placeholder: "Short summary shown in the timeline",
+				Default:     defaultSummary,
+				HelpText:    "Max 64 chars",
+			},
+		},
+		SubmitLabel:    "Add to Timeline",
+		NotifyOnCancel: false,
+		State:          string(state),
+	}, nil
+}
+
 func (s *ServiceImpl) sendIncidentToClient(incidentID string) error {
 	incidentToSend, err := s.store.GetIncident(incidentID)
 	if err != nil {
@@ -1143,4 +1324,11 @@ func findNewestNonDeletedPostID(posts []StatusPost) string {
 	}
 
 	return newest.ID
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

@@ -25,6 +25,7 @@ type Incident struct {
 	PreviousReminder        time.Duration   `json:"previous_reminder"`
 	BroadcastChannelID      string          `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string          `json:"reminder_message_template"`
+	InvitedUserIDs          []string        `json:"invited_user_ids"`
 	TimelineEvents          []TimelineEvent `json:"timeline_events"`
 }
 

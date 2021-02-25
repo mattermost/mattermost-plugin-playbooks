@@ -108,8 +108,12 @@ const RHSTimelineEventItem = (props: Props) => {
     let summaryTitle = '';
     let summary = '';
     let testid = '';
-    const diff = duration(moment(props.event.event_at).diff(moment(props.reportedAt)));
-    let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + renderDuration(diff)}</TimeDay>;
+    const diff = moment(props.event.event_at).diff(moment(props.reportedAt));
+    let stamp = renderDuration(duration(diff));
+    if (diff < 0) {
+        stamp = '-' + renderDuration(duration(diff).abs());
+    }
+    let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
 
     switch (props.event.event_type) {
     case TimelineEventType.IncidentCreated:
@@ -149,6 +153,11 @@ const RHSTimelineEventItem = (props: Props) => {
         summaryTitle = 'Slash Command Executed';
         summary = props.event.subject_display_name + ' ' + props.event.summary;
         testid = TimelineEventType.RanSlashCommand;
+        break;
+    case TimelineEventType.EventFromPost:
+        iconClass = 'icon icon-pencil-outline';
+        summaryTitle = props.event.summary;
+        testid = TimelineEventType.EventFromPost;
         break;
     }
 

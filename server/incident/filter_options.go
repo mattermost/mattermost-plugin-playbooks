@@ -28,6 +28,9 @@ type FilterOptions struct {
 	// Status filters by current status
 	Status string
 
+	// Statuses filters by all statuses in the list (inclusive)
+	Statuses []string
+
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
 	CommanderID string `url:"commander_user_id,omitempty"`
 
