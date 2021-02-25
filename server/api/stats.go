@@ -29,22 +29,20 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 }
 
 type Stats struct {
-	TotalActiveIncidents                              int                    `json:"total_active_incidents"`
-	TotalActiveParticipants                           int                    `json:"total_active_participants"`
-	AverageDurationActiveIncidentsMinutes             int                    `json:"average_duration_active_incidents_minutes"`
-	AverageReportedToActiveTimeActiveIncidentsMinutes int                    `json:"average_reported_to_active_time_minutes"`
-	PlaybookUses                                      []sqlstore.PlaybookUse `json:"playbook_uses"`
-	ActiveIncidentsOverTime                           []int                  `json:"active_incidents_over_time"`
+	TotalReportedIncidents                int   `json:"total_reported_incidents"`
+	TotalActiveIncidents                  int   `json:"total_active_incidents"`
+	TotalActiveParticipants               int   `json:"total_active_participants"`
+	AverageDurationActiveIncidentsMinutes int   `json:"average_duration_active_incidents_minutes"`
+	ActiveIncidents                       []int `json:"active_incidents"`
+	NumberOfPeopleInIncidents             []int `json:"numer_of_people_in_incidents"`
 }
 
 func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 	stats := Stats{
-		TotalActiveIncidents:                              h.statsStore.GetTotalActiveIncidents(),
-		TotalActiveParticipants:                           h.statsStore.GetTotalActiveParticipants(),
-		AverageDurationActiveIncidentsMinutes:             h.statsStore.GetAverageDurationActiveIncidentsMinutes(),
-		AverageReportedToActiveTimeActiveIncidentsMinutes: 20,
-		PlaybookUses:            h.statsStore.GetPlaybookUses(),
-		ActiveIncidentsOverTime: h.statsStore.GetActiveIncidentsOverTime(),
+		TotalReportedIncidents:                h.statsStore.TotalReportedIncidents(),
+		TotalActiveIncidents:                  h.statsStore.TotalActiveIncidents(),
+		TotalActiveParticipants:               h.statsStore.TotalActiveParticipants(),
+		AverageDurationActiveIncidentsMinutes: h.statsStore.AverageDurationActiveIncidentsMinutes(),
 	}
 
 	ReturnJSON(w, stats, http.StatusOK)

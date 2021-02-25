@@ -134,14 +134,14 @@ const Backstage: FC = () => {
                     <BackstageNavbar className='flex justify-content-between'>
                         <div className='d-flex items-center'>
                             <BackstageTitlebarItem
-                                to={`${match.url}/playbooks`}
+                                to={`${match.url}/stats`}
                                 activeClassName={'active'}
-                                data-testid='playbooksLHSButton'
+                                data-testid='incidentsLHSButton'
                             >
                                 <span className='mr-3 d-flex items-center'>
-                                    <PlaybookIcon/>
+                                    <div className={'fa fa-line-chart'}/>
                                 </span>
-                                {'Playbooks'}
+                                {'Stats'}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/incidents`}
@@ -154,14 +154,14 @@ const Backstage: FC = () => {
                                 {'Incidents'}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
-                                to={`${match.url}/stats`}
+                                to={`${match.url}/playbooks`}
                                 activeClassName={'active'}
-                                data-testid='incidentsLHSButton'
+                                data-testid='playbooksLHSButton'
                             >
                                 <span className='mr-3 d-flex items-center'>
-                                    <IncidentIcon/>
+                                    <PlaybookIcon/>
                                 </span>
-                                {'Stats'}
+                                {'Playbooks'}
                             </BackstageTitlebarItem>
                         </div>
                         <BackstageNavbarIcon

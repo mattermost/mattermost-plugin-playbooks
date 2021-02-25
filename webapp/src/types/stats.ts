@@ -7,9 +7,9 @@ export interface PlaybookUse {
 }
 
 export interface Stats {
+    total_reported_incidents: number
     total_active_incidents: number
     total_active_participants: number
     average_duration_active_incidents_minutes: number
-    average_reported_to_active_time_minutes: number
     playbook_uses: PlaybookUse[]
 }

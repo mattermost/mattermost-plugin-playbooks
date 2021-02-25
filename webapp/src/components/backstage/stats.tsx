@@ -79,21 +79,15 @@ const StatsView: FC = () => {
                     <div className='admin-console__content'/>
                     <div>
                         <StatisticCount
-                            id={'AverageDuration'}
-                            title={'Average Duration'}
-                            icon={'fa-clock-o'}
-                            count={renderDuration(moment.duration(stats?.average_duration_active_incidents_minutes, 'minutes'))}
-                        />
-                        <StatisticCount
-                            id={'AverageReportedToActive'}
-                            title={'Average Reported to Active'}
-                            icon={'fa-clock-o'}
-                            count={renderDuration(moment.duration(stats?.average_reported_to_active_time_minutes, 'minutes'))}
+                            id={'TotalReportedIncidents'}
+                            title={'Total Reported Incidents'}
+                            icon={'fa-exclamation-triangle'}
+                            count={stats?.total_reported_incidents}
                         />
                         <StatisticCount
                             id={'TotalActiveIncidents'}
                             title={'Total Active Incidents'}
-                            icon={'fa-exclamation-triangle'}
+                            icon={'fa-exclamation-circle'}
                             count={stats?.total_active_incidents}
                         />
                         <StatisticCount
@@ -101,6 +95,12 @@ const StatsView: FC = () => {
                             title={'Total Active Participants'}
                             icon={'fa-users'}
                             count={stats?.total_active_participants}
+                        />
+                        <StatisticCount
+                            id={'AverageDuration'}
+                            title={'Average Duration'}
+                            icon={'fa-clock-o'}
+                            count={renderDuration(moment.duration(stats?.average_duration_active_incidents_minutes, 'minutes'))}
                         />
                     </div>
                     <GraphBox>

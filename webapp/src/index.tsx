@@ -53,10 +53,10 @@ export default class Plugin {
                 mainMenuActionId = null;
             } else if (!mainMenuActionId && !isMobile()) {
                 mainMenuActionId = registry.registerMainMenuAction(
-                    'Playbooks & Incidents',
+                    'Incident Collaboration',
                     () => {
                         const team = getCurrentTeam(store.getState());
-                        navigateToTeamPluginUrl(team.name, '/playbooks');
+                        navigateToTeamPluginUrl(team.name, '/stats');
                     },
                 );
             }
