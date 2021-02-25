@@ -108,13 +108,13 @@ describe('timeline', () => {
             cy.updateStatus('this is a status update', 0, 'Active');
 
             // * Verify we can see the update in the timeline
-            verifyTimelineEvent('status_updated', 2, 1, 'Reported to Active');
+            verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
 
             // # Change commander
             cy.executeSlashCommand('/incident commander @user-1');
 
             // * Verify we can see the change commander in the timeline
-            verifyTimelineEvent('commander_changed', 2, 1, 'changed from @aaron.peterson to @user-1');
+            verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
         });
     });
 
@@ -187,14 +187,109 @@ describe('timeline', () => {
             verifyTimelineEvent('event_from_post', 2, 0, summary2);
         });
     });
+
+    describe('timeline updates', () => {
+        it('can be deleted (both standard events and events from posts)', () => {
+            // * Verify incident created message is visible in the timeline
+            verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+
+            // # Post an update that doesn't change the incident status
+            cy.updateStatus('this is a status update');
+
+            // * Verify we can see the update in the timeline
+            verifyTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
+
+            // # Change commander
+            cy.executeSlashCommand('/incident commander @aaron.peterson');
+
+            // * Verify we can see the change commander in the timeline
+            verifyTimelineEvent('commander_changed', 1, 0, 'Commander changed from @user-1 to @aaron.peterson');
+
+            // # Post an update that changes the incident status
+            cy.updateStatus('this is a status update', 0, 'Active');
+
+            // * Verify we can see the update in the timeline
+            verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
+
+            // # Change commander
+            cy.executeSlashCommand('/incident commander @user-1');
+
+            // * Verify we can see the change commander in the timeline
+            verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
+
+            // # Post the message we'll click on
+            cy.createPost('this is the first post we\'ll click on');
+
+            // # Add a timeline event from a post at the end of the incident
+            const summary1 = 'This is the incident summary 1';
+            cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
+
+            // * Delete the custom event
+            removeTimelineEvent('event_from_post', 1, 0, summary1);
+
+            // * Delete the incident created event
+            removeTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+
+            // * Delete the second status update
+            removeTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
+
+            // * Delete the first commander change
+            removeTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
+
+            // * Delete the first status update
+            removeTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
+
+            // * Delete the second commander change
+            removeTimelineEvent('commander_changed', 1, 0, 'Commander changed from @aaron.peterson to @user-1');
+        });
+    });
+
+    describe('timeline notice', () => {
+        it('shows when there are no events', () => {
+            // * Verify incident created message is visible in the timeline
+            verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+
+            // * Delete the incident created event
+            removeTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+
+            // * Verify notice is shown
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText('Timeline events are displayed here as they occur. Hover over an event to remove it.')
+                    .should('exist');
+            });
+        });
+    });
 });
 
 const verifyTimelineEvent = (expectedEventType, expectedNumberOfEvents, expectedEventIndex, expectedEventSummary) => {
-    cy.findByTestId('timeline-view').within(() => {
-        cy.findAllByTestId(expectedEventType).should('have.length', expectedNumberOfEvents);
-        cy.findAllByTestId(expectedEventType)
-            .eq(expectedEventIndex)
-            .contains(expectedEventSummary)
-            .should('be.visible');
-    });
+    // * Verify we have the expected number of events
+    cy.findAllByTestId(expectedEventType).should('have.length', expectedNumberOfEvents);
+
+    // * Verify the target event exists with the expected summary text
+    cy.findByText(expectedEventSummary).should('exist');
+};
+
+const removeTimelineEvent = (expectedEventType, expectedNumberOfEvents, expectedEventIndex, expectedEventSummary) => {
+    // * Verify we have the expected number of events
+    cy.findAllByTestId(expectedEventType).should('have.length', expectedNumberOfEvents);
+
+    // * Verify the target event exists with the expected summary text
+    cy.findByText(expectedEventSummary).should('exist');
+
+    // # Hover over the event
+    cy.findAllByTestId(expectedEventType)
+        .eq(expectedEventIndex)
+        .trigger('mouseover');
+
+    // # Click the trash
+    cy.get('.icon-trash-can-outline').click();
+
+    // # Press the delete entry button
+    cy.get('#confirmModalButton').contains('Delete Entry').click();
+
+    // # Verify we have one fewer event
+    cy.findAllByTestId(expectedEventType).should('have.length', expectedNumberOfEvents - 1);
+
+    // * Verify the target event does not exist with the expected summary text
+    cy.findByText(expectedEventSummary).should('not.exist');
 };
