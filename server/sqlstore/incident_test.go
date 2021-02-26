@@ -107,6 +107,7 @@ func TestGetIncidents(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
+		WithCurrentStatus("Archived").
 		ToIncident()
 
 	inc04 := *NewBuilder(nil).
@@ -116,6 +117,7 @@ func TestGetIncidents(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
+		WithCurrentStatus("Archived").
 		ToIncident()
 
 	inc05 := *NewBuilder(nil).
@@ -1653,6 +1655,7 @@ func NewBuilder(t testing.TB) *IncidentBuilder {
 			PostID:          model.NewId(),
 			PlaybookID:      model.NewId(),
 			Checklists:      nil,
+			CurrentStatus:   "Reported",
 		},
 	}
 }
@@ -1721,6 +1724,12 @@ func (ib *IncidentBuilder) WithCommanderUserID(id string) *IncidentBuilder {
 
 func (ib *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
 	ib.i.TeamID = id
+
+	return ib
+}
+
+func (ib *IncidentBuilder) WithCurrentStatus(status string) *IncidentBuilder {
+	ib.i.CurrentStatus = status
 
 	return ib
 }

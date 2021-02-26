@@ -242,7 +242,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"PreviousReminder":           rawIncident.PreviousReminder,
 			"BroadcastChannelID":         rawIncident.BroadcastChannelID,
 			"ReminderMessageTemplate":    rawIncident.ReminderMessageTemplate,
-			"CurrentStatus":              incident.StatusReported,
+			"CurrentStatus":              rawIncident.CurrentStatus,
 			"ConcatenatedInvitedUserIDs": rawIncident.ConcatenatedInvitedUserIDs,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,

@@ -93,6 +93,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
 	incdnt.ReporterUserID = userID
+	incdnt.CurrentStatus = StatusReported
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
