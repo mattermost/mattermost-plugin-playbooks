@@ -87,7 +87,7 @@ func TestIncident_CurrentStatus(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.inc.CurrentStatus())
+			require.Equal(t, tc.expected, tc.inc.CurrentStatus)
 		})
 	}
 }

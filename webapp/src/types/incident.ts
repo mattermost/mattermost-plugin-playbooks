@@ -22,6 +22,7 @@ export interface Incident {
     playbook_id: string;
     checklists: Checklist[];
     status_posts: StatusPost[];
+    current_status: IncidentStatus;
     reminder_post_id: string;
     broadcast_channel_id: string;
     timeline_events: TimelineEvent[];
@@ -124,26 +125,7 @@ export function incidentCurrentStatusPost(incident: Incident): StatusPost | unde
 }
 
 export function incidentCurrentStatus(incident: Incident): IncidentStatus {
-    let status = IncidentStatus.Reported;
-
-    const currentPost = incidentCurrentStatusPost(incident);
-
-    if (!currentPost || currentPost.status === IncidentStatus.Old) {
-        // Backwards compatibility with existing incidents.
-        if (incident.end_at === 0) {
-            if (currentPost) {
-                status = IncidentStatus.Active;
-            } else {
-                status = IncidentStatus.Reported;
-            }
-        } else {
-            status = IncidentStatus.Resolved;
-        }
-    } else {
-        status = currentPost.status;
-    }
-
-    return status;
+    return incident.current_status;
 }
 
 export function incidentIsActive(incident: Incident): boolean {
