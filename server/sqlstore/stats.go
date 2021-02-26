@@ -106,29 +106,97 @@ func (s *StatsStore) PlaybookUses() []PlaybookUse {
 	return uses
 }
 
-func (s *StatsStore) ActiveIncidentsOverTime() []int {
+func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int) ([]int, error) {
 	now := model.GetMillis()
-	dayInMS := int64(86400)
+	dayInMS := int64(86400000)
 
-	windowStart := now - dayInMS
-	windowEnd := now
-	numIncidents := []int{}
-	for i := int64(0); i < 14; i++ {
-		query := s.store.builder.
-			Select("COUNT(i.Id)").
-			From("IR_Incident as i").
-			Join("Channels AS c ON (c.Id = i.ChannelId)").
-			Where(sq.Expr(`c.CreateAt < ? AND i.EndAt > ?`, windowEnd-(i*dayInMS), windowStart-(i*dayInMS)))
+	results := []int{}
+	for i := 0; i < numDays; i++ {
+		modifiedQuery := query.Where(
+			sq.Expr(
+				`c.CreateAt < ? AND (i.EndAt > ? OR i.EndAt = 0)`,
+				now-(int64(i)*dayInMS),
+				now-(int64(i+1)*dayInMS),
+			),
+		)
 
-		var numActiveOnDay int
-		if err := s.store.getBuilder(s.store.db, &numActiveOnDay, query); err != nil {
-			// TODO: Error properly
-			fmt.Println(err)
-			return numIncidents
+		var value int
+		if err := s.store.getBuilder(s.store.db, &value, modifiedQuery); err != nil {
+			return nil, err
 		}
 
-		numIncidents = append(numIncidents, numActiveOnDay)
+		results = append(results, value)
 	}
 
-	return numIncidents
+	return results, nil
+}
+
+func (s *StatsStore) ActiveIncidents() []int {
+	query := s.store.builder.
+		Select("COUNT(i.Id)").
+		From("IR_Incident as i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)")
+
+	activeIncidents, err := s.MovingWindowQueryActive(query, 14)
+	if err != nil {
+		s.log.Warnf("Unable to get active incidents %w", err)
+		return []int{}
+	}
+
+	return activeIncidents
+}
+
+func (s *StatsStore) PeopleInIncidents() []int {
+	query := s.store.builder.
+		Select("COUNT(DISTINCT cm.UserId)").
+		From("ChannelMembers as cm").
+		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		Join("Channels AS c ON (c.Id = i.ChannelId)")
+
+	peopleInIncidents, err := s.MovingWindowQueryActive(query, 14)
+	if err != nil {
+		s.log.Warnf("Unable to get people in incidents %w", err)
+		return []int{}
+	}
+
+	return peopleInIncidents
+}
+
+func (s *StatsStore) AverageStartToActive() []int {
+	firstNonReportedStatusPost := `(
+		SELECT p.CreateAt 
+		FROM IR_StatusPosts sp 
+		JOIN Posts AS p ON sp.PostId = p.Id 
+		WHERE sp.Status != 'Reported' AND sp.IncidentId = i.Id 
+		ORDER BY p.CreateAt ASC 
+		LIMIT 1
+	)`
+	query := s.store.builder.
+		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(%s - c.CreateAt)), 0)", firstNonReportedStatusPost)).
+		From("IR_Incident as i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)")
+
+	peopleInIncidents, err := s.MovingWindowQueryActive(query, 42)
+	if err != nil {
+		s.log.Warnf("Unable to get average start to active %w", err)
+		return []int{}
+	}
+
+	return peopleInIncidents
+}
+
+func (s *StatsStore) AverageStartToResolved() []int {
+	query := s.store.builder.
+		Select("COALESCE(FLOOR(AVG(i.EndAt - c.CreateAt)), 0)").
+		From("IR_Incident as i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)").
+		Where("i.EndAt != 0")
+
+	peopleInIncidents, err := s.MovingWindowQueryActive(query, 42)
+	if err != nil {
+		s.log.Warnf("Unable to get average start time to resolved %w", err)
+		return []int{}
+	}
+
+	return peopleInIncidents
 }

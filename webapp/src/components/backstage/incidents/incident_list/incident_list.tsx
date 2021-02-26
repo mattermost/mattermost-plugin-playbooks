@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useEffect, useState} from 'react';
+
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
@@ -13,6 +14,8 @@ import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
+
+import {useQuery} from 'src/hooks';
 
 import NoContentIncidentSvg from 'src/components/assets/no_content_incidents_svg';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
@@ -162,6 +165,17 @@ const BackstageIncidentList: FC = () => {
             direction: 'desc',
         },
     );
+
+    const query = useQuery();
+    useEffect(() => {
+        // This mess makes typescript happy because string | null can't be assigned to string | undefined
+        const queryForStatus = query.get('status');
+        let status: string | undefined;
+        if (queryForStatus) {
+            status = queryForStatus;
+        }
+        setFetchParams((oldParams) => ({...oldParams, status}));
+    }, [query]);
 
     useEffect(() => {
         setFetchParams((oldParams) => {

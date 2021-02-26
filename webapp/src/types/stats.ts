@@ -11,5 +11,8 @@ export interface Stats {
     total_active_incidents: number
     total_active_participants: number
     average_duration_active_incidents_minutes: number
-    playbook_uses: PlaybookUse[]
+    active_incidents: number[]
+    people_in_incidents: number[]
+    average_start_to_active: number[]
+    average_start_to_resolved: number[]
 }

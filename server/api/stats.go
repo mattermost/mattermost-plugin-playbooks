@@ -29,12 +29,15 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 }
 
 type Stats struct {
-	TotalReportedIncidents                int   `json:"total_reported_incidents"`
-	TotalActiveIncidents                  int   `json:"total_active_incidents"`
-	TotalActiveParticipants               int   `json:"total_active_participants"`
-	AverageDurationActiveIncidentsMinutes int   `json:"average_duration_active_incidents_minutes"`
-	ActiveIncidents                       []int `json:"active_incidents"`
-	NumberOfPeopleInIncidents             []int `json:"numer_of_people_in_incidents"`
+	TotalReportedIncidents                int `json:"total_reported_incidents"`
+	TotalActiveIncidents                  int `json:"total_active_incidents"`
+	TotalActiveParticipants               int `json:"total_active_participants"`
+	AverageDurationActiveIncidentsMinutes int `json:"average_duration_active_incidents_minutes"`
+
+	ActiveIncidents        []int `json:"active_incidents"`
+	PeopleInIncidents      []int `json:"people_in_incidents"`
+	AverageStartToActive   []int `json:"average_start_to_active"`
+	AverageStartToResolved []int `json:"average_start_to_resolved"`
 }
 
 func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +46,11 @@ func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 		TotalActiveIncidents:                  h.statsStore.TotalActiveIncidents(),
 		TotalActiveParticipants:               h.statsStore.TotalActiveParticipants(),
 		AverageDurationActiveIncidentsMinutes: h.statsStore.AverageDurationActiveIncidentsMinutes(),
+
+		ActiveIncidents:        h.statsStore.ActiveIncidents(),
+		PeopleInIncidents:      h.statsStore.PeopleInIncidents(),
+		AverageStartToActive:   h.statsStore.AverageStartToActive(),
+		AverageStartToResolved: h.statsStore.AverageStartToResolved(),
 	}
 
 	ReturnJSON(w, stats, http.StatusOK)

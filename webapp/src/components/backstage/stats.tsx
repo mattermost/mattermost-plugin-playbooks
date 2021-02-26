@@ -58,9 +58,6 @@ const StatsView: FC = () => {
         fetchStatsAsync();
     }, []);
 
-    const playbookLabels = stats?.playbook_uses.map((pbUse) => pbUse.name);
-    const playbookValues = stats?.playbook_uses.map((pbUse) => pbUse.num_uses);
-
     return (
         <div className='IncidentList container-medium'>
             <div className='Backstage__header'>
@@ -109,11 +106,25 @@ const StatsView: FC = () => {
                             options={{
                                 title: {
                                     display: true,
-                                    text: 'Total Active Incidents',
+                                    text: 'Total Reported/Active Incidents',
+                                },
+                                scales: {
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero: true,
+                                            callback: (value: number) => (Number.isInteger(value) ? value : null),
+                                        },
+                                    }],
+                                    xAxes: [{
+                                        scaleLabel: {
+                                            display: true,
+                                            labelString: 'Days ago',
+                                        },
+                                    }],
                                 },
                             }}
                             data={{
-                                labels: ['Feb 15', 'Feb 16', 'Yesterday', 'Today'] as string[],
+                                labels: stats?.active_incidents.map((value: number, index: number) => String(index + 1)).reverse(),
                                 datasets: [{
                                     fill: true,
                                     backgroundColor: 'rgba(151,187,205,0.2)',
@@ -122,7 +133,7 @@ const StatsView: FC = () => {
                                     pointBorderColor: '#fff',
                                     pointHoverBackgroundColor: '#fff',
                                     pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                    data: [10, 14, 5, 23] as any,
+                                    data: stats?.active_incidents.slice().reverse(),
                                 }],
                             }}
                         />
@@ -133,11 +144,25 @@ const StatsView: FC = () => {
                             options={{
                                 title: {
                                     display: true,
-                                    text: 'Playbook Uses (Last 6 Weeks)',
+                                    text: 'People In Incidents',
+                                },
+                                scales: {
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero: true,
+                                            callback: (value: number) => (Number.isInteger(value) ? value : null),
+                                        },
+                                    }],
+                                    xAxes: [{
+                                        scaleLabel: {
+                                            display: true,
+                                            labelString: 'Days ago',
+                                        },
+                                    }],
                                 },
                             }}
                             data={{
-                                labels: playbookLabels,
+                                labels: stats?.people_in_incidents.map((value: number, index: number) => String(index + 1)).reverse(),
                                 datasets: [{
                                     fill: true,
                                     backgroundColor: 'rgba(151,187,205,0.2)',
@@ -146,12 +171,90 @@ const StatsView: FC = () => {
                                     pointBorderColor: '#fff',
                                     pointHoverBackgroundColor: '#fff',
                                     pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                    data: playbookValues,
+                                    data: stats?.people_in_incidents.slice().reverse(),
                                 }],
                             }}
                         />
                     </GraphBox>
                     <div/>
+                    <div>
+                        <GraphBox>
+                            <Line
+                                legend={{display: false}}
+                                options={{
+                                    title: {
+                                        display: true,
+                                        text: 'Average Start to Active Time (hours)',
+                                    },
+                                    scales: {
+                                        yAxes: [{
+                                            ticks: {
+                                                beginAtZero: true,
+                                                callback: (value: number) => (Number.isInteger(value) ? value : null),
+                                            },
+                                        }],
+                                        xAxes: [{
+                                            scaleLabel: {
+                                                display: true,
+                                                labelString: 'Days ago',
+                                            },
+                                        }],
+                                    },
+                                }}
+                                data={{
+                                    labels: stats?.average_start_to_active.map((value: number, index: number) => String(index + 1)).reverse(),
+                                    datasets: [{
+                                        fill: true,
+                                        backgroundColor: 'rgba(151,187,205,0.2)',
+                                        borderColor: 'rgba(151,187,205,1)',
+                                        pointBackgroundColor: 'rgba(151,187,205,1)',
+                                        pointBorderColor: '#fff',
+                                        pointHoverBackgroundColor: '#fff',
+                                        pointHoverBorderColor: 'rgba(151,187,205,1)',
+                                        data: stats?.average_start_to_active.map((value: number) => Math.floor(value / 3600000)).reverse(),
+                                    }],
+                                }}
+                            />
+                        </GraphBox>
+                        <GraphBox>
+                            <Line
+                                legend={{display: false}}
+                                options={{
+                                    title: {
+                                        display: true,
+                                        text: 'Average Start to Resolved Time (hours)',
+                                    },
+                                    scales: {
+                                        yAxes: [{
+                                            ticks: {
+                                                beginAtZero: true,
+                                                callback: (value: number) => (Number.isInteger(value) ? value : null),
+                                            },
+                                        }],
+                                        xAxes: [{
+                                            scaleLabel: {
+                                                display: true,
+                                                labelString: 'Days ago',
+                                            },
+                                        }],
+                                    },
+                                }}
+                                data={{
+                                    labels: stats?.average_start_to_resolved.map((value: number, index: number) => String(index + 1)).reverse(),
+                                    datasets: [{
+                                        fill: true,
+                                        backgroundColor: 'rgba(151,187,205,0.2)',
+                                        borderColor: 'rgba(151,187,205,1)',
+                                        pointBackgroundColor: 'rgba(151,187,205,1)',
+                                        pointBorderColor: '#fff',
+                                        pointHoverBackgroundColor: '#fff',
+                                        pointHoverBorderColor: 'rgba(151,187,205,1)',
+                                        data: stats?.average_start_to_resolved.map((value: number) => Math.floor(value / 3600000)).reverse(),
+                                    }],
+                                }}
+                            />
+                        </GraphBox>
+                    </div>
                 </div>
             </div>
         </div>
