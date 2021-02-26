@@ -199,10 +199,6 @@ const CheckboxContainer = styled.div`
     }
 `;
 
-const CheckboxContainerLive = styled(CheckboxContainer)`
-    height: 35px;
-`;
-
 const CloseContainer = styled.span`
     cursor: pointer;
     opacity: 0;
@@ -409,7 +405,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             onMouseLeave={() => setShowMenu(false)}
             data-testid='checkbox-item-container'
         >
-            <CheckboxContainerLive>
+            <CheckboxContainer>
                 {showMenu &&
                     <HoverMenu>
                         {props.checklistItem.description !== '' &&
@@ -462,7 +458,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
                     </div>
                 </label>
-            </CheckboxContainerLive>
+            </CheckboxContainer>
             <ExtrasRow>
                 {props.checklistItem.assignee_id &&
                 <SmallProfile
