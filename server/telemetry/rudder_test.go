@@ -303,7 +303,7 @@ func TestIncidentProperties(t *testing.T) {
 		"CreateAt":            dummyIncident.CreateAt,
 		"PlaybookID":          dummyIncident.PlaybookID,
 		"PostID":              dummyIncident.PostID,
-		"CurrentStatus":       dummyIncident.CurrentStatus(),
+		"CurrentStatus":       dummyIncident.CurrentStatus,
 		"NumChecklists":       1,
 		"TotalChecklistItems": 1,
 	}
