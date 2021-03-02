@@ -330,6 +330,25 @@ func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary stri
 	return nil
 }
 
+// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
+func (s *ServiceImpl) RemoveTimelineEvent(incidentID, eventID string) error {
+	event, err := s.store.GetTimelineEvent(incidentID, eventID)
+	if err != nil {
+		return err
+	}
+
+	event.DeleteAt = model.GetMillis()
+	if err = s.store.UpdateTimelineEvent(event); err != nil {
+		return err
+	}
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, authorID, originalPostID string) error {
 	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
 	if err != nil {
