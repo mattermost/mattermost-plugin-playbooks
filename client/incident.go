@@ -7,8 +7,8 @@ type Incident struct {
 	ID                      string          `json:"id"`
 	Name                    string          `json:"name"`
 	Description             string          `json:"description"`
-	IsActive                bool            `json:"is_active"`
 	CommanderUserID         string          `json:"commander_user_id"`
+	ReporterUserID          string          `json:"reporter_user_id"`
 	TeamID                  string          `json:"team_id"`
 	ChannelID               string          `json:"channel_id"`
 	CreateAt                int64           `json:"create_at"`
@@ -19,7 +19,6 @@ type Incident struct {
 	PostID                  string          `json:"post_id"`
 	PlaybookID              string          `json:"playbook_id"`
 	Checklists              []Checklist     `json:"checklists"`
-	StatusPostIDs           []string        `json:"status_post_ids"`
 	StatusPosts             []StatusPost    `json:"status_posts"`
 	ReminderPostID          string          `json:"reminder_post_id"`
 	PreviousReminder        time.Duration   `json:"previous_reminder"`
