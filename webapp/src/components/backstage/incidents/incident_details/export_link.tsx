@@ -12,6 +12,7 @@ import {OVERLAY_DELAY} from 'src/constants';
 
 import {isExportLicensed} from 'src/selectors';
 import {exportChannelUrl} from 'src/client';
+import {Banner} from 'src/components/backstage/shared';
 
 import {Incident} from 'src/types/incident';
 
@@ -36,12 +37,10 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     };
 
     const downloadStartedBanner = showBanner && (
-        <div className='banner'>
-            <div className='banner__text'>
-                <i className='icon icon-download-outline mr-1'/>
-                {'Downloading channel log'}
-            </div>
-        </div>
+        <Banner>
+            <i className='icon icon-download-outline mr-1'/>
+            {'Downloading channel log'}
+        </Banner>
     );
 
     const linkText = (

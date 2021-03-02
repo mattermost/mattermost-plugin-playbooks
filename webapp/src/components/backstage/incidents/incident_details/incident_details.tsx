@@ -219,19 +219,6 @@ const BackstageIncidentDetailsContainer = styled.div`
         text-align: center;
         width: 100%;
     }
-
-    .banner {
-        color: #155724;
-        background-color: #d4edda;
-        border-color: #c3e6cb;
-        position: fixed;
-        top: 0;
-        width: calc(100% - 32rem);
-        z-index: 8;
-        overflow: hidden;
-        padding: 0.5rem 2.4rem;
-        text-align: center;
-    }
 `;
 
 const FetchingStateType = {
