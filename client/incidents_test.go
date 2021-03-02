@@ -1,45 +1,76 @@
-package client
+package client_test
 
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"testing"
+	"log"
 
-	"github.com/stretchr/testify/require"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-func TestIncidentsService_Get(t *testing.T) {
-	client, mux, _ := setup(t)
+func ExampleIncidentsService_Get() {
+	ctx := context.Background()
 
-	mux.HandleFunc("/"+buildAPIURL("incidents/1"), func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, "GET")
-		fmt.Fprint(w, `{"id": "1"}`)
-	})
+	client4 := model.NewAPIv4Client("http://localhost:8065")
+	client4.Login("test@example.com", "testtest")
 
-	i, err := client.Incidents.Get(context.Background(), "1")
-	require.NoError(t, err)
+	c, err := client.New(client4)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	want := &Incident{ID: "1"}
-	require.Equal(t, want, i)
+	incidentID := "h4n3h7s1qjf5pkis4dn6cuxgwa"
+	incident, err := c.Incidents.Get(ctx, incidentID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Incident Name: %s\n", incident.Name)
 }
 
-func TestIncidentsService_List(t *testing.T) {
-	client, mux, _ := setup(t)
+func ExampleIncidentsService_List() {
+	ctx := context.Background()
 
-	mux.HandleFunc("/"+buildAPIURL("incidents"), func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, "GET")
-		testFormValues(t, r, values{
-			"page": "2",
+	client4 := model.NewAPIv4Client("http://localhost:8065")
+	_, response := client4.Login("test@example.com", "testtest")
+	if response.Error != nil {
+		log.Fatal(response.Error.Error())
+	}
+
+	teams, response := client4.GetAllTeams("", 0, 1)
+	if response.Error != nil {
+		log.Fatal(response.Error.Error())
+	}
+	if len(teams) == 0 {
+		log.Fatal("no teams for this user")
+	}
+
+	c, err := client.New(client4)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var incidents []client.Incident
+	for page := 0; ; page++ {
+		result, err := c.Incidents.List(ctx, client.IncidentListOptions{
+			TeamID:    teams[0].Id,
+			Page:      page,
+			PerPage:   100,
+			Sort:      client.CreateAt,
+			Direction: client.SortDesc,
 		})
-		fmt.Fprint(w, `{}`)
-	})
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	list, err := client.Incidents.List(context.Background(), IncidentListOptions{ListOptions: ListOptions{Page: 2}})
-	require.NoError(t, err)
-	require.NotNil(t, list)
-	require.Nil(t, list.Items)
-	require.Equal(t, 0, list.TotalCount)
-	require.Equal(t, 0, list.PageCount)
-	require.False(t, list.HasMore)
+		incidents = append(incidents, result.Items...)
+		if !result.HasMore {
+			break
+		}
+	}
+
+	for _, incident := range incidents {
+		fmt.Printf("Incident Name: %s\n", incident.Name)
+	}
 }

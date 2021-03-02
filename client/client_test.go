@@ -1,4 +1,4 @@
-package client
+package client_test
 
 import (
 	"net/http"
@@ -6,13 +6,14 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	"github.com/stretchr/testify/require"
 )
 
-// setup sets up a test HTTP server along with a workflows Client that is
-// configured to talk to that test server. Tests should register handlers on
-// mux which provide mock responses for the API method being tested.
-func setup(t *testing.T) (client *Client, mux *http.ServeMux, serverURL string) {
+// setup sets up a test HTTP server and matching Client.
+//
+// Tests should register handlers on mux providing mock responses for the API method being tested.
+func setup(t *testing.T) (c *client.Client, mux *http.ServeMux, serverURL string) {
 	baseURLPath := ""
 
 	// mux is the HTTP request multiplexer used with the test server.
@@ -28,11 +29,11 @@ func setup(t *testing.T) (client *Client, mux *http.ServeMux, serverURL string) 
 
 	// client is the workflows client being tested and is
 	// configured to use test server.
-	client, _ = NewClient("", nil)
+	c, _ = client.NewClient("", &http.Client{})
 	parsedURL, _ := url.Parse(server.URL + baseURLPath + "/")
-	client.BaseURL = parsedURL
+	c.BaseURL = parsedURL
 
-	return client, mux, serverURL
+	return c, mux, serverURL
 }
 
 func testMethod(t *testing.T, r *http.Request, want string) {
