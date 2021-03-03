@@ -10,7 +10,7 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
-import {getUser as fetchUser} from 'mattermost-redux/actions/users';
+import {getProfilesByIds} from 'mattermost-redux/actions/users';
 
 import Profile from 'src/components/profile/profile';
 
@@ -34,11 +34,7 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
     const invitedUsers = useSelector<GlobalState, UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
 
     useEffect(() => {
-        invitedUsers.forEach((user, idx) => {
-            if (!user) {
-                dispatch(fetchUser(props.userIds[idx]));
-            }
-        });
+        dispatch(getProfilesByIds(props.userIds));
     }, [props.userIds]);
 
     // Update the options whenever the passed user IDs or the search term are updated
