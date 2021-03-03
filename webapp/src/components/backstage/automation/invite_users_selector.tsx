@@ -1,4 +1,5 @@
 import React, {FC, useState, useEffect} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 
 import ReactSelect, {GroupType, ControlProps, OptionsType, MenuListComponentProps} from 'react-select';
 
@@ -7,6 +8,9 @@ import {Scrollbars} from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
+import {getUser as fetchUser} from 'mattermost-redux/actions/users';
 
 import Profile from 'src/components/profile/profile';
 
@@ -20,11 +24,22 @@ interface Props {
 }
 
 const InviteUsersSelector: FC<Props> = (props: Props) => {
+    const dispatch = useDispatch();
+
     // When there are no users invited, options is UserProfile[], a plain list. When there is at least one user invited,
     // options contains two groups: the first with invited members, the second with non invited members. This is needed
     // because groups are rendered in the selector list only when there is at least one user invited.
     const [options, setOptions] = useState<UserProfile[] | GroupType<UserProfile>[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const invitedUsers = useSelector<GlobalState, UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
+
+    useEffect(() => {
+        invitedUsers.forEach((user, idx) => {
+            if (!user) {
+                dispatch(fetchUser(props.userIds[idx]));
+            }
+        });
+    }, [props.userIds]);
 
     // Update the options whenever the passed user IDs or the search term are updated
     useEffect(() => {
@@ -38,16 +53,23 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
 
             //@ts-ignore
             profiles.then(({data}: { data: UserProfile[] }) => {
-                const invitedProfiles: UserProfile[] = [];
-                const nonInvitedProfiles: UserProfile[] = [];
+                let invitedProfiles: UserProfile[] = [];
+                let nonInvitedProfiles: UserProfile[] = [];
 
-                data.forEach((profile: UserProfile) => {
-                    if (props.userIds.includes(profile.id)) {
-                        invitedProfiles.push(profile);
-                    } else {
-                        nonInvitedProfiles.push(profile);
-                    }
-                });
+                if (term.trim().length === 0) {
+                    invitedProfiles = invitedUsers.filter((user) => user);
+                    nonInvitedProfiles = data.filter(
+                        (profile: UserProfile) => !props.userIds.includes(profile.id),
+                    );
+                } else {
+                    data.forEach((profile: UserProfile) => {
+                        if (props.userIds.includes(profile.id)) {
+                            invitedProfiles.push(profile);
+                        } else {
+                            nonInvitedProfiles.push(profile);
+                        }
+                    });
+                }
 
                 if (invitedProfiles.length === 0) {
                     setOptions(nonInvitedProfiles);
@@ -64,7 +86,7 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
         };
 
         updateOptions(searchTerm);
-    }, [props.userIds, searchTerm]);
+    }, [props.userIds, searchTerm, JSON.stringify(invitedUsers)]);
 
     let badgeContent = '';
     const numInvitedMembers = props.userIds.length;
