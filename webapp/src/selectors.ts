@@ -10,7 +10,12 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {pluginId} from 'src/manifest';
-import {RHSState, RHSTabState} from 'src/types/rhs';
+import {
+    RHSState,
+    RHSTabState,
+    TimelineEventsFilter,
+    TimelineEventsFilterDefault,
+} from 'src/types/rhs';
 import {Incident, incidentIsActive} from 'src/types/incident';
 
 //@ts-ignore GlobalState is not complete
@@ -77,6 +82,11 @@ export const currentRHSState = (state: GlobalState): RHSState => pluginState(sta
 export const currentRHSTabState = (state: GlobalState): RHSTabState => {
     const channelId = getCurrentChannelId(state);
     return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingSummary;
+};
+
+export const currentRHSEventsFilter = (state: GlobalState): TimelineEventsFilter => {
+    const channelId = getCurrentChannelId(state);
+    return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
 };
 
 export const lastUpdatedByIncidentId = createSelector(

@@ -6,7 +6,11 @@ import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
-const DotMenuButton = styled.div`
+interface DotMenuButtonProps {
+    extraCSS?: string;
+}
+
+const DotMenuButton = styled.div<DotMenuButtonProps>`
     display: inline-flex;
     padding: 0;
     background: transparent;
@@ -22,6 +26,8 @@ const DotMenuButton = styled.div`
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
+
+    ${(props) => (props.extraCSS && css`${props.extraCSS}`)}
 `;
 
 const DropdownMenuWrapper = styled.div`
@@ -31,6 +37,7 @@ const DropdownMenuWrapper = styled.div`
 interface DropdownMenuProps {
     top?: boolean;
     left?: boolean;
+    extraCSS?: string;
 }
 
 const DropdownMenu = styled.div<DropdownMenuProps>`
@@ -54,7 +61,6 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     font-size: 14px;
     line-height: 20px;
     color: var(--center-channel-color);
-    position: 'fixed';
 
     background: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
@@ -62,6 +68,7 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     border-radius: 4px;
 
     z-index: 1;
+    ${(props) => (props.extraCSS && css`${props.extraCSS}`)};
 `;
 
 interface DotMenuProps {
@@ -69,12 +76,14 @@ interface DotMenuProps {
     icon: JSX.Element;
     top?: boolean;
     left?: boolean;
+    menuCSS?: string;
+    buttonCSS?: string;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
-        setOpen(!isOpen);
+        setOpen(true);
     };
 
     const rootRef = useRef<HTMLDivElement>(null);
@@ -93,6 +102,7 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
+            extraCSS={props.buttonCSS}
         >
             {props.icon}
             <DropdownMenuWrapper>
@@ -101,6 +111,7 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                     <DropdownMenu
                         top={props.top}
                         left={props.left}
+                        extraCSS={props.menuCSS}
                     >
                         {props.children}
                     </DropdownMenu>
