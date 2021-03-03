@@ -109,6 +109,7 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                 {
                     isOpen &&
                     <DropdownMenu
+                        data-testid='dropdownmenu'
                         top={props.top}
                         left={props.left}
                         extraCSS={props.menuCSS}

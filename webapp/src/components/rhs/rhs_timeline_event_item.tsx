@@ -168,7 +168,7 @@ const RHSTimelineEventItem = (props: Props) => {
 
     return (
         <TimelineItem
-            data-testid={testid}
+            data-testid={'timeline-item ' + testid}
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
