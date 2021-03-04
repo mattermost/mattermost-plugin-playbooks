@@ -4,9 +4,8 @@
 import styled from 'styled-components';
 
 export const Banner = styled.div`
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
+    color: var(--button-color);
+    background-color: var(--button-bg);
     position: fixed;
     top: 0;
     left: 0;
