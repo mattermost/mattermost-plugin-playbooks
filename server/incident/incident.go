@@ -40,6 +40,7 @@ type Incident struct {
 	PlaybookID              string               `json:"playbook_id"`
 	Checklists              []playbook.Checklist `json:"checklists"`
 	StatusPosts             []StatusPost         `json:"status_posts"`
+	CurrentStatus           string               `json:"current_status"`
 	ReminderPostID          string               `json:"reminder_post_id"`
 	PreviousReminder        time.Duration        `json:"previous_reminder"`
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
@@ -89,24 +90,8 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
-func (i *Incident) CurrentStatus() string {
-	post := findNewestNonDeletedStatusPost(i.StatusPosts)
-	if post == nil {
-		return StatusReported
-	}
-	if post.Status == "" {
-		// Backwards compatibility with existing incidents
-		if i.EndAt != 0 {
-			return StatusResolved
-		}
-		return StatusActive
-	}
-
-	return post.Status
-}
-
 func (i *Incident) IsActive() bool {
-	currentStatus := i.CurrentStatus()
+	currentStatus := i.CurrentStatus
 	return currentStatus != StatusResolved && currentStatus != StatusArchived
 }
 

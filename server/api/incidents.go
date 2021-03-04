@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -129,10 +130,19 @@ func (h *IncidentHandler) checkViewPermissions(next http.Handler) http.Handler {
 func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var payloadIncident incident.Incident
-	if err := json.NewDecoder(r.Body).Decode(&payloadIncident); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode incident", err)
+	var incidentCreateOptions client.IncidentCreateOptions
+	if err := json.NewDecoder(r.Body).Decode(&incidentCreateOptions); err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode incident create options", err)
 		return
+	}
+
+	payloadIncident := incident.Incident{
+		CommanderUserID: incidentCreateOptions.CommanderUserID,
+		TeamID:          incidentCreateOptions.TeamID,
+		Name:            incidentCreateOptions.Name,
+		Description:     incidentCreateOptions.Description,
+		PostID:          incidentCreateOptions.PostID,
+		PlaybookID:      incidentCreateOptions.PlaybookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, userID)
