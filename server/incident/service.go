@@ -186,7 +186,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		EventAt:       incdnt.CreateAt,
 		EventType:     IncidentCreated,
 		PostID:        newPost.Id,
-		SubjectUserID: incdnt.CommanderUserID,
+		SubjectUserID: incdnt.ReporterUserID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
