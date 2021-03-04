@@ -53,6 +53,7 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
                 let nonInvitedProfiles: UserProfile[] = [];
 
                 if (term.trim().length === 0) {
+                    // Filter out all the undefined users, which will cast to false in the filter predicate
                     invitedProfiles = invitedUsers.filter((user) => user);
                     nonInvitedProfiles = data.filter(
                         (profile: UserProfile) => !props.userIds.includes(profile.id),
