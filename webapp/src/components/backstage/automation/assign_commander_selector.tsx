@@ -26,7 +26,7 @@ const AssignCommanderSelector: FC<Props> = (props: Props) => {
     const [searchTerm, setSearchTerm] = useState('');
     const commanderUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.commanderID));
 
-    // Update the options whenever the passed user IDs or the search term are updated
+    // Update the options whenever the commander ID or the search term are updated
     useEffect(() => {
         const updateOptions = async (term: string) => {
             let profiles;
