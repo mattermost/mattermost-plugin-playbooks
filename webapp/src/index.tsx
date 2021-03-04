@@ -41,6 +41,8 @@ import {
     WEBSOCKET_INCIDENT_UPDATED,
     WEBSOCKET_INCIDENT_CREATED,
 } from './types/websocket_events';
+import RegistryWrapper from './registry_wrapper';
+import {isE20LicensedOrDevelopment} from './license';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
@@ -48,10 +50,12 @@ export default class Plugin {
 
         let mainMenuActionId: string | null;
         const updateMainMenuAction = () => {
-            if (mainMenuActionId && isMobile()) {
+            const show = !isMobile() && isE20LicensedOrDevelopment(store);
+
+            if (mainMenuActionId && !show) {
                 registry.unregisterComponent(mainMenuActionId);
                 mainMenuActionId = null;
-            } else if (!mainMenuActionId && !isMobile()) {
+            } else if (!mainMenuActionId && show) {
                 mainMenuActionId = registry.registerMainMenuAction(
                     'Playbooks & Incidents',
                     () => {
@@ -67,32 +71,56 @@ export default class Plugin {
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
 
-        const {toggleRHSPlugin} = registry.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
-        const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
+        const doRegistrations = () => {
+            const r = new RegistryWrapper(registry, store);
 
-        // Store the toggleRHS action to use later
-        store.dispatch(setToggleRHSAction(boundToggleRHSAction));
+            const {toggleRHSPlugin} = r.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
+            const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
-        registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, 'Incidents', 'Incidents');
-        registry.registerPostDropdownMenuComponent(StartIncidentPostMenu);
-        registry.registerPostDropdownMenuComponent(AttachToIncidentPostMenu);
+            // Store the toggleRHS action to use later
+            store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
-        registry.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdated(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
+            r.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, 'Incidents', 'Incidents');
+            r.registerPostDropdownMenuComponent(StartIncidentPostMenu);
+            r.registerPostDropdownMenuComponent(AttachToIncidentPostMenu);
 
-        // Listen for channel changes and open the RHS when appropriate.
-        store.subscribe(makeRHSOpener(store));
+            r.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
 
-        registry.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
+            // Listen for channel changes and open the RHS when appropriate.
+            store.subscribe(makeRHSOpener(store));
 
-        registry.registerNeedsTeamRoute('/error', ErrorPage);
-        registry.registerNeedsTeamRoute('/', Backstage);
+            r.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
+
+            r.registerNeedsTeamRoute('/error', ErrorPage);
+            r.registerNeedsTeamRoute('/', Backstage);
+
+            return r.unregister;
+        };
+
+        // Listen for license changes and update the UI appropriately. This is the only websocket
+        // listener that stays active all the time, regardless of license.
+        let registered = false;
+        let unregister: () => void;
+        const checkRegistrations = () => {
+            updateMainMenuAction();
+
+            if (!registered && isE20LicensedOrDevelopment(store)) {
+                unregister = doRegistrations();
+                registered = true;
+            } else if (unregister && !isE20LicensedOrDevelopment(store)) {
+                unregister();
+                registered = false;
+            }
+        };
+        registry.registerWebSocketEventHandler(WebsocketEvents.LICENSE_CHANGED, checkRegistrations);
+        checkRegistrations();
     }
 }
 
