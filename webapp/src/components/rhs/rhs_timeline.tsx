@@ -88,37 +88,6 @@ const RHSTimeline = (props: Props) => {
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
     const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>(currentRHSEventsFilter);
-    const [filterOptions, setFilterOptions] = useState<CheckboxOption[]>([]);
-
-    useEffect(() => {
-        setFilterOptions([
-            {
-                display: 'All Events',
-                value: 'all',
-                selected: eventsFilter.all,
-            },
-            {
-                display: 'Commander Changed',
-                value: TimelineEventType.CommanderChanged,
-                selected: eventsFilter.commander_changed,
-            },
-            {
-                display: 'Status Updates',
-                value: TimelineEventType.StatusUpdated,
-                selected: eventsFilter.status_updated,
-            },
-            {
-                display: 'Tasks',
-                value: TimelineEventType.TaskStateModified,
-                selected: eventsFilter.task_state_modified,
-            },
-            {
-                display: 'Events From Posts',
-                value: TimelineEventType.EventFromPost,
-                selected: eventsFilter.event_from_post,
-            },
-        ]);
-    }, [eventsFilter]);
 
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
@@ -165,11 +134,41 @@ const RHSTimeline = (props: Props) => {
         );
     }
 
+    const makeFilterOptions = () => {
+        return [
+            {
+                display: 'All Events',
+                value: 'all',
+                selected: eventsFilter.all,
+            },
+            {
+                display: 'Commander Changed',
+                value: TimelineEventType.CommanderChanged,
+                selected: eventsFilter.commander_changed,
+            },
+            {
+                display: 'Status Updates',
+                value: TimelineEventType.StatusUpdated,
+                selected: eventsFilter.status_updated,
+            },
+            {
+                display: 'Tasks',
+                value: TimelineEventType.TaskStateModified,
+                selected: eventsFilter.task_state_modified,
+            },
+            {
+                display: 'Events From Posts',
+                value: TimelineEventType.EventFromPost,
+                selected: eventsFilter.event_from_post,
+            },
+        ];
+    };
+
     return (
         <>
             <Header>
                 <MultiCheckbox
-                    options={filterOptions}
+                    options={makeFilterOptions()}
                     onselect={selectOption}
                 />
             </Header>

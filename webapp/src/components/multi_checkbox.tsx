@@ -41,34 +41,32 @@ interface Props {
     onselect: (value: string, checked: boolean) => void;
 }
 
-const MultiCheckbox = (props: Props) => {
-    return (
-        <DotMenu
-            icon={
-                <IconWrapper>
-                    <i className='icon icon-filter-variant'/>
-                </IconWrapper>
-            }
-            menuCSS={'left: -230px;'}
-            buttonCSS={'margin: 0 16px 0 auto'}
-        >
-            {props.options.map((option) => {
-                return (
-                    <FilterCheckboxContainer
-                        key={option.value}
-                        onClick={() => props.onselect(option.value, !option.selected)}
-                    >
-                        <input
-                            className='checkbox'
-                            type='checkbox'
-                            checked={option.selected}
-                        />
-                        <OptionDisplay>{option.display}</OptionDisplay>
-                    </FilterCheckboxContainer>
-                );
-            })}
-        </DotMenu>
-    );
-};
+const MultiCheckbox = (props: Props) => (
+    <DotMenu
+        icon={
+            <IconWrapper>
+                <i className='icon icon-filter-variant'/>
+            </IconWrapper>
+        }
+        menuCSS={'left: -230px;'}
+        buttonCSS={'margin: 0 16px 0 auto'}
+    >
+        {props.options.map((option) => {
+            return (
+                <FilterCheckboxContainer
+                    key={option.value}
+                    onClick={() => props.onselect(option.value, !option.selected)}
+                >
+                    <input
+                        className='checkbox'
+                        type='checkbox'
+                        checked={option.selected}
+                    />
+                    <OptionDisplay>{option.display}</OptionDisplay>
+                </FilterCheckboxContainer>
+            );
+        })}
+    </DotMenu>
+);
 
 export default MultiCheckbox;
