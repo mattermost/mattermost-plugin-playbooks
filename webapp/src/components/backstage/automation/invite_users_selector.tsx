@@ -25,13 +25,9 @@ interface Props {
 
 const InviteUsersSelector: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
-
-    // When there are no users invited, options is UserProfile[], a plain list. When there is at least one user invited,
-    // options contains two groups: the first with invited members, the second with non invited members. This is needed
-    // because groups are rendered in the selector list only when there is at least one user invited.
-    const [options, setOptions] = useState<UserProfile[] | GroupType<UserProfile>[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const invitedUsers = useSelector<GlobalState, UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
+    const [searchedUsers, setSearchedUsers] = useState<UserProfile[]>([]);
 
     useEffect(() => {
         dispatch(getProfilesByIds(props.userIds));
@@ -49,41 +45,39 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
 
             //@ts-ignore
             profiles.then(({data}: { data: UserProfile[] }) => {
-                let invitedProfiles: UserProfile[] = [];
-                let nonInvitedProfiles: UserProfile[] = [];
-
-                if (term.trim().length === 0) {
-                    // Filter out all the undefined users, which will cast to false in the filter predicate
-                    invitedProfiles = invitedUsers.filter((user) => user);
-                    nonInvitedProfiles = data.filter(
-                        (profile: UserProfile) => !props.userIds.includes(profile.id),
-                    );
-                } else {
-                    data.forEach((profile: UserProfile) => {
-                        if (props.userIds.includes(profile.id)) {
-                            invitedProfiles.push(profile);
-                        } else {
-                            nonInvitedProfiles.push(profile);
-                        }
-                    });
-                }
-
-                if (invitedProfiles.length === 0) {
-                    setOptions(nonInvitedProfiles);
-                } else {
-                    setOptions([
-                        {label: 'INVITED MEMBERS', options: invitedProfiles},
-                        {label: 'NON INVITED MEMBERS', options: nonInvitedProfiles},
-                    ]);
-                }
-            }).catch(() => {
-                // eslint-disable-next-line no-console
-                console.error('Error searching user profiles in custom attribute settings dropdown.');
+                setSearchedUsers(data);
             });
         };
 
         updateOptions(searchTerm);
-    }, [props.userIds, searchTerm, JSON.stringify(invitedUsers)]);
+    }, [props.userIds, searchTerm]);
+
+    let invitedProfiles: UserProfile[] = [];
+    let nonInvitedProfiles: UserProfile[] = [];
+
+    if (searchTerm.trim().length === 0) {
+        // Filter out all the undefined users, which will cast to false in the filter predicate
+        invitedProfiles = invitedUsers.filter((user) => user);
+        nonInvitedProfiles = searchedUsers.filter(
+            (profile: UserProfile) => !props.userIds.includes(profile.id),
+        );
+    } else {
+        searchedUsers.forEach((profile: UserProfile) => {
+            if (props.userIds.includes(profile.id)) {
+                invitedProfiles.push(profile);
+            } else {
+                nonInvitedProfiles.push(profile);
+            }
+        });
+    }
+
+    let options: UserProfile[] | GroupType<UserProfile>[] = nonInvitedProfiles;
+    if (invitedProfiles.length !== 0) {
+        options = [
+            {label: 'INVITED MEMBERS', options: invitedProfiles},
+            {label: 'NON INVITED MEMBERS', options: nonInvitedProfiles},
+        ];
+    }
 
     let badgeContent = '';
     const numInvitedMembers = props.userIds.length;
