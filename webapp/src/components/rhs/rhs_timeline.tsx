@@ -134,41 +134,39 @@ const RHSTimeline = (props: Props) => {
         );
     }
 
-    const makeFilterOptions = () => {
-        return [
-            {
-                display: 'All Events',
-                value: 'all',
-                selected: eventsFilter.all,
-            },
-            {
-                display: 'Commander Changed',
-                value: TimelineEventType.CommanderChanged,
-                selected: eventsFilter.commander_changed,
-            },
-            {
-                display: 'Status Updates',
-                value: TimelineEventType.StatusUpdated,
-                selected: eventsFilter.status_updated,
-            },
-            {
-                display: 'Tasks',
-                value: TimelineEventType.TaskStateModified,
-                selected: eventsFilter.task_state_modified,
-            },
-            {
-                display: 'Events From Posts',
-                value: TimelineEventType.EventFromPost,
-                selected: eventsFilter.event_from_post,
-            },
-        ];
-    };
+    const filterOptions = [
+        {
+            display: 'All Events',
+            value: 'all',
+            selected: eventsFilter.all,
+        },
+        {
+            display: 'Commander Changed',
+            value: TimelineEventType.CommanderChanged,
+            selected: eventsFilter.commander_changed,
+        },
+        {
+            display: 'Status Updates',
+            value: TimelineEventType.StatusUpdated,
+            selected: eventsFilter.status_updated,
+        },
+        {
+            display: 'Tasks',
+            value: TimelineEventType.TaskStateModified,
+            selected: eventsFilter.task_state_modified,
+        },
+        {
+            display: 'Events From Posts',
+            value: TimelineEventType.EventFromPost,
+            selected: eventsFilter.event_from_post,
+        },
+    ];
 
     return (
         <>
             <Header>
                 <MultiCheckbox
-                    options={makeFilterOptions()}
+                    options={filterOptions}
                     onselect={selectOption}
                 />
             </Header>
