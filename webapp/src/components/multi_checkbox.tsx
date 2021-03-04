@@ -58,7 +58,6 @@ const MultiCheckbox = (props: Props) => (
                     onClick={() => props.onselect(option.value, !option.selected)}
                 >
                     <input
-                        className='checkbox'
                         type='checkbox'
                         checked={option.selected}
                     />
