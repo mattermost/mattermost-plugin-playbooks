@@ -114,9 +114,9 @@ describe('incident rhs > header', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            // * Verify the title shows "Ongoing"
+            // * Verify the title shows "Reported"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -143,9 +143,9 @@ describe('incident rhs > header', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            // * Verify the title shows "Ongoing"
+            // * Verify the title shows "Resolved"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Resolved');
             });
         });
 
@@ -172,9 +172,9 @@ describe('incident rhs > header', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            // * Verify the title shows "Ended"
+            // * Verify the title shows "Archived"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ended');
+                cy.get('.sidebar--right__title').contains('Archived');
             });
         });
 
@@ -195,7 +195,7 @@ describe('incident rhs > header', () => {
 
             // * Verify the title shows "Ongoing"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
     });

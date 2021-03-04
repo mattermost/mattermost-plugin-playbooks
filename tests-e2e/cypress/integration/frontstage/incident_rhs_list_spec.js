@@ -264,8 +264,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # bring up the incident list
@@ -541,8 +541,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -576,8 +576,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
                 cy.findByTestId('back-button').should('exist').click();
@@ -596,8 +596,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -643,8 +643,8 @@ describe('rhs incident list', () => {
                     cy.findByText(secondIncidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # Close the RHS
@@ -664,8 +664,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -788,8 +788,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -849,8 +849,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
     });
@@ -928,8 +928,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
                 cy.findByTestId('back-button').should('exist').click();
@@ -1018,8 +1018,8 @@ describe('rhs incident list', () => {
                     cy.findByText(incidentName).should('exist');
                 });
 
-                // * Verify the title shows "Ongoing"
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                // * Verify the title shows "Reported"
+                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # End incident and go to incident list
