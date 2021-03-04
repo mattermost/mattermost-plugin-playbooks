@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useEffect, useState, ReactNode} from 'react';
+import {Link, useRouteMatch} from 'react-router-dom';
 
 import {Line, Bar} from 'react-chartjs-2';
 
@@ -17,10 +18,23 @@ type Props = {
     icon: string;
     count?: ReactNode;
     id?: string;
+    to?: string;
 }
 
+type URLParams = {
+    team: string
+    plugin: string
+}
+
+const StyledLink = styled(Link)`
+    && {
+        color: inherit;
+    }
+`;
+
 const StatisticCount: FC<Props> = (props: Props) => {
-    return (
+    const match = useRouteMatch<URLParams>('/:team/:plugin');
+    const inner = (
         <div className='col-lg-3 col-md-4 col-sm-6'>
             <div className='total-count'>
                 <div
@@ -39,6 +53,18 @@ const StatisticCount: FC<Props> = (props: Props) => {
             </div>
         </div>
     );
+
+    if (props.to) {
+        return (
+            <StyledLink
+                to={`/${match?.params.team}/${match?.params.plugin}/` + props.to}
+            >
+                {inner}
+            </StyledLink>
+        );
+    }
+
+    return inner;
 };
 
 const GraphBox = styled.div`
@@ -80,12 +106,14 @@ const StatsView: FC = () => {
                             title={'Total Reported Incidents'}
                             icon={'fa-exclamation-triangle'}
                             count={stats?.total_reported_incidents}
+                            to={'incidents?status=Reported'}
                         />
                         <StatisticCount
                             id={'TotalActiveIncidents'}
                             title={'Total Active Incidents'}
                             icon={'fa-exclamation-circle'}
                             count={stats?.total_active_incidents}
+                            to={'incidents?status=Active'}
                         />
                         <StatisticCount
                             id={'TotalActiveParticipants'}

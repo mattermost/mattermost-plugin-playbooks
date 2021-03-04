@@ -1,6 +1,5 @@
 import {useEffect, useState, MutableRefObject, useRef} from 'react';
 import {useSelector} from 'react-redux';
-import {useLocation} from 'react-router-dom';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
@@ -95,11 +94,4 @@ export function useTimeout(callback: () => void, delay: number | null) {
 
     // In case you want to manually clear the timeout from the consuming component...:
     return timeoutRef;
-}
-
-/**
- * Hook that gets the query parameters from react-router
- */
-export function useQuery() {
-    return new URLSearchParams(useLocation().search);
 }

@@ -30,7 +30,7 @@ func (s *StatsStore) TotalReportedIncidents() int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		// TODO: Error properly
+		s.log.Warnf("Error retriving stat %w", err)
 		return -1
 	}
 
@@ -45,7 +45,7 @@ func (s *StatsStore) TotalActiveIncidents() int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		// TODO: Error properly
+		s.log.Warnf("Error retriving stat %w", err)
 		return -1
 	}
 
@@ -61,7 +61,7 @@ func (s *StatsStore) TotalActiveParticipants() int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		// TODO: Error properly
+		s.log.Warnf("Error retriving stat %w", err)
 		return -1
 	}
 
@@ -77,7 +77,7 @@ func (s *StatsStore) AverageDurationActiveIncidentsMinutes() int {
 
 	var averageCreateAt float64
 	if err := s.store.getBuilder(s.store.db, &averageCreateAt, query); err != nil {
-		// TODO: Error properly
+		s.log.Warnf("Error retriving stat %w", err)
 		return -1
 	}
 
@@ -98,8 +98,7 @@ func (s *StatsStore) PlaybookUses() []PlaybookUse {
 
 	var uses []PlaybookUse
 	if err := s.store.selectBuilder(s.store.db, &uses, query); err != nil {
-		// TODO: Error properly
-		fmt.Println(err)
+		s.log.Warnf("Error retriving stat %w", err)
 		return []PlaybookUse{}
 	}
 
@@ -132,21 +131,71 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 }
 
 func (s *StatsStore) ActiveIncidents() []int {
-	query := s.store.builder.
-		Select("COUNT(i.Id)").
-		From("IR_Incident as i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)")
+	now := model.GetMillis()
 
-	activeIncidents, err := s.MovingWindowQueryActive(query, 14)
-	if err != nil {
-		s.log.Warnf("Unable to get active incidents %w", err)
+	startQuery := s.store.builder.
+		Select(fmt.Sprintf("COUNT(i.Id), (%v - c.CreateAt) / 86400000 as DayStarted", now)).
+		From("IR_Incident as i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)").
+		GroupBy("DayStarted").
+		OrderBy("DayStarted ASC")
+
+	var dayCountsStart []struct {
+		Count      int
+		DayStarted int
+	}
+	if err := s.store.selectBuilder(s.store.db, &dayCountsStart, startQuery); err != nil {
+		s.log.Warnf("Unable to get start counts %w", err)
 		return []int{}
 	}
 
-	return activeIncidents
+	started := make(map[int]int)
+	for _, dcStart := range dayCountsStart {
+		started[dcStart.DayStarted] = dcStart.Count
+	}
+
+	endQuery := s.store.builder.
+		Select(fmt.Sprintf("COUNT(i.Id), (%v - i.EndAt) / 86400000 as DayEnded", now)).
+		From("IR_Incident as i").
+		Where("i.EndAt != 0").
+		GroupBy("DayEnded").
+		OrderBy("DayEnded ASC")
+
+	var dayCountsEnd []struct {
+		Count    int
+		DayEnded int
+	}
+	if err := s.store.selectBuilder(s.store.db, &dayCountsEnd, endQuery); err != nil {
+		s.log.Warnf("Unable to get end counts %w", err)
+		return []int{}
+	}
+
+	ended := make(map[int]int)
+	for _, dcEnd := range dayCountsEnd {
+		ended[dcEnd.DayEnded] = dcEnd.Count
+	}
+
+	activeNowQuery := s.store.builder.
+		Select("COUNT(i.Id)").
+		From("IR_Incident as i").
+		Where("i.EndAt = 0")
+
+	var activeNow int
+	if err := s.store.getBuilder(s.store.db, &activeNow, activeNowQuery); err != nil {
+		s.log.Warnf("Unable to get active now %w", err)
+		return []int{}
+	}
+
+	days := make([]int, 14)
+	days[0] = activeNow
+	for day := 1; day < 14; day++ {
+		days[day] = days[day-1] + ended[day] - started[day-1]
+	}
+
+	return days
 }
 
-func (s *StatsStore) PeopleInIncidents() []int {
+func (s *StatsStore) UniquePeopleInIncidents() []int {
 	query := s.store.builder.
 		Select("COUNT(DISTINCT cm.UserId)").
 		From("ChannelMembers as cm").
@@ -162,7 +211,70 @@ func (s *StatsStore) PeopleInIncidents() []int {
 	return peopleInIncidents
 }
 
+func (s *StatsStore) PeopleInIncidents() []int {
+	now := model.GetMillis()
+
+	startQuery := s.store.builder.
+		Select(fmt.Sprintf("COUNT(DISTINCT cm.UserId), (%v - cmh.JoinTime) / 86400000 as DayStarted", now)).
+		From("ChannelMembers as cm").
+		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		Join("ChannelMemberHistory AS cmh ON (cmh.ChannelId = i.ChannelId)").
+		GroupBy("DayStarted").
+		OrderBy("DayStarted ASC")
+
+	var dayCountsStart []struct {
+		Count      int
+		DayStarted int
+	}
+	if err := s.store.selectBuilder(s.store.db, &dayCountsStart, startQuery); err != nil {
+		s.log.Warnf("Unable to get start counts %w", err)
+		return []int{}
+	}
+
+	started := make(map[int]int)
+	for _, dcStart := range dayCountsStart {
+		started[dcStart.DayStarted] = dcStart.Count
+	}
+
+	endQuery := s.store.builder.
+		Select(fmt.Sprintf("COUNT(DISTINCT cm.UserId), (%v - cmh.LeaveTime) / 86400000 as DayEnded", now)).
+		From("ChannelMembers as cm").
+		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		Join("ChannelMemberHistory AS cmh ON (cmh.ChannelId = i.ChannelId)").
+		Where("i.EndAt != 0").
+		Where("cmh.LeaveTime != NULL").
+		GroupBy("DayEnded").
+		OrderBy("DayEnded ASC")
+
+	var dayCountsEnd []struct {
+		Count    int
+		DayEnded int
+	}
+	if err := s.store.selectBuilder(s.store.db, &dayCountsEnd, endQuery); err != nil {
+		s.log.Warnf("Unable to get end counts %w", err)
+		return []int{}
+	}
+
+	ended := make(map[int]int)
+	for _, dcEnd := range dayCountsEnd {
+		ended[dcEnd.DayEnded] = dcEnd.Count
+	}
+
+	activeNow := s.TotalActiveParticipants()
+
+	fmt.Printf("Counts: %+v\n %+v\n %v\n", dayCountsStart, dayCountsEnd, activeNow)
+
+	days := make([]int, 14)
+	days[0] = activeNow
+	for day := 1; day < 14; day++ {
+		days[day] = days[day-1] + ended[day] - started[day-1]
+	}
+
+	return days
+}
+
 func (s *StatsStore) AverageStartToActive() []int {
+	daysToQuery := 42
 	firstNonReportedStatusPost := `(
 		SELECT p.CreateAt 
 		FROM IR_StatusPosts sp 
@@ -171,32 +283,79 @@ func (s *StatsStore) AverageStartToActive() []int {
 		ORDER BY p.CreateAt ASC 
 		LIMIT 1
 	)`
-	query := s.store.builder.
-		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(%s - c.CreateAt)), 0)", firstNonReportedStatusPost)).
-		From("IR_Incident as i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)")
+	now := model.GetMillis()
 
-	peopleInIncidents, err := s.MovingWindowQueryActive(query, 42)
-	if err != nil {
+	query := s.store.builder.
+		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(%s - c.CreateAt)), 0) as Average, (%v - c.CreateAt) / 86400000 as DayStarted", firstNonReportedStatusPost, now)).
+		From("IR_Incident as i").
+		Join("Channels AS c ON (c.Id = i.ChannelId)").
+		GroupBy("DayStarted").
+		OrderBy("DayStarted ASC")
+
+	var averages []struct {
+		Average    int
+		DayStarted int
+	}
+	if err := s.store.selectBuilder(s.store.db, &averages, query); err != nil {
 		s.log.Warnf("Unable to get average start to active %w", err)
 		return []int{}
 	}
 
-	return peopleInIncidents
+	dayToAverage := make(map[int]int)
+	for _, av := range averages {
+		dayToAverage[av.DayStarted] = av.Average
+	}
+
+	days := make([]int, daysToQuery)
+	for day := daysToQuery - 1; day >= 0; day-- {
+		if val, ok := dayToAverage[day]; ok {
+			days[day] = val
+		} else {
+			if day != daysToQuery-1 {
+				days[day] = days[day+1]
+			}
+		}
+	}
+
+	return days
 }
 
 func (s *StatsStore) AverageStartToResolved() []int {
+	daysToQuery := 42
+	now := model.GetMillis()
+
 	query := s.store.builder.
-		Select("COALESCE(FLOOR(AVG(i.EndAt - c.CreateAt)), 0)").
+		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(i.EndAt - c.CreateAt)), 0) as Average, (%v - c.CreateAt) / 86400000 as DayStarted", now)).
 		From("IR_Incident as i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)").
-		Where("i.EndAt != 0")
+		Where("i.EndAt != 0").
+		GroupBy("DayStarted").
+		OrderBy("DayStarted ASC")
 
-	peopleInIncidents, err := s.MovingWindowQueryActive(query, 42)
-	if err != nil {
-		s.log.Warnf("Unable to get average start time to resolved %w", err)
+	var averages []struct {
+		Average    int
+		DayStarted int
+	}
+	if err := s.store.selectBuilder(s.store.db, &averages, query); err != nil {
+		s.log.Warnf("Unable to get average start to resoved %w", err)
 		return []int{}
 	}
 
-	return peopleInIncidents
+	dayToAverage := make(map[int]int)
+	for _, av := range averages {
+		dayToAverage[av.DayStarted] = av.Average
+	}
+
+	days := make([]int, daysToQuery)
+	for day := daysToQuery - 1; day >= 0; day-- {
+		if val, ok := dayToAverage[day]; ok {
+			days[day] = val
+		} else {
+			if day != daysToQuery-1 {
+				days[day] = days[day+1]
+			}
+		}
+	}
+
+	return days
 }

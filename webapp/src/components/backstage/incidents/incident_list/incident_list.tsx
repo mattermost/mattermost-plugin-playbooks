@@ -8,14 +8,13 @@ import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
+import {useLocation} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
-
-import {useQuery} from 'src/hooks';
 
 import NoContentIncidentSvg from 'src/components/assets/no_content_incidents_svg';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
@@ -156,6 +155,7 @@ const BackstageIncidentList: FC = () => {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
 
+    const query = useLocation().search;
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
             team_id: currentTeam.id,
@@ -166,10 +166,9 @@ const BackstageIncidentList: FC = () => {
         },
     );
 
-    const query = useQuery();
     useEffect(() => {
         // This mess makes typescript happy because string | null can't be assigned to string | undefined
-        const queryForStatus = query.get('status');
+        const queryForStatus = new URLSearchParams(query).get('status');
         let status: string | undefined;
         if (queryForStatus) {
             status = queryForStatus;
@@ -184,6 +183,7 @@ const BackstageIncidentList: FC = () => {
     }, [currentTeam.id]);
 
     useEffect(() => {
+        let isCanceled = false;
         async function fetchIncidentsAsync() {
             const incidentsReturn = await fetchIncidents(fetchParams);
 
@@ -193,11 +193,17 @@ const BackstageIncidentList: FC = () => {
                 setShowNoIncidents(true);
             }
 
-            setIncidents(incidentsReturn.items);
-            setTotalCount(incidentsReturn.total_count);
+            if (!isCanceled) {
+                setIncidents(incidentsReturn.items);
+                setTotalCount(incidentsReturn.total_count);
+            }
         }
 
         fetchIncidentsAsync();
+
+        return () => {
+            isCanceled = true;
+        };
     }, [fetchParams]);
 
     function setSearchTerm(term: string) {
