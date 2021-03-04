@@ -129,6 +129,7 @@ describe('incident rhs', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'resolved',
                     status: 'Resolved',
                 });
             });
@@ -158,6 +159,7 @@ describe('incident rhs', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'ending',
                     status: 'Archived',
                 });
             });
@@ -226,6 +228,7 @@ describe('incident rhs', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'resolving',
                     status: 'Resolved',
                 });
             });
@@ -264,6 +267,7 @@ describe('incident rhs', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'ending',
                     status: 'Archived',
                 });
             });
@@ -321,6 +325,7 @@ describe('incident rhs', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'resolving',
                     status: 'Resolved',
                 });
             });
@@ -357,6 +362,7 @@ describe('incident rhs', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'ending',
                     status: 'Archived',
                 });
             });
