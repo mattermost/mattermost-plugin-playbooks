@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('backstage incident creation', () => {
+describe('backstage incident creation button', () => {
     let playbookName;
     let testTeam;
 
@@ -24,7 +24,7 @@ describe('backstage incident creation', () => {
         // cy.visit('/ad-1/com.mattermost.plugin-incident-management/incidents');
     });
 
-    it('starts a new incident with New Incident button', () => {
+    it('opens incident creation modal', () => {
         // # Go to the backstage
         cy.openBackstage();
 

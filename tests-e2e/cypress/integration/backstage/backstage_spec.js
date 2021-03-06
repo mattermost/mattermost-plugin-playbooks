@@ -7,53 +7,16 @@
 // ***************************************************************
 
 describe('backstage', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let testUser;
     let testTeam;
-
+    
     before(() => {
-        cy.apiInitSetup().then(({team, user}) => {
+        cy.apiInitSetup({createPlaybook: true, createIncident: true}).then(({team}) => {
             testTeam = team;
-            testUser = user;
-
-            cy.apiLogin(testUser);
-        });
-        cy.apiGetTeamByName(testTeam).then((team) => {
-            
-        });
-    });
-
-    before(() => {
-        // # Login as user-1
-        cy.apiLogin('user-1');
-
-        // # Create a playbook and start an incident.
-        cy.apiGetTeamByName('ad-1').then((team) => {
-            cy.apiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                }).then((playbook) => {
-                    const now = Date.now();
-                    const incidentName = 'Incident (' + now + ')';
-                    cy.apiStartIncident({
-                        teamId: team.id,
-                        playbookId: playbook.id,
-                        incidentName,
-                        commanderUserId: user.id,
-                    });
-                });
-            });
         });
     });
 
     beforeEach(() => {
-        // # Login as user-1
-        cy.apiLogin('user-1');
-
-        // # Navigate to the application
-        cy.visit('/ad-1/');
+        cy.visit(`/${testTeam.name}`);
     });
 
     // it('opens statistics view by default', () => {
