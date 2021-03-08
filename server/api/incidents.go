@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -48,6 +49,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
 
 	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("/add-to-timeline-dialog", handler.addToTimelineDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
@@ -65,6 +67,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -162,10 +165,19 @@ func (h *IncidentHandler) isChannelArchived(incidentID string) (bool, error) {
 func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var payloadIncident incident.Incident
-	if err := json.NewDecoder(r.Body).Decode(&payloadIncident); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode incident", err)
+	var incidentCreateOptions client.IncidentCreateOptions
+	if err := json.NewDecoder(r.Body).Decode(&incidentCreateOptions); err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode incident create options", err)
 		return
+	}
+
+	payloadIncident := incident.Incident{
+		CommanderUserID: incidentCreateOptions.CommanderUserID,
+		TeamID:          incidentCreateOptions.TeamID,
+		Name:            incidentCreateOptions.Name,
+		Description:     incidentCreateOptions.Description,
+		PostID:          incidentCreateOptions.PostID,
+		PlaybookID:      incidentCreateOptions.PlaybookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, userID)
@@ -302,6 +314,49 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusCreated)
 }
 
+// addToTimelineDialog handles the interactive dialog submission when a user clicks the post action
+// menu option "Add to incident timeline".
+func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	request := model.SubmitDialogRequestFromJson(r.Body)
+	if request == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		return
+	}
+
+	if userID != request.UserId {
+		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		return
+	}
+
+	var incidentID, summary string
+	if rawIncidentID, ok := request.Submission[incident.DialogFieldIncidentKey].(string); ok {
+		incidentID = rawIncidentID
+	}
+	if rawSummary, ok := request.Submission[incident.DialogFieldSummary].(string); ok {
+		summary = rawSummary
+	}
+
+	if err := permissions.EditIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+		return
+	}
+
+	var state incident.DialogStateAddToTimeline
+	err := json.Unmarshal([]byte(request.State), &state)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
+		return
+	}
+
+	if err = h.incidentService.AddPostToTimeline(incidentID, userID, state.PostID, summary); err != nil {
+		HandleError(w, errors.Wrap(err, "failed to add post to timeline"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID string) (*incident.Incident, error) {
 	if newIncident.ID != "" {
 		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident already has an id")
@@ -345,6 +400,11 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		newIncident.BroadcastChannelID = pb.BroadcastChannelID
 		newIncident.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+
+		newIncident.InvitedUserIDs = []string{}
+		if pb.InviteUsersEnabled {
+			newIncident.InvitedUserIDs = pb.InvitedUserIDs
+		}
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -369,6 +429,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	return h.incidentService.CreateIncident(&newIncident, userID, public)
 }
 
+func (h *IncidentHandler) getRequesterInfo(userID string) (incident.RequesterInfo, error) {
+	return permissions.GetRequesterInfo(userID, h.pluginAPI)
+}
+
 // getIncidents handles the GET /incidents endpoint.
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
@@ -378,15 +442,17 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
+	// More detailed permissions checked on DB level.
 	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          userID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		HandleError(w, err)
+		return
 	}
 
 	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
@@ -494,9 +560,10 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		TeamID: teamID,
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          userID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		HandleError(w, err)
+		return
 	}
 
 	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
@@ -529,9 +596,10 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          userID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+	requesterInfo, err := h.getRequesterInfo(userID)
+	if err != nil {
+		HandleError(w, err)
+		return
 	}
 
 	incidents, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
@@ -703,6 +771,21 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 	}
 
 	ReturnJSON(w, nil, http.StatusOK)
+}
+
+// removeTimelineEvent handles the DELETE /incidents/{id}/timeline/{eventID} endpoint.
+// User has been authenticated to edit the incident.
+func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	eventID := vars["eventID"]
+
+	if err := h.incidentService.RemoveTimelineEvent(id, eventID); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint

@@ -14,6 +14,7 @@ import Profile from 'src/components/profile/profile';
 import Duration from 'src/components/duration';
 import {Incident, incidentCurrentStatus} from 'src/types/incident';
 import {lastUpdatedByIncidentId} from 'src/selectors';
+import StatusBadge from '../backstage/incidents/status_badge';
 
 const IncidentContainer = styled.div<IncidentContainerProps>`
     display: flex;
@@ -108,7 +109,9 @@ const RHSListIncident = (props: Props) => {
             <Row>
                 <Col1>{'Status:'}</Col1>
                 <Col2>
-                    {incidentCurrentStatus(props.incident)}
+                    <div>
+                        <StatusBadge status={incidentCurrentStatus(props.incident)}/>
+                    </div>
                 </Col2>
             </Row>
             <Row>

@@ -15,7 +15,9 @@ import (
 	"reflect"
 
 	"github.com/google/go-querystring/query"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -24,68 +26,31 @@ const (
 	userAgent  = "go-client/" + apiVersion
 )
 
-// Client manages communication with the workflows API.
+// Client manages communication with the Incident Collaboration API.
 type Client struct {
-	client  *http.Client // HTTP client used to communicate with the API.
+	// client is the underlying HTTP client used to make API requests.
+	client *http.Client
+	// BaseURL is the base HTTP endpoint for the Incident Collaboration plugin.
 	BaseURL *url.URL
-
-	// User agent used when communicating with the workflows API. Defaults to go-client.
+	// User agent used when communicating with the Incident Collaboration API.
 	UserAgent string
 
-	Incidents          *IncidentsService
-	Playbooks          *PlaybooksService
-	EventSubscriptions *EventSubscriptionsService
+	// Incidents is a collection of methods used to interact with incidents.
+	Incidents *IncidentsService
 }
 
-// ErrorResponse reports an error caused by an API request.
-type ErrorResponse struct {
-	Response *http.Response // HTTP response that caused this error
-	Error    string         `json:"error"` // error message
+// New creates a new instance of Client using the configuration from the given Mattermost Client.
+func New(client4 *model.Client4) (*Client, error) {
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: client4.AuthToken},
+	)
+
+	return newClient(client4.Url, oauth2.NewClient(ctx, ts))
 }
 
-func (r *ErrorResponse) Error() string {
-	return fmt.Sprintf("%v %v: %d %v",
-		r.Response.Request.Method, r.Response.Request.URL,
-		r.Response.StatusCode, r.Error)
-}
-
-// ListOptions specifies the optional parameters to various List methods that
-// support offset pagination.
-type ListOptions struct {
-	// For paginated result sets, page of results to retrieve. 0 based index.
-	Page int `url:"page,omitempty"`
-
-	// For paginated result sets, the number of results to include per page.
-	PerPage int `url:"per_page,omitempty"`
-}
-
-// ListResult contains pagination data for List methods.
-type ListResult struct {
-	TotalCount int  `json:"total_count"`
-	PageCount  int  `json:"page_count"`
-	HasMore    bool `json:"has_more"`
-}
-
-// SortDirection is the type used to specify the ascending or descending order of returned results.
-type SortDirection string
-
-const (
-	// Desc is descending order.
-	Desc SortDirection = "desc"
-
-	// Asc is ascending order.
-	Asc SortDirection = "asc"
-)
-
-// NewClient creates a new instance of Client. If a nil httpClient is
-// provided, a new http.Client will be used. To use API methods which require
-// authentication, provide an http.Client that will perform the authentication
-// for you (such as that provided by the golang.org/x/oauth2 library).
-func NewClient(mattermostSiteURL string, httpClient *http.Client) (*Client, error) {
-	if httpClient == nil {
-		httpClient = &http.Client{}
-	}
-
+// newClient creates a new instance of Client from the given URL and http.Client.
+func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, error) {
 	siteURL, err := url.Parse(mattermostSiteURL)
 	if err != nil {
 		return nil, err
@@ -93,19 +58,14 @@ func NewClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 
 	c := &Client{client: httpClient, BaseURL: siteURL, UserAgent: userAgent}
 	c.Incidents = &IncidentsService{c}
-	c.Playbooks = &PlaybooksService{c}
-	c.EventSubscriptions = &EventSubscriptionsService{c}
 	return c, nil
 }
 
-// NewRequest creates an API request. A relative URL can be provided in urlStr,
-// in which case it is resolved relative to the BaseURL of the Client.
-// Relative URLs should always be specified without a preceding slash. If
-// specified, the body parameter is JSON encoded.
-func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
-	u, err := c.BaseURL.Parse(buildAPIURL(urlStr))
+// newRequest creates an API request, JSON-encoding any given body parameter.
+func (c *Client) newRequest(method, endpoint string, body interface{}) (*http.Request, error) {
+	u, err := c.BaseURL.Parse(buildAPIURL(endpoint))
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to urlStr %s", urlStr)
+		return nil, errors.Wrapf(err, "invalid endpoint %s", endpoint)
 	}
 
 	var buf io.ReadWriter
@@ -121,7 +81,7 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 
 	req, err := http.NewRequest(method, u.String(), buf)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create request for url %s", u)
+		return nil, errors.Wrapf(err, "failed to create http request for url %s", u)
 	}
 
 	if buf != nil {
@@ -133,15 +93,18 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	return req, nil
 }
 
-// Do sends an API request and returns the API response. The API response is
-// JSON decoded and stored in the value pointed to by v, or returned as an
+// buildAPIURL constructs the path to the given endpoint.
+func buildAPIURL(endpoint string) string {
+	return fmt.Sprintf("plugins/%s/api/%s/%s", manifestID, apiVersion, endpoint)
+}
+
+// do sends an API request and returns the API response.
+//
+// The API response is JSON decoded and stored in the value pointed to by v, or returned as an
 // error if an API error has occurred. If v implements the io.Writer
 // interface, the raw response body will be written to v, without attempting to
 // first decode it.
-//
-// The provided ctx must be non-nil, if it is nil an error is returned. If it is canceled or times out,
-// ctx.Err() will be returned.
-func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (*http.Response, error) {
 	if ctx == nil {
 		return nil, errors.New("context must be non-nil")
 	}
@@ -159,7 +122,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	}
 	defer resp.Body.Close()
 
-	err = CheckResponse(resp)
+	err = checkResponse(resp)
 	if err != nil {
 		return resp, err
 	}
@@ -170,7 +133,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 				return nil, err
 			}
 		} else {
-			decErr := json.NewDecoder(resp.Body).Decode(v)
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			decErr := json.NewDecoder(bytes.NewReader(body)).Decode(v)
 			if decErr == io.EOF {
 				// TODO: Confirm if this happens only on empty bodies. If so, check that first before decoding.
 				decErr = nil // ignore EOF errors caused by empty response body
@@ -184,23 +149,33 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
-// CheckResponse checks the API response for errors, and returns them if
-// present. A response is considered an error if it has a status code outside
-// the 200 range.
-// API error responses are expected to have response
-// body, and a JSON response body that maps to ErrorResponse.
-func CheckResponse(r *http.Response) error {
+// checkResponse checks the API response for an error.
+//
+// Any response with a status code outside 2xx is considered an error, and its body inspected for
+// an optional `Error` property in a JSON struct.
+func checkResponse(r *http.Response) error {
 	if c := r.StatusCode; http.StatusOK <= c && c <= 299 {
 		return nil
 	}
-	errorResponse := &ErrorResponse{Response: r}
+
+	errorResponse := &ErrorResponse{
+		StatusCode: r.StatusCode,
+		Method:     r.Request.Method,
+		URL:        r.Request.URL.String(),
+	}
 	data, err := ioutil.ReadAll(r.Body)
-	if err == nil && data != nil {
-		if err := json.Unmarshal(data, errorResponse); err != nil {
-			return err
-		}
+	if err != nil {
+		errorResponse.Err = fmt.Errorf("failed to read response body: %w", err)
 	}
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+
+	if data != nil {
+		// Try to extract a structured error from the body, otherwise fall back to using
+		// the whole body as the error message.
+		if err := json.Unmarshal(data, errorResponse); err != nil {
+			errorResponse.Err = errors.New(string(data))
+		}
+	}
 
 	return errorResponse
 }
@@ -226,23 +201,3 @@ func addOptions(s string, opts interface{}) (string, error) {
 	u.RawQuery = qs.Encode()
 	return u.String(), nil
 }
-
-func buildAPIURL(urlStr string) string {
-	return fmt.Sprintf("plugins/%s/api/%s/%s", manifestID, apiVersion, urlStr)
-}
-
-// Bool is a helper routine that allocates a new bool value
-// to store v and returns a pointer to it.
-func Bool(v bool) *bool { return &v }
-
-// Int is a helper routine that allocates a new int value
-// to store v and returns a pointer to it.
-func Int(v int) *int { return &v }
-
-// Int64 is a helper routine that allocates a new int64 value
-// to store v and returns a pointer to it.
-func Int64(v int64) *int64 { return &v }
-
-// String is a helper routine that allocates a new string value
-// to store v and returns a pointer to it.
-func String(v string) *string { return &v }

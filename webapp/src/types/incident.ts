@@ -10,6 +10,7 @@ export interface Incident {
     name: string;
     description: string;
     commander_user_id: string;
+    reporter_user_id: string;
     team_id: string;
     channel_id: string;
     create_at: number;
@@ -21,6 +22,7 @@ export interface Incident {
     playbook_id: string;
     checklists: Checklist[];
     status_posts: StatusPost[];
+    current_status: IncidentStatus;
     reminder_post_id: string;
     broadcast_channel_id: string;
     timeline_events: TimelineEvent[];
@@ -63,6 +65,7 @@ export function isIncident(arg: any): arg is Incident {
         arg.name && typeof arg.name === 'string' &&
         typeof arg.description === 'string' &&
         arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
+        arg.reporter_user_id && typeof arg.reporter_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
         arg.channel_id && typeof arg.channel_id === 'string' &&
         typeof arg.create_at === 'number' &&
@@ -101,6 +104,7 @@ export function isMetadata(arg: any): arg is Metadata {
 export function isTimelineEvent(arg: any): arg is TimelineEvent {
     return Boolean(arg &&
         typeof arg.id === 'string' &&
+        typeof arg.incident_id === 'string' &&
         typeof arg.create_at === 'number' &&
         typeof arg.delete_at === 'number' &&
         typeof arg.event_at === 'number' &&
@@ -121,31 +125,12 @@ export function incidentCurrentStatusPost(incident: Incident): StatusPost | unde
 }
 
 export function incidentCurrentStatus(incident: Incident): IncidentStatus {
-    let status = IncidentStatus.Reported;
-
-    const currentPost = incidentCurrentStatusPost(incident);
-
-    if (!currentPost || currentPost.status === IncidentStatus.Old) {
-        // Backwards compatibility with existing incidents.
-        if (incident.end_at === 0) {
-            if (currentPost) {
-                status = IncidentStatus.Active;
-            } else {
-                status = IncidentStatus.Reported;
-            }
-        } else {
-            status = IncidentStatus.Resolved;
-        }
-    } else {
-        status = currentPost.status;
-    }
-
-    return status;
+    return incident.current_status;
 }
 
 export function incidentIsActive(incident: Incident): boolean {
     const currentStatus = incidentCurrentStatus(incident);
-    return currentStatus !== IncidentStatus.Archived && currentStatus !== IncidentStatus.Resolved;
+    return currentStatus !== IncidentStatus.Archived;
 }
 
 export interface FetchIncidentsParams {

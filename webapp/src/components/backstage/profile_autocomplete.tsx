@@ -76,6 +76,7 @@ interface Props {
     onAddUser: (userid: string) => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
+    isDisabled?: boolean;
 }
 
 const ProfileAutocomplete: FC<Props> = (props: Props) => {
@@ -105,8 +106,7 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
 
         //@ts-ignore
         profiles.then(({data}) => {
-            const profilesWithoutAlreadyAdded = data.filter((profile: UserProfile) => !props.userIds.includes(profile.id));
-            callback(profilesWithoutAlreadyAdded);
+            callback(data);
         }).catch(() => {
             // eslint-disable-next-line no-console
             console.error('Error searching user profiles in custom attribute settings dropdown.');
@@ -126,11 +126,13 @@ const ProfileAutocomplete: FC<Props> = (props: Props) => {
 
     return (
         <StyledAsyncSelect
+            isDisabled={props.isDisabled}
             isMulti={false}
             controlShouldRenderValue={false}
             cacheOptions={false}
             defaultOptions={true}
             loadOptions={usersLoader}
+            filterOption={({data}: { data: UserProfile }) => !props.userIds.includes(data.id)}
             onChange={onChange}
             getOptionValue={getOptionValue}
             formatOptionLabel={formatOptionLabel}

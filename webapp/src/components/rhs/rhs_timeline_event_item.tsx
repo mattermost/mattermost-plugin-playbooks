@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import moment, {duration, Moment} from 'moment';
@@ -13,6 +13,9 @@ import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {messageHtmlToComponent, formatText} from 'src/components/shared';
 import {renderDuration} from 'src/components/duration';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {clientRemoveTimelineEvent} from 'src/client';
+import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 const Circle = styled.div`
     position: absolute;
@@ -84,6 +87,8 @@ interface Props {
 
 const RHSTimelineEventItem = (props: Props) => {
     const dispatch = useDispatch();
+    const [showMenu, setShowMenu] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const markdownOptions = {
         atMentions: true,
         team: props.team,
@@ -108,8 +113,12 @@ const RHSTimelineEventItem = (props: Props) => {
     let summaryTitle = '';
     let summary = '';
     let testid = '';
-    const diff = duration(moment(props.event.event_at).diff(moment(props.reportedAt)));
-    let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + renderDuration(diff)}</TimeDay>;
+    const diff = moment(props.event.event_at).diff(moment(props.reportedAt));
+    let stamp = renderDuration(duration(diff));
+    if (diff < 0) {
+        stamp = '-' + renderDuration(duration(diff).abs());
+    }
+    let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
 
     switch (props.event.event_type) {
     case TimelineEventType.IncidentCreated:
@@ -150,10 +159,29 @@ const RHSTimelineEventItem = (props: Props) => {
         summary = props.event.subject_display_name + ' ' + props.event.summary;
         testid = TimelineEventType.RanSlashCommand;
         break;
+    case TimelineEventType.EventFromPost:
+        iconClass = 'icon icon-pencil-outline';
+        summaryTitle = props.event.summary;
+        testid = TimelineEventType.EventFromPost;
+        break;
     }
 
     return (
-        <TimelineItem data-testid={testid}>
+        <TimelineItem
+            data-testid={testid}
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+        >
+            {showMenu &&
+            <HoverMenu>
+                <HoverMenuButton
+                    className={'icon-trash-can-outline icon-16 btn-icon'}
+                    onClick={() => {
+                        setShowDeleteConfirm(true);
+                    }}
+                />
+            </HoverMenu>
+            }
             <TimeContainer>
                 <TimeHours>{moment(props.event.event_at).format('MMM DD HH:mm')}</TimeHours>
                 {timeSince}
@@ -167,6 +195,16 @@ const RHSTimelineEventItem = (props: Props) => {
                 </SummaryTitle>
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
+            <ConfirmModal
+                show={showDeleteConfirm}
+                title={'Confirm Entry Delete'}
+                message={`Are you sure you want to delete this timeline entry? "${summaryTitle}"?`}
+                confirmButtonText={'Delete Entry'}
+                onConfirm={() =>
+                    clientRemoveTimelineEvent(props.event.incident_id, props.event.id)
+                }
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </TimelineItem>
     );
 };

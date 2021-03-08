@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
@@ -30,6 +31,7 @@ const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Comman
 	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
 	"* `/incident list` - List all your incidents. \n" +
 	"* `/incident info` - Show a summary of the current incident. \n" +
+	"* `/incident timeline` - Show the timeline for the current incident. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -58,7 +60,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, update, restart, check, announce, list, commander, info")
+		"Available commands: start, end, update, restart, check, announce, list, commander, info, timeline")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -99,6 +101,9 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	info := model.NewAutocompleteData("info", "", "Shows a summary of the current incident")
 	slashIncident.AddCommand(info)
 
+	timeline := model.NewAutocompleteData("timeline", "", "Shows the timeline for the current incident")
+	slashIncident.AddCommand(timeline)
+
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
 
@@ -134,11 +139,12 @@ type Runner struct {
 	poster          bot.Poster
 	incidentService incident.Service
 	playbookService playbook.Service
+	configService   config.Service
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service, configService config.Service) *Runner {
 	return &Runner{
 		context:         ctx,
 		args:            args,
@@ -147,6 +153,7 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		poster:          poster,
 		incidentService: incidentService,
 		playbookService: playbookService,
+		configService:   configService,
 	}
 }
 
@@ -404,9 +411,10 @@ func (r *Runner) actionList() {
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
-		UserID:          r.args.UserId,
-		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
+	requesterInfo, err := permissions.GetRequesterInfo(r.args.UserId, r.pluginAPI)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error resolving permissions: %v", err)
+		return
 	}
 
 	options := incident.FilterOptions{
@@ -415,7 +423,7 @@ func (r *Runner) actionList() {
 		PerPage:   10,
 		Sort:      incident.SortByCreateAt,
 		Direction: incident.DirectionDesc,
-		Status:    incident.StatusActive,
+		Statuses:  []string{incident.StatusReported, incident.StatusActive, incident.StatusResolved},
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
@@ -571,6 +579,132 @@ func (r *Runner) actionUpdate() {
 
 func (r *Runner) actionRestart() {
 	r.actionUpdate()
+}
+
+func (r *Runner) actionAdd(args []string) {
+	if len(args) != 1 {
+		r.postCommandResponse("Need to provide a postId")
+		return
+	}
+
+	postID := args[0]
+	if postID == "" {
+		r.postCommandResponse("Need to provide a postId")
+		return
+	}
+
+	isGuest, err := permissions.IsGuest(r.args.UserId, r.pluginAPI)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
+	requesterInfo := incident.RequesterInfo{
+		UserID:  r.args.UserId,
+		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsGuest: isGuest,
+	}
+
+	if err := r.incidentService.OpenAddToTimelineDialog(requesterInfo, postID, r.args.TeamId, r.args.TriggerId); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+}
+
+func (r *Runner) actionTimeline() {
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only run the timeline command from within an incident channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	incidentToRead, err := r.incidentService.GetIncident(incidentID)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	if len(incidentToRead.TimelineEvents) == 0 {
+		r.postCommandResponse("There are no timeline events to display.")
+		return
+	}
+
+	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving team: %v", err)
+		return
+	}
+	postURL := fmt.Sprintf("/%s/pl/", team.Name)
+
+	message := "Timeline for **" + incidentToRead.Name + "**:\n\n" +
+		"|Event Time | Since Reported | Event |\n" +
+		"|:----------|:---------------|:------|\n"
+
+	var reported time.Time
+	for _, e := range incidentToRead.TimelineEvents {
+		if e.EventType == incident.IncidentCreated {
+			reported = timeutils.GetTimeForMillis(e.EventAt)
+			break
+		}
+	}
+	for _, e := range incidentToRead.TimelineEvents {
+		if e.EventType == incident.AssigneeChanged ||
+			e.EventType == incident.TaskStateModified ||
+			e.EventType == incident.RanSlashCommand {
+			continue
+		}
+
+		timeLink := timeutils.GetTimeForMillis(e.EventAt).Format("Jan 2 15:04")
+		if e.PostID != "" {
+			timeLink = " [" + timeLink + "](" + postURL + e.PostID + ") "
+		}
+		message += "|" + timeLink + "|" + r.timeSince(e, reported) + "|" + r.summaryMessage(e) + "|\n"
+	}
+
+	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{Message: message})
+}
+
+func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
+	var username string
+	user, err := r.pluginAPI.User.Get(event.SubjectUserID)
+	if err == nil {
+		username = user.Username
+	}
+
+	switch event.EventType {
+	case incident.IncidentCreated:
+		return "Incident Reported by @" + username
+	case incident.StatusUpdated:
+		if event.Summary == "" {
+			return "@" + username + " posted a status update"
+		}
+		return "@" + username + " changed status from " + event.Summary
+	case incident.CommanderChanged:
+		return "Commander changes from " + event.Summary
+	case incident.TaskStateModified:
+		return "@" + username + " " + event.Summary
+	case incident.AssigneeChanged:
+		return "@" + username + " " + event.Summary
+	case incident.RanSlashCommand:
+		return "@" + username + " " + event.Summary
+	default:
+		return event.Summary
+	}
+}
+
+func (r *Runner) timeSince(event incident.TimelineEvent, reported time.Time) string {
+	if event.EventType == incident.IncidentCreated {
+		return ""
+	}
+	eventAt := timeutils.GetTimeForMillis(event.EventAt)
+	if reported.Before(eventAt) {
+		return timeutils.DurationString(reported, eventAt)
+	}
+	return "-" + timeutils.DurationString(eventAt, reported)
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1172,6 +1306,11 @@ func (r *Runner) Execute() error {
 		return err
 	}
 
+	if !r.configService.IsLicensed() {
+		r.postCommandResponse("Incident Collaboration requires a Mattermost Cloud or Mattermost E20 License.")
+		return nil
+	}
+
 	split := strings.Fields(r.args.Command)
 	command := split[0]
 	parameters := []string{}
@@ -1206,6 +1345,10 @@ func (r *Runner) Execute() error {
 		r.actionList()
 	case "info":
 		r.actionInfo()
+	case "add":
+		r.actionAdd(parameters)
+	case "timeline":
+		r.actionTimeline()
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":

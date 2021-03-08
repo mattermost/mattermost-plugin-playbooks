@@ -50,6 +50,20 @@ func (mr *MockServiceMockRecorder) AddChecklistItem(arg0, arg1, arg2, arg3 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChecklistItem", reflect.TypeOf((*MockService)(nil).AddChecklistItem), arg0, arg1, arg2, arg3)
 }
 
+// AddPostToTimeline mocks base method
+func (m *MockService) AddPostToTimeline(arg0, arg1, arg2, arg3 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPostToTimeline", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddPostToTimeline indicates an expected call of AddPostToTimeline
+func (mr *MockServiceMockRecorder) AddPostToTimeline(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPostToTimeline", reflect.TypeOf((*MockService)(nil).AddPostToTimeline), arg0, arg1, arg2, arg3)
+}
+
 // ChangeCommander mocks base method
 func (m *MockService) ChangeCommander(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
@@ -251,6 +265,20 @@ func (mr *MockServiceMockRecorder) NukeDB() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockService)(nil).NukeDB))
 }
 
+// OpenAddToTimelineDialog mocks base method
+func (m *MockService) OpenAddToTimelineDialog(arg0 incident.RequesterInfo, arg1, arg2, arg3 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenAddToTimelineDialog", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenAddToTimelineDialog indicates an expected call of OpenAddToTimelineDialog
+func (mr *MockServiceMockRecorder) OpenAddToTimelineDialog(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenAddToTimelineDialog", reflect.TypeOf((*MockService)(nil).OpenAddToTimelineDialog), arg0, arg1, arg2, arg3)
+}
+
 // OpenCreateIncidentDialog mocks base method
 func (m *MockService) OpenCreateIncidentDialog(arg0, arg1, arg2, arg3, arg4 string, arg5 []playbook.Playbook, arg6 bool) error {
 	m.ctrl.T.Helper()
@@ -317,6 +345,20 @@ func (m *MockService) RemoveReminderPost(arg0 string) error {
 func (mr *MockServiceMockRecorder) RemoveReminderPost(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminderPost", reflect.TypeOf((*MockService)(nil).RemoveReminderPost), arg0)
+}
+
+// RemoveTimelineEvent mocks base method
+func (m *MockService) RemoveTimelineEvent(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveTimelineEvent", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveTimelineEvent indicates an expected call of RemoveTimelineEvent
+func (mr *MockServiceMockRecorder) RemoveTimelineEvent(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTimelineEvent", reflect.TypeOf((*MockService)(nil).RemoveTimelineEvent), arg0, arg1)
 }
 
 // RenameChecklistItem mocks base method
