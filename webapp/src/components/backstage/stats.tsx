@@ -98,7 +98,7 @@ const StatsView: FC = () => {
             <div className='Backstage__header'>
                 <div
                     className='title'
-                    data-testid='titleIncident'
+                    data-testid='titleStats'
                 >
                     {'Statistics'}
                     <div className='light'>
