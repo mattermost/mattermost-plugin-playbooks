@@ -136,7 +136,7 @@ const Backstage: FC = () => {
                             <BackstageTitlebarItem
                                 to={`${match.url}/stats`}
                                 activeClassName={'active'}
-                                data-testid='incidentsLHSButton'
+                                data-testid='statsLHSButton'
                             >
                                 <span className='mr-3 d-flex items-center'>
                                     <div className={'fa fa-line-chart'}/>
