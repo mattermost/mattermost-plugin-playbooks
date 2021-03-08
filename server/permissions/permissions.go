@@ -119,3 +119,12 @@ func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo
 		IsGuest: isGuest,
 	}, nil
 }
+
+func IsMemberOfTeamID(userID, teamID string, pluginAPI *pluginapi.Client) bool {
+	teamMember, err := pluginAPI.Team.GetMember(teamID, userID)
+	if err != nil {
+		return false
+	}
+
+	return teamMember.DeleteAt == 0
+}

@@ -87,8 +87,8 @@ func (s *ServiceImpl) GetIncidents(requesterInfo permissions.RequesterInfo, opti
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
 	if incdnt.DefaultCommanderID != "" {
 		// Check if the user is a member of the incident's team
-		if _, err := s.pluginAPI.Team.GetMember(incdnt.TeamID, userID); err != nil {
-			s.pluginAPI.Log.Warn("default commander specified, but it does not have permissions to incident's team", "userID", incdnt.DefaultCommanderID, "teamID", incdnt.TeamID)
+		if !permissions.IsMemberOfTeamID(incdnt.DefaultCommanderID, incdnt.TeamID, s.pluginAPI) {
+			s.pluginAPI.Log.Warn("default commander specified, but it is not a member of the incident's team", "userID", incdnt.DefaultCommanderID, "teamID", incdnt.TeamID)
 		} else {
 			incdnt.CommanderUserID = incdnt.DefaultCommanderID
 		}
