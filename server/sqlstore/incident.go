@@ -13,6 +13,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -77,7 +78,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *incidentStore) GetIncidents(requesterInfo incident.RequesterInfo, options incident.FilterOptions) (*incident.GetIncidentsResults, error) {
+func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, options incident.FilterOptions) (*incident.GetIncidentsResults, error) {
 	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
@@ -528,7 +529,7 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 }
 
 // GetCommanders returns the commanders of the incidents selected by options
-func (s *incidentStore) GetCommanders(requesterInfo incident.RequesterInfo, options incident.FilterOptions) ([]incident.CommanderInfo, error) {
+func (s *incidentStore) GetCommanders(requesterInfo permissions.RequesterInfo, options incident.FilterOptions) ([]incident.CommanderInfo, error) {
 	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
@@ -593,7 +594,7 @@ func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp 
 	return nil
 }
 
-func (s *incidentStore) buildPermissionsExpr(info incident.RequesterInfo) sq.Sqlizer {
+func (s *incidentStore) buildPermissionsExpr(info permissions.RequesterInfo) sq.Sqlizer {
 	if info.IsAdmin {
 		return nil
 	}

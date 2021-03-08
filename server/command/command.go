@@ -554,7 +554,7 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	if err = permissions.EditIncident(r.args.UserId, incidentID, r.pluginAPI, r.incidentService); err != nil {
+	if err = permissions.EditIncident(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -596,7 +596,7 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
-	requesterInfo := incident.RequesterInfo{
+	requesterInfo := permissions.RequesterInfo{
 		UserID:  r.args.UserId,
 		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
 		IsGuest: isGuest,

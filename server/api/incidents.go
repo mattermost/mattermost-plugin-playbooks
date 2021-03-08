@@ -95,7 +95,13 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		if err := permissions.EditIncident(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		incdnt, err := h.incidentService.GetIncident(vars["id"])
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+
+		if err := permissions.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
 				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -113,7 +119,13 @@ func (h *IncidentHandler) checkViewPermissions(next http.Handler) http.Handler {
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		if err := permissions.ViewIncident(userID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+		incdnt, err := h.incidentService.GetIncident(vars["id"])
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+
+		if err := permissions.ViewIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
 				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -303,7 +315,13 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 		summary = rawSummary
 	}
 
-	if err := permissions.EditIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+	incdnt, incErr := h.incidentService.GetIncident(incidentID)
+	if incErr != nil {
+		HandleError(w, incErr)
+		return
+	}
+
+	if err := permissions.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
 		return
 	}
 
@@ -398,7 +416,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	return h.incidentService.CreateIncident(&newIncident, userID, public)
 }
 
-func (h *IncidentHandler) getRequesterInfo(userID string) (incident.RequesterInfo, error) {
+func (h *IncidentHandler) getRequesterInfo(userID string) (permissions.RequesterInfo, error) {
 	return permissions.GetRequesterInfo(userID, h.pluginAPI)
 }
 
@@ -439,14 +457,14 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.ViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
-		return
-	}
-
 	incidentToGet, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
 		HandleError(w, err)
+		return
+	}
+
+	if err := permissions.ViewIncident(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
 
@@ -459,19 +477,25 @@ func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Req
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.ViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+	incidentToGet, incErr := h.incidentService.GetIncident(incidentID)
+	if incErr != nil {
+		HandleError(w, incErr)
+		return
+	}
+
+	if err := permissions.ViewIncident(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
 	}
 
-	incidentToGet, err := h.incidentService.GetIncidentMetadata(incidentID)
+	incidentMetadata, err := h.incidentService.GetIncidentMetadata(incidentID)
 	if err != nil {
 		HandleError(w, err)
 		return
 	}
 
-	ReturnJSON(w, incidentToGet, http.StatusOK)
+	ReturnJSON(w, incidentMetadata, http.StatusOK)
 }
 
 // getIncidentByChannel handles the /incidents/channel/{channel_id} endpoint.
@@ -480,7 +504,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI, h.incidentService); err != nil {
+	if err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
 		h.log.Warnf("User %s does not have permissions to get incident for channel %s", userID, channelID)
 		HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 			errors.Errorf("incident for channel id %s not found", channelID))
@@ -598,8 +622,14 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	incdnt, err := h.incidentService.GetIncident(vars["id"])
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
 	// Check if the target user (params.CommanderID) has permissions
-	if err := permissions.EditIncident(params.CommanderID, vars["id"], h.pluginAPI, h.incidentService); err != nil {
+	if err := permissions.EditIncident(params.CommanderID, incdnt.ChannelID, h.pluginAPI); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
@@ -691,7 +721,7 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err = permissions.EditIncident(requestData.UserId, incidentID, h.pluginAPI, h.incidentService); err != nil {
+	if err = permissions.EditIncident(requestData.UserId, requestData.ChannelId, h.pluginAPI); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
@@ -724,7 +754,7 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err = permissions.EditIncident(requestData.UserId, incidentID, h.pluginAPI, h.incidentService); err != nil {
+	if err = permissions.EditIncident(requestData.UserId, requestData.ChannelId, h.pluginAPI); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
@@ -769,7 +799,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI, h.incidentService); err != nil {
+	if err = permissions.ViewIncident(userID, channelID, h.pluginAPI); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", nil)
 		return
 	}
