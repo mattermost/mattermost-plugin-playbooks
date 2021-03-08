@@ -9,6 +9,14 @@ import {Line, Bar} from 'react-chartjs-2';
 import styled from 'styled-components';
 import moment from 'moment';
 
+import {useSelector} from 'react-redux';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+
+import {Team} from 'mattermost-redux/types/teams';
+
 import {Stats} from 'src/types/stats';
 import {fetchStats} from 'src/client';
 import {renderDuration} from 'src/components/duration';
@@ -75,14 +83,15 @@ const GraphBox = styled.div`
 
 const StatsView: FC = () => {
     const [stats, setStats] = useState<Stats|null>(null);
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     useEffect(() => {
         async function fetchStatsAsync() {
-            const ret = await fetchStats();
+            const ret = await fetchStats(currentTeam.id);
             setStats(ret);
         }
         fetchStatsAsync();
-    }, []);
+    }, [currentTeam.id]);
 
     return (
         <div className='IncidentList container-medium'>
@@ -93,7 +102,7 @@ const StatsView: FC = () => {
                 >
                     {'Statistics'}
                     <div className='light'>
-                        {'(Serverwide)'}
+                        {`(${currentTeam.name})`}
                     </div>
                 </div>
             </div>

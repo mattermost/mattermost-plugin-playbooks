@@ -22,12 +22,22 @@ func NewStatsStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore
 	}
 }
 
-func (s *StatsStore) TotalReportedIncidents() int {
+type StatsFilters struct {
+	TeamID string
+}
+
+func applyFilters(query sq.SelectBuilder, filters *StatsFilters) sq.SelectBuilder {
+	return query.Where(sq.Eq{"i.TeamId": filters.TeamID})
+}
+
+func (s *StatsStore) TotalReportedIncidents(filters *StatsFilters) int {
 	query := s.store.builder.
 		Select("COUNT(ID)").
-		From("IR_Incident").
+		From("IR_Incident as i").
 		Where("CurrentStatus = 'Reported'")
 
+	query = applyFilters(query, filters)
+
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
 		s.log.Warnf("Error retriving stat %w", err)
@@ -37,11 +47,13 @@ func (s *StatsStore) TotalReportedIncidents() int {
 	return total
 }
 
-func (s *StatsStore) TotalActiveIncidents() int {
+func (s *StatsStore) TotalActiveIncidents(filters *StatsFilters) int {
 	query := s.store.builder.
 		Select("COUNT(ID)").
-		From("IR_Incident").
+		From("IR_Incident as i").
 		Where("CurrentStatus = 'Active'")
+
+	query = applyFilters(query, filters)
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
@@ -52,13 +64,15 @@ func (s *StatsStore) TotalActiveIncidents() int {
 	return total
 }
 
-func (s *StatsStore) TotalActiveParticipants() int {
+func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 	query := s.store.builder.
 		Select("COUNT(DISTINCT cm.UserId)").
 		From("ChannelMembers as cm").
 		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
 		Where("i.EndAt = 0")
 
+	query = applyFilters(query, filters)
+
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
 		s.log.Warnf("Error retriving stat %w", err)
@@ -68,12 +82,14 @@ func (s *StatsStore) TotalActiveParticipants() int {
 	return total
 }
 
-func (s *StatsStore) AverageDurationActiveIncidentsMinutes() int {
+func (s *StatsStore) AverageDurationActiveIncidentsMinutes(filters *StatsFilters) int {
 	query := s.store.builder.
 		Select("AVG(c.CreateAt)").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where("i.EndAt = 0")
+
+	query = applyFilters(query, filters)
 
 	var averageCreateAt float64
 	if err := s.store.getBuilder(s.store.db, &averageCreateAt, query); err != nil {
@@ -84,27 +100,7 @@ func (s *StatsStore) AverageDurationActiveIncidentsMinutes() int {
 	return int((float64(model.GetMillis()) - averageCreateAt) / 60000)
 }
 
-type PlaybookUse struct {
-	Name    string `json:"name"`
-	NumUses int    `json:"num_uses"`
-}
-
-func (s *StatsStore) PlaybookUses() []PlaybookUse {
-	query := s.store.builder.
-		Select("pb.Title as Name, count(i.PlaybookID) as NumUses").
-		From("IR_Incident as i").
-		Join("IR_Playbook as pb ON i.PlaybookID = pb.ID").
-		GroupBy("pb.Title")
-
-	var uses []PlaybookUse
-	if err := s.store.selectBuilder(s.store.db, &uses, query); err != nil {
-		s.log.Warnf("Error retriving stat %w", err)
-		return []PlaybookUse{}
-	}
-
-	return uses
-}
-
+// Not efficent. One query per day.
 func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int) ([]int, error) {
 	now := model.GetMillis()
 	dayInMS := int64(86400000)
@@ -130,15 +126,18 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 	return results, nil
 }
 
-func (s *StatsStore) ActiveIncidents() []int {
+func (s *StatsStore) ActiveIncidents(filters *StatsFilters) []int {
 	now := model.GetMillis()
 
+	// Get the number of incidents started on each day
 	startQuery := s.store.builder.
 		Select(fmt.Sprintf("COUNT(i.Id), (%v - c.CreateAt) / 86400000 as DayStarted", now)).
 		From("IR_Incident as i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		GroupBy("DayStarted").
 		OrderBy("DayStarted ASC")
+
+	startQuery = applyFilters(startQuery, filters)
 
 	var dayCountsStart []struct {
 		Count      int
@@ -154,12 +153,15 @@ func (s *StatsStore) ActiveIncidents() []int {
 		started[dcStart.DayStarted] = dcStart.Count
 	}
 
+	// Get the number of incidents ended on each day
 	endQuery := s.store.builder.
 		Select(fmt.Sprintf("COUNT(i.Id), (%v - i.EndAt) / 86400000 as DayEnded", now)).
 		From("IR_Incident as i").
 		Where("i.EndAt != 0").
 		GroupBy("DayEnded").
 		OrderBy("DayEnded ASC")
+
+	endQuery = applyFilters(endQuery, filters)
 
 	var dayCountsEnd []struct {
 		Count    int
@@ -175,10 +177,13 @@ func (s *StatsStore) ActiveIncidents() []int {
 		ended[dcEnd.DayEnded] = dcEnd.Count
 	}
 
+	// Get the current number of active incidents
 	activeNowQuery := s.store.builder.
 		Select("COUNT(i.Id)").
 		From("IR_Incident as i").
 		Where("i.EndAt = 0")
+
+	activeNowQuery = applyFilters(activeNowQuery, filters)
 
 	var activeNow int
 	if err := s.store.getBuilder(s.store.db, &activeNow, activeNowQuery); err != nil {
@@ -186,6 +191,8 @@ func (s *StatsStore) ActiveIncidents() []int {
 		return []int{}
 	}
 
+	// Derive the number of active incidents by starting wiht the currently active incidents
+	// and using the tables above to calculate the number for each day.
 	days := make([]int, 14)
 	days[0] = activeNow
 	for day := 1; day < 14; day++ {
@@ -195,12 +202,16 @@ func (s *StatsStore) ActiveIncidents() []int {
 	return days
 }
 
-func (s *StatsStore) UniquePeopleInIncidents() []int {
+// Inefficent. Calculates the number of people in the incident using
+// todays number of people in the incident, but counts it when the incident was created.
+func (s *StatsStore) UniquePeopleInIncidents(filters *StatsFilters) []int {
 	query := s.store.builder.
 		Select("COUNT(DISTINCT cm.UserId)").
 		From("ChannelMembers as cm").
 		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
+
+	query = applyFilters(query, filters)
 
 	peopleInIncidents, err := s.MovingWindowQueryActive(query, 14)
 	if err != nil {
@@ -211,69 +222,9 @@ func (s *StatsStore) UniquePeopleInIncidents() []int {
 	return peopleInIncidents
 }
 
-func (s *StatsStore) PeopleInIncidents() []int {
-	now := model.GetMillis()
-
-	startQuery := s.store.builder.
-		Select(fmt.Sprintf("COUNT(DISTINCT cm.UserId), (%v - cmh.JoinTime) / 86400000 as DayStarted", now)).
-		From("ChannelMembers as cm").
-		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
-		Join("ChannelMemberHistory AS cmh ON (cmh.ChannelId = i.ChannelId)").
-		GroupBy("DayStarted").
-		OrderBy("DayStarted ASC")
-
-	var dayCountsStart []struct {
-		Count      int
-		DayStarted int
-	}
-	if err := s.store.selectBuilder(s.store.db, &dayCountsStart, startQuery); err != nil {
-		s.log.Warnf("Unable to get start counts %w", err)
-		return []int{}
-	}
-
-	started := make(map[int]int)
-	for _, dcStart := range dayCountsStart {
-		started[dcStart.DayStarted] = dcStart.Count
-	}
-
-	endQuery := s.store.builder.
-		Select(fmt.Sprintf("COUNT(DISTINCT cm.UserId), (%v - cmh.LeaveTime) / 86400000 as DayEnded", now)).
-		From("ChannelMembers as cm").
-		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
-		Join("ChannelMemberHistory AS cmh ON (cmh.ChannelId = i.ChannelId)").
-		Where("i.EndAt != 0").
-		Where("cmh.LeaveTime != NULL").
-		GroupBy("DayEnded").
-		OrderBy("DayEnded ASC")
-
-	var dayCountsEnd []struct {
-		Count    int
-		DayEnded int
-	}
-	if err := s.store.selectBuilder(s.store.db, &dayCountsEnd, endQuery); err != nil {
-		s.log.Warnf("Unable to get end counts %w", err)
-		return []int{}
-	}
-
-	ended := make(map[int]int)
-	for _, dcEnd := range dayCountsEnd {
-		ended[dcEnd.DayEnded] = dcEnd.Count
-	}
-
-	activeNow := s.TotalActiveParticipants()
-
-	fmt.Printf("Counts: %+v\n %+v\n %v\n", dayCountsStart, dayCountsEnd, activeNow)
-
-	days := make([]int, 14)
-	days[0] = activeNow
-	for day := 1; day < 14; day++ {
-		days[day] = days[day-1] + ended[day] - started[day-1]
-	}
-
-	return days
-}
-
-func (s *StatsStore) AverageStartToActive() []int {
+// Average times from CreateAt to the first non reported update for the last number of days.
+// Averages are for incidents created on that day. Days with no created incidents use the last day.
+func (s *StatsStore) AverageStartToActive(filters *StatsFilters) []int {
 	daysToQuery := 42
 	firstNonReportedStatusPost := `(
 		SELECT p.CreateAt 
@@ -291,6 +242,8 @@ func (s *StatsStore) AverageStartToActive() []int {
 		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		GroupBy("DayStarted").
 		OrderBy("DayStarted ASC")
+
+	query = applyFilters(query, filters)
 
 	var averages []struct {
 		Average    int
@@ -320,7 +273,9 @@ func (s *StatsStore) AverageStartToActive() []int {
 	return days
 }
 
-func (s *StatsStore) AverageStartToResolved() []int {
+// Average times from CreateAt to EndAt for the last number of days.
+// Averages are for incidents created on that day. Days with no created incidents use the last day.
+func (s *StatsStore) AverageStartToResolved(filters *StatsFilters) []int {
 	daysToQuery := 42
 	now := model.GetMillis()
 
@@ -331,6 +286,8 @@ func (s *StatsStore) AverageStartToResolved() []int {
 		Where("i.EndAt != 0").
 		GroupBy("DayStarted").
 		OrderBy("DayStarted ASC")
+
+	query = applyFilters(query, filters)
 
 	var averages []struct {
 		Average    int

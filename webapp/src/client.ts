@@ -257,8 +257,8 @@ export async function clientRemoveTimelineEvent(incidentID: string, entryID: str
     return data;
 }
 
-export async function fetchStats(): Promise<Stats | null> {
-    const data = await doGet(`${apiUrl}/stats`);
+export async function fetchStats(teamID: string): Promise<Stats | null> {
+    const data = await doGet(`${apiUrl}/stats?team_id=${teamID}`);
     if (!data) {
         return null;
     }

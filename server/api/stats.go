@@ -2,11 +2,14 @@ package api
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/mux"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
+	"github.com/pkg/errors"
 )
 
 type StatsHandler struct {
@@ -40,17 +43,42 @@ type Stats struct {
 	AverageStartToResolved []int `json:"average_start_to_resolved"`
 }
 
-func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
-	stats := Stats{
-		TotalReportedIncidents:                h.statsStore.TotalReportedIncidents(),
-		TotalActiveIncidents:                  h.statsStore.TotalActiveIncidents(),
-		TotalActiveParticipants:               h.statsStore.TotalActiveParticipants(),
-		AverageDurationActiveIncidentsMinutes: h.statsStore.AverageDurationActiveIncidentsMinutes(),
+func parseStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
+	teamID := u.Query().Get("team_id")
+	if teamID == "" {
+		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
+	}
 
-		ActiveIncidents:        h.statsStore.ActiveIncidents(),
-		PeopleInIncidents:      h.statsStore.UniquePeopleInIncidents(),
-		AverageStartToActive:   h.statsStore.AverageStartToActive(),
-		AverageStartToResolved: h.statsStore.AverageStartToResolved(),
+	return &sqlstore.StatsFilters{
+		TeamID: teamID,
+	}, nil
+}
+
+func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	filters, err := parseStatsFilters(r.URL)
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "Bad filters", err)
+		return
+	}
+
+	if !permissions.CanViewTeam(userID, filters.TeamID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+			"userID %s does not have view permission for teamID %s", userID, filters.TeamID))
+		return
+	}
+
+	stats := Stats{
+		TotalReportedIncidents:                h.statsStore.TotalReportedIncidents(filters),
+		TotalActiveIncidents:                  h.statsStore.TotalActiveIncidents(filters),
+		TotalActiveParticipants:               h.statsStore.TotalActiveParticipants(filters),
+		AverageDurationActiveIncidentsMinutes: h.statsStore.AverageDurationActiveIncidentsMinutes(filters),
+
+		ActiveIncidents:        h.statsStore.ActiveIncidents(filters),
+		PeopleInIncidents:      h.statsStore.UniquePeopleInIncidents(filters),
+		AverageStartToActive:   h.statsStore.AverageStartToActive(filters),
+		AverageStartToResolved: h.statsStore.AverageStartToResolved(filters),
 	}
 
 	ReturnJSON(w, stats, http.StatusOK)
