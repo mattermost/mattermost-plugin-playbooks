@@ -85,10 +85,11 @@ func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options FilterOp
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
 	if incdnt.DefaultCommanderID != "" {
-		if s.pluginAPI.User.HasPermissionToTeam(incdnt.DefaultCommanderID, incdnt.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
-			incdnt.CommanderUserID = incdnt.DefaultCommanderID
-		} else {
+		// Check if the user is a member of the incident's team
+		if _, err := s.pluginAPI.Team.GetMember(incdnt.TeamID, userID); err != nil {
 			s.pluginAPI.Log.Warn("default commander specified, but it does not have permissions to incident's team", "userID", incdnt.DefaultCommanderID, "teamID", incdnt.TeamID)
+		} else {
+			incdnt.CommanderUserID = incdnt.DefaultCommanderID
 		}
 	}
 

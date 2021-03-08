@@ -188,10 +188,13 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 	pbook.InvitedUserIDs = filteredUsers
 
-	if pbook.DefaultCommanderID != "" && !h.pluginAPI.User.HasPermissionToTeam(pbook.DefaultCommanderID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-		h.pluginAPI.Log.Warn("commander does not have permissions to playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
-		pbook.DefaultCommanderID = ""
-		pbook.DefaultCommanderEnabled = false
+	if pbook.DefaultCommanderID != "" {
+		// Check if the user is a member of the incident's team
+		if _, permErr := h.pluginAPI.Team.GetMember(pbook.TeamID, pbook.DefaultCommanderID); permErr != nil {
+			h.pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
+			pbook.DefaultCommanderID = ""
+			pbook.DefaultCommanderEnabled = false
+		}
 	}
 
 	err = h.playbookService.Update(pbook, userID)
