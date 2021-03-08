@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Stats} from 'fs';
-
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
@@ -32,6 +30,8 @@ import {
     Playbook,
     PlaybookNoChecklist,
 } from 'src/types/playbook';
+
+import {Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 

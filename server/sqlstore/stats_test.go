@@ -111,17 +111,23 @@ func TestTotalReportedIncidents(t *testing.T) {
 		}
 
 		t.Run(driverName+" Reported Incidents", func(t *testing.T) {
-			result := statsStore.TotalReportedIncidents()
+			result := statsStore.TotalReportedIncidents(&StatsFilters{
+				TeamID: team1id,
+			})
 			assert.Equal(t, 1, result)
 		})
 
 		t.Run(driverName+" Active Incidents", func(t *testing.T) {
-			result := statsStore.TotalActiveIncidents()
+			result := statsStore.TotalActiveIncidents(&StatsFilters{
+				TeamID: team1id,
+			})
 			assert.Equal(t, 2, result)
 		})
 
 		t.Run(driverName+" Active Participants", func(t *testing.T) {
-			result := statsStore.TotalActiveParticipants()
+			result := statsStore.TotalActiveParticipants(&StatsFilters{
+				TeamID: team1id,
+			})
 			assert.Equal(t, 4, result)
 		})
 
