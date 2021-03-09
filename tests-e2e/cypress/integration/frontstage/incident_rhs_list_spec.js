@@ -180,6 +180,7 @@ describe('rhs incident list', () => {
                     incidentId: incident.id,
                     userId,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
             });
@@ -1097,6 +1098,7 @@ describe('rhs incident list', () => {
                     incidentId,
                     userId: user2Id,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
 
@@ -1147,6 +1149,7 @@ describe('rhs incident list', () => {
                     incidentId,
                     userId,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
                 cy.verifyIncidentEnded(teamId1, incidentName);
@@ -1221,6 +1224,7 @@ describe('rhs incident list', () => {
                     incidentId: incident.id,
                     userId: user2Id,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
 
