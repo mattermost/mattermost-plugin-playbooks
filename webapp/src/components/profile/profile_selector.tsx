@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
+import styled from 'styled-components';
 import {css} from '@emotion/core';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -27,7 +28,7 @@ interface ActionObj {
 }
 
 interface Props {
-    testId?:string
+    testId?: string
     selectedUserId?: string;
     placeholder: React.ReactNode;
     placeholderButtonClass?: string;
@@ -169,7 +170,7 @@ export default function ProfileSelector(props: Props) {
         const extraSpace = 10;
         const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
         setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, userOptions]);
+    }, [rect, userOptions.length]);
 
     let target;
     if (props.selectedUserId) {
@@ -273,6 +274,19 @@ interface DropdownProps {
     onClose: () => void;
 }
 
+const ProfileDropdown = styled.div`
+    position: relative;
+`;
+
+const Blanket = styled.div`
+    bottom: 0;
+    left: 0;
+    top: 0;
+    right: 0;
+    position: fixed;
+    z-index: 1;
+`;
+
 const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
     if (!isOpen) {
         return target;
@@ -283,10 +297,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
 
     const top = 27 - (moveUp || 0);
     return (
-        <div
-            className={classes}
-            css={{position: 'relative'}}
-        >
+        <ProfileDropdown className={classes}>
             {target}
             <div
                 className='IncidentFilter-select incident-user-select__container'
@@ -295,23 +306,9 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
                 {children}
             </div>
             <Blanket onClick={onClose}/>
-        </div>
+        </ProfileDropdown>
     );
 };
-
-const Blanket = (props: Record<string, any>) => (
-    <div
-        css={{
-            bottom: 0,
-            left: 0,
-            top: 0,
-            right: 0,
-            position: 'fixed',
-            zIndex: 1,
-        }}
-        {...props}
-    />
-);
 
 const getFullName = (firstName: string, lastName: string): string => {
     return (firstName + ' ' + lastName).trim();

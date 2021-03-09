@@ -96,6 +96,9 @@ export function useTimeout(callback: () => void, delay: number | null) {
     return timeoutRef;
 }
 
+// useClientRect will be called only when the component mounts and unmounts, so changes to the
+// component's size will not cause rect to change. If you want to be notified of changes after
+// mounting, you will need to add ResizeObserver to this hook.
 export function useClientRect() {
     const [rect, setRect] = useState(new DOMRect());
 
