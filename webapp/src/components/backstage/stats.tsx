@@ -143,7 +143,7 @@ const StatsView: FC = () => {
                             options={{
                                 title: {
                                     display: true,
-                                    text: 'Total Reported/Active Incidents',
+                                    text: 'Total incidents by day',
                                 },
                                 scales: {
                                     yAxes: [{
@@ -181,7 +181,7 @@ const StatsView: FC = () => {
                             options={{
                                 title: {
                                     display: true,
-                                    text: 'People In Incidents',
+                                    text: 'Total participants by day',
                                 },
                                 scales: {
                                     yAxes: [{
@@ -221,7 +221,7 @@ const StatsView: FC = () => {
                                 options={{
                                     title: {
                                         display: true,
-                                        text: 'Average Start to Active Time (hours)',
+                                        text: 'Mean-time-to-acknowledge by day (hours)',
                                     },
                                     scales: {
                                         yAxes: [{
@@ -259,7 +259,7 @@ const StatsView: FC = () => {
                                 options={{
                                     title: {
                                         display: true,
-                                        text: 'Average Start to Resolved Time (hours)',
+                                        text: 'Mean-time-to-resolve by day (hours)',
                                     },
                                     scales: {
                                         yAxes: [{
