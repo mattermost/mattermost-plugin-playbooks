@@ -1,11 +1,21 @@
-import {useEffect, useState, MutableRefObject, useRef} from 'react';
-import {useSelector} from 'react-redux';
+import {useEffect, MutableRefObject, useRef, useCallback} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import {
+    getCurrentUserId,
+    getProfilesInCurrentChannel,
+} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {batchActions} from 'mattermost-redux/types/actions';
+import {UserTypes} from 'mattermost-redux/action_types';
+import {removeUserFromList} from 'mattermost-redux/utils/user_utils';
+
+import {fetchUsersInChannel} from 'src/client';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -94,4 +104,37 @@ export function useTimeout(callback: () => void, delay: number | null) {
 
     // In case you want to manually clear the timeout from the consuming component...:
     return timeoutRef;
+}
+
+export function useProfilesInChannel() {
+    const dispatch = useDispatch();
+    const profilesInChannel = useSelector(getProfilesInCurrentChannel);
+    const currentChannelId = useSelector(getCurrentChannelId);
+    const currentUserId = useSelector(getCurrentUserId);
+
+    useEffect(() => {
+        const getProfiles = async () => {
+            const profiles = await fetchUsersInChannel(currentChannelId);
+
+            dispatch(batchActions([
+                {
+                    type: UserTypes.RECEIVED_PROFILES_LIST_IN_CHANNEL,
+                    data: profiles,
+                    id: currentChannelId,
+                },
+                {
+                    type: UserTypes.RECEIVED_PROFILES_LIST,
+                    data: removeUserFromList(currentUserId, [...profiles]),
+                },
+            ]));
+        };
+
+        if (profilesInChannel.length > 0) {
+            return;
+        }
+
+        getProfiles();
+    }, [currentChannelId, currentUserId, profilesInChannel]);
+
+    return profilesInChannel;
 }
