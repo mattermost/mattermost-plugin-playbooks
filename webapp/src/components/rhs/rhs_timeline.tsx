@@ -42,7 +42,7 @@ import {setRHSEventsFilter} from 'src/actions';
 const Header = styled.div`
     display: flex;
     flex-direction: row;
-    height: 38px;
+    height: 40px;
     align-items: center;
     box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
 `;
