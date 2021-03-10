@@ -8,14 +8,17 @@
 
 describe('backstage', () => {
     let testTeam;
+    let testUser;
     
     before(() => {
-        cy.apiInitSetup({createPlaybook: true, createIncident: true}).then(({team}) => {
+        cy.apiInitSetup({createPlaybook: true}).then(({team, user}) => {
             testTeam = team;
+            testUser = user;
         });
     });
 
     beforeEach(() => {
+        cy.apiLogin(testUser);
         cy.visit(`/${testTeam.name}`);
     });
 
@@ -49,6 +52,6 @@ describe('backstage', () => {
         cy.findByTestId('incidentsLHSButton').click();
 
         // * Verify that incidents are shown
-        cy.findByTestId('titleIncident').should('exist').contains('Incidents');
+        cy.findByText('What are Incidents?').should('exist').contains('Incidents');
     });
 });

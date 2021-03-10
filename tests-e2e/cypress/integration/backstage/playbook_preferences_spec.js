@@ -7,7 +7,6 @@
 // ***************************************************************
 
 describe('preferences', () => {
-    // const playbookName = 'Playbook (' + Date.now() + ')';
     let testTeam;
     let testUser;
     let playbookId;
@@ -25,6 +24,7 @@ describe('preferences', () => {
             // # Create a public channel
             cy.apiCreateChannel(team.id, 'public', 'Public', 'O'). then(({channel}) => {
                 publicChannel = channel;
+                cy.apiAddUserToChannel(publicChannel.id, testUser.id);
             });
             
             // # Create a private channel
@@ -35,13 +35,16 @@ describe('preferences', () => {
 
             cy.apiCreateChannel(team.id, 'private-2', 'Private 2', 'P').then(({channel}) => {
                 privateChannel2 = channel;
+                cy.apiAddUserToChannel(privateChannel2.id, testUser.id);
             });
         });
     });
 
     beforeEach(() => {
-        // // # Login as test user
+        // # Login as test user
         cy.apiLogin(testUser);
+
+        // # Visit the town-square channel of the team
         cy.visit(`/${testTeam.name}/channels/town-square`);
     });
 
