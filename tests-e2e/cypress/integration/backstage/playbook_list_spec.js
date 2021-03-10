@@ -7,7 +7,6 @@
 // ***************************************************************
 
 describe('backstage playbook list', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
     let testTeam;
     let testUser;
 

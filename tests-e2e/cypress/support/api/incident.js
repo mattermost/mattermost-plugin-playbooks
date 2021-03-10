@@ -36,7 +36,7 @@ Cypress.Commands.add('apiStartIncident', (
         url: incidentsEndpoint,
         method: 'POST',
         body: {
-            incidentName: `${incidentPrefix}-${randomSuffix}`,
+            name: `${incidentPrefix}-${randomSuffix}`,
             commander_user_id: userId,
             team_id: teamId,
             playbook_id: playbookId

@@ -17,7 +17,6 @@ Cypress.Commands.add('apiInitSetup', ({
                 return cy.apiAddUserToTeam(team.id, user.id).then(() => {
                     return cy.apiAddUserToChannel(channel.id, user.id).then(() => {
                         if (createPlaybook || createIncident) {
-                            cy.log(`***** Logging in to create playbook with user `, user.id);
                             return cy.apiCreateTestPlaybook(team.id, user.id).then(({playbook}) => {
                                 if (createIncident) {
                                     return cy.apiStartIncident(incidentPrefix, user.id, team.id, playbook.id).then(({incident}) => {

@@ -287,7 +287,7 @@ describe('invite members setting', () => {
         let userToRemove;
 
         // # Create a playbook with a user that is later removed from the team
-        cy.apiLogin('sysadmin').then(() => {
+        cy.apiAdminLogin().then(() => {
             // # We need to increase the maximum number of users per team; otherwise,
             // adding a new member to the team fails in CI
             cy.apiUpdateConfig({
