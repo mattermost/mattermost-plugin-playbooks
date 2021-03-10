@@ -1,5 +1,5 @@
 import {useEffect, useState, MutableRefObject, useRef, useCallback} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch, useSelector, useStore} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
@@ -11,11 +11,10 @@ import {
     getProfilesInCurrentChannel,
 } from 'mattermost-redux/selectors/entities/users';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {batchActions} from 'mattermost-redux/types/actions';
-import {UserTypes} from 'mattermost-redux/action_types';
-import {removeUserFromList} from 'mattermost-redux/utils/user_utils';
+import {DispatchFunc} from 'mattermost-redux/types/actions';
+import {getProfilesInChannel} from 'mattermost-redux/actions/users';
 
-import {fetchUsersInChannel} from 'src/client';
+import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -122,26 +121,15 @@ export function useClientRect() {
 }
 
 export function useProfilesInChannel() {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch() as DispatchFunc;
+    const store = useStore();
     const profilesInChannel = useSelector(getProfilesInCurrentChannel);
     const currentChannelId = useSelector(getCurrentChannelId);
     const currentUserId = useSelector(getCurrentUserId);
 
     useEffect(() => {
         const getProfiles = async () => {
-            const profiles = await fetchUsersInChannel(currentChannelId);
-
-            dispatch(batchActions([
-                {
-                    type: UserTypes.RECEIVED_PROFILES_LIST_IN_CHANNEL,
-                    data: profiles,
-                    id: currentChannelId,
-                },
-                {
-                    type: UserTypes.RECEIVED_PROFILES_LIST,
-                    data: removeUserFromList(currentUserId, [...profiles]),
-                },
-            ]));
+            getProfilesInChannel(currentChannelId, 0, PROFILE_CHUNK_SIZE)(dispatch, store.getState);
         };
 
         if (profilesInChannel.length > 0) {
