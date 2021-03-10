@@ -76,6 +76,20 @@ func (mr *MockServiceMockRecorder) IsConfiguredForDevelopmentAndTesting() *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConfiguredForDevelopmentAndTesting", reflect.TypeOf((*MockService)(nil).IsConfiguredForDevelopmentAndTesting))
 }
 
+// IsLicensed mocks base method
+func (m *MockService) IsLicensed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsLicensed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsLicensed indicates an expected call of IsLicensed
+func (mr *MockServiceMockRecorder) IsLicensed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLicensed", reflect.TypeOf((*MockService)(nil).IsLicensed))
+}
+
 // RegisterConfigChangeListener mocks base method
 func (m *MockService) RegisterConfigChangeListener(arg0 func()) string {
 	m.ctrl.T.Helper()

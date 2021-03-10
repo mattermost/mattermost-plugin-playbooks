@@ -33,7 +33,7 @@ describe('incident rhs > footer', () => {
         });
 
         beforeEach(() => {
-        // # Size the viewport to show the RHS without covering posts.
+            // # Size the viewport to show the RHS without covering posts.
             cy.viewport('macbook-13');
 
             // # Login as user-1

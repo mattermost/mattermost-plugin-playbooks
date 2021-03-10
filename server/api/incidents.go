@@ -638,7 +638,13 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 
 	var options incident.StatusUpdateOptions
 	if message, ok := request.Submission[incident.DialogFieldMessageKey]; ok {
-		options.Message = message.(string)
+		options.Message = strings.TrimSpace(message.(string))
+	}
+
+	if options.Message == "" {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, incident.DialogFieldMessageKey)))
+		return
 	}
 
 	if reminderI, ok := request.Submission[incident.DialogFieldReminderInSecondsKey]; ok {
