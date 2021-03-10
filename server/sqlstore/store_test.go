@@ -25,9 +25,10 @@ func TestMigrationIdempotency(t *testing.T) {
 		}
 
 		t.Run("Run every migration twice", func(t *testing.T) {
+			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
 				logger,
-				setupTestDB(t, driver),
+				db,
 				builder,
 			}
 
@@ -35,6 +36,9 @@ func TestMigrationIdempotency(t *testing.T) {
 			currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 			require.NoError(t, err)
 			require.Equal(t, currentSchemaVersion, semver.Version{})
+
+			// Migration to 0.10.0 needs the Channels table to work
+			setupChannelsTable(t, db)
 
 			// Apply each migration twice
 			for _, migration := range migrations {
@@ -50,9 +54,10 @@ func TestMigrationIdempotency(t *testing.T) {
 		})
 
 		t.Run("Run the whole set of migrations twice", func(t *testing.T) {
+			db := setupTestDB(t, driver)
 			sqlStore := &SQLStore{
 				logger,
-				setupTestDB(t, driver),
+				db,
 				builder,
 			}
 
@@ -60,6 +65,9 @@ func TestMigrationIdempotency(t *testing.T) {
 			currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 			require.NoError(t, err)
 			require.Equal(t, currentSchemaVersion, semver.Version{})
+
+			// Migration to 0.10.0 needs the Channels table to work
+			setupChannelsTable(t, db)
 
 			// Apply the whole set of migrations twice
 			for i := 0; i < 2; i++ {

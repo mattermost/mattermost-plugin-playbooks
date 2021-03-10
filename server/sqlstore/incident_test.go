@@ -1619,7 +1619,7 @@ func TestNukeDB(t *testing.T) {
 	}
 }
 
-func setupIncidentStore(t testing.TB, db *sqlx.DB) incident.Store {
+func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
 	mockCtrl := gomock.NewController(t)
 
 	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
