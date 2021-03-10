@@ -392,6 +392,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		if pb.DefaultCommanderEnabled {
 			newIncident.DefaultCommanderID = pb.DefaultCommanderID
 		}
+
+		if pb.AnnouncementChannelEnabled {
+			newIncident.AnnouncementChannelID = pb.AnnouncementChannelID
+		}
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL

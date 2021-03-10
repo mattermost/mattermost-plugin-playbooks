@@ -49,6 +49,7 @@ type Incident struct {
 	InvitedUserIDs          []string             `json:"invited_user_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 	DefaultCommanderID      string               `json:"default_commander_id"`
+	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 }
 
 func (i *Incident) Clone() *Incident {
