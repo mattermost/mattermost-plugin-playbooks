@@ -1,15 +1,12 @@
 import {useEffect, useState, MutableRefObject, useRef, useCallback} from 'react';
-import {useDispatch, useSelector, useStore} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import {
-    getCurrentUserId,
-    getProfilesInCurrentChannel,
-} from 'mattermost-redux/selectors/entities/users';
+import {getProfilesInCurrentChannel} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesInChannel} from 'mattermost-redux/actions/users';
@@ -122,22 +119,16 @@ export function useClientRect() {
 
 export function useProfilesInChannel() {
     const dispatch = useDispatch() as DispatchFunc;
-    const store = useStore();
     const profilesInChannel = useSelector(getProfilesInCurrentChannel);
     const currentChannelId = useSelector(getCurrentChannelId);
-    const currentUserId = useSelector(getCurrentUserId);
 
     useEffect(() => {
-        const getProfiles = async () => {
-            getProfilesInChannel(currentChannelId, 0, PROFILE_CHUNK_SIZE)(dispatch, store.getState);
-        };
-
         if (profilesInChannel.length > 0) {
             return;
         }
 
-        getProfiles();
-    }, [currentChannelId, currentUserId, profilesInChannel]);
+        dispatch(getProfilesInChannel(currentChannelId, 0, PROFILE_CHUNK_SIZE));
+    }, [currentChannelId, profilesInChannel]);
 
     return profilesInChannel;
 }
