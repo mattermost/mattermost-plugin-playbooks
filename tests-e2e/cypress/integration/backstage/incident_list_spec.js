@@ -6,6 +6,10 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+const BACKSTAGE_LIST_PER_PAGE = 15;
+
+import {TINY} from '../../fixtures/timeouts';
+
 describe('backstage incident list', () => {
     let testTeam;
     let testUser;
@@ -26,6 +30,8 @@ describe('backstage incident list', () => {
     });
 
     beforeEach(() => {
+        // # Size the viewport to show all of the backstage.
+        cy.viewport('macbook-13');
         // # Login as test user
         cy.apiLogin(testUser);
     });
@@ -142,5 +148,28 @@ describe('backstage incident list', () => {
             // * Verify that the header contains the incident name
             cy.findByTestId('incident-title').contains(`${incident.name}`);
         });
+    });
+
+    it('by incident name', () => {
+        // # Search for an incident by name
+        cy.get('#incidentList input').type(incidentTimestamps[0]);
+
+        // # Wait for the incident list to update.
+        cy.wait(TINY);
+
+        // * Verify "Previous" no longer shown
+        cy.findByText('Previous').should('not.exist');
+    });
+
+    it('by commander', () => {
+        // # Expose the commander list
+        cy.findByTestId('commander-filter').click();
+
+        // # Find the list and chose the first commander in the list
+        cy.get('.incident-user-select__container')
+            .find('.IncidentProfile').first().parent().click({force: true});
+
+        // # Wait for the incident list to update.
+        cy.wait(TINY);
     });
 });
