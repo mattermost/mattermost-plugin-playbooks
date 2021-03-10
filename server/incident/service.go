@@ -83,6 +83,34 @@ func (s *ServiceImpl) GetIncidents(requesterInfo permissions.RequesterInfo, opti
 	return s.store.GetIncidents(requesterInfo, options)
 }
 
+func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander *model.User) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	announcementChannel, err := s.pluginAPI.Channel.Get(theIncident.AnnouncementChannelID)
+	if err != nil {
+		return err
+	}
+
+	if announcementChannel.DeleteAt != 0 {
+		return fmt.Errorf("channel with ID %s is deleted", announcementChannel.Id)
+	}
+
+	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
+	announcementMsg += fmt.Sprintf("**Commander**: @%s\n", commander.Username)
+	if theIncident.Description != "" {
+		announcementMsg += fmt.Sprintf("**Description**: %s\n", theIncident.Description)
+	}
+
+	if _, err := s.poster.PostMessage(announcementChannel.Id, announcementMsg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
 	if incdnt.DefaultCommanderID != "" {
@@ -168,19 +196,29 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
 	}
 
+	commander, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
+	}
+
 	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
 	if incdnt.CommanderUserID != incdnt.ReporterUserID {
-		commander, err2 := s.pluginAPI.User.Get(incdnt.CommanderUserID)
-		if err2 != nil {
-			return nil, errors.Wrapf(err2, "failed to resolve user %s", incdnt.CommanderUserID)
-		}
-
 		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, commander.Username)
 	}
 
 	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
+	}
+
+	if incdnt.AnnouncementChannelID != "" {
+		if err := s.broadcastIncidentCreation(incdnt, commander); err != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incdnt.AnnouncementChannelID)
+
+			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this incident in the configured channel."); err != nil {
+				return nil, errors.Wrapf(err, "failed to post to incident channel")
+			}
+		}
 	}
 
 	event := &TimelineEvent{

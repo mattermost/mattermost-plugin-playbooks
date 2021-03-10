@@ -90,6 +90,29 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	if pbook.AnnouncementChannelID != "" {
+		channel, err := h.pluginAPI.Channel.Get(pbook.AnnouncementChannelID)
+		if err != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("announcement channel with ID %s does not exist", pbook.AnnouncementChannelID), err)
+			return
+		}
+
+		if channel.DeleteAt != 0 {
+			HandleErrorWithCode(w, http.StatusBadRequest, "channel is archived", errors.Errorf("channel with ID %s is archived", channel.Id))
+			return
+		}
+
+		if channel.TeamId != pbook.TeamID {
+			HandleErrorWithCode(w, http.StatusForbidden, "Channel is on a different team", errors.Errorf(
+				"channel with ID %s is on team with ID %s; playbook team ID is %s",
+				channel.Id,
+				channel.TeamId,
+				pbook.TeamID,
+			))
+			return
+		}
+	}
+
 	// Exclude guest users
 	if isGuest, err := permissions.IsGuest(userID, h.pluginAPI); err != nil {
 		HandleError(w, err)
@@ -192,6 +215,27 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		h.pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
 		pbook.DefaultCommanderID = ""
 		pbook.DefaultCommanderEnabled = false
+	}
+
+	if pbook.AnnouncementChannelID != "" {
+		channel, err := h.pluginAPI.Channel.Get(pbook.AnnouncementChannelID)
+		if err != nil {
+			h.pluginAPI.Log.Warn("announcement channel does not exist, disabling announcement channel", "channelID", pbook.AnnouncementChannelID)
+			pbook.AnnouncementChannelID = ""
+			pbook.AnnouncementChannelEnabled = false
+		} else {
+			if channel.DeleteAt != 0 {
+				h.pluginAPI.Log.Warn("announcement channel is archived, disabling announcement channel", "channelID", pbook.AnnouncementChannelID)
+				pbook.AnnouncementChannelID = ""
+				pbook.AnnouncementChannelEnabled = false
+			}
+
+			if channel.TeamId != pbook.TeamID {
+				h.pluginAPI.Log.Warn("announcement channel does not not belong to the playbook's team, disabling announcement channel", "teamID", pbook.TeamID, "channel teamID", channel.TeamId)
+				pbook.AnnouncementChannelID = ""
+				pbook.AnnouncementChannelEnabled = false
+			}
+		}
 	}
 
 	err = h.playbookService.Update(pbook, userID)
