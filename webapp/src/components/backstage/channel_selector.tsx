@@ -6,19 +6,18 @@ import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/cha
 import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {Playbook} from 'src/types/playbook';
-
 import {StyledAsyncSelect} from './styles';
 
 export interface Props {
     id?: string;
     onChannelSelected: (channelID: string | null) => void;
-    playbook: Playbook;
+    channelId?: string;
     isClearable?: boolean;
     selectComponents?: SelectComponentsConfig<Channel>;
     isDisabled: boolean;
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
+    placeholder?: string;
 }
 
 const ChannelSelector: FC<Props & { className: string }> = (props: Props & { className: string }) => {
@@ -50,13 +49,13 @@ const ChannelSelector: FC<Props & { className: string }> = (props: Props & { cla
             // Implement rudimentary channel name searches.
             callback(selectableChannels.filter((channel) => (
                 channel.name.toLowerCase().includes(term.toLowerCase()) ||
-                    channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
-                    channel.id.toLowerCase() === term.toLowerCase()
+                channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
+                channel.id.toLowerCase() === term.toLowerCase()
             )));
         }
     };
 
-    const value = props.playbook.broadcast_channel_id && getChannelFromID(props.playbook.broadcast_channel_id);
+    const value = props.channelId && getChannelFromID(props.channelId);
 
     const components = props.selectComponents || defaultComponents;
 
@@ -76,7 +75,7 @@ const ChannelSelector: FC<Props & { className: string }> = (props: Props & { cla
             openMenuOnClick={true}
             isClearable={props.isClearable}
             value={value}
-            placeholder={'Select a channel'}
+            placeholder={props.placeholder || 'Select a channel'}
             classNamePrefix='channel-selector'
             components={components}
             isDisabled={props.isDisabled}

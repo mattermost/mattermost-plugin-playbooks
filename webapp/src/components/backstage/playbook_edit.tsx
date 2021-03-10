@@ -330,6 +330,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
+    const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
+        if (channelId && playbook.announcement_channel_id !== channelId) {
+            setPlaybook({
+                ...playbook,
+                announcement_channel_id: channelId,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
@@ -342,6 +352,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setPlaybook({
             ...playbook,
             default_commander_enabled: !playbook.default_commander_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleAnnouncementChannel = () => {
+        setPlaybook({
+            ...playbook,
+            announcement_channel_enabled: !playbook.announcement_channel_enabled,
         });
         setChangesMade(true);
     };
@@ -441,7 +459,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     <ChannelSelector
                                         id='playbook-preferences-broadcast-channel'
                                         onChannelSelected={handleBroadcastInput}
-                                        playbook={playbook}
+                                        channelId={playbook.broadcast_channel_id}
                                         isClearable={true}
                                         shouldRenderValue={true}
                                     />
@@ -501,6 +519,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleDefaultCommander={handleToggleDefaultCommander}
                                     onAssignCommander={handleAssignDefaultCommander}
                                     teamID={playbook.team_id}
+                                    announcementChannelID={playbook.announcement_channel_id}
+                                    announcementChannelEnabled={playbook.announcement_channel_enabled}
+                                    onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
+                                    onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
                                 />
                             </TabContainer>
                         </TabsContent>
