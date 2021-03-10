@@ -1,4 +1,4 @@
-import {useEffect, useState, MutableRefObject, useRef} from 'react';
+import {useEffect, useState, MutableRefObject, useRef, useCallback} from 'react';
 import {useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
@@ -94,4 +94,19 @@ export function useTimeout(callback: () => void, delay: number | null) {
 
     // In case you want to manually clear the timeout from the consuming component...:
     return timeoutRef;
+}
+
+// useClientRect will be called only when the component mounts and unmounts, so changes to the
+// component's size will not cause rect to change. If you want to be notified of changes after
+// mounting, you will need to add ResizeObserver to this hook.
+export function useClientRect() {
+    const [rect, setRect] = useState(new DOMRect());
+
+    const ref = useCallback((node) => {
+        if (node !== null) {
+            setRect(node.getBoundingClientRect());
+        }
+    }, []);
+
+    return [rect, ref] as const;
 }
