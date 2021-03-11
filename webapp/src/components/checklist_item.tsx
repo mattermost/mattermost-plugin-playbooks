@@ -13,18 +13,21 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee, clientRemoveChecklistItem} from 'src/client';
+import {
+    clientRunChecklistItemSlashCommand,
+    setAssignee,
+    clientRemoveChecklistItem,
+} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {useTimeout, useClickOutsideRef} from 'src/hooks';
+import {useTimeout, useClickOutsideRef, useProfilesInChannel} from 'src/hooks';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/components/shared';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-
-import ConfirmModal from './widgets/confirmation_modal';
-import Profile from './profile/profile';
+import Profile from 'src/components/profile/profile';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -303,6 +306,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
+    const profilesInChannel = useProfilesInChannel();
 
     const markdownOptions = {
         singleline: true,
@@ -327,7 +331,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
 
     const fetchUsers = async () => {
-        return fetchUsersInChannel(props.channelId);
+        return profilesInChannel;
     };
 
     const onAssigneeChange = async (userId?: string) => {
