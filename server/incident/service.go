@@ -64,6 +64,15 @@ const DialogFieldIncidentKey = "incident"
 // DialogFieldSummary is the key for the summary in AddToTimelineDialog
 const DialogFieldSummary = "summary"
 
+// DialogFieldItemName is the key for the name in AddChecklistItemDialog
+const DialogFieldItemNameKey = "name"
+
+// DialogFieldDescriptionKey is the key for the description in AddChecklistItemDialog
+const DialogFieldItemDescriptionKey = "description"
+
+// DialogFieldCommandKey is the key for the command in AddChecklistItemDialog
+const DialogFieldItemCommandKey = "command"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -304,6 +313,49 @@ func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo permissions.Requeste
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/add-to-timeline-dialog",
 			s.configService.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error {
+	dialog := &model.Dialog{
+		Title: "Add New Task",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Name",
+				Name:        DialogFieldItemNameKey,
+				Type:        "text",
+				Default:     "",
+			},
+			{
+				DisplayName: "Description",
+				Name:        DialogFieldItemDescriptionKey,
+				Type:        "text",
+				Default:     "",
+				Optional:    true,
+			},
+			{
+				DisplayName: "Slash Command",
+				Name:        DialogFieldItemCommandKey,
+				Type:        "text",
+				Default:     "",
+				Optional:    true,
+			},
+		},
+		SubmitLabel:    "Add Task",
+		NotifyOnCancel: false,
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/checklists/%v/add-dialog",
+			s.configService.GetManifest().Id, incidentID, checklist),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -930,11 +982,29 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	for i, checklist := range theIncident.Checklists {
 		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
-				Item:     fmt.Sprintf("%d %d", i, j),
-				Hint:     fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
-				HelpText: "Check/uncheck this item",
+				Item: fmt.Sprintf("%d %d", i, j),
+				Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
 			})
 		}
+	}
+
+	return ret, nil
+}
+
+// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+func (s *ServiceImpl) GetChecklistAutocompleteItem(incidentID string) ([]model.AutocompleteListItem, error) {
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for i, checklist := range theIncident.Checklists {
+		ret = append(ret, model.AutocompleteListItem{
+			Item: fmt.Sprintf("%d", i),
+			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
+		})
 	}
 
 	return ret, nil

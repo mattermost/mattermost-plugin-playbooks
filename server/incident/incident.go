@@ -265,6 +265,9 @@ type Service interface {
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the incident timeline.
 	OpenAddToTimelineDialog(requesterInfo permissions.RequesterInfo, postID, teamID, triggerID string) error
 
+	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a post to the incident timeline.
+	OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error
+
 	// AddPostToTimeline adds an event based on a post to an incident's timeline.
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
@@ -321,6 +324,9 @@ type Service interface {
 	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
 
 	// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+	GetChecklistAutocompleteItem(incidentID string) ([]model.AutocompleteListItem, error)
+
+	// GetChecklistAutocomplete returns the list of checklists for incidentID to be used in autocomplete
 	GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error)
 
 	// NukeDB removes all incident related data.
