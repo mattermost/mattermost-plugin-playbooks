@@ -83,6 +83,8 @@ const AssignCommanderSelector: FC<Props> = (props: Props) => {
 export default AssignCommanderSelector;
 
 const StyledProfile = styled(Profile)`
+    color: var(--center-channel-color);
+
     && .image {
         width: 24px;
         height: 24px;
