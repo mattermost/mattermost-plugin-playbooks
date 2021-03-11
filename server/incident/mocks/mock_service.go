@@ -7,6 +7,7 @@ package mock_incident
 import (
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	permissions "github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
@@ -123,7 +124,7 @@ func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockService) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockService) GetCommanders(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -183,7 +184,7 @@ func (mr *MockServiceMockRecorder) GetIncidentMetadata(arg0 interface{}) *gomock
 }
 
 // GetIncidents mocks base method
-func (m *MockService) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockService) GetIncidents(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)
@@ -266,7 +267,7 @@ func (mr *MockServiceMockRecorder) NukeDB() *gomock.Call {
 }
 
 // OpenAddToTimelineDialog mocks base method
-func (m *MockService) OpenAddToTimelineDialog(arg0 incident.RequesterInfo, arg1, arg2, arg3 string) error {
+func (m *MockService) OpenAddToTimelineDialog(arg0 permissions.RequesterInfo, arg1, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OpenAddToTimelineDialog", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

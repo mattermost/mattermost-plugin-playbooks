@@ -7,6 +7,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 
 	"github.com/mattermost/mattermost-plugin-api/cluster"
@@ -47,6 +48,7 @@ type Incident struct {
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
 	InvitedUserIDs          []string             `json:"invited_user_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
+	DefaultCommanderID      string               `json:"default_commander_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -228,14 +230,6 @@ type DialogStateAddToTimeline struct {
 	PostID string `json:"post_id"`
 }
 
-// RequesterInfo holds the userID and teamID that this request is regarding, and permissions
-// for the user making the request
-type RequesterInfo struct {
-	UserID  string
-	IsAdmin bool
-	IsGuest bool
-}
-
 // ErrNotFound used to indicate entity not found.
 var ErrNotFound = errors.New("not found")
 
@@ -257,7 +251,7 @@ var ErrMalformedIncident = errors.New("incident active")
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(requesterInfo RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
@@ -269,7 +263,7 @@ type Service interface {
 	OpenUpdateStatusDialog(incidentID, triggerID string) error
 
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the incident timeline.
-	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
+	OpenAddToTimelineDialog(requesterInfo permissions.RequesterInfo, postID, teamID, triggerID string) error
 
 	// AddPostToTimeline adds an event based on a post to an incident's timeline.
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
@@ -291,7 +285,7 @@ type Service interface {
 	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetCommanders returns all the commanders of incidents selected
-	GetCommanders(requesterInfo RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
+	GetCommanders(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
 
 	// IsCommander returns true if the userID is the commander for incidentID.
 	IsCommander(incidentID string, userID string) bool
@@ -352,7 +346,7 @@ type Service interface {
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
 type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(requesterInfo RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident.
 	CreateIncident(incdnt *Incident) (*Incident, error)
@@ -384,7 +378,7 @@ type Store interface {
 	GetAllIncidentMembersCount(channelID string) (int64, error)
 
 	// GetCommanders returns the commanders of the incidents selected by options
-	GetCommanders(requesterInfo RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
+	GetCommanders(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error

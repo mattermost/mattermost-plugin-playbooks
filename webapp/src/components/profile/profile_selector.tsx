@@ -186,7 +186,11 @@ export default function ProfileSelector(props: Props) {
     } else {
         target = (
             <button
-                onClick={toggleOpen}
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
                 className={props.placeholderButtonClass || 'IncidentFilter-button'}
             >
                 {props.placeholder}
