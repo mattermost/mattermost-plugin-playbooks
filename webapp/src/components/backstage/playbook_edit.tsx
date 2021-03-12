@@ -320,10 +320,28 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleAssignDefaultCommander = (userId: string | undefined) => {
+        if (userId && playbook.default_commander_id !== userId) {
+            setPlaybook({
+                ...playbook,
+                default_commander_id: userId,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
             invite_users_enabled: !playbook.invite_users_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleDefaultCommander = () => {
+        setPlaybook({
+            ...playbook,
+            default_commander_enabled: !playbook.default_commander_enabled,
         });
         setChangesMade(true);
     };
@@ -477,6 +495,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleInviteUsers={handleToggleInviteUsers}
                                     onAddUser={handleAddUserInvited}
                                     onRemoveUser={handleRemoveUserInvited}
+                                    defaultCommanderEnabled={playbook.default_commander_enabled}
+                                    defaultCommanderID={playbook.default_commander_id}
+                                    onToggleDefaultCommander={handleToggleDefaultCommander}
+                                    onAssignCommander={handleAssignDefaultCommander}
+                                    teamID={playbook.team_id}
                                 />
                             </TabContainer>
                         </TabsContent>

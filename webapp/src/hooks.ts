@@ -1,11 +1,17 @@
-import {useEffect, useState, MutableRefObject, useRef} from 'react';
-import {useSelector} from 'react-redux';
+import {useEffect, useState, MutableRefObject, useRef, useCallback} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import {getProfilesInCurrentChannel} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {DispatchFunc} from 'mattermost-redux/types/actions';
+import {getProfilesInChannel} from 'mattermost-redux/actions/users';
+
+import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -94,4 +100,35 @@ export function useTimeout(callback: () => void, delay: number | null) {
 
     // In case you want to manually clear the timeout from the consuming component...:
     return timeoutRef;
+}
+
+// useClientRect will be called only when the component mounts and unmounts, so changes to the
+// component's size will not cause rect to change. If you want to be notified of changes after
+// mounting, you will need to add ResizeObserver to this hook.
+export function useClientRect() {
+    const [rect, setRect] = useState(new DOMRect());
+
+    const ref = useCallback((node) => {
+        if (node !== null) {
+            setRect(node.getBoundingClientRect());
+        }
+    }, []);
+
+    return [rect, ref] as const;
+}
+
+export function useProfilesInChannel() {
+    const dispatch = useDispatch() as DispatchFunc;
+    const profilesInChannel = useSelector(getProfilesInCurrentChannel);
+    const currentChannelId = useSelector(getCurrentChannelId);
+
+    useEffect(() => {
+        if (profilesInChannel.length > 0) {
+            return;
+        }
+
+        dispatch(getProfilesInChannel(currentChannelId, 0, PROFILE_CHUNK_SIZE));
+    }, [currentChannelId, profilesInChannel]);
+
+    return profilesInChannel;
 }

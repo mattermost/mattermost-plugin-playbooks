@@ -11,6 +11,7 @@ import './ui_commands';
 import './plugin_ui_commands';
 import './api/preference';
 import './api/user';
+import './test_commands';
 
 require('cypress-terminal-report/src/installLogsCollector')();
 

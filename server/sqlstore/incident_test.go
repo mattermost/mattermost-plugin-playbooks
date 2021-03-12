@@ -11,6 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -192,14 +193,14 @@ func TestGetIncidents(t *testing.T) {
 
 	testData := []struct {
 		Name          string
-		RequesterInfo incident.RequesterInfo
+		RequesterInfo permissions.RequesterInfo
 		Options       incident.FilterOptions
 		Want          incident.GetIncidentsResults
 		ExpectedErr   error
 	}{
 		{
 			Name: "no options - team1 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -216,7 +217,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options - team1 - guest - no channels",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsGuest: true,
 			},
@@ -233,7 +234,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options - team1 - guest - has channels",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  john.ID,
 				IsGuest: true,
 			},
@@ -250,7 +251,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - desc - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -268,7 +269,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team2 - sort by CreateAt desc - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -287,7 +288,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no paging, team3, sort by Name",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -305,7 +306,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team paged by 1, admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -324,7 +325,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 0 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -343,7 +344,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 1 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -362,7 +363,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 2 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -381,7 +382,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 999 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -400,7 +401,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team1 - page 2 by 2 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -419,7 +420,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team1 - page 1 by 2 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -438,7 +439,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "no options, team1 - page 1 by 4 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -457,7 +458,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - only active, page 1 by 2 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -477,7 +478,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - active, commander3, desc - admin ",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -497,7 +498,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - search for horse - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -515,7 +516,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - search for aliens & commander3 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -534,7 +535,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "fuzzy search using starting characters -- not implemented",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -552,7 +553,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "fuzzy search using starting characters, active -- not implemented",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -571,7 +572,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team3 - case-insensitive and unicode characters - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -589,7 +590,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "bad parameter sort",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -602,7 +603,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "bad team id",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -614,7 +615,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "bad parameter direction by",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -627,7 +628,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "bad commander id",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -640,7 +641,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - desc - Bob (in all channels)",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: bob.ID,
 			},
 			Options: incident.FilterOptions{
@@ -657,7 +658,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team2 -  Bob (in all channels)",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: bob.ID,
 			},
 			Options: incident.FilterOptions{
@@ -673,7 +674,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - Alice (in no channels but member of team (because request must have made it through the API team membership test to the store), can see public incidents)",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: alice.ID,
 			},
 			Options: incident.FilterOptions{
@@ -689,7 +690,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team2 - Charlotte (in no channels but member of team -- because her request must have made it to the store through the API's team membership check)",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: charlotte.ID,
 			},
 			Options: incident.FilterOptions{
@@ -705,7 +706,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - Admin gets incidents with John as member",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -723,7 +724,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - Admin gets incidents with Jane as member",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -741,7 +742,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - John gets its own incidents",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: john.ID,
 			},
 			Options: incident.FilterOptions{
@@ -758,7 +759,7 @@ func TestGetIncidents(t *testing.T) {
 		},
 		{
 			Name: "team1 - Jane gets its own incidents",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: jane.ID,
 			},
 			Options: incident.FilterOptions{
@@ -795,7 +796,7 @@ func TestGetIncidents(t *testing.T) {
 		makeAdmin(t, store, lucy)
 
 		t.Run("zero incidents", func(t *testing.T) {
-			result, err := incidentStore.GetIncidents(incident.RequesterInfo{
+			result, err := incidentStore.GetIncidents(permissions.RequesterInfo{
 				UserID: lucy.ID,
 			},
 				incident.FilterOptions{
@@ -1113,7 +1114,7 @@ func TestStressTestGetIncidents(t *testing.T) {
 
 		t.Run("stress test status posts retrieval", func(t *testing.T) {
 			for _, p := range verifyPages {
-				returned, err := incidentStore.GetIncidents(incident.RequesterInfo{
+				returned, err := incidentStore.GetIncidents(permissions.RequesterInfo{
 					UserID:  "testID",
 					IsAdmin: true,
 				}, incident.FilterOptions{
@@ -1170,7 +1171,7 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 			intervals := make([]int64, 0, numReps)
 			for i := 0; i < numReps; i++ {
 				start := time.Now()
-				_, err := incidentStore.GetIncidents(incident.RequesterInfo{
+				_, err := incidentStore.GetIncidents(permissions.RequesterInfo{
 					UserID:  "testID",
 					IsAdmin: true,
 				}, incident.FilterOptions{
@@ -1406,14 +1407,14 @@ func TestGetCommanders(t *testing.T) {
 
 	cases := []struct {
 		Name          string
-		RequesterInfo incident.RequesterInfo
+		RequesterInfo permissions.RequesterInfo
 		Options       incident.FilterOptions
 		Expected      []incident.CommanderInfo
 		ExpectedErr   error
 	}{
 		{
 			Name: "team 1 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -1425,7 +1426,7 @@ func TestGetCommanders(t *testing.T) {
 		},
 		{
 			Name: "team 2 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -1437,7 +1438,7 @@ func TestGetCommanders(t *testing.T) {
 		},
 		{
 			Name: "team 3 - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
@@ -1449,7 +1450,7 @@ func TestGetCommanders(t *testing.T) {
 		},
 		{
 			Name: "team1 - Alice (in no channels but member of team (because must have made it through API team membership test), can see public incidents)",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: "Alice",
 			},
 			Options: incident.FilterOptions{
@@ -1460,7 +1461,7 @@ func TestGetCommanders(t *testing.T) {
 		},
 		{
 			Name: "team2 - Charlotte (in no channels but member of team, because must have made it through API team membership test)",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID: "Charlotte",
 			},
 			Options: incident.FilterOptions{
@@ -1471,7 +1472,7 @@ func TestGetCommanders(t *testing.T) {
 		},
 		{
 			Name: "no team - admin",
-			RequesterInfo: incident.RequesterInfo{
+			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
