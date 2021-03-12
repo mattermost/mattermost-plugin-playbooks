@@ -62,6 +62,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
 	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/update-status", handler.updateStatus).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
@@ -606,6 +607,61 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.incidentService.ChangeCommander(vars["id"], userID, params.CommanderID); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// updateStatusD handles the POST /incidents/{id}/update-status endpoint, user has edit permissions
+func (h *IncidentHandler) updateStatus(w http.ResponseWriter, r *http.Request) {
+	incidentID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentToModify, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if !permissions.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
+		return
+	}
+
+	var options incident.StatusUpdateOptions
+	if err = json.NewDecoder(r.Body).Decode(&options); err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode body into StatusUpdateOptions", err)
+		return
+	}
+
+	options.Message = strings.TrimSpace(options.Message)
+	if options.Message == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "message must not be empty", errors.New("message field empty"))
+		return
+	}
+
+	options.Reminder = options.Reminder * time.Second
+
+	options.Status = strings.TrimSpace(options.Status)
+	if options.Status == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "status must not be empty", errors.New("status field empty"))
+		return
+	}
+	switch options.Status {
+	case incident.StatusActive:
+	case incident.StatusArchived:
+	case incident.StatusReported:
+	case incident.StatusResolved:
+		break
+	default:
+		HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
+		return
+	}
+
+	err = h.incidentService.UpdateStatus(incidentID, userID, options)
+	if err != nil {
 		HandleError(w, err)
 		return
 	}

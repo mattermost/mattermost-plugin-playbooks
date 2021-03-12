@@ -131,9 +131,9 @@ type UpdateOptions struct {
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
 type StatusUpdateOptions struct {
-	Status   string
-	Message  string
-	Reminder time.Duration
+	Status   string        `json:"status"`
+	Message  string        `json:"message"`
+	Reminder time.Duration `json:"reminder"`
 }
 
 // Metadata tracks ancillary metadata about an incident.

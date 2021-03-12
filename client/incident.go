@@ -82,6 +82,46 @@ type IncidentCreateOptions struct {
 	PlaybookID      string `json:"playbook_id"`
 }
 
+// IncidentSort enumerates the available fields we can sort on.
+type IncidentSort string
+
+const (
+	// SortByCreateAt sorts by the "create_at" field. It is the default.
+	SortByCreateAt IncidentSort = "create_at"
+
+	// SortByID sorts by the "id" field.
+	SortByID IncidentSort = "id"
+
+	// SortByName sorts by the "name" field.
+	SortByName IncidentSort = "name"
+
+	// SortByCommanderUserID sorts by the "commander_user_id" field.
+	SortByCommanderUserID IncidentSort = "commander_user_id"
+
+	// SortByTeamID sorts by the "team_id" field.
+	SortByTeamID IncidentSort = "team_id"
+
+	// SortByEndAt sorts by the "end_at" field.
+	SortByEndAt IncidentSort = "end_at"
+
+	// DirectionAsc sets the direction of the sort to ascending (lower to higher).
+	DirectionAsc = "asc"
+
+	// DirectionDesc sets the direction of the sort to descending (higher to lower).
+	DirectionDesc = "desc"
+)
+
+// SortDirection determines whether results are sorted ascending or descending.
+type SortDirection string
+
+const (
+	// Desc sorts the results in descending order.
+	SortDesc SortDirection = "desc"
+
+	// Asc sorts the results in ascending order.
+	SortAsc SortDirection = "asc"
+)
+
 // IncidentListOptions specifies the optional parameters to the
 // IncidentsService.List method.
 type IncidentListOptions struct {
@@ -112,29 +152,6 @@ type IncidentListOptions struct {
 	SearchTerm string `url:"search_term,omitempty"`
 }
 
-// IncidentSort enumerates the available fields we can sort on.
-type IncidentSort string
-
-const (
-	// CreateAt sorts by the "create_at" field. It is the default.
-	CreateAt IncidentSort = "create_at"
-
-	// ID sorts by the "id" field.
-	ID IncidentSort = "id"
-
-	// Name sorts by the "name" field.
-	Name IncidentSort = "name"
-
-	// CommanderUserID sorts by the "commander_user_id" field.
-	CommanderUserID IncidentSort = "commander_user_id"
-
-	// TeamID sorts by the "team_id" field.
-	TeamID IncidentSort = "team_id"
-
-	// EndAt sorts by the "end_at" field.
-	EndAt IncidentSort = "end_at"
-)
-
 // IncidentList contains the paginated result.
 type IncidentList struct {
 	TotalCount int  `json:"total_count"`
@@ -144,17 +161,13 @@ type IncidentList struct {
 }
 
 // Status is the type used to specify the activity status of the incident.
-type Status int
+type Status string
 
 const (
-	// All are all incidents (active and ended).
-	All Status = iota
-
-	// Ongoing are incidents that are currently under way.
-	Ongoing
-
-	// Ended are incidents that are finished.
-	Ended
+	StatusReported Status = "Reported"
+	StatusActive   Status = "Active"
+	StatusResolved Status = "Resolved"
+	StatusArchived Status = "Archived"
 )
 
 type GetIncidentsResults struct {
@@ -162,4 +175,12 @@ type GetIncidentsResults struct {
 	PageCount  int        `json:"page_count"`
 	HasMore    bool       `json:"has_more"`
 	Items      []Incident `json:"items"`
+}
+
+// StatusUpdateOptions are the fields required to update an incident's status
+type StatusUpdateOptions struct {
+	IncidentID        string `json:"incident_id"`
+	Status            Status `json:"status"`
+	Message           string `json:"message"`
+	ReminderInSeconds int64  `json:"reminder"`
 }

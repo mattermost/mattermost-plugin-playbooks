@@ -113,3 +113,18 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 
 	return incident, nil
 }
+
+func (s *IncidentsService) UpdateStatus(ctx context.Context, opts StatusUpdateOptions) error {
+	updateURL := fmt.Sprintf("incidents/%s/update-status", opts.IncidentID)
+	req, err := s.client.newRequest(http.MethodPost, updateURL, opts)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
