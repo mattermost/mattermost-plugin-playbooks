@@ -108,7 +108,7 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 	for i := 0; i < numDays; i++ {
 		modifiedQuery := query.Where(
 			sq.Expr(
-				`c.CreateAt < ? AND (i.EndAt > ? OR i.EndAt = 0)`,
+				`i.CreateAt < ? AND (i.EndAt > ? OR i.EndAt = 0)`,
 				now-(int64(i)*dayInMS),
 				now-(int64(i+1)*dayInMS),
 			),
@@ -206,8 +206,7 @@ func (s *StatsStore) UniquePeopleInIncidents(filters *StatsFilters) []int {
 	query := s.store.builder.
 		Select("COUNT(DISTINCT cm.UserId)").
 		From("ChannelMembers as cm").
-		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
-		Join("Channels AS c ON (c.Id = i.ChannelId)")
+		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId")
 
 	query = applyFilters(query, filters)
 
