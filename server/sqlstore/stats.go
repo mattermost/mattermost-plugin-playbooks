@@ -84,9 +84,8 @@ func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 
 func (s *StatsStore) AverageDurationActiveIncidentsMinutes(filters *StatsFilters) int {
 	query := s.store.builder.
-		Select("AVG(c.CreateAt)").
+		Select("AVG(i.CreateAt)").
 		From("IR_Incident AS i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where("i.EndAt = 0")
 
 	query = applyFilters(query, filters)
@@ -126,14 +125,13 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 	return results, nil
 }
 
-func (s *StatsStore) ActiveIncidents(filters *StatsFilters) []int {
+func (s *StatsStore) CountActiveIncidentsByDay(filters *StatsFilters) []int {
 	now := model.GetMillis()
 
 	// Get the number of incidents started on each day
 	startQuery := s.store.builder.
-		Select(fmt.Sprintf("COUNT(i.Id), (%v - c.CreateAt) / 86400000 as DayStarted", now)).
+		Select(fmt.Sprintf("COUNT(i.Id), (%v - i.CreateAt) / 86400000 as DayStarted", now)).
 		From("IR_Incident as i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		GroupBy("DayStarted").
 		OrderBy("DayStarted ASC")
 
@@ -222,7 +220,7 @@ func (s *StatsStore) UniquePeopleInIncidents(filters *StatsFilters) []int {
 	return peopleInIncidents
 }
 
-// Average times from CreateAt to the first non reported update for the last number of days.
+// Average times from CreateAt to the first non-"Reported" update for the last number of days.
 // Averages are for incidents created on that day. Days with no created incidents use the last day.
 func (s *StatsStore) AverageStartToActive(filters *StatsFilters) []int {
 	daysToQuery := 42
@@ -237,9 +235,8 @@ func (s *StatsStore) AverageStartToActive(filters *StatsFilters) []int {
 	now := model.GetMillis()
 
 	query := s.store.builder.
-		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(%s - c.CreateAt)), 0) as Average, (%v - c.CreateAt) / 86400000 as DayStarted", firstNonReportedStatusPost, now)).
+		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(%s - i.CreateAt)), 0) as Average, (%v - i.CreateAt) / 86400000 as DayStarted", firstNonReportedStatusPost, now)).
 		From("IR_Incident as i").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		GroupBy("DayStarted").
 		OrderBy("DayStarted ASC")
 

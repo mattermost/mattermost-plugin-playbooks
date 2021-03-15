@@ -75,7 +75,7 @@ func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 		TotalActiveParticipants:               h.statsStore.TotalActiveParticipants(filters),
 		AverageDurationActiveIncidentsMinutes: h.statsStore.AverageDurationActiveIncidentsMinutes(filters),
 
-		ActiveIncidents:        h.statsStore.ActiveIncidents(filters),
+		ActiveIncidents:        h.statsStore.CountActiveIncidentsByDay(filters),
 		PeopleInIncidents:      h.statsStore.UniquePeopleInIncidents(filters),
 		AverageStartToActive:   h.statsStore.AverageStartToActive(filters),
 		AverageStartToResolved: h.statsStore.AverageStartToResolved(filters),
