@@ -674,10 +674,10 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/update-status:
+  /incidents/{id}/status:
     post:
       summary: Update an incident's status
-      operationId: updateStatus
+      operationId: status
       security:
         - BearerAuth: []
       tags:
@@ -699,7 +699,12 @@ paths:
               properties:
                 status:
                   type: string
-                  description: The new status. May be 'Reported', 'Active', 'Resolved', or 'Archived'
+                  enum:
+                    - Reported
+                    - Active
+                    - Resolved
+                    - Archived
+                  description: The new status.
                   example: Active
                 message:
                   type: string

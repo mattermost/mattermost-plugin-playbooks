@@ -169,17 +169,8 @@ func checkResponse(r *http.Response) error {
 	}
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 
-	var errorText struct {
-		Error string
-	}
 	if data != nil {
-		// Try to extract a structured error from the body, otherwise fall back to using
-		// the whole body as the error message.
-		if err2 := json.Unmarshal(data, &errorText); err2 != nil {
-			errorResponse.Err = errors.New(string(data))
-		} else {
-			errorResponse.Err = errors.New(errorText.Error)
-		}
+		_ = json.Unmarshal(data, errorResponse)
 	}
 
 	return errorResponse

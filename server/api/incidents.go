@@ -62,7 +62,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
 	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
 	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
-	incidentRouterAuthorized.HandleFunc("/update-status", handler.updateStatus).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/status", handler.status).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
@@ -614,8 +614,8 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 }
 
-// updateStatusD handles the POST /incidents/{id}/update-status endpoint, user has edit permissions
-func (h *IncidentHandler) updateStatus(w http.ResponseWriter, r *http.Request) {
+// updateStatusD handles the POST /incidents/{id}/status endpoint, user has edit permissions
+func (h *IncidentHandler) status(w http.ResponseWriter, r *http.Request) {
 	incidentID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -667,6 +667,7 @@ func (h *IncidentHandler) updateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
 }
 
 // updateStatusDialog handles the POST /incidents/{id}/update-status-dialog endpoint, called when a

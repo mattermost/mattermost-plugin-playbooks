@@ -1194,12 +1194,7 @@ func TestIncidents(t *testing.T) {
 		}
 		incidentService.EXPECT().UpdateStatus("incidentID", "testUserID", updateOptions).Return(nil)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), icClient.StatusUpdateOptions{
-			IncidentID:        "incidentID",
-			Status:            icClient.StatusActive,
-			Message:           "test message",
-			ReminderInSeconds: 600,
-		})
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test message", 600)
 		require.NoError(t, err)
 	})
 
@@ -1220,12 +1215,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), icClient.StatusUpdateOptions{
-			IncidentID:        "incidentID",
-			Status:            "Arrrrrrrctive",
-			Message:           "test message",
-			ReminderInSeconds: 600,
-		})
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "Arrrrrrrctive", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
@@ -1246,12 +1236,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(false)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), icClient.StatusUpdateOptions{
-			IncidentID:        "incidentID",
-			Status:            icClient.StatusActive,
-			Message:           "test message",
-			ReminderInSeconds: 600,
-		})
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
@@ -1272,12 +1257,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), icClient.StatusUpdateOptions{
-			IncidentID:        "incidentID",
-			Status:            icClient.StatusActive,
-			Message:           "  \t   \r   \t  \r\r  ",
-			ReminderInSeconds: 600,
-		})
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "  \t   \r   \t  \r\r  ", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
@@ -1298,12 +1278,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), icClient.StatusUpdateOptions{
-			IncidentID:        "incidentID",
-			Status:            "\t   \r  ",
-			Message:           "test message",
-			ReminderInSeconds: 600,
-		})
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "\t   \r  ", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }

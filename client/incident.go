@@ -82,33 +82,27 @@ type IncidentCreateOptions struct {
 	PlaybookID      string `json:"playbook_id"`
 }
 
-// IncidentSort enumerates the available fields we can sort on.
-type IncidentSort string
+// Sort enumerates the available fields we can sort on.
+type Sort string
 
 const (
 	// SortByCreateAt sorts by the "create_at" field. It is the default.
-	SortByCreateAt IncidentSort = "create_at"
+	SortByCreateAt Sort = "create_at"
 
 	// SortByID sorts by the "id" field.
-	SortByID IncidentSort = "id"
+	SortByID Sort = "id"
 
 	// SortByName sorts by the "name" field.
-	SortByName IncidentSort = "name"
+	SortByName Sort = "name"
 
 	// SortByCommanderUserID sorts by the "commander_user_id" field.
-	SortByCommanderUserID IncidentSort = "commander_user_id"
+	SortByCommanderUserID Sort = "commander_user_id"
 
 	// SortByTeamID sorts by the "team_id" field.
-	SortByTeamID IncidentSort = "team_id"
+	SortByTeamID Sort = "team_id"
 
 	// SortByEndAt sorts by the "end_at" field.
-	SortByEndAt IncidentSort = "end_at"
-
-	// DirectionAsc sets the direction of the sort to ascending (lower to higher).
-	DirectionAsc = "asc"
-
-	// DirectionDesc sets the direction of the sort to descending (higher to lower).
-	DirectionDesc = "desc"
+	SortByEndAt Sort = "end_at"
 )
 
 // SortDirection determines whether results are sorted ascending or descending.
@@ -134,7 +128,7 @@ type IncidentListOptions struct {
 	// TeamID filters incidents to those in the given team.
 	TeamID string `url:"team_id,omitempty"`
 
-	Sort      IncidentSort  `url:"sort,omitempty"`
+	Sort      Sort          `url:"sort,omitempty"`
 	Direction SortDirection `url:"direction,omitempty"`
 
 	// Status filters by All, Ongoing, or Ended; defaults to All.
@@ -179,7 +173,6 @@ type GetIncidentsResults struct {
 
 // StatusUpdateOptions are the fields required to update an incident's status
 type StatusUpdateOptions struct {
-	IncidentID        string `json:"incident_id"`
 	Status            Status `json:"status"`
 	Message           string `json:"message"`
 	ReminderInSeconds int64  `json:"reminder"`

@@ -114,8 +114,13 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 	return incident, nil
 }
 
-func (s *IncidentsService) UpdateStatus(ctx context.Context, opts StatusUpdateOptions) error {
-	updateURL := fmt.Sprintf("incidents/%s/update-status", opts.IncidentID)
+func (s *IncidentsService) UpdateStatus(ctx context.Context, incidentID string, status Status, message string, reminderInSeconds int64) error {
+	updateURL := fmt.Sprintf("incidents/%s/status", incidentID)
+	opts := StatusUpdateOptions{
+		Status:            status,
+		Message:           message,
+		ReminderInSeconds: reminderInSeconds,
+	}
 	req, err := s.client.newRequest(http.MethodPost, updateURL, opts)
 	if err != nil {
 		return err
