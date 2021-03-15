@@ -1,5 +1,5 @@
 import React, {FC} from 'react';
-import {OptionsType} from 'react-select';
+import {OptionsType, SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
 import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -15,9 +15,13 @@ export interface Props {
     onChannelSelected: (channelID: string | null) => void;
     playbook: Playbook;
     isClearable?: boolean;
+    selectComponents?: SelectComponentsConfig<Channel>;
+    isDisabled: boolean;
+    captureMenuScroll: boolean;
+    shouldRenderValue: boolean;
 }
 
-const ChannelSelector: FC<Props> = (props: Props) => {
+const ChannelSelector: FC<Props & { className: string }> = (props: Props & { className: string }) => {
     const selectableChannels = useSelector(getMyChannels);
 
     type GetChannelType = (channelID: string) => Channel
@@ -54,11 +58,14 @@ const ChannelSelector: FC<Props> = (props: Props) => {
 
     const value = props.playbook.broadcast_channel_id && getChannelFromID(props.playbook.broadcast_channel_id);
 
+    const components = props.selectComponents || defaultComponents;
+
     return (
         <StyledAsyncSelect
+            className={props.className}
             id={props.id}
             isMulti={false}
-            controlShouldRenderValue={true}
+            controlShouldRenderValue={props.shouldRenderValue}
             cacheOptions={false}
             defaultOptions={true}
             loadOptions={channelsLoader}
@@ -71,6 +78,9 @@ const ChannelSelector: FC<Props> = (props: Props) => {
             value={value}
             placeholder={'Select a channel'}
             classNamePrefix='channel-selector'
+            components={components}
+            isDisabled={props.isDisabled}
+            captureMenuScroll={props.captureMenuScroll}
         />
     );
 };

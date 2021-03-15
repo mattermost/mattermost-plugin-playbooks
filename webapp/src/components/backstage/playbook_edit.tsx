@@ -443,6 +443,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         onChannelSelected={handleBroadcastInput}
                                         playbook={playbook}
                                         isClearable={true}
+                                        shouldRenderValue={true}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
