@@ -4,7 +4,7 @@
 import React, {FC, useEffect, useState, ReactNode} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
-import {Line, Bar} from 'react-chartjs-2';
+import {Line} from 'react-chartjs-2';
 
 import styled from 'styled-components';
 import moment from 'moment';
@@ -21,7 +21,7 @@ import {Stats} from 'src/types/stats';
 import {fetchStats} from 'src/client';
 import {renderDuration} from 'src/components/duration';
 
-type Props = {
+type SatisticCountProps = {
     title: ReactNode;
     icon: string;
     count?: ReactNode;
@@ -40,7 +40,7 @@ const StyledLink = styled(Link)`
     }
 `;
 
-const StatisticCount: FC<Props> = (props: Props) => {
+const StatisticCount: FC<SatisticCountProps> = (props: SatisticCountProps) => {
     const match = useRouteMatch<URLParams>('/:team/:plugin');
     const inner = (
         <div className='col-lg-3 col-md-4 col-sm-6'>
@@ -75,11 +75,61 @@ const StatisticCount: FC<Props> = (props: Props) => {
     return inner;
 };
 
-const GraphBox = styled.div`
+type GraphBoxProps = {
+    title: string
+    xlabel: string
+    labels?: string[]
+    data?: number[]
+}
+
+const GraphBoxContainer = styled.div`
     padding: 10px;
     width: 50%;
     float: left;
 `;
+
+const GraphBox: FC<GraphBoxProps> = (props: GraphBoxProps) => {
+    return (
+        <GraphBoxContainer>
+            <Line
+                legend={{display: false}}
+                options={{
+                    title: {
+                        display: true,
+                        text: props.title,
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                callback: (value: number) => (Number.isInteger(value) ? value : null),
+                            },
+                        }],
+                        xAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: props.xlabel,
+                            },
+                        }],
+                    },
+                }}
+                data={{
+                    labels: props.labels,
+                    datasets: [{
+                        fill: true,
+                        backgroundColor: 'rgba(151,187,205,0.2)',
+                        borderColor: 'rgba(151,187,205,1)',
+                        pointBackgroundColor: 'rgba(151,187,205,1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(151,187,205,1)',
+                        data: props.data,
+                    }],
+                }}
+            />
+        </GraphBoxContainer>
+    );
+};
 
 const StatsView: FC = () => {
     const [stats, setStats] = useState<Stats|null>(null);
@@ -137,160 +187,34 @@ const StatsView: FC = () => {
                             count={renderDuration(moment.duration(stats?.average_duration_active_incidents_minutes, 'minutes'))}
                         />
                     </div>
-                    <GraphBox>
-                        <Line
-                            legend={{display: false}}
-                            options={{
-                                title: {
-                                    display: true,
-                                    text: 'Total incidents by day',
-                                },
-                                scales: {
-                                    yAxes: [{
-                                        ticks: {
-                                            beginAtZero: true,
-                                            callback: (value: number) => (Number.isInteger(value) ? value : null),
-                                        },
-                                    }],
-                                    xAxes: [{
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: 'Days ago',
-                                        },
-                                    }],
-                                },
-                            }}
-                            data={{
-                                labels: stats?.active_incidents.map((value: number, index: number) => String(index + 1)).reverse(),
-                                datasets: [{
-                                    fill: true,
-                                    backgroundColor: 'rgba(151,187,205,0.2)',
-                                    borderColor: 'rgba(151,187,205,1)',
-                                    pointBackgroundColor: 'rgba(151,187,205,1)',
-                                    pointBorderColor: '#fff',
-                                    pointHoverBackgroundColor: '#fff',
-                                    pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                    data: stats?.active_incidents.slice().reverse(),
-                                }],
-                            }}
-                        />
-                    </GraphBox>
-                    <GraphBox>
-                        <Bar
-                            legend={{display: false}}
-                            options={{
-                                title: {
-                                    display: true,
-                                    text: 'Total participants by day',
-                                },
-                                scales: {
-                                    yAxes: [{
-                                        ticks: {
-                                            beginAtZero: true,
-                                            callback: (value: number) => (Number.isInteger(value) ? value : null),
-                                        },
-                                    }],
-                                    xAxes: [{
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: 'Days ago',
-                                        },
-                                    }],
-                                },
-                            }}
-                            data={{
-                                labels: stats?.people_in_incidents.map((value: number, index: number) => String(index + 1)).reverse(),
-                                datasets: [{
-                                    fill: true,
-                                    backgroundColor: 'rgba(151,187,205,0.2)',
-                                    borderColor: 'rgba(151,187,205,1)',
-                                    pointBackgroundColor: 'rgba(151,187,205,1)',
-                                    pointBorderColor: '#fff',
-                                    pointHoverBackgroundColor: '#fff',
-                                    pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                    data: stats?.people_in_incidents.slice().reverse(),
-                                }],
-                            }}
-                        />
-                    </GraphBox>
-                    <div/>
                     <div>
-                        <GraphBox>
-                            <Line
-                                legend={{display: false}}
-                                options={{
-                                    title: {
-                                        display: true,
-                                        text: 'Mean-time-to-acknowledge by day (hours)',
-                                    },
-                                    scales: {
-                                        yAxes: [{
-                                            ticks: {
-                                                beginAtZero: true,
-                                                callback: (value: number) => (Number.isInteger(value) ? value : null),
-                                            },
-                                        }],
-                                        xAxes: [{
-                                            scaleLabel: {
-                                                display: true,
-                                                labelString: 'Days ago',
-                                            },
-                                        }],
-                                    },
-                                }}
-                                data={{
-                                    labels: stats?.average_start_to_active.map((value: number, index: number) => String(index + 1)).reverse(),
-                                    datasets: [{
-                                        fill: true,
-                                        backgroundColor: 'rgba(151,187,205,0.2)',
-                                        borderColor: 'rgba(151,187,205,1)',
-                                        pointBackgroundColor: 'rgba(151,187,205,1)',
-                                        pointBorderColor: '#fff',
-                                        pointHoverBackgroundColor: '#fff',
-                                        pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                        data: stats?.average_start_to_active.map((value: number) => Math.floor(value / 3600000)).reverse(),
-                                    }],
-                                }}
-                            />
-                        </GraphBox>
-                        <GraphBox>
-                            <Line
-                                legend={{display: false}}
-                                options={{
-                                    title: {
-                                        display: true,
-                                        text: 'Mean-time-to-resolve by day (hours)',
-                                    },
-                                    scales: {
-                                        yAxes: [{
-                                            ticks: {
-                                                beginAtZero: true,
-                                                callback: (value: number) => (Number.isInteger(value) ? value : null),
-                                            },
-                                        }],
-                                        xAxes: [{
-                                            scaleLabel: {
-                                                display: true,
-                                                labelString: 'Days ago',
-                                            },
-                                        }],
-                                    },
-                                }}
-                                data={{
-                                    labels: stats?.average_start_to_resolved.map((value: number, index: number) => String(index + 1)).reverse(),
-                                    datasets: [{
-                                        fill: true,
-                                        backgroundColor: 'rgba(151,187,205,0.2)',
-                                        borderColor: 'rgba(151,187,205,1)',
-                                        pointBackgroundColor: 'rgba(151,187,205,1)',
-                                        pointBorderColor: '#fff',
-                                        pointHoverBackgroundColor: '#fff',
-                                        pointHoverBorderColor: 'rgba(151,187,205,1)',
-                                        data: stats?.average_start_to_resolved.map((value: number) => Math.floor(value / 3600000)).reverse(),
-                                    }],
-                                }}
-                            />
-                        </GraphBox>
+                        <GraphBox
+                            title={'Total incidents by day'}
+                            xlabel={'Days ago'}
+                            labels={stats?.active_incidents.map((value: number, index: number) => String(index + 1)).reverse()}
+                            data={stats?.active_incidents.slice().reverse()}
+                        />
+                        <GraphBox
+                            title={'Total participants by day'}
+                            xlabel={'Days ago'}
+                            labels={stats?.people_in_incidents.map((value: number, index: number) => String(index + 1)).reverse()}
+                            data={stats?.people_in_incidents.slice().reverse()}
+                        />
+                    </div>
+                    <div>
+                        <GraphBox
+                            title={'Mean-time-to-acknowledge by day (hours)'}
+                            xlabel={'Days ago'}
+                            labels={stats?.average_start_to_active.map((value: number, index: number) => String(index + 1)).reverse()}
+                            data={stats?.average_start_to_active.map((value: number) => Math.floor(value / 3600000)).reverse()}
+                        />
+                        <GraphBox
+                            title={'Mean-time-to-resolve by day (hours)'}
+                            xlabel={'Days ago'}
+                            labels={stats?.average_start_to_resolved.map((value: number, index: number) => String(index + 1)).reverse()}
+                            data={stats?.average_start_to_resolved.map((value: number) => Math.floor(value / 3600000)).reverse()}
+                        />
+                        <div/>
                     </div>
                 </div>
             </div>
