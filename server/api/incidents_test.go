@@ -2,12 +2,15 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
@@ -18,6 +21,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
@@ -30,15 +34,31 @@ func TestIncidents(t *testing.T) {
 	var handler *Handler
 	var poster *mock_poster.MockPoster
 	var logger *mock_poster.MockLogger
+	var configService *mock_config.MockService
 	var playbookService *mock_playbook.MockService
 	var incidentService *mock_incident.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 	telemetryService := &telemetry.NoopTelemetry{}
 
+	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
+	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.Header.Add("Mattermost-User-ID", "testUserID")
+
+		handler.ServeHTTP(w, r)
+	})
+
+	server := httptest.NewServer(mattermostHandler)
+	t.Cleanup(server.Close)
+
+	c, err := icClient.New(&model.Client4{Url: server.URL})
+	require.NoError(t, err)
+
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
-		handler = NewHandler()
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
@@ -47,7 +67,57 @@ func TestIncidents(t *testing.T) {
 		client = pluginapi.NewClient(pluginAPI)
 		telemetryService = &telemetry.NoopTelemetry{}
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(true)
 	}
+
+	t.Run("create valid incident, unlicensed", func(t *testing.T) {
+		mockCtrl = gomock.NewController(t)
+		configService = mock_config.NewMockService(mockCtrl)
+		handler = NewHandler(configService)
+		poster = mock_poster.NewMockPoster(mockCtrl)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
+		incidentService = mock_incident.NewMockService(mockCtrl)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(false)
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+		}
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
+		}
+
+		incidentJSON, err := json.Marshal(testIncident)
+		require.NoError(t, err)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
 	t.Run("create valid incident from dialog", func(t *testing.T) {
 		reset()
@@ -464,7 +534,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create valid incident", func(t *testing.T) {
 		reset()
 
-		withid := playbook.Playbook{
+		testPlaybook := playbook.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
@@ -477,14 +547,15 @@ func TestIncidents(t *testing.T) {
 			CommanderUserID: "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
+			Description:     "description",
+			PlaybookID:      testPlaybook.ID,
+			Checklists:      testPlaybook.Checklists,
 			InvitedUserIDs:  []string{},
 		}
 
 		playbookService.EXPECT().
 			Get("playbookid1").
-			Return(withid, nil).
+			Return(testPlaybook, nil).
 			Times(1)
 
 		retI := testIncident
@@ -499,21 +570,13 @@ func TestIncidents(t *testing.T) {
 		poster.EXPECT().
 			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 
-		incidentJSON, err := json.Marshal(testIncident)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
-
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            testIncident.Name,
+			CommanderUserID: testIncident.CommanderUserID,
+			TeamID:          testIncident.TeamID,
+			Description:     testIncident.Description,
+			PlaybookID:      testIncident.PlaybookID,
+		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultIncident.ID)
 	})
@@ -539,21 +602,11 @@ func TestIncidents(t *testing.T) {
 		poster.EXPECT().
 			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 
-		incidentJSON, err := json.Marshal(testIncident)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
-
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            testIncident.Name,
+			CommanderUserID: testIncident.CommanderUserID,
+			TeamID:          testIncident.TeamID,
+		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultIncident.ID)
 	})
@@ -570,18 +623,12 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 
-		incidentJSON, err := json.Marshal(testIncident)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:   testIncident.Name,
+			TeamID: testIncident.TeamID,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		require.Nil(t, resultIncident)
 	})
 
 	t.Run("create invalid incident - missing team", func(t *testing.T) {
@@ -594,44 +641,12 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
-		incidentJSON, err := json.Marshal(testIncident)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	})
-
-	t.Run("create invalid incident - channel id already set", func(t *testing.T) {
-		reset()
-
-		testIncident := incident.Incident{
-			TeamID:    "testTeamID",
-			Name:      "incidentName",
-			ChannelID: "channelID",
-		}
-
-		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-
-		incidentJSON, err := json.Marshal(testIncident)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            testIncident.Name,
+			CommanderUserID: testIncident.CommanderUserID,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		require.Nil(t, resultIncident)
 	})
 
 	t.Run("get incident by channel id", func(t *testing.T) {
@@ -656,20 +671,9 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("incidentID", nil)
 		incidentService.EXPECT().GetIncident("incidentID").Return(&testIncident, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		resultIncident, err := c.Incidents.GetByChannelID(context.TODO(), testIncident.ChannelID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
-		require.NoError(t, err)
-		assert.Equal(t, testIncident, resultIncident)
+		assert.Equal(t, testIncident, toInternalIncident(*resultIncident))
 	})
 
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
@@ -691,15 +695,9 @@ func TestIncidents(t *testing.T) {
 		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("", incident.ErrNotFound)
 		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncident.ChannelID)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
-		testreq.Header.Add("Mattermost-User-ID", userID)
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		resultIncident, err := c.Incidents.GetByChannelID(context.TODO(), testIncident.ChannelID)
+		requireErrorWithStatusCode(t, err, http.StatusNotFound)
+		require.Nil(t, resultIncident)
 	})
 
 	t.Run("get incident by channel id - not authorized", func(t *testing.T) {
@@ -721,15 +719,9 @@ func TestIncidents(t *testing.T) {
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/channel/"+testIncident.ChannelID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		resultIncident, err := c.Incidents.GetByChannelID(context.TODO(), testIncident.ChannelID)
+		requireErrorWithStatusCode(t, err, http.StatusNotFound)
+		require.Nil(t, resultIncident)
 	})
 
 	t.Run("get private incident - not part of channel", func(t *testing.T) {
@@ -758,15 +750,9 @@ func TestIncidents(t *testing.T) {
 			GetIncident("incidentID").
 			Return(&testIncident, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultIncident, err := c.Incidents.Get(context.TODO(), testIncident.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		require.Nil(t, resultIncident)
 	})
 
 	t.Run("get private incident - part of channel", func(t *testing.T) {
@@ -798,20 +784,9 @@ func TestIncidents(t *testing.T) {
 			GetIncident("incidentID").
 			Return(&testIncident, nil).Times(2)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		resultIncident, err := c.Incidents.Get(context.TODO(), testIncident.ID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
-		require.NoError(t, err)
-		assert.Equal(t, testIncident, resultIncident)
+		assert.Equal(t, testIncident, toInternalIncident(*resultIncident))
 	})
 
 	t.Run("get public incident - not part of channel or team", func(t *testing.T) {
@@ -843,15 +818,9 @@ func TestIncidents(t *testing.T) {
 			GetIncident("incidentID").
 			Return(&testIncident, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultIncident, err := c.Incidents.Get(context.TODO(), testIncident.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		require.Nil(t, resultIncident)
 	})
 
 	t.Run("get public incident - not part of channel, but part of team", func(t *testing.T) {
@@ -885,20 +854,9 @@ func TestIncidents(t *testing.T) {
 			GetIncident("incidentID").
 			Return(&testIncident, nil).Times(2)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		resultIncident, err := c.Incidents.Get(context.TODO(), testIncident.ID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
-		require.NoError(t, err)
-		assert.Equal(t, testIncident, resultIncident)
+		assert.Equal(t, testIncident, toInternalIncident(*resultIncident))
 	})
 
 	t.Run("get public incident - part of channel", func(t *testing.T) {
@@ -930,20 +888,9 @@ func TestIncidents(t *testing.T) {
 			GetIncident("incidentID").
 			Return(&testIncident, nil).Times(2)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID, nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		resultIncident, err := c.Incidents.Get(context.TODO(), testIncident.ID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var resultIncident incident.Incident
-		err = json.NewDecoder(resp.Body).Decode(&resultIncident)
-		require.NoError(t, err)
-		assert.Equal(t, testIncident, resultIncident)
+		assert.Equal(t, testIncident, toInternalIncident(*resultIncident))
 	})
 
 	t.Run("get private incident metadata - not part of channel", func(t *testing.T) {
@@ -972,15 +919,9 @@ func TestIncidents(t *testing.T) {
 			GetIncident("incidentID").
 			Return(&testIncident, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultIncidentMetadata, err := c.Incidents.GetMetadata(context.TODO(), testIncident.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		require.Nil(t, resultIncidentMetadata)
 	})
 
 	t.Run("get private incident metadata - part of channel", func(t *testing.T) {
@@ -1021,20 +962,9 @@ func TestIncidents(t *testing.T) {
 			GetIncidentMetadata("incidentID").
 			Return(&testIncidentMetadata, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		resultIncidentMetadata, err := c.Incidents.GetMetadata(context.TODO(), testIncident.ID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var resultMetadata incident.Metadata
-		err = json.NewDecoder(resp.Body).Decode(&resultMetadata)
-		require.NoError(t, err)
-		assert.Equal(t, testIncidentMetadata, resultMetadata)
+		assert.Equal(t, testIncidentMetadata, toInternalIncidentMetadata(*resultIncidentMetadata))
 	})
 
 	t.Run("get public incident metadata - not part of channel or team", func(t *testing.T) {
@@ -1065,15 +995,9 @@ func TestIncidents(t *testing.T) {
 			GetIncident("incidentID").
 			Return(&testIncident, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultIncidentMetadata, err := c.Incidents.GetMetadata(context.TODO(), testIncident.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		require.Nil(t, resultIncidentMetadata)
 	})
 
 	t.Run("get public incident metadata - not part of channel, but part of team", func(t *testing.T) {
@@ -1116,20 +1040,9 @@ func TestIncidents(t *testing.T) {
 			GetIncidentMetadata("incidentID").
 			Return(&testIncidentMetadata, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		resultIncidentMetadata, err := c.Incidents.GetMetadata(context.TODO(), testIncident.ID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var resultMetadata incident.Metadata
-		err = json.NewDecoder(resp.Body).Decode(&resultMetadata)
-		require.NoError(t, err)
-		assert.Equal(t, testIncidentMetadata, resultMetadata)
+		assert.Equal(t, testIncidentMetadata, toInternalIncidentMetadata(*resultIncidentMetadata))
 	})
 
 	t.Run("get public incident metadata - part of channel", func(t *testing.T) {
@@ -1170,20 +1083,9 @@ func TestIncidents(t *testing.T) {
 			GetIncidentMetadata("incidentID").
 			Return(&testIncidentMetadata, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents/"+testIncident.ID+"/metadata", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		resultIncidentMetadata, err := c.Incidents.GetMetadata(context.TODO(), testIncident.ID)
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var resultMetadata incident.Metadata
-		err = json.NewDecoder(resp.Body).Decode(&resultMetadata)
-		require.NoError(t, err)
-		assert.Equal(t, testIncidentMetadata, resultMetadata)
+		assert.Equal(t, testIncidentMetadata, toInternalIncidentMetadata(*resultIncidentMetadata))
 	})
 
 	t.Run("get incidents", func(t *testing.T) {
@@ -1213,24 +1115,16 @@ func TestIncidents(t *testing.T) {
 		}
 		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents?team_id=testTeamID1", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		actualList, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+			TeamID: "testTeamID1",
+		})
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
 
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var actualList incident.GetIncidentsResults
-		err = json.NewDecoder(resp.Body).Decode(&actualList)
-		require.NoError(t, err)
-		expectedList := incident.GetIncidentsResults{
+		expectedList := &icClient.GetIncidentsResults{
 			TotalCount: 100,
 			PageCount:  200,
 			HasMore:    true,
-			Items:      []incident.Incident{incident1},
+			Items:      []icClient.Incident{toAPIIncident(incident1)},
 		}
 		assert.Equal(t, expectedList, actualList)
 	})
@@ -1240,15 +1134,11 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/incidents?team_id=non-existent", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultIncident, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+			TeamID: "non-existent",
+		})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		require.Nil(t, resultIncident)
 	})
 
 	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {

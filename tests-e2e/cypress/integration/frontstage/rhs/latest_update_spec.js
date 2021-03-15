@@ -82,37 +82,38 @@ describe('incident rhs > latest update', () => {
             const now = Date.now();
             const broadcastDisplayName = 'Private channel (' + now + ')';
             const broadcastName = 'private-channel-' + now;
-            cy.apiCreateChannel(teamId, broadcastName, broadcastDisplayName, 'P').then(({channel}) => {
-                // # Create a playbook with a private broadcast channel configured
-                cy.apiCreateTestPlaybook({
-                    teamId,
-                    title: playbookName,
-                    userId,
-                    broadcastChannelId: channel.id,
-                }).then((playbook) => {
-                    // # Create a new incident
-                    const name = 'Incident (' + now + ')';
-                    const incidentChannelName = 'incident-' + now;
-                    cy.apiStartIncident({
+            cy.apiCreateChannel(teamId, broadcastName, broadcastDisplayName, 'P')
+                .then(({channel}) => {
+                    // # Create a playbook with a private broadcast channel configured
+                    cy.apiCreateTestPlaybook({
                         teamId,
-                        playbookId: playbook.id,
-                        incidentName: name,
-                        commanderUserId: userId,
-                    });
+                        title: playbookName,
+                        userId,
+                        broadcastChannelId: channel.id,
+                    }).then((playbook) => {
+                        // # Create a new incident
+                        const name = 'Incident (' + now + ')';
+                        const incidentChannelName = 'incident-' + now;
+                        cy.apiStartIncident({
+                            teamId,
+                            playbookId: playbook.id,
+                            incidentName: name,
+                            commanderUserId: userId,
+                        });
 
-                    // # Navigate to the incident channel
-                    cy.visit('/ad-1/channels/' + incidentChannelName);
+                        // # Navigate to the incident channel
+                        cy.visit('/ad-1/channels/' + incidentChannelName);
 
-                    // # Run the /incident status slash command.
-                    cy.executeSlashCommand('/incident update');
+                        // # Run the /incident status slash command.
+                        cy.executeSlashCommand('/incident update');
 
-                    // * Verify that the interactive dialog contains a generic message
-                    cy.get('#interactiveDialogModal').within(() => {
-                        cy.get('#interactiveDialogModalIntroductionText')
-                            .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                        // * Verify that the interactive dialog contains a generic message
+                        cy.get('#interactiveDialogModal').within(() => {
+                            cy.get('#interactiveDialogModalIntroductionText')
+                                .contains('Update your incident status. This post will be broadcasted to a private channel.');
+                        });
                     });
                 });
-            });
         });
 
         it('shows a generic message when the broadcast channel is a direct message', () => {
@@ -225,6 +226,38 @@ describe('incident rhs > latest update', () => {
                         .should('not.contain', 'This post will be broadcasted');
                 });
             });
+        });
+
+        it('shows an error when entering an update message with whitespace', () => {
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // # Get the interactive dialog modal.
+            cy.get('#interactiveDialogModal').within(() => {
+                // # Type the invalid data
+                cy.findByTestId('messageinput').clear().type(' {enter} {enter}  ');
+
+                // # Enter valid status
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
+                    cy.get('input').type('Reported', {delay: 200}).type('{enter}');
+                });
+
+                // # Submit the dialog.
+                cy.get('#interactiveDialogSubmit').click();
+
+                // * Verify the error is provided.
+                cy.findByTestId('messagehelp-text').should('exist')
+                    .contains('This field is required.');
+
+                // # Enter valid data
+                cy.findByTestId('messageinput').type('valid update');
+
+                // # Submit the dialog.
+                cy.get('#interactiveDialogSubmit').click();
+            });
+
+            // * Verify that the interactive dialog has gone.
+            cy.get('#interactiveDialogModal').should('not.exist');
         });
     });
 

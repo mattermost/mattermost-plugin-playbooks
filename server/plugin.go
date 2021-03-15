@@ -52,10 +52,6 @@ func (p *Plugin) OnActivate() error {
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
-	if !pluginapi.IsE20LicensedOrDevelopment(pluginAPIClient.Configuration.GetConfig(), pluginAPIClient.System.GetLicense()) {
-		return errors.New("a valid Mattermost Enterprise E20 license is required to use this plugin")
-	}
-
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
 		DisplayName: "Incident Bot",
@@ -137,7 +133,7 @@ func (p *Plugin) OnActivate() error {
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
-	p.handler = api.NewHandler()
+	p.handler = api.NewHandler(p.config)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
@@ -204,7 +200,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService)
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService, p.config)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("IncidentCollaborationPlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)

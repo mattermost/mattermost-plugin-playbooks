@@ -5,32 +5,33 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // ErrNoPermissions if the error is caused by the user not having permissions
 var ErrNoPermissions = errors.New("does not have permissions")
 
+// RequesterInfo holds the userID and teamID that this request is regarding, and permissions
+// for the user making the request
+type RequesterInfo struct {
+	UserID  string
+	IsAdmin bool
+	IsGuest bool
+}
+
 // ViewIncident returns nil if the userID has permissions to view incidentID
-func ViewIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
+func ViewIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
 
-	incidentToCheck, err := incidentService.GetIncident(incidentID)
-	if err != nil {
-		return errors.Wrapf(err, "could not get incident id `%s`", incidentID)
-	}
-
-	if pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.ChannelID, model.PERMISSION_READ_CHANNEL) {
+	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
 		return nil
 	}
 
-	channel, err := pluginAPI.Channel.Get(incidentToCheck.ChannelID)
+	channel, err := pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", incidentToCheck.ChannelID)
+		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", channelID)
 	}
 
 	if channel.Type == model.CHANNEL_OPEN && pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
@@ -42,7 +43,7 @@ func ViewIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incide
 
 // ViewIncidentFromChannelID returns nil if the userID has permissions to view the incident
 // associated with channelID
-func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
+func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -64,17 +65,12 @@ func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Cl
 }
 
 // EditIncident returns nil if the userID has permissions to edit incidentID
-func EditIncident(userID, incidentID string, pluginAPI *pluginapi.Client, incidentService incident.Service) error {
+func EditIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
 
-	incidentToCheck, err := incidentService.GetIncident(incidentID)
-	if err != nil {
-		return errors.Wrapf(err, "could not get incident id `%s`", incidentID)
-	}
-
-	if pluginAPI.User.HasPermissionToChannel(userID, incidentToCheck.ChannelID, model.PERMISSION_READ_CHANNEL) {
+	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
 		return nil
 	}
 
@@ -109,17 +105,26 @@ func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) boo
 	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_CREATE_POST)
 }
 
-func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (incident.RequesterInfo, error) {
+func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo, error) {
 	isAdmin := IsAdmin(userID, pluginAPI)
 
 	isGuest, err := IsGuest(userID, pluginAPI)
 	if err != nil {
-		return incident.RequesterInfo{}, err
+		return RequesterInfo{}, err
 	}
 
-	return incident.RequesterInfo{
+	return RequesterInfo{
 		UserID:  userID,
 		IsAdmin: isAdmin,
 		IsGuest: isGuest,
 	}, nil
+}
+
+func IsMemberOfTeamID(userID, teamID string, pluginAPI *pluginapi.Client) bool {
+	teamMember, err := pluginAPI.Team.GetMember(teamID, userID)
+	if err != nil {
+		return false
+	}
+
+	return teamMember.DeleteAt == 0
 }

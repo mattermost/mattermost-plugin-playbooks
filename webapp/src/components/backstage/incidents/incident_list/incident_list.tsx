@@ -303,6 +303,7 @@ const BackstageIncidentList: FC = () => {
                         onSearch={debounce(setSearchTerm, debounceDelay)}
                     />
                     <ProfileSelector
+                        testId={'commander-filter'}
                         selectedUserId={fetchParams.commander_user_id}
                         placeholder={'Commander'}
                         enableEdit={true}

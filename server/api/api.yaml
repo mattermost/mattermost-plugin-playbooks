@@ -549,7 +549,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PATCH 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/mx3xyzdojfgyfdx8sc8of1gdme' \
+            curl -X PATCH 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
             -d '{"active_stage": 2}'
@@ -639,7 +639,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -666,7 +666,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1054,7 +1054,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-response/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
             -d '{"new_state": "closed"}'
       responses:

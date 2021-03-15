@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
+import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
 
 import {BackstageHeaderHelpText, BackstageHeaderTitle} from 'src/components/backstage/styles';
 
@@ -19,6 +20,11 @@ interface Props {
     onToggleInviteUsers: () => void;
     onAddUser: (userId: string) => void;
     onRemoveUser: (userId: string) => void;
+    defaultCommanderID: string;
+    defaultCommanderEnabled: boolean;
+    onToggleDefaultCommander: () => void;
+    onAssignCommander: (userId: string | undefined) => void;
+    teamID: string;
 }
 
 export const AutomationSettings: FC<Props> = (props: Props) => {
@@ -43,6 +49,17 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         userIds={props.userIds}
                         onAddUser={props.onAddUser}
                         onRemoveUser={props.onRemoveUser}
+                    />
+                </Setting>
+                <Setting id={'assign-commander'}>
+                    <AutoAssignCommander
+                        enabled={props.defaultCommanderEnabled}
+                        onToggle={props.onToggleDefaultCommander}
+                        searchProfiles={props.searchProfiles}
+                        getProfiles={props.getProfiles}
+                        commanderID={props.defaultCommanderID}
+                        onAssignCommander={props.onAssignCommander}
+                        teamID={props.teamID}
                     />
                 </Setting>
             </Section>
