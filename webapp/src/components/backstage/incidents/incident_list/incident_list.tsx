@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useEffect, useState} from 'react';
-
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
