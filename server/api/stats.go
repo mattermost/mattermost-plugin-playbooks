@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
@@ -63,7 +63,7 @@ func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !permissions.CanViewTeam(userID, filters.TeamID, h.pluginAPI) {
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, filters.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filters.TeamID))
 		return
