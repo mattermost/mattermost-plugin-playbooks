@@ -283,8 +283,8 @@ describe('timeline', () => {
         });
     });
 
-    describe.only('timeline filter', () => {
-        it.only('shows each type, and all', () => {
+    describe('timeline filter', () => {
+        it('shows each type, and all', () => {
             // # Post an update that doesn't change the incident status
             cy.updateStatus('this is a status update');
 
@@ -323,40 +323,56 @@ describe('timeline', () => {
             // # Select the timeline tab
             cy.findByTestId('timeline').click();
 
+            // # Remove default options
+            clickOnFilterOption('Incident report');
+            clickOnFilterOption('Commander change');
+            clickOnFilterOption('Status update');
+            clickOnFilterOption('Channel message');
+
             // # Filter to Commander Changed only
-            changeFilterToOnly('Commander Changed');
+            clickOnFilterOption('Commander change');
             verifyTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
             verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
+            clickOnFilterOption('Commander change');
 
             // # Filter to Status Updates only
-            changeFilterToOnly('Status Updated');
+            clickOnFilterOption('Status update');
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
+            clickOnFilterOption('Status update');
 
             // # Filter to Events From Posts only
-            changeFilterToOnly('Events From Posts');
+            clickOnFilterOption('Channel message');
             verifyTimelineEvent('event_from_post', 1, 0, summary1);
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
+            clickOnFilterOption('Channel message');
 
             // # Filter to Tasks only
-            changeFilterToOnly('Task State Changed');
+            clickOnFilterOption('Task state change');
             verifyTimelineEvent('task_state_modified', 1, 0, 'user-1 checked off checklist item "Step 1"');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
+            clickOnFilterOption('Task state change');
 
             // * Filter to Task Assignee Changed only
-            changeFilterToOnly('Task Assignee Changed');
+            clickOnFilterOption('Task assignment');
             verifyTimelineEvent('assignee_changed', 1, 0, 'Assignee Changed');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
+            clickOnFilterOption('Task assignment');
 
             // * Filter to Slash Commands only
-            changeFilterToOnly('Slash Commands');
+            clickOnFilterOption('Slash command');
             verifyTimelineEvent('ran_slash_command', 1, 0, 'Slash Command Executed');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
+            clickOnFilterOption('Slash command');
+
+            // # Click a couple options to makes sure All below works even when some are selected
+            clickOnFilterOption('Status update');
+            clickOnFilterOption('Task state change');
 
             // * Verify we can see all events:
-            changeFilterToOnly('All Events');
+            clickOnFilterOption('All Events');
 
             // * Verify all events are shown
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 9);
@@ -408,18 +424,13 @@ const removeTimelineEvent = (expectedEventType, expectedNumberOfEvents, expected
     cy.findByText(expectedEventSummary).should('not.exist');
 };
 
-const changeFilterToOnly = (newFilter) => {
+const clickOnFilterOption = (option) => {
     // # Show filter menu
     cy.get('.icon-filter-variant').click();
 
     cy.findByTestId('dropdownmenu').within(() => {
-        // # Click on all to clear all others that might be checked
-        if (newFilter !== 'All Events') {
-            cy.findByText('All Events').click();
-        }
-
         // # Click on desired filter
-        cy.findByText(newFilter).click();
+        cy.findByText(option).click();
     });
 
     // # Hide menu

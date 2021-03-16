@@ -40,32 +40,32 @@ export interface TimelineEvent {
 export interface TimelineEventsFilter {
     all: boolean;
     incident_created: boolean;
-    status_updated: boolean;
     commander_changed: boolean;
-    assignee_changed: boolean;
-    task_state_modified: boolean;
-    ran_slash_command: boolean;
+    status_updated: boolean;
     event_from_post: boolean;
+    task_state_modified: boolean;
+    assignee_changed: boolean;
+    ran_slash_command: boolean;
 }
 
 export const TimelineEventsFilterDefault = {
     all: false,
     incident_created: true,
-    status_updated: true,
     commander_changed: true,
-    assignee_changed: false,
-    task_state_modified: false,
-    ran_slash_command: false,
+    status_updated: true,
     event_from_post: true,
+    task_state_modified: false,
+    assignee_changed: false,
+    ran_slash_command: false,
 };
 
 export const TimelineEventsFilterAll = {
     all: true,
     incident_created: false,
-    status_updated: false,
     commander_changed: false,
-    assignee_changed: false,
-    task_state_modified: false,
-    ran_slash_command: false,
+    status_updated: false,
     event_from_post: false,
+    task_state_modified: false,
+    assignee_changed: false,
+    ran_slash_command: false,
 };
