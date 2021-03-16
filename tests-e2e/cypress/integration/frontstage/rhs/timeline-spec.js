@@ -137,6 +137,7 @@ describe('timeline', () => {
             cy.findByTestId('timeline').click();
 
             // * Verify we can see the task event in the timeline
+            clickOnFilterOption('All Events');
             verifyTimelineEvent('task_state_modified', 1, 1, 'user-1 checked off checklist item "Step 1"');
         });
     });
