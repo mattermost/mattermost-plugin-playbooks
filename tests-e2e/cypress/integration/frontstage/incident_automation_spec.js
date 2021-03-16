@@ -560,7 +560,7 @@ describe('incident automation', () => {
                     cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
                     // * Verify that there is an error message from the incident bot
-                    cy.getNthPostId(1).then((id) => {
+                    cy.getLastPostId().then((id) => {
                         cy.get(`#postMessageText_${id}`)
                             .contains('Failed to announce the creation of this incident in the configured channel.');
                     });
