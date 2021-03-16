@@ -222,12 +222,10 @@ export async function clientAddChecklistItem(incidentID: string, checklistNum: n
 }
 
 export async function clientRemoveChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
         body: '',
     });
-
-    return data;
 }
 
 export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newItem: ChecklistItem) {
@@ -259,8 +257,10 @@ export async function clientRemoveTimelineEvent(incidentID: string, entryID: str
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {
-    const body = JSON.stringify({action});
-    await doPost(`${apiUrl}/telemetry/incident/${incidentID}`, body);
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/incident/${incidentID}`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
 }
 
 export function exportChannelUrl(channelId: string) {
