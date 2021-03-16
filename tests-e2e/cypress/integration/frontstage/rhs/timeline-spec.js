@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {TINY} from '../../../fixtures/timeouts';
+
 describe('timeline', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
@@ -37,17 +39,19 @@ describe('timeline', () => {
             cy.apiGetCurrentUser().then((user) => {
                 userId = user.id;
 
-                cy.apiCreateTestPlaybook({
+                cy.apiCreatePlaybook({
                     teamId: team.id,
                     title: playbookName,
                     checklists: [{
                         title: 'Stage 1',
                         items: [
                             {title: 'Step 1'},
-                            {title: 'Step 2'},
+                            {title: 'Step 2', command: '/echo VALID'},
                         ],
                     }],
-                    userId: user.id,
+                    memberIDs: [
+                        user.id,
+                    ],
                 }).then((playbook) => {
                     playbookId = playbook.id;
                 });
@@ -306,70 +310,64 @@ describe('timeline', () => {
             // # Click the first task
             cy.get('[type="checkbox"]').first().check();
 
+            // # Run the second slash command
+            cy.findAllByTestId('run').eq(0).click();
+
+            // # Assign Aaron to the first task
+            cy.findAllByTestId('checkbox-item-container').eq(1).trigger('mouseover');
+            cy.get('.icon-account-plus-outline').click().wait(TINY);
+            cy.get('.incident-user-select__input > input')
+                .type('aaron', {force: true, delay: 100})
+                .wait(100).type('{enter}');
+
             // # Select the timeline tab
             cy.findByTestId('timeline').click();
 
             // # Filter to Commander Changed only
             changeFilterToOnly('Commander Changed');
-
-            // * Verify we can see the change commander events in the timeline
             verifyTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
             verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
-
-            // * Verify only those events are shown
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
 
             // # Filter to Status Updates only
             changeFilterToOnly('Status Updated');
-
-            // * Verify we can see the status updated events in the timeline
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
-
-            // * Verify only those events are shown
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
-
-            // # Filter to Tasks only
-            changeFilterToOnly('Task State Changed');
-
-            // * Verify we can see the status updated events in the timeline
-            verifyTimelineEvent('task_state_modified', 1, 0, 'user-1 checked off checklist item "Step 1"');
-
-            // * Verify only those events are shown
-            cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
 
             // # Filter to Events From Posts only
             changeFilterToOnly('Events From Posts');
-
-            // * Verify we can see the status updated events in the timeline
             verifyTimelineEvent('event_from_post', 1, 0, summary1);
+            cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
 
-            // * Verify only those events are shown
+            // # Filter to Tasks only
+            changeFilterToOnly('Task State Changed');
+            verifyTimelineEvent('task_state_modified', 1, 0, 'user-1 checked off checklist item "Step 1"');
+            cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
+
+            // * Filter to Task Assignee Changed only
+            changeFilterToOnly('Task Assignee Changed');
+            verifyTimelineEvent('assignee_changed', 1, 0, 'Assignee Changed');
+            cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
+
+            // * Filter to Slash Commands only
+            changeFilterToOnly('Slash Commands');
+            verifyTimelineEvent('ran_slash_command', 1, 0, 'Slash Command Executed');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
 
             // * Verify we can see all events:
             changeFilterToOnly('All Events');
 
             // * Verify all events are shown
-            cy.findAllByTestId(/timeline-item .*/).should('have.length', 7);
-
-            // * Verify we can see the update in the timeline
+            cy.findAllByTestId(/timeline-item .*/).should('have.length', 9);
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
-
-            // * Verify we can see the change commander in the timeline
             verifyTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
-
-            // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
-
-            // * Verify we can see the change commander in the timeline
             verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
-
-            // * Verify we can see the task event in the timeline
-            verifyTimelineEvent('task_state_modified', 1, 1, 'user-1 checked off checklist item "Step 1"');
-
-            // * Verify we can see the post event
             verifyTimelineEvent('event_from_post', 1, 0, summary1);
+            verifyTimelineEvent('task_state_modified', 1, 1, 'user-1 checked off checklist item "Step 1"');
+            verifyTimelineEvent('assignee_changed', 1, 0, 'Assignee Changed');
+            verifyTimelineEvent('ran_slash_command', 1, 0, 'Slash Command Executed');
         });
     });
 });
