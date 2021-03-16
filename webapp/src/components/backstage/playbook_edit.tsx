@@ -372,7 +372,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
     };
 
-    const handleBroadcastInput = (channelId: string | null) => {
+    const handleBroadcastInput = (channelId: string | undefined) => {
         setPlaybook({
             ...playbook,
             broadcast_channel_id: channelId || '',
@@ -462,6 +462,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         channelId={playbook.broadcast_channel_id}
                                         isClearable={true}
                                         shouldRenderValue={true}
+                                        isDisabled={false}
+                                        captureMenuScroll={false}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>

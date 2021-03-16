@@ -218,8 +218,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if pbook.AnnouncementChannelID != "" {
-		channel, err := h.pluginAPI.Channel.Get(pbook.AnnouncementChannelID)
-		if err != nil {
+		channel, err2 := h.pluginAPI.Channel.Get(pbook.AnnouncementChannelID)
+		if err2 != nil {
 			h.pluginAPI.Log.Warn("announcement channel does not exist, disabling announcement channel", "channelID", pbook.AnnouncementChannelID)
 			pbook.AnnouncementChannelID = ""
 			pbook.AnnouncementChannelEnabled = false

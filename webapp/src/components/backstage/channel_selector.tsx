@@ -10,7 +10,7 @@ import {StyledAsyncSelect} from './styles';
 
 export interface Props {
     id?: string;
-    onChannelSelected: (channelID: string | null) => void;
+    onChannelSelected: (channelID: string | undefined) => void;
     channelId?: string;
     isClearable?: boolean;
     selectComponents?: SelectComponentsConfig<Channel>;
@@ -20,14 +20,14 @@ export interface Props {
     placeholder?: string;
 }
 
-const ChannelSelector: FC<Props & { className: string }> = (props: Props & { className: string }) => {
+const ChannelSelector: FC<Props & { className?: string }> = (props: Props & { className?: string }) => {
     const selectableChannels = useSelector(getMyChannels);
 
     type GetChannelType = (channelID: string) => Channel
     const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
 
     const onChange = (channel: Channel | null) => {
-        props.onChannelSelected(channel ? channel.id : null);
+        props.onChannelSelected(channel?.id);
     };
 
     const getOptionValue = (channel: Channel) => {

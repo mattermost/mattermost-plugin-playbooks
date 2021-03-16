@@ -212,7 +212,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	}
 
 	if incdnt.AnnouncementChannelID != "" {
-		if err := s.broadcastIncidentCreation(incdnt, commander); err != nil {
+		if err2 := s.broadcastIncidentCreation(incdnt, commander); err2 != nil {
 			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incdnt.AnnouncementChannelID)
 
 			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this incident in the configured channel."); err != nil {

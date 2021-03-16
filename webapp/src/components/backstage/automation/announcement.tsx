@@ -19,7 +19,7 @@ interface Props {
     enabled: boolean;
     onToggle: () => void;
     channelId?: string;
-    onChannelSelected: (channelId: string | undefined) => void;
+    onChannelSelected: (channelID: string | undefined) => void;
 }
 
 export const Announcement: FC<Props> = (props: Props) => {
