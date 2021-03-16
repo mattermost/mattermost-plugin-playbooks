@@ -208,6 +208,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     reminderTimerDefaultSeconds,
     invitedUserIds,
     inviteUsersEnabled,
+    defaultCommanderId,
+    defaultCommanderEnabled,
 }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -224,6 +226,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             invited_user_ids: invitedUserIds,
             invite_users_enabled: inviteUsersEnabled,
+            default_commander_id: defaultCommanderId,
+            default_commander_enabled: defaultCommanderEnabled,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
