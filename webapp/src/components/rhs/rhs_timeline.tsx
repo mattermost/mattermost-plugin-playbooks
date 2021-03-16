@@ -25,7 +25,7 @@ import {Incident} from 'src/types/incident';
 import {
     TimelineEvent,
     TimelineEventsFilter,
-    TimelineEventsFilterDefault,
+    TimelineEventsFilterAll,
     TimelineEventType,
 } from 'src/types/rhs';
 import RHSTimelineEventItem from 'src/components/rhs/rhs_timeline_event_item';
@@ -35,7 +35,7 @@ import {
     renderView,
 } from 'src/components/rhs/rhs_shared';
 import {ChannelNamesMap} from 'src/types/backstage';
-import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
+import MultiCheckbox from 'src/components/multi_checkbox';
 import {currentRHSEventsFilter} from 'src/selectors';
 import {setRHSEventsFilter} from 'src/actions';
 
@@ -48,7 +48,7 @@ const Header = styled.div`
 `;
 
 const Timeline = styled.ul`
-    margin: 35px 0 150px 0;
+    margin: 35px 0 200px 0;
     padding: 0;
     list-style: none;
     position: relative;
@@ -95,7 +95,7 @@ const RHSTimeline = (props: Props) => {
 
     const selectOption = (value: string, checked: boolean) => {
         if (value === 'all' && checked) {
-            dispatch(setRHSEventsFilter(currentChannelId, TimelineEventsFilterDefault));
+            dispatch(setRHSEventsFilter(currentChannelId, TimelineEventsFilterAll));
             return;
         }
         dispatch(setRHSEventsFilter(currentChannelId, {
@@ -146,19 +146,29 @@ const RHSTimeline = (props: Props) => {
             selected: eventsFilter.commander_changed,
         },
         {
-            display: 'Status Updates',
+            display: 'Status Updated',
             value: TimelineEventType.StatusUpdated,
             selected: eventsFilter.status_updated,
-        },
-        {
-            display: 'Tasks',
-            value: TimelineEventType.TaskStateModified,
-            selected: eventsFilter.task_state_modified,
         },
         {
             display: 'Events From Posts',
             value: TimelineEventType.EventFromPost,
             selected: eventsFilter.event_from_post,
+        },
+        {
+            display: 'Task State Changed',
+            value: TimelineEventType.TaskStateModified,
+            selected: eventsFilter.task_state_modified,
+        },
+        {
+            display: 'Task Assignee Changed',
+            value: TimelineEventType.AssigneeChanged,
+            selected: eventsFilter.assignee_changed,
+        },
+        {
+            display: 'Slash Commands',
+            value: TimelineEventType.RanSlashCommand,
+            selected: eventsFilter.ran_slash_command,
         },
     ];
 
@@ -200,13 +210,6 @@ const RHSTimeline = (props: Props) => {
 export default RHSTimeline;
 
 const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
-    // For now, ignoring these always:
-    switch (eventType) {
-    case TimelineEventType.AssigneeChanged:
-    case TimelineEventType.RanSlashCommand:
-        return false;
-    }
-
     // Otherwise, apply the filter settings:
     if (filter.all) {
         return true;

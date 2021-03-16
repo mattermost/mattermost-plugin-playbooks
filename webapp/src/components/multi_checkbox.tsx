@@ -13,7 +13,7 @@ const IconWrapper = styled.div`
 `;
 
 const FilterCheckboxContainer = styled(CheckboxContainer)`
-    margin: 0 36px 0 20px;
+    margin: 0 30px 0 20px;
     line-height: 30px;
     align-items: center;
 
@@ -48,7 +48,7 @@ const MultiCheckbox = (props: Props) => (
                 <i className='icon icon-filter-variant'/>
             </IconWrapper>
         }
-        menuCSS={'left: -230px;'}
+        menuCSS={'left: -234px;'}
         buttonCSS={'margin: 0 16px 0 auto'}
     >
         {props.options.map((option) => {

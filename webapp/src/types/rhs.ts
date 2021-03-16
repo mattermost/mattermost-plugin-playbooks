@@ -49,6 +49,17 @@ export interface TimelineEventsFilter {
 }
 
 export const TimelineEventsFilterDefault = {
+    all: false,
+    incident_created: true,
+    status_updated: true,
+    commander_changed: true,
+    assignee_changed: false,
+    task_state_modified: false,
+    ran_slash_command: false,
+    event_from_post: true,
+};
+
+export const TimelineEventsFilterAll = {
     all: true,
     incident_created: false,
     status_updated: false,
