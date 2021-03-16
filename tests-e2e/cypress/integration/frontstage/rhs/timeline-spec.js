@@ -279,8 +279,8 @@ describe('timeline', () => {
         });
     });
 
-    describe('timeline filter', () => {
-        it('shows each type, and all', () => {
+    describe.only('timeline filter', () => {
+        it.only('shows each type, and all', () => {
             // # Post an update that doesn't change the incident status
             cy.updateStatus('this is a status update');
 
@@ -320,7 +320,7 @@ describe('timeline', () => {
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
 
             // # Filter to Status Updates only
-            changeFilterToOnly('Status Updates');
+            changeFilterToOnly('Status Updated');
 
             // * Verify we can see the status updated events in the timeline
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
@@ -330,7 +330,7 @@ describe('timeline', () => {
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
 
             // # Filter to Tasks only
-            changeFilterToOnly('Tasks');
+            changeFilterToOnly('Task State Changed');
 
             // * Verify we can see the status updated events in the timeline
             verifyTimelineEvent('task_state_modified', 1, 0, 'user-1 checked off checklist item "Step 1"');
