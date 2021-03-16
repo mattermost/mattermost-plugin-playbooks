@@ -29,7 +29,6 @@ func TestMigrationIdempotency(t *testing.T) {
 				logger,
 				setupTestDB(t, driver),
 				builder,
-				nil,
 			}
 
 			// Make sure we start from scratch
@@ -55,7 +54,6 @@ func TestMigrationIdempotency(t *testing.T) {
 				logger,
 				setupTestDB(t, driver),
 				builder,
-				nil,
 			}
 
 			// Make sure we start from scratch

@@ -108,9 +108,13 @@ describe('incident automation', () => {
 
                     // * Verify that the users were invited
                     cy.getFirstPostId().then((id) => {
+                        cy.get(`#postMessageText_${id}`).within(() => {
+                            cy.findByText('2 others').click();
+                        });
+
                         cy.get(`#postMessageText_${id}`).contains('@aaron.medina');
                         cy.get(`#postMessageText_${id}`).contains('@alice.johnston');
-                        cy.get(`#postMessageText_${id}`).contains('joined the channel.');
+                        cy.get(`#postMessageText_${id}`).contains('added to the channel by @incident.');
                     });
                 });
             });
@@ -212,6 +216,209 @@ describe('incident automation', () => {
                     cy.getNthPostId(1).then((id) => {
                         cy.get(`#postMessageText_${id}`)
                             .contains(`Failed to invite the following users: @${userToRemove.username}`);
+                    });
+                });
+            });
+        });
+
+        describe('default commander setting', () => {
+            it('defaults to the creator when no commander is specified', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+                let playbookId;
+
+                // # Create a playbook with the default commander setting set to false
+                // and no commander specified
+                cy.apiCreatePlaybook({
+                    teamId,
+                    title: playbookName,
+                    createPublicIncident: true,
+                    memberIDs: [userId],
+                    defaultCommanderId: '',
+                    defaultCommanderEnabled: false,
+                }).then((playbook) => {
+                    playbookId = playbook.id;
+                });
+
+                // # Create a new incident with that playbook
+                const now = Date.now();
+                const incidentName = `Incident (${now})`;
+                const incidentChannelName = `incident-${now}`;
+                cy.apiStartIncident({
+                    teamId,
+                    playbookId,
+                    incidentName,
+                    commanderUserId: userId,
+                });
+
+                // # Navigate to the incident channel
+                cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                // * Verify that the RHS shows the commander being the creator
+                cy.get('#rhsContainer').within(() => {
+                    cy.findByText('Commander').parent().within(() => {
+                        cy.findByText('@user-1');
+                    });
+                });
+            });
+
+            it('defaults to the creator when no commander is specified, even if the setting is enabled', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+                let playbookId;
+
+                // # Create a playbook with the default commander setting set to false
+                // and no commander specified
+                cy.apiCreatePlaybook({
+                    teamId,
+                    title: playbookName,
+                    createPublicIncident: true,
+                    memberIDs: [userId],
+                    defaultCommanderId: '',
+                    defaultCommanderEnabled: true,
+                }).then((playbook) => {
+                    playbookId = playbook.id;
+                });
+
+                // # Create a new incident with that playbook
+                const now = Date.now();
+                const incidentName = `Incident (${now})`;
+                const incidentChannelName = `incident-${now}`;
+                cy.apiStartIncident({
+                    teamId,
+                    playbookId,
+                    incidentName,
+                    commanderUserId: userId,
+                });
+
+                // # Navigate to the incident channel
+                cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                // * Verify that the RHS shows the commander being the creator
+                cy.get('#rhsContainer').within(() => {
+                    cy.findByText('Commander').parent().within(() => {
+                        cy.findByText('@user-1');
+                    });
+                });
+            });
+
+            it('assigns the commander when they are part of the invited members list', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+
+                // # Create a playbook with the commander being part of the invited users
+                cy.apiGetUsers(['alice.johnston']).then((res) => {
+                    const userIds = res.body.map((user) => user.id);
+
+                    return cy.apiCreatePlaybook({
+                        teamId,
+                        title: playbookName,
+                        createPublicIncident: true,
+                        memberIDs: [userId],
+                        invitedUserIds: userIds,
+                        inviteUsersEnabled: true,
+                        defaultCommanderId: userIds[0],
+                        defaultCommanderEnabled: true,
+                    });
+                }).then((playbook) => {
+                    // # Create a new incident with that playbook
+                    const now = Date.now();
+                    const incidentName = `Incident (${now})`;
+                    const incidentChannelName = `incident-${now}`;
+
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName,
+                        commanderUserId: userId,
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                    // * Verify that the RHS shows the commander being the invited user
+                    cy.get('#rhsContainer').within(() => {
+                        cy.findByText('Commander').parent().within(() => {
+                            cy.findByText('@alice.johnston');
+                        });
+                    });
+                });
+            });
+
+            it('assigns the commander even if they are not invited', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+
+                // # Create a playbook with the commander being part of the invited users
+                cy.apiGetUsers(['alice.johnston']).then((res) => {
+                    const userIds = res.body.map((user) => user.id);
+
+                    return cy.apiCreatePlaybook({
+                        teamId,
+                        title: playbookName,
+                        createPublicIncident: true,
+                        memberIDs: [userId],
+                        invitedUserIds: [],
+                        inviteUsersEnabled: false,
+                        defaultCommanderId: userIds[0],
+                        defaultCommanderEnabled: true,
+                    });
+                }).then((playbook) => {
+                    // # Create a new incident with that playbook
+                    const now = Date.now();
+                    const incidentName = `Incident (${now})`;
+                    const incidentChannelName = `incident-${now}`;
+
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName,
+                        commanderUserId: userId,
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                    // * Verify that the RHS shows the commander being the invited user
+                    cy.get('#rhsContainer').within(() => {
+                        cy.findByText('Commander').parent().within(() => {
+                            cy.findByText('@alice.johnston');
+                        });
+                    });
+                });
+            });
+
+            it('assigns the commander when they and the creator are the same', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+                let playbookId;
+
+                // # Create a playbook with the default commander setting set to false
+                // and no commander specified
+                cy.apiCreatePlaybook({
+                    teamId,
+                    title: playbookName,
+                    createPublicIncident: true,
+                    memberIDs: [userId],
+                    defaultCommanderId: userId,
+                    defaultCommanderEnabled: true,
+                }).then((playbook) => {
+                    playbookId = playbook.id;
+                });
+
+                // # Create a new incident with that playbook
+                const now = Date.now();
+                const incidentName = `Incident (${now})`;
+                const incidentChannelName = `incident-${now}`;
+                cy.apiStartIncident({
+                    teamId,
+                    playbookId,
+                    incidentName,
+                    commanderUserId: userId,
+                });
+
+                // # Navigate to the incident channel
+                cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                // * Verify that the RHS shows the commander being the creator
+                cy.get('#rhsContainer').within(() => {
+                    cy.findByText('Commander').parent().within(() => {
+                        cy.findByText('@user-1');
                     });
                 });
             });

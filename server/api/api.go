@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 )
 
 // Handler Root API handler.
@@ -16,12 +18,17 @@ type Handler struct {
 }
 
 // NewHandler constructs a new handler.
-func NewHandler() *Handler {
+func NewHandler(config config.Service) *Handler {
 	handler := &Handler{}
 
 	root := mux.NewRouter()
 	api := root.PathPrefix("/api/v0").Subrouter()
 	api.Use(MattermostAuthorizationRequired)
+
+	e20middleware := e20LicenseRequired{
+		config: config,
+	}
+	api.Use(e20middleware.Middleware)
 	api.Handle("{anything:.*}", http.NotFoundHandler())
 	api.NotFoundHandler = http.NotFoundHandler()
 
@@ -92,5 +99,22 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 		}
 
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
+	})
+}
+
+type e20LicenseRequired struct {
+	config config.Service
+}
+
+// Middleware checks if the server is appropriately licensed.
+func (m *e20LicenseRequired) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !m.config.IsLicensed() {
+			http.Error(w, "E20 license required", http.StatusForbidden)
+
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

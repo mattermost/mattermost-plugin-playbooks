@@ -56,7 +56,6 @@ func setupSQLStore(t testing.TB, db *sqlx.DB) (bot.Logger, *SQLStore) {
 		logger,
 		db,
 		builder,
-		nil,
 	}
 
 	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)

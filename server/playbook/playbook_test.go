@@ -33,7 +33,7 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				ReminderTimerDefaultSeconds: 0,
 				InvitedUserIDs:              nil,
 			},
-			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[],"member_ids":[],"broadcast_channel_id":"channelid","reminder_message_template":"This is a message","reminder_timer_default_seconds":0,"invited_user_ids":[],"invite_users_enabled":false}`),
+			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[],"member_ids":[],"broadcast_channel_id":"channelid","reminder_message_template":"This is a message","reminder_timer_default_seconds":0,"invited_user_ids":[],"invite_users_enabled":false,"default_commander_id":"","default_commander_enabled":false}`),
 			wantErr:  false,
 		},
 		{
@@ -60,7 +60,7 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				ReminderMessageTemplate:     "This is a message",
 				ReminderTimerDefaultSeconds: 0,
 			},
-			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[{"id":"checklist1","title":"checklist 1","items":[]}],"member_ids":["bob","divyani"],"broadcast_channel_id":"","reminder_message_template":"This is a message","reminder_timer_default_seconds":0,"invited_user_ids":[],"invite_users_enabled":false}`),
+			expected: []byte(`{"id":"playbookid","title":"the playbook title","description":"the playbook's description","team_id":"theteamid","create_public_incident":true,"create_at":4503134,"delete_at":0,"num_stages":0,"num_steps":0,"checklists":[{"id":"checklist1","title":"checklist 1","items":[]}],"member_ids":["bob","divyani"],"broadcast_channel_id":"","reminder_message_template":"This is a message","reminder_timer_default_seconds":0,"invited_user_ids":[],"invite_users_enabled":false,"default_commander_id":"","default_commander_enabled":false}`),
 			wantErr:  false,
 		},
 	}

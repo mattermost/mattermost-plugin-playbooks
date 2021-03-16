@@ -3,7 +3,6 @@
 
 import React, {FC, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import moment from 'moment';
 import {components, ControlProps} from 'react-select';
 import styled from 'styled-components';
 import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
@@ -14,18 +13,21 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {clientRunChecklistItemSlashCommand, fetchUsersInChannel, setAssignee, clientRemoveChecklistItem} from 'src/client';
+import {
+    clientRunChecklistItemSlashCommand,
+    setAssignee,
+    clientRemoveChecklistItem,
+} from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {useTimeout, useClickOutsideRef} from 'src/hooks';
+import {useTimeout, useClickOutsideRef, useProfilesInChannel} from 'src/hooks';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/components/shared';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-
-import ConfirmModal from './widgets/confirmation_modal';
-import Profile from './profile/profile';
+import Profile from 'src/components/profile/profile';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -39,16 +41,7 @@ interface ChecklistItemDetailsProps {
 
 const RunningTimeout = 1000;
 
-const HoverableIcon = styled.i`
-    color: var(--center-channel-color-56);
-    cursor: pointer;
-
-    &:hover {
-        color: var(--center-channel-color);
-    }
-`;
-
-const StyledPopover = styled(Popover)<PopoverProps>`
+const StyledPopover = styled(Popover) <PopoverProps>`
     min-width: 180px;
     border-radius: 8px;
 
@@ -199,48 +192,6 @@ export const CheckboxContainer = styled.div`
     }
 `;
 
-const CheckboxContainerLive = styled(CheckboxContainer)`
-    height: 35px;
-`;
-
-const CloseContainer = styled.span`
-    cursor: pointer;
-    opacity: 0;
-    width: 3.2rem;
-    height: 3.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: var(--error-text);
-
-    &:hover {
-        opacity: 1;
-    }
-`;
-
-const CheckboxTextboxes = styled.div`
-    width: 100%;
-
-    .form-control {
-        margin-top: 5px;
-        min-width: 320px;
-    }
-
-    .custom-textarea {
-        border-radius: 2px;
-        border: 1px solid var(--center-channel-color-16);
-        min-height: unset;
-        height: 34px;
-
-        &:focus {
-            border-radius: 2px;
-            border: 1px solid var(--center-channel-color-40);
-            padding: 6px 12px;
-        }
-    }
-`;
-
 const Command = styled.div`
     word-break: break-word;
     display: inline;
@@ -284,7 +235,7 @@ interface StepDescriptionProps {
     team: Team;
 }
 
-const StepDescription = (props: StepDescriptionProps) : React.ReactElement<StepDescriptionProps> => {
+const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDescriptionProps> => {
     const [showTooltip, setShowTooltip] = useState(false);
     const target = useRef(null);
     const popoverRef = useRef(null);
@@ -355,6 +306,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
+    const profilesInChannel = useProfilesInChannel();
 
     const markdownOptions = {
         singleline: true,
@@ -379,7 +331,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
 
     const fetchUsers = async () => {
-        return fetchUsersInChannel(props.channelId);
+        return profilesInChannel;
     };
 
     const onAssigneeChange = async (userId?: string) => {
@@ -409,15 +361,15 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             onMouseLeave={() => setShowMenu(false)}
             data-testid='checkbox-item-container'
         >
-            <CheckboxContainerLive>
+            <CheckboxContainer>
                 {showMenu &&
                     <HoverMenu>
                         {props.checklistItem.description !== '' &&
-                        <StepDescription
-                            text={props.checklistItem.description}
-                            channelNames={channelNamesMap}
-                            team={team}
-                        />
+                            <StepDescription
+                                text={props.checklistItem.description}
+                                channelNames={channelNamesMap}
+                                team={team}
+                            />
                         }
                         <HoverMenuButton
                             className={'icon-trash-can-outline icon-16 btn-icon'}
@@ -462,33 +414,33 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
                     </div>
                 </label>
-            </CheckboxContainerLive>
+            </CheckboxContainer>
             <ExtrasRow>
                 {props.checklistItem.assignee_id &&
-                <SmallProfile
-                    userId={props.checklistItem.assignee_id}
-                />
+                    <SmallProfile
+                        userId={props.checklistItem.assignee_id}
+                    />
                 }
                 {
                     props.checklistItem.command !== '' &&
-                        <div>
-                            <Run
-                                data-testid={'run'}
-                                running={running}
-                                onClick={() => {
-                                    if (!running) {
-                                        setRunning(true);
-                                        clientRunChecklistItemSlashCommand(dispatch, props.incidentId, props.checklistNum, props.itemNum);
-                                    }
-                                }}
-                            >
-                                {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
-                            </Run>
-                            <Command>
-                                {props.checklistItem.command}
-                            </Command>
-                            {running && <StyledSpinner/>}
-                        </div>
+                    <div>
+                        <Run
+                            data-testid={'run'}
+                            running={running}
+                            onClick={() => {
+                                if (!running) {
+                                    setRunning(true);
+                                    clientRunChecklistItemSlashCommand(dispatch, props.incidentId, props.checklistNum, props.itemNum);
+                                }
+                            }}
+                        >
+                            {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
+                        </Run>
+                        <Command>
+                            {props.checklistItem.command}
+                        </Command>
+                        {running && <StyledSpinner/>}
+                    </div>
                 }
             </ExtrasRow>
             <ConfirmModal
@@ -502,116 +454,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 onCancel={() => setShowDeleteConfirm(false)}
             />
         </ItemContainer>
-    );
-};
-
-interface ChecklistItemDetailsEditProps {
-    commandInputId: string;
-    channelId?: string;
-    checklistItem: ChecklistItem;
-    suggestionsOnBottom?: boolean;
-    onEdit: (newvalue: ChecklistItem) => void;
-    onRemove: () => void;
-}
-
-export const ChecklistItemDetailsEdit = ({commandInputId, channelId, checklistItem, suggestionsOnBottom, onEdit, onRemove}: ChecklistItemDetailsEditProps): React.ReactElement => {
-    const commandInputRef = useRef(null);
-    const [title, setTitle] = useState(checklistItem.title);
-    const [description, setDescription] = useState(checklistItem.description);
-    const [command, setCommand] = useState(checklistItem.command);
-
-    const submit = () => {
-        const trimmedTitle = title.trim();
-        const trimmedCommand = command.trim();
-        if (trimmedTitle === '') {
-            setTitle(checklistItem.title);
-            return;
-        }
-        if (trimmedTitle !== checklistItem.title || trimmedCommand !== checklistItem.command || description !== checklistItem.description) {
-            onEdit({...checklistItem, ...{title: trimmedTitle, command: trimmedCommand, description}});
-        }
-    };
-
-    // @ts-ignore
-    const AutocompleteTextbox = window.Components.Textbox;
-
-    const suggestionListStyle = suggestionsOnBottom ? 'bottom' : 'top';
-
-    return (
-        <CheckboxContainer>
-            <i
-                className='icon icon-menu pr-2'
-            />
-            <CheckboxTextboxes>
-                <input
-                    className='form-control'
-                    type='text'
-                    value={title}
-                    onClick={(e) => e.stopPropagation()}
-                    onBlur={submit}
-                    placeholder={'Title'}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === 'Escape') {
-                            submit();
-                        }
-                    }}
-                    onChange={(e) => {
-                        setTitle(e.target.value);
-                    }}
-                />
-                <AutocompleteTextbox
-                    ref={commandInputRef}
-                    id={commandInputId}
-                    channelId={channelId}
-                    inputComponent={'input'}
-                    createMessage={'/slash command'}
-                    onKeyDown={(e: KeyboardEvent) => {
-                        if (e.key === 'Enter' || e.key === 'Escape') {
-                            if (commandInputRef.current) {
-                                // @ts-ignore
-                                commandInputRef.current!.blur();
-                            }
-                        }
-                    }}
-                    onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                        if (e.target) {
-                            const input = e.target as HTMLInputElement;
-                            setCommand(input.value);
-                        }
-                    }}
-                    suggestionListStyle={suggestionListStyle}
-
-                    className='form-control'
-                    type='text'
-                    value={command}
-                    onBlur={submit}
-
-                    // the following are required props but aren't used
-                    characterLimit={256}
-                    onKeyPress={(e: KeyboardEvent) => true}
-                />
-                <textarea
-                    className='form-control'
-                    value={description}
-                    onClick={(e) => e.stopPropagation()}
-                    onBlur={submit}
-                    placeholder={'Step description'}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                            submit();
-                        }
-                    }}
-                    onChange={(e) => {
-                        setDescription(e.target.value);
-                    }}
-                />
-            </CheckboxTextboxes>
-            <CloseContainer
-                onClick={onRemove}
-            >
-                <i className='icon icon-close'/>
-            </CloseContainer>
-        </CheckboxContainer>
     );
 };
 

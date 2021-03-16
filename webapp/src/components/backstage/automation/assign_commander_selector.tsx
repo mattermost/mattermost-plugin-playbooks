@@ -1,39 +1,32 @@
 import React, {FC, useState, useEffect} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useSelector} from 'react-redux';
 
-import ReactSelect, {GroupType, ControlProps, OptionsType, MenuListComponentProps} from 'react-select';
+import ReactSelect, {ControlProps, MenuListComponentProps} from 'react-select';
 
 import {Scrollbars} from 'react-custom-scrollbars';
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
-import {UserProfile} from 'mattermost-redux/types/users';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
-import {getProfilesByIds} from 'mattermost-redux/actions/users';
 
 import Profile from 'src/components/profile/profile';
 
 interface Props {
-    userIds: string[];
+    commanderID: string;
     onAddUser: (userid: string) => void;
-    onRemoveUser: (userid: string) => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
     isDisabled: boolean;
 }
 
-const InviteUsersSelector: FC<Props> = (props: Props) => {
-    const dispatch = useDispatch();
+const AssignCommanderSelector: FC<Props> = (props: Props) => {
+    const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const invitedUsers = useSelector<GlobalState, UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
-    const [searchedUsers, setSearchedUsers] = useState<UserProfile[]>([]);
+    const commanderUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.commanderID));
 
-    useEffect(() => {
-        dispatch(getProfilesByIds(props.userIds));
-    }, [props.userIds]);
-
-    // Update the options whenever the passed user IDs or the search term are updated
+    // Update the options whenever the commander ID or the search term are updated
     useEffect(() => {
         const updateOptions = async (term: string) => {
             let profiles;
@@ -45,69 +38,30 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
 
             //@ts-ignore
             profiles.then(({data}: { data: UserProfile[] }) => {
-                setSearchedUsers(data);
+                setOptions(data.filter((user: UserProfile) => user.id !== props.commanderID));
+            }).catch(() => {
+                // eslint-disable-next-line no-console
+                console.error('Error searching user profiles in custom attribute settings dropdown.');
             });
         };
 
         updateOptions(searchTerm);
-    }, [props.userIds, searchTerm]);
-
-    let invitedProfiles: UserProfile[] = [];
-    let nonInvitedProfiles: UserProfile[] = [];
-
-    if (searchTerm.trim().length === 0) {
-        // Filter out all the undefined users, which will cast to false in the filter predicate
-        invitedProfiles = invitedUsers.filter((user) => user);
-        nonInvitedProfiles = searchedUsers.filter(
-            (profile: UserProfile) => !props.userIds.includes(profile.id),
-        );
-    } else {
-        searchedUsers.forEach((profile: UserProfile) => {
-            if (props.userIds.includes(profile.id)) {
-                invitedProfiles.push(profile);
-            } else {
-                nonInvitedProfiles.push(profile);
-            }
-        });
-    }
-
-    let options: UserProfile[] | GroupType<UserProfile>[] = nonInvitedProfiles;
-    if (invitedProfiles.length !== 0) {
-        options = [
-            {label: 'INVITED MEMBERS', options: invitedProfiles},
-            {label: 'NON INVITED MEMBERS', options: nonInvitedProfiles},
-        ];
-    }
-
-    let badgeContent = '';
-    const numInvitedMembers = props.userIds.length;
-    if (numInvitedMembers > 0) {
-        badgeContent = `${numInvitedMembers} MEMBER${numInvitedMembers > 1 ? 'S' : ''}`;
-    }
-
-    // Type guard to check whether the current options is a group or a plain list
-    const isGroup = (option: UserProfile | GroupType<UserProfile>): option is GroupType<UserProfile> => (
-        (option as GroupType<UserProfile>).label
-    );
+    }, [props.commanderID, searchTerm]);
 
     return (
         <StyledReactSelect
-            badgeContent={badgeContent}
-            closeMenuOnSelect={false}
+            closeMenuOnSelect={true}
             onInputChange={setSearchTerm}
             options={options}
             filterOption={() => true}
             isDisabled={props.isDisabled}
             isMulti={false}
-            controlShouldRenderValue={false}
+            value={commanderUser}
+            controlShouldRenderValue={!props.isDisabled}
             onChange={(userAdded: UserProfile) => props.onAddUser(userAdded.id)}
             getOptionValue={(user: UserProfile) => user.id}
-            formatOptionLabel={(option: UserProfile) => (
-                <UserLabel
-                    onRemove={() => props.onRemoveUser(option.id)}
-                    id={option.id}
-                    invitedUsers={(options.length > 0 && isGroup(options[0])) ? options[0].options : []}
-                />
+            formatOptionLabel={(user: UserProfile) => (
+                <StyledProfile userId={user.id}/>
             )}
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
@@ -120,66 +74,20 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
                     minHeight: 34,
                 }),
             }}
-            classNamePrefix='invite-users-selector'
+            classNamePrefix='assign-commander-selector'
             captureMenuScroll={false}
         />
     );
 };
 
-export default InviteUsersSelector;
-
-interface UserLabelProps {
-    onRemove: () => void;
-    id: string;
-    invitedUsers: OptionsType<UserProfile>;
-}
-
-const UserLabel: FC<UserLabelProps> = (props: UserLabelProps) => {
-    let icon = <PlusIcon/>;
-    if (props.invitedUsers.find((user: UserProfile) => user.id === props.id)) {
-        icon = <Remove onClick={props.onRemove}>{'Remove'}</Remove>;
-    }
-
-    return (
-        <>
-            <StyledProfile userId={props.id}/>
-            {icon}
-        </>
-    );
-};
-
-const Remove = styled.span`
-    display: inline-block;
-
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 9px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-
-    :hover {
-    cursor: pointer;
-    }
-`;
+export default AssignCommanderSelector;
 
 const StyledProfile = styled(Profile)`
+    color: var(--center-channel-color);
+
     && .image {
         width: 24px;
         height: 24px;
-    }
-`;
-
-const PlusIcon = styled.i`
-    // Only shows on hover, controlled in the style from
-    // .invite-users-selector__option--is-focused
-    display: none;
-
-    :before {
-        font-family: compass-icons;
-        font-size: 14.4px;
-        line-height: 17px;
-        color: var(--button-bg);
-        content: "\f415";
-        font-style: normal;
     }
 `;
 
@@ -187,17 +95,17 @@ const StyledReactSelect = styled(ReactSelect)`
     flex-grow: 1;
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
 
-    .invite-users-selector__input {
+    .assign-commander-selector__input {
         color: var(--center-channel-color);
     }
 
-    .invite-users-selector__menu {
+    .assign-commander-selector__menu {
         background-color: transparent;
         box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
     }
 
 
-    .invite-users-selector__option {
+    .assign-commander-selector__option {
         height: 36px;
         padding: 6px 21px 6px 12px;
         display: flex;
@@ -206,20 +114,16 @@ const StyledReactSelect = styled(ReactSelect)`
         align-items: center;
     }
 
-    .invite-users-selector__option--is-selected {
+    .assign-commander-selector__option--is-selected {
         background-color: var(--center-channel-bg);
         color: var(--center-channel-color);
     }
 
-    .invite-users-selector__option--is-focused {
+    .assign-commander-selector__option--is-focused {
         background-color: rgba(var(--button-bg-rgb), 0.04);
-
-        ${PlusIcon} {
-            display: inline-block;
-        }
     }
 
-    .invite-users-selector__control {
+    .assign-commander-selector__control {
         -webkit-transition: all 0.15s ease;
         -webkit-transition-delay: 0s;
         -moz-transition: all 0.15s ease;
@@ -251,30 +155,15 @@ const StyledReactSelect = styled(ReactSelect)`
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-
-        &:after {
-            padding: 0px 4px;
-
-            /* Light / 8% Center Channel Text */
-            background: rgba(var(--center-channel-color-rgb), 0.08);
-            border-radius: 4px;
-
-
-            content: '${(props) => !props.isDisabled && props.badgeContent}';
-
-            font-weight: 600;
-            font-size: 10px;
-            line-height: 16px;
-        }
     }
 
-    .invite-users-selector__option {
+    .assign-commander-selector__option {
         &:active {
             background-color: var(--center-channel-color-08);
         }
     }
 
-    .invite-users-selector__group-heading {
+    .assign-commander-selector__group-heading {
         height: 32px;
         padding: 8px 12px 8px;
         font-size: 12px;
