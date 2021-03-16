@@ -967,7 +967,7 @@ describe('backstage playbook details', () => {
                         });
 
                         const channelDisplayName = String('Channel to delete ' + Date.now());
-                        const channelName = channelDisplayName.toLowerCase().replaceAll(' ', '-');
+                        const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
                         cy.apiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
                             // # Create a playbook with the channel to be deleted as the announcement channel
                             cy.apiCreatePlaybook({
