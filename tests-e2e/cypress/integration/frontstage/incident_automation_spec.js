@@ -423,5 +423,149 @@ describe('incident automation', () => {
                 });
             });
         });
+
+        describe('announcement channel setting', () => {
+            it('with channel configured and setting enabled', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+
+                // # Create a playbook with a couple of invited users and the setting enabled, and an incident with it
+                cy.apiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
+                    return cy.apiCreatePlaybook({
+                        teamId,
+                        title: playbookName,
+                        createPublicIncident: true,
+                        memberIDs: [userId],
+                        announcementChannelId: channel.id,
+                        announcementChannelEnabled: true,
+                    });
+                }).then((playbook) => {
+                    // # Create a new incident with that playbook
+                    const now = Date.now();
+                    const incidentName = `Incident (${now})`;
+                    const incidentChannelName = `incident-${now}`;
+
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName,
+                        commanderUserId: userId,
+                        description: 'Incident description.',
+                    });
+
+                    // # Navigate to the incident channel.
+                    cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                    // * Verify that the channel is created and that the first post exists.
+                    cy.getFirstPostId().then((id) => {
+                        cy.get(`#postMessageText_${id}`)
+                            .contains('You were added to the channel by @incident.')
+                            .should('not.contain', 'joined the channel');
+                    });
+
+                    // # Navigate to the announcement channel
+                    cy.visit('/ad-1/channels/town-square');
+
+                    cy.getLastPostId().then((lastPostId) => {
+                        cy.get(`#postMessageText_${lastPostId}`).contains(`New Incident: ~${incidentName}`);
+                        cy.get(`#postMessageText_${lastPostId}`).contains('Commander: @user-1');
+                        cy.get(`#postMessageText_${lastPostId}`).contains('Description: Incident description.');
+                    });
+                });
+            });
+
+            it('with channel configured and setting disabled', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+
+                // # Create a playbook with a couple of invited users and the setting enabled, and an incident with it
+                cy.apiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
+                    return cy.apiCreatePlaybook({
+                        teamId,
+                        title: playbookName,
+                        createPublicIncident: true,
+                        memberIDs: [userId],
+                        announcementChannelId: channel.id,
+                        announcementChannelEnabled: false,
+                    });
+                }).then((playbook) => {
+                    // # Create a new incident with that playbook
+                    const now = Date.now();
+                    const incidentName = `Incident (${now})`;
+                    const incidentChannelName = `incident-${now}`;
+
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName,
+                        commanderUserId: userId,
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                    // * Verify that the channel is created and that the first post exists.
+                    cy.getFirstPostId().then((id) => {
+                        cy.get(`#postMessageText_${id}`)
+                            .contains('You were added to the channel by @incident.')
+                            .should('not.contain', 'joined the channel');
+                    });
+
+                    // # Navigate to the announcement channel
+                    cy.visit('/ad-1/channels/town-square');
+
+                    cy.getLastPostId().then((lastPostId) => {
+                        cy.get(`#postMessageText_${lastPostId}`).should('not.contain', `New Incident: ~${incidentName}`);
+                    });
+                });
+            });
+
+            it('with non-existent channel', () => {
+                let playbookId;
+
+                // # Create a playbook with a channel that is later deleted
+                cy.apiLogin('sysadmin').then(() => {
+                    const channelDisplayName = String('Channel to delete ' + Date.now());
+                    const channelName = channelDisplayName.toLowerCase().replaceAll(' ', '-');
+                    cy.apiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
+                        // # Create a playbook with the channel to be deleted as the announcement channel
+                        cy.apiCreatePlaybook({
+                            teamId,
+                            title: 'Playbook (' + Date.now() + ')',
+                            createPublicIncident: true,
+                            memberIDs: [userId],
+                            announcementChannelId: channel.id,
+                            announcementChannelEnabled: true,
+                        }).then((playbook) => {
+                            playbookId = playbook.id;
+                        });
+
+                        // # Delete channel
+                        cy.apiDeleteChannel(channel.id);
+                    });
+                }).then(() => {
+                    cy.apiLogin('user-1');
+
+                    // # Create a new incident with the playbook.
+                    const now = Date.now();
+                    const incidentName = `Incident (${now})`;
+                    const incidentChannelName = `incident-${now}`;
+
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId,
+                        incidentName,
+                        commanderUserId: userId,
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                    // * Verify that there is an error message from the incident bot
+                    cy.getNthPostId(1).then((id) => {
+                        cy.get(`#postMessageText_${id}`)
+                            .contains('Failed to announce the creation of this incident in the configured channel.');
+                    });
+                });
+            });
+        });
     });
 });

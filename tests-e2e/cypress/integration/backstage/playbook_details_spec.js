@@ -785,6 +785,241 @@ describe('backstage playbook details', () => {
                     });
                 });
             });
+
+            describe('announcement channel setting', () => {
+                it('is disabled in a new playbook', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('#announcement-channel label input').should('not.be.checked');
+                });
+
+                it('can be enabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#announcement-channel').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('be.checked');
+                    });
+                });
+
+                it('does not let select a channel when disabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('#announcement-channel label input').should('not.be.checked');
+
+                    // * Verify that the channel selector is disabled
+                    cy.get('#announcement-channel').within(() => {
+                        cy.getStyledComponent('StyledAsyncSelect').should('have.class', 'channel-selector--is-disabled');
+                    });
+                });
+
+                it('allows selecting a channel when enabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#announcement-channel').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the channel selector
+                        cy.openChannelSelector();
+
+                        // # Select a channel
+                        cy.selectChannel('Town Square');
+
+                        // * Verify that the control shows the selected commander
+                        cy.get('.channel-selector__control').contains('Town Square');
+                    });
+                });
+
+                it('allows changing the channel', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#announcement-channel').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the channel selector
+                        cy.openChannelSelector();
+
+                        // # Select a channel
+                        cy.selectChannel('Town Square');
+
+                        // * Verify that the control shows the selected channel
+                        cy.get('.channel-selector__control').contains('Town Square');
+
+                        // # Open the channel selector
+                        cy.get('.channel-selector__control').click({force: true});
+
+                        // # Select a new channel
+                        cy.selectChannel('commodi');
+
+                        // * Verify that the control shows the selected channel
+                        cy.get('.channel-selector__control').contains('commodi');
+                    });
+                });
+
+                it('persists the channel even if the toggle is off', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#announcement-channel').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the channel selector
+                        cy.openChannelSelector();
+
+                        // # Select a channel
+                        cy.selectChannel('Town Square');
+
+                        // * Verify that the control shows the selected channel
+                        cy.get('.channel-selector__control').contains('Town Square');
+
+                        // # Click on the toggle to disable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+                    });
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Navigate again to the playbook
+                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                    // # Switch to Automation tab
+                    cy.get('#root').findByText('Automation').click();
+
+                    cy.get('#announcement-channel').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // * Verify that the control still shows the selected channel
+                        cy.get('.channel-selector__control').contains('Town Square');
+                    });
+                });
+
+                it('removes the channel and disables the setting if the channel no longer exists', () => {
+                    // # Create a playbook with a user that is later removed from the team
+                    cy.apiLogin('sysadmin').then(() => {
+                        // # We need to increase the maximum number of users per team; otherwise,
+                        // adding a new member to the team fails in CI
+                        cy.apiUpdateConfig({
+                            TeamSettings: {
+                                MaxUsersPerTeam: 1000,
+                            },
+                        });
+
+                        const channelDisplayName = String('Channel to delete ' + Date.now());
+                        const channelName = channelDisplayName.toLowerCase().replaceAll(' ', '-');
+                        cy.apiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
+                            // # Create a playbook with the channel to be deleted as the announcement channel
+                            cy.apiCreatePlaybook({
+                                teamId,
+                                title: 'Playbook (' + Date.now() + ')',
+                                createPublicIncident: true,
+                                memberIDs: [userId],
+                                announcementChannelId: channel.id,
+                                announcementChannelEnabled: true,
+                            }).then((playbook) => {
+                                playbookId = playbook.id;
+                            });
+
+                            // # Delete channel
+                            cy.apiDeleteChannel(channel.id);
+                        });
+                    }).then(() => {
+                        cy.apiLogin('user-1');
+
+                        // # Navigate again to the playbook
+                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                        // # Switch to Automation tab
+                        cy.get('#root').findByText('Automation').click();
+
+                        // # Save the playbook
+                        cy.findByTestId('save_playbook').click();
+
+                        // * Make sure the playbook is correctly saved
+                        cy.url().should('not.include', playbookId);
+
+                        // # Navigate again to the playbook
+                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}`);
+
+                        // # Switch to Automation tab
+                        cy.get('#root').findByText('Automation').click();
+
+                        cy.get('#announcement-channel').within(() => {
+                            // * Verify that the toggle is unchecked
+                            cy.get('label input').should('not.be.checked');
+
+                            // # Click on the toggle to enable the setting
+                            cy.get('label input').click({force: true});
+
+                            // * Verify that the control shows no selected channel
+                            cy.get('.channel-selector__control').within(() => {
+                                cy.findByText('Search for channel');
+                            });
+                        });
+                    });
+                });
+            });
         });
     });
 });

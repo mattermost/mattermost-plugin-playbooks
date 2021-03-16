@@ -202,6 +202,16 @@ Cypress.Commands.add('apiPatchChannel', (channelId, channelData) => {
     });
 });
 
+Cypress.Commands.add('apiDeleteChannel', (channelId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        method: 'DELETE',
+        url: `/api/v4/channels/${channelId}`,
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+    });
+});
+
 // *****************************************************************************
 // Plugins
 // https://api.mattermost.com/#tag/plugins
