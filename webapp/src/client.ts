@@ -252,12 +252,10 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
 }
 
 export async function clientRemoveTimelineEvent(incidentID: string, entryID: string) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
         method: 'delete',
         body: '',
     });
-
-    return data;
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {
@@ -347,6 +345,20 @@ export const doFetchWithTextResponse = async (url: string, options = {}) => {
 
     throw new ClientError(Client4.url, {
         message: data || '',
+        status_code: response.status,
+        url,
+    });
+};
+
+export const doFetchWithoutResponse = async (url: string, options = {}) => {
+    const response = await fetch(url, Client4.getOptions(options));
+
+    if (response.ok) {
+        return;
+    }
+
+    throw new ClientError(Client4.url, {
+        message: '',
         status_code: response.status,
         url,
     });
