@@ -137,7 +137,7 @@ describe('timeline', () => {
             cy.findByTestId('timeline').click();
 
             // * Verify we can see the task event in the timeline
-            clickOnFilterOption('All Events');
+            clickOnFilterOption('All events');
             verifyTimelineEvent('task_state_modified', 1, 1, 'user-1 checked off checklist item "Step 1"');
         });
     });
@@ -325,55 +325,54 @@ describe('timeline', () => {
             cy.findByTestId('timeline').click();
 
             // # Remove default options
-            clickOnFilterOption('Incident report');
-            clickOnFilterOption('Commander change');
-            clickOnFilterOption('Status update');
-            clickOnFilterOption('Channel message');
+            clickOnFilterOption('Commander changes');
+            clickOnFilterOption('Status updates');
+            clickOnFilterOption('Events from posts');
 
             // # Filter to Commander Changed only
-            clickOnFilterOption('Commander change');
+            clickOnFilterOption('Commander changes');
             verifyTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
             verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
-            clickOnFilterOption('Commander change');
+            clickOnFilterOption('Commander changes');
 
             // # Filter to Status Updates only
-            clickOnFilterOption('Status update');
+            clickOnFilterOption('Status updates');
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
-            cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
-            clickOnFilterOption('Status update');
+            cy.findAllByTestId(/timeline-item .*/).should('have.length', 3);
+            clickOnFilterOption('Status updates');
 
             // # Filter to Events From Posts only
-            clickOnFilterOption('Channel message');
+            clickOnFilterOption('Events from posts');
             verifyTimelineEvent('event_from_post', 1, 0, summary1);
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
-            clickOnFilterOption('Channel message');
+            clickOnFilterOption('Events from posts');
 
             // # Filter to Tasks only
-            clickOnFilterOption('Task state change');
+            clickOnFilterOption('Task state changes');
             verifyTimelineEvent('task_state_modified', 1, 0, 'user-1 checked off checklist item "Step 1"');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
-            clickOnFilterOption('Task state change');
+            clickOnFilterOption('Task state changes');
 
             // * Filter to Task Assignee Changed only
-            clickOnFilterOption('Task assignment');
+            clickOnFilterOption('Task assignments');
             verifyTimelineEvent('assignee_changed', 1, 0, 'Assignee Changed');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
-            clickOnFilterOption('Task assignment');
+            clickOnFilterOption('Task assignments');
 
             // * Filter to Slash Commands only
-            clickOnFilterOption('Slash command');
+            clickOnFilterOption('Slash commands');
             verifyTimelineEvent('ran_slash_command', 1, 0, 'Slash Command Executed');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 1);
-            clickOnFilterOption('Slash command');
+            clickOnFilterOption('Slash commands');
 
             // # Click a couple options to makes sure All below works even when some are selected
-            clickOnFilterOption('Status update');
-            clickOnFilterOption('Task state change');
+            clickOnFilterOption('Status updates');
+            clickOnFilterOption('Task state changes');
 
             // * Verify we can see all events:
-            clickOnFilterOption('All Events');
+            clickOnFilterOption('All events');
 
             // * Verify all events are shown
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 9);

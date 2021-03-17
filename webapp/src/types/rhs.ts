@@ -39,7 +39,6 @@ export interface TimelineEvent {
 
 export interface TimelineEventsFilter {
     all: boolean;
-    incident_created: boolean;
     commander_changed: boolean;
     status_updated: boolean;
     event_from_post: boolean;
@@ -50,7 +49,6 @@ export interface TimelineEventsFilter {
 
 export const TimelineEventsFilterDefault = {
     all: false,
-    incident_created: true,
     commander_changed: true,
     status_updated: true,
     event_from_post: true,
@@ -61,7 +59,6 @@ export const TimelineEventsFilterDefault = {
 
 export const TimelineEventsFilterAll = {
     all: true,
-    incident_created: false,
     commander_changed: false,
     status_updated: false,
     event_from_post: false,

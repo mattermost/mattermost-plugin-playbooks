@@ -135,49 +135,43 @@ const RHSTimeline = (props: Props) => {
 
     const filterOptions = [
         {
-            display: 'All Events',
+            display: 'All events',
             value: 'all',
             selected: eventsFilter.all,
             disabled: false,
         },
         {
-            display: 'Incident report',
-            value: TimelineEventType.IncidentCreated,
-            selected: eventsFilter.incident_created,
-            disabled: eventsFilter.all,
-        },
-        {
-            display: 'Commander change',
+            display: 'Commander changes',
             value: TimelineEventType.CommanderChanged,
             selected: eventsFilter.commander_changed,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Status update',
+            display: 'Status updates',
             value: TimelineEventType.StatusUpdated,
             selected: eventsFilter.status_updated,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Channel message',
+            display: 'Events from posts',
             value: TimelineEventType.EventFromPost,
             selected: eventsFilter.event_from_post,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Task state change',
+            display: 'Task state changes',
             value: TimelineEventType.TaskStateModified,
             selected: eventsFilter.task_state_modified,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Task assignment',
+            display: 'Task assignments',
             value: TimelineEventType.AssigneeChanged,
             selected: eventsFilter.assignee_changed,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Slash command',
+            display: 'Slash commands',
             value: TimelineEventType.RanSlashCommand,
             selected: eventsFilter.ran_slash_command,
             disabled: eventsFilter.all,
@@ -225,5 +219,7 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
     if (filter.all) {
         return true;
     }
-    return (filter as unknown as Record<string, boolean>)[eventType];
+    const filterRecord = filter as unknown as Record<string, boolean>;
+    return filterRecord[eventType] ||
+        (eventType === TimelineEventType.IncidentCreated && filterRecord[TimelineEventType.StatusUpdated]);
 };

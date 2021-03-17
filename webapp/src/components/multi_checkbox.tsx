@@ -13,7 +13,7 @@ const IconWrapper = styled.div`
 `;
 
 const FilterCheckboxContainer = styled(CheckboxContainer)`
-    margin: 0 40px 0 20px;
+    margin: 0 34px 0 20px;
     line-height: 30px;
     align-items: center;
 
