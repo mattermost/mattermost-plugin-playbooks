@@ -60,8 +60,8 @@ const MultiCheckbox = (props: Props) => (
                 <i className='icon icon-filter-variant'/>
             </IconWrapper>
         }
-        menuCSS={'left: -224px;'}
-        buttonCSS={'margin: 0 16px 0 auto;'}
+        wide={true}
+        buttonRight={true}
     >
         {props.options.map((option, idx) => {
             const checkboxContainer = (

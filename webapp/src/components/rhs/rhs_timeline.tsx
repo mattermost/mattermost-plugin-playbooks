@@ -48,7 +48,7 @@ const Header = styled.div`
 `;
 
 const Timeline = styled.ul`
-    margin: 35px 0 200px 0;
+    margin: 24px 0 200px 0;
     padding: 0;
     list-style: none;
     position: relative;

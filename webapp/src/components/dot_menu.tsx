@@ -7,7 +7,7 @@ import styled, {css} from 'styled-components';
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
 interface DotMenuButtonProps {
-    extraCSS?: string;
+    right?: boolean;
 }
 
 const DotMenuButton = styled.div<DotMenuButtonProps>`
@@ -27,7 +27,9 @@ const DotMenuButton = styled.div<DotMenuButtonProps>`
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
-    ${(props) => (props.extraCSS && css`${props.extraCSS}`)}
+    ${(props) => (props.right && css`
+        margin: 0 16px 0 auto;
+    `)}
 `;
 
 const DropdownMenuWrapper = styled.div`
@@ -37,7 +39,7 @@ const DropdownMenuWrapper = styled.div`
 interface DropdownMenuProps {
     top?: boolean;
     left?: boolean;
-    extraCSS?: string;
+    wide?: boolean;
 }
 
 const DropdownMenu = styled.div<DropdownMenuProps>`
@@ -50,6 +52,10 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
         left: -197px;
         top: 35px;
     `)};
+    ${(props) => (props.wide && css`
+        left: -224px;
+    `)};
+
     min-width: 160px;
     text-align: left;
     list-style: none;
@@ -68,7 +74,6 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     border-radius: 4px;
 
     z-index: 1;
-    ${(props) => (props.extraCSS && css`${props.extraCSS}`)};
 `;
 
 interface DotMenuProps {
@@ -76,8 +81,8 @@ interface DotMenuProps {
     icon: JSX.Element;
     top?: boolean;
     left?: boolean;
-    menuCSS?: string;
-    buttonCSS?: string;
+    wide?: boolean;
+    buttonRight?: boolean;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
@@ -102,7 +107,7 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
-            extraCSS={props.buttonCSS}
+            right={props.buttonRight}
         >
             {props.icon}
             <DropdownMenuWrapper>
@@ -112,7 +117,7 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                         data-testid='dropdownmenu'
                         top={props.top}
                         left={props.left}
-                        extraCSS={props.menuCSS}
+                        wide={props.wide}
                     >
                         {props.children}
                     </DropdownMenu>
