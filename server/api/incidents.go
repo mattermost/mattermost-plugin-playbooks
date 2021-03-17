@@ -361,6 +361,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing commander user id of incident")
 	}
 
+	if newIncident.Name == "" {
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing name of incident")
+	}
+
 	// Commander should have permission to the team
 	if !permissions.CanViewTeam(newIncident.CommanderUserID, newIncident.TeamID, h.pluginAPI) {
 		return nil, errors.Wrap(incident.ErrPermission, "commander user does not have permissions for the team")
