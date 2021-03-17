@@ -89,13 +89,8 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 		return err
 	}
 
-	announcementChannel, err := s.pluginAPI.Channel.Get(theIncident.AnnouncementChannelID)
-	if err != nil {
+	if err := permissions.IsChannelActiveInTeam(theIncident.AnnouncementChannelID, theIncident.TeamID, s.pluginAPI); err != nil {
 		return err
-	}
-
-	if announcementChannel.DeleteAt != 0 {
-		return fmt.Errorf("channel with ID %s is deleted", announcementChannel.Id)
 	}
 
 	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
@@ -104,7 +99,7 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 		announcementMsg += fmt.Sprintf("**Description**: %s\n", theIncident.Description)
 	}
 
-	if _, err := s.poster.PostMessage(announcementChannel.Id, announcementMsg); err != nil {
+	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
 	}
 

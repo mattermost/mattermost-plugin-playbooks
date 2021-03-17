@@ -91,25 +91,20 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if pbook.AnnouncementChannelID != "" {
-		channel, err := h.pluginAPI.Channel.Get(pbook.AnnouncementChannelID)
-		if err != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("announcement channel with ID %s does not exist", pbook.AnnouncementChannelID), err)
-			return
-		}
+		if err := permissions.IsChannelActiveInTeam(pbook.AnnouncementChannelID, pbook.TeamID, h.pluginAPI); err != nil {
+			switch {
+			case errors.Is(err, permissions.ErrChannelNotFound):
+				HandleErrorWithCode(w, http.StatusBadRequest, "announcement channel does not exist", err)
+				return
 
-		if channel.DeleteAt != 0 {
-			HandleErrorWithCode(w, http.StatusBadRequest, "channel is archived", errors.Errorf("channel with ID %s is archived", channel.Id))
-			return
-		}
+			case errors.Is(err, permissions.ErrChannelDeleted):
+				HandleErrorWithCode(w, http.StatusBadRequest, "channel is archived", err)
+				return
 
-		if channel.TeamId != pbook.TeamID {
-			HandleErrorWithCode(w, http.StatusForbidden, "Channel is on a different team", errors.Errorf(
-				"channel with ID %s is on team with ID %s; playbook team ID is %s",
-				channel.Id,
-				channel.TeamId,
-				pbook.TeamID,
-			))
-			return
+			case errors.Is(err, permissions.ErrChannelNotInExpectedTeam):
+				HandleErrorWithCode(w, http.StatusForbidden, "channel is on a different team", err)
+				return
+			}
 		}
 	}
 
@@ -218,23 +213,10 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if pbook.AnnouncementChannelID != "" {
-		channel, err2 := h.pluginAPI.Channel.Get(pbook.AnnouncementChannelID)
-		if err2 != nil {
-			h.pluginAPI.Log.Warn("announcement channel does not exist, disabling announcement channel", "channelID", pbook.AnnouncementChannelID)
+		if err2 := permissions.IsChannelActiveInTeam(pbook.AnnouncementChannelID, pbook.TeamID, h.pluginAPI); err2 != nil {
+			h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting", "error", err2.Error())
 			pbook.AnnouncementChannelID = ""
 			pbook.AnnouncementChannelEnabled = false
-		} else {
-			if channel.DeleteAt != 0 {
-				h.pluginAPI.Log.Warn("announcement channel is archived, disabling announcement channel", "channelID", pbook.AnnouncementChannelID)
-				pbook.AnnouncementChannelID = ""
-				pbook.AnnouncementChannelEnabled = false
-			}
-
-			if channel.TeamId != pbook.TeamID {
-				h.pluginAPI.Log.Warn("announcement channel does not not belong to the playbook's team, disabling announcement channel", "teamID", pbook.TeamID, "channel teamID", channel.TeamId)
-				pbook.AnnouncementChannelID = ""
-				pbook.AnnouncementChannelEnabled = false
-			}
 		}
 	}
 
