@@ -22,34 +22,30 @@ interface Props {
     onChannelSelected: (channelID: string | undefined) => void;
 }
 
-export const Announcement: FC<Props> = (props: Props) => {
-    return (
-        <>
-            <AutomationHeader>
-                <AutomationTitle>
-                    <Toggle
-                        isChecked={props.enabled}
-                        onChange={props.onToggle}
-                    />
-                    <div>{'Announce in another channel'}</div>
-                </AutomationTitle>
-                <SelectorWrapper>
-                    <StyledChannelSelector
-                        id='playbook-automation-announcement'
-                        onChannelSelected={props.onChannelSelected}
-                        channelId={props.channelId}
-                        isClearable={false}
-                        selectComponents={{DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                        isDisabled={!props.enabled}
-                        captureMenuScroll={false}
-                        shouldRenderValue={props.enabled}
-                        placeholder={'Search for channel'}
-                    />
-                </SelectorWrapper>
-            </AutomationHeader>
-        </>
-    );
-};
+export const Announcement: FC<Props> = (props: Props) => (
+    <AutomationHeader>
+        <AutomationTitle>
+            <Toggle
+                isChecked={props.enabled}
+                onChange={props.onToggle}
+            />
+            <div>{'Announce in another channel'}</div>
+        </AutomationTitle>
+        <SelectorWrapper>
+            <StyledChannelSelector
+                id='playbook-automation-announcement'
+                onChannelSelected={props.onChannelSelected}
+                channelId={props.channelId}
+                isClearable={false}
+                selectComponents={{DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                isDisabled={!props.enabled}
+                captureMenuScroll={false}
+                shouldRenderValue={props.enabled}
+                placeholder={'Search for channel'}
+            />
+        </SelectorWrapper>
+    </AutomationHeader>
+);
 
 const StyledChannelSelector = styled(ChannelSelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
