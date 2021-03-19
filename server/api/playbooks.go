@@ -205,7 +205,6 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if pbook.AnnouncementChannelID != "" &&
-		pbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
 		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
 		h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
 		pbook.AnnouncementChannelID = ""
