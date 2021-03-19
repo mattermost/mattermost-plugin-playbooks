@@ -90,22 +90,14 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.AnnouncementChannelID != "" {
-		if err := permissions.IsChannelActiveInTeam(pbook.AnnouncementChannelID, pbook.TeamID, h.pluginAPI); err != nil {
-			switch {
-			case errors.Is(err, permissions.ErrChannelNotFound):
-				HandleErrorWithCode(w, http.StatusBadRequest, "announcement channel does not exist", err)
-				return
-
-			case errors.Is(err, permissions.ErrChannelDeleted):
-				HandleErrorWithCode(w, http.StatusBadRequest, "channel is archived", err)
-				return
-
-			case errors.Is(err, permissions.ErrChannelNotInExpectedTeam):
-				HandleErrorWithCode(w, http.StatusForbidden, "channel is on a different team", err)
-				return
-			}
-		}
+	if pbook.AnnouncementChannelID != "" &&
+		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.AnnouncementChannelID,
+		))
+		return
 	}
 
 	// Exclude guest users
@@ -212,12 +204,12 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		pbook.DefaultCommanderEnabled = false
 	}
 
-	if pbook.AnnouncementChannelID != "" {
-		if err2 := permissions.IsChannelActiveInTeam(pbook.AnnouncementChannelID, pbook.TeamID, h.pluginAPI); err2 != nil {
-			h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting", "error", err2.Error())
-			pbook.AnnouncementChannelID = ""
-			pbook.AnnouncementChannelEnabled = false
-		}
+	if pbook.AnnouncementChannelID != "" &&
+		pbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
+		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
+		pbook.AnnouncementChannelID = ""
+		pbook.AnnouncementChannelEnabled = false
 	}
 
 	err = h.playbookService.Update(pbook, userID)
