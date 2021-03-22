@@ -364,7 +364,6 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.6.0"),
 		toVersion:   semver.MustParse("0.7.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
@@ -412,6 +411,129 @@ var migrations = []Migration{
 				}
 				if _, err := e.Exec(createPGIndex("IR_TimelineEvent_IncidentID", "IR_TimelineEvent", "IncidentID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_TimelineEvent_IncidentID")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.7.0"),
+		toVersion:   semver.MustParse("0.8.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReporterUserID", "varchar(26) NOT NULL DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ReporterUserID", "TEXT NOT NULL DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
+				}
+			}
+			if _, err := e.Exec(`UPDATE IR_Incident SET ReporterUserID = CommanderUserID WHERE ReporterUserID = ''`); err != nil {
+				return errors.Wrapf(err, "Failed to migrate ReporterUserID")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.8.0"),
+		toVersion:   semver.MustParse("0.9.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedInvitedUserIDs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedUserIDs to table IR_Incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET ConcatenatedInvitedUserIDs = '' WHERE ConcatenatedInvitedUserIDs IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column ConcatenatedInvitedUserIDs of table IR_Incident")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedInvitedUserIDs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedUserIDs to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET ConcatenatedInvitedUserIDs = '' WHERE ConcatenatedInvitedUserIDs IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column ConcatenatedInvitedUserIDs of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "InviteUsersEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column InviteUsersEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ConcatenatedInvitedUserIDs", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedUserIDs to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ConcatenatedInvitedUserIDs", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedUserIDs to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "InviteUsersEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column InviteUsersEnabled to table IR_Playbook")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.9.0"),
+		toVersion:   semver.MustParse("0.10.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "DefaultCommanderID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Incident")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "DefaultCommanderID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "DefaultCommanderEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "DefaultCommanderID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Incident")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "DefaultCommanderID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "DefaultCommanderEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderEnabled to table IR_Playbook")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.10.0"),
+		toVersion:   semver.MustParse("0.11.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec(`
+					UPDATE IR_Incident
+					INNER JOIN Channels ON IR_Incident.ChannelID = Channels.ID
+					SET IR_Incident.CreateAt = Channels.CreateAt,
+						IR_Incident.DeleteAt = Channels.DeleteAt
+					WHERE IR_Incident.CreateAt = 0
+						AND IR_Incident.DeleteAt = 0
+						AND IR_Incident.ChannelID = Channels.ID
+				`); err != nil {
+					return errors.Wrap(err, "failed updating table IR_Incident with Channels' CreateAt and DeleteAt values")
+				}
+			} else {
+				if _, err := e.Exec(`
+					UPDATE IR_Incident
+					SET CreateAt = Channels.CreateAt,
+						DeleteAt = Channels.DeleteAt
+					FROM Channels
+					WHERE IR_Incident.CreateAt = 0
+						AND IR_Incident.DeleteAt = 0
+						AND IR_Incident.ChannelID = Channels.ID
+				`); err != nil {
+					return errors.Wrap(err, "failed updating table IR_Incident with Channels' CreateAt and DeleteAt values")
 				}
 			}
 

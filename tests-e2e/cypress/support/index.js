@@ -11,6 +11,7 @@ import './ui_commands';
 import './plugin_ui_commands';
 import './api/preference';
 import './api/user';
+import './test_commands';
 
 require('cypress-terminal-report/src/installLogsCollector')();
 
@@ -62,7 +63,8 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    message: 'ending',
+                    status: 'Archived',
                 });
             });
         });
@@ -75,7 +77,8 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    message: 'ending',
+                    status: 'Archived',
                 });
             });
         });
@@ -107,7 +110,8 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    message: 'ending',
+                    status: 'Archived',
                 });
             });
         });
@@ -120,7 +124,8 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
                     incidentId: incident.id,
                     userId: user.id,
                     teamId,
-                    status: 'Resolved',
+                    message: 'ending',
+                    status: 'Archived',
                 });
             });
         });

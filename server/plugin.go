@@ -40,9 +40,9 @@ type Plugin struct {
 	bot             *bot.Bot
 }
 
-// ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
+// ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	p.handler.ServeHTTP(w, r, c.SourcePluginId)
+	p.handler.ServeHTTP(w, r)
 }
 
 // OnActivate Called when this plugin is activated.
@@ -51,10 +51,6 @@ func (p *Plugin) OnActivate() error {
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
-
-	if !pluginapi.IsE20LicensedOrDevelopment(pluginAPIClient.Configuration.GetConfig(), pluginAPIClient.System.GetLicense()) {
-		return errors.New("a valid Mattermost Enterprise E20 license is required to use this plugin")
-	}
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "incident",
@@ -136,7 +132,7 @@ func (p *Plugin) OnActivate() error {
 	incidentStore := sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 
-	p.handler = api.NewHandler()
+	p.handler = api.NewHandler(p.config)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
@@ -202,7 +198,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService)
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService, p.config)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("IncidentCollaborationPlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)

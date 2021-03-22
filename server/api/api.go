@@ -1,19 +1,15 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 )
-
-type contextKey string
-
-// PluginIDContextKey Key used to store the sourcePluginID for http requests.
-const PluginIDContextKey = "plugin_id"
 
 // Handler Root API handler.
 type Handler struct {
@@ -22,12 +18,17 @@ type Handler struct {
 }
 
 // NewHandler constructs a new handler.
-func NewHandler() *Handler {
+func NewHandler(config config.Service) *Handler {
 	handler := &Handler{}
 
 	root := mux.NewRouter()
 	api := root.PathPrefix("/api/v0").Subrouter()
 	api.Use(MattermostAuthorizationRequired)
+
+	e20middleware := e20LicenseRequired{
+		config: config,
+	}
+	api.Use(e20middleware.Middleware)
 	api.Handle("{anything:.*}", http.NotFoundHandler())
 	api.NotFoundHandler = http.NotFoundHandler()
 
@@ -37,8 +38,8 @@ func NewHandler() *Handler {
 	return handler
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, sourcePluginID string) {
-	h.root.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), contextKey(PluginIDContextKey), sourcePluginID)))
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.root.ServeHTTP(w, r)
 }
 
 // ReturnJSON writes the given pointer to object as json with a success response
@@ -97,12 +98,23 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 			return
 		}
 
-		pluginID, ok := r.Context().Value(PluginIDContextKey).(string)
-		if ok && pluginID != "" {
-			next.ServeHTTP(w, r)
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+	})
+}
+
+type e20LicenseRequired struct {
+	config config.Service
+}
+
+// Middleware checks if the server is appropriately licensed.
+func (m *e20LicenseRequired) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !m.config.IsLicensed() {
+			http.Error(w, "E20 license required", http.StatusForbidden)
+
 			return
 		}
 
-		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		next.ServeHTTP(w, r)
 	})
 }

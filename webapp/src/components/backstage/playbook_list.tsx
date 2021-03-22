@@ -28,6 +28,7 @@ import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {Banner} from 'src/components/backstage/shared';
 
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
@@ -45,7 +46,7 @@ const PlaybookList: FC = () => {
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
-    const [fetchParams, setFetchParams] = useState<{sort: string, direction: string, page: number, per_page: number}>(
+    const [fetchParams, setFetchParams] = useState<{ sort: string, direction: string, page: number, per_page: number }>(
         {
             sort: 'title',
             direction: 'asc',
@@ -83,7 +84,7 @@ const PlaybookList: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}`);
     };
 
-    const newPlaybook = (templateTitle?: string|undefined) => {
+    const newPlaybook = (templateTitle?: string | undefined) => {
         const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
         navigateToTeamPluginUrl(currentTeam.name, `/playbooks/new${queryParams}`);
     };
@@ -122,12 +123,10 @@ const PlaybookList: FC = () => {
     };
 
     const deleteSuccessfulBanner = showBanner && (
-        <div className='banner'>
-            <div className='banner__text'>
-                <i className='icon icon-check mr-1'/>
-                {`The playbook ${selectedPlaybook?.title} was successfully deleted.`}
-            </div>
-        </div>
+        <Banner>
+            <i className='icon icon-check mr-1'/>
+            {`The playbook ${selectedPlaybook?.title} was successfully deleted.`}
+        </Banner>
     );
 
     let body;
@@ -184,7 +183,7 @@ const PlaybookList: FC = () => {
 
     return (
         <div className='Playbook'>
-            { deleteSuccessfulBanner }
+            {deleteSuccessfulBanner}
             <TemplateSelector
                 onSelect={(template: PresetTemplate) => {
                     newPlaybook(template.title);
@@ -332,7 +331,7 @@ const Button = styled.button`
     }
 `;
 
-const NoContentPage = (props: {onNewPlaybook: () => void}) => {
+const NoContentPage = (props: { onNewPlaybook: () => void }) => {
     return (
         <Container>
             <Title>{'What is a Playbook?'}</Title>

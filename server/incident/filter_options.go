@@ -12,32 +12,35 @@ const PerPageDefault = 1000
 // FilterOptions specifies the optional parameters when getting headers.
 type FilterOptions struct {
 	// Gets all the headers with this TeamID.
-	TeamID string
+	TeamID string `url:"team_id,omitempty"`
 
 	// Pagination options.
-	Page    int
-	PerPage int
+	Page    int `url:"page,omitempty"`
+	PerPage int `url:"per_page,omitempty"`
 
 	// Sort sorts by this header field in json format (eg, "create_at", "end_at", "name", etc.);
 	// defaults to "create_at".
-	Sort string
+	Sort string `url:"sort,omitempty"`
 
 	// Direction orders by Asc (ascending), or Desc (descending); defaults to desc.
-	Direction string
+	Direction string `url:"direction,omitempty"`
 
 	// Status filters by current status
 	Status string
 
+	// Statuses filters by all statuses in the list (inclusive)
+	Statuses []string
+
 	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
-	CommanderID string
+	CommanderID string `url:"commander_user_id,omitempty"`
 
 	// MemberID filters incidents that have this member. Defaults to blank (no filter).
-	MemberID string
+	MemberID string `url:"member_id,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
 	// not returned in relevance order).
-	SearchTerm string
+	SearchTerm string `url:"search_term,omitempty"`
 }
 
 const (

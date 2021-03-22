@@ -13,7 +13,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {fetchIncident, fetchIncidentMetadata} from 'src/client';
-import {Incident, Metadata as IncidentMetadata, incidentIsActive} from 'src/types/incident';
+import {Incident, Metadata as IncidentMetadata, incidentIsActive, incidentCurrentStatus} from 'src/types/incident';
 import Profile from 'src/components/profile/profile';
 import {OVERLAY_DELAY, ErrorPageTypes} from 'src/constants';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
@@ -219,19 +219,6 @@ const BackstageIncidentDetailsContainer = styled.div`
         text-align: center;
         width: 100%;
     }
-
-    .banner {
-        color: #155724;
-        background-color: #d4edda;
-        border-color: #c3e6cb;
-        position: fixed;
-        top: 0;
-        width: calc(100% - 32rem);
-        z-index: 8;
-        overflow: hidden;
-        padding: 0.5rem 2.4rem;
-        text-align: center;
-    }
 `;
 
 const FetchingStateType = {
@@ -287,7 +274,7 @@ const BackstageIncidentDetails: FC = () => {
                 <IncidentTitle data-testid='incident-title'>
                     {`Incident ${incident.name}`}
                 </IncidentTitle>
-                <StatusBadge isActive={incidentIsActive(incident)}/>
+                <StatusBadge status={incidentCurrentStatus(incident)}/>
                 <NavbarPadding/>
                 <CommanderContainer>
                     <span className='label'>{'Commander:'}</span>

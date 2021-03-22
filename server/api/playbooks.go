@@ -79,6 +79,30 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	for _, userID := range pbook.InvitedUserIDs {
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+				"invited user with ID %s does not have permission to playbook's team %s",
+				userID,
+				pbook.TeamID,
+			))
+			return
+		}
+	}
+
+	// Exclude guest users
+	if isGuest, err := permissions.IsGuest(userID, h.pluginAPI); err != nil {
+		HandleError(w, err)
+		return
+	} else if isGuest {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create playbook on teamID %s because they are a guest",
+			userID,
+			pbook.TeamID,
+		))
+		return
+	}
+
 	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
@@ -154,6 +178,22 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	filteredUsers := []string{}
+	for _, userID := range pbook.InvitedUserIDs {
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			h.pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
+			continue
+		}
+		filteredUsers = append(filteredUsers, userID)
+	}
+	pbook.InvitedUserIDs = filteredUsers
+
+	if pbook.DefaultCommanderID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, h.pluginAPI) {
+		h.pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
+		pbook.DefaultCommanderID = ""
+		pbook.DefaultCommanderEnabled = false
+	}
+
 	err = h.playbookService.Update(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
@@ -210,6 +250,19 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
+			userID,
+			teamID,
+		))
+		return
+	}
+
+	// Exclude guest users
+	if isGuest, errg := permissions.IsGuest(userID, h.pluginAPI); errg != nil {
+		HandleError(w, errg)
+		return
+	} else if isGuest {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to get playbooks on teamID %s because they are a guest",
 			userID,
 			teamID,
 		))

@@ -172,3 +172,8 @@ func (c *ServiceImpl) IsConfiguredForDevelopmentAndTesting() bool {
 		config.ServiceSettings.EnableDeveloper != nil &&
 		*config.ServiceSettings.EnableDeveloper
 }
+
+// IsLicensed returns true when the server is appropriately licensed to run this plugin.
+func (c *ServiceImpl) IsLicensed() bool {
+	return pluginapi.IsE20LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
+}

@@ -23,12 +23,13 @@ type RudderTelemetry struct {
 
 // Unique strings that identify each of the tracked events
 const (
-	eventIncident         = "incident"
-	actionCreate          = "create"
-	actionEnd             = "end"
-	actionRestart         = "restart"
-	actionChangeCommander = "change_commander"
-	actionUpdateStatus    = "update_status"
+	eventIncident                  = "incident"
+	actionCreate                   = "create"
+	actionEnd                      = "end"
+	actionRestart                  = "restart"
+	actionChangeCommander          = "change_commander"
+	actionUpdateStatus             = "update_status"
+	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
 
 	eventTasks                = "tasks"
 	actionAddTask             = "add_task"
@@ -106,7 +107,7 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 	return map[string]interface{}{
 		"UserActualID":        userID,
 		"IncidentID":          incdnt.ID,
-		"CurrentStatus":       incdnt.CurrentStatus(),
+		"CurrentStatus":       incdnt.CurrentStatus,
 		"CommanderUserID":     incdnt.CommanderUserID,
 		"TeamID":              incdnt.TeamID,
 		"CreateAt":            incdnt.CreateAt,
@@ -157,6 +158,13 @@ func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = action
 	t.track(eventFrontend, properties)
+}
+
+// AddPostToTimeline tracks userID creating a timeline event from a post.
+func (t *RudderTelemetry) AddPostToTimeline(incdnt *incident.Incident, userID string) {
+	properties := incidentProperties(incdnt, userID)
+	properties["Action"] = actionAddTimelineEventFromPost
+	t.track(eventIncident, properties)
 }
 
 func taskProperties(incidentID, userID string) map[string]interface{} {

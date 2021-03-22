@@ -21,7 +21,7 @@ import {StatusFilter} from 'src/components/backstage/incidents/incident_list/sta
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/pagination_row';
-import {FetchIncidentsParams, Incident, incidentIsActive} from 'src/types/incident';
+import {FetchIncidentsParams, Incident, incidentIsActive, incidentCurrentStatus} from 'src/types/incident';
 import {
     fetchCommandersInTeam,
     fetchIncidents,
@@ -283,6 +283,7 @@ const BackstageIncidentList: FC = () => {
                         onSearch={debounce(setSearchTerm, debounceDelay)}
                     />
                     <ProfileSelector
+                        testId={'commander-filter'}
                         selectedUserId={fetchParams.commander_user_id}
                         placeholder={'Commander'}
                         enableEdit={true}
@@ -359,7 +360,7 @@ const BackstageIncidentList: FC = () => {
                             />
                         </a>
                         <div className='col-sm-2'>
-                            <StatusBadge isActive={incidentIsActive(incident)}/>
+                            <StatusBadge status={incidentCurrentStatus(incident)}/>
                         </div>
                         <div
                             className='col-sm-2'

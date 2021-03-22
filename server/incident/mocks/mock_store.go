@@ -7,6 +7,7 @@ package mock_incident
 import (
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	permissions "github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	reflect "reflect"
 	time "time"
 )
@@ -94,7 +95,7 @@ func (mr *MockStoreMockRecorder) GetAllIncidentMembersCount(arg0 interface{}) *g
 }
 
 // GetCommanders mocks base method
-func (m *MockStore) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockStore) GetCommanders(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -139,7 +140,7 @@ func (mr *MockStoreMockRecorder) GetIncidentIDForChannel(arg0 interface{}) *gomo
 }
 
 // GetIncidents mocks base method
-func (m *MockStore) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockStore) GetIncidents(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)
@@ -151,6 +152,21 @@ func (m *MockStore) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.Filt
 func (mr *MockStoreMockRecorder) GetIncidents(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncidents", reflect.TypeOf((*MockStore)(nil).GetIncidents), arg0, arg1)
+}
+
+// GetTimelineEvent mocks base method
+func (m *MockStore) GetTimelineEvent(arg0, arg1 string) (*incident.TimelineEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTimelineEvent", arg0, arg1)
+	ret0, _ := ret[0].(*incident.TimelineEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTimelineEvent indicates an expected call of GetTimelineEvent
+func (mr *MockStoreMockRecorder) GetTimelineEvent(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimelineEvent", reflect.TypeOf((*MockStore)(nil).GetTimelineEvent), arg0, arg1)
 }
 
 // NukeDB mocks base method

@@ -200,7 +200,7 @@ function generateRandomUser(prefix = 'user') {
     return {
         email: `${prefix}${randomId}@sample.mattermost.com`,
         username: `${prefix}${randomId}`,
-        password: 'passwd',
+        password: 'A7G|h>sJ4RNNc;&7Q[ey',
         first_name: `First${randomId}`,
         last_name: `Last${randomId}`,
         nickname: `Nickname${randomId}`,

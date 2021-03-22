@@ -25,6 +25,10 @@ type Playbook struct {
 	BroadcastChannelID          string      `json:"broadcast_channel_id"`
 	ReminderMessageTemplate     string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs              []string    `json:"invited_user_ids"`
+	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
+	DefaultCommanderID          string      `json:"default_commander_id"`
+	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -35,6 +39,9 @@ func (p Playbook) Clone() Playbook {
 	}
 	newPlaybook.Checklists = newChecklists
 	newPlaybook.MemberIDs = append([]string(nil), p.MemberIDs...)
+	if len(p.InvitedUserIDs) != 0 {
+		newPlaybook.InvitedUserIDs = append([]string(nil), p.InvitedUserIDs...)
+	}
 	return newPlaybook
 }
 
@@ -53,6 +60,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.MemberIDs == nil {
 		old.MemberIDs = []string{}
+	}
+	if old.InvitedUserIDs == nil {
+		old.InvitedUserIDs = []string{}
 	}
 
 	return json.Marshal(old)

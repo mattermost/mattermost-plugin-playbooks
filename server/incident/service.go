@@ -12,6 +12,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -57,6 +58,12 @@ const DialogFieldReminderInSecondsKey = "reminder"
 // DialogFieldStatusKey is the key for the status select field used in UpdateIncidentDialog
 const DialogFieldStatusKey = "status"
 
+// DialogFieldIncidentKey is the key for the incident chosen in AddToTimelineDialog
+const DialogFieldIncidentKey = "incident"
+
+// DialogFieldSummary is the key for the summary in AddToTimelineDialog
+const DialogFieldSummary = "summary"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -72,12 +79,23 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options FilterOptions) (*GetIncidentsResults, error) {
+func (s *ServiceImpl) GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(requesterInfo, options)
 }
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
+	if incdnt.DefaultCommanderID != "" {
+		// Check if the user is a member of the incident's team
+		if !permissions.IsMemberOfTeamID(incdnt.DefaultCommanderID, incdnt.TeamID, s.pluginAPI) {
+			s.pluginAPI.Log.Warn("default commander specified, but it is not a member of the incident's team", "userID", incdnt.DefaultCommanderID, "teamID", incdnt.TeamID)
+		} else {
+			incdnt.CommanderUserID = incdnt.DefaultCommanderID
+		}
+	}
+
+	incdnt.ReporterUserID = userID
+
 	// Try to create the channel first
 	channel, err := s.createIncidentChannel(incdnt, public)
 	if err != nil {
@@ -86,6 +104,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
+	incdnt.CurrentStatus = StatusReported
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
@@ -104,12 +123,62 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	s.telemetry.CreateIncident(incdnt, userID, public)
 
-	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
+	usersFailedToInvite := []string{}
+	for _, userID := range incdnt.InvitedUserIDs {
+		// Check if the user is a member of the incident's team
+		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
+
+		_, err = s.pluginAPI.Channel.AddUser(incdnt.ChannelID, userID, s.configService.GetConfiguration().BotUserID)
+		if err != nil {
+			usersFailedToInvite = append(usersFailedToInvite, userID)
+			continue
+		}
 	}
 
-	newPost, err := s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username)
+	if len(usersFailedToInvite) != 0 {
+		usernames := make([]string, 0, len(usersFailedToInvite))
+		numDeletedUsers := 0
+		for _, userID := range usersFailedToInvite {
+			user, userErr := s.pluginAPI.User.Get(userID)
+			if userErr != nil {
+				// User does not exist anymore
+				numDeletedUsers++
+				continue
+			}
+
+			usernames = append(usernames, "@"+user.Username)
+		}
+
+		deletedUsersMsg := ""
+		if numDeletedUsers > 0 {
+			deletedUsersMsg = fmt.Sprintf(" %d users from the original list have been deleted since the creation of the playbook.", numDeletedUsers)
+		}
+
+		if _, err = s.poster.PostMessage(channel.Id, "Failed to invite the following users: %s. %s", strings.Join(usernames, ", "), deletedUsersMsg); err != nil {
+			return nil, errors.Wrapf(err, "failed to post to incident channel")
+		}
+	}
+
+	reporter, err := s.pluginAPI.User.Get(incdnt.ReporterUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
+	}
+
+	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
+	if incdnt.CommanderUserID != incdnt.ReporterUserID {
+		commander, err2 := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+		if err2 != nil {
+			return nil, errors.Wrapf(err2, "failed to resolve user %s", incdnt.CommanderUserID)
+		}
+
+		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, commander.Username)
+	}
+
+	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
@@ -120,7 +189,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		EventAt:       incdnt.CreateAt,
 		EventType:     IncidentCreated,
 		PostID:        newPost.Id,
-		SubjectUserID: incdnt.CommanderUserID,
+		SubjectUserID: incdnt.ReporterUserID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -193,7 +262,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		message = currentIncident.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.CurrentStatus(), currentIncident.PreviousReminder)
+	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.CurrentStatus, currentIncident.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -208,6 +277,95 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 
 	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
 		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo permissions.RequesterInfo, postID, teamID, triggerID string) error {
+	options := FilterOptions{
+		TeamID:    teamID,
+		MemberID:  requesterInfo.UserID,
+		Sort:      SortByCreateAt,
+		Direction: DirectionDesc,
+		Statuses:  []string{StatusReported, StatusActive, StatusResolved},
+	}
+
+	result, err := s.GetIncidents(requesterInfo, options)
+	if err != nil {
+		return errors.Wrap(err, "Error retrieving the incidents: %v")
+	}
+
+	dialog, err := s.newAddToTimelineDialog(result.Items, postID)
+	if err != nil {
+		return errors.Wrap(err, "failed to create add to timeline dialog")
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/add-to-timeline-dialog",
+			s.configService.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary string) error {
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return errors.Wrap(err, "failed to find post")
+	}
+
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      model.GetMillis(),
+		DeleteAt:      0,
+		EventAt:       post.CreateAt,
+		EventType:     EventFromPost,
+		Summary:       summary,
+		Details:       "",
+		PostID:        postID,
+		SubjectUserID: post.UserId,
+		CreatorUserID: userID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	incidentModified, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	s.telemetry.AddPostToTimeline(incidentModified, userID)
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
+func (s *ServiceImpl) RemoveTimelineEvent(incidentID, eventID string) error {
+	event, err := s.store.GetTimelineEvent(incidentID, eventID)
+	if err != nil {
+		return err
+	}
+
+	event.DeleteAt = model.GetMillis()
+	if err = s.store.UpdateTimelineEvent(event); err != nil {
+		return err
+	}
+
+	if err = s.sendIncidentToClient(incidentID); err != nil {
+		return err
 	}
 
 	return nil
@@ -232,7 +390,7 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 	duration := timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())
 
 	broadcastedMsg := fmt.Sprintf("# Incident Update: [%s](/%s/pl/%s)\n", incidentChannel.DisplayName, incidentTeam.Name, originalPostID)
-	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, theIncident.CurrentStatus())
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, theIncident.CurrentStatus)
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
@@ -250,7 +408,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
-	previousStatus := incidentToModify.CurrentStatus()
+	previousStatus := incidentToModify.CurrentStatus
 
 	post := model.Post{
 		Message:   options.Message,
@@ -291,7 +449,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(incidentID)
 
-	if options.Reminder != 0 {
+	if options.Reminder != 0 && options.Status != StatusArchived {
 		if err = s.SetReminder(incidentID, options.Reminder); err != nil {
 			return errors.Wrap(err, "failed to set the reminder for incident")
 		}
@@ -375,7 +533,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 }
 
 // GetCommanders returns all the commanders of the incidents selected by options
-func (s *ServiceImpl) GetCommanders(requesterInfo RequesterInfo, options FilterOptions) ([]CommanderInfo, error) {
+func (s *ServiceImpl) GetCommanders(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]CommanderInfo, error) {
 	return s.store.GetCommanders(requesterInfo, options)
 }
 
@@ -861,6 +1019,10 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		Header:      channelHeader,
 	}
 
+	if channel.Name == "" {
+		channel.Name = model.NewId()
+	}
+
 	// Prefer the channel name the user chose. But if it already exists, add some random bits
 	// and try exactly once more.
 	err := s.pluginAPI.Channel.Create(channel)
@@ -884,8 +1046,14 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add user to channel")
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
+	}
+
+	if incdnt.CommanderUserID != incdnt.ReporterUserID {
+		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+			return nil, errors.Wrapf(err, "failed to add commander to channel")
+		}
 	}
 
 	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.CommanderUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
@@ -1079,6 +1247,66 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID, statu
 	}, nil
 }
 
+func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string) (*model.Dialog, error) {
+	var options []*model.PostActionOptions
+	for _, i := range incidents {
+		options = append(options, &model.PostActionOptions{
+			Text:  i.Name,
+			Value: i.ID,
+		})
+	}
+
+	state, err := json.Marshal(DialogStateAddToTimeline{
+		PostID: postID,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
+	}
+
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal DialogState")
+	}
+	defaultSummary := ""
+	if len(post.Message) > 0 {
+		end := min(40, len(post.Message))
+		defaultSummary = post.Message[:end]
+		if len(post.Message) > end {
+			defaultSummary += "..."
+		}
+	}
+
+	defaultIncidentID, err := s.GetIncidentIDForChannel(post.ChannelId)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return nil, errors.Wrapf(err, "failed to get incidentID for channel")
+	}
+
+	return &model.Dialog{
+		Title: "Add to Incident Timeline",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Incident",
+				Name:        DialogFieldIncidentKey,
+				Type:        "select",
+				Options:     options,
+				Default:     defaultIncidentID,
+			},
+			{
+				DisplayName: "Summary",
+				Name:        DialogFieldSummary,
+				Type:        "text",
+				MaxLength:   64,
+				Placeholder: "Short summary shown in the timeline",
+				Default:     defaultSummary,
+				HelpText:    "Max 64 chars",
+			},
+		},
+		SubmitLabel:    "Add to Timeline",
+		NotifyOnCancel: false,
+		State:          string(state),
+	}, nil
+}
+
 func (s *ServiceImpl) sendIncidentToClient(incidentID string) error {
 	incidentToSend, err := s.store.GetIncident(incidentID)
 	if err != nil {
@@ -1143,4 +1371,11 @@ func findNewestNonDeletedPostID(posts []StatusPost) string {
 	}
 
 	return newest.ID
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

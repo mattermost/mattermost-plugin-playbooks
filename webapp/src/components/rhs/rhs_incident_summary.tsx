@@ -4,7 +4,7 @@
 import React, {FC} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 
-import {fetchUsersInChannel, setCommander} from 'src/client';
+import {setCommander} from 'src/client';
 import {Incident, incidentCurrentStatus} from 'src/types/incident';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import Duration from '../duration';
@@ -15,14 +15,18 @@ import {
     renderView,
 } from 'src/components/rhs/rhs_shared';
 import LatestUpdate from 'src/components/rhs/latest_update';
+import StatusBadge from '../backstage/incidents/status_badge';
+import {useProfilesInChannel} from 'src/hooks';
 
 interface Props {
     incident: Incident;
 }
 
 const RHSIncidentSummary: FC<Props> = (props: Props) => {
+    const profilesInChannel = useProfilesInChannel();
+
     const fetchUsers = async () => {
-        return fetchUsersInChannel(props.incident.channel_id);
+        return profilesInChannel;
     };
 
     const onSelectedProfileChange = async (userId?: string) => {
@@ -72,7 +76,21 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                 <div className='side-by-side'>
                     <div className='inner-container first-container'>
                         <div className='first-title'>{'Status'}</div>
-                        <div>{incidentCurrentStatus(props.incident)}</div>
+                        <div>
+                            <StatusBadge status={incidentCurrentStatus(props.incident)}/>
+                        </div>
+                    </div>
+                    <div className='inner-container'>
+                        <div className='first-title'>{'Reporter'}</div>
+                        <ProfileSelector
+                            selectedUserId={props.incident.reporter_user_id}
+                            placeholder={'Reporter Not Available'}
+                            placeholderButtonClass={'NoAssignee-button'}
+                            profileButtonClass={'Assigned-button'}
+                            enableEdit={false}
+                            getUsers={fetchUsers}
+                            selfIsFirstOption={true}
+                        />
                     </div>
                 </div>
                 <div id={'incidentRHSUpdates'}>

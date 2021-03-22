@@ -29,7 +29,7 @@ import {
 import {ChannelNamesMap} from 'src/types/backstage';
 
 const Timeline = styled.ul`
-    margin: 10px 0 150px 0;
+    margin: 35px 0 150px 0;
     padding: 0;
     list-style: none;
     position: relative;
@@ -43,6 +43,12 @@ const Timeline = styled.ul`
         width: 1px;
         background: #EFF1F5;
     }
+`;
+
+const NoEventsNotice = styled.div`
+    margin: 35px 20px 0 20px;
+    font-size: 14px;
+    font-weight: 600;
 `;
 
 type IdToUserFn = (userId: string) => UserProfile;
@@ -60,7 +66,6 @@ const RHSTimeline = (props: Props) => {
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
     const [events, setEvents] = useState<TimelineEvent[]>([]);
-    const [reportedAt, setReportedAt] = useState(moment());
 
     const ignoredEvent = (e: TimelineEvent) => {
         switch (e.event_type) {
@@ -74,10 +79,6 @@ const RHSTimeline = (props: Props) => {
 
     useEffect(() => {
         Promise.all(props.incident.timeline_events.map(async (e) => {
-            if (e.event_type === TimelineEventType.IncidentCreated) {
-                setReportedAt(moment(e.event_at));
-            }
-
             if (ignoredEvent(e)) {
                 return null;
             }
@@ -99,7 +100,15 @@ const RHSTimeline = (props: Props) => {
         })).then((eventArray) => {
             setEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
-    }, [props.incident.status_posts, displayPreference]);
+    }, [props.incident.timeline_events, displayPreference]);
+
+    if (props.incident.timeline_events.length === 0) {
+        return (
+            <NoEventsNotice>
+                {'Timeline events are displayed here as they occur. Hover over an event to remove it.'}
+            </NoEventsNotice>
+        );
+    }
 
     return (
         <Scrollbars
@@ -117,7 +126,7 @@ const RHSTimeline = (props: Props) => {
                         <RHSTimelineEventItem
                             key={event.id}
                             event={event}
-                            reportedAt={reportedAt}
+                            reportedAt={moment(props.incident.create_at)}
                             channelNames={channelNamesMap}
                             team={team}
                         />

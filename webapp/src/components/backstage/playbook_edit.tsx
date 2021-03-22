@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect, useCallback} from 'react';
+import React, {FC, useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
@@ -11,8 +11,6 @@ import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users'
 import {Team} from 'mattermost-redux/types/teams';
 
 import styled from 'styled-components';
-
-import {ValueType} from 'react-select';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 
@@ -26,13 +24,13 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
+import {AutomationSettings} from 'src/components/backstage/automation/settings';
 
 import './playbook.scss';
-import StagesAndStepsIcon from './stages_and_steps_icon';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
-import {BackstageHeader, BackstageHeaderTitle, BackstageSubheader, BackstageSubheaderText, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledAsyncSelect, StyledSelect} from './styles';
+import {BackstageSubheader, BackstageSubheaderText, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledSelect} from './styles';
 
 const Container = styled.div`
     display: flex;
@@ -303,6 +301,51 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleAddUserInvited = (userId: string) => {
+        if (!playbook.invited_user_ids.includes(userId)) {
+            setPlaybook({
+                ...playbook,
+                invited_user_ids: [...playbook.invited_user_ids, userId],
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleRemoveUserInvited = (userId: string) => {
+        const idx = playbook.invited_user_ids.indexOf(userId);
+        setPlaybook({
+            ...playbook,
+            invited_user_ids: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
+        });
+        setChangesMade(true);
+    };
+
+    const handleAssignDefaultCommander = (userId: string | undefined) => {
+        if (userId && playbook.default_commander_id !== userId) {
+            setPlaybook({
+                ...playbook,
+                default_commander_id: userId,
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleToggleInviteUsers = () => {
+        setPlaybook({
+            ...playbook,
+            invite_users_enabled: !playbook.invite_users_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleDefaultCommander = () => {
+        setPlaybook({
+            ...playbook,
+            default_commander_enabled: !playbook.default_commander_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -376,6 +419,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         >
                             {'Tasks'}
                             {'Preferences'}
+                            {'Automation'}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -410,7 +454,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     </BackstageSubheaderText>
                                     <StyledSelect
                                         value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: {label: string, value: number}) => {
+                                        onChange={(option: { label: string, value: number }) => {
                                             setPlaybook({
                                                 ...playbook,
                                                 reminder_timer_default_seconds: option ? option.value : option,
@@ -441,6 +485,22 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
+                            </TabContainer>
+                            <TabContainer>
+                                <AutomationSettings
+                                    searchProfiles={searchUsers}
+                                    getProfiles={getUsers}
+                                    userIds={playbook.invited_user_ids}
+                                    inviteUsersEnabled={playbook.invite_users_enabled}
+                                    onToggleInviteUsers={handleToggleInviteUsers}
+                                    onAddUser={handleAddUserInvited}
+                                    onRemoveUser={handleRemoveUserInvited}
+                                    defaultCommanderEnabled={playbook.default_commander_enabled}
+                                    defaultCommanderID={playbook.default_commander_id}
+                                    onToggleDefaultCommander={handleToggleDefaultCommander}
+                                    onAssignCommander={handleAssignDefaultCommander}
+                                    teamID={playbook.team_id}
+                                />
                             </TabContainer>
                         </TabsContent>
                     </EditContent>

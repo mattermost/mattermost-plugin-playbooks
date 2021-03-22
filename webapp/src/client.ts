@@ -30,6 +30,7 @@ import {
     Playbook,
     PlaybookNoChecklist,
 } from 'src/types/playbook';
+import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
 import {pluginId} from './manifest';
 
@@ -168,7 +169,11 @@ export async function deletePlaybook(playbook: PlaybookNoChecklist) {
 }
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
-    return Client4.getProfilesInChannel(channelId, 0, 200);
+    return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
+}
+
+export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
+    return Client4.getProfilesInTeam(teamId, 0, 200);
 }
 
 export async function fetchCommandersInTeam(teamId: string): Promise<CommanderInfo[]> {
@@ -242,6 +247,15 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
             new_location: newLocation,
         }),
     );
+
+    return data;
+}
+
+export async function clientRemoveTimelineEvent(incidentID: string, entryID: string) {
+    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
+        method: 'delete',
+        body: '',
+    });
 
     return data;
 }

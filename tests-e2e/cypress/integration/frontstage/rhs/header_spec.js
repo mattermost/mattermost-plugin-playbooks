@@ -34,6 +34,9 @@ describe('incident rhs > header', () => {
     });
 
     beforeEach(() => {
+        // # Size the viewport to show the RHS without covering posts.
+        cy.viewport('macbook-13');
+
         // # Login as user-1
         cy.apiLogin('user-1');
     });
@@ -111,13 +114,13 @@ describe('incident rhs > header', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            // * Verify the title shows "Ongoing"
+            // * Verify the title shows "Reported"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
-        it('when ended', () => {
+        it('when Resolved', () => {
             // # Start the incident
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
@@ -133,6 +136,7 @@ describe('incident rhs > header', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'ending',
                     status: 'Resolved',
                 });
             });
@@ -140,9 +144,39 @@ describe('incident rhs > header', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            // * Verify the title shows "Ended"
+            // * Verify the title shows "Resolved"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ended');
+                cy.get('.sidebar--right__title').contains('Resolved');
+            });
+        });
+
+        it('when Archived', () => {
+            // # Start the incident
+            const now = Date.now();
+            const incidentName = 'Incident (' + now + ')';
+            const incidentChannelName = 'incident-' + now;
+            cy.apiStartIncident({
+                teamId,
+                playbookId,
+                incidentName,
+                commanderUserId: userId,
+            }).then((incident) => {
+                // # End the incident
+                cy.apiUpdateStatus({
+                    incidentId: incident.id,
+                    userId,
+                    teamId,
+                    message: 'ending',
+                    status: 'Archived',
+                });
+            });
+
+            // # Navigate directly to the application and the incident channel
+            cy.visit('/ad-1/channels/' + incidentChannelName);
+
+            // * Verify the title shows "Archived"
+            cy.get('#rhsContainer').within(() => {
+                cy.get('.sidebar--right__title').contains('Archived');
             });
         });
 
@@ -163,7 +197,7 @@ describe('incident rhs > header', () => {
 
             // * Verify the title shows "Ongoing"
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Ongoing');
+                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
     });

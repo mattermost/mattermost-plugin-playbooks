@@ -115,3 +115,45 @@ Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
         cy.get('#suggestionList').contains(playbookName).click({force: true});
     });
 });
+
+Cypress.Commands.add('createPost', (message) => {
+    // post a message as user to avoid system message
+    cy.findByTestId('post_textbox').clear().type(`${message}{enter}`);
+});
+
+Cypress.Commands.add('addPostToTimelineUsingPostMenu', (incidentName, summary, postId) => {
+    cy.clickPostDotMenu(postId);
+    cy.findByTestId('incidentAddToTimeline').click();
+
+    cy.get('#interactiveDialogModal').should('exist').within(() => {
+        // # Select incident
+        cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
+            cy.get('input').click().type(incidentName);
+            cy.get('#suggestionList').contains(incidentName).click({force: true});
+        });
+
+        // # Type incident name
+        cy.findByTestId('summaryinput').clear().type(summary, {force: true});
+
+        // # Submit
+        cy.get('#interactiveDialogSubmit').click();
+    });
+
+    cy.get('#interactiveDialogModal').should('not.exist');
+});
+
+Cypress.Commands.add('openSelector', () => {
+    cy.findByText('Search for member').click({force: true});
+});
+
+Cypress.Commands.add('addInvitedUser', (userName) => {
+    cy.get('.invite-users-selector__menu').within(() => {
+        cy.findByText(userName).click({force: true});
+    });
+});
+
+Cypress.Commands.add('selectCommander', (userName) => {
+    cy.get('.assign-commander-selector__menu').within(() => {
+        cy.findByText(userName).click({force: true});
+    });
+});
