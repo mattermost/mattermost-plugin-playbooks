@@ -29,7 +29,7 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {formatText, messageHtmlToComponent} from 'src/components/shared';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {useClickOutsideRef, useProfilesInChannel, useTimeout} from 'src/hooks';
+import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 
@@ -311,7 +311,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
-    const profilesInChannel = useProfilesInChannel();
+    const profilesInChannel = useProfilesInCurrentChannel();
 
     const markdownOptions = {
         singleline: true,

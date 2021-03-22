@@ -15,16 +15,17 @@ import {
     renderView,
     SmallerProfile,
 } from 'src/components/rhs/rhs_shared';
-import LatestUpdate from 'src/components/rhs/latest_update';
+import PostCard from 'src/components/rhs/latest_update';
 import StatusBadge from '../backstage/incidents/status_badge';
-import {useProfilesInChannel} from 'src/hooks';
+import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
 
 interface Props {
     incident: Incident;
 }
 
 const RHSIncidentSummary: FC<Props> = (props: Props) => {
-    const profilesInChannel = useProfilesInChannel();
+    const profilesInChannel = useProfilesInCurrentChannel();
+    const latestUpdatePost = useLatestUpdate(props.incident.status_posts);
 
     const fetchUsers = async () => {
         return profilesInChannel;
@@ -94,7 +95,7 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                     <div className='title'>
                         {'Recent Update:'}
                     </div>
-                    <LatestUpdate statusPosts={props.incident.status_posts}/>
+                    <PostCard statusPost={latestUpdatePost}/>
                 </div>
             </div>
         </Scrollbars>

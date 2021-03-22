@@ -10,8 +10,14 @@ import {getProfilesInCurrentChannel} from 'mattermost-redux/selectors/entities/u
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesInChannel} from 'mattermost-redux/actions/users';
+import {Client4} from 'mattermost-redux/client';
+import {Post} from 'mattermost-redux/types/posts';
+import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
+import {getPost} from 'mattermost-redux/actions/posts';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import {getProfileSetForChannel} from 'src/selectors';
+import {StatusPost} from 'src/types/incident';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -117,7 +123,7 @@ export function useClientRect() {
     return [rect, ref] as const;
 }
 
-export function useProfilesInChannel() {
+export function useProfilesInCurrentChannel() {
     const dispatch = useDispatch() as DispatchFunc;
     const profilesInChannel = useSelector(getProfilesInCurrentChannel);
     const currentChannelId = useSelector(getCurrentChannelId);
@@ -131,4 +137,52 @@ export function useProfilesInChannel() {
     }, [currentChannelId, profilesInChannel]);
 
     return profilesInChannel;
+}
+
+export function useProfilesInChannel(channelId: string) {
+    const dispatch = useDispatch() as DispatchFunc;
+    const profilesInChannel = useSelector((state) => getProfileSetForChannel(state as GlobalState, channelId));
+
+    useEffect(() => {
+        if (profilesInChannel.length > 0) {
+            return;
+        }
+
+        dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
+    }, [channelId, profilesInChannel]);
+
+    return profilesInChannel;
+}
+
+function usePostFromState(statusPosts: StatusPost[]): [string, Post | null] {
+    const sortedPosts = [...statusPosts]
+        .filter((a) => a.delete_at === 0)
+        .sort((a, b) => b.create_at - a.create_at);
+
+    const postID = sortedPosts[0]?.id;
+
+    return [postID, useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postID || ''))];
+}
+
+export function useLatestUpdate(statusPosts: StatusPost[]) {
+    const [postId, postFromState] = usePostFromState(statusPosts);
+    const [post, setPost] = useState<Post | null>(null);
+
+    useEffect(() => {
+        const updateLatestUpdate = async () => {
+            if (postFromState) {
+                setPost(postFromState);
+                return;
+            }
+
+            if (postId) {
+                const fromServer = await Client4.getPost(postId);
+                setPost(fromServer);
+            }
+        };
+
+        updateLatestUpdate();
+    }, [postFromState, postId, statusPosts]);
+
+    return post;
 }

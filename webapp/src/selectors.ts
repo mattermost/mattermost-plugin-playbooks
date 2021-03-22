@@ -8,6 +8,10 @@ import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getUsers} from 'mattermost-redux/selectors/entities/common';
+import {UserProfile} from 'mattermost-redux/types/users';
+import {sortByUsername} from 'mattermost-redux/utils/user_utils';
+import {$ID, IDMappedObjects} from 'mattermost-redux/types/utilities';
 
 import {pluginId} from 'src/manifest';
 import {
@@ -91,6 +95,10 @@ export const currentRHSEventsFilter = (state: GlobalState): TimelineEventsFilter
     return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
 };
 
+export const rhsEventsFilterForChannel = (state: GlobalState, channelId: string): TimelineEventsFilter => {
+    return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
+};
+
 export const lastUpdatedByIncidentId = createSelector(
     getCurrentTeamId,
     myIncidentsByTeam,
@@ -109,4 +117,27 @@ const findLastUpdated = (incident: Incident) => {
         .filter((a) => a.delete_at === 0)
         .sort((a, b) => b.create_at - a.create_at);
     return posts.length === 0 ? 0 : posts[0].create_at;
+};
+
+const PROFILE_SET_ALL = 'all';
+function sortAndInjectProfiles(profiles: IDMappedObjects<UserProfile>, profileSet?: 'all' | Array<$ID<UserProfile>> | Set<$ID<UserProfile>>): Array<UserProfile> {
+    let currentProfiles: UserProfile[] = [];
+
+    if (typeof profileSet === 'undefined') {
+        return currentProfiles;
+    } else if (profileSet === PROFILE_SET_ALL) {
+        currentProfiles = Object.keys(profiles).map((key) => profiles[key]);
+    } else {
+        currentProfiles = Array.from(profileSet).map((p) => profiles[p]);
+    }
+
+    currentProfiles = currentProfiles.filter((profile) => Boolean(profile));
+
+    return currentProfiles.sort(sortByUsername);
+}
+
+export const getProfileSetForChannel = (state: GlobalState, channelId: string) => {
+    const profileSet = state.entities.users.profilesInChannel[channelId];
+    const profiles = getUsers(state);
+    return sortAndInjectProfiles(profiles, profileSet);
 };

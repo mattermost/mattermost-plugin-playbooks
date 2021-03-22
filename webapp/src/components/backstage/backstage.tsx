@@ -22,11 +22,14 @@ import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/br
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
+import IncidentBackstage
+    from 'src/components/backstage/incidents/incident_backstage/incident_backstage';
 
 import StatsView from './stats';
 
 const BackstageContainer = styled.div`
-    background: var(--center-channel-bg);
+    //background: var(--center-channel-bg);
+    background: #F7F9FA;
     height: 100%;
     overflow-y: auto;
 `;
@@ -191,7 +194,8 @@ const Backstage: FC = () => {
                         <PlaybookList/>
                     </Route>
                     <Route path={`${match.url}/incidents/:incidentId`}>
-                        <BackstageIncidentDetails/>
+                        <IncidentBackstage/>
+                        {/*<BackstageIncidentDetails/>*/}
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
