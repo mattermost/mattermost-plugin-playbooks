@@ -191,12 +191,12 @@ describe('incident rhs checklist', () => {
 
         it('assignee selector is shifted up if it falls below window', () => {
             // Hover over a checklist item at the end
-            cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover');
+            cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover').within(() => {
+                // Click the profile icon
+                cy.get('.icon-account-plus-outline').click().wait(TINY);
 
-            // Click the profile icon
-            cy.get('.icon-account-plus-outline').click().wait(TINY);
-
-            cy.isInViewport('.incident-user-select');
+                cy.isInViewport('.incident-user-select');
+            });
         });
     });
 });
