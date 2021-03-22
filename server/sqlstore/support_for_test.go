@@ -39,7 +39,7 @@ func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	return db
 }
 
-func setupSQLStore(t testing.TB, db *sqlx.DB) (bot.Logger, *SQLStore) {
+func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
@@ -62,6 +62,8 @@ func setupSQLStore(t testing.TB, db *sqlx.DB) (bot.Logger, *SQLStore) {
 
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	require.NoError(t, err)
+
+	setupChannelsTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -303,7 +305,7 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 
 	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE Channels (
+			CREATE TABLE IF NOT EXISTS Channels (
 			  Id varchar(26) NOT NULL,
 			  CreateAt bigint(20) DEFAULT NULL,
 			  UpdateAt bigint(20) DEFAULT NULL,
