@@ -662,6 +662,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            "",
 			TeamID:          testIncident.TeamID,
 			CommanderUserID: testIncident.CommanderUserID,
 		})
