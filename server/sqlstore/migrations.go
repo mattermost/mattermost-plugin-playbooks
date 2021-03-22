@@ -539,6 +539,7 @@ var migrations = []Migration{
 
 			return nil
 		},
+	},
 	{
 		fromVersion: semver.MustParse("0.11.0"),
 		toVersion:   semver.MustParse("0.12.0"),
