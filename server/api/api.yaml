@@ -674,6 +674,65 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
+  /incidents/{id}/status:
+    post:
+      summary: Update an incident's status
+      operationId: status
+      security:
+        - BearerAuth: []
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the incident to update.
+          schema:
+            type: string
+            example: 1igmynxs77ywmcbwbsujzktter
+      requestBody:
+        description: Payload to change the incident's status.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - Reported
+                    - Active
+                    - Resolved
+                    - Archived
+                  description: The new status.
+                  example: Active
+                message:
+                  type: string
+                  description: The status update message.
+                  example: Starting to investigate.
+                reminder:
+                  type: number
+                  description: The number of seconds until the system will send a reminder to the commander to update the status. No reminder will be scheduled if reminder is 0 or omitted.
+                  example: 600
+              required:
+                - status
+                - message
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/update-status' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+            -d '{"status": "Resolved", "message": "Resolving incident because the issue was solved."}'
+      responses:
+        200:
+          description: Incident updated.
+        400:
+          $ref: "#/components/schemas/400"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
+
   /incidents/{id}/commander:
     post:
       summary: Update incident commander

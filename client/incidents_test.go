@@ -57,7 +57,7 @@ func ExampleIncidentsService_List() {
 			TeamID:    teams[0].Id,
 			Page:      page,
 			PerPage:   100,
-			Sort:      client.CreateAt,
+			Sort:      client.SortByCreateAt,
 			Direction: client.SortDesc,
 		})
 		if err != nil {
