@@ -650,6 +650,27 @@ func TestIncidents(t *testing.T) {
 		require.Nil(t, resultIncident)
 	})
 
+	t.Run("create invalid incident - missing name", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+		}
+
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            "",
+			TeamID:          testIncident.TeamID,
+			CommanderUserID: testIncident.CommanderUserID,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		require.Nil(t, resultIncident)
+	})
+
 	t.Run("get incident by channel id", func(t *testing.T) {
 		reset()
 
