@@ -438,7 +438,6 @@ var migrations = []Migration{
 		},
 	},
 	{
-
 		fromVersion: semver.MustParse("0.8.0"),
 		toVersion:   semver.MustParse("0.9.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
@@ -511,6 +510,38 @@ var migrations = []Migration{
 	{
 		fromVersion: semver.MustParse("0.10.0"),
 		toVersion:   semver.MustParse("0.11.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec(`
+					UPDATE IR_Incident
+					INNER JOIN Channels ON IR_Incident.ChannelID = Channels.ID
+					SET IR_Incident.CreateAt = Channels.CreateAt,
+						IR_Incident.DeleteAt = Channels.DeleteAt
+					WHERE IR_Incident.CreateAt = 0
+						AND IR_Incident.DeleteAt = 0
+						AND IR_Incident.ChannelID = Channels.ID
+				`); err != nil {
+					return errors.Wrap(err, "failed updating table IR_Incident with Channels' CreateAt and DeleteAt values")
+				}
+			} else {
+				if _, err := e.Exec(`
+					UPDATE IR_Incident
+					SET CreateAt = Channels.CreateAt,
+						DeleteAt = Channels.DeleteAt
+					FROM Channels
+					WHERE IR_Incident.CreateAt = 0
+						AND IR_Incident.DeleteAt = 0
+						AND IR_Incident.ChannelID = Channels.ID
+				`); err != nil {
+					return errors.Wrap(err, "failed updating table IR_Incident with Channels' CreateAt and DeleteAt values")
+				}
+			}
+
+			return nil
+		},
+	{
+		fromVersion: semver.MustParse("0.11.0"),
+		toVersion:   semver.MustParse("0.12.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "AnnouncementChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {

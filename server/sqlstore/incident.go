@@ -49,7 +49,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
-			"c.CreateAt", "i.EndAt", "c.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
+			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "DefaultCommanderID",
 			"AnnouncementChannelID").
@@ -237,6 +237,8 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"ReporterUserID":             rawIncident.ReporterUserID,
 			"TeamID":                     rawIncident.TeamID,
 			"ChannelID":                  rawIncident.ChannelID,
+			"CreateAt":                   rawIncident.CreateAt,
+			"EndAt":                      rawIncident.EndAt,
 			"PostID":                     rawIncident.PostID,
 			"PlaybookID":                 rawIncident.PlaybookID,
 			"ChecklistsJSON":             rawIncident.ChecklistsJSON,
@@ -252,8 +254,6 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
 			"IsActive":         true,
-			"CreateAt":         0,
-			"EndAt":            0,
 			"DeleteAt":         0,
 		}))
 
