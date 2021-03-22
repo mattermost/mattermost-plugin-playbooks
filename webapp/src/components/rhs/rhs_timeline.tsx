@@ -35,7 +35,7 @@ import {
     renderView,
 } from 'src/components/rhs/rhs_shared';
 import {ChannelNamesMap} from 'src/types/backstage';
-import MultiCheckbox from 'src/components/multi_checkbox';
+import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {currentRHSEventsFilter} from 'src/selectors';
 import {setRHSEventsFilter} from 'src/actions';
 
@@ -140,6 +140,9 @@ const RHSTimeline = (props: Props) => {
             selected: eventsFilter.all,
             disabled: false,
         },
+        {
+            value: 'divider',
+        } as CheckboxOption,
         {
             display: 'Commander changes',
             value: TimelineEventType.CommanderChanged,

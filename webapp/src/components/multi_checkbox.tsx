@@ -63,8 +63,12 @@ const MultiCheckbox = (props: Props) => (
         wide={true}
         buttonRight={true}
     >
-        {props.options.map((option, idx) => {
-            const checkboxContainer = (
+        {props.options.map((option) => {
+            if (option.value === 'divider') {
+                return <Divider/>;
+            }
+
+            return (
                 <FilterCheckboxContainer
                     key={option.value}
                     onClick={() => props.onselect(option.value, !option.selected)}
@@ -77,17 +81,6 @@ const MultiCheckbox = (props: Props) => (
                     <OptionDisplay>{option.display}</OptionDisplay>
                 </FilterCheckboxContainer>
             );
-
-            if (idx === 1) {
-                return (
-                    <>
-                        <Divider/>
-                        {checkboxContainer}
-                    </>
-                );
-            }
-
-            return checkboxContainer;
         })}
     </DotMenu>
 );
