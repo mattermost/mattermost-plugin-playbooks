@@ -340,6 +340,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
+    const handleCreationWebhookChange = (url: string) => {
+        if (playbook.creation_webhook_url !== url) {
+            setPlaybook({
+                ...playbook,
+                creation_webhook_url: url,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
@@ -360,6 +370,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setPlaybook({
             ...playbook,
             announcement_channel_enabled: !playbook.announcement_channel_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleCreationWebhook = () => {
+        setPlaybook({
+            ...playbook,
+            creation_webhook_enabled: !playbook.creation_webhook_enabled,
         });
         setChangesMade(true);
     };
@@ -525,6 +543,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}
                                     onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
                                     onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
+                                    creationWebhookEnabled={playbook.creation_webhook_enabled}
+                                    onToggleCreationWebhook={handleToggleCreationWebhook}
+                                    onCreationWebhookChange={handleCreationWebhookChange}
+                                    creationWebhookUrl={playbook.creation_webhook_url}
                                 />
                             </TabContainer>
                         </TabsContent>

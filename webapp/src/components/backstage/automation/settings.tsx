@@ -10,6 +10,7 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
 import {Announcement} from 'src/components/backstage/automation/announcement';
+import {CreationWebhook} from 'src/components/backstage/automation/creation_webhook';
 
 import {BackstageHeaderHelpText, BackstageHeaderTitle} from 'src/components/backstage/styles';
 
@@ -30,6 +31,10 @@ interface Props {
     announcementChannelEnabled: boolean;
     onToggleAnnouncementChannel: () => void;
     onAnnouncementChannelSelected: (channelID: string | undefined) => void;
+    creationWebhookEnabled: boolean;
+    onToggleCreationWebhook: () => void;
+    onCreationWebhookChange: (url: string) => void;
+    creationWebhookUrl: string;
 }
 
 export const AutomationSettings: FC<Props> = (props: Props) => {
@@ -73,6 +78,14 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         onToggle={props.onToggleAnnouncementChannel}
                         channelId={props.announcementChannelID}
                         onChannelSelected={props.onAnnouncementChannelSelected}
+                    />
+                </Setting>
+                <Setting id={'incident-creation__outgoing-webhook'}>
+                    <CreationWebhook
+                        enabled={props.creationWebhookEnabled}
+                        onToggle={props.onToggleCreationWebhook}
+                        url={props.creationWebhookUrl}
+                        onChange={props.onCreationWebhookChange}
                     />
                 </Setting>
             </Section>
