@@ -224,12 +224,10 @@ export async function clientAddChecklistItem(incidentID: string, checklistNum: n
 }
 
 export async function clientRemoveChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
         body: '',
     });
-
-    return data;
 }
 
 export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newItem: ChecklistItem) {
@@ -254,12 +252,10 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
 }
 
 export async function clientRemoveTimelineEvent(incidentID: string, entryID: string) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
         method: 'delete',
         body: '',
     });
-
-    return data;
 }
 
 export async function fetchStats(teamID: string): Promise<Stats | null> {
@@ -272,8 +268,10 @@ export async function fetchStats(teamID: string): Promise<Stats | null> {
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {
-    const body = JSON.stringify({action});
-    await doPost(`${apiUrl}/telemetry/incident/${incidentID}`, body);
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/incident/${incidentID}`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
 }
 
 export function exportChannelUrl(channelId: string) {
@@ -358,6 +356,20 @@ export const doFetchWithTextResponse = async (url: string, options = {}) => {
 
     throw new ClientError(Client4.url, {
         message: data || '',
+        status_code: response.status,
+        url,
+    });
+};
+
+export const doFetchWithoutResponse = async (url: string, options = {}) => {
+    const response = await fetch(url, Client4.getOptions(options));
+
+    if (response.ok) {
+        return;
+    }
+
+    throw new ClientError(Client4.url, {
+        message: '',
         status_code: response.status,
         url,
     });

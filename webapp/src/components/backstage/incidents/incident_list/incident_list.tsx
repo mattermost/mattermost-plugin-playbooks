@@ -385,7 +385,7 @@ const BackstageIncidentList: FC = () => {
                             className='col-sm-2'
                         >
                             {
-                                moment(incident.create_at).format('MMM DD LT')
+                                formatDate(moment(incident.create_at))
                             }
                         </div>
                         <div className='col-sm-2'>
@@ -413,6 +413,13 @@ const BackstageIncidentList: FC = () => {
     </>);
 };
 
+const formatDate = (mom: moment.Moment) => {
+    if (mom.isSame(moment(), 'year')) {
+        return mom.format('MMM DD LT');
+    }
+    return mom.format('MMM DD YYYY LT');
+};
+
 const endedAt = (isActive: boolean, time: number) => {
     if (isActive) {
         return '--';
@@ -420,7 +427,7 @@ const endedAt = (isActive: boolean, time: number) => {
 
     const mom = moment(time);
     if (mom.isSameOrAfter('2020-01-01')) {
-        return mom.format('MMM DD LT');
+        return formatDate(mom);
     }
     return '--';
 };

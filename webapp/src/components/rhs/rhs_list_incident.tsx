@@ -15,6 +15,7 @@ import Duration from 'src/components/duration';
 import {Incident, incidentCurrentStatus} from 'src/types/incident';
 import {lastUpdatedByIncidentId} from 'src/selectors';
 import StatusBadge from '../backstage/incidents/status_badge';
+import {SmallerProfile} from 'src/components/rhs/rhs_shared';
 
 const IncidentContainer = styled.div<IncidentContainerProps>`
     display: flex;
@@ -58,13 +59,6 @@ const Col2 = styled.div`
     flex-direction: column;
     flex: 3;
     font-weight: 400;
-`;
-
-const SmallerProfile = styled(Profile)`
-    >.image {
-        width: 20px;
-        height: 20px;
-    }
 `;
 
 interface IncidentContainerProps {
