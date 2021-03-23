@@ -166,13 +166,8 @@ const BackstageIncidentList: FC = () => {
     );
 
     useEffect(() => {
-        // This mess makes typescript happy because string | null can't be assigned to string | undefined
         const queryForStatus = new URLSearchParams(query).get('status');
-        let status: string | undefined;
-        if (queryForStatus) {
-            status = queryForStatus;
-        }
-        setFetchParams((oldParams) => ({...oldParams, status}));
+        setFetchParams((oldParams) => ({...oldParams, status: queryForStatus || undefined})); //eslint-disable-line no-undefined
     }, [query]);
 
     useEffect(() => {
