@@ -37,9 +37,9 @@ interface Props {
 const Participants = (props: Props) => {
     const profilesInChannel = useProfilesInChannel(props.incident.channel_id);
 
-    const profilesExceptCommander = profilesInChannel.filter((u) => u.id !== props.incident.commander_user_id);
-    const observers = profilesExceptCommander.slice(0, Math.min(2, profilesExceptCommander.length));
-    const subscribers = profilesExceptCommander.slice(Math.min(2, profilesExceptCommander.length));
+    const profilesExceptTwoMains = profilesInChannel.filter((u) => u.id !== props.incident.commander_user_id && u.id !== props.incident.reporter_user_id);
+    const observers = profilesExceptTwoMains.slice(0, Math.min(2, profilesExceptTwoMains.length));
+    const subscribers = profilesExceptTwoMains.slice(Math.min(2, profilesExceptTwoMains.length));
 
     return (
         <TabPageContainer>
