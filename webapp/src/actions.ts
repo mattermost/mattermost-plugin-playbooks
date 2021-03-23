@@ -10,7 +10,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {selectToggleRHS} from 'src/selectors';
 import {Incident} from 'src/types/incident';
-import {RHSState, RHSTabState} from 'src/types/rhs';
+import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
     INCIDENT_CREATED,
@@ -24,10 +24,12 @@ import {
     REMOVED_FROM_INCIDENT_CHANNEL,
     RemovedFromIncidentChannel,
     SET_CLIENT_ID,
+    SET_RHS_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
     SET_RHS_TAB_STATE,
     SetClientId,
+    SetRHSEventsFilter,
     SetRHSOpen,
     SetRHSState,
     SetRHSTabState,
@@ -149,6 +151,12 @@ export const removedFromIncidentChannel = (channelId: string): RemovedFromIncide
 
 export const setRHSTabState = (channelId: string, nextState: RHSTabState): SetRHSTabState => ({
     type: SET_RHS_TAB_STATE,
+    channelId,
+    nextState,
+});
+
+export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsFilter): SetRHSEventsFilter => ({
+    type: SET_RHS_EVENTS_FILTER,
     channelId,
     nextState,
 });

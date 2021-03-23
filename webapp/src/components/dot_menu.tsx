@@ -6,7 +6,11 @@ import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
-const DotMenuButton = styled.div`
+interface DotMenuButtonProps {
+    right?: boolean;
+}
+
+const DotMenuButton = styled.div<DotMenuButtonProps>`
     display: inline-flex;
     padding: 0;
     background: transparent;
@@ -22,6 +26,10 @@ const DotMenuButton = styled.div`
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
+
+    ${(props) => (props.right && css`
+        margin: 0 16px 0 auto;
+    `)}
 `;
 
 const DropdownMenuWrapper = styled.div`
@@ -31,6 +39,7 @@ const DropdownMenuWrapper = styled.div`
 interface DropdownMenuProps {
     top?: boolean;
     left?: boolean;
+    wide?: boolean;
 }
 
 const DropdownMenu = styled.div<DropdownMenuProps>`
@@ -43,6 +52,10 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
         left: -197px;
         top: 35px;
     `)};
+    ${(props) => (props.wide && css`
+        left: -224px;
+    `)};
+
     min-width: 160px;
     text-align: left;
     list-style: none;
@@ -54,7 +67,6 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     font-size: 14px;
     line-height: 20px;
     color: var(--center-channel-color);
-    position: 'fixed';
 
     background: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
@@ -69,12 +81,14 @@ interface DotMenuProps {
     icon: JSX.Element;
     top?: boolean;
     left?: boolean;
+    wide?: boolean;
+    buttonRight?: boolean;
 }
 
 const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
-        setOpen(!isOpen);
+        setOpen(true);
     };
 
     const rootRef = useRef<HTMLDivElement>(null);
@@ -93,14 +107,17 @@ const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
+            right={props.buttonRight}
         >
             {props.icon}
             <DropdownMenuWrapper>
                 {
                     isOpen &&
                     <DropdownMenu
+                        data-testid='dropdownmenu'
                         top={props.top}
                         left={props.left}
+                        wide={props.wide}
                     >
                         {props.children}
                     </DropdownMenu>

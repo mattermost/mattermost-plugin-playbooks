@@ -3,7 +3,7 @@
 
 import {combineReducers} from 'redux';
 
-import {RHSState, RHSTabState} from 'src/types/rhs';
+import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -23,7 +23,7 @@ import {
     INCIDENT_UPDATED,
     REMOVED_FROM_INCIDENT_CHANNEL,
     SetRHSTabState,
-    SET_RHS_TAB_STATE,
+    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -144,6 +144,18 @@ const tabStateByChannel = (state: Record<string, RHSTabState> = {}, action: SetR
     }
 };
 
+const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {}, action: SetRHSEventsFilter) => {
+    switch (action.type) {
+    case SET_RHS_EVENTS_FILTER:
+        return {
+            ...state,
+            [action.channelId]: action.nextState,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -151,4 +163,5 @@ export default combineReducers({
     myIncidentsByTeam,
     rhsState,
     tabStateByChannel,
+    eventsFilterByChannel,
 });

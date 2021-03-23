@@ -3,7 +3,7 @@
 
 import Integrations from 'mattermost-redux/action_types/integrations';
 
-import {RHSState, RHSTabState} from 'src/types/rhs';
+import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
 import {pluginId} from 'src/manifest';
 
@@ -16,6 +16,7 @@ export const RECEIVED_TEAM_INCIDENTS = pluginId + '_received_team_incident_chann
 export const REMOVED_FROM_INCIDENT_CHANNEL = pluginId + '_removed_from_incident_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
 export const SET_RHS_TAB_STATE = pluginId + '_set_rhs_tab_state';
+export const SET_RHS_EVENTS_FILTER = pluginId + '_set_rhs_events_filter';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -66,4 +67,10 @@ export interface SetRHSTabState {
     type: typeof SET_RHS_TAB_STATE;
     channelId: string;
     nextState: RHSTabState;
+}
+
+export interface SetRHSEventsFilter {
+    type: typeof SET_RHS_EVENTS_FILTER;
+    channelId: string;
+    nextState: TimelineEventsFilter;
 }

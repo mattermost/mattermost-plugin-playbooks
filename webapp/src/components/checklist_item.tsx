@@ -100,7 +100,7 @@ const SmallProfile = styled(Profile)`
     }
 `;
 
-const CheckboxContainer = styled.div`
+export const CheckboxContainer = styled.div`
     align-items: flex-start;
     display: flex;
     position: relative;
