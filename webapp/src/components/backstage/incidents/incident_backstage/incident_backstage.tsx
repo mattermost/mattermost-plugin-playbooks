@@ -23,8 +23,8 @@ import {
 } from 'src/components/backstage/incidents/incident_backstage/shared';
 
 const Container = styled.div`
-    padding: 20px 0;
-    max-width: 1080px;
+    padding: 20px;
+    max-width: 1120px;
     margin: 0 auto;
     //border: 1px solid black;
     font-family: 'Open Sans', sans-serif;
