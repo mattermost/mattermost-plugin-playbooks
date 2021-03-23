@@ -50,6 +50,7 @@ type Incident struct {
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 	DefaultCommanderID      string               `json:"default_commander_id"`
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
+	CreationWebhookURL      string               `json:"creation_webhook_url"`
 }
 
 func (i *Incident) Clone() *Incident {
