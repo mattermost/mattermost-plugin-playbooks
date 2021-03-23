@@ -315,11 +315,12 @@ describe('timeline', () => {
             cy.findAllByTestId('run').eq(0).click();
 
             // # Assign Aaron to the first task
-            cy.findAllByTestId('checkbox-item-container').eq(1).trigger('mouseover');
-            cy.get('.icon-account-plus-outline').click().wait(TINY);
-            cy.get('.incident-user-select__input > input')
-                .type('aaron', {force: true, delay: 100})
-                .wait(100).type('{enter}');
+            cy.findAllByTestId('checkbox-item-container').eq(1).trigger('mouseover').within(() => {
+                cy.get('.icon-account-plus-outline').click().wait(TINY);
+                cy.get('.incident-user-select__input > input')
+                    .type('aaron', {force: true, delay: 100})
+                    .wait(100).type('{enter}');
+            });
 
             // # Select the timeline tab
             cy.findByTestId('timeline').click();
