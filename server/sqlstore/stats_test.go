@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupStatsStore(t testing.TB, db *sqlx.DB) *StatsStore {
+func setupStatsStore(t *testing.T, db *sqlx.DB) *StatsStore {
 	mockCtrl := gomock.NewController(t)
 
 	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
