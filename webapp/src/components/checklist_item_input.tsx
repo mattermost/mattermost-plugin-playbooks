@@ -43,7 +43,7 @@ export const ChecklistItemCommand: FC<ChecklistItemCommandProps> = (props: Check
     if (commandOpen) {
         slashCommandBox = (
             <CommandInput
-                command={props.command}
+                command={props.command === '' ? '/' : props.command}
                 setCommand={setCommand}
                 autocompleteOnBottom={props.autocompleteOnBottom}
                 grabFocus={true}
