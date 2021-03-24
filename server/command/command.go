@@ -1009,8 +1009,8 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.incidentService.RenameChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
-		"I should say this! and be unchecked and first!", ""); err != nil {
+	if err := r.incidentService.EditChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
+		"I should say this! and be unchecked and first!", "", ""); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}

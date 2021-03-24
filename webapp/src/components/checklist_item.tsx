@@ -1,33 +1,39 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useRef, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {components, ControlProps} from 'react-select';
-import styled from 'styled-components';
-import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
-import Scrollbars from 'react-custom-scrollbars';
-
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
+import React, {FC, useRef, useState} from 'react';
+import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
+import Scrollbars from 'react-custom-scrollbars';
+import {useDispatch, useSelector} from 'react-redux';
+import {components, ControlProps} from 'react-select';
 
+import styled from 'styled-components';
+
+import {handleFormattedTextClick} from 'src/browser_routing';
 import {
-    clientRunChecklistItemSlashCommand,
+    clientRemoveChecklistItem, clientRunChecklistItemSlashCommand,
     setAssignee,
-    clientRemoveChecklistItem,
+    clientEditChecklistItem,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
+import {ChecklistItemButton, ChecklistItemDescription} from 'src/components/checklist_item_input';
+import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import {useTimeout, useClickOutsideRef, useProfilesInChannel} from 'src/hooks';
-import {handleFormattedTextClick} from 'src/browser_routing';
+import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
+import {formatText, messageHtmlToComponent} from 'src/components/shared';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import {useClickOutsideRef, useProfilesInChannel, useTimeout} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import {messageHtmlToComponent, formatText} from 'src/components/shared';
-import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import Profile from 'src/components/profile/profile';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
+
+import CommandInput from './command_input';
+import GenericModal from './widgets/generic_modal';
+import {BaseInput} from './assets/inputs';
+import {StyledTextarea} from './backstage/styles';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -56,15 +62,6 @@ const StyledPopover = styled(Popover) <PopoverProps>`
 
 const PaddedDiv = styled.div`
     padding-right: 15px;
-`;
-
-const DescriptionTitle = styled.span`
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--center-channel-color);
 `;
 
 const StyledSpinner = styled(Spinner)`
@@ -265,7 +262,6 @@ const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDe
                     <div
                         ref={popoverRef}
                     >
-                        <DescriptionTitle>{'Step Description'}</DescriptionTitle>
                         <Scrollbars
                             autoHeight={true}
                             autoHeightMax={200}
@@ -320,6 +316,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showEditDialog, setShowEditDialog] = useState(false);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
     if (props.checklistItem.command_last_run > lastRun) {
@@ -364,6 +361,12 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             <CheckboxContainer>
                 {showMenu &&
                     <HoverMenu>
+                        <HoverMenuButton
+                            className={'icon-pencil-outline icon-16 btn-icon'}
+                            onClick={() => {
+                                setShowEditDialog(true);
+                            }}
+                        />
                         {props.checklistItem.description !== '' &&
                             <StepDescription
                                 text={props.checklistItem.description}
@@ -453,30 +456,90 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 }
                 onCancel={() => setShowDeleteConfirm(false)}
             />
+            <ChecklistItemEditModal
+                show={showEditDialog}
+                incidentId={props.incidentId}
+                checklistNum={props.checklistNum}
+                itemNum={props.itemNum}
+                onDone={() => setShowEditDialog(false)}
+                taskTitle={props.checklistItem.title}
+                taskDescription={props.checklistItem.description}
+                taskCommand={props.checklistItem.command}
+            />
         </ItemContainer>
     );
 };
 
-interface ChecklistItemButtonProps {
-    onChange: (item: ChecklistItemState) => void;
-    item: ChecklistItem;
+interface ChecklistItemEditModalProps {
+    show: boolean
+    onDone: () => void
+    checklistNum: number
+    incidentId: string
+    itemNum: number
+    taskTitle: string
+    taskDescription: string
+    taskCommand: string
 }
 
-const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemButtonProps) => {
-    const isChecked = props.item.state === ChecklistItemState.Closed;
+const ModalField = styled(BaseInput)`
+    width: 100%;
+`;
+
+const FormContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    color: var(--center-channel-color);
+
+    * {
+        margin-bottom: 10px;
+    }
+`;
+
+const ChecklistItemEditModal: FC<ChecklistItemEditModalProps> = (props: ChecklistItemEditModalProps) => {
+    const [title, setTitle] = useState(props.taskTitle);
+    const [description, setDescription] = useState<string>(props.taskDescription);
+    const [command, setCommand] = useState(props.taskCommand);
+
+    const submit = () => {
+        clientEditChecklistItem(props.incidentId, props.checklistNum, props.itemNum, {
+            title,
+            command,
+            description,
+        });
+        props.onDone();
+    };
 
     return (
-        <input
-            className='checkbox'
-            type='checkbox'
-            checked={isChecked}
-            onChange={() => {
-                if (isChecked) {
-                    props.onChange(ChecklistItemState.Open);
-                } else {
-                    props.onChange(ChecklistItemState.Closed);
-                }
-            }}
-        />);
+        <GenericModal
+            id={'taskEditModalc' + props.checklistNum + 'i' + props.itemNum}
+            show={props.show}
+            modalHeaderText={'Edit Task'}
+            onHide={props.onDone}
+            confirmButtonText={'Edit Task'}
+            cancelButtonText={'Cancel'}
+            handleCancel={props.onDone}
+            handleConfirm={submit}
+        >
+            <FormContainer>
+                <ModalField
+                    placeholder={'Task Name'}
+                    type='text'
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    autoFocus={true}
+                />
+                <CommandInput
+                    command={command}
+                    setCommand={setCommand}
+                    autocompleteOnBottom={true}
+                />
+                <StyledTextarea
+                    value={description}
+                    placeholder={'Description'}
+                    onChange={(e) => setDescription(e.target.value)}
+                />
+            </FormContainer>
+        </GenericModal>
+    );
 };
 

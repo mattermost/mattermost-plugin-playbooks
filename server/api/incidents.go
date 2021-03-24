@@ -80,7 +80,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
-	checklistItem.HandleFunc("", handler.itemRename).Methods(http.MethodPut)
+	checklistItem.HandleFunc("", handler.itemEdit).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
@@ -1045,7 +1045,7 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
@@ -1061,15 +1061,16 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		Title   string `json:"title"`
-		Command string `json:"command"`
+		Title       string `json:"title"`
+		Command     string `json:"command"`
+		Description string `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params state", err)
 		return
 	}
 
-	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command); err != nil {
+	if err := h.incidentService.EditChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command, params.Description); err != nil {
 		HandleError(w, err)
 		return
 	}
