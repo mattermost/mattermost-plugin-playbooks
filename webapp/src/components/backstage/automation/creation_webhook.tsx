@@ -34,9 +34,18 @@ export const CreationWebhook: FC<Props> = (props: Props) => (
                 pattern={'https?://.*'}
                 placeholder={'Enter webhook'}
             />
+            <ErrorMessage>
+                {'URL is not valid.'}
+            </ErrorMessage>
         </SelectorWrapper>
     </AutomationHeader>
 );
+
+const ErrorMessage = styled.div`
+    color: var(--error-text);
+    margin-left: auto;
+    display: none;
+`;
 
 interface TextBoxProps {
     enabled: boolean;
@@ -61,9 +70,13 @@ const TextBox = styled.input<TextBoxProps>`
     padding-right: 16px;
 
     ${(props) => props.enabled && props.value && css`
-        :invalid :not(:focus) {
+        :invalid:not(:focus) {
             box-shadow: inset 0 0 0 1px var(--error-text);
 
+            & + ${ErrorMessage} {
+                display: inline-block;
+            }
         }
     `}
 `;
+
