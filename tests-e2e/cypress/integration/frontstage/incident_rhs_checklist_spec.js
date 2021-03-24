@@ -201,7 +201,7 @@ describe('incident rhs checklist', () => {
         it('add new task slash command', () => {
             const newTasktext = 'Task from slash command';
 
-            cy.executeSlashCommand('/incident checkadd 0 randomtext');//${newTasktext}`);
+            cy.executeSlashCommand(`/incident checkadd 0 ${newTasktext}`);
 
             // CHeck that it was created
             cy.findByText(newTasktext).should('exist');
