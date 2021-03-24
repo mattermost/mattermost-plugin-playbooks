@@ -164,6 +164,10 @@ interface ChecklistItemTitleProps {
     setTitle: (title: string) => void;
 }
 
+const StyledBaseInput = styled(BaseInput)`
+    flex: 0.5;
+`;
+
 export const ChecklistItemTitle: FC<ChecklistItemTitleProps> = (props: ChecklistItemTitleProps) => {
     const [title, setTitle] = useState(props.title);
 
@@ -178,7 +182,7 @@ export const ChecklistItemTitle: FC<ChecklistItemTitleProps> = (props: Checklist
     };
 
     return (
-        <BaseInput
+        <StyledBaseInput
             placeholder={'Task Name'}
             type='text'
             value={title}
