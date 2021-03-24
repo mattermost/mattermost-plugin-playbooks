@@ -25,7 +25,6 @@ import {Incident} from 'src/types/incident';
 import {
     TimelineEvent,
     TimelineEventsFilter,
-    TimelineEventsFilterAll,
     TimelineEventType,
 } from 'src/types/rhs';
 import RHSTimelineEventItem from 'src/components/rhs/rhs_timeline_event_item';
@@ -181,6 +180,25 @@ const RHSTimeline = (props: Props) => {
         },
     ];
 
+    let timeline = null;
+    if (filteredEvents.length > 0) {
+        timeline = (
+            <Timeline data-testid='timeline-view'>
+                {
+                    filteredEvents.map((event) => (
+                        <RHSTimelineEventItem
+                            key={event.id}
+                            event={event}
+                            reportedAt={moment(props.incident.create_at)}
+                            channelNames={channelNamesMap}
+                            team={team}
+                        />
+                    ))
+                }
+            </Timeline>
+        );
+    }
+
     return (
         <>
             <Header>
@@ -198,19 +216,7 @@ const RHSTimeline = (props: Props) => {
                 renderView={renderView}
                 style={{position: 'absolute'}}
             >
-                <Timeline data-testid='timeline-view'>
-                    {
-                        filteredEvents.map((event) => (
-                            <RHSTimelineEventItem
-                                key={event.id}
-                                event={event}
-                                reportedAt={moment(props.incident.create_at)}
-                                channelNames={channelNamesMap}
-                                team={team}
-                            />
-                        ))
-                    }
-                </Timeline>
+                {timeline}
             </Scrollbars>
         </>
     );
