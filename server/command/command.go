@@ -306,9 +306,12 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 	}
 
 	combineargs := strings.Join(args[1:], " ")
-	r.incidentService.AddChecklistItem(incidentID, r.args.UserId, checklist, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incidentID, r.args.UserId, checklist, playbook.ChecklistItem{
 		Title: combineargs,
-	})
+	}); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
 
 }
 
