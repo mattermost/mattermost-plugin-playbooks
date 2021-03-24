@@ -1,8 +1,10 @@
 package incident
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -101,6 +103,61 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 
 	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// sendCreationWebhook sends a POST request to the creation webhook URL.
+// It blocks until a response is received.
+func (s *ServiceImpl) sendCreationWebhook(theIncident *Incident) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+
+	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	channelURL := fmt.Sprintf("%s/%s/channels/%s",
+		*siteURL,
+		team.Name,
+		channel.Name,
+	)
+
+	detailsURL := fmt.Sprintf("%s/%s/%s/incidents/%s",
+		*siteURL,
+		team.Name,
+		s.configService.GetManifest().Id,
+		theIncident.ID,
+	)
+
+	payload := struct {
+		Incident
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
+	}{
+		Incident:   *theIncident,
+		ChannelURL: channelURL,
+		DetailsURL: detailsURL,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(theIncident.CreationWebhookURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
 	}
 
 	return nil
@@ -214,6 +271,15 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 				return nil, errors.Wrapf(err, "failed to post to incident channel")
 			}
 		}
+	}
+
+	if incdnt.CreationWebhookURL != "" {
+		go func() {
+			if err = s.sendCreationWebhook(incdnt); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.CreationWebhookURL, "error", err)
+				_, _ = s.poster.PostMessage(channel.Id, "Failed to communicate the incident's creation through the outgoing webhook.")
+			}
+		}()
 	}
 
 	event := &TimelineEvent{
