@@ -1,17 +1,20 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import React, {FC, useRef, useState} from 'react';
+import ReactDOM from 'react-dom';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import React, {FC, useRef, useState} from 'react';
 import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 import {components, ControlProps} from 'react-select';
 
 import styled from 'styled-components';
+
+import {DraggableProvided} from 'react-beautiful-dnd';
 
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {
@@ -43,6 +46,8 @@ interface ChecklistItemDetailsProps {
     incidentId: string;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
+    draggableProvided: DraggableProvided;
+    dragging: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -248,6 +253,7 @@ const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDe
     return (
         <>
             <HoverMenuButton
+                title={'Description'}
                 tabIndex={0}
                 className={'icon-information-outline icon-16 btn-icon'}
                 ref={target}
@@ -296,6 +302,9 @@ const ControlComponent = (ownProps: ControlProps<any>) => (
         )}
     </div>
 );
+
+const portal: HTMLElement = document.createElement('div');
+document.body.appendChild(portal);
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
     const dispatch = useDispatch();
@@ -352,16 +361,25 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
-    return (
-        <ItemContainer
-            onMouseEnter={() => setShowMenu(true)}
-            onMouseLeave={() => setShowMenu(false)}
-            data-testid='checkbox-item-container'
-        >
-            <CheckboxContainer>
-                {showMenu &&
+    const content = (
+        <>
+            <ItemContainer
+                ref={props.draggableProvided.innerRef}
+                {...props.draggableProvided.draggableProps}
+                onMouseEnter={() => setShowMenu(true)}
+                onMouseLeave={() => setShowMenu(false)}
+                data-testid='checkbox-item-container'
+            >
+                <CheckboxContainer >
+                    {showMenu &&
                     <HoverMenu>
                         <HoverMenuButton
+                            title={'Drag me to reorder'}
+                            className={'icon icon-menu'}
+                            {...props.draggableProvided.dragHandleProps}
+                        />
+                        <HoverMenuButton
+                            title={'Edit'}
                             className={'icon-pencil-outline icon-16 btn-icon'}
                             onClick={() => {
                                 setShowEditDialog(true);
@@ -375,6 +393,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             />
                         }
                         <HoverMenuButton
+                            title={'Delete'}
                             className={'icon-trash-can-outline icon-16 btn-icon'}
                             onClick={() => {
                                 setShowDeleteConfirm(true);
@@ -385,6 +404,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             onlyPlaceholder={true}
                             placeholder={
                                 <HoverMenuButton
+                                    title={'Assign'}
                                     className={'icon-account-plus-outline icon-16 btn-icon'}
                                 />
                             }
@@ -401,51 +421,52 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             showOnRight={true}
                         />
                     </HoverMenu>
-                }
-                <ChecklistItemButton
-                    item={props.checklistItem}
-                    onChange={(item: ChecklistItemState) => {
-                        if (props.onChange) {
-                            props.onChange(item);
-                        }
-                    }}
-                />
-                <label title={title}>
-                    <div
-                        onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
-                    >
-                        {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
-                    </div>
-                </label>
-            </CheckboxContainer>
-            <ExtrasRow>
-                {props.checklistItem.assignee_id &&
+                    }
+                    <ChecklistItemButton
+                        item={props.checklistItem}
+                        onChange={(item: ChecklistItemState) => {
+                            if (props.onChange) {
+                                props.onChange(item);
+                            }
+                        }}
+                    />
+                    <label title={title}>
+                        <div
+                            onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                        >
+                            {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                        </div>
+                    </label>
+                </CheckboxContainer>
+                <ExtrasRow>
+                    {props.checklistItem.assignee_id &&
                     <SmallProfile
                         userId={props.checklistItem.assignee_id}
                     />
-                }
-                {
-                    props.checklistItem.command !== '' &&
-                    <div>
-                        <Run
-                            data-testid={'run'}
-                            running={running}
-                            onClick={() => {
-                                if (!running) {
-                                    setRunning(true);
-                                    clientRunChecklistItemSlashCommand(dispatch, props.incidentId, props.checklistNum, props.itemNum);
-                                }
-                            }}
-                        >
-                            {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
-                        </Run>
-                        <Command>
-                            {props.checklistItem.command}
-                        </Command>
-                        {running && <StyledSpinner/>}
-                    </div>
-                }
-            </ExtrasRow>
+                    }
+                    {
+                        props.checklistItem.command !== '' &&
+                        <div>
+                            <Run
+                                data-testid={'run'}
+                                running={running}
+                                onClick={() => {
+                                    if (!running) {
+                                        setRunning(true);
+                                        clientRunChecklistItemSlashCommand(dispatch, props.incidentId, props.checklistNum, props.itemNum);
+                                    }
+                                }}
+                            >
+                                {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
+                            </Run>
+                            <Command>
+                                {props.checklistItem.command}
+                            </Command>
+                            {running && <StyledSpinner/>}
+                        </div>
+                    }
+                </ExtrasRow>
+            </ItemContainer>
             <ConfirmModal
                 show={showDeleteConfirm}
                 title={'Confirm Task Delete'}
@@ -466,8 +487,14 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 taskDescription={props.checklistItem.description}
                 taskCommand={props.checklistItem.command}
             />
-        </ItemContainer>
+        </>
     );
+
+    if (props.dragging) {
+        return ReactDOM.createPortal(content, portal);
+    }
+
+    return content;
 };
 
 interface ChecklistItemEditModalProps {
