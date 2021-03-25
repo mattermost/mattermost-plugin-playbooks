@@ -341,13 +341,6 @@ func (s *ServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, c
 				Default:     "",
 				Optional:    true,
 			},
-			{
-				DisplayName: "Slash Command",
-				Name:        DialogFieldItemCommandKey,
-				Type:        "text",
-				Default:     "",
-				Optional:    true,
-			},
 		},
 		SubmitLabel:    "Add Task",
 		NotifyOnCancel: false,

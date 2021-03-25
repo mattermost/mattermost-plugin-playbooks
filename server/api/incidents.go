@@ -989,21 +989,17 @@ func (h *IncidentHandler) addChecklistItemDialog(w http.ResponseWriter, r *http.
 		return
 	}
 
-	var name, description, command string
+	var name, description string
 	if rawName, ok := request.Submission[incident.DialogFieldItemNameKey].(string); ok {
 		name = rawName
 	}
 	if rawDescription, ok := request.Submission[incident.DialogFieldItemDescriptionKey].(string); ok {
 		description = rawDescription
 	}
-	if rawCommand, ok := request.Submission[incident.DialogFieldItemCommandKey].(string); ok {
-		command = rawCommand
-	}
 
 	checklistItem := playbook.ChecklistItem{
 		Title:       name,
 		Description: description,
-		Command:     command,
 	}
 
 	checklistItem.Title = strings.TrimSpace(checklistItem.Title)
