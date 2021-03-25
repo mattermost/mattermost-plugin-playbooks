@@ -137,19 +137,19 @@ func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistAutocomplete", reflect.TypeOf((*MockService)(nil).GetChecklistAutocomplete), arg0)
 }
 
-// GetChecklistAutocompleteItem mocks base method
-func (m *MockService) GetChecklistAutocompleteItem(arg0 string) ([]model.AutocompleteListItem, error) {
+// GetChecklistItemAutocomplete mocks base method
+func (m *MockService) GetChecklistItemAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChecklistAutocompleteItem", arg0)
+	ret := m.ctrl.Call(m, "GetChecklistItemAutocomplete", arg0)
 	ret0, _ := ret[0].([]model.AutocompleteListItem)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetChecklistAutocompleteItem indicates an expected call of GetChecklistAutocompleteItem
-func (mr *MockServiceMockRecorder) GetChecklistAutocompleteItem(arg0 interface{}) *gomock.Call {
+// GetChecklistItemAutocomplete indicates an expected call of GetChecklistItemAutocomplete
+func (mr *MockServiceMockRecorder) GetChecklistItemAutocomplete(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistAutocompleteItem", reflect.TypeOf((*MockService)(nil).GetChecklistAutocompleteItem), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistItemAutocomplete", reflect.TypeOf((*MockService)(nil).GetChecklistItemAutocomplete), arg0)
 }
 
 // GetCommanders mocks base method

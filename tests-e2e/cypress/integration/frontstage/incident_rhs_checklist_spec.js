@@ -190,7 +190,7 @@ describe('incident rhs checklist', () => {
         });
 
         it('add new task', () => {
-            const newTasktext = 'This is my new task';
+            const newTasktext = 'This is my new task' + Date.now();
 
             cy.addNewTaskFromPostMenu(newTasktext);
 
@@ -199,7 +199,7 @@ describe('incident rhs checklist', () => {
         });
 
         it('add new task slash command', () => {
-            const newTasktext = 'Task from slash command';
+            const newTasktext = 'Task from slash command' + Date.now();
 
             cy.executeSlashCommand(`/incident checkadd 0 ${newTasktext}`);
 

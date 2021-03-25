@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 export const BaseInput = styled.input`
-    -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     background-color: rgb(var(--center-channel-bg-rgb));
     border: none;

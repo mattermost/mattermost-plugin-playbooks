@@ -807,11 +807,11 @@ func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r 
 	}
 
 	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", nil)
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
 
-	data, err := h.incidentService.GetChecklistAutocompleteItem(incidentID)
+	data, err := h.incidentService.GetChecklistItemAutocomplete(incidentID)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -832,7 +832,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 	}
 
 	if err = permissions.ViewIncident(userID, channelID, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", nil)
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
 

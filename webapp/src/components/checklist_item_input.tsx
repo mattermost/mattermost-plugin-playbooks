@@ -74,16 +74,6 @@ export const ChecklistItemDescription: FC<ChecklistItemDescriptionProps> = (prop
     const [description, setDescription] = useState(props.description);
     const [descriptionOpen, setDescriptionOpen] = useState(props.description.length > 0);
     const [hover, setHover] = useState(false);
-    const [focus, setFocus] = useState(false);
-    const ref = useRef(null);
-
-    useEffect(() => {
-        if (focus && ref && ref.current) {
-            // @ts-ignore
-            ref.current.focus();
-            setFocus(false);
-        }
-    }, [focus, setFocus]);
 
     const save = () => {
         props.setDescription(description);
@@ -93,7 +83,6 @@ export const ChecklistItemDescription: FC<ChecklistItemDescriptionProps> = (prop
         <GrayTertiaryButton
             onClick={() => {
                 setDescriptionOpen(true);
-                setFocus(true);
             }}
         >
             <i className='icon-plus icon-12 icon--no-spacing mr-1'/>
@@ -104,7 +93,7 @@ export const ChecklistItemDescription: FC<ChecklistItemDescriptionProps> = (prop
         descriptionBox = (
             <>
                 <StyledTextarea
-                    ref={ref}
+                    autoFocus={true}
                     value={description}
                     onBlur={save}
                     placeholder={'Description'}

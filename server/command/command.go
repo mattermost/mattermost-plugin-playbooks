@@ -83,20 +83,20 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		"Checks or unchecks a checklist item.")
 	checklist.AddDynamicListArgument(
 		"List of checklist items is downloading from your Incident Collaboration plugin",
-		"api/v0/incidents/checklist-autocomplete", true)
+		"api/v0/incidents/checklist-autocomplete-item", true)
 	slashIncident.AddCommand(checklist)
 
 	itemAdd := model.NewAutocompleteData("checkadd", "[checklist]",
 		"Add a checklist item")
 	itemAdd.AddDynamicListArgument(
 		"List of checklist items is downloading from your Incident Collaboration plugin",
-		"api/v0/incidents/checklist-autocomplete-item", true)
+		"api/v0/incidents/checklist-autocomplete", true)
 
 	itemRemove := model.NewAutocompleteData("checkremove", "[checklist item]",
 		"Remove a checklist item")
 	itemRemove.AddDynamicListArgument(
 		"List of checklist items is downloading from your Incident Collaboration plugin",
-		"api/v0/incidents/checklist-autocomplete", true)
+		"api/v0/incidents/checklist-autocomplete-item", true)
 
 	slashIncident.AddCommand(itemAdd)
 	slashIncident.AddCommand(itemRemove)

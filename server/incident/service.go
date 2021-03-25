@@ -981,19 +981,17 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	ret := make([]model.AutocompleteListItem, 0)
 
 	for i, checklist := range theIncident.Checklists {
-		for j, item := range checklist.Items {
-			ret = append(ret, model.AutocompleteListItem{
-				Item: fmt.Sprintf("%d %d", i, j),
-				Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
-			})
-		}
+		ret = append(ret, model.AutocompleteListItem{
+			Item: fmt.Sprintf("%d", i),
+			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
+		})
 	}
 
 	return ret, nil
 }
 
 // GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
-func (s *ServiceImpl) GetChecklistAutocompleteItem(incidentID string) ([]model.AutocompleteListItem, error) {
+func (s *ServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
 	theIncident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident")
@@ -1002,10 +1000,12 @@ func (s *ServiceImpl) GetChecklistAutocompleteItem(incidentID string) ([]model.A
 	ret := make([]model.AutocompleteListItem, 0)
 
 	for i, checklist := range theIncident.Checklists {
-		ret = append(ret, model.AutocompleteListItem{
-			Item: fmt.Sprintf("%d", i),
-			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
-		})
+		for j, item := range checklist.Items {
+			ret = append(ret, model.AutocompleteListItem{
+				Item: fmt.Sprintf("%d %d", i, j),
+				Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
+			})
+		}
 	}
 
 	return ret, nil
