@@ -378,13 +378,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             className={'icon icon-menu'}
                             {...props.draggableProvided.dragHandleProps}
                         />
-                        <HoverMenuButton
-                            title={'Edit'}
-                            className={'icon-pencil-outline icon-16 btn-icon'}
-                            onClick={() => {
-                                setShowEditDialog(true);
-                            }}
-                        />
                         {props.checklistItem.description !== '' &&
                             <StepDescription
                                 text={props.checklistItem.description}
@@ -392,13 +385,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                 team={team}
                             />
                         }
-                        <HoverMenuButton
-                            title={'Delete'}
-                            className={'icon-trash-can-outline icon-16 btn-icon'}
-                            onClick={() => {
-                                setShowDeleteConfirm(true);
-                            }}
-                        />
                         <ProfileSelector
                             selectedUserId={props.checklistItem.assignee_id}
                             onlyPlaceholder={true}
@@ -419,6 +405,20 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }}
                             controlledOpenToggle={profileSelectorToggle}
                             showOnRight={true}
+                        />
+                        <HoverMenuButton
+                            title={'Edit'}
+                            className={'icon-pencil-outline icon-16 btn-icon'}
+                            onClick={() => {
+                                setShowEditDialog(true);
+                            }}
+                        />
+                        <HoverMenuButton
+                            title={'Delete'}
+                            className={'icon-trash-can-outline icon-16 btn-icon'}
+                            onClick={() => {
+                                setShowDeleteConfirm(true);
+                            }}
                         />
                     </HoverMenu>
                     }
