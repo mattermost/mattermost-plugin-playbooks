@@ -370,7 +370,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 onMouseLeave={() => setShowMenu(false)}
                 data-testid='checkbox-item-container'
             >
-                <CheckboxContainer >
+                <CheckboxContainer>
                     {showMenu &&
                     <HoverMenu>
                         <HoverMenuButton
@@ -569,4 +569,3 @@ const ChecklistItemEditModal: FC<ChecklistItemEditModalProps> = (props: Checklis
         </GenericModal>
     );
 };
-

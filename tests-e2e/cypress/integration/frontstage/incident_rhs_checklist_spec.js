@@ -194,7 +194,7 @@ describe('incident rhs checklist', () => {
 
             cy.addNewTaskFromPostMenu(newTasktext);
 
-            // CHeck that it was created
+            // Check that it was created
             cy.findByText(newTasktext).should('exist');
         });
 
@@ -203,7 +203,7 @@ describe('incident rhs checklist', () => {
 
             cy.executeSlashCommand(`/incident checkadd 0 ${newTasktext}`);
 
-            // CHeck that it was created
+            // Check that it was created
             cy.findByText(newTasktext).should('exist');
         });
 

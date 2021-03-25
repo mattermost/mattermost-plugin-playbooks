@@ -317,7 +317,7 @@ type Service interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
 
-	// EditChecklistItem changes the title of a specified checklist item
+	// EditChecklistItem changes the title, command and description of a specified checklist item.
 	EditChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand, newDescription string) error
 
 	// MoveChecklistItem moves a checklist item from one position to anouther

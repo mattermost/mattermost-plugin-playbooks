@@ -62,7 +62,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, update, restart, check, item, announce, list, commander, info, timeline")
+		"Available commands: start, end, update, restart, check, checkadd, checkremove, announce, list, commander, info, timeline")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -317,7 +317,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 
 func (r *Runner) actionRemoveChecklistItem(args []string) {
 	if len(args) != 2 {
-		r.postCommandResponse(helpText)
+		r.postCommandResponse("Command expects two arguments: the checklist number and the item number.")
 		return
 	}
 
