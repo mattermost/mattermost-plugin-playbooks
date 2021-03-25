@@ -123,8 +123,41 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	s.telemetry.CreateIncident(incdnt, userID, public)
 
+	invitedUserIDs := incdnt.InvitedUserIDs
+
+	for _, groupID := range incdnt.InvitedGroupIDs {
+		var group *model.Group
+		group, err = s.pluginAPI.Group.Get(groupID)
+		if err != nil {
+			s.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			continue
+		}
+
+		if !group.AllowReference {
+			s.pluginAPI.Log.Warn("group that does not allow references", "group_id", groupID)
+			continue
+		}
+
+		perPage := 1000
+		for page := 0; ; page++ {
+			var users []*model.User
+			users, err = s.pluginAPI.Group.GetMemberUsers(groupID, page, perPage)
+			if err != nil {
+				s.pluginAPI.Log.Warn("failed to query group", "group_id", groupID, "err", err)
+				break
+			}
+			if len(users) == 0 {
+				break
+			}
+
+			for _, user := range users {
+				invitedUserIDs = append(invitedUserIDs, user.Id)
+			}
+		}
+	}
+
 	usersFailedToInvite := []string{}
-	for _, userID := range incdnt.InvitedUserIDs {
+	for _, userID := range invitedUserIDs {
 		// Check if the user is a member of the incident's team
 		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
 		if err != nil {

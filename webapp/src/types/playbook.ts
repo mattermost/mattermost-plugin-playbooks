@@ -13,6 +13,7 @@ export interface Playbook {
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
     invited_user_ids: string[];
+    invited_group_ids: string[];
     invite_users_enabled: boolean;
     default_commander_id: string;
     default_commander_enabled: boolean;
@@ -77,6 +78,7 @@ export function emptyPlaybook(): Playbook {
         reminder_message_template: '',
         reminder_timer_default_seconds: 0,
         invited_user_ids: [],
+        invited_group_ids: [],
         invite_users_enabled: false,
         default_commander_id: '',
         default_commander_enabled: false,
@@ -121,6 +123,7 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.reminder_message_template == 'string' &&
         typeof arg.reminder_timer_default_seconds == 'number' &&
         arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
+        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
         typeof arg.invite_users_enabled === 'boolean' &&
         typeof arg.default_commander_id === 'string' &&
         typeof arg.default_commander_enabled === 'boolean';

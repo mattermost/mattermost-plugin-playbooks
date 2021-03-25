@@ -1186,6 +1186,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			Checklists:           []playbook.Checklist(nil),
 			MemberIDs:            []string(nil),
 			InvitedUserIDs:       []string(nil),
+			InvitedGroupIDs:      []string(nil),
 		},
 	}
 }

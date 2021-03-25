@@ -129,7 +129,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -153,15 +155,16 @@ func TestIncidents(t *testing.T) {
 			Name:            "incidentName",
 			PlaybookID:      "playbookid1",
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 		}
-		retI := i
+		retI := i.Clone()
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(retI, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -183,7 +186,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -210,6 +215,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      withid.ID,
 			Checklists:      withid.Checklists,
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -240,7 +246,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -303,7 +311,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: false,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -366,7 +376,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -453,7 +465,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -497,7 +511,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"some_other_id"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -541,7 +557,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		testIncident := incident.Incident{
@@ -552,6 +570,60 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      testPlaybook.ID,
 			Checklists:      testPlaybook.Checklists,
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(testPlaybook, nil).
+			Times(1)
+
+		retI := testIncident
+		retI.ID = "incidentID"
+		retI.ChannelID = "channelID"
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
+
+		// Verify that the websocket event is published
+		poster.EXPECT().
+			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
+
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            testIncident.Name,
+			CommanderUserID: testIncident.CommanderUserID,
+			TeamID:          testIncident.TeamID,
+			Description:     testIncident.Description,
+			PlaybookID:      testIncident.PlaybookID,
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultIncident.ID)
+	})
+
+	t.Run("create valid incident, invite users enabled", func(t *testing.T) {
+		reset()
+
+		testPlaybook := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+			InviteUsersEnabled:   true,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			Description:     "description",
+			PlaybookID:      testPlaybook.ID,
+			Checklists:      testPlaybook.Checklists,
+			InvitedUserIDs:  []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs: []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		playbookService.EXPECT().
@@ -683,6 +755,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -791,6 +864,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -824,6 +898,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      nil,
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -859,6 +934,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -895,6 +971,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -1122,6 +1199,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 

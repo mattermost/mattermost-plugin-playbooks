@@ -46,8 +46,9 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:      []string{},
-		InvitedUserIDs: []string{},
+		MemberIDs:       []string{},
+		InvitedUserIDs:  []string{},
+		InvitedGroupIDs: []string{},
 	}
 	withid := playbook.Playbook{
 		ID:     "testplaybookid",
@@ -63,8 +64,9 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:      []string{},
-		InvitedUserIDs: []string{},
+		MemberIDs:       []string{},
+		InvitedUserIDs:  []string{},
+		InvitedGroupIDs: []string{},
 	}
 	withidBytes, err := json.Marshal(&withid)
 	require.NoError(t, err)
@@ -83,8 +85,9 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:      []string{"testuserid"},
-		InvitedUserIDs: []string{},
+		MemberIDs:       []string{"testuserid"},
+		InvitedUserIDs:  []string{},
+		InvitedGroupIDs: []string{},
 	}
 	withMemberBytes, err := json.Marshal(&withMember)
 	require.NoError(t, err)
@@ -105,6 +108,7 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:          []string{},
 		BroadcastChannelID: "nonemptychannelid",
 		InvitedUserIDs:     []string{},
+		InvitedGroupIDs:    []string{},
 	}
 	withBroadcastChannelNoID := playbook.Playbook{
 		Title:  "My Playbook",
@@ -122,6 +126,7 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:          []string{},
 		BroadcastChannelID: "nonemptychannelid",
 		InvitedUserIDs:     []string{},
+		InvitedGroupIDs:    []string{},
 	}
 
 	var mockCtrl *gomock.Controller
@@ -235,6 +240,162 @@ func TestPlaybooks(t *testing.T) {
 
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("create playbook with invited users and groups", func(t *testing.T) {
+		reset()
+
+		pbook := playbook.Playbook{
+			Title:  "My Playbook",
+			TeamID: "testteamid",
+			Checklists: []playbook.Checklist{
+				{
+					Title: "Do these things",
+					Items: []playbook.ChecklistItem{
+						{
+							Title: "Do this",
+						},
+					},
+				},
+			},
+			MemberIDs:          []string{"testuserid"},
+			InviteUsersEnabled: true,
+			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(pbook))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Create(pbook, "testuserid").
+			Return(model.NewId(), nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
+			Id:             "testInvitedGroupID1",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("GetGroup", "testInvitedGroupID2").Return(&model.Group{
+			Id:             "testInvitedGroupID2",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
+
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	})
+
+	t.Run("create playbook with invited users and groups, invite disabled", func(t *testing.T) {
+		reset()
+
+		pbook := playbook.Playbook{
+			Title:  "My Playbook",
+			TeamID: "testteamid",
+			Checklists: []playbook.Checklist{
+				{
+					Title: "Do these things",
+					Items: []playbook.ChecklistItem{
+						{
+							Title: "Do this",
+						},
+					},
+				},
+			},
+			MemberIDs:          []string{"testuserid"},
+			InviteUsersEnabled: false,
+			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(pbook))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Create(pbook, "testuserid").
+			Return(model.NewId(), nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
+			Id:             "testInvitedGroupID1",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("GetGroup", "testInvitedGroupID2").Return(&model.Group{
+			Id:             "testInvitedGroupID2",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
+
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	})
+
+	t.Run("create playbook with invited users and groups, group disallowing mention", func(t *testing.T) {
+		reset()
+
+		pbook := playbook.Playbook{
+			Title:  "My Playbook",
+			TeamID: "testteamid",
+			Checklists: []playbook.Checklist{
+				{
+					Title: "Do these things",
+					Items: []playbook.ChecklistItem{
+						{
+							Title: "Do this",
+						},
+					},
+				},
+			},
+			MemberIDs:          []string{"testuserid"},
+			InviteUsersEnabled: true,
+			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(pbook))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Create(pbook, "testuserid").
+			Return(model.NewId(), nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
+			Id:             "testInvitedGroupID1",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("GetGroup", "testInvitedGroupID2").Return(&model.Group{
+			Id:             "testInvitedGroupID2",
+			AllowReference: false,
+		}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
+
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
@@ -483,6 +644,183 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("update playbook with invited users and groups", func(t *testing.T) {
+		reset()
+
+		pbook := playbook.Playbook{
+			Title:  "My Playbook",
+			TeamID: "testteamid",
+			Checklists: []playbook.Checklist{
+				{
+					Title: "Do these things",
+					Items: []playbook.ChecklistItem{
+						{
+							Title: "Do this",
+						},
+					},
+				},
+			},
+			MemberIDs:          []string{},
+			BroadcastChannelID: "nonemptychannelid",
+			InviteUsersEnabled: true,
+			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Get("testplaybookid").
+			Return(pbook, nil).
+			Times(1)
+
+		pbook.ID = "testplaybookid"
+		playbookService.EXPECT().
+			Update(pbook, "testuserid").
+			Return(nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
+			Id:             "testInvitedGroupID1",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("GetGroup", "testInvitedGroupID2").Return(&model.Group{
+			Id:             "testInvitedGroupID2",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("update playbook with invited users and groups, invite disabled", func(t *testing.T) {
+		reset()
+
+		pbook := playbook.Playbook{
+			Title:  "My Playbook",
+			TeamID: "testteamid",
+			Checklists: []playbook.Checklist{
+				{
+					Title: "Do these things",
+					Items: []playbook.ChecklistItem{
+						{
+							Title: "Do this",
+						},
+					},
+				},
+			},
+			MemberIDs:          []string{},
+			BroadcastChannelID: "nonemptychannelid",
+			InviteUsersEnabled: false,
+			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Get("testplaybookid").
+			Return(pbook, nil).
+			Times(1)
+
+		pbook.ID = "testplaybookid"
+		playbookService.EXPECT().
+			Update(pbook, "testuserid").
+			Return(nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
+			Id:             "testInvitedGroupID1",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("GetGroup", "testInvitedGroupID2").Return(&model.Group{
+			Id:             "testInvitedGroupID2",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("update playbook with invited users and groups, group disallowing mention", func(t *testing.T) {
+		reset()
+
+		pbook := playbook.Playbook{
+			Title:  "My Playbook",
+			TeamID: "testteamid",
+			Checklists: []playbook.Checklist{
+				{
+					Title: "Do these things",
+					Items: []playbook.ChecklistItem{
+						{
+							Title: "Do this",
+						},
+					},
+				},
+			},
+			MemberIDs:          []string{},
+			BroadcastChannelID: "nonemptychannelid",
+			InviteUsersEnabled: false,
+			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		require.NoError(t, err)
+
+		playbookService.EXPECT().
+			Get("testplaybookid").
+			Return(pbook, nil).
+			Times(1)
+
+		pbook.ID = "testplaybookid"
+		pbook.InvitedGroupIDs = []string{"testInvitedGroupID1"}
+
+		playbookService.EXPECT().
+			Update(pbook, "testuserid").
+			Return(nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
+			Id:             "testInvitedGroupID1",
+			AllowReference: true,
+		}, nil)
+		pluginAPI.On("GetGroup", "testInvitedGroupID2").Return(&model.Group{
+			Id:             "testInvitedGroupID2",
+			AllowReference: false,
+		}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("LogWarn", "group does not allow references, removing from automated invite list", "group_id", "testInvitedGroupID2")
 
 		handler.ServeHTTP(testrecorder, testreq)
 
@@ -1105,25 +1443,28 @@ func TestSortingPlaybooks(t *testing.T) {
 
 func TestPagingPlaybooks(t *testing.T) {
 	playbooktest1 := playbook.Playbook{
-		Title:          "A",
-		TeamID:         "testteamid",
-		Checklists:     []playbook.Checklist{},
-		MemberIDs:      []string{},
-		InvitedUserIDs: []string{},
+		Title:           "A",
+		TeamID:          "testteamid",
+		Checklists:      []playbook.Checklist{},
+		MemberIDs:       []string{},
+		InvitedUserIDs:  []string{},
+		InvitedGroupIDs: []string{},
 	}
 	playbooktest2 := playbook.Playbook{
-		Title:          "B",
-		TeamID:         "testteamid",
-		Checklists:     []playbook.Checklist{},
-		MemberIDs:      []string{},
-		InvitedUserIDs: []string{},
+		Title:           "B",
+		TeamID:          "testteamid",
+		Checklists:      []playbook.Checklist{},
+		MemberIDs:       []string{},
+		InvitedUserIDs:  []string{},
+		InvitedGroupIDs: []string{},
 	}
 	playbooktest3 := playbook.Playbook{
-		Title:          "C",
-		TeamID:         "testteamid",
-		Checklists:     []playbook.Checklist{},
-		MemberIDs:      []string{},
-		InvitedUserIDs: []string{},
+		Title:           "C",
+		TeamID:          "testteamid",
+		Checklists:      []playbook.Checklist{},
+		MemberIDs:       []string{},
+		InvitedUserIDs:  []string{},
+		InvitedGroupIDs: []string{},
 	}
 
 	var mockCtrl *gomock.Controller

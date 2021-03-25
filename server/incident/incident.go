@@ -47,6 +47,7 @@ type Incident struct {
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
 	InvitedUserIDs          []string             `json:"invited_user_ids"`
+	InvitedGroupIDs         []string             `json:"invited_group_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 	DefaultCommanderID      string               `json:"default_commander_id"`
 }
@@ -61,6 +62,8 @@ func (i *Incident) Clone() *Incident {
 
 	newIncident.StatusPosts = append([]StatusPost(nil), i.StatusPosts...)
 	newIncident.TimelineEvents = append([]TimelineEvent(nil), i.TimelineEvents...)
+	newIncident.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
+	newIncident.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
 
 	return &newIncident
 }
@@ -83,6 +86,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 	if old.InvitedUserIDs == nil {
 		old.InvitedUserIDs = []string{}
+	}
+	if old.InvitedGroupIDs == nil {
+		old.InvitedGroupIDs = []string{}
 	}
 	if old.TimelineEvents == nil {
 		old.TimelineEvents = []TimelineEvent{}

@@ -390,8 +390,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 
 		newIncident.InvitedUserIDs = []string{}
+		newIncident.InvitedGroupIDs = []string{}
 		if pb.InviteUsersEnabled {
 			newIncident.InvitedUserIDs = pb.InvitedUserIDs
+			newIncident.InvitedGroupIDs = pb.InvitedGroupIDs
 		}
 
 		if pb.DefaultCommanderEnabled {

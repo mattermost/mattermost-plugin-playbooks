@@ -16,8 +16,9 @@ import (
 
 type sqlPlaybook struct {
 	playbook.Playbook
-	ChecklistsJSON             json.RawMessage
-	ConcatenatedInvitedUserIDs string
+	ChecklistsJSON              json.RawMessage
+	ConcatenatedInvitedUserIDs  string
+	ConcatenatedInvitedGroupIDs string
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -44,7 +45,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
 			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
-			"ConcatenatedInvitedUserIDs", "InviteUsersEnabled",
+			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
 			"DefaultCommanderID", "DefaultCommanderEnabled").
 		From("IR_Playbook")
 
@@ -98,6 +99,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
 			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs": rawPlaybook.ConcatenatedInvitedGroupIDs,
 			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
 			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
@@ -293,6 +295,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
 			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs": rawPlaybook.ConcatenatedInvitedGroupIDs,
 			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
 			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
@@ -400,12 +403,11 @@ func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
 		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)
 	}
 
-	invitedUserIDs := strings.Join(origPlaybook.InvitedUserIDs, ",")
-
 	return &sqlPlaybook{
-		Playbook:                   origPlaybook,
-		ChecklistsJSON:             checklistsJSON,
-		ConcatenatedInvitedUserIDs: invitedUserIDs,
+		Playbook:                    origPlaybook,
+		ChecklistsJSON:              checklistsJSON,
+		ConcatenatedInvitedUserIDs:  strings.Join(origPlaybook.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs: strings.Join(origPlaybook.InvitedGroupIDs, ","),
 	}, nil
 }
 
@@ -418,6 +420,11 @@ func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
 	p.InvitedUserIDs = []string(nil)
 	if rawPlaybook.ConcatenatedInvitedUserIDs != "" {
 		p.InvitedUserIDs = strings.Split(rawPlaybook.ConcatenatedInvitedUserIDs, ",")
+	}
+
+	p.InvitedGroupIDs = []string(nil)
+	if rawPlaybook.ConcatenatedInvitedGroupIDs != "" {
+		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
 	}
 
 	return p, nil
