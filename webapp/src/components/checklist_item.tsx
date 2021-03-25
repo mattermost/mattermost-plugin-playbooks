@@ -517,7 +517,7 @@ const FormContainer = styled.div`
     flex-direction: column;
     color: var(--center-channel-color);
 
-    * {
+    > * {
         margin-bottom: 10px;
     }
 `;

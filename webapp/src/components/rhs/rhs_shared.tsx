@@ -113,6 +113,7 @@ export const HoverMenu = styled.div`
 
 export const HoverMenuButton = styled.i`
     display: inline-block;
+    cursor: pointer;
     width: 28px;
     height: 28px;
     padding: 2px 0 0 2px;
