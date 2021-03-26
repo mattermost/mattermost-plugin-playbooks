@@ -108,7 +108,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 
 		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only http and https are accepted", url.Scheme)
+			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
@@ -233,7 +233,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		}
 
 		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only http and https are accepted", url.Scheme)
+			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}

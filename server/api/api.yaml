@@ -1440,7 +1440,7 @@ paths:
                   type: boolean
                   example: true
                 default_commander_id:
-                  description: User ID of the member that will be automatically assigned as commander as soon as the incident is created. If this member is not part of the incident's channel nor included in the invited_user_ids list, it will be automatically invited to the channel.
+                  description: User ID of the member that will be automatically assigned as commander as soon as the incident is created. If the member is not part of the incident's channel or is not included in the invited_user_ids list, they will be automatically invited to the channel.
                   type: string
                   example: 9dtruav6d9ce3oqnc5pwhtqtfq
                 default_commander_enabled:
@@ -1456,7 +1456,7 @@ paths:
                   type: boolean
                   example: true
                 creation_webhook_url:
-                  description: An absolute URL where a POST request will be sent as soon as the incident is created. The allowed protocols are http and https.
+                  description: An absolute URL where a POST request will be sent as soon as the incident is created. The allowed protocols are HTTP and HTTPS.
                   type: string
                   example: https://httpbin.org/post
                 creation_webhook_enabled:
@@ -1473,7 +1473,7 @@ paths:
         incidentCreation:
           "{$request.body#/creation_webhook_url}":
             post:
-              summary: Incident's creation outgoing webhook
+              summary: Incident's creation outgoing webhook.
               description: When an incident is created with this playbook, a POST request is sent to the URL configured in creation_webhook_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
               operationId: creationWebhook
               requestBody:
@@ -1942,9 +1942,9 @@ components:
           properties:
             channel_url:
               type: string
-              description: Absolute URL to the incident's channel
+              description: Absolute URL to the incident's channel.
               example: http://example.com/ad-1/channels/incident-channel-name
             details_url:
               type: string
-              description: Absolute URL to the incident's details
+              description: Absolute URL to the incident's details.
               example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID

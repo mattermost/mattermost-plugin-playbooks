@@ -594,7 +594,7 @@ describe('incident automation', () => {
                         description: 'Incident description.',
                     });
 
-                    // # Navigate to the incident channel.
+                    // # Navigate to the incident channel
                     cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
                     // * Verify that the bot has not posted a message informing of the failure to send the webhook
@@ -629,7 +629,7 @@ describe('incident automation', () => {
                         description: 'Incident description.',
                     });
 
-                    // # Navigate to the incident channel.
+                    // # Navigate to the incident channel
                     cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
                     // * Verify that the bot has posted a message informing of the failure to send the webhook
