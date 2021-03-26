@@ -1,8 +1,13 @@
 package incident_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
@@ -229,6 +234,89 @@ func TestCreateIncident(t *testing.T) {
 		_, err := s.CreateIncident(incdnt, "user_id", true)
 		pluginAPI.AssertExpectations(t)
 		require.NoError(t, err)
+	})
+
+	t.Run("webhook is sent", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		type webhookPayload struct {
+			incident.Incident
+			ChannelURL string `json:"channel_url"`
+			DetailsURL string `json:"details_url"`
+		}
+
+		webhookChan := make(chan webhookPayload)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			body, err := ioutil.ReadAll(r.Body)
+			require.NoError(t, err)
+
+			var p webhookPayload
+			err = json.Unmarshal(body, &p)
+			require.NoError(t, err)
+
+			webhookChan <- p
+		}))
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:                 "incidentID",
+			Name:               "Incident Name",
+			TeamID:             teamID,
+			CommanderUserID:    "user_id",
+			CreationWebhookURL: server.URL,
+		}
+
+		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&incident.TimelineEvent{}))
+		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
+
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
+
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
+		poster.EXPECT().PostMessage("channel_id", gomock.Any()).Return(&model.Post{Id: "testId"}, nil)
+
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		siteURL := "http://example.com"
+		mattermostConfig.ServiceSettings.SiteURL = &siteURL
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
+		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id"}, nil)
+		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", mock.Anything).Return(nil, nil)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "incident-channel-name"}, nil)
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		createdIncident, err := s.CreateIncident(incdnt, "user_id", true)
+		require.NoError(t, err)
+
+		select {
+		case payload := <-webhookChan:
+			require.Equal(t, *createdIncident, payload.Incident)
+			require.Equal(t,
+				"http://example.com/ad-1/channels/incident-channel-name",
+				payload.ChannelURL)
+			require.Equal(t,
+				"http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID",
+				payload.DetailsURL)
+
+		case <-time.After(time.Second * 5):
+			require.Fail(t, "did not receive webhook")
+		}
+
+		pluginAPI.AssertExpectations(t)
 	})
 }
 
