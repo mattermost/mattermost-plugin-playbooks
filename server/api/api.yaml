@@ -1484,7 +1484,7 @@ paths:
                       $ref: "#/components/schemas/CreationWebhookPayload"
               responses:
                 "2XX":
-                  description: Your server returns a 2XX code if it successfuly received the request.
+                  description: Your server returns a 2XX code if it successfully received the request.
       responses:
         201:
           description: ID of the created playbook.
