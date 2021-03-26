@@ -51,7 +51,8 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "DefaultCommanderID").
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "DefaultCommanderID",
+			"AnnouncementChannelID").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -248,6 +249,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"CurrentStatus":              rawIncident.CurrentStatus,
 			"ConcatenatedInvitedUserIDs": rawIncident.ConcatenatedInvitedUserIDs,
 			"DefaultCommanderID":         rawIncident.DefaultCommanderID,
+			"AnnouncementChannelID":      rawIncident.AnnouncementChannelID,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -290,6 +292,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"EndAt":                      rawIncident.ResolvedAt(),
 			"ConcatenatedInvitedUserIDs": rawIncident.ConcatenatedInvitedUserIDs,
 			"DefaultCommanderID":         rawIncident.DefaultCommanderID,
+			"AnnouncementChannelID":      rawIncident.AnnouncementChannelID,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 

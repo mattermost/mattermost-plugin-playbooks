@@ -146,6 +146,10 @@ Cypress.Commands.add('openSelector', () => {
     cy.findByText('Search for member').click({force: true});
 });
 
+Cypress.Commands.add('openChannelSelector', () => {
+    cy.findByText('Search for channel').click({force: true});
+});
+
 Cypress.Commands.add('addInvitedUser', (userName) => {
     cy.get('.invite-users-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
@@ -155,5 +159,11 @@ Cypress.Commands.add('addInvitedUser', (userName) => {
 Cypress.Commands.add('selectCommander', (userName) => {
     cy.get('.assign-commander-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
+    });
+});
+
+Cypress.Commands.add('selectChannel', (channelName) => {
+    cy.get('.channel-selector__menu').within(() => {
+        cy.findByText(channelName).click({force: true});
     });
 });
