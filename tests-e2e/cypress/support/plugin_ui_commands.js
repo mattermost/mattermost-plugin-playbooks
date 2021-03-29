@@ -65,6 +65,18 @@ Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentName) => {
     cy.startIncident(playbookName, incidentName);
 });
 
+// Create a new task from the RHS
+Cypress.Commands.add('addNewTaskFromPostMenu', (taskname) => {
+    // Click add new task
+    cy.findAllByText('Add new task').eq(0).click();
+
+    // Type a name
+    cy.findByTestId('nameinput').type(taskname);
+
+    // Submit the dialog
+    cy.findByText('Add Task').click();
+});
+
 // Starts incident from the post menu
 // function startIncidentFromPostMenu(incidentName) {
 Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) => {

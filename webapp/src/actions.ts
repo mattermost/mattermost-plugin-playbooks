@@ -77,6 +77,12 @@ export function addToTimeline(postId: string) {
     };
 }
 
+export function addNewTask(checklist: number) {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, `/incident checkadd ${checklist}`);
+    };
+}
+
 export function setRHSOpen(open: boolean): SetRHSOpen {
     return {
         type: SET_RHS_OPEN,
