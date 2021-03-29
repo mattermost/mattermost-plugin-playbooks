@@ -32,6 +32,8 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
+import {Stats} from 'src/types/stats';
+
 import {pluginId} from './manifest';
 
 const apiUrl = `/plugins/${pluginId}/api/v0`;
@@ -261,6 +263,15 @@ export async function clientRemoveTimelineEvent(incidentID: string, entryID: str
         method: 'delete',
         body: '',
     });
+}
+
+export async function fetchStats(teamID: string): Promise<Stats | null> {
+    const data = await doGet(`${apiUrl}/stats?team_id=${teamID}`);
+    if (!data) {
+        return null;
+    }
+
+    return data as Stats;
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {
