@@ -99,7 +99,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 		if !group.AllowReference {
 			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-				"group %s does now allow referenes",
+				"group %s does now allow references",
 				groupID,
 			))
 			return
