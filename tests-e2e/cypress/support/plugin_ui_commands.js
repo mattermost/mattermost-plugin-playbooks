@@ -65,6 +65,18 @@ Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentName) => {
     cy.startIncident(playbookName, incidentName);
 });
 
+// Create a new task from the RHS
+Cypress.Commands.add('addNewTaskFromPostMenu', (taskname) => {
+    // Click add new task
+    cy.findAllByText('Add new task').eq(0).click();
+
+    // Type a name
+    cy.findByTestId('nameinput').type(taskname);
+
+    // Submit the dialog
+    cy.findByText('Add Task').click();
+});
+
 // Starts incident from the post menu
 // function startIncidentFromPostMenu(incidentName) {
 Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) => {
@@ -146,6 +158,10 @@ Cypress.Commands.add('openSelector', () => {
     cy.findByText('Search for member').click({force: true});
 });
 
+Cypress.Commands.add('openChannelSelector', () => {
+    cy.findByText('Search for channel').click({force: true});
+});
+
 Cypress.Commands.add('addInvitedUser', (userName) => {
     cy.get('.invite-users-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
@@ -155,5 +171,11 @@ Cypress.Commands.add('addInvitedUser', (userName) => {
 Cypress.Commands.add('selectCommander', (userName) => {
     cy.get('.assign-commander-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
+    });
+});
+
+Cypress.Commands.add('selectChannel', (channelName) => {
+    cy.get('.channel-selector__menu').within(() => {
+        cy.findByText(channelName).click({force: true});
     });
 });

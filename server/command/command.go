@@ -27,6 +27,8 @@ const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Comman
 	"* `/incident end` - Close the incident of that channel. \n" +
 	"* `/incident update` - Update the incident's status and (if enabled) post the status update to the broadcast channel. \n" +
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
+	"* `/incident checkadd [checklist #] [item text]` - add a checklist item. \n" +
+	"* `/incident checkremove [checklist #] [item #]` - remove a checklist item. \n" +
 	"* `/incident commander [@username]` - Show or change the current commander. \n" +
 	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
 	"* `/incident list` - List all your incidents. \n" +
@@ -60,7 +62,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, update, restart, check, announce, list, commander, info, timeline")
+		"Available commands: start, end, update, restart, check, checkadd, checkremove, announce, list, commander, info, timeline")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -81,8 +83,23 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		"Checks or unchecks a checklist item.")
 	checklist.AddDynamicListArgument(
 		"List of checklist items is downloading from your Incident Collaboration plugin",
-		"api/v0/incidents/checklist-autocomplete", true)
+		"api/v0/incidents/checklist-autocomplete-item", true)
 	slashIncident.AddCommand(checklist)
+
+	itemAdd := model.NewAutocompleteData("checkadd", "[checklist]",
+		"Add a checklist item")
+	itemAdd.AddDynamicListArgument(
+		"List of checklist items is downloading from your Incident Collaboration plugin",
+		"api/v0/incidents/checklist-autocomplete", true)
+
+	itemRemove := model.NewAutocompleteData("checkremove", "[checklist item]",
+		"Remove a checklist item")
+	itemRemove.AddDynamicListArgument(
+		"List of checklist items is downloading from your Incident Collaboration plugin",
+		"api/v0/incidents/checklist-autocomplete-item", true)
+
+	slashIncident.AddCommand(itemAdd)
+	slashIncident.AddCommand(itemRemove)
 
 	announce := model.NewAutocompleteData("announce", "~[channels]",
 		"Announce the current incident in other channels.")
@@ -254,6 +271,81 @@ func (r *Runner) actionCheck(args []string) {
 	err = r.incidentService.ToggleCheckedState(incidentID, r.args.UserId, checklist, item)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error checking/unchecking item: %v", err)
+	}
+}
+
+func (r *Runner) actionAddChecklistItem(args []string) {
+	if len(args) < 1 {
+		r.postCommandResponse("Need to provide arguments")
+		return
+	}
+
+	checklist, err := strconv.Atoi(args[0])
+	if err != nil {
+		r.postCommandResponse("Error parsing the first argument. Must be a number.")
+		return
+	}
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only add an item from within the incident's channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	// If we didn't get the item's text, then use the interactive dialog
+	if len(args) == 1 {
+		if err := r.incidentService.OpenAddChecklistItemDialog(r.args.TriggerId, incidentID, checklist); err != nil {
+			r.warnUserAndLogErrorf("Error: %v", err)
+			return
+		}
+		return
+	}
+
+	combineargs := strings.Join(args[1:], " ")
+	if err := r.incidentService.AddChecklistItem(incidentID, r.args.UserId, checklist, playbook.ChecklistItem{
+		Title: combineargs,
+	}); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
+}
+
+func (r *Runner) actionRemoveChecklistItem(args []string) {
+	if len(args) != 2 {
+		r.postCommandResponse("Command expects two arguments: the checklist number and the item number.")
+		return
+	}
+
+	checklist, err := strconv.Atoi(args[0])
+	if err != nil {
+		r.postCommandResponse("Error parsing the first argument. Must be a number.")
+		return
+	}
+
+	item, err := strconv.Atoi(args[1])
+	if err != nil {
+		r.postCommandResponse("Error parsing the second argument. Must be a number.")
+		return
+	}
+
+	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, incident.ErrNotFound) {
+			r.postCommandResponse("You can only remove an item from within the incident's channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
+		return
+	}
+
+	err = r.incidentService.RemoveChecklistItem(incidentID, r.args.UserId, checklist, item)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error removing item: %v", err)
 	}
 }
 
@@ -920,8 +1012,8 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.incidentService.RenameChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
-		"I should say this! and be unchecked and first!", ""); err != nil {
+	if err := r.incidentService.EditChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
+		"I should say this! and be unchecked and first!", "", ""); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
@@ -1335,6 +1427,10 @@ func (r *Runner) Execute() error {
 		r.actionUpdate()
 	case "check":
 		r.actionCheck(parameters)
+	case "checkadd":
+		r.actionAddChecklistItem(parameters)
+	case "checkremove":
+		r.actionRemoveChecklistItem(parameters)
 	case "restart":
 		r.actionRestart()
 	case "commander":

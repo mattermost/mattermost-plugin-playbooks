@@ -64,6 +64,15 @@ const DialogFieldIncidentKey = "incident"
 // DialogFieldSummary is the key for the summary in AddToTimelineDialog
 const DialogFieldSummary = "summary"
 
+// DialogFieldItemName is the key for the name in AddChecklistItemDialog
+const DialogFieldItemNameKey = "name"
+
+// DialogFieldDescriptionKey is the key for the description in AddChecklistItemDialog
+const DialogFieldItemDescriptionKey = "description"
+
+// DialogFieldCommandKey is the key for the command in AddChecklistItemDialog
+const DialogFieldItemCommandKey = "command"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -81,6 +90,29 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 // GetIncidents returns filtered incidents and the total count before paging.
 func (s *ServiceImpl) GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(requesterInfo, options)
+}
+
+func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander *model.User) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	if err := permissions.IsChannelActiveInTeam(theIncident.AnnouncementChannelID, theIncident.TeamID, s.pluginAPI); err != nil {
+		return err
+	}
+
+	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
+	announcementMsg += fmt.Sprintf("**Commander**: @%s\n", commander.Username)
+	if theIncident.Description != "" {
+		announcementMsg += fmt.Sprintf("**Description**: %s\n", theIncident.Description)
+	}
+
+	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
@@ -168,19 +200,29 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
 	}
 
+	commander, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
+	}
+
 	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
 	if incdnt.CommanderUserID != incdnt.ReporterUserID {
-		commander, err2 := s.pluginAPI.User.Get(incdnt.CommanderUserID)
-		if err2 != nil {
-			return nil, errors.Wrapf(err2, "failed to resolve user %s", incdnt.CommanderUserID)
-		}
-
 		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, commander.Username)
 	}
 
 	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
+	}
+
+	if incdnt.AnnouncementChannelID != "" {
+		if err2 := s.broadcastIncidentCreation(incdnt, commander); err2 != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incdnt.AnnouncementChannelID)
+
+			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this incident in the configured channel."); err != nil {
+				return nil, errors.Wrapf(err, "failed to post to incident channel")
+			}
+		}
 	}
 
 	event := &TimelineEvent{
@@ -304,6 +346,42 @@ func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo permissions.Requeste
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/add-to-timeline-dialog",
 			s.configService.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error {
+	dialog := &model.Dialog{
+		Title: "Add New Task",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Name",
+				Name:        DialogFieldItemNameKey,
+				Type:        "text",
+				Default:     "",
+			},
+			{
+				DisplayName: "Description",
+				Name:        DialogFieldItemDescriptionKey,
+				Type:        "text",
+				Default:     "",
+				Optional:    true,
+			},
+		},
+		SubmitLabel:    "Add Task",
+		NotifyOnCancel: false,
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/checklists/%v/add-dialog",
+			s.configService.GetManifest().Id, incidentID, checklist),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -866,8 +944,8 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	return nil
 }
 
-// RenameChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand string) error {
+// EditChecklistItem changes the title of a specified checklist item
+func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -875,6 +953,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
+	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
@@ -928,11 +1007,29 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	ret := make([]model.AutocompleteListItem, 0)
 
 	for i, checklist := range theIncident.Checklists {
+		ret = append(ret, model.AutocompleteListItem{
+			Item: fmt.Sprintf("%d", i),
+			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
+		})
+	}
+
+	return ret, nil
+}
+
+// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+func (s *ServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for i, checklist := range theIncident.Checklists {
 		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
-				Item:     fmt.Sprintf("%d %d", i, j),
-				Hint:     fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
-				HelpText: "Check/uncheck this item",
+				Item: fmt.Sprintf("%d %d", i, j),
+				Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
 			})
 		}
 	}

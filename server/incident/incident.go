@@ -49,6 +49,7 @@ type Incident struct {
 	InvitedUserIDs          []string             `json:"invited_user_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 	DefaultCommanderID      string               `json:"default_commander_id"`
+	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -265,6 +266,9 @@ type Service interface {
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the incident timeline.
 	OpenAddToTimelineDialog(requesterInfo permissions.RequesterInfo, postID, teamID, triggerID string) error
 
+	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a post to the incident timeline.
+	OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error
+
 	// AddPostToTimeline adds an event based on a post to an incident's timeline.
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
@@ -314,13 +318,16 @@ type Service interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
 
-	// RenameChecklistItem changes the title of a specified checklist item
-	RenameChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand string) error
+	// EditChecklistItem changes the title, command and description of a specified checklist item.
+	EditChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand, newDescription string) error
 
 	// MoveChecklistItem moves a checklist item from one position to anouther
 	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
 
-	// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+	// GetChecklistItemAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+	GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error)
+
+	// GetChecklistAutocomplete returns the list of checklists for incidentID to be used in autocomplete
 	GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error)
 
 	// NukeDB removes all incident related data.

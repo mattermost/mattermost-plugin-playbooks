@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import Profile from 'src/components/profile/profile';
-import {AutomationHeader, AutomationTitle} from 'src/components/backstage/automation/styles';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import AssignCommanderSelector from 'src/components/backstage/automation/assign_commander_selector';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import {fetchUsersInTeam} from 'src/client';
@@ -34,7 +34,7 @@ export const AutoAssignCommander: FC<Props> = (props: Props) => {
                     />
                     <div>{'Assign commander'}</div>
                 </AutomationTitle>
-                <ProfileAutocompleteWrapper>
+                <SelectorWrapper>
                     <AssignCommanderSelector
                         commanderID={props.commanderID}
                         onAddUser={props.onAssignCommander}
@@ -42,7 +42,7 @@ export const AutoAssignCommander: FC<Props> = (props: Props) => {
                         getProfiles={props.getProfiles}
                         isDisabled={!props.enabled}
                     />
-                </ProfileAutocompleteWrapper>
+                </SelectorWrapper>
             </AutomationHeader>
         </>
     );
@@ -114,11 +114,6 @@ const UserPic = styled.div`
         border: 2px solid var(--center-channel-color-04);
     }
 
-`;
-
-const ProfileAutocompleteWrapper = styled.div`
-    margin: 0;
-    width: 300px;
 `;
 
 interface UserProps {

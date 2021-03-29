@@ -53,6 +53,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/checklist-autocomplete-item", handler.getChecklistAutocompleteItem).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -76,10 +77,11 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/reorder", handler.reorderChecklist).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("/add-dialog", handler.addChecklistItemDialog).Methods(http.MethodPost)
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
-	checklistItem.HandleFunc("", handler.itemRename).Methods(http.MethodPut)
+	checklistItem.HandleFunc("", handler.itemEdit).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
@@ -396,6 +398,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 
 		if pb.DefaultCommanderEnabled {
 			newIncident.DefaultCommanderID = pb.DefaultCommanderID
+		}
+
+		if pb.AnnouncementChannelEnabled {
+			newIncident.AnnouncementChannelID = pb.AnnouncementChannelID
 		}
 	}
 
@@ -854,7 +860,31 @@ func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// getChecklistAutocomplete handles the GET /incidents/checklists-autocomplete api endpoint
+func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	channelID := query.Get("channel_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
+		return
+	}
+
+	data, err := h.incidentService.GetChecklistItemAutocomplete(incidentID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, data, http.StatusOK)
+}
+
 func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	channelID := query.Get("channel_id")
@@ -867,7 +897,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 	}
 
 	if err = permissions.ViewIncident(userID, channelID, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", nil)
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
 
@@ -1002,6 +1032,57 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusCreated)
 }
 
+// addChecklistItemDialog handles the interactive dialog submission when a user clicks add new task
+func (h *IncidentHandler) addChecklistItemDialog(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+
+	request := model.SubmitDialogRequestFromJson(r.Body)
+	if request == nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		return
+	}
+
+	if userID != request.UserId {
+		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		return
+	}
+
+	var name, description string
+	if rawName, ok := request.Submission[incident.DialogFieldItemNameKey].(string); ok {
+		name = rawName
+	}
+	if rawDescription, ok := request.Submission[incident.DialogFieldItemDescriptionKey].(string); ok {
+		description = rawDescription
+	}
+
+	checklistItem := playbook.ChecklistItem{
+		Title:       name,
+		Description: description,
+	}
+
+	checklistItem.Title = strings.TrimSpace(checklistItem.Title)
+	if checklistItem.Title == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist item title",
+			errors.New("checklist item title must not be blank"))
+		return
+	}
+
+	if err := h.incidentService.AddChecklistItem(incidentID, userID, checklistNum, checklistItem); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -1025,7 +1106,7 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
+func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
@@ -1041,15 +1122,16 @@ func (h *IncidentHandler) itemRename(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		Title   string `json:"title"`
-		Command string `json:"command"`
+		Title       string `json:"title"`
+		Command     string `json:"command"`
+		Description string `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params state", err)
 		return
 	}
 
-	if err := h.incidentService.RenameChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command); err != nil {
+	if err := h.incidentService.EditChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command, params.Description); err != nil {
 		HandleError(w, err)
 		return
 	}

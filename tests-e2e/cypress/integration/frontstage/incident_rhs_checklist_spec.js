@@ -189,6 +189,24 @@ describe('incident rhs checklist', () => {
             cy.findByText('Step 1').should('not.exist');
         });
 
+        it('add new task', () => {
+            const newTasktext = 'This is my new task' + Date.now();
+
+            cy.addNewTaskFromPostMenu(newTasktext);
+
+            // Check that it was created
+            cy.findByText(newTasktext).should('exist');
+        });
+
+        it('add new task slash command', () => {
+            const newTasktext = 'Task from slash command' + Date.now();
+
+            cy.executeSlashCommand(`/incident checkadd 0 ${newTasktext}`);
+
+            // Check that it was created
+            cy.findByText(newTasktext).should('exist');
+        });
+
         it('assignee selector is shifted up if it falls below window', () => {
             // Hover over a checklist item at the end
             cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover').within(() => {

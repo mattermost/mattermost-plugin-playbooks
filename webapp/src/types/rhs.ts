@@ -36,3 +36,33 @@ export interface TimelineEvent {
     creator_user_id: string;
     subject_display_name?: string;
 }
+
+export interface TimelineEventsFilter {
+    all: boolean;
+    commander_changed: boolean;
+    status_updated: boolean;
+    event_from_post: boolean;
+    task_state_modified: boolean;
+    assignee_changed: boolean;
+    ran_slash_command: boolean;
+}
+
+export const TimelineEventsFilterDefault = {
+    all: false,
+    commander_changed: true,
+    status_updated: true,
+    event_from_post: true,
+    task_state_modified: false,
+    assignee_changed: false,
+    ran_slash_command: false,
+};
+
+export const TimelineEventsFilterAll = {
+    all: true,
+    commander_changed: false,
+    status_updated: false,
+    event_from_post: false,
+    task_state_modified: false,
+    assignee_changed: false,
+    ran_slash_command: false,
+};
