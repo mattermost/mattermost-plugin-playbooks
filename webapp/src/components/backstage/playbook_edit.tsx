@@ -330,6 +330,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
+    const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
+        if (channelId && playbook.announcement_channel_id !== channelId) {
+            setPlaybook({
+                ...playbook,
+                announcement_channel_id: channelId,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
@@ -346,6 +356,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleAnnouncementChannel = () => {
+        setPlaybook({
+            ...playbook,
+            announcement_channel_enabled: !playbook.announcement_channel_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -354,7 +372,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
     };
 
-    const handleBroadcastInput = (channelId: string | null) => {
+    const handleBroadcastInput = (channelId: string | undefined) => {
         setPlaybook({
             ...playbook,
             broadcast_channel_id: channelId || '',
@@ -441,8 +459,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     <ChannelSelector
                                         id='playbook-preferences-broadcast-channel'
                                         onChannelSelected={handleBroadcastInput}
-                                        playbook={playbook}
+                                        channelId={playbook.broadcast_channel_id}
                                         isClearable={true}
+                                        shouldRenderValue={true}
+                                        isDisabled={false}
+                                        captureMenuScroll={false}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
@@ -500,6 +521,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleDefaultCommander={handleToggleDefaultCommander}
                                     onAssignCommander={handleAssignDefaultCommander}
                                     teamID={playbook.team_id}
+                                    announcementChannelID={playbook.announcement_channel_id}
+                                    announcementChannelEnabled={playbook.announcement_channel_enabled}
+                                    onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
+                                    onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
                                 />
                             </TabContainer>
                         </TabsContent>

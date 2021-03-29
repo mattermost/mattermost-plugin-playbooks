@@ -30,6 +30,8 @@ type Playbook struct {
 	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
 	DefaultCommanderID          string      `json:"default_commander_id"`
 	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	AnnouncementChannelID       string      `json:"announcement_channel_id"`
+	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {

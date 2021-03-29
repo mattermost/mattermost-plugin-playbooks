@@ -17,6 +17,8 @@ export interface Playbook {
     invite_users_enabled: boolean;
     default_commander_id: string;
     default_commander_enabled: boolean;
+    announcement_channel_id: string;
+    announcement_channel_enabled: boolean;
 }
 
 export interface PlaybookNoChecklist {
@@ -82,6 +84,8 @@ export function emptyPlaybook(): Playbook {
         invite_users_enabled: false,
         default_commander_id: '',
         default_commander_enabled: false,
+        announcement_channel_id: '',
+        announcement_channel_enabled: false,
     };
 }
 
@@ -126,7 +130,9 @@ export function isPlaybook(arg: any): arg is Playbook {
         arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
         typeof arg.invite_users_enabled === 'boolean' &&
         typeof arg.default_commander_id === 'string' &&
-        typeof arg.default_commander_enabled === 'boolean';
+        typeof arg.default_commander_enabled === 'boolean' &&
+        typeof arg.announcement_channel_id === 'string' &&
+        typeof arg.announcement_channel_enabled === 'boolean';
 }
 
 // eslint-disable-next-line

@@ -90,6 +90,16 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	if pbook.AnnouncementChannelID != "" &&
+		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.AnnouncementChannelID,
+		))
+		return
+	}
+
 	for _, groupID := range pbook.InvitedGroupIDs {
 		group, err := h.pluginAPI.Group.Get(groupID)
 		if err != nil {
@@ -226,6 +236,13 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		h.pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
 		pbook.DefaultCommanderID = ""
 		pbook.DefaultCommanderEnabled = false
+	}
+
+	if pbook.AnnouncementChannelID != "" &&
+		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
+		pbook.AnnouncementChannelID = ""
+		pbook.AnnouncementChannelEnabled = false
 	}
 
 	err = h.playbookService.Update(pbook, userID)

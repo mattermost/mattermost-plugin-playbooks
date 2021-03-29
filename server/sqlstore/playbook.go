@@ -46,7 +46,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
-			"DefaultCommanderID", "DefaultCommanderEnabled").
+			"DefaultCommanderID", "DefaultCommanderEnabled",
+			"AnnouncementChannelID", "AnnouncementChannelEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -103,6 +104,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
 			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
+			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
+			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -299,6 +302,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
 			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
+			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
+			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

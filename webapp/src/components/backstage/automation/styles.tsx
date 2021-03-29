@@ -17,3 +17,7 @@ export const AutomationTitle = styled.div`
     align-items: center;
 `;
 
+export const SelectorWrapper = styled.div`
+    margin: 0;
+    width: 300px;
+`;
