@@ -84,6 +84,7 @@ const commonSelectStyle = css`
 
     .channel-selector__option--is-selected {
         background-color: var(--center-channel-color-08);
+        color: inherit;
     }
 
     .channel-selector__option--is-focused {
