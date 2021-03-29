@@ -323,7 +323,7 @@ type Service interface {
 	// MoveChecklistItem moves a checklist item from one position to anouther
 	MoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int, newLocation int) error
 
-	// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+	// GetChecklistItemAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
 	GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error)
 
 	// GetChecklistAutocomplete returns the list of checklists for incidentID to be used in autocomplete
