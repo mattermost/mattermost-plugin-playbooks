@@ -146,12 +146,12 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 				s.pluginAPI.Log.Warn("failed to query group", "group_id", groupID, "err", err)
 				break
 			}
-			if len(users) == 0 {
-				break
-			}
-
 			for _, user := range users {
 				invitedUserIDs = append(invitedUserIDs, user.Id)
+			}
+			
+			if len(users) < perPage {
+				break
 			}
 		}
 	}
