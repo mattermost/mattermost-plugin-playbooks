@@ -151,10 +151,23 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 		return err
 	}
 
-	resp, err := http.Post(theIncident.WebhookOnCreationURL, "application/json", bytes.NewReader(body))
+	req, err := http.NewRequest("POST", theIncident.WebhookOnCreationURL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
