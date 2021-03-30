@@ -578,34 +578,34 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.13.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if err := addColumnToMySQLTable(e, "IR_Incident", "CreationWebhookURL", "TEXT"); err != nil {
-					return errors.Wrapf(err, "failed adding column CreationWebhookURL to table IR_Incident")
+				if err := addColumnToMySQLTable(e, "IR_Incident", "WebhookOnCreationURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnCreationURL to table IR_Incident")
 				}
-				if _, err := e.Exec("UPDATE IR_Incident SET CreationWebhookURL = '' WHERE CreationWebhookURL IS NULL"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column CreationWebhookURL of table IR_Incident")
-				}
-
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "CreationWebhookURL", "TEXT"); err != nil {
-					return errors.Wrapf(err, "failed adding column CreationWebhookURL to table IR_Playbook")
-				}
-				if _, err := e.Exec("UPDATE IR_Incident SET CreationWebhookURL = '' WHERE CreationWebhookURL IS NULL"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column CreationWebhookURL of table IR_Playbook")
+				if _, err := e.Exec("UPDATE IR_Incident SET WebhookOnCreationURL = '' WHERE WebhookOnCreationURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnCreationURL of table IR_Incident")
 				}
 
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "CreationWebhookEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
-					return errors.Wrapf(err, "failed adding column CreationWebhookEnabled to table IR_Playbook")
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnCreationURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnCreationURL to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET WebhookOnCreationURL = '' WHERE WebhookOnCreationURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnCreationURL of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnCreationEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnCreationEnabled to table IR_Playbook")
 				}
 			} else {
-				if err := addColumnToPGTable(e, "IR_Incident", "CreationWebhookURL", "TEXT DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column CreationWebhookURL to table IR_Incident")
+				if err := addColumnToPGTable(e, "IR_Incident", "WebhookOnCreationURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnCreationURL to table IR_Incident")
 				}
 
-				if err := addColumnToPGTable(e, "IR_Playbook", "CreationWebhookURL", "TEXT DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column CreationWebhookURL to table IR_Playbook")
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnCreationURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnCreationURL to table IR_Playbook")
 				}
 
-				if err := addColumnToPGTable(e, "IR_Playbook", "CreationWebhookEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
-					return errors.Wrapf(err, "failed adding column CreationWebhookEnabled to table IR_Playbook")
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnCreationEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnCreationEnabled to table IR_Playbook")
 				}
 			}
 

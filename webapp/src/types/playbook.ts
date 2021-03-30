@@ -18,8 +18,8 @@ export interface Playbook {
     default_commander_enabled: boolean;
     announcement_channel_id: string;
     announcement_channel_enabled: boolean;
-    creation_webhook_url: string;
-    creation_webhook_enabled: boolean;
+    webhook_on_creation_url: string;
+    webhook_on_creation_enabled: boolean;
 }
 
 export interface PlaybookNoChecklist {
@@ -86,8 +86,8 @@ export function emptyPlaybook(): Playbook {
         default_commander_enabled: false,
         announcement_channel_id: '',
         announcement_channel_enabled: false,
-        creation_webhook_url: '',
-        creation_webhook_enabled: false,
+        webhook_on_creation_url: '',
+        webhook_on_creation_enabled: false,
     };
 }
 
@@ -134,8 +134,8 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.default_commander_enabled === 'boolean' &&
         typeof arg.announcement_channel_id === 'string' &&
         typeof arg.announcement_channel_enabled === 'boolean' &&
-        typeof arg.creation_webhook_url === 'string' &&
-        typeof arg.creation_webhook_enabled === 'boolean';
+        typeof arg.webhook_on_creation_url === 'string' &&
+        typeof arg.webhook_on_creation_enabled === 'boolean';
 }
 
 // eslint-disable-next-line

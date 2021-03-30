@@ -108,9 +108,9 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 	return nil
 }
 
-// sendCreationWebhook sends a POST request to the creation webhook URL.
+// sendWebhookOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
-func (s *ServiceImpl) sendCreationWebhook(theIncident *Incident) error {
+func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 
 	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
@@ -151,7 +151,7 @@ func (s *ServiceImpl) sendCreationWebhook(theIncident *Incident) error {
 		return err
 	}
 
-	resp, err := http.Post(theIncident.CreationWebhookURL, "application/json", bytes.NewReader(body))
+	resp, err := http.Post(theIncident.WebhookOnCreationURL, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -273,10 +273,10 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		}
 	}
 
-	if incdnt.CreationWebhookURL != "" {
+	if incdnt.WebhookOnCreationURL != "" {
 		go func() {
-			if err = s.sendCreationWebhook(incdnt); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.CreationWebhookURL, "error", err)
+			if err = s.sendWebhookOnCreation(incdnt); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
 				_, _ = s.poster.PostMessage(channel.Id, "Failed to communicate the incident's creation through the outgoing webhook.")
 			}
 		}()

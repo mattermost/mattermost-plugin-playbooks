@@ -100,8 +100,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if pbook.CreationWebhookURL != "" {
-		url, err := url.ParseRequestURI(pbook.CreationWebhookURL)
+	if pbook.WebhookOnCreationURL != "" {
+		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
 			return
@@ -225,8 +225,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		pbook.AnnouncementChannelEnabled = false
 	}
 
-	if pbook.CreationWebhookURL != "" {
-		url, err2 := url.ParseRequestURI(pbook.CreationWebhookURL)
+	if pbook.WebhookOnCreationURL != "" {
+		url, err2 := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err2 != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
 			return

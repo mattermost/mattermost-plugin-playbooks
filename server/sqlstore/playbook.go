@@ -47,7 +47,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"ConcatenatedInvitedUserIDs", "InviteUsersEnabled",
 			"DefaultCommanderID", "DefaultCommanderEnabled",
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
-			"CreationWebhookURL", "CreationWebhookEnabled").
+			"WebhookOnCreationURL", "WebhookOnCreationEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -105,8 +105,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
 			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
-			"CreationWebhookURL":          rawPlaybook.CreationWebhookURL,
-			"CreationWebhookEnabled":      rawPlaybook.CreationWebhookEnabled,
+			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -304,8 +304,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
 			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
-			"CreationWebhookURL":          rawPlaybook.CreationWebhookURL,
-			"CreationWebhookEnabled":      rawPlaybook.CreationWebhookEnabled,
+			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

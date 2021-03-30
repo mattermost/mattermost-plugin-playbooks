@@ -268,11 +268,11 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			ID:                 "incidentID",
-			Name:               "Incident Name",
-			TeamID:             teamID,
-			CommanderUserID:    "user_id",
-			CreationWebhookURL: server.URL,
+			ID:                   "incidentID",
+			Name:                 "Incident Name",
+			TeamID:               teamID,
+			CommanderUserID:      "user_id",
+			WebhookOnCreationURL: server.URL,
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)

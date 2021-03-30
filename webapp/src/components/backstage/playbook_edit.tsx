@@ -340,11 +340,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
-    const handleCreationWebhookChange = (url: string) => {
-        if (playbook.creation_webhook_url !== url) {
+    const handleWebhookOnCreationChange = (url: string) => {
+        if (playbook.webhook_on_creation_url !== url) {
             setPlaybook({
                 ...playbook,
-                creation_webhook_url: url,
+                webhook_on_creation_url: url,
             });
             setChangesMade(true);
         }
@@ -374,10 +374,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleCreationWebhook = () => {
+    const handleToggleWebhookOnCreation = () => {
         setPlaybook({
             ...playbook,
-            creation_webhook_enabled: !playbook.creation_webhook_enabled,
+            webhook_on_creation_enabled: !playbook.webhook_on_creation_enabled,
         });
         setChangesMade(true);
     };
@@ -543,10 +543,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}
                                     onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
                                     onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
-                                    creationWebhookEnabled={playbook.creation_webhook_enabled}
-                                    onToggleCreationWebhook={handleToggleCreationWebhook}
-                                    onCreationWebhookChange={handleCreationWebhookChange}
-                                    creationWebhookUrl={playbook.creation_webhook_url}
+                                    webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
+                                    onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
+                                    webhookOnCreationChange={handleWebhookOnCreationChange}
+                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
                                 />
                             </TabContainer>
                         </TabsContent>

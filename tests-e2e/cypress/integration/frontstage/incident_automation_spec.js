@@ -578,8 +578,8 @@ describe('incident automation', () => {
                     title: playbookName,
                     createPublicIncident: true,
                     memberIDs: [userId],
-                    creationWebhookURL: 'https://httpbin.org/post',
-                    creationWebhookEnabled: true,
+                    webhookOnCreationURL: 'https://httpbin.org/post',
+                    webhookOnCreationEnabled: true,
                 }).then((playbook) => {
                     // # Create a new incident with that playbook
                     const now = Date.now();
@@ -613,8 +613,8 @@ describe('incident automation', () => {
                     title: playbookName,
                     createPublicIncident: true,
                     memberIDs: [userId],
-                    creationWebhookURL: 'http://example.com/not-an-actual-endpoint',
-                    creationWebhookEnabled: true,
+                    webhookOnCreationURL: 'http://example.com/not-an-actual-endpoint',
+                    webhookOnCreationEnabled: true,
                 }).then((playbook) => {
                     // # Create a new incident with that playbook
                     const now = Date.now();

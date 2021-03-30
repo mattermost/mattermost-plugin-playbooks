@@ -15,7 +15,7 @@ interface Props {
     onChange: (url: string) => void;
 }
 
-export const CreationWebhook: FC<Props> = (props: Props) => (
+export const WebhookOnCreation: FC<Props> = (props: Props) => (
     <AutomationHeader>
         <AutomationTitle>
             <Toggle

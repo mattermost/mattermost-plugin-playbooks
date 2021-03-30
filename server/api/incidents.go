@@ -402,8 +402,8 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			newIncident.AnnouncementChannelID = pb.AnnouncementChannelID
 		}
 
-		if pb.CreationWebhookEnabled {
-			newIncident.CreationWebhookURL = pb.CreationWebhookURL
+		if pb.WebhookOnCreationEnabled {
+			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
 		}
 	}
 
