@@ -290,7 +290,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		go func() {
 			if err = s.sendWebhookOnCreation(incdnt); err != nil {
 				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
-				_, _ = s.poster.PostMessage(channel.Id, "Failed to communicate the incident's creation through the outgoing webhook.")
+				_, _ = s.poster.PostMessage(channel.Id, "Incident creation using the outgoing webhook was unsuccessful. Contact your System Admin for more information.")
 			}
 		}()
 	}
