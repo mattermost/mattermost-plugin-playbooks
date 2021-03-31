@@ -7,6 +7,7 @@ import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
+import {useLocation} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -153,6 +154,7 @@ const BackstageIncidentList: FC = () => {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
 
+    const query = useLocation().search;
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
             team_id: currentTeam.id,
@@ -164,12 +166,18 @@ const BackstageIncidentList: FC = () => {
     );
 
     useEffect(() => {
+        const queryForStatus = new URLSearchParams(query).get('status');
+        setFetchParams((oldParams) => ({...oldParams, status: queryForStatus || undefined})); //eslint-disable-line no-undefined
+    }, [query]);
+
+    useEffect(() => {
         setFetchParams((oldParams) => {
             return {...oldParams, team_id: currentTeam.id};
         });
     }, [currentTeam.id]);
 
     useEffect(() => {
+        let isCanceled = false;
         async function fetchIncidentsAsync() {
             const incidentsReturn = await fetchIncidents(fetchParams);
 
@@ -179,11 +187,17 @@ const BackstageIncidentList: FC = () => {
                 setShowNoIncidents(true);
             }
 
-            setIncidents(incidentsReturn.items);
-            setTotalCount(incidentsReturn.total_count);
+            if (!isCanceled) {
+                setIncidents(incidentsReturn.items);
+                setTotalCount(incidentsReturn.total_count);
+            }
         }
 
         fetchIncidentsAsync();
+
+        return () => {
+            isCanceled = true;
+        };
     }, [fetchParams]);
 
     function setSearchTerm(term: string) {

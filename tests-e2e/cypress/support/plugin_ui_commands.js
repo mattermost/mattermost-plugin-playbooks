@@ -65,6 +65,18 @@ Cypress.Commands.add('startIncidentFromRHS', (playbookName, incidentName) => {
     cy.startIncident(playbookName, incidentName);
 });
 
+// Create a new task from the RHS
+Cypress.Commands.add('addNewTaskFromPostMenu', (taskname) => {
+    // Click add new task
+    cy.findAllByText('Add new task').eq(0).click();
+
+    // Type a name
+    cy.findByTestId('nameinput').type(taskname);
+
+    // Submit the dialog
+    cy.findByText('Add Task').click();
+});
+
 // Starts incident from the post menu
 // function startIncidentFromPostMenu(incidentName) {
 Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) => {
@@ -85,8 +97,8 @@ Cypress.Commands.add('openBackstage', () => {
 
         // * Dropdown menu should be visible
         cy.get('.dropdown-menu').should('exist').within(() => {
-            // 'Playbooks & Incidents' button should be visible, then click
-            cy.findByText('Playbooks & Incidents').should('exist').click();
+            // 'Incident Collaboration' button should be visible, then click
+            cy.findByText('Incident Collaboration').should('exist').click();
         });
     });
 });

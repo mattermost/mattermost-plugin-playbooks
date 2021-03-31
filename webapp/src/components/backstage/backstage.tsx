@@ -23,6 +23,8 @@ import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/br
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
 
+import StatsView from './stats';
+
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     height: 100%;
@@ -132,14 +134,14 @@ const Backstage: FC = () => {
                     <BackstageNavbar className='flex justify-content-between'>
                         <div className='d-flex items-center'>
                             <BackstageTitlebarItem
-                                to={`${match.url}/playbooks`}
+                                to={`${match.url}/stats`}
                                 activeClassName={'active'}
-                                data-testid='playbooksLHSButton'
+                                data-testid='statsLHSButton'
                             >
                                 <span className='mr-3 d-flex items-center'>
-                                    <PlaybookIcon/>
+                                    <div className={'fa fa-line-chart'}/>
                                 </span>
-                                {'Playbooks'}
+                                {'Stats'}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/incidents`}
@@ -150,6 +152,16 @@ const Backstage: FC = () => {
                                     <IncidentIcon/>
                                 </span>
                                 {'Incidents'}
+                            </BackstageTitlebarItem>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/playbooks`}
+                                activeClassName={'active'}
+                                data-testid='playbooksLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <PlaybookIcon/>
+                                </span>
+                                {'Playbooks'}
                             </BackstageTitlebarItem>
                         </div>
                         <BackstageNavbarIcon
@@ -183,6 +195,9 @@ const Backstage: FC = () => {
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
+                    </Route>
+                    <Route path={`${match.url}/stats`}>
+                        <StatsView/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>

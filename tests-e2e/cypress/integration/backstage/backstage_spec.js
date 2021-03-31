@@ -47,7 +47,7 @@ describe('backstage', () => {
         cy.openBackstage();
 
         // * Verify that when backstage loads, the heading is visible and contains "Incident"
-        cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
+        cy.findByTestId('titleStats').should('exist').contains('Statistics');
     });
 
     it('switches to playbooks list view via header button', () => {
