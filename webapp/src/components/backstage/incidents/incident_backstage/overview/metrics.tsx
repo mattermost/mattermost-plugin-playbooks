@@ -4,11 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {
-    Content,
-    TabPageContainer,
-    Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
+import {Content, TabPageContainer, Title} from 'src/components/backstage/incidents/shared';
 
 const Centered = styled.div`
     padding: 10px 60px 0;

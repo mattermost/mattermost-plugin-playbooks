@@ -13,18 +13,18 @@ import {getUser as getUserAction} from 'mattermost-redux/actions/users';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
+import {Incident} from 'src/types/incident';
+import Timeline from 'src/components/backstage/incidents/incident_backstage/retrospective/timeline';
+import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
+import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/rhs';
+import {setRHSEventsFilter} from 'src/actions';
+import {rhsEventsFilterForChannel} from 'src/selectors';
 import {
     Content,
     PrimaryButtonRight,
     TabPageContainer,
     Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
-import {Incident} from 'src/types/incident';
-import Timeline from 'src/components/backstage/incidents/incident_backstage/retrospective/timeline';
-import MultiCheckbox from 'src/components/multi_checkbox';
-import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/rhs';
-import {setRHSEventsFilter} from 'src/actions';
-import {rhsEventsFilterForChannel} from 'src/selectors';
+} from 'src/components/backstage/incidents/shared';
 
 const Header = styled.div`
     display: flex;
@@ -123,6 +123,9 @@ const TimelineRetro = (props: { incident: Incident }) => {
             disabled: false,
         },
         {
+            value: 'divider',
+        } as CheckboxOption,
+        {
             display: 'Commander changes',
             value: TimelineEventType.CommanderChanged,
             selected: eventsFilter.commander_changed,
@@ -135,7 +138,7 @@ const TimelineRetro = (props: { incident: Incident }) => {
             disabled: eventsFilter.all,
         },
         {
-            display: 'Events from posts',
+            display: 'Saved messages',
             value: TimelineEventType.EventFromPost,
             selected: eventsFilter.event_from_post,
             disabled: eventsFilter.all,
@@ -156,6 +159,27 @@ const TimelineRetro = (props: { incident: Incident }) => {
             display: 'Slash commands',
             value: TimelineEventType.RanSlashCommand,
             selected: eventsFilter.ran_slash_command,
+            disabled: eventsFilter.all,
+        },
+        {
+            value: 'divider',
+        } as CheckboxOption,
+        {
+            display: 'Jira issue updates',
+            value: 'jira',
+            selected: eventsFilter.jira,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: 'Zendesk ticket updates',
+            value: 'zendesk',
+            selected: eventsFilter.zendesk,
+            disabled: eventsFilter.all,
+        },
+        {
+            display: 'Github code changes',
+            value: 'github',
+            selected: eventsFilter.github,
             disabled: eventsFilter.all,
         },
     ];

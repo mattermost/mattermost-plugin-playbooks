@@ -17,7 +17,7 @@ import {getPost} from 'mattermost-redux/actions/posts';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel} from 'src/selectors';
-import {StatusPost} from 'src/types/incident';
+import {Incident, StatusPost} from 'src/types/incident';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -164,8 +164,8 @@ function usePostFromState(statusPosts: StatusPost[]): [string, Post | null] {
     return [postID, useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postID || ''))];
 }
 
-export function useLatestUpdate(statusPosts: StatusPost[]) {
-    const [postId, postFromState] = usePostFromState(statusPosts);
+export function useLatestUpdate(incident: Incident) {
+    const [postId, postFromState] = usePostFromState(incident.status_posts);
     const [post, setPost] = useState<Post | null>(null);
 
     useEffect(() => {
@@ -178,11 +178,14 @@ export function useLatestUpdate(statusPosts: StatusPost[]) {
             if (postId) {
                 const fromServer = await Client4.getPost(postId);
                 setPost(fromServer);
+                return;
             }
+
+            setPost(null);
         };
 
         updateLatestUpdate();
-    }, [postFromState, postId, statusPosts]);
+    }, [postFromState, postId]);
 
     return post;
 }

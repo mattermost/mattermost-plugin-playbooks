@@ -22,10 +22,10 @@ export const Right = styled.div`
     //border: 1px solid green;
 `;
 
-export const TabPageContainer = styled.div`
-    margin: 20px 0 0 0;
+export const TabPageContainer = styled.div<{first?: boolean}>`
     font-size: 12px;
     font-weight: normal;
+    margin-top: ${(props) => (props.first ? 0 : '20px')};
 `;
 
 export const Title = styled.div`
@@ -38,6 +38,15 @@ export const Content = styled.div`
     margin: 8px 0 0 0;
     border: 1px solid grey;
     padding: 0 8px 4px;
+`;
+
+export const Heading = styled.div`
+    margin: 10px 0 0 0;
+    font-weight: 600;
+`;
+
+export const Body = styled.p`
+    margin: 8px;
 `;
 
 export const SecondaryButton = styled(TertiaryButton)`
@@ -72,5 +81,12 @@ export const PrimaryButtonRight = styled(PrimaryButton)`
 export const Badge = styled(StatusBadge)`
     display: unset;
     position: unset;
+    height: unset;
+    white-space: nowrap;
+`;
+
+export const SpacedSmallBadge = styled(Badge)<{space?: number}>`
+    line-height: 18px;
+    margin-left: ${(props) => (props.space ? props.space : 10)}px;
 `;
 

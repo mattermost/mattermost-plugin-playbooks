@@ -4,13 +4,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {
-    Badge,
-    Content,
-    TabPageContainer,
-    Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
 import {IncidentStatus} from 'src/types/incident';
+import {Badge, Content, TabPageContainer, Title} from 'src/components/backstage/incidents/shared';
 
 const StyledContent = styled(Content)`
     padding: 10px 20px;

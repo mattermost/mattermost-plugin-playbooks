@@ -25,6 +25,8 @@ import {updateStatus, toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import ShowMore from 'src/components/rhs/show_more';
 import {StatusPost} from 'src/types/incident';
+import {UpdateBody} from 'src/components/rhs/rhs_shared';
+import PostText from 'src/components/post_text';
 
 const NoRecentUpdates = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -64,15 +66,6 @@ const UpdateTimeLink = styled.a`
     }
 `;
 
-const UpdateBody = styled.div`
-    padding-right: 6px;
-
-    h1,h2,h3,h4,h5,h6 {
-        font-size: inherit;
-        font-weight: 600;
-    }
-`;
-
 const EditedIndicator = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: .87em;
@@ -94,16 +87,14 @@ function useAuthorInfo(userID: string) : [string, string] {
 }
 
 interface Props {
-    statusPost: Post | null;
+    post: Post | null;
 }
 
 const PostCard: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const [authorProfileUrl, authorUserName] = useAuthorInfo(props.statusPost?.user_id || '');
+    const [authorProfileUrl, authorUserName] = useAuthorInfo(props.post?.user_id || '');
 
-    if (!props.statusPost) {
+    if (!props.post) {
         return (
             <NoRecentUpdates>
                 {'No recent updates. '}<a onClick={() => dispatch(updateStatus())}>{'Click here'}</a>{' to update status.'}
@@ -111,18 +102,7 @@ const PostCard: FC<Props> = (props: Props) => {
         );
     }
 
-    const updateTimestamp = moment(props.statusPost.create_at).calendar(undefined, {sameDay: 'LT'}); //eslint-disable-line no-undefined
-
-    // @ts-ignore
-    const {formatText, messageHtmlToComponent} = window.PostUtils;
-
-    const markdownOptions = {
-        singleline: false,
-        mentionHighlight: true,
-        atMentions: true,
-        team,
-        channelNamesMap,
-    };
+    const updateTimestamp = moment(props.post.create_at).calendar(undefined, {sameDay: 'LT'}); //eslint-disable-line no-undefined
 
     return (
         <UpdateSection>
@@ -131,7 +111,7 @@ const PostCard: FC<Props> = (props: Props) => {
                 <UpdateHeader>
                     <UpdateAuthor>{authorUserName}</UpdateAuthor>
                     <UpdateTimeLink
-                        href={`/_redirect/pl/${props.statusPost.id}`}
+                        href={`/_redirect/pl/${props.post.id}`}
                         onClick={(e) => {
                             e.preventDefault();
 
@@ -147,12 +127,11 @@ const PostCard: FC<Props> = (props: Props) => {
                     </UpdateTimeLink>
                 </UpdateHeader>
                 <ShowMore
-                    text={props.statusPost.message}
+                    text={props.post.message}
                 >
-                    <UpdateBody>
-                        {messageHtmlToComponent(formatText(props.statusPost.message, markdownOptions), true, {})}
-                        {props.statusPost.edit_at !== 0 && <EditedIndicator>{'(edited)'}</EditedIndicator>}
-                    </UpdateBody>
+                    <PostText text={props.post.message}>
+                        {props.post.edit_at !== 0 && <EditedIndicator>{'(edited)'}</EditedIndicator>}
+                    </PostText>
                 </ShowMore>
             </UpdateContainer>
         </UpdateSection>

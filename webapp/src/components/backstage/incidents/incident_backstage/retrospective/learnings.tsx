@@ -4,17 +4,16 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import {Incident} from 'src/types/incident';
+import {useProfilesInChannel} from 'src/hooks';
+import ProfileVertical
+    from 'src/components/backstage/incidents/incident_backstage/retrospective/profile_vertical';
 import {
     Content,
     SecondaryButtonRight,
     TabPageContainer,
     Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
-import Profile from 'src/components/profile/profile';
-import {Incident} from 'src/types/incident';
-import {useProfilesInChannel} from 'src/hooks';
-import ProfileVertical
-    from 'src/components/backstage/incidents/incident_backstage/retrospective/profile_vertical';
+} from 'src/components/backstage/incidents/shared';
 
 const Header = styled.div`
     display: flex;

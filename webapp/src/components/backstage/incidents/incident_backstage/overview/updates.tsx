@@ -9,13 +9,9 @@ import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Post} from 'mattermost-redux/types/posts';
 
-import {
-    Content,
-    TabPageContainer,
-    Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
 import {Incident} from 'src/types/incident';
-import PostCard from 'src/components/rhs/latest_update';
+import PostCard from 'src/components/rhs/post_card';
+import {Content, TabPageContainer, Title} from 'src/components/backstage/incidents/shared';
 
 const Body = styled.div`
     margin: 10px 0 0 0;
@@ -48,7 +44,7 @@ const PostContent = (props: { postId: string }) => {
     return (
         <Content>
             <Body>
-                <PostCard statusPost={post}/>
+                <PostCard post={post}/>
             </Body>
         </Content>
     );

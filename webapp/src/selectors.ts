@@ -87,7 +87,7 @@ export const currentRHSState = (state: GlobalState): RHSState => pluginState(sta
 
 export const currentRHSTabState = (state: GlobalState): RHSTabState => {
     const channelId = getCurrentChannelId(state);
-    return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingSummary;
+    return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingAbout;
 };
 
 export const currentRHSEventsFilter = (state: GlobalState): TimelineEventsFilter => {

@@ -19,8 +19,9 @@ import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/br
 import {ErrorPageTypes} from 'src/constants';
 import {
     Badge,
-    SecondaryButtonLarger, SecondaryButtonLargerRight,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
+    SecondaryButtonLarger,
+    SecondaryButtonLargerRight,
+} from 'src/components/backstage/incidents/shared';
 
 const Container = styled.div`
     padding: 20px;

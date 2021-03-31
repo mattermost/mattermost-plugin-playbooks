@@ -10,20 +10,13 @@ import './status_filter.scss';
 interface Props {
     default: string | undefined;
     onChange: (newStatus: string) => void;
+    options: StatusOption[];
 }
 
-interface Option {
+export interface StatusOption {
     value: string;
     label: string;
 }
-
-const fixedOptions: Option[] = [
-    {value: '', label: 'All'},
-    {value: 'Reported', label: 'Reported'},
-    {value: 'Active', label: 'Active'},
-    {value: 'Resolved', label: 'Resolved'},
-    {value: 'Archived', label: 'Archived'},
-];
 
 export function StatusFilter(props: Props) {
     const [isOpen, setOpen] = useState(false);
@@ -32,16 +25,16 @@ export function StatusFilter(props: Props) {
     };
 
     const getDefault = () => {
-        const defaultOption = fixedOptions.find((val) => val.value === props.default);
+        const defaultOption = props.options.find((val) => val.value === props.default);
         if (defaultOption) {
             return defaultOption;
         }
-        return fixedOptions[0];
+        return props.options[0];
     };
 
     const [selected, setSelected] = useState(getDefault());
 
-    const onSelectedChange = async (val: Option) => {
+    const onSelectedChange = async (val: StatusOption) => {
         toggleOpen();
         if (val !== selected) {
             props.onChange(val.value);
@@ -72,10 +65,10 @@ export function StatusFilter(props: Props) {
                 isClearable={false}
                 isSearchable={false}
                 menuIsOpen={true}
-                options={fixedOptions}
+                options={props.options}
                 styles={selectStyles}
                 tabSelectsValue={false}
-                onChange={(option) => onSelectedChange(option as Option)}
+                onChange={(option) => onSelectedChange(option as StatusOption)}
                 classNamePrefix='status-filter-select'
                 className='status-filter-select'
             />

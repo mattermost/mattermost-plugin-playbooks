@@ -3,6 +3,12 @@
 
 import React, {FC} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
+import {useSelector} from 'react-redux';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 
 import {setCommander} from 'src/client';
 import {Incident, incidentCurrentStatus} from 'src/types/incident';
@@ -15,17 +21,19 @@ import {
     renderView,
     SmallerProfile,
 } from 'src/components/rhs/rhs_shared';
-import PostCard from 'src/components/rhs/latest_update';
+import PostCard from 'src/components/rhs/post_card';
 import StatusBadge from '../backstage/incidents/status_badge';
 import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
+import {Body} from 'src/components/backstage/incidents/shared';
+import PostText from 'src/components/post_text';
 
 interface Props {
     incident: Incident;
 }
 
-const RHSIncidentSummary: FC<Props> = (props: Props) => {
+const RHSAbout: FC<Props> = (props: Props) => {
     const profilesInChannel = useProfilesInCurrentChannel();
-    const latestUpdatePost = useLatestUpdate(props.incident.status_posts);
+    const latestUpdatePost = useLatestUpdate(props.incident);
 
     const fetchUsers = async () => {
         return profilesInChannel;
@@ -91,15 +99,23 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                         <div className='second-line'>{reporterElem}</div>
                     </div>
                 </div>
+                <div>
+                    <div className='title'>
+                        {'Current Description:'}
+                    </div>
+                    <Body>
+                        <PostText text={props.incident.description}/>
+                    </Body>
+                </div>
                 <div id={'incidentRHSUpdates'}>
                     <div className='title'>
                         {'Recent Update:'}
                     </div>
-                    <PostCard statusPost={latestUpdatePost}/>
+                    <PostCard post={latestUpdatePost}/>
                 </div>
             </div>
         </Scrollbars>
     );
 };
 
-export default RHSIncidentSummary;
+export default RHSAbout;

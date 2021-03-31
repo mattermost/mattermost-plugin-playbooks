@@ -179,6 +179,7 @@ type GetIncidentsResults struct {
 // StatusUpdateOptions are the fields required to update an incident's status
 type StatusUpdateOptions struct {
 	Status            Status `json:"status"`
+	Description       string `json:"description"`
 	Message           string `json:"message"`
 	ReminderInSeconds int64  `json:"reminder"`
 }

@@ -7,7 +7,7 @@ export enum RHSState {
 }
 
 export enum RHSTabState {
-    ViewingSummary,
+    ViewingAbout,
     ViewingTasks,
     ViewingTimeline,
 }
@@ -45,6 +45,9 @@ export interface TimelineEventsFilter {
     task_state_modified: boolean;
     assignee_changed: boolean;
     ran_slash_command: boolean;
+    jira: boolean;
+    zendesk: boolean;
+    github: boolean;
 }
 
 export const TimelineEventsFilterDefault = {

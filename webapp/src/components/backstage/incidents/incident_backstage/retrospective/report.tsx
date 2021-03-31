@@ -4,12 +4,12 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 
+import {StyledTextarea} from 'src/components/backstage/styles';
 import {
     SecondaryButtonRight,
     TabPageContainer,
     Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
-import {StyledTextarea} from 'src/components/backstage/styles';
+} from 'src/components/backstage/incidents/shared';
 
 const Header = styled.div`
     display: flex;

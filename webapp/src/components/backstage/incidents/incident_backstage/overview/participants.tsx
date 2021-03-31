@@ -4,16 +4,16 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 
+import {Incident} from 'src/types/incident';
+import ProfileWithPosition
+    from 'src/components/backstage/incidents/incident_backstage/overview/profile_w_position';
+import {useProfilesInChannel} from 'src/hooks';
 import {
     Content,
     SecondaryButtonRight,
     TabPageContainer,
     Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
-import {Incident} from 'src/types/incident';
-import ProfileWithPosition
-    from 'src/components/backstage/incidents/incident_backstage/overview/profile_w_position';
-import {useProfilesInChannel} from 'src/hooks';
+} from 'src/components/backstage/incidents/shared';
 
 const StyledContent = styled(Content)`
     padding: 10px 20px;

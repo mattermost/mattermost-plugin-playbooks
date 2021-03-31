@@ -2,32 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled from 'styled-components';
 
-import {
-    Content,
-    TabPageContainer,
-    Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
+import {Content, TabPageContainer, Title} from 'src/components/backstage/incidents/shared';
+import {Incident} from 'src/types/incident';
+import PostText from 'src/components/post_text';
 
-const Heading = styled.div`
-    margin: 10px 0 0 0;
-    font-weight: 600;
-`;
-
-const Body = styled.p`
-    margin: 8px;
-`;
-
-const Description = () => {
+const Description = (props: {incident: Incident}) => {
     return (
         <TabPageContainer>
             <Title>{'Description'}</Title>
             <Content>
-                <Heading>{'# Summary'}</Heading>
-                <Body>{'Three of the servers went down. At the moment we\'re not sure why. We think it might have something to do with Route 53. We are on the phone with our AWS Technical Account Manager.'}</Body>
-                <Heading>{'# Impact'}</Heading>
-                <Body>{'10 customers are are experiencing P50 response times above our SLA.'}</Body>
+                <PostText text={props.incident.description}/>
             </Content>
         </TabPageContainer>
     );

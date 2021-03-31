@@ -14,7 +14,6 @@ import {Team} from 'mattermost-redux/types/teams';
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
-import BackstageIncidentDetails from 'src/components/backstage/incidents/incident_details/incident_details';
 
 import {ErrorPageTypes} from 'src/constants';
 
@@ -199,6 +198,7 @@ const Backstage: FC = () => {
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
+                        {/*<Dashboard/>*/}
                     </Route>
                     <Route path={`${match.url}/stats`}>
                         <StatsView/>

@@ -53,7 +53,7 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
         top: 35px;
     `)};
     ${(props) => (props.wide && css`
-        left: -224px;
+        left: -236px;
     `)};
 
     min-width: 160px;

@@ -3,11 +3,6 @@
 
 import React from 'react';
 
-import {
-    Container,
-    Left,
-    Right,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
 import Report from 'src/components/backstage/incidents/incident_backstage/retrospective/report';
 import {Incident} from 'src/types/incident';
 import Learnings
@@ -16,6 +11,7 @@ import Followups
     from 'src/components/backstage/incidents/incident_backstage/retrospective/followups';
 import TimelineRetro
     from 'src/components/backstage/incidents/incident_backstage/retrospective/timeline_retro';
+import {Container, Left, Right} from 'src/components/backstage/incidents/shared';
 
 export const Retrospective = (props: { incident: Incident }) => {
     return (

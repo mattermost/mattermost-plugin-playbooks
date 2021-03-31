@@ -4,10 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {
-    TabPageContainer,
-    Title,
-} from 'src/components/backstage/incidents/incident_backstage/shared';
+import {TabPageContainer, Title} from 'src/components/backstage/incidents/shared';
 
 const Body = styled.p`
     margin-top: 8px;
