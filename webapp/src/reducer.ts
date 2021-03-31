@@ -23,7 +23,7 @@ import {
     INCIDENT_UPDATED,
     REMOVED_FROM_INCIDENT_CHANNEL,
     SetRHSTabState,
-    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER,
+    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -66,7 +66,11 @@ function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
 // myIncidentsByTeam is a map of teamId->{channelId->incidents} for which the current user is an incident member. Note
 // that it is lazy loaded on team change, but will also track incremental updates as provided by
 // websocket events.
-const myIncidentsByTeam = (state: Record<string, Record<string, Incident>> = {}, action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel) => {
+// Aditnally it handles the plugin being disabled on the team
+const myIncidentsByTeam = (
+    state: Record<string, Record<string, Incident>> = {},
+    action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel | ReceivedTeamDisabled,
+) => {
     switch (action.type) {
     case INCIDENT_CREATED: {
         const incidentCreatedAction = action as IncidentCreated;
@@ -126,6 +130,13 @@ const myIncidentsByTeam = (state: Record<string, Record<string, Incident>> = {},
         };
         delete newState[teamId][channelId];
         return newState;
+    }
+    case RECEIVED_TEAM_DISABLED: {
+        const teamDisabledAction = action as ReceivedTeamDisabled;
+        return {
+            ...state,
+            [teamDisabledAction.teamId]: false,
+        };
     }
     default:
         return state;

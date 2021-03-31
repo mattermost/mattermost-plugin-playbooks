@@ -12,6 +12,9 @@ package config
 // If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
 // copy appropriate for your types.
 type Configuration struct {
+	// EnabledTeams a list of team IDs the plugin is enabled for
+	EnabledTeams []string
+
 	// ** The following are NOT stored on the server
 	// AdminUserIDs contains a list of user IDs that are allowed
 	// to administer plugin functions, even if not Mattermost sysadmins.

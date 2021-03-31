@@ -169,6 +169,7 @@ type GetIncidentsResults struct {
 	PageCount  int        `json:"page_count"`
 	HasMore    bool       `json:"has_more"`
 	Items      []Incident `json:"items"`
+	Disabled   bool       `json:"disabled"`
 }
 
 // StatusUpdateOptions are the fields required to update an incident's status

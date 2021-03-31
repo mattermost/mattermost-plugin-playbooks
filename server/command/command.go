@@ -1418,6 +1418,11 @@ func (r *Runner) Execute() error {
 		return nil
 	}
 
+	if !permissions.IsOnEnabledTeam(r.args.TeamId, r.configService) {
+		r.postCommandResponse("Not enabled on this team.")
+		return nil
+	}
+
 	switch cmd {
 	case "start":
 		r.actionStart(parameters)

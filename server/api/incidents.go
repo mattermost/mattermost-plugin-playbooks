@@ -17,6 +17,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
@@ -24,6 +25,7 @@ import (
 
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
+	config          config.Service
 	incidentService incident.Service
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
@@ -34,7 +36,7 @@ type IncidentHandler struct {
 
 // NewIncidentHandler Creates a new Plugin API handler.
 func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
-	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry) *IncidentHandler {
+	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry, config config.Service) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		playbookService: playbookService,
@@ -42,6 +44,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 		poster:          poster,
 		log:             log,
 		telemetry:       telemetry,
+		config:          config,
 	}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
@@ -151,6 +154,11 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
+	if !permissions.IsOnEnabledTeam(incidentCreateOptions.TeamID, h.config) {
+		HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
+		return
+	}
+
 	payloadIncident := incident.Incident{
 		CommanderUserID: incidentCreateOptions.CommanderUserID,
 		TeamID:          incidentCreateOptions.TeamID,
@@ -221,6 +229,11 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	if userID != request.UserId {
 		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		return
+	}
+
+	if !permissions.IsOnEnabledTeam(request.TeamId, h.config) {
+		HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
@@ -444,6 +457,11 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
 		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
+		return
+	}
+
+	if !permissions.IsOnEnabledTeam(filterOptions.TeamID, h.config) {
+		ReturnJSON(w, map[string]bool{"disabled": true}, http.StatusOK)
 		return
 	}
 

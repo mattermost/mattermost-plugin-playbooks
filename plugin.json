@@ -20,6 +20,10 @@
     "settings_schema": {
         "header": "Incident Collaboration requires a Mattermost Cloud or Mattermost E20 License.",
         "footer": "",
-        "settings": []
+        "settings": [{
+            "key": "EnabledTeams",
+            "type": "custom",
+            "display_name": "Enabled Teams:"
+        }]
     }
 }

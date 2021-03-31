@@ -10,7 +10,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {fetchIncidents} from 'src/client';
 
 import {isIncidentRHSOpen, inIncidentChannel} from 'src/selectors';
-import {toggleRHS, receivedTeamIncidents} from 'src/actions';
+import {toggleRHS, receivedTeamIncidents, receivedDisabledOnTeam} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';
@@ -38,7 +38,11 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
                 team_id: currentTeam.id,
                 member_id: currentUserId,
             });
-            store.dispatch(receivedTeamIncidents(fetched.items));
+            if (fetched.disabled) {
+                store.dispatch(receivedDisabledOnTeam(currentTeam.id));
+            } else {
+                store.dispatch(receivedTeamIncidents(fetched.items));
+            }
         }
 
         // Only consider opening the RHS if the channel has changed and wasn't already seen as

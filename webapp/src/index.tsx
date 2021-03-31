@@ -43,33 +43,45 @@ import {
 } from './types/websocket_events';
 import RegistryWrapper from './registry_wrapper';
 import {isE20LicensedOrDevelopment} from './license';
+import SystemConsoleEnabledTeams from './system_console_enabled_teams';
+import {isDisabled} from './selectors';
+
+function makeUpdateMainMenu(registry: PluginRegistry, store: Store<GlobalState>): () => Promise<void> {
+    let mainMenuActionId: string | null;
+
+    return async () => {
+        const disable = isDisabled(store.getState());
+        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store);
+
+        if (mainMenuActionId && !show) {
+            const temp = mainMenuActionId;
+            mainMenuActionId = null;
+            registry.unregisterComponent(temp);
+        } else if (!mainMenuActionId && show) {
+            mainMenuActionId = 'notnull';
+            mainMenuActionId = registry.registerMainMenuAction(
+                'Incident Collaboration',
+                () => {
+                    const team = getCurrentTeam(store.getState());
+                    navigateToTeamPluginUrl(team.name, '/stats');
+                },
+            );
+        }
+    };
+}
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
         registry.registerReducer(reducer);
 
-        let mainMenuActionId: string | null;
-        const updateMainMenuAction = () => {
-            const show = !isMobile() && isE20LicensedOrDevelopment(store);
-
-            if (mainMenuActionId && !show) {
-                registry.unregisterComponent(mainMenuActionId);
-                mainMenuActionId = null;
-            } else if (!mainMenuActionId && show) {
-                mainMenuActionId = registry.registerMainMenuAction(
-                    'Incident Collaboration',
-                    () => {
-                        const team = getCurrentTeam(store.getState());
-                        navigateToTeamPluginUrl(team.name, '/stats');
-                    },
-                );
-            }
-        };
-
+        const updateMainMenuAction = makeUpdateMainMenu(registry, store);
         updateMainMenuAction();
 
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
+        store.subscribe(updateMainMenuAction);
+
+        registry.registerAdminConsoleCustomSetting('EnabledTeams', SystemConsoleEnabledTeams, {showTitle: true});
 
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);
