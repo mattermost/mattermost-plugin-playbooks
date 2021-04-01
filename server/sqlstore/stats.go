@@ -40,7 +40,7 @@ func (s *StatsStore) TotalReportedIncidents(filters *StatsFilters) int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		s.log.Warnf("Error retriving stat %w", err)
+		s.log.Warnf("Error retriving stat total reported %w", err)
 		return -1
 	}
 
@@ -57,7 +57,7 @@ func (s *StatsStore) TotalActiveIncidents(filters *StatsFilters) int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		s.log.Warnf("Error retriving stat %w", err)
+		s.log.Warnf("Error retriving stat total active incidents %w", err)
 		return -1
 	}
 
@@ -75,7 +75,7 @@ func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 
 	var total int
 	if err := s.store.getBuilder(s.store.db, &total, query); err != nil {
-		s.log.Warnf("Error retriving stat %w", err)
+		s.log.Warnf("Error retriving stat total active participants %w", err)
 		return -1
 	}
 
@@ -84,7 +84,7 @@ func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 
 func (s *StatsStore) AverageDurationActiveIncidentsMinutes(filters *StatsFilters) int {
 	query := s.store.builder.
-		Select("AVG(i.CreateAt)").
+		Select("COALESCE(AVG(i.CreateAt), 0)").
 		From("IR_Incident AS i").
 		Where("i.EndAt = 0")
 
@@ -92,8 +92,12 @@ func (s *StatsStore) AverageDurationActiveIncidentsMinutes(filters *StatsFilters
 
 	var averageCreateAt float64
 	if err := s.store.getBuilder(s.store.db, &averageCreateAt, query); err != nil {
-		s.log.Warnf("Error retriving stat %w", err)
+		s.log.Warnf("Error retriving stat duration active incidetns %w", err)
 		return -1
+	}
+
+	if averageCreateAt < 1.0 {
+		return 0
 	}
 
 	return int((float64(model.GetMillis()) - averageCreateAt) / 60000)
@@ -130,7 +134,7 @@ func (s *StatsStore) CountActiveIncidentsByDay(filters *StatsFilters) []int {
 
 	// Get the number of incidents started on each day
 	startQuery := s.store.builder.
-		Select(fmt.Sprintf("COUNT(i.Id), (%v - i.CreateAt) / 86400000 as DayStarted", now)).
+		Select(fmt.Sprintf("COUNT(i.Id) as Count, FLOOR((%v - i.CreateAt) / 86400000) as DayStarted", now)).
 		From("IR_Incident as i").
 		GroupBy("DayStarted").
 		OrderBy("DayStarted ASC")
@@ -153,7 +157,7 @@ func (s *StatsStore) CountActiveIncidentsByDay(filters *StatsFilters) []int {
 
 	// Get the number of incidents ended on each day
 	endQuery := s.store.builder.
-		Select(fmt.Sprintf("COUNT(i.Id), (%v - i.EndAt) / 86400000 as DayEnded", now)).
+		Select(fmt.Sprintf("COUNT(i.Id) as Count, FLOOR((%v - i.EndAt) / 86400000) as DayEnded", now)).
 		From("IR_Incident as i").
 		Where("i.EndAt != 0").
 		GroupBy("DayEnded").
@@ -234,7 +238,7 @@ func (s *StatsStore) AverageStartToActive(filters *StatsFilters) []int {
 	now := model.GetMillis()
 
 	query := s.store.builder.
-		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(%s - i.CreateAt)), 0) as Average, (%v - i.CreateAt) / 86400000 as DayStarted", firstNonReportedStatusPost, now)).
+		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(%s - i.CreateAt)), 0) as Average, FLOOR((%v - i.CreateAt) / 86400000) as DayStarted", firstNonReportedStatusPost, now)).
 		From("IR_Incident as i").
 		GroupBy("DayStarted").
 		OrderBy("DayStarted ASC")
@@ -276,7 +280,7 @@ func (s *StatsStore) AverageStartToResolved(filters *StatsFilters) []int {
 	now := model.GetMillis()
 
 	query := s.store.builder.
-		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(i.EndAt - c.CreateAt)), 0) as Average, (%v - c.CreateAt) / 86400000 as DayStarted", now)).
+		Select(fmt.Sprintf("COALESCE(FLOOR(AVG(i.EndAt - c.CreateAt)), 0) as Average, FLOOR((%v - c.CreateAt) / 86400000) as DayStarted", now)).
 		From("IR_Incident as i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where("i.EndAt != 0").
