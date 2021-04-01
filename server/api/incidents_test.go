@@ -1137,7 +1137,7 @@ func TestIncidents(t *testing.T) {
 		}
 		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
-		actualList, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+		actualList, err := c.Incidents.List(context.TODO(), 0, 200, icClient.IncidentListOptions{
 			TeamID: "testTeamID1",
 		})
 		require.NoError(t, err)
@@ -1156,7 +1156,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
 
-		resultIncident, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+		resultIncident, err := c.Incidents.List(context.TODO(), 0, 100, icClient.IncidentListOptions{
 			TeamID: "non-existent",
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
