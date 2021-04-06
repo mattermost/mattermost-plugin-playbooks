@@ -21,7 +21,7 @@ import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
+import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
@@ -369,7 +369,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const getUsers = () => {
-        return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
+        return dispatch(getProfilesInTeam(props.currentTeam.id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
     const handleBroadcastInput = (channelId: string | undefined) => {
