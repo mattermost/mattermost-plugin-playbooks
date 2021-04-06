@@ -562,7 +562,7 @@ describe('incident automation', () => {
                     // * Verify that there is an error message from the incident bot
                     cy.getLastPostId().then((id) => {
                         cy.get(`#postMessageText_${id}`)
-                            .contains('Failed to announce the creation of this incident in the configured channel.');
+                            .contains('Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
                     });
                 });
             });
@@ -600,7 +600,7 @@ describe('incident automation', () => {
                     // * Verify that the bot has not posted a message informing of the failure to send the webhook
                     cy.getLastPostId().then((lastPostId) => {
                         cy.get(`#postMessageText_${lastPostId}`)
-                            .should('not.contain', 'Failed to communicate the incident\'s creation through the outgoing webhook.');
+                            .should('not.contain', 'Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
                     });
                 });
             });
