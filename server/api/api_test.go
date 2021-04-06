@@ -10,6 +10,7 @@ import (
 	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,7 @@ func requireErrorWithStatusCode(t *testing.T, err error, statusCode int) {
 	require.Error(t, err)
 
 	var errResponse *icClient.ErrorResponse
-	require.True(t, errors.As(err, &errResponse))
+	require.Truef(t, errors.As(err, &errResponse), "err is not an instance of errResponse: %s", err.Error())
 	require.Equal(t, statusCode, errResponse.StatusCode)
 }
 
@@ -85,4 +86,50 @@ func toInternalIncidentMetadata(apiIncidentMetadata icClient.IncidentMetadata) i
 	}
 
 	return internalIncidentMetadata
+}
+
+func toAPIPlaybook(internalPlaybook playbook.Playbook) icClient.Playbook {
+	var apiPlaybook icClient.Playbook
+
+	playbookBytes, _ := json.Marshal(internalPlaybook)
+	err := json.Unmarshal(playbookBytes, &apiPlaybook)
+	if err != nil {
+		panic(err)
+	}
+
+	return apiPlaybook
+}
+
+func toAPIPlaybooks(internalPlaybooks []playbook.Playbook) []icClient.Playbook {
+	apiPlaybooks := []icClient.Playbook{}
+
+	for _, internalPlaybook := range internalPlaybooks {
+		apiPlaybooks = append(apiPlaybooks, toAPIPlaybook(internalPlaybook))
+	}
+
+	return apiPlaybooks
+}
+
+func toInternalPlaybook(apiPlaybook icClient.Playbook) playbook.Playbook {
+	var internalPlaybook playbook.Playbook
+
+	playbookBytes, _ := json.Marshal(apiPlaybook)
+	err := json.Unmarshal(playbookBytes, &internalPlaybook)
+	if err != nil {
+		panic(err)
+	}
+
+	return internalPlaybook
+}
+
+func toAPIChecklists(internalChecklists []playbook.Checklist) []icClient.Checklist {
+	var apiChecklists []icClient.Checklist
+
+	checklistBytes, _ := json.Marshal(internalChecklists)
+	err := json.Unmarshal(checklistBytes, &apiChecklists)
+	if err != nil {
+		panic(err)
+	}
+
+	return apiChecklists
 }

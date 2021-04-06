@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-func ExampleIncidentsService_Get() {
+func ExamplePlaybooksService_Get() {
 	ctx := context.Background()
 
 	client4 := model.NewAPIv4Client("http://localhost:8065")
@@ -20,16 +20,16 @@ func ExampleIncidentsService_Get() {
 		log.Fatal(err)
 	}
 
-	incidentID := "h4n3h7s1qjf5pkis4dn6cuxgwa"
-	incident, err := c.Incidents.Get(ctx, incidentID)
+	playbookID := "h4n3h7s1qjf5pkis4dn6cuxgwa"
+	playbook, err := c.Playbooks.Get(ctx, playbookID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Incident Name: %s\n", incident.Name)
+	fmt.Printf("Playbook Name: %s\n", playbook.Title)
 }
 
-func ExampleIncidentsService_List() {
+func ExamplePlaybooksService_List() {
 	ctx := context.Background()
 
 	client4 := model.NewAPIv4Client("http://localhost:8065")
@@ -51,10 +51,9 @@ func ExampleIncidentsService_List() {
 		log.Fatal(err)
 	}
 
-	var incidents []client.Incident
+	var playbooks []client.Playbook
 	for page := 0; ; page++ {
-		result, err := c.Incidents.List(ctx, page, 100, client.IncidentListOptions{
-			TeamID:    teams[0].Id,
+		result, err := c.Playbooks.List(ctx, teams[0].Id, page, 100, client.PlaybookListOptions{
 			Sort:      client.SortByCreateAt,
 			Direction: client.SortDesc,
 		})
@@ -62,13 +61,13 @@ func ExampleIncidentsService_List() {
 			log.Fatal(err)
 		}
 
-		incidents = append(incidents, result.Items...)
+		playbooks = append(playbooks, result.Items...)
 		if !result.HasMore {
 			break
 		}
 	}
 
-	for _, incident := range incidents {
-		fmt.Printf("Incident Name: %s\n", incident.Name)
+	for _, playbook := range playbooks {
+		fmt.Printf("Playbook Name: %s\n", playbook.Title)
 	}
 }
