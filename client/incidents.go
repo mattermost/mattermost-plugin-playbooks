@@ -70,11 +70,15 @@ func (s *IncidentsService) GetMetadata(ctx context.Context, incidentID string) (
 }
 
 // List the incidents.
-func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (*GetIncidentsResults, error) {
+func (s *IncidentsService) List(ctx context.Context, page, perPage int, opts IncidentListOptions) (*GetIncidentsResults, error) {
 	incidentURL := "incidents"
 	incidentURL, err := addOptions(incidentURL, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build options: %w", err)
+	}
+	incidentURL, err = addPaginationOptions(incidentURL, page, perPage)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build pagination options: %w", err)
 	}
 
 	req, err := s.client.newRequest(http.MethodGet, incidentURL, nil)

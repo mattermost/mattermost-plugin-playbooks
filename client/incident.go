@@ -103,6 +103,15 @@ const (
 
 	// SortByEndAt sorts by the "end_at" field.
 	SortByEndAt Sort = "end_at"
+
+	// SortBySteps sorts playbooks by the number of steps in the playbook.
+	SortBySteps Sort = "steps"
+
+	// SortByStages sorts playbooks by the number of stages in the playbook.
+	SortByStages Sort = "stages"
+
+	// SortByTitle sorts by the "title" field.
+	SortByTitle Sort = "title"
 )
 
 // SortDirection determines whether results are sorted ascending or descending.
@@ -119,12 +128,6 @@ const (
 // IncidentListOptions specifies the optional parameters to the
 // IncidentsService.List method.
 type IncidentListOptions struct {
-	// For paginated result sets, page of results to retrieve. 0 based indx.
-	Page int `url:"page,omitempty"`
-
-	// For paginated result sets, the number of results to include per page.
-	PerPage int `url:"per_page,omitempty"`
-
 	// TeamID filters incidents to those in the given team.
 	TeamID string `url:"team_id,omitempty"`
 
