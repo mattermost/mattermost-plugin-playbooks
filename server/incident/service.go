@@ -32,6 +32,7 @@ const (
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
 type ServiceImpl struct {
 	pluginAPI     *pluginapi.Client
+	httpClient    *http.Client
 	configService config.Service
 	store         Store
 	poster        bot.Poster
@@ -86,6 +87,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 		configService: configService,
 		scheduler:     scheduler,
 		telemetry:     telemetry,
+		httpClient:    &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -167,11 +169,7 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
