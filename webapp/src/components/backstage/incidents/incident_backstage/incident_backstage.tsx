@@ -146,7 +146,7 @@ const IncidentBackstage = () => {
                     className='icon-chevron-left'
                     onClick={closeIncidentDetails}
                 />
-                <Title>{incident.name}</Title>
+                <Title data-testid='incident-title'>{incident.name}</Title>
                 <Badge status={incident.current_status}/>
                 <SecondaryButtonLargerRight>{'Subscribe'}</SecondaryButtonLargerRight>
             </TopBar>
