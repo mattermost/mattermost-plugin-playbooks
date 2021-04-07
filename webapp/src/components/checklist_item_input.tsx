@@ -21,6 +21,7 @@ const SlashCommandContainer = styled.div`
 
 export const ChecklistItemCommand: FC<ChecklistItemCommandProps> = (props: ChecklistItemCommandProps) => {
     const [commandOpen, setCommandOpen] = useState(props.command.length > 0);
+    const [wasOpened, setWasOpened] = useState(false);
 
     const setCommand = (command: string) => {
         if (command === '') {
@@ -32,6 +33,7 @@ export const ChecklistItemCommand: FC<ChecklistItemCommandProps> = (props: Check
     let slashCommandBox = (
         <TertiaryButton
             onClick={() => {
+                setWasOpened(true);
                 setCommandOpen(true);
             }}
         >
@@ -46,7 +48,7 @@ export const ChecklistItemCommand: FC<ChecklistItemCommandProps> = (props: Check
                 command={props.command === '' ? '/' : props.command}
                 setCommand={setCommand}
                 autocompleteOnBottom={props.autocompleteOnBottom}
-                grabFocus={true}
+                grabFocus={wasOpened}
             />
         );
     }
