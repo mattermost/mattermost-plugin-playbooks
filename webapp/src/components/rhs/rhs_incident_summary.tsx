@@ -7,7 +7,7 @@ import {useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {isCurrentChannelArchived} from 'mattermost-redux/selectors/entities/channels';
 
-import {fetchUsersInChannel, setCommander} from 'src/client';
+import {setCommander} from 'src/client';
 import {Incident, incidentCurrentStatus} from 'src/types/incident';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import Duration from '../duration';
@@ -16,9 +16,11 @@ import {
     renderThumbHorizontal,
     renderThumbVertical,
     renderView,
+    SmallerProfile,
 } from 'src/components/rhs/rhs_shared';
 import LatestUpdate from 'src/components/rhs/latest_update';
 import StatusBadge from '../backstage/incidents/status_badge';
+import {useProfilesInChannel} from 'src/hooks';
 
 interface Props {
     incident: Incident;
@@ -26,9 +28,10 @@ interface Props {
 
 const RHSIncidentSummary: FC<Props> = (props: Props) => {
     const isChannelArchived = useSelector<GlobalState, boolean>(isCurrentChannelArchived);
+    const profilesInChannel = useProfilesInChannel();
 
     const fetchUsers = async () => {
-        return fetchUsersInChannel(props.incident.channel_id);
+        return profilesInChannel;
     };
 
     const onSelectedProfileChange = async (userId?: string) => {
@@ -41,6 +44,10 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
             console.log(response.error); // eslint-disable-line no-console
         }
     };
+
+    // eslint-disable-next-line multiline-ternary
+    const reporterElem = props.incident.reporter_user_id ?
+        <SmallerProfile userId={props.incident.reporter_user_id}/> : 'Not available.';
 
     return (
         <Scrollbars
@@ -85,15 +92,7 @@ const RHSIncidentSummary: FC<Props> = (props: Props) => {
                     </div>
                     <div className='inner-container'>
                         <div className='first-title'>{'Reporter'}</div>
-                        <ProfileSelector
-                            selectedUserId={props.incident.reporter_user_id}
-                            placeholder={'Reporter Not Available'}
-                            placeholderButtonClass={'NoAssignee-button'}
-                            profileButtonClass={'Assigned-button'}
-                            enableEdit={false}
-                            getUsers={fetchUsers}
-                            selfIsFirstOption={true}
-                        />
+                        <div className='second-line'>{reporterElem}</div>
                     </div>
                 </div>
                 <div id={'incidentRHSUpdates'}>

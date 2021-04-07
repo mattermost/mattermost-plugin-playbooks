@@ -30,6 +30,9 @@ import {
     Playbook,
     PlaybookNoChecklist,
 } from 'src/types/playbook';
+import {PROFILE_CHUNK_SIZE} from 'src/constants';
+
+import {Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 
@@ -168,7 +171,11 @@ export async function deletePlaybook(playbook: PlaybookNoChecklist) {
 }
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
-    return Client4.getProfilesInChannel(channelId, 0, 200);
+    return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
+}
+
+export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
+    return Client4.getProfilesInTeam(teamId, 0, 200);
 }
 
 export async function fetchCommandersInTeam(teamId: string): Promise<CommanderInfo[]> {
@@ -217,19 +224,24 @@ export async function clientAddChecklistItem(incidentID: string, checklistNum: n
 }
 
 export async function clientRemoveChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
         body: '',
     });
-
-    return data;
 }
 
-export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, newItem: ChecklistItem) {
+interface ChecklistItemUpdate {
+    title: string
+    command: string
+    description: string
+}
+
+export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, itemUpdate: ChecklistItemUpdate) {
     const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`,
         JSON.stringify({
-            title: newItem.title,
-            command: newItem.command,
+            title: itemUpdate.title,
+            command: itemUpdate.command,
+            description: itemUpdate.description,
         }));
 
     return data;
@@ -247,17 +259,26 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
 }
 
 export async function clientRemoveTimelineEvent(incidentID: string, entryID: string) {
-    const {data} = await doFetchWithResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
         method: 'delete',
         body: '',
     });
+}
 
-    return data;
+export async function fetchStats(teamID: string): Promise<Stats | null> {
+    const data = await doGet(`${apiUrl}/stats?team_id=${teamID}`);
+    if (!data) {
+        return null;
+    }
+
+    return data as Stats;
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {
-    const body = JSON.stringify({action});
-    await doPost(`${apiUrl}/telemetry/incident/${incidentID}`, body);
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/incident/${incidentID}`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
 }
 
 export function exportChannelUrl(channelId: string) {
@@ -342,6 +363,20 @@ export const doFetchWithTextResponse = async (url: string, options = {}) => {
 
     throw new ClientError(Client4.url, {
         message: data || '',
+        status_code: response.status,
+        url,
+    });
+};
+
+export const doFetchWithoutResponse = async (url: string, options = {}) => {
+    const response = await fetch(url, Client4.getOptions(options));
+
+    if (response.ok) {
+        return;
+    }
+
+    throw new ClientError(Client4.url, {
+        message: '',
         status_code: response.status,
         url,
     });

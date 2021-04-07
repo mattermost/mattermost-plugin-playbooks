@@ -438,7 +438,6 @@ var migrations = []Migration{
 		},
 	},
 	{
-
 		fromVersion: semver.MustParse("0.8.0"),
 		toVersion:   semver.MustParse("0.9.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
@@ -469,6 +468,105 @@ var migrations = []Migration{
 				}
 				if err := addColumnToPGTable(e, "IR_Playbook", "InviteUsersEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column InviteUsersEnabled to table IR_Playbook")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.9.0"),
+		toVersion:   semver.MustParse("0.10.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "DefaultCommanderID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Incident")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "DefaultCommanderID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "DefaultCommanderEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "DefaultCommanderID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Incident")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "DefaultCommanderID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "DefaultCommanderEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column DefaultCommanderEnabled to table IR_Playbook")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.10.0"),
+		toVersion:   semver.MustParse("0.11.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if _, err := e.Exec(`
+					UPDATE IR_Incident
+					INNER JOIN Channels ON IR_Incident.ChannelID = Channels.ID
+					SET IR_Incident.CreateAt = Channels.CreateAt,
+						IR_Incident.DeleteAt = Channels.DeleteAt
+					WHERE IR_Incident.CreateAt = 0
+						AND IR_Incident.DeleteAt = 0
+						AND IR_Incident.ChannelID = Channels.ID
+				`); err != nil {
+					return errors.Wrap(err, "failed updating table IR_Incident with Channels' CreateAt and DeleteAt values")
+				}
+			} else {
+				if _, err := e.Exec(`
+					UPDATE IR_Incident
+					SET CreateAt = Channels.CreateAt,
+						DeleteAt = Channels.DeleteAt
+					FROM Channels
+					WHERE IR_Incident.CreateAt = 0
+						AND IR_Incident.DeleteAt = 0
+						AND IR_Incident.ChannelID = Channels.ID
+				`); err != nil {
+					return errors.Wrap(err, "failed updating table IR_Incident with Channels' CreateAt and DeleteAt values")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.11.0"),
+		toVersion:   semver.MustParse("0.12.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "AnnouncementChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column AnnouncementChannelID to table IR_Incident")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "AnnouncementChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column AnnouncementChannelID to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "AnnouncementChannelEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column AnnouncementChannelEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "AnnouncementChannelID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column AnnouncementChannelID to table IR_Incident")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "AnnouncementChannelID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column AnnouncementChannelID to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "AnnouncementChannelEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column AnnouncementChannelEnabled to table IR_Playbook")
 				}
 			}
 

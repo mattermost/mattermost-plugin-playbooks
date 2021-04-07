@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -37,6 +38,8 @@ type Client struct {
 
 	// Incidents is a collection of methods used to interact with incidents.
 	Incidents *IncidentsService
+	// Playbooks is a collection of methods used to interact with playbooks.
+	Playbooks *PlaybooksService
 }
 
 // New creates a new instance of Client using the configuration from the given Mattermost Client.
@@ -58,6 +61,7 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 
 	c := &Client{client: httpClient, BaseURL: siteURL, UserAgent: userAgent}
 	c.Incidents = &IncidentsService{c}
+	c.Playbooks = &PlaybooksService{c}
 	return c, nil
 }
 
@@ -170,14 +174,24 @@ func checkResponse(r *http.Response) error {
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 
 	if data != nil {
-		// Try to extract a structured error from the body, otherwise fall back to using
-		// the whole body as the error message.
-		if err := json.Unmarshal(data, errorResponse); err != nil {
-			errorResponse.Err = errors.New(string(data))
-		}
+		_ = json.Unmarshal(data, errorResponse)
 	}
 
 	return errorResponse
+}
+
+// addOption adds the given parameter as an URL query parameters to s.
+func addOption(s string, name, value string) (string, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		return s, errors.Wrapf(err, "failed to parse %s", s)
+	}
+
+	qa := u.Query()
+	qa.Add(name, value)
+	u.RawQuery = qa.Encode()
+
+	return u.String(), nil
 }
 
 // addOptions adds the parameters in opts as URL query parameters to s. opts
@@ -198,6 +212,29 @@ func addOptions(s string, opts interface{}) (string, error) {
 		return s, errors.Wrapf(err, "failed to opts %+v", opts)
 	}
 
-	u.RawQuery = qs.Encode()
+	// Append to the existing query parameters.
+	qa := u.Query()
+	for key, values := range qs {
+		for _, value := range values {
+			qa.Add(key, value)
+		}
+	}
+
+	u.RawQuery = qa.Encode()
+	return u.String(), nil
+}
+
+// addPaginationOptions adds the given pagination parameters as URL query parameters to s.
+func addPaginationOptions(s string, page, perPage int) (string, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		return s, errors.Wrapf(err, "failed to parse %s", s)
+	}
+
+	qa := u.Query()
+	qa.Add("page", strconv.Itoa(page))
+	qa.Add("per_page", strconv.Itoa(perPage))
+	u.RawQuery = qa.Encode()
+
 	return u.String(), nil
 }

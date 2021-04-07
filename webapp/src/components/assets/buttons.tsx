@@ -89,3 +89,17 @@ export const TertiaryButton = styled.button`
     }
 `;
 
+export const GrayTertiaryButton = styled.button`
+    border: none;
+    background: none;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    text-align: left;
+
+    &:hover {
+        color: rgba(var(--center-channel-color-rgb));
+    }
+`;
+

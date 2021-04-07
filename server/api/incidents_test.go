@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
@@ -649,6 +650,27 @@ func TestIncidents(t *testing.T) {
 		require.Nil(t, resultIncident)
 	})
 
+	t.Run("create invalid incident - missing name", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+		}
+
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            "",
+			TeamID:          testIncident.TeamID,
+			CommanderUserID: testIncident.CommanderUserID,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+		require.Nil(t, resultIncident)
+	})
+
 	t.Run("get incident by channel id", func(t *testing.T) {
 		reset()
 
@@ -1115,7 +1137,7 @@ func TestIncidents(t *testing.T) {
 		}
 		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
-		actualList, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+		actualList, err := c.Incidents.List(context.TODO(), 0, 200, icClient.IncidentListOptions{
 			TeamID: "testTeamID1",
 		})
 		require.NoError(t, err)
@@ -1134,7 +1156,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
 
-		resultIncident, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+		resultIncident, err := c.Incidents.List(context.TODO(), 0, 100, icClient.IncidentListOptions{
 			TeamID: "non-existent",
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1167,5 +1189,117 @@ func TestIncidents(t *testing.T) {
 		resp := testrecorder.Result()
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("update incident status", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
+
+		updateOptions := incident.StatusUpdateOptions{
+			Status:   "Active",
+			Message:  "test message",
+			Reminder: 600 * time.Second,
+		}
+		incidentService.EXPECT().UpdateStatus("incidentID", "testUserID", updateOptions).Return(nil)
+
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test message", 600)
+		require.NoError(t, err)
+	})
+
+	t.Run("update incident status, bad status", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
+
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "Arrrrrrrctive", "test message", 600)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update incident status, no permission to post", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(false)
+
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test message", 600)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("update incident status, message empty", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
+
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "  \t   \r   \t  \r\r  ", 600)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update incident status, status empty", func(t *testing.T) {
+		reset()
+
+		testIncident := incident.Incident{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
+
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "\t   \r  ", "test message", 600)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }

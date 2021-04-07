@@ -2,15 +2,16 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
@@ -66,8 +67,6 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:      []string{},
 		InvitedUserIDs: []string{},
 	}
-	withidBytes, err := json.Marshal(&withid)
-	require.NoError(t, err)
 
 	withMember := playbook.Playbook{
 		ID:     "playbookwithmember",
@@ -86,27 +85,8 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:      []string{"testuserid"},
 		InvitedUserIDs: []string{},
 	}
-	withMemberBytes, err := json.Marshal(&withMember)
-	require.NoError(t, err)
 	withBroadcastChannel := playbook.Playbook{
 		ID:     "testplaybookid",
-		Title:  "My Playbook",
-		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
-			{
-				Title: "Do these things",
-				Items: []playbook.ChecklistItem{
-					{
-						Title: "Do this",
-					},
-				},
-			},
-		},
-		MemberIDs:          []string{},
-		BroadcastChannelID: "nonemptychannelid",
-		InvitedUserIDs:     []string{},
-	}
-	withBroadcastChannelNoID := playbook.Playbook{
 		Title:  "My Playbook",
 		TeamID: "testteamid",
 		Checklists: []playbook.Checklist{
@@ -131,8 +111,24 @@ func TestPlaybooks(t *testing.T) {
 	var playbookService *mock_playbook.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
+	mattermostUserID := "testuserid"
+
+	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
+	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.Header.Add("Mattermost-User-ID", mattermostUserID)
+
+		handler.ServeHTTP(w, r)
+	})
+
+	server := httptest.NewServer(mattermostHandler)
+	t.Cleanup(server.Close)
+
+	c, err := icClient.New(&model.Client4{Url: server.URL})
+	require.NoError(t, err)
 
 	reset := func() {
+		mattermostUserID = "testuserid"
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		handler = NewHandler(configService)
@@ -183,15 +179,15 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
+		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+			Title:          playbooktest.Title,
+			TeamID:         playbooktest.TeamID,
+			Checklists:     toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:      playbooktest.MemberIDs,
+			InvitedUserIDs: playbooktest.InvitedUserIDs,
+		})
 		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+		assert.NotEmpty(t, resultPlaybook.ID)
 	})
 
 	t.Run("create playbook, as guest", func(t *testing.T) {
@@ -205,19 +201,20 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Roles: "system_guest"}, nil)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+			Title:          playbooktest.Title,
+			TeamID:         playbooktest.TeamID,
+			Checklists:     toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:      playbooktest.MemberIDs,
+			InvitedUserIDs: playbooktest.InvitedUserIDs,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.Nil(t, resultPlaybook)
 	})
 
-	t.Run("create playbook, no premissions to broadcast channel", func(t *testing.T) {
+	t.Run("create playbook, no permissions to broadcast channel", func(t *testing.T) {
 		reset()
+		broadcastChannelID := model.NewId()
 
 		playbookService.EXPECT().
 			Create(playbooktest, "testuserid").
@@ -225,26 +222,29 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannelNoID.BroadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", broadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(withBroadcastChannelNoID))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+			Title:  "My Playbook",
+			TeamID: "testteamid",
+			Checklists: toAPIChecklists([]playbook.Checklist{
+				{
+					Title: "Do these things",
+					Items: []playbook.ChecklistItem{
+						{
+							Title: "Do this",
+						},
+					},
+				},
+			}),
+			BroadcastChannelID: broadcastChannelID,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.Nil(t, resultPlaybook)
 	})
 
 	t.Run("get playbook", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/testplaybookid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
@@ -254,14 +254,9 @@ func TestPlaybooks(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, withidBytes, result)
+		result, err := c.Playbooks.Get(context.TODO(), "testplaybookid")
+		require.NoError(t, err)
+		assert.Equal(t, withid, toInternalPlaybook(*result))
 	})
 
 	t.Run("get playbooks", func(t *testing.T) {
@@ -278,11 +273,6 @@ func TestPlaybooks(t *testing.T) {
 			HasMore:    false,
 			Items:      []playbook.Playbook{playbooktest, playbooktest},
 		}
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
@@ -301,16 +291,16 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		playbooksBytes, err := json.Marshal(&playbookResult)
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
 		require.NoError(t, err)
-		assert.Equal(t, playbooksBytes, result)
+
+		expectedList := &icClient.GetPlaybooksResults{
+			TotalCount: 2,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []icClient.Playbook{toAPIPlaybook(playbooktest), toAPIPlaybook(playbooktest)},
+		}
+		assert.Equal(t, expectedList, actualList)
 	})
 
 	t.Run("get playbooks, as guest", func(t *testing.T) {
@@ -327,11 +317,6 @@ func TestPlaybooks(t *testing.T) {
 			HasMore:    false,
 			Items:      []playbook.Playbook{playbooktest, playbooktest},
 		}
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
@@ -350,11 +335,9 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Roles: "system_guest"}, nil)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.Empty(t, actualList)
 	})
 
 	t.Run("get playbooks, member only", func(t *testing.T) {
@@ -371,11 +354,6 @@ func TestPlaybooks(t *testing.T) {
 			HasMore:    false,
 			Items:      []playbook.Playbook{playbooktest, playbooktest},
 		}
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid&member_only=true", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
@@ -395,25 +373,22 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		playbooksBytes, err := json.Marshal(&playbookResult)
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{
+			MemberOnly: true,
+		})
 		require.NoError(t, err)
-		assert.Equal(t, playbooksBytes, result)
+
+		expectedList := &icClient.GetPlaybooksResults{
+			TotalCount: 2,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []icClient.Playbook{toAPIPlaybook(playbooktest), toAPIPlaybook(playbooktest)},
+		}
+		assert.Equal(t, expectedList, actualList)
 	})
 
 	t.Run("update playbook", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbooktest))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -428,19 +403,12 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withid))
+		require.NoError(t, err)
 	})
 
-	t.Run("update playbook but no premissions in broadcast channel", func(t *testing.T) {
+	t.Run("update playbook but no permissions in broadcast channel", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(withBroadcastChannel))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -457,19 +425,12 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannel.BroadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("update playbook but no premissions in broadcast channel, but no edit", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(withBroadcastChannel))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -484,19 +445,12 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
+		require.NoError(t, err)
 	})
 
 	t.Run("delete playbook", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/testplaybookid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -511,20 +465,13 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
+		require.NoError(t, err)
 	})
 
 	t.Run("delete playbook no team permission", func(t *testing.T) {
 		reset()
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/testplaybookid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(withid, nil).
@@ -532,38 +479,29 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("create playbook no team permission", func(t *testing.T) {
 		reset()
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(playbooktest))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+			Title:          playbooktest.Title,
+			TeamID:         playbooktest.TeamID,
+			Checklists:     toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:      playbooktest.MemberIDs,
+			InvitedUserIDs: playbooktest.InvitedUserIDs,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.Nil(t, resultPlaybook)
 	})
 
 	t.Run("get playbook no team permission", func(t *testing.T) {
 		reset()
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/testplaybookid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(withid, nil).
@@ -571,37 +509,23 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		result, err := c.Playbooks.Get(context.TODO(), "testplaybookid")
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.Nil(t, result)
 	})
 
 	t.Run("get playbooks no team permission", func(t *testing.T) {
 		reset()
 
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.Empty(t, actualList)
 	})
 
 	t.Run("update playbooks no team permission", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(withid))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -610,34 +534,12 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-	})
-
-	t.Run("create playbook playbook with ID", func(t *testing.T) {
-		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/playbooks", jsonPlaybookReader(withid))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withid))
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("get playbook by member", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/playbookwithmember", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -647,23 +549,14 @@ func TestPlaybooks(t *testing.T) {
 			Return(withMember, nil).
 			Times(1)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, withMemberBytes, result)
+		result, err := c.Playbooks.Get(context.TODO(), "playbookwithmember")
+		require.NoError(t, err)
+		assert.Equal(t, withMember, toInternalPlaybook(*result))
 	})
 
 	t.Run("get playbook by non-member", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks/playbookwithmember", nil)
-		testreq.Header.Add("Mattermost-User-ID", "unknownMember")
-		require.NoError(t, err)
+		mattermostUserID = "unknownMember"
 
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -673,20 +566,13 @@ func TestPlaybooks(t *testing.T) {
 			Return(withMember, nil).
 			Times(1)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		result, err := c.Playbooks.Get(context.TODO(), "playbookwithmember")
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		assert.Nil(t, result)
 	})
 
 	t.Run("update playbook by member", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/playbookwithmember", jsonPlaybookReader(playbooktest))
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("playbookwithmember").
@@ -704,19 +590,13 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(updatedPlaybook))
+		require.NoError(t, err)
 	})
 
 	t.Run("update playbook by non-member", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/playbookwithmember", jsonPlaybookReader(playbooktest))
-		testreq.Header.Add("Mattermost-User-ID", "unknownMember")
-		require.NoError(t, err)
+		mattermostUserID = "unknownMember"
 
 		playbookService.EXPECT().
 			Get("playbookwithmember").
@@ -734,20 +614,12 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(updatedPlaybook))
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("delete playbook by member", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/playbookwithmember", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("playbookwithmember").
@@ -762,19 +634,13 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
+		require.NoError(t, err)
 	})
 
 	t.Run("delete playbook by non-member", func(t *testing.T) {
 		reset()
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("DELETE", "/api/v0/playbooks/playbookwithmember", nil)
-		testreq.Header.Add("Mattermost-User-ID", "unknownMember")
-		require.NoError(t, err)
+		mattermostUserID = "unknownMember"
 
 		playbookService.EXPECT().
 			Get("playbookwithmember").
@@ -784,11 +650,8 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("get playbooks with members", func(t *testing.T) {
@@ -805,11 +668,6 @@ func TestPlaybooks(t *testing.T) {
 			HasMore:    false,
 			Items:      []playbook.Playbook{withMember},
 		}
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("GET", "/api/v0/playbooks?team_id=testteamid", nil)
-		testreq.Header.Add("Mattermost-User-ID", "testuserid")
-		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
@@ -828,16 +686,16 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		result, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		playbooksBytes, err := json.Marshal(&playbookResult)
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
 		require.NoError(t, err)
-		assert.Equal(t, playbooksBytes, result)
+
+		expectedList := &icClient.GetPlaybooksResults{
+			TotalCount: 1,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []icClient.Playbook{toAPIPlaybook(withMember)},
+		}
+		assert.Equal(t, expectedList, actualList)
 	})
 }
 
@@ -941,6 +799,20 @@ func TestSortingPlaybooks(t *testing.T) {
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
+	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
+	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.Header.Add("Mattermost-User-ID", "testuserid")
+
+		handler.ServeHTTP(w, r)
+	})
+
+	server := httptest.NewServer(mattermostHandler)
+	t.Cleanup(server.Close)
+
+	c, err := icClient.New(&model.Client4{Url: server.URL})
+	require.NoError(t, err)
+
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
@@ -958,8 +830,8 @@ func TestSortingPlaybooks(t *testing.T) {
 
 	testData := []struct {
 		testName           string
-		sortField          string
-		sortDirection      string
+		sortField          icClient.Sort
+		sortDirection      icClient.SortDirection
 		expectedList       []playbook.Playbook
 		expectedErr        error
 		expectedStatusCode int
@@ -990,7 +862,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		},
 		{
 			testName:           "get playbooks with sort=title direction=asc",
-			sortField:          "title",
+			sortField:          icClient.SortByTitle,
 			sortDirection:      "asc",
 			expectedList:       []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			expectedErr:        nil,
@@ -998,7 +870,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		},
 		{
 			testName:           "get playbooks with sort=title direction=desc",
-			sortField:          "title",
+			sortField:          icClient.SortByTitle,
 			sortDirection:      "desc",
 			expectedList:       []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
 			expectedErr:        nil,
@@ -1006,7 +878,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		},
 		{
 			testName:           "get playbooks with sort=stages direction=asc",
-			sortField:          "stages",
+			sortField:          icClient.SortByStages,
 			sortDirection:      "asc",
 			expectedList:       []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			expectedErr:        nil,
@@ -1014,7 +886,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		},
 		{
 			testName:           "get playbooks with sort=stages direction=desc",
-			sortField:          "stages",
+			sortField:          icClient.SortByStages,
 			sortDirection:      "desc",
 			expectedList:       []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
 			expectedErr:        nil,
@@ -1022,7 +894,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		},
 		{
 			testName:           "get playbooks with sort=steps direction=asc",
-			sortField:          "steps",
+			sortField:          icClient.SortBySteps,
 			sortDirection:      "asc",
 			expectedList:       []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			expectedErr:        nil,
@@ -1030,7 +902,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		},
 		{
 			testName:           "get playbooks with sort=steps direction=desc",
-			sortField:          "steps",
+			sortField:          icClient.SortBySteps,
 			sortDirection:      "desc",
 			expectedList:       []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
 			expectedErr:        nil,
@@ -1054,11 +926,6 @@ func TestSortingPlaybooks(t *testing.T) {
 				Items:      data.expectedList,
 			}
 
-			testrecorder := httptest.NewRecorder()
-			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v0/playbooks?team_id=testteamid&sort=%s&direction=%s", data.sortField, data.sortDirection), nil)
-			testreq.Header.Add("Mattermost-User-ID", "testuserid")
-			require.NoError(t, err)
-
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
@@ -1076,28 +943,25 @@ func TestSortingPlaybooks(t *testing.T) {
 			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 			pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-			handler.ServeHTTP(testrecorder, testreq)
-			resp := testrecorder.Result()
-			defer resp.Body.Close()
+			actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{
+				Sort:      data.sortField,
+				Direction: data.sortDirection,
+			})
 
-			assert.Equal(t, data.expectedStatusCode, resp.StatusCode)
+			expectedList := &icClient.GetPlaybooksResults{
+				TotalCount: playbookResult.TotalCount,
+				PageCount:  playbookResult.PageCount,
+				HasMore:    playbookResult.HasMore,
+				Items:      toAPIPlaybooks(playbookResult.Items),
+			}
+
 			if data.expectedErr == nil {
-				result, err := ioutil.ReadAll(resp.Body)
-				assert.NoError(t, err)
-				playbooksBytes, err := json.Marshal(&playbookResult)
 				require.NoError(t, err)
-				assert.Equal(t, playbooksBytes, result)
+				assert.Equal(t, expectedList, actualList)
 			} else {
-				result, err := ioutil.ReadAll(resp.Body)
-				assert.NoError(t, err)
-
-				errorResult := struct {
-					Error string `json:"error"`
-				}{}
-
-				err = json.Unmarshal(result, &errorResult)
-				require.NoError(t, err)
-				assert.Contains(t, errorResult.Error, data.expectedErr.Error())
+				requireErrorWithStatusCode(t, err, data.expectedStatusCode)
+				assert.Contains(t, err.Error(), data.expectedErr.Error())
+				require.Empty(t, actualList)
 			}
 		})
 	}
@@ -1134,6 +998,20 @@ func TestPagingPlaybooks(t *testing.T) {
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
+	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
+	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.Header.Add("Mattermost-User-ID", "testuserid")
+
+		handler.ServeHTTP(w, r)
+	})
+
+	server := httptest.NewServer(mattermostHandler)
+	t.Cleanup(server.Close)
+
+	c, err := icClient.New(&model.Client4{Url: server.URL})
+	require.NoError(t, err)
+
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
@@ -1151,33 +1029,25 @@ func TestPagingPlaybooks(t *testing.T) {
 
 	testData := []struct {
 		testName           string
-		page               string
-		perPage            string
+		page               int
+		perPage            int
 		expectedResult     playbook.GetPlaybooksResults
 		emptyStore         bool
 		expectedErr        error
 		expectedStatusCode int
 	}{
 		{
-			testName:           "get playbooks with invalid page values",
-			page:               "test",
-			perPage:            "test",
-			expectedResult:     playbook.GetPlaybooksResults{},
-			expectedErr:        errors.New("bad parameter"),
-			expectedStatusCode: http.StatusBadRequest,
-		},
-		{
 			testName:           "get playbooks with negative page values",
-			page:               "-1",
-			perPage:            "-1",
+			page:               -1,
+			perPage:            -1,
 			expectedResult:     playbook.GetPlaybooksResults{},
 			expectedErr:        errors.New("bad parameter"),
 			expectedStatusCode: http.StatusBadRequest,
 		},
 		{
 			testName: "get playbooks with page=0 per_page=0 with empty store",
-			page:     "0",
-			perPage:  "0",
+			page:     0,
+			perPage:  0,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 0,
 				PageCount:  0,
@@ -1190,8 +1060,8 @@ func TestPagingPlaybooks(t *testing.T) {
 		},
 		{
 			testName: "get playbooks with page=1 per_page=1 with empty store",
-			page:     "1",
-			perPage:  "1",
+			page:     1,
+			perPage:  1,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 0,
 				PageCount:  0,
@@ -1204,8 +1074,8 @@ func TestPagingPlaybooks(t *testing.T) {
 		},
 		{
 			testName: "get playbooks with page=0 per_page=0",
-			page:     "0",
-			perPage:  "0",
+			page:     0,
+			perPage:  0,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  1,
@@ -1217,8 +1087,8 @@ func TestPagingPlaybooks(t *testing.T) {
 		},
 		{
 			testName: "get playbooks with page=0 per_page=3",
-			page:     "0",
-			perPage:  "3",
+			page:     0,
+			perPage:  3,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  1,
@@ -1230,8 +1100,8 @@ func TestPagingPlaybooks(t *testing.T) {
 		},
 		{
 			testName: "get playbooks with page=0 per_page=2",
-			page:     "0",
-			perPage:  "2",
+			page:     0,
+			perPage:  2,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
@@ -1243,8 +1113,8 @@ func TestPagingPlaybooks(t *testing.T) {
 		},
 		{
 			testName: "get playbooks with page=1 per_page=2",
-			page:     "1",
-			perPage:  "2",
+			page:     1,
+			perPage:  2,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
@@ -1256,8 +1126,8 @@ func TestPagingPlaybooks(t *testing.T) {
 		},
 		{
 			testName: "get playbooks with page=2 per_page=2",
-			page:     "2",
-			perPage:  "2",
+			page:     2,
+			perPage:  2,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
@@ -1269,8 +1139,8 @@ func TestPagingPlaybooks(t *testing.T) {
 		},
 		{
 			testName: "get playbooks with page=9999 per_page=2",
-			page:     "9999",
-			perPage:  "2",
+			page:     9999,
+			perPage:  2,
 			expectedResult: playbook.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
@@ -1285,11 +1155,6 @@ func TestPagingPlaybooks(t *testing.T) {
 	for _, data := range testData {
 		t.Run(data.testName, func(t *testing.T) {
 			reset()
-
-			testrecorder := httptest.NewRecorder()
-			testreq, err := http.NewRequest("GET", fmt.Sprintf("/api/v0/playbooks?team_id=testteamid&page=%s&per_page=%s", data.page, data.perPage), nil)
-			testreq.Header.Add("Mattermost-User-ID", "testuserid")
-			require.NoError(t, err)
 
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
@@ -1308,27 +1173,22 @@ func TestPagingPlaybooks(t *testing.T) {
 			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 			pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-			handler.ServeHTTP(testrecorder, testreq)
-			resp := testrecorder.Result()
-			defer resp.Body.Close()
+			actualList, err := c.Playbooks.List(context.TODO(), "testteamid", data.page, data.perPage, icClient.PlaybookListOptions{})
 
-			assert.Equal(t, data.expectedStatusCode, resp.StatusCode)
+			expectedList := &icClient.GetPlaybooksResults{
+				TotalCount: data.expectedResult.TotalCount,
+				PageCount:  data.expectedResult.PageCount,
+				HasMore:    data.expectedResult.HasMore,
+				Items:      toAPIPlaybooks(data.expectedResult.Items),
+			}
+
 			if data.expectedErr == nil {
-				actualList := playbook.GetPlaybooksResults{}
-				err = json.NewDecoder(resp.Body).Decode(&actualList)
 				require.NoError(t, err)
-				assert.Equal(t, data.expectedResult, actualList)
+				assert.Equal(t, expectedList, actualList)
 			} else {
-				result, err := ioutil.ReadAll(resp.Body)
-				assert.NoError(t, err)
-
-				errorResult := struct {
-					Error string `json:"error"`
-				}{}
-
-				err = json.Unmarshal(result, &errorResult)
-				require.NoError(t, err)
-				assert.Contains(t, errorResult.Error, data.expectedErr.Error())
+				requireErrorWithStatusCode(t, err, data.expectedStatusCode)
+				assert.Contains(t, err.Error(), data.expectedErr.Error())
+				require.Empty(t, actualList)
 			}
 		})
 	}

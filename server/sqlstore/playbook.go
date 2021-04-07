@@ -42,7 +42,11 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID", "COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "ConcatenatedInvitedUserIDs", "InviteUsersEnabled").
+			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
+			"ConcatenatedInvitedUserIDs", "InviteUsersEnabled",
+			"DefaultCommanderID", "DefaultCommanderEnabled",
+			"AnnouncementChannelID", "AnnouncementChannelEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -96,6 +100,10 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
 			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
+			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
+			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
+			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
+			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -289,6 +297,10 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
 			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
+			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
+			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
+			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
+			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

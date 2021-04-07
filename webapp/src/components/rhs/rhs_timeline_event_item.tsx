@@ -143,8 +143,8 @@ const RHSTimelineEventItem = (props: Props) => {
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
-        summaryTitle = 'Task Modified';
-        summary = props.event.subject_display_name + ' ' + props.event.summary;
+        summaryTitle = props.event.subject_display_name + ' ' + props.event.summary;
+        summaryTitle = summaryTitle.replace(/\*\*/g, '"');
         testid = TimelineEventType.TaskStateModified;
         break;
     case TimelineEventType.AssigneeChanged:
@@ -168,7 +168,7 @@ const RHSTimelineEventItem = (props: Props) => {
 
     return (
         <TimelineItem
-            data-testid={testid}
+            data-testid={'timeline-item ' + testid}
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
@@ -198,7 +198,7 @@ const RHSTimelineEventItem = (props: Props) => {
             <ConfirmModal
                 show={showDeleteConfirm}
                 title={'Confirm Entry Delete'}
-                message={`Are you sure you want to delete this timeline entry? "${summaryTitle}"?`}
+                message={'Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.'}
                 confirmButtonText={'Delete Entry'}
                 onConfirm={() =>
                     clientRemoveTimelineEvent(props.event.incident_id, props.event.id)

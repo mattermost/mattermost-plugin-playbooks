@@ -21,7 +21,7 @@ import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
+import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
@@ -320,10 +320,46 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleAssignDefaultCommander = (userId: string | undefined) => {
+        if (userId && playbook.default_commander_id !== userId) {
+            setPlaybook({
+                ...playbook,
+                default_commander_id: userId,
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
+        if (channelId && playbook.announcement_channel_id !== channelId) {
+            setPlaybook({
+                ...playbook,
+                announcement_channel_id: channelId,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
             invite_users_enabled: !playbook.invite_users_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleDefaultCommander = () => {
+        setPlaybook({
+            ...playbook,
+            default_commander_enabled: !playbook.default_commander_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleAnnouncementChannel = () => {
+        setPlaybook({
+            ...playbook,
+            announcement_channel_enabled: !playbook.announcement_channel_enabled,
         });
         setChangesMade(true);
     };
@@ -333,10 +369,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const getUsers = () => {
-        return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
+        return dispatch(getProfilesInTeam(props.currentTeam.id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
-    const handleBroadcastInput = (channelId: string | null) => {
+    const handleBroadcastInput = (channelId: string | undefined) => {
         setPlaybook({
             ...playbook,
             broadcast_channel_id: channelId || '',
@@ -423,8 +459,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     <ChannelSelector
                                         id='playbook-preferences-broadcast-channel'
                                         onChannelSelected={handleBroadcastInput}
-                                        playbook={playbook}
+                                        channelId={playbook.broadcast_channel_id}
                                         isClearable={true}
+                                        shouldRenderValue={true}
+                                        isDisabled={false}
+                                        captureMenuScroll={false}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
@@ -477,6 +516,15 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleInviteUsers={handleToggleInviteUsers}
                                     onAddUser={handleAddUserInvited}
                                     onRemoveUser={handleRemoveUserInvited}
+                                    defaultCommanderEnabled={playbook.default_commander_enabled}
+                                    defaultCommanderID={playbook.default_commander_id}
+                                    onToggleDefaultCommander={handleToggleDefaultCommander}
+                                    onAssignCommander={handleAssignDefaultCommander}
+                                    teamID={playbook.team_id}
+                                    announcementChannelID={playbook.announcement_channel_id}
+                                    announcementChannelEnabled={playbook.announcement_channel_enabled}
+                                    onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
+                                    onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
                                 />
                             </TabContainer>
                         </TabsContent>

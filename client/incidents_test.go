@@ -53,11 +53,9 @@ func ExampleIncidentsService_List() {
 
 	var incidents []client.Incident
 	for page := 0; ; page++ {
-		result, err := c.Incidents.List(ctx, client.IncidentListOptions{
+		result, err := c.Incidents.List(ctx, page, 100, client.IncidentListOptions{
 			TeamID:    teams[0].Id,
-			Page:      page,
-			PerPage:   100,
-			Sort:      client.CreateAt,
+			Sort:      client.SortByCreateAt,
 			Direction: client.SortDesc,
 		})
 		if err != nil {

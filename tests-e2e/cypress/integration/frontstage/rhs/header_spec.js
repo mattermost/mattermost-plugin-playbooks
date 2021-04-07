@@ -136,6 +136,7 @@ describe('incident rhs > header', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'ending',
                     status: 'Resolved',
                 });
             });
@@ -165,6 +166,7 @@ describe('incident rhs > header', () => {
                     incidentId: incident.id,
                     userId,
                     teamId,
+                    message: 'ending',
                     status: 'Archived',
                 });
             });

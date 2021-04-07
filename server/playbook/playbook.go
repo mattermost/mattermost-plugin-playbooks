@@ -27,6 +27,10 @@ type Playbook struct {
 	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
 	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
+	DefaultCommanderID          string      `json:"default_commander_id"`
+	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	AnnouncementChannelID       string      `json:"announcement_channel_id"`
+	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {

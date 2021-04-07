@@ -7,6 +7,7 @@ package mock_incident
 import (
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	permissions "github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
@@ -107,6 +108,20 @@ func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1, arg2 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1, arg2)
 }
 
+// EditChecklistItem mocks base method
+func (m *MockService) EditChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5, arg6 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditChecklistItem", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EditChecklistItem indicates an expected call of EditChecklistItem
+func (mr *MockServiceMockRecorder) EditChecklistItem(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditChecklistItem", reflect.TypeOf((*MockService)(nil).EditChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+}
+
 // GetChecklistAutocomplete mocks base method
 func (m *MockService) GetChecklistAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
 	m.ctrl.T.Helper()
@@ -122,8 +137,23 @@ func (mr *MockServiceMockRecorder) GetChecklistAutocomplete(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistAutocomplete", reflect.TypeOf((*MockService)(nil).GetChecklistAutocomplete), arg0)
 }
 
+// GetChecklistItemAutocomplete mocks base method
+func (m *MockService) GetChecklistItemAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChecklistItemAutocomplete", arg0)
+	ret0, _ := ret[0].([]model.AutocompleteListItem)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChecklistItemAutocomplete indicates an expected call of GetChecklistItemAutocomplete
+func (mr *MockServiceMockRecorder) GetChecklistItemAutocomplete(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistItemAutocomplete", reflect.TypeOf((*MockService)(nil).GetChecklistItemAutocomplete), arg0)
+}
+
 // GetCommanders mocks base method
-func (m *MockService) GetCommanders(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
+func (m *MockService) GetCommanders(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
 	ret0, _ := ret[0].([]incident.CommanderInfo)
@@ -183,7 +213,7 @@ func (mr *MockServiceMockRecorder) GetIncidentMetadata(arg0 interface{}) *gomock
 }
 
 // GetIncidents mocks base method
-func (m *MockService) GetIncidents(arg0 incident.RequesterInfo, arg1 incident.FilterOptions) (*incident.GetIncidentsResults, error) {
+func (m *MockService) GetIncidents(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) (*incident.GetIncidentsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIncidents", arg0, arg1)
 	ret0, _ := ret[0].(*incident.GetIncidentsResults)
@@ -265,8 +295,22 @@ func (mr *MockServiceMockRecorder) NukeDB() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockService)(nil).NukeDB))
 }
 
+// OpenAddChecklistItemDialog mocks base method
+func (m *MockService) OpenAddChecklistItemDialog(arg0, arg1 string, arg2 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenAddChecklistItemDialog", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenAddChecklistItemDialog indicates an expected call of OpenAddChecklistItemDialog
+func (mr *MockServiceMockRecorder) OpenAddChecklistItemDialog(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenAddChecklistItemDialog", reflect.TypeOf((*MockService)(nil).OpenAddChecklistItemDialog), arg0, arg1, arg2)
+}
+
 // OpenAddToTimelineDialog mocks base method
-func (m *MockService) OpenAddToTimelineDialog(arg0 incident.RequesterInfo, arg1, arg2, arg3 string) error {
+func (m *MockService) OpenAddToTimelineDialog(arg0 permissions.RequesterInfo, arg1, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OpenAddToTimelineDialog", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -359,20 +403,6 @@ func (m *MockService) RemoveTimelineEvent(arg0, arg1 string) error {
 func (mr *MockServiceMockRecorder) RemoveTimelineEvent(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTimelineEvent", reflect.TypeOf((*MockService)(nil).RemoveTimelineEvent), arg0, arg1)
-}
-
-// RenameChecklistItem mocks base method
-func (m *MockService) RenameChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RenameChecklistItem", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RenameChecklistItem indicates an expected call of RenameChecklistItem
-func (mr *MockServiceMockRecorder) RenameChecklistItem(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklistItem", reflect.TypeOf((*MockService)(nil).RenameChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // RunChecklistItemSlashCommand mocks base method

@@ -70,11 +70,15 @@ func (s *IncidentsService) GetMetadata(ctx context.Context, incidentID string) (
 }
 
 // List the incidents.
-func (s *IncidentsService) List(ctx context.Context, opts IncidentListOptions) (*GetIncidentsResults, error) {
+func (s *IncidentsService) List(ctx context.Context, page, perPage int, opts IncidentListOptions) (*GetIncidentsResults, error) {
 	incidentURL := "incidents"
 	incidentURL, err := addOptions(incidentURL, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build options: %w", err)
+	}
+	incidentURL, err = addPaginationOptions(incidentURL, page, perPage)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build pagination options: %w", err)
 	}
 
 	req, err := s.client.newRequest(http.MethodGet, incidentURL, nil)
@@ -112,4 +116,24 @@ func (s *IncidentsService) Create(ctx context.Context, opts IncidentCreateOption
 	}
 
 	return incident, nil
+}
+
+func (s *IncidentsService) UpdateStatus(ctx context.Context, incidentID string, status Status, message string, reminderInSeconds int64) error {
+	updateURL := fmt.Sprintf("incidents/%s/status", incidentID)
+	opts := StatusUpdateOptions{
+		Status:            status,
+		Message:           message,
+		ReminderInSeconds: reminderInSeconds,
+	}
+	req, err := s.client.newRequest(http.MethodPost, updateURL, opts)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

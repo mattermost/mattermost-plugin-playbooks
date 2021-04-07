@@ -14,7 +14,6 @@ describe('rhs incident list', () => {
     let playbookId1;
     let playbookId2;
     let playbookIdTeam2;
-    let privateChannelId;
     let privateChannelName;
 
     before(() => {
@@ -33,7 +32,6 @@ describe('rhs incident list', () => {
                 // # Create a private channel
                 cy.apiCreateChannel(team.id, 'private-channel', 'Private Channel', 'P')
                     .then(({channel}) => {
-                        privateChannelId = channel.id;
                         privateChannelName = channel.name;
 
                         // # Add user-1 to that channel
@@ -180,6 +178,7 @@ describe('rhs incident list', () => {
                     incidentId: incident.id,
                     userId,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
             });
@@ -1097,6 +1096,7 @@ describe('rhs incident list', () => {
                     incidentId,
                     userId: user2Id,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
 
@@ -1147,6 +1147,7 @@ describe('rhs incident list', () => {
                     incidentId,
                     userId,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
                 cy.verifyIncidentEnded(teamId1, incidentName);
@@ -1221,6 +1222,7 @@ describe('rhs incident list', () => {
                     incidentId: incident.id,
                     userId: user2Id,
                     teamId: teamId1,
+                    message: 'ending',
                     status: 'Archived',
                 });
 

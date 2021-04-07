@@ -4,6 +4,8 @@
 import React from 'react';
 import styled, {css} from 'styled-components';
 
+import Profile from 'src/components/profile/profile';
+
 export const RHSContainer = styled.div`
     height: calc(100vh - 119px);
     display: flex;
@@ -113,7 +115,15 @@ export const HoverMenu = styled.div`
 
 export const HoverMenuButton = styled.i`
     display: inline-block;
+    cursor: pointer;
     width: 28px;
     height: 28px;
     padding: 2px 0 0 2px;
+`;
+
+export const SmallerProfile = styled(Profile)`
+    >.image {
+        width: 20px;
+        height: 20px;
+    }
 `;

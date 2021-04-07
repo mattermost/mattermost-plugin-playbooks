@@ -4,6 +4,9 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
+import classNames from 'classnames';
+import styled from 'styled-components';
+import {css} from '@emotion/core';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -13,10 +16,11 @@ import './profile_selector.scss';
 
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
+import {useClientRect} from 'src/hooks';
 
 interface Option {
     value: string;
-    label: JSX.Element|string;
+    label: JSX.Element | string;
     userId: string;
 }
 
@@ -25,6 +29,7 @@ interface ActionObj {
 }
 
 interface Props {
+    testId?: string
     selectedUserId?: string;
     placeholder: React.ReactNode;
     placeholderButtonClass?: string;
@@ -150,6 +155,26 @@ export default function ProfileSelector(props: Props) {
         }
     };
 
+    // Decide where to open the profile selector
+    const [rect, ref] = useClientRect();
+    const [moveUp, setMoveUp] = useState(0);
+
+    useEffect(() => {
+        if (!rect) {
+            setMoveUp(0);
+            return;
+        }
+
+        const innerHeight = window.innerHeight;
+        const numProfilesShown = Math.min(6, userOptions.length);
+        const spacePerProfile = 48;
+        const dropdownYShift = 27;
+        const dropdownReqSpace = 80;
+        const extraSpace = 10;
+        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
+        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
+    }, [rect, userOptions.length]);
+
     let target;
     if (props.selectedUserId) {
         target = (
@@ -164,7 +189,11 @@ export default function ProfileSelector(props: Props) {
     } else {
         target = (
             <button
-                onClick={toggleOpen}
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
                 className={props.placeholderButtonClass || 'IncidentFilter-button'}
             >
                 {props.placeholder}
@@ -182,16 +211,28 @@ export default function ProfileSelector(props: Props) {
             </div>
         );
     }
+    const targetWrapped = (
+        <div
+            data-testid={props.testId}
+            ref={ref}
+        >
+            {target}
+        </div>
+    );
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
-    const components = props.customControl ? {...noDropdown, Control: props.customControl} : noDropdown;
+    const components = props.customControl ? {
+        ...noDropdown,
+        Control: props.customControl,
+    } : noDropdown;
 
     return (
         <Dropdown
             isOpen={isOpen}
             onClose={toggleOpen}
-            target={target}
+            target={targetWrapped}
             showOnRight={props.showOnRight}
+            moveUp={moveUp}
         >
             <ReactSelect
                 autoFocus={true}
@@ -235,46 +276,46 @@ interface DropdownProps {
     children: JSX.Element;
     isOpen: boolean;
     showOnRight?: boolean;
+    moveUp?: number;
     target: JSX.Element;
     onClose: () => void;
 }
 
-const Dropdown = ({children, isOpen, showOnRight, target, onClose}: DropdownProps) => (
-    <div
-        className={`IncidentFilter profile-dropdown${isOpen ? ' IncidentFilter--active profile-dropdown--active' : ''} ${showOnRight && 'show-on-right'}`}
+const ProfileDropdown = styled.div`
+    position: relative;
+`;
 
-        // @ts-ignore
-        css={{position: 'relative'}}
-    >
-        {target}
-        {isOpen ? <Menu className='IncidentFilter-select incident-user-select__container'>
-            {children}
-        </Menu> : null}
-        {isOpen ? <Blanket onClick={onClose}/> : null}
-    </div>
-);
+const Blanket = styled.div`
+    bottom: 0;
+    left: 0;
+    top: 0;
+    right: 0;
+    position: fixed;
+    z-index: 1;
+`;
 
-const Menu = (props: Record<string, any>) => {
+const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
+    if (!isOpen) {
+        return target;
+    }
+
+    const classes = classNames('IncidentFilter', 'profile-dropdown',
+        'IncidentFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
+
+    const top = 27 - (moveUp || 0);
     return (
-        <div {...props}/>
+        <ProfileDropdown className={classes}>
+            {target}
+            <div
+                className='IncidentFilter-select incident-user-select__container'
+                css={{top: top + 'px'}}
+            >
+                {children}
+            </div>
+            <Blanket onClick={onClose}/>
+        </ProfileDropdown>
     );
 };
-
-const Blanket = (props: Record<string, any>) => (
-    <div
-
-        // @ts-ignore
-        css={{
-            bottom: 0,
-            left: 0,
-            top: 0,
-            right: 0,
-            position: 'fixed',
-            zIndex: 1,
-        }}
-        {...props}
-    />
-);
 
 const getFullName = (firstName: string, lastName: string): string => {
     return (firstName + ' ' + lastName).trim();

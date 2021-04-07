@@ -12,6 +12,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -63,6 +64,15 @@ const DialogFieldIncidentKey = "incident"
 // DialogFieldSummary is the key for the summary in AddToTimelineDialog
 const DialogFieldSummary = "summary"
 
+// DialogFieldItemName is the key for the name in AddChecklistItemDialog
+const DialogFieldItemNameKey = "name"
+
+// DialogFieldDescriptionKey is the key for the description in AddChecklistItemDialog
+const DialogFieldItemDescriptionKey = "description"
+
+// DialogFieldCommandKey is the key for the command in AddChecklistItemDialog
+const DialogFieldItemCommandKey = "command"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -78,12 +88,46 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(requesterInfo RequesterInfo, options FilterOptions) (*GetIncidentsResults, error) {
+func (s *ServiceImpl) GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(requesterInfo, options)
+}
+
+func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander *model.User) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	if err := permissions.IsChannelActiveInTeam(theIncident.AnnouncementChannelID, theIncident.TeamID, s.pluginAPI); err != nil {
+		return err
+	}
+
+	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
+	announcementMsg += fmt.Sprintf("**Commander**: @%s\n", commander.Username)
+	if theIncident.Description != "" {
+		announcementMsg += fmt.Sprintf("**Description**: %s\n", theIncident.Description)
+	}
+
+	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
+	if incdnt.DefaultCommanderID != "" {
+		// Check if the user is a member of the incident's team
+		if !permissions.IsMemberOfTeamID(incdnt.DefaultCommanderID, incdnt.TeamID, s.pluginAPI) {
+			s.pluginAPI.Log.Warn("default commander specified, but it is not a member of the incident's team", "userID", incdnt.DefaultCommanderID, "teamID", incdnt.TeamID)
+		} else {
+			incdnt.CommanderUserID = incdnt.DefaultCommanderID
+		}
+	}
+
+	incdnt.ReporterUserID = userID
+
 	// Try to create the channel first
 	channel, err := s.createIncidentChannel(incdnt, public)
 	if err != nil {
@@ -92,7 +136,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
-	incdnt.ReporterUserID = userID
 	incdnt.CurrentStatus = StatusReported
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
@@ -121,7 +164,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 			continue
 		}
 
-		_, err = s.pluginAPI.Channel.AddMember(incdnt.ChannelID, userID)
+		_, err = s.pluginAPI.Channel.AddUser(incdnt.ChannelID, userID, s.configService.GetConfiguration().BotUserID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
@@ -152,14 +195,34 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		}
 	}
 
-	user, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+	reporter, err := s.pluginAPI.User.Get(incdnt.ReporterUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
+	}
+
+	commander, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
 	}
 
-	newPost, err := s.poster.PostMessage(channel.Id, "This incident has been started by @%s", user.Username)
+	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
+	if incdnt.CommanderUserID != incdnt.ReporterUserID {
+		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, commander.Username)
+	}
+
+	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
+	}
+
+	if incdnt.AnnouncementChannelID != "" {
+		if err2 := s.broadcastIncidentCreation(incdnt, commander); err2 != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incdnt.AnnouncementChannelID)
+
+			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this incident in the configured channel."); err != nil {
+				return nil, errors.Wrapf(err, "failed to post to incident channel")
+			}
+		}
 	}
 
 	event := &TimelineEvent{
@@ -168,7 +231,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		EventAt:       incdnt.CreateAt,
 		EventType:     IncidentCreated,
 		PostID:        newPost.Id,
-		SubjectUserID: incdnt.CommanderUserID,
+		SubjectUserID: incdnt.ReporterUserID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
@@ -261,7 +324,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	return nil
 }
 
-func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error {
+func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo permissions.RequesterInfo, postID, teamID, triggerID string) error {
 	options := FilterOptions{
 		TeamID:    teamID,
 		MemberID:  requesterInfo.UserID,
@@ -283,6 +346,42 @@ func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postI
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/add-to-timeline-dialog",
 			s.configService.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error {
+	dialog := &model.Dialog{
+		Title: "Add New Task",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Name",
+				Name:        DialogFieldItemNameKey,
+				Type:        "text",
+				Default:     "",
+			},
+			{
+				DisplayName: "Description",
+				Name:        DialogFieldItemDescriptionKey,
+				Type:        "text",
+				Default:     "",
+				Optional:    true,
+			},
+		},
+		SubmitLabel:    "Add Task",
+		NotifyOnCancel: false,
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/checklists/%v/add-dialog",
+			s.configService.GetManifest().Id, incidentID, checklist),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -512,7 +611,7 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 }
 
 // GetCommanders returns all the commanders of the incidents selected by options
-func (s *ServiceImpl) GetCommanders(requesterInfo RequesterInfo, options FilterOptions) ([]CommanderInfo, error) {
+func (s *ServiceImpl) GetCommanders(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]CommanderInfo, error) {
 	return s.store.GetCommanders(requesterInfo, options)
 }
 
@@ -845,8 +944,8 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	return nil
 }
 
-// RenameChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand string) error {
+// EditChecklistItem changes the title of a specified checklist item
+func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -854,6 +953,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
+	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
@@ -907,11 +1007,29 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	ret := make([]model.AutocompleteListItem, 0)
 
 	for i, checklist := range theIncident.Checklists {
+		ret = append(ret, model.AutocompleteListItem{
+			Item: fmt.Sprintf("%d", i),
+			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
+		})
+	}
+
+	return ret, nil
+}
+
+// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+func (s *ServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for i, checklist := range theIncident.Checklists {
 		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
-				Item:     fmt.Sprintf("%d %d", i, j),
-				Hint:     fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
-				HelpText: "Check/uncheck this item",
+				Item: fmt.Sprintf("%d %d", i, j),
+				Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
 			})
 		}
 	}
@@ -1025,8 +1143,14 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add user to channel")
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
+	}
+
+	if incdnt.CommanderUserID != incdnt.ReporterUserID {
+		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+			return nil, errors.Wrapf(err, "failed to add commander to channel")
+		}
 	}
 
 	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.CommanderUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {

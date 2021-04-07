@@ -51,7 +51,6 @@ export const TabContainer = styled.div`
 `;
 
 export const StyledTextarea = styled.textarea`
-    -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     width: 100%;
     resize: none;
@@ -84,6 +83,7 @@ const commonSelectStyle = css`
 
     .channel-selector__option--is-selected {
         background-color: var(--center-channel-color-08);
+        color: inherit;
     }
 
     .channel-selector__option--is-focused {

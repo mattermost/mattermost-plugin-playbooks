@@ -84,7 +84,7 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
 /**
  * Start an incident directly via API.
  */
-Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId}) => {
+Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId, description = ''}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint,
@@ -94,6 +94,7 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
             commander_user_id: commanderUserId,
             team_id: teamId,
             playbook_id: playbookId,
+            description,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
@@ -208,6 +209,10 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     reminderTimerDefaultSeconds,
     invitedUserIds,
     inviteUsersEnabled,
+    defaultCommanderId,
+    defaultCommanderEnabled,
+    announcementChannelId,
+    announcementChannelEnabled,
 }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -224,6 +229,10 @@ Cypress.Commands.add('apiCreatePlaybook', ({
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             invited_user_ids: invitedUserIds,
             invite_users_enabled: inviteUsersEnabled,
+            default_commander_id: defaultCommanderId,
+            default_commander_enabled: defaultCommanderEnabled,
+            announcement_channel_id: announcementChannelId,
+            announcement_channel_enabled: announcementChannelEnabled,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

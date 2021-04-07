@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import Profile from 'src/components/profile/profile';
-import {AutomationHeader, AutomationTitle} from 'src/components/backstage/automation/styles';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import InviteUsersSelector from 'src/components/backstage/automation/invite_users_selector';
 
@@ -33,7 +33,7 @@ export const InviteUsers: FC<Props> = (props: Props) => {
                     />
                     <div>{'Invite members'}</div>
                 </AutomationTitle>
-                <ProfileAutocompleteWrapper>
+                <SelectorWrapper>
                     <InviteUsersSelector
                         isDisabled={!props.enabled}
                         onAddUser={props.onAddUser}
@@ -42,14 +42,8 @@ export const InviteUsers: FC<Props> = (props: Props) => {
                         searchProfiles={props.searchProfiles}
                         getProfiles={props.getProfiles}
                     />
-                </ProfileAutocompleteWrapper>
+                </SelectorWrapper>
             </AutomationHeader>
         </>
     );
 };
-
-const ProfileAutocompleteWrapper = styled.div`
-    margin: 0;
-    width: 300px;
-`;
-
