@@ -6,7 +6,7 @@ import {useSelector} from 'react-redux';
 
 import {createGlobalStyle} from 'styled-components';
 
-import {isIncidentRHSOpen, isDisabled} from 'src/selectors';
+import {isIncidentRHSOpen, isDisabledOnCurrentTeam} from 'src/selectors';
 
 import IncidentIcon, {Ref as IncidentIconRef} from './incident_icon';
 
@@ -19,7 +19,7 @@ const DisabledStyle = createGlobalStyle`
 const ChannelHeaderButton: FC = () => {
     const myRef = useRef<IncidentIconRef>(null);
     const isRHSOpen = useSelector(isIncidentRHSOpen);
-    const disabled = useSelector(isDisabled);
+    const disabled = useSelector(isDisabledOnCurrentTeam);
 
     // If it has been mounted, we know our parent is always a button.
     const parent = myRef?.current ? myRef?.current?.parentNode as HTMLButtonElement : null;

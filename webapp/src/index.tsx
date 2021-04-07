@@ -9,11 +9,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
 
-import {isMobile} from 'src/mobile';
-import {navigateToTeamPluginUrl} from 'src/browser_routing';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 
@@ -44,31 +41,7 @@ import {
 import RegistryWrapper from './registry_wrapper';
 import {isE20LicensedOrDevelopment} from './license';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
-import {isDisabled} from './selectors';
-
-function makeUpdateMainMenu(registry: PluginRegistry, store: Store<GlobalState>): () => Promise<void> {
-    let mainMenuActionId: string | null;
-
-    return async () => {
-        const disable = isDisabled(store.getState());
-        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store);
-
-        if (mainMenuActionId && !show) {
-            const temp = mainMenuActionId;
-            mainMenuActionId = null;
-            registry.unregisterComponent(temp);
-        } else if (!mainMenuActionId && show) {
-            mainMenuActionId = 'notnull';
-            mainMenuActionId = registry.registerMainMenuAction(
-                'Incident Collaboration',
-                () => {
-                    const team = getCurrentTeam(store.getState());
-                    navigateToTeamPluginUrl(team.name, '/stats');
-                },
-            );
-        }
-    };
-}
+import {makeUpdateMainMenu} from './make_update_main_menu';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {

@@ -29,7 +29,7 @@ export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isDisabled = (state: GlobalState): boolean => pluginState(state).myIncidentsByTeam[getCurrentTeamId(state)] === false;
+export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myIncidentsByTeam[getCurrentTeamId(state)] === false;
 
 // reminder: myIncidentsByTeam indexes teamId->channelId->incident
 const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> =>
