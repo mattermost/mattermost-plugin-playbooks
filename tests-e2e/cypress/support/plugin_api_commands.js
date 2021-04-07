@@ -109,6 +109,7 @@ Cypress.Commands.add('apiUpdateStatus', ({
     channelId,
     teamId,
     message,
+    description,
     status
 }) => {
     return cy.request({
@@ -122,7 +123,7 @@ Cypress.Commands.add('apiUpdateStatus', ({
             user_id: userId,
             channel_id: channelId,
             team_id: teamId,
-            submission: {message, reminder: '15', status},
+            submission: {message, description, reminder: '15', status},
             cancelled: false,
         },
     }).then((response) => {
@@ -144,6 +145,7 @@ Cypress.Commands.add('apiRestartIncident', (incidentId) => {
         teamId: '',
         reminder: '',
         message: 'reopen',
+        description: 'description',
         status: 'Active',
     });
 });

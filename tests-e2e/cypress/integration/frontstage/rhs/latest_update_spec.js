@@ -65,7 +65,7 @@ describe('incident rhs > latest update', () => {
         cy.visit('/ad-1/channels/' + channelName);
     });
 
-    describe('status update interactive dialog', () => {
+    describe.only('status update interactive dialog', () => {
         it('shows the broadcast channel when it is public', () => {
             // # Run the /incident status slash command.
             cy.executeSlashCommand('/incident update');
@@ -228,7 +228,7 @@ describe('incident rhs > latest update', () => {
             });
         });
 
-        it('shows an error when entering an update message with whitespace', () => {
+        it.only('shows an error when entering an update message with whitespace', () => {
             // # Run the /incident status slash command.
             cy.executeSlashCommand('/incident update');
 
@@ -237,10 +237,11 @@ describe('incident rhs > latest update', () => {
                 // # Type the invalid data
                 cy.findByTestId('messageinput').clear().type(' {enter} {enter}  ');
 
-                // # Enter valid status
+                // # Enter valid status and description
                 cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').type('Reported', {delay: 200}).type('{enter}');
                 });
+                cy.findByTestId('descriptioninput').clear().type('description');
 
                 // # Submit the dialog.
                 cy.get('#interactiveDialogSubmit').click();

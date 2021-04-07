@@ -179,6 +179,7 @@ describe('rhs incident list', () => {
                     userId,
                     teamId: teamId1,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
             });
@@ -1097,6 +1098,7 @@ describe('rhs incident list', () => {
                     userId: user2Id,
                     teamId: teamId1,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
 
@@ -1223,6 +1225,7 @@ describe('rhs incident list', () => {
                     userId: user2Id,
                     teamId: teamId1,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
 
@@ -1498,6 +1501,7 @@ describe('rhs incident list', () => {
                             channelId,
                             teamId: teamId1,
                             message: 'Status update 2',
+                            description: 'description',
                             status: 'Active',
                         });
 
