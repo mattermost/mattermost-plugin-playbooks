@@ -6,18 +6,13 @@ import * as TIMEOUTS from '../fixtures/timeouts';
 const incidentStartCommand = '/incident start';
 
 // function startIncident(incidentName) {
-Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescription) => {
+Cypress.Commands.add('startIncident', (playbookName, incidentName) => {
     cy.get('#interactiveDialogModal').should('exist').within(() => {
         // # Select playbook
         cy.selectPlaybookFromDropdown(playbookName);
 
         // # Type incident name
         cy.findByTestId('incidentNameinput').type(incidentName, {force: true});
-
-        // # Type description, if any
-        if (incidentDescription) {
-            cy.findByTestId('incidentDescriptioninput').type(incidentDescription, {force: true});
-        }
 
         // # Submit
         cy.get('#interactiveDialogSubmit').click();
@@ -41,10 +36,10 @@ Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
 
 // Starts incident with the `/incident start` slash command
 // function startIncidentWithSlashCommand(incidentName) {
-Cypress.Commands.add('startIncidentWithSlashCommand', (playbookName, incidentName, incidentDescription) => {
+Cypress.Commands.add('startIncidentWithSlashCommand', (playbookName, incidentName) => {
     cy.openIncidentDialogFromSlashCommand();
 
-    cy.startIncident(playbookName, incidentName, incidentDescription);
+    cy.startIncident(playbookName, incidentName);
 });
 
 // Starts incident from the incident RHS

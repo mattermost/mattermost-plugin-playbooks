@@ -59,7 +59,6 @@ describe('incident creation dialog', () => {
         cy.findByTestId('autoCompleteSelector').contains('Playbook');
         cy.findByTestId('autoCompleteSelector').contains('This field is required.');
         cy.findByTestId('incidentName').contains('This field is required.');
-        cy.findByTestId('incidentDescription').contains('This field is required.').should('not.exist');
     });
 
     it('shows create playbook link', () => {
@@ -82,9 +81,6 @@ describe('incident creation dialog', () => {
 
             // * Verify incident name prompt
             cy.findByText('Incident Name').should('exist');
-
-            // * Verify incident description prompt
-            cy.findByText('Incident Description').should('exist');
         });
     });
 

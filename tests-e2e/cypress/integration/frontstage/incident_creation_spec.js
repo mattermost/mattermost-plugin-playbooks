@@ -120,18 +120,6 @@ describe('incidents can be started', () => {
         });
     });
 
-    it('with a description', () => {
-        // # Visit a public channel: off-topic
-        cy.visit('/ad-1/channels/off-topic');
-
-        // * Verify that incident can be started from incident RHS
-        const now = Date.now();
-        const incidentName = 'With Description - ' + now;
-        const incidentDescription = 'Description - ' + now;
-        cy.startIncidentWithSlashCommand(playbookName, incidentName, incidentDescription);
-        cy.verifyIncidentActive(teamId, incidentName, incidentDescription);
-    });
-
     it('always as channel admin', () => {
         // # Visit a public channel: off-topic
         cy.visit('/ad-1/channels/off-topic');
