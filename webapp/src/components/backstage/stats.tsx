@@ -120,6 +120,7 @@ const GraphBoxContainer = styled.div`
 
 const GraphBox: FC<GraphBoxProps> = (props: GraphBoxProps) => {
     const style = getComputedStyle(document.body);
+    const centerChannelFontColor = style.getPropertyValue('--center-channel-color');
     return (
         <GraphBoxContainer>
             <Line
@@ -128,24 +129,24 @@ const GraphBox: FC<GraphBoxProps> = (props: GraphBoxProps) => {
                     title: {
                         display: true,
                         text: props.title,
-                        fontColor: style.getPropertyValue('--center-channel-color'),
+                        fontColor: centerChannelFontColor,
                     },
                     scales: {
                         yAxes: [{
                             ticks: {
                                 beginAtZero: true,
                                 callback: (value: number) => (Number.isInteger(value) ? value : null),
-                                fontColor: style.getPropertyValue('--center-channel-color'),
+                                fontColor: centerChannelFontColor,
                             },
                         }],
                         xAxes: [{
                             scaleLabel: {
                                 display: true,
                                 labelString: props.xlabel,
-                                fontColor: style.getPropertyValue('--center-channel-color'),
+                                fontColor: centerChannelFontColor,
                             },
                             ticks: {
-                                fontColor: style.getPropertyValue('--center-channel-color'),
+                                fontColor: centerChannelFontColor,
                             },
                         }],
                     },
