@@ -100,6 +100,20 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if pbook.WebhookOnCreationURL != "" {
+		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
+		if err != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
 	// Exclude guest users
 	if isGuest, err := permissions.IsGuest(userID, h.pluginAPI); err != nil {
 		HandleError(w, err)
@@ -209,6 +223,20 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
 		pbook.AnnouncementChannelID = ""
 		pbook.AnnouncementChannelEnabled = false
+	}
+
+	if pbook.WebhookOnCreationURL != "" {
+		url, err2 := url.ParseRequestURI(pbook.WebhookOnCreationURL)
+		if err2 != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
 	}
 
 	err = h.playbookService.Update(pbook, userID)

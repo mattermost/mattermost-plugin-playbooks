@@ -1,8 +1,10 @@
 package incident
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -30,6 +32,7 @@ const (
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
 type ServiceImpl struct {
 	pluginAPI     *pluginapi.Client
+	httpClient    *http.Client
 	configService config.Service
 	store         Store
 	poster        bot.Poster
@@ -84,6 +87,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 		configService: configService,
 		scheduler:     scheduler,
 		telemetry:     telemetry,
+		httpClient:    &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -110,6 +114,70 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 
 	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// sendWebhookOnCreation sends a POST request to the creation webhook URL.
+// It blocks until a response is received.
+func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+
+	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	channelURL := fmt.Sprintf("%s/%s/channels/%s",
+		*siteURL,
+		team.Name,
+		channel.Name,
+	)
+
+	detailsURL := fmt.Sprintf("%s/%s/%s/incidents/%s",
+		*siteURL,
+		team.Name,
+		s.configService.GetManifest().Id,
+		theIncident.ID,
+	)
+
+	payload := struct {
+		Incident
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
+	}{
+		Incident:   *theIncident,
+		ChannelURL: channelURL,
+		DetailsURL: detailsURL,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", theIncident.WebhookOnCreationURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
 	}
 
 	return nil
@@ -223,6 +291,15 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 				return nil, errors.Wrapf(err, "failed to post to incident channel")
 			}
 		}
+	}
+
+	if incdnt.WebhookOnCreationURL != "" {
+		go func() {
+			if err = s.sendWebhookOnCreation(incdnt); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
+				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+			}
+		}()
 	}
 
 	event := &TimelineEvent{

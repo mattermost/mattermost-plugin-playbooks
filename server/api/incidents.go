@@ -403,6 +403,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		if pb.AnnouncementChannelEnabled {
 			newIncident.AnnouncementChannelID = pb.AnnouncementChannelID
 		}
+
+		if pb.WebhookOnCreationEnabled {
+			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
+		}
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL

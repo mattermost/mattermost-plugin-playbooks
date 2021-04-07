@@ -1424,12 +1424,67 @@ paths:
                     type: string
                     description: User ID of the playbook member.
                     example: ilh6s1j4yefbdhxhtlzt179i6m
+                broadcast_channel_id:
+                  description: The ID of the channel where all the status updates will be broadcasted. The team of the broadcast channel must be the same as the playbook's team.
+                  type: string
+                  example: 2zh7rpashwfwapwaqyslmhwbax
+                invited_user_ids:
+                  description: A list with the IDs of the members to be automatically invited to the incident's channel as soon as the incident is created.
+                  type: array
+                  items:
+                    type: string
+                    description: User ID of the member to be invited.
+                    example: 01kidjn9iozv7bist427w4gkjo
+                invite_users_enabled:
+                  description: Boolean that indicates whether the members declared in invited_user_ids will be automatically invited.
+                  type: boolean
+                  example: true
+                default_commander_id:
+                  description: User ID of the member that will be automatically assigned as commander as soon as the incident is created. If the member is not part of the incident's channel or is not included in the invited_user_ids list, they will be automatically invited to the channel.
+                  type: string
+                  example: 9dtruav6d9ce3oqnc5pwhtqtfq
+                default_commander_enabled:
+                  description: Boolean that indicates whether the member declared in default_commander_id will be automatically assigned as commander.
+                  type: string
+                  example: true
+                announcement_channel_id:
+                  description: ID of the channel where the incident will be automatically announced as soon as the incident is created.
+                  type: string
+                  example: 8iofau5swv32l6qtk3vlxgobta
+                announcement_channel_enabled:
+                  description: Boolean that indicates whether the incident creation will be announced in the channel declared in announcement_channel_id.
+                  type: boolean
+                  example: true
+                webhook_on_creation_url:
+                  description: An absolute URL where a POST request will be sent as soon as the incident is created. The allowed protocols are HTTP and HTTPS.
+                  type: string
+                  example: https://httpbin.org/post
+                webhook_on_creation_enabled:
+                  description: Boolean that indicates whether the webhook declared in webhook_on_creation_url will be automatically sent.
+                  type: boolean
+                  example: true
       x-codeSamples:
         - lang: curl
           source: |
             curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Cloud Incidents", "description": "A playbook to follow when there is an incident regarding the availability of the cloud service.", "team_id": "p03rbi6viyztysbqnkvcqyel2i","create_public_incident": true,"checklists": [{"title": "Triage issue","items": [{"title": "Gather information from customer."}]}]}'
+      callbacks:
+        incidentCreation:
+          "{$request.body#/webhook_on_creation_url}":
+            post:
+              summary: Incident's creation outgoing webhook.
+              description: When an incident is created with this playbook, a POST request is sent to the URL configured in webhook_on_creation_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
+              operationId: webhookOncreation
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/WebhookOnCreationPayload"
+              responses:
+                "2XX":
+                  description: Your server returns a 2XX code if it successfully received the request.
       responses:
         201:
           description: ID of the created playbook.
@@ -1880,3 +1935,16 @@ components:
           type: string
           description: Further details on where and why this error happened.
           example: Specific details about the error, depending on the case.
+    WebhookOnCreationPayload:
+      allOf:
+        - $ref: "#/components/schemas/Incident"
+        - type: object
+          properties:
+            channel_url:
+              type: string
+              description: Absolute URL to the incident's channel.
+              example: http://example.com/ad-1/channels/incident-channel-name
+            details_url:
+              type: string
+              description: Absolute URL to the incident's details.
+              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID
