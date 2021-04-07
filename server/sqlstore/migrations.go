@@ -588,7 +588,7 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnCreationURL", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column WebhookOnCreationURL to table IR_Playbook")
 				}
-				if _, err := e.Exec("UPDATE IR_Incident SET WebhookOnCreationURL = '' WHERE WebhookOnCreationURL IS NULL"); err != nil {
+				if _, err := e.Exec("UPDATE IR_Playbook SET WebhookOnCreationURL = '' WHERE WebhookOnCreationURL IS NULL"); err != nil {
 					return errors.Wrapf(err, "failed setting default value in column WebhookOnCreationURL of table IR_Playbook")
 				}
 
