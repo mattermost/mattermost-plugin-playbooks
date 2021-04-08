@@ -13,6 +13,7 @@ import (
 	"github.com/golang/mock/gomock"
 	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
@@ -136,11 +137,17 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().
 			Return(true)
+
+		configService.EXPECT().
+			GetConfiguration().
+			Return(&config.Configuration{
+				EnabledTeams: []string{},
+			})
 	}
 
 	t.Run("create playbook, unlicensed", func(t *testing.T) {
@@ -151,7 +158,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().
@@ -821,7 +828,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().
@@ -1020,7 +1027,7 @@ func TestPagingPlaybooks(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().

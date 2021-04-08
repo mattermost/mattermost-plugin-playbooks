@@ -34,6 +34,8 @@ import {
     SetRHSState,
     SetRHSTabState,
     SetTriggerId,
+    RECEIVED_TEAM_DISABLED,
+    ReceivedTeamDisabled,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -148,6 +150,11 @@ export const incidentUpdated = (incident: Incident): IncidentUpdated => ({
 export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncidents => ({
     type: RECEIVED_TEAM_INCIDENTS,
     incidents,
+});
+
+export const receivedDisabledOnTeam = (teamId: string): ReceivedTeamDisabled => ({
+    type: RECEIVED_TEAM_DISABLED,
+    teamId,
 });
 
 export const removedFromIncidentChannel = (channelId: string): RemovedFromIncidentChannel => ({

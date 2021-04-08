@@ -13,6 +13,7 @@ export const SET_CLIENT_ID = pluginId + '_set_client_id';
 export const INCIDENT_CREATED = pluginId + '_incident_created';
 export const INCIDENT_UPDATED = pluginId + '_incident_updated';
 export const RECEIVED_TEAM_INCIDENTS = pluginId + '_received_team_incident_channels';
+export const RECEIVED_TEAM_DISABLED = pluginId + '_received_team_disabled';
 export const REMOVED_FROM_INCIDENT_CHANNEL = pluginId + '_removed_from_incident_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
 export const SET_RHS_TAB_STATE = pluginId + '_set_rhs_tab_state';
@@ -51,6 +52,11 @@ export interface IncidentUpdated {
 export interface ReceivedTeamIncidents {
     type: typeof RECEIVED_TEAM_INCIDENTS;
     incidents: Incident[];
+}
+
+export interface ReceivedTeamDisabled {
+    type: typeof RECEIVED_TEAM_DISABLED;
+    teamId: string
 }
 
 export interface RemovedFromIncidentChannel {

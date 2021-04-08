@@ -22,6 +22,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
@@ -67,28 +68,29 @@ func TestIncidents(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		telemetryService = &telemetry.NoopTelemetry{}
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService)
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
+	}
 
+	setDefaultExpectations := func() {
 		configService.EXPECT().
 			IsLicensed().
 			Return(true)
+
+		configService.EXPECT().
+			GetConfiguration().
+			Return(&config.Configuration{
+				EnabledTeams: []string{},
+			})
 	}
 
 	t.Run("create valid incident, unlicensed", func(t *testing.T) {
-		mockCtrl = gomock.NewController(t)
-		configService = mock_config.NewMockService(mockCtrl)
-		handler = NewHandler(configService)
-		poster = mock_poster.NewMockPoster(mockCtrl)
-		logger = mock_poster.NewMockLogger(mockCtrl)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
-		incidentService = mock_incident.NewMockService(mockCtrl)
-		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService)
+		reset()
 
 		configService.EXPECT().
 			IsLicensed().
 			Return(false)
+
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -120,8 +122,50 @@ func TestIncidents(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
+	t.Run("create valid incident, but it's disabled on this team", func(t *testing.T) {
+		reset()
+
+		configService.EXPECT().
+			GetConfiguration().
+			Return(&config.Configuration{
+				EnabledTeams: []string{"notthisteam"},
+			})
+
+		setDefaultExpectations()
+
+		withid := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+		}
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			PlaybookID:      withid.ID,
+			Checklists:      withid.Checklists,
+		}
+
+		incidentJSON, err := json.Marshal(testIncident)
+		require.NoError(t, err)
+
+		testrecorder := httptest.NewRecorder()
+		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
+		testreq.Header.Add("Mattermost-User-ID", "testUserID")
+		require.NoError(t, err)
+		handler.ServeHTTP(testrecorder, testreq)
+
+		resp := testrecorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
 	t.Run("create valid incident from dialog", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -176,6 +220,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident from dialog with description", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -233,6 +278,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create incident from dialog - no permissions for public channels", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -296,6 +342,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create incident from dialog - no permissions for public channels", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -359,6 +406,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create incident from dialog - dialog request userID doesn't match requester's id", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -412,6 +460,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: "testTeamID",
@@ -446,6 +495,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create incident from dialog -- user does not have permission for the original postID's channel", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -490,6 +540,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create incident from dialog -- user is not a member of the playbook", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -534,6 +585,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testPlaybook := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -584,6 +636,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create valid incident without playbook", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -614,6 +667,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create invalid incident - missing commander", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			TeamID: "testTeamID",
@@ -634,6 +688,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create invalid incident - missing team", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -652,6 +707,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("create invalid incident - missing name", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -673,6 +729,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incident by channel id", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -700,6 +757,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 		userID := "testUserID"
 
 		testIncident := incident.Incident{
@@ -724,6 +782,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incident by channel id - not authorized", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -748,6 +807,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get private incident - not part of channel", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -779,6 +839,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get private incident - part of channel", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -813,6 +874,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get public incident - not part of channel or team", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -847,6 +909,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get public incident - not part of channel, but part of team", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -883,6 +946,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get public incident - part of channel", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -917,6 +981,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get private incident metadata - not part of channel", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -948,6 +1013,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get private incident metadata - part of channel", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -991,6 +1057,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get public incident metadata - not part of channel or team", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1024,6 +1091,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get public incident metadata - not part of channel, but part of team", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1069,6 +1137,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get public incident metadata - part of channel", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1112,6 +1181,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get incidents", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		incident1 := incident.Incident{
 			ID:              "incidentID1",
@@ -1153,6 +1223,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get empty list of incidents", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
 
@@ -1163,8 +1234,33 @@ func TestIncidents(t *testing.T) {
 		require.Nil(t, resultIncident)
 	})
 
+	t.Run("get disabled list of incidents", func(t *testing.T) {
+		reset()
+
+		configService.EXPECT().
+			GetConfiguration().
+			Return(&config.Configuration{
+				EnabledTeams: []string{"notthisteam"},
+			})
+
+		setDefaultExpectations()
+
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+
+		actualList, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+			TeamID: "notonlist",
+		})
+		require.NoError(t, err)
+
+		expectedList := &icClient.GetIncidentsResults{
+			Disabled: true,
+		}
+		assert.Equal(t, expectedList, actualList)
+	})
+
 	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1193,6 +1289,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("update incident status", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1221,6 +1318,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("update incident status, bad status", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1242,6 +1340,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("update incident status, no permission to post", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1263,6 +1362,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("update incident status, message empty", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1284,6 +1384,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("update incident status, status empty", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
