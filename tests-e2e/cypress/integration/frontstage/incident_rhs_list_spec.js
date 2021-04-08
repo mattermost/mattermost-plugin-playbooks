@@ -1150,6 +1150,7 @@ describe('rhs incident list', () => {
                     userId,
                     teamId: teamId1,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
                 cy.verifyIncidentEnded(teamId1, incidentName);
