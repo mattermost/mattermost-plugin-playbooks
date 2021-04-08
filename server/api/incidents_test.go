@@ -1247,7 +1247,7 @@ func TestIncidents(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
 
-		actualList, err := c.Incidents.List(context.TODO(), icClient.IncidentListOptions{
+		actualList, err := c.Incidents.List(context.TODO(), 0, 100, icClient.IncidentListOptions{
 			TeamID: "notonlist",
 		})
 		require.NoError(t, err)
