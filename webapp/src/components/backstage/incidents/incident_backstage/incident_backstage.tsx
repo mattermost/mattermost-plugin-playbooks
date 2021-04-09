@@ -148,15 +148,11 @@ const IncidentBackstage = () => {
                 />
                 <Title data-testid='incident-title'>{incident.name}</Title>
                 <Badge status={incident.current_status}/>
-                <SecondaryButtonLargerRight>{'Subscribe'}</SecondaryButtonLargerRight>
             </TopBar>
             <Bar>
                 <SecondaryButtonLarger onClick={goToChannel}>
                     <i className='icon-mattermost'/>
                     {'Mattermost Channel'}
-                </SecondaryButtonLarger>
-                <SecondaryButtonLarger><i className='icon-video-outline'/>
-                    {'Zoom Meeting'}
                 </SecondaryButtonLarger>
             </Bar>
             <Bar>
