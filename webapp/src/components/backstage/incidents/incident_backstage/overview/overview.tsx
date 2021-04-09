@@ -23,7 +23,6 @@ export const Overview = (props: {incident: Incident}) => {
                 <Updates incident={props.incident}/>
             </Left>
             <Right>
-                <About/>
                 <Participants incident={props.incident}/>
             </Right>
         </Container>

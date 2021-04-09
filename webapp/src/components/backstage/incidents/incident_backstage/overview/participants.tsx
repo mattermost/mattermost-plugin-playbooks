@@ -38,8 +38,6 @@ const Participants = (props: Props) => {
     const profilesInChannel = useProfilesInChannel(props.incident.channel_id);
 
     const profilesExceptTwoMains = profilesInChannel.filter((u) => u.id !== props.incident.commander_user_id && u.id !== props.incident.reporter_user_id);
-    const observers = profilesExceptTwoMains.slice(0, Math.min(2, profilesExceptTwoMains.length));
-    const subscribers = profilesExceptTwoMains.slice(Math.min(2, profilesExceptTwoMains.length));
 
     return (
         <TabPageContainer>
@@ -49,15 +47,8 @@ const Participants = (props: Props) => {
                 <Participant userId={props.incident.commander_user_id}/>
                 <Heading>{'Reporter'}</Heading>
                 <Participant userId={props.incident.reporter_user_id}/>
-                <Heading>{'Observers'}</Heading>
-                {observers.map((o) => (
-                    <Participant
-                        key={o.id}
-                        userId={o.id}
-                    />
-                ))}
-                <Heading>{'Subscribers'}</Heading>
-                {subscribers.map((o) => (
+                <Heading>{'Channel Members'}</Heading>
+                {profilesExceptTwoMains.map((o) => (
                     <Participant
                         key={o.id}
                         userId={o.id}
