@@ -1,17 +1,20 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// eslint-disable-next-line no-shadow
 export enum RHSState {
     ViewingList,
     ViewingIncident,
 }
 
+// eslint-disable-next-line no-shadow
 export enum RHSTabState {
     ViewingAbout,
     ViewingTasks,
     ViewingTimeline,
 }
 
+// eslint-disable-next-line no-shadow
 export enum TimelineEventType {
     IncidentCreated = 'incident_created',
     StatusUpdated = 'status_updated',

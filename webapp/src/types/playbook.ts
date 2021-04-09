@@ -51,6 +51,7 @@ export interface Checklist {
     items: ChecklistItem[];
 }
 
+// eslint-disable-next-line no-shadow
 export enum ChecklistItemState {
     Open = '',
     InProgress = 'in_progress',

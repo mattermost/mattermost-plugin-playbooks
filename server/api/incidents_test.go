@@ -203,6 +203,7 @@ func TestIncidents(t *testing.T) {
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
 			PlaybookID:      "playbookid1",
+			Description:     "description",
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
 		}
@@ -234,6 +235,7 @@ func TestIncidents(t *testing.T) {
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
+			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
 			InviteUsersEnabled:   false,
@@ -612,6 +614,7 @@ func TestIncidents(t *testing.T) {
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
+			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
 			InviteUsersEnabled:   false,
@@ -1491,6 +1494,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("update incident status, description empty", func(t *testing.T) {
 		reset()
+		setDefaultExpectations()
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",

@@ -13,7 +13,6 @@ import {getProfilesInChannel} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
-import {getPost} from 'mattermost-redux/actions/posts';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel} from 'src/selectors';
@@ -23,12 +22,6 @@ export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     options.team = currentTeam.id;
     return useSelector<GlobalState, boolean>((state) => haveITeamPermission(state, options));
-}
-
-export enum IncidentFetchState {
-    Loading,
-    NotFound,
-    Loaded,
 }
 
 /**

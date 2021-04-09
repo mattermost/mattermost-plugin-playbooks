@@ -5,6 +5,7 @@ export const OVERLAY_DELAY = 400;
 
 export const MAX_NAME_LENGTH = 64;
 
+// eslint-disable-next-line no-shadow
 export enum ErrorPageTypes {
     INCIDENTS = 'incidents',
     PLAYBOOKS = 'playbooks',

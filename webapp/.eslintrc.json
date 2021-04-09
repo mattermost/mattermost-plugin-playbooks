@@ -371,14 +371,7 @@
         "args": "after-used"
       }
     ],
-    "no-use-before-define": [
-      2,
-      {
-        "classes": false,
-        "functions": false,
-        "variables": false
-      }
-    ],
+    "no-use-before-define": "off",
     "no-useless-computed-key": 2,
     "no-useless-concat": 2,
     "no-useless-constructor": 2,
@@ -546,16 +539,7 @@
     ],
     "react/prefer-es6-class": 2,
     "react/prefer-stateless-function": 2,
-    "react/prop-types": [
-      2,
-      {
-        "ignore": [
-          "location",
-          "history",
-          "component"
-        ]
-      }
-    ],
+    "react/prop-types": "off",
     "react/require-default-props": 0,
     "react/require-optimization": 1,
     "react/require-render-return": 2,
