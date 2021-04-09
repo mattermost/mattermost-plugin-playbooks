@@ -33,13 +33,13 @@ const Container = styled.div`
     font-weight: 600;
 `;
 
-const TopBar = styled.div`
+const TopRow = styled.div`
     display: flex;
     align-items: center;
     //border: 1px solid blue;
 `;
 
-const Bar = styled.div`
+const Row = styled.div`
     display: flex;
     align-items: center;
     margin: 20px 0 0 0;
@@ -141,34 +141,26 @@ const IncidentBackstage = () => {
 
     return (
         <Container>
-            <TopBar>
+            <TopRow>
                 <LeftArrow
                     className='icon-chevron-left'
                     onClick={closeIncidentDetails}
                 />
                 <Title data-testid='incident-title'>{incident.name}</Title>
                 <Badge status={incident.current_status}/>
-            </TopBar>
-            <Bar>
-                <SecondaryButtonLarger onClick={goToChannel}>
+                <SecondaryButtonLargerRight onClick={goToChannel}>
                     <i className='icon-mattermost'/>
                     {'Mattermost Channel'}
-                </SecondaryButtonLarger>
-            </Bar>
-            <Bar>
+                </SecondaryButtonLargerRight>
+            </TopRow>
+            <Row>
                 <TabItem
                     active={tabState === IncidentBackstageTabState.ViewingOverview}
                     onClick={() => setTabState(IncidentBackstageTabState.ViewingOverview)}
                 >
                     {'Overview'}
                 </TabItem>
-                <TabItem
-                    active={tabState === IncidentBackstageTabState.ViewingRetrospective}
-                    onClick={() => setTabState(IncidentBackstageTabState.ViewingRetrospective)}
-                >
-                    {'Retrospective'}
-                </TabItem>
-            </Bar>
+            </Row>
             {tabPage}
         </Container>
     );
