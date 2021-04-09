@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect, useRef} from 'react';
-import {useSelector} from 'react-redux';
 import moment from 'moment';
 import Chart, {ChartOptions, ChartTooltipItem, ChartTooltipModel, Point} from 'chart.js';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {useSelector} from 'react-redux';
 
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
@@ -27,8 +27,7 @@ interface ChartData{
 }
 
 const ChecklistTimeline: FC<Props> = (props: Props) => {
-    const rawTheme = useSelector<GlobalState, Record<string, string|undefined>>(getTheme);
-    const theme = rawTheme as Record<string, string>;
+    const theme = useSelector<GlobalState, Record<string, string>>(getTheme);
     const canvas = useRef<HTMLCanvasElement>(null);
 
     const [chart, setChart] = useState<Chart | null>(null);

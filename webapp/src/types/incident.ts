@@ -51,7 +51,6 @@ export interface FetchIncidentsReturn {
     disabled?: boolean;
 }
 
-// eslint-disable-next-line no-shadow
 export enum IncidentStatus {
     Reported = 'Reported',
     Active = 'Active',

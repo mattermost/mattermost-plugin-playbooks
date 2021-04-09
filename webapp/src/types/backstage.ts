@@ -15,7 +15,6 @@ export type ChannelNamesMap = {
     } | Channel;
 };
 
-// eslint-disable-next-line no-shadow
 export enum IncidentBackstageTabState {
     ViewingOverview,
     ViewingRetrospective,

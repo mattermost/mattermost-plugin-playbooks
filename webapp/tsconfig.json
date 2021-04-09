@@ -23,7 +23,6 @@
     "baseUrl": ".",
     "paths": {
       "src": ["src"],
-      "mattermost-redux/*": ["node_modules/mattermost-webapp/packages/mattermost-redux/src/*"]
     },
   },
   "include": [
@@ -31,7 +30,6 @@
   ],
   "exclude": [
     "dist",
-    "!node_modules/@types",
-    "!node_modules/mattermost-webapp/packages/mattermost-redux/**/*"
+    "!node_modules/@types"
   ],
 }
