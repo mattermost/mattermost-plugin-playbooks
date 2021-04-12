@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -18,14 +19,17 @@ type StatsHandler struct {
 	statsStore *sqlstore.StatsStore
 }
 
-func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore) *StatsHandler {
+func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, config config.Service) *StatsHandler {
 	handler := &StatsHandler{
 		pluginAPI:  api,
 		log:        log,
 		statsStore: statsStore,
 	}
 
+	e20Middleware := E20LicenseRequired{config}
+
 	statsRouter := router.PathPrefix("/stats").Subrouter()
+	statsRouter.Use(e20Middleware.Middleware)
 	statsRouter.HandleFunc("", handler.stats).Methods(http.MethodGet)
 
 	return handler
