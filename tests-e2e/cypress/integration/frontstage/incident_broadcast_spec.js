@@ -93,7 +93,7 @@ describe('incident broadcast', () => {
 
         // # Update the incident's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage);
+        cy.updateStatus(updateMessage, 0, 'Active');
 
         // * Verify that the RHS shows the status update
         cy.get('div[class^=UpdateSection-]').within(() => {
@@ -106,7 +106,7 @@ describe('incident broadcast', () => {
         // * Verify that the last post contains the expected header and the update message verbatim
         cy.getLastPostId().then((lastPostId) => {
             cy.get(`#postMessageText_${lastPostId}`).contains(`Incident Update: ${incidentName}`);
-            cy.get(`#postMessageText_${lastPostId}`).contains('By @user-1 | Duration: < 1m | Status: Reported');
+            cy.get(`#postMessageText_${lastPostId}`).contains('By @user-1 | Duration: < 1m | Status: Active');
             cy.get(`#postMessageText_${lastPostId}`).contains(updateMessage);
         });
     });
