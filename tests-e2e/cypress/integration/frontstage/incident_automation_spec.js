@@ -567,5 +567,75 @@ describe('incident automation', () => {
                 });
             });
         });
+
+        describe('creation webhook setting', () => {
+            it('with webhook correctly configured and setting enabled', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+
+                // # Create a playbook with a correct webhook and the setting enabled
+                cy.apiCreatePlaybook({
+                    teamId,
+                    title: playbookName,
+                    createPublicIncident: true,
+                    memberIDs: [userId],
+                    webhookOnCreationURL: 'https://httpbin.org/post',
+                    webhookOnCreationEnabled: true,
+                }).then((playbook) => {
+                    // # Create a new incident with that playbook
+                    const now = Date.now();
+                    const incidentName = `Incident (${now})`;
+                    const incidentChannelName = `incident-${now}`;
+
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName,
+                        commanderUserId: userId,
+                        description: 'Incident description.',
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                    // * Verify that the bot has not posted a message informing of the failure to send the webhook
+                    cy.getLastPostId().then((lastPostId) => {
+                        cy.get(`#postMessageText_${lastPostId}`)
+                            .should('not.contain', 'Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
+                    });
+                });
+            });
+            it('with webhook misconfigured and setting enabled', () => {
+                const playbookName = 'Playbook (' + Date.now() + ')';
+
+                // # Create a playbook with a wrong webhook and the setting enabled
+                cy.apiCreatePlaybook({
+                    teamId,
+                    title: playbookName,
+                    createPublicIncident: true,
+                    memberIDs: [userId],
+                    webhookOnCreationURL: 'http://example.com/not-an-actual-endpoint',
+                    webhookOnCreationEnabled: true,
+                }).then((playbook) => {
+                    // # Create a new incident with that playbook
+                    const now = Date.now();
+                    const incidentName = `Incident (${now})`;
+                    const incidentChannelName = `incident-${now}`;
+
+                    cy.apiStartIncident({
+                        teamId,
+                        playbookId: playbook.id,
+                        incidentName,
+                        commanderUserId: userId,
+                        description: 'Incident description.',
+                    });
+
+                    // # Navigate to the incident channel
+                    cy.visit(`/ad-1/channels/${incidentChannelName}`);
+
+                    // * Verify that the bot has posted a message informing of the failure to send the webhook
+                    cy.findByText('Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
+                });
+            });
+        });
     });
 });

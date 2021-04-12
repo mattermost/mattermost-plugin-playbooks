@@ -48,6 +48,7 @@ export interface FetchIncidentsReturn {
     page_count: number;
     has_more: boolean;
     items: Incident[];
+    disabled?: boolean;
 }
 
 export enum IncidentStatus {
@@ -143,6 +144,7 @@ export interface FetchIncidentsParams {
     commander_user_id?: string;
     search_term?: string;
     member_id?: string;
+    disabled?: boolean;
 }
 
 export interface FetchPlaybooksParams {

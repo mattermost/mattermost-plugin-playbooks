@@ -42,6 +42,9 @@ describe('playbook creation button', () => {
         // # Open backstage
         cy.openBackstage();
 
+        // # Switch to playbooks backstage
+        cy.findByTestId('playbooksLHSButton').click();
+
         // # Click 'New Playbook' button
         cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
@@ -55,6 +58,9 @@ describe('playbook creation button', () => {
 
         // # Open backstage
         cy.openBackstage();
+
+        // # Switch to playbooks backstage
+        cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Blank Playbook'
         cy.findByText('Blank Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
@@ -70,6 +76,9 @@ describe('playbook creation button', () => {
         // # Open backstage
         cy.openBackstage();
 
+        // # Switch to playbooks backstage
+        cy.findByTestId('playbooksLHSButton').click();
+
         // # Click 'Incident Collaboration Playbook'
         cy.findByText('Incident Collaboration Playbook')
             .should('be.visible')
@@ -83,6 +92,9 @@ describe('playbook creation button', () => {
     it('shows remove beside members when > 1 member', () => {
         // # Open backstage
         cy.openBackstage();
+
+        // # Switch to playbooks backstage
+        cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'New Playbook' button
         cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);

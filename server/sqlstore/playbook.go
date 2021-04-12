@@ -47,7 +47,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
 			"DefaultCommanderID", "DefaultCommanderEnabled",
-			"AnnouncementChannelID", "AnnouncementChannelEnabled").
+			"AnnouncementChannelID", "AnnouncementChannelEnabled",
+			"WebhookOnCreationURL", "WebhookOnCreationEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -106,6 +107,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
 			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
+			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -304,6 +307,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
 			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
+			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

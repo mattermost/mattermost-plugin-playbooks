@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -23,14 +24,16 @@ type PlaybookHandler struct {
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
+	config          config.Service
 }
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, config config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
 		pluginAPI:       api,
 		log:             log,
+		config:          config,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -52,6 +55,11 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	var pbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
+		return
+	}
+
+	if !permissions.IsOnEnabledTeam(pbook.TeamID, h.config) {
+		HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
@@ -90,16 +98,6 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.AnnouncementChannelID != "" &&
-		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to create posts in the channel %s",
-			userID,
-			pbook.AnnouncementChannelID,
-		))
-		return
-	}
-
 	for _, groupID := range pbook.InvitedGroupIDs {
 		group, err := h.pluginAPI.Group.Get(groupID)
 		if err != nil {
@@ -112,6 +110,30 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 				"group %s does now allow references",
 				groupID,
 			))
+			return
+		}
+	}
+
+	if pbook.AnnouncementChannelID != "" &&
+		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.AnnouncementChannelID,
+		))
+		return
+	}
+
+	if pbook.WebhookOnCreationURL != "" {
+		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
+		if err != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 	}
@@ -243,6 +265,20 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
 		pbook.AnnouncementChannelID = ""
 		pbook.AnnouncementChannelEnabled = false
+	}
+
+	if pbook.WebhookOnCreationURL != "" {
+		url, err2 := url.ParseRequestURI(pbook.WebhookOnCreationURL)
+		if err2 != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
 	}
 
 	err = h.playbookService.Update(pbook, userID)

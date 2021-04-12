@@ -131,6 +131,7 @@ func (p *Plugin) OnActivate() error {
 
 	incidentStore := sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
+	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler(p.config)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
@@ -156,7 +157,7 @@ func (p *Plugin) OnActivate() error {
 
 	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 
-	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot)
+	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot, p.config)
 	api.NewIncidentHandler(
 		p.handler.APIRouter,
 		p.incidentService,
@@ -165,7 +166,9 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.bot,
 		telemetryClient,
+		p.config,
 	)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting

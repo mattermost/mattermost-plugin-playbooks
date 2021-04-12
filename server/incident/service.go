@@ -1,8 +1,10 @@
 package incident
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -30,6 +32,7 @@ const (
 // ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
 type ServiceImpl struct {
 	pluginAPI     *pluginapi.Client
+	httpClient    *http.Client
 	configService config.Service
 	store         Store
 	poster        bot.Poster
@@ -64,6 +67,15 @@ const DialogFieldIncidentKey = "incident"
 // DialogFieldSummary is the key for the summary in AddToTimelineDialog
 const DialogFieldSummary = "summary"
 
+// DialogFieldItemName is the key for the name in AddChecklistItemDialog
+const DialogFieldItemNameKey = "name"
+
+// DialogFieldDescriptionKey is the key for the description in AddChecklistItemDialog
+const DialogFieldItemDescriptionKey = "description"
+
+// DialogFieldCommandKey is the key for the command in AddChecklistItemDialog
+const DialogFieldItemCommandKey = "command"
+
 // NewService creates a new incident ServiceImpl.
 func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
 	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
@@ -75,6 +87,7 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 		configService: configService,
 		scheduler:     scheduler,
 		telemetry:     telemetry,
+		httpClient:    &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -101,6 +114,70 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 
 	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// sendWebhookOnCreation sends a POST request to the creation webhook URL.
+// It blocks until a response is received.
+func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+
+	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	channelURL := fmt.Sprintf("%s/%s/channels/%s",
+		*siteURL,
+		team.Name,
+		channel.Name,
+	)
+
+	detailsURL := fmt.Sprintf("%s/%s/%s/incidents/%s",
+		*siteURL,
+		team.Name,
+		s.configService.GetManifest().Id,
+		theIncident.ID,
+	)
+
+	payload := struct {
+		Incident
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
+	}{
+		Incident:   *theIncident,
+		ChannelURL: channelURL,
+		DetailsURL: detailsURL,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", theIncident.WebhookOnCreationURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
 	}
 
 	return nil
@@ -249,6 +326,15 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		}
 	}
 
+	if incdnt.WebhookOnCreationURL != "" {
+		go func() {
+			if err = s.sendWebhookOnCreation(incdnt); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
+				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+			}
+		}()
+	}
+
 	event := &TimelineEvent{
 		IncidentID:    incdnt.ID,
 		CreateAt:      incdnt.CreateAt,
@@ -370,6 +456,42 @@ func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo permissions.Requeste
 	dialogRequest := model.OpenDialogRequest{
 		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/add-to-timeline-dialog",
 			s.configService.GetManifest().Id),
+		Dialog:    *dialog,
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open update status dialog")
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error {
+	dialog := &model.Dialog{
+		Title: "Add New Task",
+		Elements: []model.DialogElement{
+			{
+				DisplayName: "Name",
+				Name:        DialogFieldItemNameKey,
+				Type:        "text",
+				Default:     "",
+			},
+			{
+				DisplayName: "Description",
+				Name:        DialogFieldItemDescriptionKey,
+				Type:        "text",
+				Default:     "",
+				Optional:    true,
+			},
+		},
+		SubmitLabel:    "Add Task",
+		NotifyOnCancel: false,
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/checklists/%v/add-dialog",
+			s.configService.GetManifest().Id, incidentID, checklist),
 		Dialog:    *dialog,
 		TriggerId: triggerID,
 	}
@@ -932,8 +1054,8 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	return nil
 }
 
-// RenameChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand string) error {
+// EditChecklistItem changes the title of a specified checklist item
+func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -941,6 +1063,7 @@ func (s *ServiceImpl) RenameChecklistItem(incidentID, userID string, checklistNu
 
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
+	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
@@ -994,11 +1117,29 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 	ret := make([]model.AutocompleteListItem, 0)
 
 	for i, checklist := range theIncident.Checklists {
+		ret = append(ret, model.AutocompleteListItem{
+			Item: fmt.Sprintf("%d", i),
+			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
+		})
+	}
+
+	return ret, nil
+}
+
+// GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
+func (s *ServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve incident")
+	}
+
+	ret := make([]model.AutocompleteListItem, 0)
+
+	for i, checklist := range theIncident.Checklists {
 		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
-				Item:     fmt.Sprintf("%d %d", i, j),
-				Hint:     fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
-				HelpText: "Check/uncheck this item",
+				Item: fmt.Sprintf("%d %d", i, j),
+				Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(item.Title)),
 			})
 		}
 	}

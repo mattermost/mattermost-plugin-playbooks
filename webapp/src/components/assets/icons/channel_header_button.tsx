@@ -4,13 +4,22 @@
 import React, {useRef, FC} from 'react';
 import {useSelector} from 'react-redux';
 
-import {isIncidentRHSOpen} from 'src/selectors';
+import {createGlobalStyle} from 'styled-components';
+
+import {isIncidentRHSOpen, isDisabledOnCurrentTeam} from 'src/selectors';
 
 import IncidentIcon, {Ref as IncidentIconRef} from './incident_icon';
+
+const DisabledStyle = createGlobalStyle`
+    .plugin-icon-hide {
+        display: none;
+    }
+`;
 
 const ChannelHeaderButton: FC = () => {
     const myRef = useRef<IncidentIconRef>(null);
     const isRHSOpen = useSelector(isIncidentRHSOpen);
+    const disabled = useSelector(isDisabledOnCurrentTeam);
 
     // If it has been mounted, we know our parent is always a button.
     const parent = myRef?.current ? myRef?.current?.parentNode as HTMLButtonElement : null;
@@ -20,13 +29,22 @@ const ChannelHeaderButton: FC = () => {
         } else {
             parent.classList.remove('channel-header__icon--active');
         }
+
+        if (disabled) {
+            parent.classList.add('plugin-icon-hide');
+        } else {
+            parent.classList.remove('plugin-icon-hide');
+        }
     }
 
     return (
-        <IncidentIcon
-            id='incidentIcon'
-            ref={myRef}
-        />
+        <>
+            <DisabledStyle/>
+            <IncidentIcon
+                id='incidentIcon'
+                ref={myRef}
+            />
+        </>
     );
 };
 

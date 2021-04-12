@@ -34,6 +34,8 @@ import {
     SetRHSState,
     SetRHSTabState,
     SetTriggerId,
+    RECEIVED_TEAM_DISABLED,
+    ReceivedTeamDisabled,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -74,6 +76,12 @@ export function updateStatus() {
 export function addToTimeline(postId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, `/incident add ${postId}`);
+    };
+}
+
+export function addNewTask(checklist: number) {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, `/incident checkadd ${checklist}`);
     };
 }
 
@@ -142,6 +150,11 @@ export const incidentUpdated = (incident: Incident): IncidentUpdated => ({
 export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncidents => ({
     type: RECEIVED_TEAM_INCIDENTS,
     incidents,
+});
+
+export const receivedDisabledOnTeam = (teamId: string): ReceivedTeamDisabled => ({
+    type: RECEIVED_TEAM_DISABLED,
+    teamId,
 });
 
 export const removedFromIncidentChannel = (channelId: string): RemovedFromIncidentChannel => ({

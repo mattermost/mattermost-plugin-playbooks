@@ -16,6 +16,13 @@ type Playbook struct {
 	BroadcastChannelID          string      `json:"broadcast_channel_id"`
 	ReminderMessageTemplate     string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs              []string    `json:"invited_user_ids"`
+	InvitedGroupIDs             []string    `json:"invited_group_ids"`
+	InvitedUsersEnabled         bool        `json:"invited_users_enabled"`
+	DefaultCommanderID          string      `json:"default_commander_id"`
+	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	AnnouncementChannelID       string      `json:"announcement_channel_id"`
+	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
 }
 
 // Checklist represents a checklist in a playbook
@@ -38,4 +45,41 @@ type ChecklistItem struct {
 	Command                string `json:"command"`
 	CommandLastRun         int64  `json:"command_last_run"`
 	Description            string `json:"description"`
+}
+
+// PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
+type PlaybookCreateOptions struct {
+	Title                       string      `json:"title"`
+	Description                 string      `json:"description"`
+	TeamID                      string      `json:"team_id"`
+	CreatePublicIncident        bool        `json:"create_public_incident"`
+	Checklists                  []Checklist `json:"checklists"`
+	MemberIDs                   []string    `json:"member_ids"`
+	BroadcastChannelID          string      `json:"broadcast_channel_id"`
+	ReminderMessageTemplate     string      `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs              []string    `json:"invited_user_ids"`
+	InvitedGroupIDs             []string    `json:"invited_group_ids"`
+	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
+	DefaultCommanderID          string      `json:"default_commander_id"`
+	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	AnnouncementChannelID       string      `json:"announcement_channel_id"`
+	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
+}
+
+// PlaybookListOptions specifies the optional parameters to the
+// PlaybooksService.List method.
+type PlaybookListOptions struct {
+	// MemberOnly filters playbooks to those for which the current user is a member.
+	MemberOnly bool `url:"member_only,omitempty"`
+
+	Sort      Sort          `url:"sort,omitempty"`
+	Direction SortDirection `url:"direction,omitempty"`
+}
+
+type GetPlaybooksResults struct {
+	TotalCount int        `json:"total_count"`
+	PageCount  int        `json:"page_count"`
+	HasMore    bool       `json:"has_more"`
+	Items      []Playbook `json:"items"`
 }

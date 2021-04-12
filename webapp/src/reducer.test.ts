@@ -30,6 +30,7 @@ describe('myIncidentsByTeam', () => {
             };
             const expectedState = state;
 
+            // @ts-ignore
             expect(reducer(state, action)).toStrictEqual(expectedState);
         });
 
@@ -58,6 +59,7 @@ describe('myIncidentsByTeam', () => {
                 },
             });
 
+            // @ts-ignore
             expect(reducer(state, action)).toEqual(expectedState);
         });
     });

@@ -3,6 +3,7 @@ package permissions
 import (
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -155,4 +156,20 @@ func IsChannelActiveInTeam(channelID string, expectedTeamID string, pluginAPI *p
 	}
 
 	return nil
+}
+
+func IsOnEnabledTeam(teamID string, cfgService config.Service) bool {
+	enabledTeams := cfgService.GetConfiguration().EnabledTeams
+
+	if len(enabledTeams) == 0 {
+		return true
+	}
+
+	for _, enabledTeam := range enabledTeams {
+		if enabledTeam == teamID {
+			return true
+		}
+	}
+
+	return false
 }

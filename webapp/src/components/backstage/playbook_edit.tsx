@@ -21,7 +21,7 @@ import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {ErrorPageTypes, TEMPLATE_TITLE_KEY} from 'src/constants';
+import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
@@ -340,6 +340,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
+    const handleWebhookOnCreationChange = (url: string) => {
+        if (playbook.webhook_on_creation_url !== url) {
+            setPlaybook({
+                ...playbook,
+                webhook_on_creation_url: url,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
@@ -364,12 +374,20 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleWebhookOnCreation = () => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_creation_enabled: !playbook.webhook_on_creation_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
 
     const getUsers = () => {
-        return dispatch(getProfilesInTeam(props.currentTeam.id, 0));
+        return dispatch(getProfilesInTeam(props.currentTeam.id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
     const handleBroadcastInput = (channelId: string | undefined) => {
@@ -525,6 +543,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}
                                     onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
                                     onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
+                                    webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
+                                    onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
+                                    webhookOnCreationChange={handleWebhookOnCreationChange}
+                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
                                 />
                             </TabContainer>
                         </TabsContent>
