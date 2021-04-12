@@ -526,7 +526,7 @@ func (s *ServiceImpl) RemoveTimelineEvent(incidentID, eventID string) error {
 	return nil
 }
 
-func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, authorID, originalPostID string) error {
+func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, newStatus, authorID, originalPostID string) error {
 	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
 	if err != nil {
 		return err
@@ -597,7 +597,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
 
-	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
+	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, options.Status, userID, post.Id); err2 != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
 
