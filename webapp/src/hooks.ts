@@ -1,4 +1,4 @@
-import {useEffect, useState, MutableRefObject, useRef, useCallback} from 'react';
+import {MutableRefObject, useCallback, useEffect, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
@@ -147,18 +147,20 @@ export function useProfilesInChannel(channelId: string) {
     return profilesInChannel;
 }
 
-function usePostFromState(statusPosts: StatusPost[]): [string, Post | null] {
+function useLatestPostId(statusPosts: StatusPost[]) {
     const sortedPosts = [...statusPosts]
         .filter((a) => a.delete_at === 0)
         .sort((a, b) => b.create_at - a.create_at);
 
-    const postID = sortedPosts[0]?.id;
-
-    return [postID, useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postID || ''))];
+    return sortedPosts[0]?.id;
 }
 
-export function useLatestUpdate(incident: Incident) {
-    const [postId, postFromState] = usePostFromState(incident.status_posts);
+function usePostFromState(postId: string) {
+    return useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postId || ''));
+}
+
+export function usePost(postId: string) {
+    const postFromState = usePostFromState(postId);
     const [post, setPost] = useState<Post | null>(null);
 
     useEffect(() => {
@@ -181,4 +183,9 @@ export function useLatestUpdate(incident: Incident) {
     }, [postFromState, postId]);
 
     return post;
+}
+
+export function useLatestUpdate(incident: Incident) {
+    const postId = useLatestPostId(incident.status_posts);
+    return usePost(postId);
 }
