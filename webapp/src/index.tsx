@@ -96,10 +96,10 @@ export default class Plugin {
         const checkRegistrations = () => {
             updateMainMenuAction();
 
-            if (!registered && isE20LicensedOrDevelopment(store)) {
+            if (!registered && isE20LicensedOrDevelopment(store.getState())) {
                 unregister = doRegistrations();
                 registered = true;
-            } else if (unregister && !isE20LicensedOrDevelopment(store)) {
+            } else if (unregister && !isE20LicensedOrDevelopment(store.getState())) {
                 unregister();
                 registered = false;
             }

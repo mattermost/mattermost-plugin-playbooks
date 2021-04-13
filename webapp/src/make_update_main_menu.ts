@@ -18,7 +18,7 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
 
     return async () => {
         const disable = isDisabledOnCurrentTeam(store.getState());
-        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store);
+        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store.getState());
 
         if (mainMenuActionId && !show) {
             const temp = mainMenuActionId;
