@@ -29,6 +29,7 @@ import {
     FetchPlaybooksNoChecklistReturn,
     Playbook,
     PlaybookNoChecklist,
+    FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
@@ -148,6 +149,13 @@ export {clientHasPlaybooks};
 
 export function clientFetchPlaybook(playbookID: string) {
     return doGet(`${apiUrl}/playbooks/${playbookID}`);
+}
+
+export async function clientFetchPlaybooksCount(teamID: string) {
+    const queryParams = qs.stringify({
+        team_id: teamID,
+    }, {addQueryPrefix: true});
+    return await doGet(`${apiUrl}/playbooks/count${queryParams}`) as FetchPlaybooksCountReturn;
 }
 
 export async function savePlaybook(playbook: Playbook) {

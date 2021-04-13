@@ -46,6 +46,10 @@ export interface FetchIncidentsParams {
     direction?: string;
 }
 
+export interface FetchPlaybooksCountReturn {
+    count: number;
+}
+
 export interface Checklist {
     title: string;
     items: ChecklistItem[];
