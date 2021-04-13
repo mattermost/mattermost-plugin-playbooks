@@ -20,7 +20,7 @@ var driverNames = []string{model.DATABASE_DRIVER_POSTGRES, model.DATABASE_DRIVER
 func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
 
-	sqlSettings := storetest.MakeSqlSettings(driverName)
+	sqlSettings := storetest.MakeSqlSettings(driverName, false)
 
 	origDB, err := sql.Open(*sqlSettings.DriverName, *sqlSettings.DataSource)
 	require.NoError(t, err)

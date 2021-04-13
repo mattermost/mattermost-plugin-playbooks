@@ -98,6 +98,22 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	for _, groupID := range pbook.InvitedGroupIDs {
+		group, err := h.pluginAPI.Group.Get(groupID)
+		if err != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid group", err)
+			return
+		}
+
+		if !group.AllowReference {
+			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+				"group %s does now allow references",
+				groupID,
+			))
+			return
+		}
+	}
+
 	if pbook.AnnouncementChannelID != "" &&
 		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
@@ -219,6 +235,24 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		filteredUsers = append(filteredUsers, userID)
 	}
 	pbook.InvitedUserIDs = filteredUsers
+
+	filteredGroups := []string{}
+	for _, groupID := range pbook.InvitedGroupIDs {
+		var group *model.Group
+		group, err = h.pluginAPI.Group.Get(groupID)
+		if err != nil {
+			h.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			continue
+		}
+
+		if !group.AllowReference {
+			h.pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
+			continue
+		}
+
+		filteredGroups = append(filteredGroups, groupID)
+	}
+	pbook.InvitedGroupIDs = filteredGroups
 
 	if pbook.DefaultCommanderID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, h.pluginAPI) {
 		h.pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
