@@ -152,8 +152,10 @@ Cypress.Commands.add('updateStatus', (message, reminder, status) => {
 
         let actualStatus = status;
         if (!actualStatus) {
-            actualStatus = 'Reported';
+            actualStatus = 'reported';
         }
+
+        actualStatus = actualStatus.toLowerCase();
 
         cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
             cy.get('input').type(actualStatus, {delay: 200}).type('{enter}');
