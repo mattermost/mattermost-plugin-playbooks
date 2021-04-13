@@ -7,6 +7,8 @@ import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {PRICING_PLAN_DIFFERENTIATION_ENABLED} from 'src/constants';
+
 import {isDisabledOnCurrentTeam} from './selectors';
 import {isMobile} from './mobile';
 import {isE20LicensedOrDevelopment} from './license';
@@ -17,8 +19,12 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
     let mainMenuActionId: string | null;
 
     return async () => {
-        const disable = isDisabledOnCurrentTeam(store.getState());
-        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store.getState());
+        let show = !isMobile();
+
+        if (!PRICING_PLAN_DIFFERENTIATION_ENABLED) {
+            const disable = isDisabledOnCurrentTeam(store.getState());
+            show = !disable && !isMobile() && isE20LicensedOrDevelopment(store.getState());
+        }
 
         if (mainMenuActionId && !show) {
             const temp = mainMenuActionId;
