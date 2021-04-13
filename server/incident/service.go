@@ -597,6 +597,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	}
 
 	previousStatus := incidentToModify.CurrentStatus
+	incidentToModify.CurrentStatus = options.Status
 
 	post := model.Post{
 		Message:   options.Message,
