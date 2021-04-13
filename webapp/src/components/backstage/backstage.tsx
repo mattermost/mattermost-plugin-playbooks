@@ -128,50 +128,44 @@ const Backstage: FC = () => {
 
     return (
         <BackstageContainer>
-            <Switch>
-                <Route path={`${match.url}/playbooks/*`}/>
-                <Route path={`${match.url}/incidents/*`}/>
-                <Route>
-                    <BackstageNavbar className='flex justify-content-between'>
-                        <div className='d-flex items-center'>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/stats`}
-                                activeClassName={'active'}
-                                data-testid='statsLHSButton'
-                            >
-                                <span className='mr-3 d-flex items-center'>
-                                    <div className={'fa fa-line-chart'}/>
-                                </span>
-                                {'Stats'}
-                            </BackstageTitlebarItem>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/incidents`}
-                                activeClassName={'active'}
-                                data-testid='incidentsLHSButton'
-                            >
-                                <span className='mr-3 d-flex items-center'>
-                                    <IncidentIcon/>
-                                </span>
-                                {'Incidents'}
-                            </BackstageTitlebarItem>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/playbooks`}
-                                activeClassName={'active'}
-                                data-testid='playbooksLHSButton'
-                            >
-                                <span className='mr-3 d-flex items-center'>
-                                    <PlaybookIcon/>
-                                </span>
-                                {'Playbooks'}
-                            </BackstageTitlebarItem>
-                        </div>
-                        <BackstageNavbarIcon
-                            className='icon-close close-icon'
-                            onClick={goToMattermost}
-                        />
-                    </BackstageNavbar>
-                </Route>
-            </Switch>
+            <BackstageNavbar className='flex justify-content-between'>
+                <div className='d-flex items-center'>
+                    <BackstageTitlebarItem
+                        to={`${match.url}/stats`}
+                        activeClassName={'active'}
+                        data-testid='statsLHSButton'
+                    >
+                        <span className='mr-3 d-flex items-center'>
+                            <div className={'fa fa-line-chart'}/>
+                        </span>
+                        {'Stats'}
+                    </BackstageTitlebarItem>
+                    <BackstageTitlebarItem
+                        to={`${match.url}/incidents`}
+                        activeClassName={'active'}
+                        data-testid='incidentsLHSButton'
+                    >
+                        <span className='mr-3 d-flex items-center'>
+                            <IncidentIcon/>
+                        </span>
+                        {'Incidents'}
+                    </BackstageTitlebarItem>
+                    <BackstageTitlebarItem
+                        to={`${match.url}/playbooks`}
+                        activeClassName={'active'}
+                        data-testid='playbooksLHSButton'
+                    >
+                        <span className='mr-3 d-flex items-center'>
+                            <PlaybookIcon/>
+                        </span>
+                        {'Playbooks'}
+                    </BackstageTitlebarItem>
+                </div>
+                <BackstageNavbarIcon
+                    className='icon-close close-icon'
+                    onClick={goToMattermost}
+                />
+            </BackstageNavbar>
             <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
