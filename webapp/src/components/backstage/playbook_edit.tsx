@@ -30,7 +30,18 @@ import './playbook.scss';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
-import {BackstageSubheader, BackstageSubheaderText, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledSelect} from './styles';
+import {BackstageSubheader, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledSelect} from './styles';
+
+const SidebarHeader = styled.div`
+    display: flex;
+    align-items: center;
+    height: 72px;
+    min-height: 72px;
+    padding: 0 24px;
+    font-weight: 600;
+    font-size: 16px;
+    border-bottom: 1px solid var(--center-channel-color-16);
+`;
 
 const Container = styled.div`
     display: flex;
@@ -468,12 +479,12 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             />
                             <TabContainer>
                                 <SidebarBlock>
-                                    <BackstageSubheaderText>
+                                    <BackstageSubheader>
                                         {'Broadcast Channel'}
                                         <BackstageSubheaderDescription>
                                             {'Broadcast the incident status to an additional channel. All status posts will be shared automatically with both the incident and broadcast channel.'}
                                         </BackstageSubheaderDescription>
-                                    </BackstageSubheaderText>
+                                    </BackstageSubheader>
                                     <ChannelSelector
                                         id='playbook-preferences-broadcast-channel'
                                         onChannelSelected={handleBroadcastInput}
@@ -485,12 +496,12 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
-                                    <BackstageSubheaderText>
+                                    <BackstageSubheader>
                                         {'Reminder Timer'}
                                         <BackstageSubheaderDescription>
                                             {'Prompts the commander at a specified interval to update the status of the Incident.'}
                                         </BackstageSubheaderDescription>
-                                    </BackstageSubheaderText>
+                                    </BackstageSubheader>
                                     <StyledSelect
                                         value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
                                         onChange={(option: { label: string, value: number }) => {
@@ -506,12 +517,12 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
-                                    <BackstageSubheaderText>
+                                    <BackstageSubheader>
                                         {'Message Template'}
                                         <BackstageSubheaderDescription>
                                             {'Add a templated message to give you a headstart. This can be modified at the Incident level.'}
                                         </BackstageSubheaderDescription>
-                                    </BackstageSubheaderText>
+                                    </BackstageSubheader>
                                     <StyledTextarea
                                         placeholder={'Enter message template'}
                                         value={playbook.reminder_message_template}
@@ -555,17 +566,17 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                 <Sidebar
                     data-testid='playbook-sidebar'
                 >
-                    <BackstageSubheader>
+                    <SidebarHeader>
                         {'Permissions'}
-                    </BackstageSubheader>
+                    </SidebarHeader>
                     <SidebarContent>
                         <SidebarBlock>
-                            <BackstageSubheaderText>
+                            <BackstageSubheader>
                                 {'Channel access'}
                                 <BackstageSubheaderDescription>
                                     {'Determine the type of incident channel this playbook creates when starting an incident.'}
                                 </BackstageSubheaderDescription>
-                            </BackstageSubheaderText>
+                            </BackstageSubheader>
                             <RadioContainer>
                                 <RadioLabel>
                                     <RadioInput
@@ -590,12 +601,12 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             </RadioContainer>
                         </SidebarBlock>
                         <SidebarBlock>
-                            <BackstageSubheaderText>
+                            <BackstageSubheader>
                                 {'Playbook access'}
                                 <BackstageSubheaderDescription>
                                     {'Only people who you share with can create an incident from this playbook.'}
                                 </BackstageSubheaderDescription>
-                            </BackstageSubheaderText>
+                            </BackstageSubheader>
                             <SharePlaybook
                                 onAddUser={handleUsersInput}
                                 onRemoveUser={handleRemoveUser}

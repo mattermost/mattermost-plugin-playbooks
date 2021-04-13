@@ -27,6 +27,8 @@ type PlaybookHandler struct {
 	config          config.Service
 }
 
+const SettingsKey = "global_settings"
+
 // NewPlaybookHandler returns a new playbook api handler
 func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, config config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
@@ -35,6 +37,9 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 		log:             log,
 		config:          config,
 	}
+
+	router.HandleFunc("/settings", handler.getSettings).Methods(http.MethodGet)
+	router.HandleFunc("/settings", handler.setSettings).Methods(http.MethodPost)
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
@@ -47,6 +52,29 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
 
 	return handler
+}
+
+func (h *PlaybookHandler) getSettings(w http.ResponseWriter, r *http.Request) {
+	var settings config.GlobalSettings
+	if err := h.pluginAPI.KV.Get(SettingsKey, &settings); err != nil {
+		HandleErrorWithCode(w, http.StatusInternalServerError, "unable to decode playbook", err)
+	}
+
+	ReturnJSON(w, &settings, http.StatusOK)
+}
+
+func (h *PlaybookHandler) setSettings(w http.ResponseWriter, r *http.Request) {
+	var settings config.GlobalSettings
+	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode settings", err)
+		return
+	}
+
+	if didSet, err := h.pluginAPI.KV.Set(SettingsKey, settings); !didSet || err != nil {
+		HandleErrorWithCode(w, http.StatusInternalServerError, "unable to set settings", err)
+	}
+
+	ReturnJSON(w, &settings, http.StatusOK)
 }
 
 func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {

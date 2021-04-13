@@ -2,6 +2,10 @@ package config
 
 import "github.com/mattermost/mattermost-server/v5/model"
 
+type GlobalSettings struct {
+	PlaybookEditorsUserIds []string `json:"playbook_editors_user_ids"`
+}
+
 // Service is the config.Service interface.
 // NOTE: for now we are defining this here for simplicity. It will be mocked by multiple consumers,
 // so keep the definition in one place -- here. In the future we may move to a

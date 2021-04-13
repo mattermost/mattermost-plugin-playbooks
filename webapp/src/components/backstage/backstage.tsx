@@ -24,6 +24,7 @@ import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
 
 import StatsView from './stats';
+import SettingsView from './settings';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -163,6 +164,16 @@ const Backstage: FC = () => {
                                 </span>
                                 {'Playbooks'}
                             </BackstageTitlebarItem>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/settings`}
+                                activeClassName={'active'}
+                                data-testid='settingsLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <div className={'fa fa-gear'}/>
+                                </span>
+                                {'Settings'}
+                            </BackstageTitlebarItem>
                         </div>
                         <BackstageNavbarIcon
                             className='icon-close close-icon'
@@ -198,6 +209,9 @@ const Backstage: FC = () => {
                     </Route>
                     <Route path={`${match.url}/stats`}>
                         <StatsView/>
+                    </Route>
+                    <Route path={`${match.url}/settings`}>
+                        <SettingsView/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>

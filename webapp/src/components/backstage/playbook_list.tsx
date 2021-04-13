@@ -28,12 +28,13 @@ import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {Banner} from 'src/components/backstage/shared';
 
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
+
+import {Banner} from './styles';
 
 const DeleteBannerTimeout = 5000;
 

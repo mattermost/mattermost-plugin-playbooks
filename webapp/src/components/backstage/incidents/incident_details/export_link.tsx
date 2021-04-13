@@ -12,9 +12,9 @@ import {OVERLAY_DELAY} from 'src/constants';
 
 import {isExportLicensed} from 'src/selectors';
 import {exportChannelUrl} from 'src/client';
-import {Banner} from 'src/components/backstage/shared';
 
 import {Incident} from 'src/types/incident';
+import {Banner} from 'src/components/backstage/styles';
 
 interface ExportLinkProps {
     incident: Incident
