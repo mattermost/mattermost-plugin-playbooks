@@ -10,7 +10,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {Incident, IncidentStatus, Metadata as IncidentMetadata} from 'src/types/incident';
+import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
 import {IncidentBackstageTabState} from 'src/types/backstage';
 import {Overview} from 'src/components/backstage/incidents/incident_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/incidents/incident_backstage/retrospective/retrospective';
@@ -19,7 +19,6 @@ import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/br
 import {ErrorPageTypes} from 'src/constants';
 import {
     Badge,
-    SecondaryButtonLarger,
     SecondaryButtonLargerRight,
 } from 'src/components/backstage/incidents/shared';
 
