@@ -15,11 +15,13 @@ import (
 type Handler struct {
 	APIRouter *mux.Router
 	root      *mux.Router
+	config    config.Service
 }
 
 // NewHandler constructs a new handler.
 func NewHandler(config config.Service) *Handler {
 	handler := &Handler{}
+	handler.config = config
 
 	root := mux.NewRouter()
 	api := root.PathPrefix("/api/v0").Subrouter()
@@ -32,6 +34,9 @@ func NewHandler(config config.Service) *Handler {
 	api.Handle("{anything:.*}", http.NotFoundHandler())
 	api.NotFoundHandler = http.NotFoundHandler()
 
+	api.HandleFunc("/settings", handler.getSettings).Methods(http.MethodGet)
+	api.HandleFunc("/settings", handler.setSettings).Methods(http.MethodPost)
+
 	handler.APIRouter = api
 	handler.root = root
 
@@ -40,6 +45,35 @@ func NewHandler(config config.Service) *Handler {
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.root.ServeHTTP(w, r)
+}
+
+type GlobalSettings struct {
+	PlaybookEditorsUserIds []string `json:"playbook_editors_user_ids"`
+}
+
+func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
+	cfg := h.config.GetConfiguration()
+	settings := GlobalSettings{
+		PlaybookEditorsUserIds: cfg.PlaybookEditorsUserIds,
+	}
+	ReturnJSON(w, &settings, http.StatusOK)
+}
+
+func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
+	var settings GlobalSettings
+	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode settings", err)
+		return
+	}
+
+	if err := h.config.UpdateConfiguration(func(oldcfg *config.Configuration) {
+		oldcfg.PlaybookEditorsUserIds = settings.PlaybookEditorsUserIds
+	}); err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // ReturnJSON writes the given pointer to object as json with a success response

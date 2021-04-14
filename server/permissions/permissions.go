@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -172,4 +173,141 @@ func IsOnEnabledTeam(teamID string, cfgService config.Service) bool {
 	}
 
 	return false
+}
+
+func isPlaybookCreator(userID string, cfgService config.Service) error {
+	playbookCreators := cfgService.GetConfiguration().PlaybookEditorsUserIds
+	if len(playbookCreators) == 0 {
+		return nil
+	}
+
+	for _, candidateUserID := range playbookCreators {
+		if userID == candidateUserID {
+			return nil
+		}
+	}
+
+	return errors.Wrap(ErrNoPermissions, "create playbooks")
+}
+
+func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi.Client) error {
+	noAccessErr := errors.Wrapf(
+		ErrNoPermissions,
+		"userID %s to access playbook",
+		userID,
+	)
+
+	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
+		return noAccessErr
+	}
+
+	for _, memberID := range pbook.MemberIDs {
+		if memberID == userID {
+			return nil
+		}
+	}
+
+	return noAccessErr
+}
+
+func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client) error {
+	if err := isPlaybookCreator(userID, cfgService); err != nil {
+		return err
+	}
+
+	if !IsOnEnabledTeam(pbook.TeamID, cfgService) {
+		return errors.Wrap(ErrNoPermissions, "not enabled on this team")
+	}
+
+	// Exclude guest users
+	if isGuest, err := IsGuest(userID, pluginAPI); err != nil {
+		return err
+	} else if isGuest {
+		return errors.Errorf(
+			"userID %s does not have permission to create playbook on teamID %s because they are a guest",
+			userID,
+			pbook.TeamID,
+		)
+	}
+
+	if pbook.BroadcastChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		return errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.BroadcastChannelID,
+		)
+	}
+
+	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
+		return errors.Errorf(
+			"userID %s does not have permission to create playbook on teamID %s",
+			userID,
+			pbook.TeamID,
+		)
+	}
+
+	if pbook.AnnouncementChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		return errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.AnnouncementChannelID,
+		)
+	}
+
+	// Check all invited users have permissions to the team.
+	for _, userID := range pbook.InvitedUserIDs {
+		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			return errors.Errorf(
+				"invited user with ID %s does not have permission to playbook's team %s",
+				userID,
+				pbook.TeamID,
+			)
+		}
+	}
+
+	return nil
+}
+
+func PlaybookModify(userID string, pbook, oldPlaybook *playbook.Playbook, pluginAPI *pluginapi.Client) error {
+	if err := PlaybookAccess(userID, *pbook, pluginAPI); err != nil {
+		return err
+	}
+
+	if pbook.BroadcastChannelID != "" &&
+		pbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		return errors.Wrapf(
+			ErrNoPermissions,
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.BroadcastChannelID,
+		)
+	}
+
+	filteredUsers := []string{}
+	for _, userID := range pbook.InvitedUserIDs {
+		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
+			continue
+		}
+		filteredUsers = append(filteredUsers, userID)
+	}
+	pbook.InvitedUserIDs = filteredUsers
+
+	if pbook.DefaultCommanderID != "" && !IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, pluginAPI) {
+		pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
+		pbook.DefaultCommanderID = ""
+		pbook.DefaultCommanderEnabled = false
+	}
+
+	if pbook.AnnouncementChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
+		pbook.AnnouncementChannelID = ""
+		pbook.AnnouncementChannelEnabled = false
+	}
+
+	return nil
 }
