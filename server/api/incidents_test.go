@@ -669,6 +669,7 @@ func TestIncidents(t *testing.T) {
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
+			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
 			InviteUsersEnabled:   true,
