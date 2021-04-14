@@ -56,6 +56,8 @@ commands:
       - run:
           name: Getting JavaScript dependencies
           command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm use 15
             node -v
             npm -v
@@ -66,11 +68,6 @@ commands:
           key: v2-npm-{{ checksum "./webapp/package.json" }}-{{ arch }}
           paths:
             - ./webapp/node_modules
-      - run:
-          name: "Patch dependencies"
-          command: |
-            cd webapp
-            npx patch-package
 
   deploy:
     parameters:
@@ -196,7 +193,10 @@ jobs:
       - npm-dependencies
       - run:
           name: Checking code style
-          command: make check-style
+          command: |
+          node -v
+          npm -v
+          make check-style
       - run: go mod tidy -v
       - run:
           name: Checking diff of go mod files
