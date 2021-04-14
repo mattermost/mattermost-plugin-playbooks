@@ -85,6 +85,7 @@
     "chart.js": "2.9.3",
     "core-js": "3.6.5",
     "debounce": "^1.2.0",
+    "fsevents": "2.3.2",
     "mattermost-redux": "github:mattermost/mattermost-redux#3d1028034d7677adfda58e91b9a5dcaf1bc0ff99",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#0b27dbfaa79b88cc207d835bbe604577d9397425",
     "moment": "2.26.0",
@@ -98,9 +99,6 @@
     "reselect": "4.0.0",
     "styled-components": "5.1.1",
     "typescript": "3.9.3"
-  },
-  "optionalDependencies": {
-    "fsevents": "^2.3.2"
   },
   "jest": {
     "snapshotSerializers": [
