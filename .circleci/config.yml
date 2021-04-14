@@ -117,6 +117,7 @@ commands:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
+      - npm-dependencies
       - *restore_go_cache
       - run:
           name: Testing
@@ -153,6 +154,7 @@ commands:
             TOKEN=${TOKEN//$'\r'/}
             STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
             if test $STATUSCODE -ne 200; then exit 1; fi
+      - npm-dependencies
       - *restore_deploy_cache
       - run:
           name: Install Incident Collaboration plugin
