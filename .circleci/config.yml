@@ -1,15 +1,19 @@
 version: 2.1
 
-orbs:
-  plugin-ci: mattermost/plugin-ci@0.1
-  codecov: codecov/codecov@1.1.1
-
 executors:
   default:
     docker:
       - image: circleci/golang:1.16.0-node
 
 aliases:
+  - &restore_go_cache
+    restore_cache:
+      key: go-mod-v1-{{ checksum "go.sum" }}
+  - &save_go_cache
+    save_cache:
+      key: go-mod-v1-{{ checksum "go.sum" }}
+      paths:
+        - "/go/pkg/mod"
   - &restore_deploy_cache
     restore_cache:
       key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
@@ -59,6 +63,35 @@ commands:
       - run:
           name: "Patch dependencies"
           command: npx patch-package
+
+  install-golangci-lint:
+    description: Install golangci-lint
+    parameters:
+      version:
+        type: string
+        default: 1.31.0
+      gobin:
+        type: string
+        default: /go/bin
+      prefix:
+        type: string
+        default: v1
+        description: Prefix for cache key to store the binary.
+    steps:
+      - restore_cache:
+          name: Restore golangci-lint cache
+          keys: ['<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>']
+      - run:
+          name: Install golangci-lint
+          command: |
+            mkdir -p << parameters.gobin >>
+            command -v << parameters.gobin >>/golangci-lint && exit
+            download=https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
+            wget -O- -q $download | sh -s -- -b << parameters.gobin >>/ v<< parameters.version >>
+      - save_cache:
+          name: Save golangci-lint cache
+          key: '<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>'
+          paths: [<< parameters.gobin >>/golangci-lint]
 
   test-with-db:
     description: "Run tests with database"
@@ -128,6 +161,101 @@ commands:
           path: tests-e2e/cypress/videos
 
 jobs:
+  lint:
+    executor:
+      name: default
+    resource_class: xlarge
+    steps:
+      - checkout
+      - install-golangci-lint
+      - *restore_go_cache
+      - npm-dependencies
+      - run:
+          name: Checking code style
+          command: make check-style
+      - run: go mod tidy -v
+      - run:
+          name: Checking diff of go mod files
+          command: |
+            git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
+      - run: make apply
+      - run:
+          name: Checking diff of generated manifest files
+          command: |
+            git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
+      - *save_go_cache
+
+  test:
+    executor:
+      name: default
+    steps:
+      - checkout
+      - *restore_go_cache
+      - run: make test
+      - *save_go_cache
+
+  build:
+    executor:
+      name: default
+    steps:
+      - checkout
+      - run:
+          name: Building Plugin Bundle
+          command: make dist
+      - run:
+          name: Generating Release Notes
+          command: |
+            printf "Supported Mattermost Server Versions: **$(cat plugin.json | jq .min_server_version -r)+** \n## Enhancements\n\n## Fixes\n"  >> dist/release-notes.md
+            if [[ $(git tag -l | wc -l) -eq 1 ]]; then
+              git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git rev-list --max-parents=0 HEAD) HEAD >> dist/release-notes.md
+            else
+              git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git describe --tags --abbrev=0 $(git describe --tags --abbrev=0)^)..HEAD >> dist/release-notes.md
+            fi
+      - persist_to_workspace:
+          root: dist
+          paths:
+            - "*.tar.gz"
+            - "release-notes.md"
+      - store_artifacts:
+          path: dist
+
+  deploy-ci:
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      - attach_workspace:
+          at: dist
+      - run: 'mv dist/*.tar.gz dist/$CIRCLE_PROJECT_REPONAME-ci.tar.gz'
+      - deploy:
+          filename: "dist/*.tar.gz"
+          bucket: "s3://mattermost-plugins-ci/ci/"
+
+  deploy-release:
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      - attach_workspace:
+          at: dist
+      - run: 'mv dist/*.tar.gz dist/$CIRCLE_PROJECT_REPONAME-latest.tar.gz'
+      - run: 'cp dist/$CIRCLE_PROJECT_REPONAME-latest.tar.gz dist/$CIRCLE_PROJECT_REPONAME-$CIRCLE_TAG.tar.gz'
+      - deploy:
+          filename: "dist/$CIRCLE_PROJECT_REPONAME-latest.tar.gz"
+          bucket: "s3://mattermost-plugins-ci/release/"
+      - deploy:
+          filename: "dist/$CIRCLE_PROJECT_REPONAME-$CIRCLE_TAG.tar.gz"
+          bucket: "s3://mattermost-plugins-ci/release/"
+
+  deploy-release-github:
+    docker:
+      - image: cibuilds/github:0.13
+    steps:
+      - attach_workspace:
+          at: dist
+      - run:
+          name: "Publish Release on Github"
+          command: |
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -b "$(< ./dist/release-notes.md)" -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -delete ${CIRCLE_TAG} dist/*.tar.gz
+
   test-MySQL56-Postgres96:
     docker:
       - image: circleci/golang:1.14.1-node
@@ -411,85 +539,84 @@ workflows:
   version: 2
   ci:
     jobs:
-      - plugin-ci/lint:
+      - lint:
           filters:
             tags:
               only: /^v.*/
-      - test-MySQL56-Postgres96:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL57-Postgres10:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL8-Postgres11:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL-Postgres-latest:
-          filters:
-            tags:
-              only: /^v.*/
-      - e2e-cypress-tests-cloud:
-          context: matterbuild-docker
-          filters:
-            tags:
-              only: /^v.*/
-      - e2e-cypress-tests-master:
-          filters:
-            # remove this branches statement to include e2e tests on master for a PR branch
-            branches:
-              ignore: /.*/
-      - e2e-cypress-tests-531:
-          filters:
-            tags:
-              only: /^v.*/
-      - plugin-ci/build:
-          context: mattermost-plugin-incident-response-production
-          filters:
-            tags:
-              only: /^v.*/
-      - plugin-ci/deploy-ci:
-          filters:
-            branches:
-              only: master
-          context: plugin-ci
-          requires:
-            - plugin-ci/lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - plugin-ci/build
-      - plugin-ci/deploy-release:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          context: plugin-ci
-          requires:
-            - plugin-ci/lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - plugin-ci/build
-      - plugin-ci/deploy-release-github:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          context: matterbuild-github-token
-          requires:
-            - plugin-ci/lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - plugin-ci/build
+#      - test-MySQL56-Postgres96:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL57-Postgres10:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL8-Postgres11:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL-Postgres-latest:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - e2e-cypress-tests-cloud:
+#          context: matterbuild-docker
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - e2e-cypress-tests-master:
+#          filters:
+#            # remove this branches statement to include e2e tests on master for a PR branch
+#            branches:
+#              ignore: /.*/
+#      - e2e-cypress-tests-531:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - build:
+#          context: mattermost-plugin-incident-response-production
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - deploy-ci:
+#          filters:
+#            branches:
+#              only: master
+#          context: plugin-ci
+#          requires:
+#            - lint
+#            - test-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - e2e-cypress-tests-531
+#            - build
+#      - deploy-release:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#          requires:
+#            - lint
+#            - test-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - e2e-cypress-tests-531
+#            - build
+#      - deploy-release-github:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#          context: matterbuild-github-token
+#          requires:
+#            - lint
+#            - test-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - e2e-cypress-tests-531
+#            - build
