@@ -41,7 +41,7 @@ commands:
     description: "Get JavaScript dependencies"
     steps:
       - run:
-          name: Install npm 7.9.0 and node 15
+          name: Install npm 7 and node 15
           command: |
             set +e
             wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash &&  sudo /opt/circleci/.nvm/nvm.sh
@@ -194,6 +194,9 @@ jobs:
       - run:
           name: Checking code style
           command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
             node -v
             npm -v
             make check-style
@@ -227,7 +230,11 @@ jobs:
       - run:
           name: Building Plugin Bundle
           command: |
-            cd webapp && npm -v && node -v && cd ..
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            npm -v
+            node -v
             make dist
       - run:
           name: Generating Release Notes
@@ -600,11 +607,11 @@ workflows:
 #          filters:
 #            tags:
 #              only: /^v.*/
-#      - build:
-#          context: mattermost-plugin-incident-response-production
-#          filters:
-#            tags:
-#              only: /^v.*/
+      - build:
+          context: mattermost-plugin-incident-response-production
+          filters:
+            tags:
+              only: /^v.*/
 #      - deploy-ci:
 #          filters:
 #            branches:
