@@ -50,7 +50,9 @@ func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus i
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpStatus)
+
 	if _, err = w.Write(jsonBytes); err != nil {
 		HandleError(w, err)
 		return
@@ -65,6 +67,7 @@ func HandleError(w http.ResponseWriter, internalErr error) {
 // HandleErrorWithCode logs the internal error and sends the public facing error
 // message as JSON in a response with the provided code.
 func HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
 	details := ""
