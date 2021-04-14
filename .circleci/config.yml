@@ -41,8 +41,12 @@ commands:
     description: "Get JavaScript dependencies"
     steps:
       - run:
-          name: Install npm 7.9.0
-          command: sudo npm -g install npm@7.9.0
+          name: Install npm 7.9.0 and node 15
+          command: |
+            set +e
+            export NVM_DIR="/opt/circleci/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install v15.14
       - restore_cache:
           name: Restore npm cache
           key: v2-npm-{{ checksum "./webapp/package.json" }}-{{ arch }}
@@ -560,79 +564,79 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - test-MySQL56-Postgres96:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL57-Postgres10:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL8-Postgres11:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL-Postgres-latest:
-          filters:
-            tags:
-              only: /^v.*/
-      - e2e-cypress-tests-cloud:
-          context: matterbuild-docker
-          filters:
-            tags:
-              only: /^v.*/
-      - e2e-cypress-tests-master:
-          filters:
-            # remove this branches statement to include e2e tests on master for a PR branch
-            branches:
-              ignore: /.*/
-      - e2e-cypress-tests-531:
-          filters:
-            tags:
-              only: /^v.*/
-      - build:
-          context: mattermost-plugin-incident-response-production
-          filters:
-            tags:
-              only: /^v.*/
-      - deploy-ci:
-          filters:
-            branches:
-              only: master
-          requires:
-            - lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - build
-      - deploy-release:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          requires:
-            - lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - build
-      - deploy-release-github:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          context: matterbuild-github-token
-          requires:
-            - lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
-            - test-MySQL8-Postgres11
-            - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - build
+#      - test-MySQL56-Postgres96:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL57-Postgres10:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL8-Postgres11:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - test-MySQL-Postgres-latest:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - e2e-cypress-tests-cloud:
+#          context: matterbuild-docker
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - e2e-cypress-tests-master:
+#          filters:
+#            # remove this branches statement to include e2e tests on master for a PR branch
+#            branches:
+#              ignore: /.*/
+#      - e2e-cypress-tests-531:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - build:
+#          context: mattermost-plugin-incident-response-production
+#          filters:
+#            tags:
+#              only: /^v.*/
+#      - deploy-ci:
+#          filters:
+#            branches:
+#              only: master
+#          requires:
+#            - lint
+#            - test-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - e2e-cypress-tests-531
+#            - build
+#      - deploy-release:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#          requires:
+#            - lint
+#            - test-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - e2e-cypress-tests-531
+#            - build
+#      - deploy-release-github:
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#          context: matterbuild-github-token
+#          requires:
+#            - lint
+#            - test-MySQL56-Postgres96
+#            - test-MySQL57-Postgres10
+#            - test-MySQL8-Postgres11
+#            - test-MySQL-Postgres-latest
+#            - e2e-cypress-tests-531
+#            - build
