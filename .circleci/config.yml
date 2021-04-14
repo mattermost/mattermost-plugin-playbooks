@@ -194,9 +194,9 @@ jobs:
       - run:
           name: Checking code style
           command: |
-          node -v
-          npm -v
-          make check-style
+            node -v
+            npm -v
+            make check-style
       - run: go mod tidy -v
       - run:
           name: Checking diff of go mod files
