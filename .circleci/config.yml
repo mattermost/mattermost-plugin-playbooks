@@ -48,6 +48,9 @@ commands:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm install v15.14
+            sudo npm -g install npm@7.9.0
+            node -v
+            npm -v
       - restore_cache:
           name: Restore npm cache
           key: v2-npm-{{ checksum "./webapp/package.json" }}-{{ arch }}
