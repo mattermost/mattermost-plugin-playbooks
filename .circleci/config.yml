@@ -59,6 +59,18 @@ commands:
             cd webapp
             npx patch-package
 
+  deploy:
+    parameters:
+      bucket:
+        type: string
+      filename:
+        type: string
+    steps:
+      - aws-s3/copy:
+          from: << parameters.filename >>
+          to: << parameters.bucket >>
+          arguments: '--acl public-read --cache-control no-cache'
+
   install-golangci-lint:
     description: Install golangci-lint
     parameters:
@@ -75,7 +87,7 @@ commands:
     steps:
       - restore_cache:
           name: Restore golangci-lint cache
-          keys: ['<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>']
+          keys: [ '<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>' ]
       - run:
           name: Install golangci-lint
           command: |
@@ -86,7 +98,7 @@ commands:
       - save_cache:
           name: Save golangci-lint cache
           key: '<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>'
-          paths: [<< parameters.gobin >>/golangci-lint]
+          paths: [ << parameters.gobin >>/golangci-lint ]
 
   test-with-db:
     description: "Run tests with database"
@@ -578,7 +590,6 @@ workflows:
           filters:
             branches:
               only: master
-          context: default
           requires:
             - lint
             - test-MySQL56-Postgres96
