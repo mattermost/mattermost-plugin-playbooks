@@ -618,6 +618,8 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		})
 
 	incidentToModify.PreviousReminder = options.Reminder
+	incidentToModify.Description = options.Description
+
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
@@ -633,14 +635,6 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
-	}
-
-	// Update the incident's description (tl;dr summary/customer impact)
-	if options.Description != incidentToModify.Description {
-		incidentToModify.Description = options.Description
-		if err = s.store.UpdateIncident(incidentToModify); err != nil {
-			return errors.Wrap(err, "failed to update incident")
-		}
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)

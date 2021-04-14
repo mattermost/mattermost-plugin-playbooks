@@ -120,6 +120,10 @@ const findLastUpdated = (incident: Incident) => {
 };
 
 const PROFILE_SET_ALL = 'all';
+
+// sortAndInjectProfiles is an unexported function copied from mattermost-redux, it is called
+// whenever a function returns a populated list of UserProfiles. Since getProfileSetForChannel is
+// new, we have to sort and inject profiles before returning the list.
 function sortAndInjectProfiles(profiles: IDMappedObjects<UserProfile>, profileSet?: 'all' | Array<$ID<UserProfile>> | Set<$ID<UserProfile>>): Array<UserProfile> {
     let currentProfiles: UserProfile[] = [];
 

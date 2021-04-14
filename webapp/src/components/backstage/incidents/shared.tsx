@@ -8,24 +8,21 @@ import StatusBadge from 'src/components/backstage/incidents/status_badge';
 
 export const Container = styled.div`
     display: flex;
-    //border: 1px solid blue;
 `;
 
 export const Left = styled.div`
     flex: 2;
-    //border: 1px solid green;
 `;
 
 export const Right = styled.div`
     flex: 1;
     margin-left: 20px;
-    //border: 1px solid green;
 `;
 
-export const TabPageContainer = styled.div<{first?: boolean}>`
+export const TabPageContainer = styled.div`
     font-size: 12px;
     font-weight: normal;
-    margin-top: ${(props) => (props.first ? 0 : '20px')};
+    margin-top: 20px;
 `;
 
 export const Title = styled.div`
@@ -34,7 +31,7 @@ export const Title = styled.div`
 `;
 
 export const Content = styled.div`
-    background: white;
+    background: var(--center-channel-bg);
     margin: 8px 0 0 0;
     border: 1px solid grey;
     padding: 0 8px 4px;
@@ -49,8 +46,12 @@ export const Body = styled.p`
     margin: 8px;
 `;
 
+export const EmptyBody = styled.div`
+    margin-top: 8px;
+`;
+
 export const SecondaryButton = styled(TertiaryButton)`
-    background: white;
+    background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
     padding: 0 14px;
     height: 26px;

@@ -6,11 +6,16 @@ import styled from 'styled-components';
 
 import {Incident} from 'src/types/incident';
 import PostCard from 'src/components/rhs/post_card';
-import {Content, TabPageContainer, Title} from 'src/components/backstage/incidents/shared';
+import {
+    Content,
+    EmptyBody,
+    TabPageContainer,
+    Title,
+} from 'src/components/backstage/incidents/shared';
 import {usePost} from 'src/hooks';
 
-const Body = styled.div`
-    margin: 10px 0 0 0;
+const PostBody = styled.div`
+    margin-top: 10px;
 `;
 
 interface Props {
@@ -20,15 +25,20 @@ interface Props {
 const Updates = (props: Props) => {
     const statusPosts = props.incident.status_posts.sort((a, b) => b.create_at - a.create_at);
 
+    let updates: JSX.Element | JSX.Element[] = <EmptyBody>{'There are no updates available.'}</EmptyBody>;
+    if (statusPosts.length) {
+        updates = statusPosts.map((sp) => (
+            <PostContent
+                key={sp.id}
+                postId={sp.id}
+            />
+        ));
+    }
+
     return (
         <TabPageContainer>
             <Title>{'Updates'}</Title>
-            {statusPosts?.map((sp) => (
-                <PostContent
-                    key={sp.id}
-                    postId={sp.id}
-                />
-            ))}
+            {updates}
         </TabPageContainer>
     );
 };
@@ -42,9 +52,9 @@ const PostContent = (props: { postId: string }) => {
 
     return (
         <Content>
-            <Body>
+            <PostBody>
                 <PostCard post={post}/>
-            </Body>
+            </PostBody>
         </Content>
     );
 };

@@ -27,8 +27,7 @@ import IncidentBackstage
 import StatsView from './stats';
 
 const BackstageContainer = styled.div`
-    //background: var(--center-channel-bg);
-    background: #F7F9FA;
+    background: var(--center-channel-bg);
     height: 100%;
     overflow-y: auto;
 `;
