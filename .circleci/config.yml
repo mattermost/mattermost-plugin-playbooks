@@ -61,7 +61,7 @@ commands:
           name: Save npm cache
           key: v2-npm-{{ checksum "./webapp/package.json" }}-{{ arch }}
           paths:
-            - node_modules
+            - ./webapp/node_modules
       - run:
           name: "Patch dependencies"
           command: |
