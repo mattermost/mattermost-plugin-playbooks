@@ -9,7 +9,6 @@ import RetrospectiveSummary
     from 'src/components/backstage/incidents/incident_backstage/overview/retrospective_summary';
 import {Incident} from 'src/types/incident';
 import Updates from 'src/components/backstage/incidents/incident_backstage/overview/updates';
-import About from 'src/components/backstage/incidents/incident_backstage/overview/about';
 import Participants from 'src/components/backstage/incidents/incident_backstage/overview/participants';
 import {Container, Left, Right} from 'src/components/backstage/incidents/shared';
 

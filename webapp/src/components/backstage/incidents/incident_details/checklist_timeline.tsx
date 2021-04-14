@@ -2,32 +2,31 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect, useRef} from 'react';
+import {useSelector} from 'react-redux';
 import moment from 'moment';
 import Chart, {ChartOptions, ChartTooltipItem, ChartTooltipModel, Point} from 'chart.js';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
-import {useSelector} from 'react-redux';
-
 import {changeOpacity} from 'mattermost-redux/utils/theme_utils';
 
 import {ChecklistItem, ChecklistItemState, Checklist} from 'src/types/playbook';
 import {Incident} from 'src/types/incident';
-
 import EmptyChecklistImage from 'src/components/assets/empty_checklist';
 
 interface Props {
     incident: Incident;
 }
 
-interface ChartData{
+interface ChartData {
     yLabels: string[];
     checklistItems: ChecklistItem[];
     datasets: any[];
 }
 
 const ChecklistTimeline: FC<Props> = (props: Props) => {
-    const theme = useSelector<GlobalState, Record<string, string>>(getTheme);
+    const rawTheme = useSelector<GlobalState, Record<string, string | undefined>>(getTheme);
+    const theme = rawTheme as Record<string, string>;
     const canvas = useRef<HTMLCanvasElement>(null);
 
     const [chart, setChart] = useState<Chart | null>(null);
@@ -50,30 +49,32 @@ const ChecklistTimeline: FC<Props> = (props: Props) => {
 
     const numItems = props.incident.checklists?.reduce((accum, current) => accum + current.items?.length, 0);
     if (numItems === 0) {
-        content = (<div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
-            <div>
+        content = (
+            <div className='d-flex align-items-center justify-content-center mt-16 mb-14'>
                 <div>
-                    <EmptyChecklistImage theme={theme}/>
-                </div>
-                <div className='chart-label mt-7'>
-                    {'The incident has no checklist items yet'}
+                    <div>
+                        <EmptyChecklistImage theme={theme}/>
+                    </div>
+                    <div className='chart-label mt-7'>
+                        {'The incident has no checklist items yet'}
+                    </div>
                 </div>
             </div>
-        </div>
         );
     } else {
         // Calculate height based on amount of items using ratio of 40px per item.
         const chartHeight = Math.max(400, chartData.yLabels.length * 40);
-        content = (<>
-            <div className='chart-title'>
-                {'Time occurrence of each checklist item'}
-            </div>
-            <div style={{height: `${chartHeight}px`}}>
-                <canvas
-                    ref={canvas}
-                />
-            </div>
-        </>
+        content = (
+            <>
+                <div className='chart-title'>
+                    {'Time occurrence of each checklist item'}
+                </div>
+                <div style={{height: `${chartHeight}px`}}>
+                    <canvas
+                        ref={canvas}
+                    />
+                </div>
+            </>
         );
     }
 
