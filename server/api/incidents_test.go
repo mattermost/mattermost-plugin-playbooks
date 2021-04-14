@@ -1493,8 +1493,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("update incident status, description empty", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
