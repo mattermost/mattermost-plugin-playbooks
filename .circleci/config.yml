@@ -23,15 +23,6 @@ aliases:
       paths:
         - "/go/pkg/mod"
         - "./webapp/node_modules"
-  - &restore_test_cache
-    restore_cache:
-      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-  - &save_test_cache
-    save_cache:
-      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-      paths:
-        - "/go/pkg/mod"
-        - "./webapp/node_modules"
   - &restore_cypress_cache
     restore_cache:
       key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
@@ -111,11 +102,11 @@ commands:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
-      - *restore_test_cache
+      - *restore_go_cache
       - run:
           name: Testing
           command: make test
-      - *save_test_cache
+      - *save_go_cache
 
   run-e2e-tests:
     description: "Run the e2e tests with a server"
@@ -203,6 +194,7 @@ jobs:
       name: default
     steps:
       - checkout
+      - npm-dependencies
       - run:
           name: Building Plugin Bundle
           command: make dist
@@ -547,80 +539,80 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-#      - test-MySQL56-Postgres96:
-#          filters:
-#            tags:
-#              only: /^v.*/
-#      - test-MySQL57-Postgres10:
-#          filters:
-#            tags:
-#              only: /^v.*/
-#      - test-MySQL8-Postgres11:
-#          filters:
-#            tags:
-#              only: /^v.*/
-#      - test-MySQL-Postgres-latest:
-#          filters:
-#            tags:
-#              only: /^v.*/
-#      - e2e-cypress-tests-cloud:
-#          context: matterbuild-docker
-#          filters:
-#            tags:
-#              only: /^v.*/
-#      - e2e-cypress-tests-master:
-#          filters:
-#            # remove this branches statement to include e2e tests on master for a PR branch
-#            branches:
-#              ignore: /.*/
-#      - e2e-cypress-tests-531:
-#          filters:
-#            tags:
-#              only: /^v.*/
-#      - build:
-#          context: mattermost-plugin-incident-response-production
-#          filters:
-#            tags:
-#              only: /^v.*/
-#      - deploy-ci:
-#          filters:
-#            branches:
-#              only: master
-#          context: plugin-ci
-#          requires:
-#            - lint
-#            - test-MySQL56-Postgres96
-#            - test-MySQL57-Postgres10
-#            - test-MySQL8-Postgres11
-#            - test-MySQL-Postgres-latest
-#            - e2e-cypress-tests-531
-#            - build
-#      - deploy-release:
-#          filters:
-#            tags:
-#              only: /^v.*/
-#            branches:
-#              ignore: /.*/
-#          requires:
-#            - lint
-#            - test-MySQL56-Postgres96
-#            - test-MySQL57-Postgres10
-#            - test-MySQL8-Postgres11
-#            - test-MySQL-Postgres-latest
-#            - e2e-cypress-tests-531
-#            - build
-#      - deploy-release-github:
-#          filters:
-#            tags:
-#              only: /^v.*/
-#            branches:
-#              ignore: /.*/
-#          context: matterbuild-github-token
-#          requires:
-#            - lint
-#            - test-MySQL56-Postgres96
-#            - test-MySQL57-Postgres10
-#            - test-MySQL8-Postgres11
-#            - test-MySQL-Postgres-latest
-#            - e2e-cypress-tests-531
-#            - build
+      - test-MySQL56-Postgres96:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL57-Postgres10:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL8-Postgres11:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-MySQL-Postgres-latest:
+          filters:
+            tags:
+              only: /^v.*/
+      - e2e-cypress-tests-cloud:
+          context: matterbuild-docker
+          filters:
+            tags:
+              only: /^v.*/
+      - e2e-cypress-tests-master:
+          filters:
+            # remove this branches statement to include e2e tests on master for a PR branch
+            branches:
+              ignore: /.*/
+      - e2e-cypress-tests-531:
+          filters:
+            tags:
+              only: /^v.*/
+      - build:
+          context: mattermost-plugin-incident-response-production
+          filters:
+            tags:
+              only: /^v.*/
+      - deploy-ci:
+          filters:
+            branches:
+              only: master
+          context: plugin-ci
+          requires:
+            - lint
+            - test-MySQL56-Postgres96
+            - test-MySQL57-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
+            - e2e-cypress-tests-531
+            - build
+      - deploy-release:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+          requires:
+            - lint
+            - test-MySQL56-Postgres96
+            - test-MySQL57-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
+            - e2e-cypress-tests-531
+            - build
+      - deploy-release-github:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+          context: matterbuild-github-token
+          requires:
+            - lint
+            - test-MySQL56-Postgres96
+            - test-MySQL57-Postgres10
+            - test-MySQL8-Postgres11
+            - test-MySQL-Postgres-latest
+            - e2e-cypress-tests-531
+            - build
