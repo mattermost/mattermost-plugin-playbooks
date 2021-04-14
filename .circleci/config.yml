@@ -56,6 +56,8 @@ commands:
       - run:
           name: Getting JavaScript dependencies
           command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             node -v
             npm -v
             cd webapp
