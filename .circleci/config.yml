@@ -302,7 +302,7 @@ jobs:
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
     executor:
-      name: plugin-ci/default
+      name: default
     steps:
       - test-with-db
 
@@ -578,7 +578,6 @@ workflows:
           filters:
             branches:
               only: master
-          context: plugin-ci
           requires:
             - lint
             - test-MySQL56-Postgres96
