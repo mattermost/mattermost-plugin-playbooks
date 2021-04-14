@@ -51,7 +51,7 @@ commands:
           command: sudo npm -g install npm@7.9.0
       - restore_cache:
           name: Restore npm cache
-          key: v2-npm-{{ checksum "~/webapp/package.json" }}-{{ arch }}
+          key: v2-npm-{{ checksum "./webapp/package.json" }}-{{ arch }}
       - run:
           name: Getting JavaScript dependencies
           command: |
@@ -59,7 +59,7 @@ commands:
             NODE_ENV=development npm install --ignore-scripts
       - save_cache:
           name: Save npm cache
-          key: v2-npm-{{ checksum "~/webapp/package.json" }}-{{ arch }}
+          key: v2-npm-{{ checksum "./webapp/package.json" }}-{{ arch }}
           paths:
             - node_modules
       - run:
