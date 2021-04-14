@@ -4,6 +4,11 @@ orbs:
   plugin-ci: mattermost/plugin-ci@0.1
   codecov: codecov/codecov@1.1.1
 
+executors:
+  default:
+    docker:
+      - image: circleci/golang:1.16.0-node
+
 aliases:
   - &restore_deploy_cache
     restore_cache:
@@ -33,22 +38,30 @@ aliases:
         - ./tests-e2e/node_modules
         - /home/circleci/.cache/Cypress
 
-jobs:
-  test-MySQL56-Postgres96:
-    docker:
-      - image: circleci/golang:1.14.1-node
-      - image: circleci/postgres:9.6-alpine
-        environment:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:5.6.49
-        environment:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
-    executor:
-      name: plugin-ci/default
+commands:
+  npm-dependencies:
+    description: "Get JavaScript dependencies"
+    steps:
+      - run:
+          name: Install npm 7.9.0
+          command: sudo npm -g install npm@7.9.0
+      - restore_cache:
+          name: Restore npm cache
+          key: v2-npm-{{ checksum "package.json" }}-{{ arch }}
+      - run:
+          name: Getting JavaScript dependencies
+          command: NODE_ENV=development npm install --ignore-scripts
+      - save_cache:
+          name: Save npm cache
+          key: v2-npm-{{ checksum "package.json" }}-{{ arch }}
+          paths:
+            - node_modules
+      - run:
+          name: "Patch dependencies"
+          command: npx patch-package
+
+  test-with-db:
+    description: "Run tests with database"
     steps:
       - run:
           name: Waiting for Postgres and MySQL to be ready
@@ -67,6 +80,72 @@ jobs:
           command: make test
       - *save_test_cache
 
+  run-e2e-tests:
+    description: "Run the e2e tests with a server"
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Wait for Inbucket
+          command: |
+            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
+      - run:
+          name: Wait for Elasticsearch
+          command: |
+            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
+      - checkout
+      - run:
+          name: Set and restore Postgres DB
+          command: |
+            whoami
+            sudo apt-get update
+            sudo apt-get install libxss1
+            sudo apt-get install postgresql-client
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
+            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
+      - run:
+          name: Upload license
+          command: |
+            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
+            TOKEN=${TOKEN//$'\r'/}
+            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+            if test $STATUSCODE -ne 200; then exit 1; fi
+      - *restore_deploy_cache
+      - run:
+          name: Install Incident Collaboration plugin
+          command: make deploy
+      - *save_deploy_cache
+      - *restore_cypress_cache
+      - run:
+          name: Run Cypress Tests
+          no_output_timeout: 30m
+          command: |
+            export FAILURE_MESSAGE="At least one test has failed."
+            export RESULTS_OUTPUT="results-output.txt"
+            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+      - *save_cypress_cache
+      - store_artifacts:
+          path: tests-e2e/cypress/videos
+
+jobs:
+  test-MySQL56-Postgres96:
+    docker:
+      - image: circleci/golang:1.14.1-node
+      - image: circleci/postgres:9.6-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mysql:5.6.49
+        environment:
+          MYSQL_ROOT_PASSWORD: mostest
+          MYSQL_DATABASE: mattermost_test
+          MYSQL_USER: mmuser
+          MYSQL_PASSWORD: mostest
+    executor:
+      name: default
+    steps:
+      - test-with-db
+
   test-MySQL57-Postgres10:
     docker:
       - image: circleci/golang:1.14.1-node
@@ -81,24 +160,9 @@ jobs:
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
     executor:
-      name: plugin-ci/default
+      name: default
     steps:
-      - run:
-          name: Waiting for Postgres and MySQL to be ready
-          command: |
-            for i in `seq 1 20`;
-            do
-              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres and MySQL && exit 1
-      - checkout
-      - *restore_test_cache
-      - run:
-          name: Testing
-          command: make test
-      - *save_test_cache
+      - test-with-db
 
   test-MySQL8-Postgres11:
     docker:
@@ -116,22 +180,7 @@ jobs:
     executor:
       name: plugin-ci/default
     steps:
-      - run:
-          name: Waiting for Postgres and MySQL to be ready
-          command: |
-            for i in `seq 1 20`;
-            do
-              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres and MySQL && exit 1
-      - checkout
-      - *restore_test_cache
-      - run:
-          name: Testing
-          command: make test
-      - *save_test_cache
+      - test-with-db
 
   test-MySQL-Postgres-latest:
     docker:
@@ -148,24 +197,9 @@ jobs:
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
     executor:
-      name: plugin-ci/default
+      name: default
     steps:
-      - run:
-          name: Waiting for Postgres and MySQL to be ready
-          command: |
-            for i in `seq 1 20`;
-            do
-              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres and MySQL && exit 1
-      - checkout
-      - *restore_test_cache
-      - run:
-          name: Testing
-          command: make test
-      - *save_test_cache
+      - test-with-db
 
   e2e-cypress-tests-cloud:
     resource_class: large
@@ -236,49 +270,7 @@ jobs:
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
     steps:
-      - setup_remote_docker
-      - run:
-          name: Wait for Inbucket
-          command: |
-            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
-      - run:
-          name: Wait for Elasticsearch
-          command: |
-            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - checkout
-      - run:
-          name: Set and restore Postgres DB
-          command: |
-            whoami
-            sudo apt-get update
-            sudo apt-get install libxss1
-            sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - run:
-          name: Upload license
-          command: |
-            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
-            TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-            if test $STATUSCODE -ne 200; then exit 1; fi
-      - *restore_deploy_cache
-      - run:
-          name: Install Incident Collaboration plugin
-          command: make deploy
-      - *save_deploy_cache
-      - *restore_cypress_cache
-      - run:
-          name: Run Cypress Tests
-          no_output_timeout: 30m
-          command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - *save_cypress_cache
-      - store_artifacts:
-          path: tests-e2e/cypress/videos
+      - run-e2e-tests
 
   e2e-cypress-tests-master:
     resource_class: large
@@ -349,49 +341,7 @@ jobs:
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
     steps:
-      - setup_remote_docker
-      - run:
-          name: Wait for Inbucket
-          command: |
-            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
-      - run:
-          name: Wait for Elasticsearch
-          command: |
-            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - checkout
-      - run:
-          name: Set and restore Postgres DB
-          command: |
-            whoami
-            sudo apt-get update
-            sudo apt-get install libxss1
-            sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - run:
-          name: Upload license
-          command: |
-            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
-            TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-            if test $STATUSCODE -ne 200; then exit 1; fi
-      - *restore_deploy_cache
-      - run:
-          name: Install Incident Collaboration plugin
-          command: make deploy
-      - *save_deploy_cache
-      - *restore_cypress_cache
-      - run:
-          name: Run Cypress Tests
-          no_output_timeout: 30m
-          command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - *save_cypress_cache
-      - store_artifacts:
-          path: tests-e2e/cypress/videos
+      - run-e2e-tests
 
   e2e-cypress-tests-531:
     resource_class: large
@@ -455,49 +405,7 @@ jobs:
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
     steps:
-      - setup_remote_docker
-      - run:
-          name: Wait for Inbucket
-          command: |
-            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
-      - run:
-          name: Wait for Elasticsearch
-          command: |
-            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - checkout
-      - run:
-          name: Set and restore Postgres DB
-          command: |
-            whoami
-            sudo apt-get update
-            sudo apt-get install libxss1
-            sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - run:
-          name: Upload license
-          command: |
-            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
-            TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-            if test $STATUSCODE -ne 200; then exit 1; fi
-      - *restore_deploy_cache
-      - run:
-          name: Install Incident Collaboration plugin
-          command: make deploy
-      - *save_deploy_cache
-      - *restore_cypress_cache
-      - run:
-          name: Run Cypress Tests
-          no_output_timeout: 30m
-          command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - *save_cypress_cache
-      - store_artifacts:
-          path: tests-e2e/cypress/videos
+      - run-e2e-tests
 
 workflows:
   version: 2
