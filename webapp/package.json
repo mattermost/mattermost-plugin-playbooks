@@ -99,9 +99,6 @@
     "styled-components": "5.1.1",
     "typescript": "3.9.3"
   },
-  "optionalDependencies": {
-    "fsevents": "^2.3.2"
-  },
   "jest": {
     "snapshotSerializers": [
       "<rootDir>/node_modules/enzyme-to-json/serializer"
