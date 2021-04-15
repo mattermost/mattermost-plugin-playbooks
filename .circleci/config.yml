@@ -181,6 +181,7 @@ commands:
           name: Run Cypress Tests
           no_output_timeout: 30m
           command: |
+            npm -v && node -v
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
             cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
