@@ -89,6 +89,7 @@ Cypress.Commands.add('openBackstage', () => {
     cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('exist').within(() => {
         // # Wait until the channel loads enough to show the post textbox.
         cy.get('#post-create').should('exist');
+        cy.wait(2000);
 
         // # Click hamburger main menu
         cy.get('#sidebarHeaderDropdownButton').click();
@@ -122,7 +123,7 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
         cy.get('input').click().type(playbookName.toLowerCase());
-        cy.get('#suggestionList').contains(playbookName).click({ force: true });
+        cy.get('#suggestionList').contains(playbookName).click({force: true});
     });
 });
 
