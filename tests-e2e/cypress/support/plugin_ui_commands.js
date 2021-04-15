@@ -87,6 +87,9 @@ Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) =
 
 Cypress.Commands.add('openBackstage', () => {
     cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('exist').within(() => {
+        // # Wait until the channel loads enough to show the post textbox.
+        cy.get('#post-create').should('exist');
+
         // # Click hamburger main menu
         cy.get('#sidebarHeaderDropdownButton').click();
 
