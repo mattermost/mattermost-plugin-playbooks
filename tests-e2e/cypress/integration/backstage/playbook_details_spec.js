@@ -87,7 +87,7 @@ describe('backstage playbook details', () => {
         });
     });
 
-    describe('preferences', () => {
+    describe.only('preferences', () => {
         const playbookName = 'Playbook (' + Date.now() + ')';
         let teamId;
         let playbookId;
@@ -122,7 +122,7 @@ describe('backstage playbook details', () => {
             });
         });
 
-        it('shows "Select a channel" when no broadcast channel configured', () => {
+        it.only('shows "Select a channel" when no broadcast channel configured', () => {
             // # Visit the selected playbook
             cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId);
 
