@@ -149,15 +149,15 @@ commands:
             until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
       - checkout
       - run:
+          name: Setup test data
+          command: make test-data
+      - run:
           name: Upload license
           command: |
             TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
             TOKEN=${TOKEN//$'\r'/}
             STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
             if test $STATUSCODE -ne 200; then exit 1; fi
-      - run:
-          name: Setup test data
-          command: make test-data
       - npm-dependencies
       - *restore_deploy_cache
       - run:
