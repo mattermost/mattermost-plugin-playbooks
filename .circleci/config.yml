@@ -481,7 +481,7 @@ jobs:
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
-        command: apk update && apk add make && ls -al && make test-data
+        command: ["apk", "update", "&&", "apk", "add", "make", "&&", "ls", "-al", "&&", "make", "test-data"]
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
