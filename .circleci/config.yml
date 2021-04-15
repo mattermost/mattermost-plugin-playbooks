@@ -481,7 +481,9 @@ jobs:
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
-        command: make test-data
+        command: |
+          sudo apt-get update && sudo apt-get install make
+          make test-data
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
