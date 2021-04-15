@@ -63,7 +63,7 @@ describe('backstage', () => {
 
     it('switches to incidents list view via header button', () => {
         // # Open backstage
-        cy.openBackstage();
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
