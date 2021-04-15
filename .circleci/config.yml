@@ -150,7 +150,10 @@ commands:
       - checkout
       - run:
           name: Setup test data
-          command: make test-data
+          command: |
+            pwd
+            ls -al
+            make test-data
       - run:
           name: Upload license
           command: |
