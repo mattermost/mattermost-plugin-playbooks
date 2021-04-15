@@ -481,9 +481,9 @@ jobs:
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
-        command:
-          - ["apk", "update"]
-          - ["apk", "add", "make"]
+        command: |
+          apk update
+          apk add make
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
