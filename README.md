@@ -16,6 +16,12 @@ Although a valid Mattermost Enterprise Edition E20 license is required if using 
 
 On startup, the plugin checks for a valid Mattermost Enterprise Edition E20 license. If you're running an Enterprise Edition of Mattermost and don't already have a valid license, you can obtain a trial license from **System Console > Edition and License**. If you're running the Team Edition of Mattermost, including when you run the server directly from source, you may instead configure your server to enable both testing (`ServiceSettings.EnableTesting`) and developer mode (`ServiceSettings.EnableDeveloper`). These settings are not recommended in production environments. See [Contributing](#contributing) to learn more about how to set up your development environment.
 
+## Updating documentation
+
+When you've submitted a PR that requires a documentation update, please visit the documentation [here](https://docs.mattermost.com/administration/devops-command-center.html), select **Edit** in the top-right corner of the page, and add your update. You can read more about the process in the [docs repo README file](https://github.com/mattermost/docs).
+
+If you're uncertain whether your PR requires documentation, or you'd like some editorial feedback prior to submitting the docs PR, you can add the `Docs/Needed` label to your PR in this repo, and tag @justinegeffen.
+
 ## Generating test data
 
 To quickly test Mattermost Incident Collaboration, use the following test commands to create incidents populated with random data:
