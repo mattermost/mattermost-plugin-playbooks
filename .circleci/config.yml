@@ -578,13 +578,13 @@ workflows:
 #      - test-MySQL57-Postgres10
 #      - test-MySQL8-Postgres11
 #      - test-MySQL-Postgres-latest
-      - e2e-cypress-tests-cloud
+#      - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master
            # remove this filters statement to include e2e tests on master for a PR branch
 #          filters:
 #            branches:
 #              ignore: /.*/
-      - e2e-cypress-tests-533
+#      - e2e-cypress-tests-533
 #      - build:
 #          context: mattermost-plugin-incident-response-production
 #          filters:
