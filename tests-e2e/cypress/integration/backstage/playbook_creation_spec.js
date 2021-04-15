@@ -32,7 +32,7 @@ describe('playbook creation button', () => {
         cy.apiLogin('user-1');
 
         // # Navigate to the application
-        cy.visit('/');
+        cy.visit('/ad-1/');
     });
 
     it('opens playbook creation page with New Playbook button', () => {

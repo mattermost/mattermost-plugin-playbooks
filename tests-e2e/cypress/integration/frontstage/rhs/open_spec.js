@@ -41,7 +41,7 @@ describe('incident rhs', () => {
     describe('does not open', () => {
         it('when navigating to a non-incident channel', () => {
             // # Navigate to the application
-            cy.visit('/');
+            cy.visit('/ad-1/');
 
             // # Select a channel without an incident.
             cy.get('#sidebarItem_off-topic').click({force: true});
@@ -58,7 +58,7 @@ describe('incident rhs', () => {
 
         it('when navigating to an incident channel with the RHS already open', () => {
             // # Navigate to the application.
-            cy.visit('/');
+            cy.visit('/ad-1/');
 
             // # Select a channel without an incident.
             cy.get('#sidebarItem_off-topic').click({force: true});
@@ -177,7 +177,7 @@ describe('incident rhs', () => {
 
         it('for a new, ongoing incident channel opened from the lhs', () => {
             // # Navigate to the application.
-            cy.visit('/');
+            cy.visit('/ad-1/');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -207,7 +207,7 @@ describe('incident rhs', () => {
 
         it('for a new, resolved incident channel opened from the lhs', () => {
             // # Navigate to the application.
-            cy.visit('/');
+            cy.visit('/ad-1/');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -247,7 +247,7 @@ describe('incident rhs', () => {
 
         it('for a new, archived incident channel opened from the lhs', () => {
             // # Navigate to the application.
-            cy.visit('/');
+            cy.visit('/ad-1/');
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');

@@ -33,7 +33,7 @@ describe('incident creation dialog', () => {
         cy.apiLogin('user-1');
 
         // # Navigate to the application
-        cy.visit('/');
+        cy.visit('/ad-1/');
 
         // # Trigger the incident creation dialog
         cy.openIncidentDialogFromSlashCommand();

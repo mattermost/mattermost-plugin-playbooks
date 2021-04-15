@@ -39,7 +39,7 @@ describe('backstage', () => {
         cy.apiLogin('user-1');
 
         // # Navigate to the application
-        cy.visit('/');
+        cy.visit('/ad-1/');
     });
 
     it('opens playbooks list view by default', () => {
