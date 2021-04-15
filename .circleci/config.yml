@@ -187,7 +187,7 @@ commands:
             npm -v && node -v
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && ./node_modules/.bin/cypress run --spec 'cypress/integration/backstage/playbook_details_spec.js' |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
       - *save_cypress_cache
       - store_artifacts:
           path: tests-e2e/cypress/videos
