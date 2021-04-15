@@ -123,10 +123,16 @@ commands:
             done
             echo Failed waiting for Postgres and MySQL && exit 1
       - checkout
+      - npm-dependencies
       - *restore_go_cache
       - run:
           name: Testing
-          command: make test
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            node -v && npm -v
+            make test
       - *save_go_cache
 
   run-e2e-tests:
@@ -210,22 +216,6 @@ jobs:
           name: Checking diff of generated manifest files
           command: |
             git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
-      - *save_go_cache
-
-  test:
-    executor:
-      name: default
-    steps:
-      - checkout
-      - npm-dependencies
-      - *restore_go_cache
-      - run:
-          command: |
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            nvm use 15
-            node -v && npm -v
-            make test
       - *save_go_cache
 
   build:
