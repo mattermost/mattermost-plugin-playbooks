@@ -580,7 +580,7 @@ workflows:
       - test-MySQL-Postgres-latest
       - e2e-cypress-tests-533
       - e2e-cypress-tests-cloud
-      - e2e-cypress-tests-master
+      - e2e-cypress-tests-master:
            # remove/comment this filters statement to include e2e tests on master for a PR branch
           filters:
             branches:
