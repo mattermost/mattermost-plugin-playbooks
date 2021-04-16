@@ -505,7 +505,7 @@ jobs:
     steps:
       - run-e2e-tests
 
-  e2e-cypress-tests-533:
+  e2e-cypress-tests-534:
     resource_class: large
     docker:
       - image: circleci/golang:1.14.1-node-browsers
@@ -556,7 +556,7 @@ jobs:
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
     environment:
-      MM_DOCKER_IMAGE_TAG: 5.33.3
+      MM_DOCKER_IMAGE_TAG: 5.34.0
       TYPE: NONE
       PULL_REQUEST:
       BROWSER: chrome
@@ -578,7 +578,7 @@ workflows:
       - test-MySQL57-Postgres10
       - test-MySQL8-Postgres11
       - test-MySQL-Postgres-latest
-      - e2e-cypress-tests-533
+      - e2e-cypress-tests-534
       - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master:
            # remove/comment this filters statement to include e2e tests on master for a PR branch
@@ -600,7 +600,7 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-533
+            - e2e-cypress-tests-534
             - build
       - deploy-release:
           filters:
@@ -614,7 +614,7 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-533
+            - e2e-cypress-tests-534
             - build
       - deploy-release-github:
           filters:
@@ -629,5 +629,5 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-533
+            - e2e-cypress-tests-534
             - build
