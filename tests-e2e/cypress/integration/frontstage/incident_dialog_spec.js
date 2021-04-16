@@ -103,7 +103,7 @@ describe('incident creation dialog', () => {
 
         // * Verify the incident did not get created
         cy.apiGetAllIncidents(teamId).then((response) => {
-            const allIncidents = JSON.parse(response.body);
+            const allIncidents = response.body;
             const incident = allIncidents.items.find((inc) => inc.name === incidentName);
             expect(incident).to.be.undefined;
         });
