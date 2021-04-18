@@ -49,7 +49,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"DefaultCommanderID", "DefaultCommanderEnabled",
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
 			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
-			"WebhookOnArcgiveURL", "WebhookOnArchiveEnabled").
+			"WebhookOnArchiveURL", "WebhookOnArchiveEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
