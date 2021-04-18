@@ -52,6 +52,7 @@ type Incident struct {
 	DefaultCommanderID      string               `json:"default_commander_id"`
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
+	WebhookOnArchiveURL     string               `json:"webhook_on_archive_url"`
 }
 
 func (i *Incident) Clone() *Incident {
