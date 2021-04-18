@@ -422,6 +422,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		if pb.WebhookOnCreationEnabled {
 			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
 		}
+
+		if pb.WebhookOnArchiveEnabled {
+			newIncident.WebhookOnArchiveURL = pb.WebhookOnArchiveURL
+		}
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
