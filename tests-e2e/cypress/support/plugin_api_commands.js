@@ -173,7 +173,7 @@ Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
 // Verify incident is created
 Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDescription) => {
     cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
-        const returnedIncidents = JSON.parse(response.body);
+        const returnedIncidents = response.body;
         const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
         assert.equal(incident.end_at, 0);
@@ -192,7 +192,7 @@ Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDesc
 // Verify incident exists but is not active
 Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
     cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
-        const returnedIncidents = JSON.parse(response.body);
+        const returnedIncidents = response.body;
         const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
         assert.isDefined(incident);
         assert.notEqual(incident.end_at, 0);
@@ -283,7 +283,7 @@ Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
         method: 'GET'
     }).then((response) => {
         expect(response.status).to.equal(200);
-        const playbookResults = JSON.parse(response.body);
+        const playbookResults = response.body;
         const playbook = playbookResults.items.find((p) => p.title === playbookTitle);
         assert.isDefined(playbook);
     })

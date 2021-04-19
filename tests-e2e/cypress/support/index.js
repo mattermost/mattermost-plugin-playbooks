@@ -56,7 +56,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
     cy.apiLogin('sysadmin');
     cy.apiGetCurrentUser().then((user) => {
         cy.apiGetAllActiveIncidents(teamId).then((response) => {
-            const incidents = JSON.parse(response.body).items;
+            const incidents = response.body.items;
 
             incidents.forEach((incident) => {
                 cy.apiUpdateStatus({
@@ -71,7 +71,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
         });
 
         cy.apiGetAllReportedIncidents(teamId).then((response) => {
-            const incidents = JSON.parse(response.body).items;
+            const incidents = response.body.items;
 
             incidents.forEach((incident) => {
                 cy.apiUpdateStatus({
@@ -86,12 +86,12 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
         });
 
         cy.apiGetAllActiveIncidents(teamId).then((response) => {
-            const incidents = JSON.parse(response.body).items;
+            const incidents = response.body.items;
             expect(incidents.length).to.equal(0);
         });
 
         cy.apiGetAllReportedIncidents(teamId).then((response) => {
-            const incidents = JSON.parse(response.body).items;
+            const incidents = response.body.items;
             expect(incidents.length).to.equal(0);
         });
 
@@ -105,7 +105,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
 Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
     cy.apiGetCurrentUser().then((user) => {
         cy.apiGetAllActiveIncidents(teamId, user.id).then((response) => {
-            const incidents = JSON.parse(response.body).items;
+            const incidents = response.body.items;
 
             incidents.forEach((incident) => {
                 cy.apiUpdateStatus({
@@ -120,7 +120,7 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
         });
 
         cy.apiGetAllReportedIncidents(teamId, user.id).then((response) => {
-            const incidents = JSON.parse(response.body).items;
+            const incidents = response.body.items;
 
             incidents.forEach((incident) => {
                 cy.apiUpdateStatus({
