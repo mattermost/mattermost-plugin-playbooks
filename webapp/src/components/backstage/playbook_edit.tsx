@@ -32,17 +32,6 @@ import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
 import {BackstageSubheader, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledSelect} from './styles';
 
-const SidebarHeader = styled.div`
-    display: flex;
-    align-items: center;
-    height: 72px;
-    min-height: 72px;
-    padding: 0 24px;
-    font-weight: 600;
-    font-size: 16px;
-    border-bottom: 1px solid var(--center-channel-color-16);
-`;
-
 const Container = styled.div`
     display: flex;
     flex-direction: row;
@@ -72,22 +61,8 @@ const EditContent = styled.div`
     flex-grow: 1;
 `;
 
-const Sidebar = styled.div`
-    width: 400px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    border-left: 1px solid var(--center-channel-color-16);
-`;
-
 const SidebarBlock = styled.div`
     margin: 0 0 40px;
-`;
-
-const SidebarContent = styled.div`
-    background: var(--center-channel-bg);
-    flex-grow: 1;
-    padding: 24px;
 `;
 
 const NavbarPadding = styled.div`
@@ -298,6 +273,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleClearUsers = () => {
+        setPlaybook({
+            ...playbook,
+            member_ids: [],
+        });
+        setChangesMade(true);
+    };
+
     const handleAddUserInvited = (userId: string) => {
         if (!playbook.invited_user_ids.includes(userId)) {
             setPlaybook({
@@ -444,6 +427,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         >
                             {'Tasks'}
                             {'Preferences'}
+                            {'Permissions'}
                             {'Automation'}
                         </Tabs>
                     </TabsHeader>
@@ -534,6 +518,55 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 </SidebarBlock>
                             </TabContainer>
                             <TabContainer>
+                                <SidebarBlock>
+                                    <BackstageSubheader>
+                                        {'Channel access'}
+                                        <BackstageSubheaderDescription>
+                                            {'Determine the type of incident channel this playbook creates when starting an incident.'}
+                                        </BackstageSubheaderDescription>
+                                    </BackstageSubheader>
+                                    <RadioContainer>
+                                        <RadioLabel>
+                                            <RadioInput
+                                                type='radio'
+                                                name='public'
+                                                value={'public'}
+                                                checked={playbook.create_public_incident}
+                                                onChange={handlePublicChange}
+                                            />
+                                            {'Public'}
+                                        </RadioLabel>
+                                        <RadioLabel>
+                                            <RadioInput
+                                                type='radio'
+                                                name='public'
+                                                value={'private'}
+                                                checked={!playbook.create_public_incident}
+                                                onChange={handlePublicChange}
+                                            />
+                                            {'Private'}
+                                        </RadioLabel>
+                                    </RadioContainer>
+                                </SidebarBlock>
+                                <SidebarBlock>
+                                    <BackstageSubheader>
+                                        {'Playbook access'}
+                                        <BackstageSubheaderDescription>
+                                            {'Only people who you share with can create an incident from this playbook.'}
+                                        </BackstageSubheaderDescription>
+                                    </BackstageSubheader>
+                                    <SharePlaybook
+                                        currentUserId={currentUserId}
+                                        onAddUser={handleUsersInput}
+                                        onRemoveUser={handleRemoveUser}
+                                        searchProfiles={searchUsers}
+                                        getProfiles={getUsers}
+                                        playbook={playbook}
+                                        onClear={handleClearUsers}
+                                    />
+                                </SidebarBlock>
+                            </TabContainer>
+                            <TabContainer>
                                 <AutomationSettings
                                     searchProfiles={searchUsers}
                                     getProfiles={getUsers}
@@ -560,60 +593,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         </TabsContent>
                     </EditContent>
                 </EditView>
-                <Sidebar
-                    data-testid='playbook-sidebar'
-                >
-                    <SidebarHeader>
-                        {'Permissions'}
-                    </SidebarHeader>
-                    <SidebarContent>
-                        <SidebarBlock>
-                            <BackstageSubheader>
-                                {'Channel access'}
-                                <BackstageSubheaderDescription>
-                                    {'Determine the type of incident channel this playbook creates when starting an incident.'}
-                                </BackstageSubheaderDescription>
-                            </BackstageSubheader>
-                            <RadioContainer>
-                                <RadioLabel>
-                                    <RadioInput
-                                        type='radio'
-                                        name='public'
-                                        value={'public'}
-                                        checked={playbook.create_public_incident}
-                                        onChange={handlePublicChange}
-                                    />
-                                    {'Public'}
-                                </RadioLabel>
-                                <RadioLabel>
-                                    <RadioInput
-                                        type='radio'
-                                        name='public'
-                                        value={'private'}
-                                        checked={!playbook.create_public_incident}
-                                        onChange={handlePublicChange}
-                                    />
-                                    {'Private'}
-                                </RadioLabel>
-                            </RadioContainer>
-                        </SidebarBlock>
-                        <SidebarBlock>
-                            <BackstageSubheader>
-                                {'Playbook access'}
-                                <BackstageSubheaderDescription>
-                                    {'Only people who you share with can create an incident from this playbook.'}
-                                </BackstageSubheaderDescription>
-                            </BackstageSubheader>
-                            <SharePlaybook
-                                onAddUser={handleUsersInput}
-                                onRemoveUser={handleRemoveUser}
-                                searchProfiles={searchUsers}
-                                getProfiles={getUsers}
-                                playbook={playbook}
-                            />
-                        </SidebarBlock>
-                    </SidebarContent>
-                </Sidebar>
             </Container>
             <ConfirmModal
                 show={confirmOpen}
