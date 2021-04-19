@@ -16,25 +16,18 @@ aliases:
     save_cache:
       key: go-mod-v1-{{ checksum "go.sum" }}
       paths:
-        - "/go/pkg/mod"
-  - &restore_deploy_cache
-    restore_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-  - &save_deploy_cache
-    save_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-      paths:
-        - "/go/pkg/mod"
-        - "./webapp/node_modules"
+        - /go/pkg/mod
   - &restore_cypress_cache
     restore_cache:
-      key: cypress-cache-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
   - &save_cypress_cache
     save_cache:
-      key: cypress-cache-{{ checksum "./tests-e2e/package-lock.json" }}
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
       paths:
+        - /go/pkg/mod
+        - ./webapp/node_modules
         - ./tests-e2e/node_modules
-        - /home/circleci/.cache/Cypress
+        - /home/circleci/.cache
 
 commands:
   npm-dependencies:
@@ -165,8 +158,7 @@ commands:
             TOKEN=${TOKEN//$'\r'/}
             STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
             if test $STATUSCODE -ne 200; then exit 1; fi
-      - npm-dependencies
-      - *restore_deploy_cache
+      - *restore_cypress_cache
       - run:
           name: Install Incident Collaboration plugin
           command: |
@@ -175,8 +167,6 @@ commands:
             nvm use 15
             npm -v && node -v
             make deploy
-      - *save_deploy_cache
-      - *restore_cypress_cache
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
