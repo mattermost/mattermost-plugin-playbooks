@@ -180,7 +180,7 @@ commands:
             NODE_ENV=development npm install --ignore-scripts
             cd ../tests-e2e
             NODE_ENV=development npm install --ignore-scripts
-    - run:
+      - run:
           name: Install Incident Collaboration plugin
           command: |
             export NVM_DIR="$HOME/.nvm"
