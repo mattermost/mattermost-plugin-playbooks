@@ -603,15 +603,15 @@ workflows:
 #            branches:
 #              ignore: /.*/
       - build:
+          context: mattermost-plugin-incident-response-production
           filters:
             tags:
               only: /^v.*/
-          context: mattermost-plugin-incident-response-production
       - deploy-ci:
+          context: plugin-ci
           filters:
             branches:
               only: master
-          context: plugin-ci
           requires:
             - lint
             - test-MySQL56-Postgres96
@@ -636,12 +636,12 @@ workflows:
             - e2e-cypress-tests-cloud
             - build
       - deploy-release-github:
+          context: matterbuild-github-token
           filters:
             tags:
               only: /^v.*/
             branches:
               ignore: /.*/
-          context: matterbuild-github-token
           requires:
             - lint
             - test-MySQL56-Postgres96
