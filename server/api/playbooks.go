@@ -39,10 +39,8 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
-	// Only Playbook cerators OR Everyone on the team
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
 
-	// Can only interact with playbooks that are public or you are a member of
 	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
 	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
 

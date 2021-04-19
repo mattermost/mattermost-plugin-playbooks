@@ -2,20 +2,48 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useEffect, useState} from 'react';
-
-import {useDispatch} from 'react-redux';
-
 import {getProfiles, searchProfiles} from 'mattermost-redux/actions/users';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {useDispatch, useSelector} from 'react-redux';
 
+import styled from 'styled-components';
+
+import {actionSetGlobalSettings} from 'src/actions';
 import {fetchGlobalSettings, setGlobalSettings} from 'src/client';
-import {GlobalSettings} from 'src/types/settings';
-
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import {globalSettings} from 'src/selectors';
+import {GlobalSettings} from 'src/types/settings';
+import ConfirmModal from '../widgets/confirmation_modal';
+
+import Profile from '../profile/profile';
+
+import {useCanCreatePlaybooks} from 'src/hooks';
 
 import InviteUsersSelector from './automation/invite_users_selector';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from './automation/styles';
 import {Toggle} from './automation/toggle';
-import {BackstageHeader, BackstageHorizontalContentSquish} from './styles';
+import {BackstageHeader} from './styles';
+
+const SettingsContainer = styled.div`
+    margin: 0 auto;
+    max-width: 700px;
+`;
+
+const NoPermissionsTitle = styled.div`
+    font-weight: 600;
+    margin-bottom: 1rem;
+`;
+
+const NoPermissionsUsers = styled.div`
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+`;
+
+const NoPermissionsUserEntry = styled.div`
+    margin: 5px;
+`;
 
 interface PlaybookCreatorsProps {
     settings: GlobalSettings
@@ -24,7 +52,10 @@ interface PlaybookCreatorsProps {
 
 const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProps) => {
     const dispatch = useDispatch();
-    const [enabled, setEnabled] = useState<boolean>(props.settings.playbook_editors_user_ids !== []);
+    const [enabled, setEnabled] = useState<boolean>(Boolean(props.settings.playbook_editors_user_ids) && props.settings.playbook_editors_user_ids?.length !== 0);
+    const [confirmRemoveSelfOpen, setConfirmRemoveSelfOpen] = useState('');
+    const hasPermissions = useCanCreatePlaybooks();
+    const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
 
     const userMaybeAdded = (userid: string) => {
         if (!props.settings.playbook_editors_user_ids) {
@@ -50,6 +81,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
         if (!props.settings.playbook_editors_user_ids) {
             return;
         }
+
         const idx = props.settings.playbook_editors_user_ids.indexOf(userid);
         props.onChange({
             ...props.settings,
@@ -71,9 +103,31 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                 ...props.settings,
                 playbook_editors_user_ids: [],
             });
+        } else {
+            props.onChange({
+                ...props.settings,
+                playbook_editors_user_ids: [currentUserId],
+            });
         }
         setEnabled(!enabled);
     };
+
+    if (!hasPermissions) {
+        return (
+            <>
+                <NoPermissionsTitle>{'Playbook creation is currenty restricted to these users:'}</NoPermissionsTitle>
+                <NoPermissionsUsers>
+                    {props.settings.playbook_editors_user_ids?.map((userId) => (
+                        <NoPermissionsUserEntry
+                            key={userId}
+                        >
+                            <Profile userId={userId}/>
+                        </NoPermissionsUserEntry>
+                    ))}
+                </NoPermissionsUsers>
+            </>
+        );
+    }
 
     return (
         <AutomationHeader>
@@ -82,16 +136,35 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                     isChecked={enabled}
                     onChange={toggledEnable}
                 />
-                <div>{'Playbook Creators'}</div>
+                <div>{'Restrict who can create playbooks'}</div>
             </AutomationTitle>
             <SelectorWrapper>
-                <InviteUsersSelector
-                    isDisabled={!enabled}
-                    userIds={props.settings.playbook_editors_user_ids || []}
-                    onAddUser={userMaybeAdded}
-                    onRemoveUser={removeUser}
-                    searchProfiles={searchUsers}
-                    getProfiles={getUsers}
+                {enabled &&
+                    <InviteUsersSelector
+                        isDisabled={false}
+                        userIds={props.settings.playbook_editors_user_ids || []}
+                        onAddUser={userMaybeAdded}
+                        onRemoveUser={(userid: string) => {
+                            if (userid === currentUserId) {
+                                setConfirmRemoveSelfOpen(currentUserId);
+                                return;
+                            }
+                            removeUser(userid);
+                        }}
+                        searchProfiles={searchUsers}
+                        getProfiles={getUsers}
+                    />
+                }
+                <ConfirmModal
+                    show={confirmRemoveSelfOpen !== ''}
+                    title={'Confirm Remove Self'}
+                    message={'Are you sure you want to remove yourelf as a playbook creator? You will not be able to add yourself back.'}
+                    confirmButtonText={'RemoveSelf'}
+                    onConfirm={() => {
+                        removeUser(confirmRemoveSelfOpen);
+                        setConfirmRemoveSelfOpen('');
+                    }}
+                    onCancel={() => setConfirmRemoveSelfOpen('')}
                 />
             </SelectorWrapper>
         </AutomationHeader>
@@ -99,16 +172,17 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
 };
 
 const SettingsView: FC = () => {
-    const [settings, setSettings] = useState<GlobalSettings | null>(null);
+    const dispatch = useDispatch();
+    const settings = useSelector(globalSettings);
 
     const updateSettings = (newsettings: GlobalSettings) => {
-        setSettings(newsettings);
+        dispatch(actionSetGlobalSettings(newsettings));
         setGlobalSettings(newsettings);
     };
 
     useEffect(() => {
         const fetchSettings = async () => {
-            setSettings(await fetchGlobalSettings());
+            dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
         };
         fetchSettings();
     }, []);
@@ -118,7 +192,7 @@ const SettingsView: FC = () => {
     }
 
     return (
-        <BackstageHorizontalContentSquish>
+        <SettingsContainer>
             <BackstageHeader data-testid='titleStats'>
                 {'Settings'}
             </BackstageHeader>
@@ -126,7 +200,7 @@ const SettingsView: FC = () => {
                 settings={settings}
                 onChange={updateSettings}
             />
-        </BackstageHorizontalContentSquish>
+        </SettingsContainer>
     );
 };
 

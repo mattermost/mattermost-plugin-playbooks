@@ -34,6 +34,8 @@ import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
 
+import {useCanCreatePlaybooks} from 'src/hooks';
+
 import {Banner} from './styles';
 
 const DeleteBannerTimeout = 5000;
@@ -44,6 +46,7 @@ const PlaybookList: FC = () => {
     const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookNoChecklist | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
+    const canCreatePlaybooks = useCanCreatePlaybooks();
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
@@ -185,15 +188,20 @@ const PlaybookList: FC = () => {
     return (
         <div className='Playbook'>
             {deleteSuccessfulBanner}
-            <TemplateSelector
-                onSelect={(template: PresetTemplate) => {
-                    newPlaybook(template.title);
-                }}
-            />
+            {canCreatePlaybooks &&
+                <TemplateSelector
+                    onSelect={(template: PresetTemplate) => {
+                        newPlaybook(template.title);
+                    }}
+                />
+            }
             {
                 (playbooks?.length === 0) &&
                 <>
-                    <NoContentPage onNewPlaybook={newPlaybook}/>
+                    <NoContentPage
+                        onNewPlaybook={newPlaybook}
+                        canCreatePlaybooks={canCreatePlaybooks}
+                    />
                     <NoContentPlaybookSvg/>
                 </>
             }
@@ -215,15 +223,17 @@ const PlaybookList: FC = () => {
                                     {'(' + currentTeam.display_name + ')'}
                                 </div>
                             </div>
-                            <div className='header-button-div'>
-                                <button
-                                    className='btn btn-primary'
-                                    onClick={() => newPlaybook()}
-                                >
-                                    <i className='icon-plus mr-2'/>
-                                    {'Create a Playbook'}
-                                </button>
-                            </div>
+                            {canCreatePlaybooks &&
+                                <div className='header-button-div'>
+                                    <button
+                                        className='btn btn-primary'
+                                        onClick={() => newPlaybook()}
+                                    >
+                                        <i className='icon-plus mr-2'/>
+                                        {'Create a Playbook'}
+                                    </button>
+                                </div>
+                            }
                         </div>
                         <BackstageListHeader>
                             <div className='row'>
@@ -304,6 +314,10 @@ const Description = styled.h5`
     max-width: 800px;
 `;
 
+const DescriptionWarn = styled(Description)`
+    color: rgba(var(--error-text-color-rgb), 0.72);
+`;
+
 const Button = styled.button`
     display: inline-flex;
     background: var(--button-bg);
@@ -332,18 +346,23 @@ const Button = styled.button`
     }
 `;
 
-const NoContentPage = (props: { onNewPlaybook: () => void }) => {
+const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: boolean }) => {
     return (
         <Container>
             <Title>{'What is a Playbook?'}</Title>
             <Description>{'A playbook is a workflow template which must be created before an incident occurs. It defines the stages and tasks associated with an incident, as well as who can use playbook to start an incident.'}</Description>
-            <Button
-                className='mt-6'
-                onClick={() => props.onNewPlaybook()}
-            >
-                <i className='icon-plus mr-2'/>
-                {'New Playbook'}
-            </Button>
+            { props.canCreatePlaybooks &&
+                <Button
+                    className='mt-6'
+                    onClick={() => props.onNewPlaybook()}
+                >
+                    <i className='icon-plus mr-2'/>
+                    {'New Playbook'}
+                </Button>
+            }
+            { !props.canCreatePlaybooks &&
+            <DescriptionWarn>{'There are no playbooks and you do not have permissions to create playbooks on this server.'}</DescriptionWarn>
+            }
         </Container>
     );
 };

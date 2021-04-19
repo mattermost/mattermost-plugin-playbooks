@@ -8,20 +8,24 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 )
 
 // Handler Root API handler.
 type Handler struct {
+	pluginAPI *pluginapi.Client
 	APIRouter *mux.Router
 	root      *mux.Router
 	config    config.Service
 }
 
 // NewHandler constructs a new handler.
-func NewHandler(config config.Service) *Handler {
+func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 	handler := &Handler{}
 	handler.config = config
+	handler.pluginAPI = pluginAPI
 
 	root := mux.NewRouter()
 	api := root.PathPrefix("/api/v0").Subrouter()
@@ -60,18 +64,22 @@ func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
 	var settings GlobalSettings
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode settings", err)
 		return
 	}
 
-	if err := h.config.UpdateConfiguration(func(oldcfg *config.Configuration) {
-		oldcfg.PlaybookEditorsUserIds = settings.PlaybookEditorsUserIds
-	}); err != nil {
-		HandleError(w, err)
+	if err := permissions.ModifySettings(userID, h.config); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
+
+	pluginConfig := h.pluginAPI.Configuration.GetPluginConfig()
+	pluginConfig["PlaybookEditorsUserIds"] = settings.PlaybookEditorsUserIds
+	h.pluginAPI.Configuration.SavePluginConfig(pluginConfig)
 
 	w.WriteHeader(http.StatusOK)
 }

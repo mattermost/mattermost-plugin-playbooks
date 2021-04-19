@@ -6,12 +6,14 @@ import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_help
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import {getProfilesInCurrentChannel} from 'mattermost-redux/selectors/entities/users';
+import {getProfilesInCurrentChannel, getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesInChannel} from 'mattermost-redux/actions/users';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
+
+import {globalSettings} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -131,4 +133,14 @@ export function useProfilesInChannel() {
     }, [currentChannelId, profilesInChannel]);
 
     return profilesInChannel;
+}
+
+export function useCanCreatePlaybooks() {
+    return useSelector<GlobalState, boolean>((state: GlobalState) => {
+        const playbookCreators = globalSettings(state)?.playbook_editors_user_ids;
+        if (!playbookCreators || playbookCreators.length === 0) {
+            return true;
+        }
+        return playbookCreators.includes(getCurrentUserId(state));
+    });
 }

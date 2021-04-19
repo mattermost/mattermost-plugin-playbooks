@@ -7,6 +7,8 @@ import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
 import {Incident} from 'src/types/incident';
 import {pluginId} from 'src/manifest';
 
+import {GlobalSettings} from './settings';
+
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
 export const SET_CLIENT_ID = pluginId + '_set_client_id';
@@ -18,6 +20,7 @@ export const REMOVED_FROM_INCIDENT_CHANNEL = pluginId + '_removed_from_incident_
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
 export const SET_RHS_TAB_STATE = pluginId + '_set_rhs_tab_state';
 export const SET_RHS_EVENTS_FILTER = pluginId + '_set_rhs_events_filter';
+export const RECIVED_GLOBAL_SETTINGS = pluginId + '_recived_global_settings';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -79,4 +82,9 @@ export interface SetRHSEventsFilter {
     type: typeof SET_RHS_EVENTS_FILTER;
     channelId: string;
     nextState: TimelineEventsFilter;
+}
+
+export interface RecivedGlobalSettings {
+    type: typeof RECIVED_GLOBAL_SETTINGS;
+    settings: GlobalSettings;
 }

@@ -100,7 +100,7 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:          []string{},
+		MemberIDs:          []string{"testuserid"},
 		BroadcastChannelID: "nonemptychannelid",
 		InvitedUserIDs:     []string{},
 	}
@@ -132,10 +132,10 @@ func TestPlaybooks(t *testing.T) {
 		mattermostUserID = "testuserid"
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
-		handler = NewHandler(configService)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
+		handler = NewHandler(client, configService)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
@@ -145,18 +145,20 @@ func TestPlaybooks(t *testing.T) {
 
 		configService.EXPECT().
 			GetConfiguration().
+			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams: []string{},
+				EnabledTeams:           []string{},
+				PlaybookEditorsUserIds: []string{},
 			})
 	}
 
 	t.Run("create playbook, unlicensed", func(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
-		handler = NewHandler(configService)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
+		handler = NewHandler(client, configService)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
@@ -230,6 +232,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("HasPermissionToChannel", "testuserid", broadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
@@ -254,16 +257,15 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(withid, nil).
+			Return(withMember, nil).
 			Times(1)
 
 		result, err := c.Playbooks.Get(context.TODO(), "testplaybookid")
 		require.NoError(t, err)
-		assert.Equal(t, withid, toInternalPlaybook(*result))
+		assert.Equal(t, withMember, toInternalPlaybook(*result))
 	})
 
 	t.Run("get playbooks", func(t *testing.T) {
@@ -398,19 +400,19 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		playbookService.EXPECT().
-			Get("testplaybookid").
-			Return(playbooktest, nil).
+			Get("playbookwithmember").
+			Return(withMember, nil).
 			Times(1)
 
 		playbookService.EXPECT().
-			Update(withid, "testuserid").
+			Update(withMember, "testuserid").
 			Return(nil).
 			Times(1)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withid))
+		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withMember))
 		require.NoError(t, err)
 	})
 
@@ -450,7 +452,6 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
 		require.NoError(t, err)
@@ -461,11 +462,11 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(withid, nil).
+			Return(withMember, nil).
 			Times(1)
 
 		playbookService.EXPECT().
-			Delete(withid, "testuserid").
+			Delete(withMember, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -494,6 +495,7 @@ func TestPlaybooks(t *testing.T) {
 		reset()
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:          playbooktest.Title,
@@ -823,10 +825,10 @@ func TestSortingPlaybooks(t *testing.T) {
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
-		handler = NewHandler(configService)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
+		handler = NewHandler(client, configService)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
@@ -1022,11 +1024,11 @@ func TestPagingPlaybooks(t *testing.T) {
 	reset := func() {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
-		handler = NewHandler(configService)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
-		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
+		handler = NewHandler(client, configService)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
+		pluginAPI = &plugintest.API{}
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().

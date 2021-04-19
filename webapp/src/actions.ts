@@ -36,9 +36,12 @@ import {
     SetTriggerId,
     RECEIVED_TEAM_DISABLED,
     ReceivedTeamDisabled,
+    RECIVED_GLOBAL_SETTINGS,
+    RecivedGlobalSettings,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
+import {GlobalSettings} from './types/settings';
 
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -172,4 +175,9 @@ export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsF
     type: SET_RHS_EVENTS_FILTER,
     channelId,
     nextState,
+});
+
+export const actionSetGlobalSettings = (settings: GlobalSettings): RecivedGlobalSettings => ({
+    type: RECIVED_GLOBAL_SETTINGS,
+    settings,
 });

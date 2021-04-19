@@ -198,7 +198,7 @@ func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi
 	)
 
 	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
-		return noAccessErr
+		return errors.Wrap(noAccessErr, "no team view permission")
 	}
 
 	for _, memberID := range pbook.MemberIDs {
@@ -207,7 +207,7 @@ func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi
 		}
 	}
 
-	return noAccessErr
+	return errors.Wrap(noAccessErr, "not on list of members")
 }
 
 func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client) error {
@@ -271,7 +271,7 @@ func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Se
 }
 
 func PlaybookModify(userID string, pbook, oldPlaybook *playbook.Playbook, pluginAPI *pluginapi.Client) error {
-	if err := PlaybookAccess(userID, *pbook, pluginAPI); err != nil {
+	if err := PlaybookAccess(userID, *oldPlaybook, pluginAPI); err != nil {
 		return err
 	}
 
@@ -307,6 +307,25 @@ func PlaybookModify(userID string, pbook, oldPlaybook *playbook.Playbook, plugin
 		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
 		pbook.AnnouncementChannelID = ""
 		pbook.AnnouncementChannelEnabled = false
+	}
+
+	return nil
+}
+
+func ModifySettings(userID string, config config.Service) error {
+	cfg := config.GetConfiguration()
+	if len(cfg.PlaybookEditorsUserIds) > 0 {
+		found := false
+		for _, candidateUserID := range cfg.PlaybookEditorsUserIds {
+			if candidateUserID == userID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return errors.Wrap(ErrNoPermissions, "not a playbook editor")
+		}
 	}
 
 	return nil
