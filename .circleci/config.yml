@@ -180,6 +180,7 @@ commands:
             NODE_ENV=development npm install --ignore-scripts
             cd ../tests-e2e
             NODE_ENV=development npm install --ignore-scripts
+            npx cypress install
       - run:
           name: Install Incident Collaboration plugin
           command: |
@@ -188,19 +189,6 @@ commands:
             nvm use 15
             npm -v && node -v
             make deploy
-      - run:
-          name: Check cache
-          command: |
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            nvm use 15
-            node -v && npm -v
-            cd tests-e2e
-            npx cypress info
-            ls -al /home/circleci/.cache/Cypress
-            ls -al /go/pkg/mod
-            ls -al /home/circleci/go/pkg/mod
-            ls -al ~/go/pkg/mod
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
