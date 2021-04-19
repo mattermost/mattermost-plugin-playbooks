@@ -170,6 +170,17 @@ commands:
             npm -v
       - *restore_cypress_cache
       - run:
+          name: Getting JavaScript dependencies
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            node -v && npm -v
+            cd webapp
+            NODE_ENV=development npm install --ignore-scripts
+            cd ../tests-e2e
+            NODE_ENV=development npm install --ignore-scripts
+    - run:
           name: Install Incident Collaboration plugin
           command: |
             export NVM_DIR="$HOME/.nvm"
@@ -187,7 +198,7 @@ commands:
             npm -v && node -v
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+            npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
       - *save_cypress_cache
       - store_test_results:
           path: tests-e2e/cypress/results
