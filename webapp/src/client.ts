@@ -347,7 +347,11 @@ export const doFetchWithResponse = async (url: string, options = {}) => {
 
     let data;
     if (response.ok) {
-        data = await response.json();
+        const contentType = response.headers.get('content-type');
+        if (contentType === 'application/json') {
+            data = await response.json();
+        }
+
         return {
             response,
             data,

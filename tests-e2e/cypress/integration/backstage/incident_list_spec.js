@@ -60,11 +60,8 @@ describe('backstage incident list', () => {
     });
 
     it('shows welcome page when no incidents', () => {
-        // # Navigate to a team with no incidents.
-        cy.visit(`/${newTeamName}/channels/town-square`);
-
         // # Open backstage
-        cy.openBackstage();
+        cy.visit(`/${newTeamName}/com.mattermost.plugin-incident-management/stats`);
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -101,11 +98,8 @@ describe('backstage incident list', () => {
             commanderUserId: userId,
         });
 
-        // # Navigate to the application
-        cy.visit('/ad-1');
-
         // # Open backstage
-        cy.openBackstage();
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -126,11 +120,8 @@ describe('backstage incident list', () => {
             commanderUserId: userId,
         });
 
-        // # Navigate to the application
-        cy.visit('/ad-1');
-
         // # Open backstage
-        cy.openBackstage();
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -168,11 +159,8 @@ describe('backstage incident list', () => {
             // # Login as user-1
             cy.apiLogin('user-1');
 
-            // # Navigate to the application
-            cy.visit('/ad-1');
-
             // # Open backstage
-            cy.openBackstage();
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
 
             // # Switch to incidents backstage
             cy.findByTestId('incidentsLHSButton').click();

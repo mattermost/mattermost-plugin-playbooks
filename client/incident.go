@@ -25,6 +25,7 @@ type Incident struct {
 	BroadcastChannelID      string          `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string          `json:"reminder_message_template"`
 	InvitedUserIDs          []string        `json:"invited_user_ids"`
+	InvitedGroupIDs         []string        `json:"invited_group_ids"`
 	TimelineEvents          []TimelineEvent `json:"timeline_events"`
 }
 
@@ -178,6 +179,7 @@ type GetIncidentsResults struct {
 // StatusUpdateOptions are the fields required to update an incident's status
 type StatusUpdateOptions struct {
 	Status            Status `json:"status"`
+	Description       string `json:"description"`
 	Message           string `json:"message"`
 	ReminderInSeconds int64  `json:"reminder"`
 }

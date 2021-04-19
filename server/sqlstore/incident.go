@@ -21,8 +21,9 @@ import (
 
 type sqlIncident struct {
 	incident.Incident
-	ChecklistsJSON             json.RawMessage
-	ConcatenatedInvitedUserIDs string
+	ChecklistsJSON              json.RawMessage
+	ConcatenatedInvitedUserIDs  string
+	ConcatenatedInvitedGroupIDs string
 }
 
 // incidentStore holds the information needed to fulfill the methods in the store interface.
@@ -51,7 +52,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "DefaultCommanderID",
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
 			"AnnouncementChannelID", "WebhookOnCreationURL").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
@@ -230,27 +231,28 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":                         rawIncident.ID,
-			"Name":                       rawIncident.Name,
-			"Description":                rawIncident.Description,
-			"CommanderUserID":            rawIncident.CommanderUserID,
-			"ReporterUserID":             rawIncident.ReporterUserID,
-			"TeamID":                     rawIncident.TeamID,
-			"ChannelID":                  rawIncident.ChannelID,
-			"CreateAt":                   rawIncident.CreateAt,
-			"EndAt":                      rawIncident.EndAt,
-			"PostID":                     rawIncident.PostID,
-			"PlaybookID":                 rawIncident.PlaybookID,
-			"ChecklistsJSON":             rawIncident.ChecklistsJSON,
-			"ReminderPostID":             rawIncident.ReminderPostID,
-			"PreviousReminder":           rawIncident.PreviousReminder,
-			"BroadcastChannelID":         rawIncident.BroadcastChannelID,
-			"ReminderMessageTemplate":    rawIncident.ReminderMessageTemplate,
-			"CurrentStatus":              rawIncident.CurrentStatus,
-			"ConcatenatedInvitedUserIDs": rawIncident.ConcatenatedInvitedUserIDs,
-			"DefaultCommanderID":         rawIncident.DefaultCommanderID,
-			"AnnouncementChannelID":      rawIncident.AnnouncementChannelID,
-			"WebhookOnCreationURL":       rawIncident.WebhookOnCreationURL,
+			"ID":                          rawIncident.ID,
+			"Name":                        rawIncident.Name,
+			"Description":                 rawIncident.Description,
+			"CommanderUserID":             rawIncident.CommanderUserID,
+			"ReporterUserID":              rawIncident.ReporterUserID,
+			"TeamID":                      rawIncident.TeamID,
+			"ChannelID":                   rawIncident.ChannelID,
+			"CreateAt":                    rawIncident.CreateAt,
+			"EndAt":                       rawIncident.EndAt,
+			"PostID":                      rawIncident.PostID,
+			"PlaybookID":                  rawIncident.PlaybookID,
+			"ChecklistsJSON":              rawIncident.ChecklistsJSON,
+			"ReminderPostID":              rawIncident.ReminderPostID,
+			"PreviousReminder":            rawIncident.PreviousReminder,
+			"BroadcastChannelID":          rawIncident.BroadcastChannelID,
+			"ReminderMessageTemplate":     rawIncident.ReminderMessageTemplate,
+			"CurrentStatus":               rawIncident.CurrentStatus,
+			"ConcatenatedInvitedUserIDs":  rawIncident.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs": rawIncident.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
+			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
+			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -283,18 +285,19 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":                       "",
-			"Description":                rawIncident.Description,
-			"CommanderUserID":            rawIncident.CommanderUserID,
-			"ChecklistsJSON":             rawIncident.ChecklistsJSON,
-			"ReminderPostID":             rawIncident.ReminderPostID,
-			"PreviousReminder":           rawIncident.PreviousReminder,
-			"BroadcastChannelID":         rawIncident.BroadcastChannelID,
-			"EndAt":                      rawIncident.ResolvedAt(),
-			"ConcatenatedInvitedUserIDs": rawIncident.ConcatenatedInvitedUserIDs,
-			"DefaultCommanderID":         rawIncident.DefaultCommanderID,
-			"AnnouncementChannelID":      rawIncident.AnnouncementChannelID,
-			"WebhookOnCreationURL":       rawIncident.WebhookOnCreationURL,
+			"Name":                        "",
+			"Description":                 rawIncident.Description,
+			"CommanderUserID":             rawIncident.CommanderUserID,
+			"ChecklistsJSON":              rawIncident.ChecklistsJSON,
+			"ReminderPostID":              rawIncident.ReminderPostID,
+			"PreviousReminder":            rawIncident.PreviousReminder,
+			"BroadcastChannelID":          rawIncident.BroadcastChannelID,
+			"EndAt":                       rawIncident.ResolvedAt(),
+			"ConcatenatedInvitedUserIDs":  rawIncident.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs": rawIncident.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
+			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
+			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -641,6 +644,11 @@ func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident,
 		i.InvitedUserIDs = strings.Split(rawIncident.ConcatenatedInvitedUserIDs, ",")
 	}
 
+	i.InvitedGroupIDs = []string(nil)
+	if rawIncident.ConcatenatedInvitedGroupIDs != "" {
+		i.InvitedGroupIDs = strings.Split(rawIncident.ConcatenatedInvitedGroupIDs, ",")
+	}
+
 	return &i, nil
 }
 
@@ -652,9 +660,10 @@ func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
 	}
 
 	return &sqlIncident{
-		Incident:                   origIncident,
-		ChecklistsJSON:             checklistsJSON,
-		ConcatenatedInvitedUserIDs: strings.Join(origIncident.InvitedUserIDs, ","),
+		Incident:                    origIncident,
+		ChecklistsJSON:              checklistsJSON,
+		ConcatenatedInvitedUserIDs:  strings.Join(origIncident.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs: strings.Join(origIncident.InvitedGroupIDs, ","),
 	}, nil
 }
 

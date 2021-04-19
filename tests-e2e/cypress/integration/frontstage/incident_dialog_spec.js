@@ -33,7 +33,7 @@ describe('incident creation dialog', () => {
         cy.apiLogin('user-1');
 
         // # Navigate to the application
-        cy.visit('/');
+        cy.visit('/ad-1/');
 
         // # Trigger the incident creation dialog
         cy.openIncidentDialogFromSlashCommand();
@@ -59,7 +59,6 @@ describe('incident creation dialog', () => {
         cy.findByTestId('autoCompleteSelector').contains('Playbook');
         cy.findByTestId('autoCompleteSelector').contains('This field is required.');
         cy.findByTestId('incidentName').contains('This field is required.');
-        cy.findByTestId('incidentDescription').contains('This field is required.').should('not.exist');
     });
 
     it('shows create playbook link', () => {
@@ -82,9 +81,6 @@ describe('incident creation dialog', () => {
 
             // * Verify incident name prompt
             cy.findByText('Incident Name').should('exist');
-
-            // * Verify incident description prompt
-            cy.findByText('Incident Description').should('exist');
         });
     });
 
@@ -103,7 +99,7 @@ describe('incident creation dialog', () => {
 
         // * Verify the incident did not get created
         cy.apiGetAllIncidents(teamId).then((response) => {
-            const allIncidents = JSON.parse(response.body);
+            const allIncidents = response.body;
             const incident = allIncidents.items.find((inc) => inc.name === incidentName);
             expect(incident).to.be.undefined;
         });

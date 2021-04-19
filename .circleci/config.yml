@@ -1,39 +1,311 @@
 version: 2.1
 
 orbs:
-  plugin-ci: mattermost/plugin-ci@0.1
-  codecov: codecov/codecov@1.1.1
+  aws-s3: circleci/aws-s3@1.0.16
+
+executors:
+  default:
+    docker:
+      - image: circleci/golang:1.16.0-node
 
 aliases:
-  - &restore_deploy_cache
+  - &restore_go_cache
     restore_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-  - &save_deploy_cache
+      key: go-mod-v1-{{ checksum "go.sum" }}
+  - &save_go_cache
     save_cache:
-      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
+      key: go-mod-v1-{{ checksum "go.sum" }}
       paths:
-        - "/go/pkg/mod"
-        - "./webapp/node_modules"
-  - &restore_test_cache
-    restore_cache:
-      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-  - &save_test_cache
-    save_cache:
-      key: test-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}
-      paths:
-        - "/go/pkg/mod"
-        - "./webapp/node_modules"
+        - /go/pkg/mod
   - &restore_cypress_cache
     restore_cache:
-      key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
   - &save_cypress_cache
     save_cache:
-      key: cypress-cache-{{ checksum "tests-e2e/package-lock.json" }}
+      key: deploy-go-{{ checksum "go.sum" }}-npm-{{ checksum "./webapp/package-lock.json" }}-test-npm-{{ checksum "./tests-e2e/package-lock.json" }}
       paths:
+        - /go/pkg/mod
+        - ./webapp/node_modules
         - ./tests-e2e/node_modules
-        - /home/circleci/.cache/Cypress
+        - /home/circleci/.cache
+
+commands:
+  npm-dependencies:
+    description: "Get JavaScript dependencies"
+    steps:
+      - run:
+          name: Install npm 7 and node 15
+          command: |
+            set +e
+            wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash &&  sudo /opt/circleci/.nvm/nvm.sh
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install v15.14
+            node -v
+            npm -v
+      - restore_cache:
+          name: Restore npm cache
+          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+      - run:
+          name: Getting JavaScript dependencies
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            node -v && npm -v
+            cd webapp
+            NODE_ENV=development npm install --ignore-scripts
+      - save_cache:
+          name: Save npm cache
+          key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
+          paths:
+            - ./webapp/node_modules
+
+  deploy:
+    parameters:
+      bucket:
+        type: string
+      filename:
+        type: string
+    steps:
+      - aws-s3/copy:
+          from: << parameters.filename >>
+          to: << parameters.bucket >>
+          arguments: '--acl public-read --cache-control no-cache'
+
+  install-golangci-lint:
+    description: Install golangci-lint
+    parameters:
+      version:
+        type: string
+        default: 1.31.0
+      gobin:
+        type: string
+        default: /go/bin
+      prefix:
+        type: string
+        default: v1
+        description: Prefix for cache key to store the binary.
+    steps:
+      - restore_cache:
+          name: Restore golangci-lint cache
+          keys: [ '<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>' ]
+      - run:
+          name: Install golangci-lint
+          command: |
+            mkdir -p << parameters.gobin >>
+            command -v << parameters.gobin >>/golangci-lint && exit
+            download=https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
+            wget -O- -q $download | sh -s -- -b << parameters.gobin >>/ v<< parameters.version >>
+      - save_cache:
+          name: Save golangci-lint cache
+          key: '<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>'
+          paths: [ << parameters.gobin >>/golangci-lint ]
+
+  test-with-db:
+    description: "Run tests with database"
+    steps:
+      - run:
+          name: Waiting for Postgres and MySQL to be ready
+          command: |
+            for i in `seq 1 20`;
+            do
+              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres and MySQL && exit 1
+      - checkout
+      - npm-dependencies
+      - *restore_go_cache
+      - run:
+          name: Testing
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            node -v && npm -v
+            make test
+      - *save_go_cache
+
+  run-e2e-tests:
+    description: "Run the e2e tests with a server"
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Wait for Inbucket
+          command: |
+            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
+      - run:
+          name: Wait for Elasticsearch
+          command: |
+            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
+      - checkout
+      - run:
+          name: Set and restore Postgres DB
+          command: |
+            whoami
+            sudo apt-get update
+            sudo apt-get install libxss1
+            sudo apt-get install postgresql-client
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
+            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
+            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/mm534.sql
+      - run:
+          name: Upload license
+          command: |
+            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
+            TOKEN=${TOKEN//$'\r'/}
+            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+            if test $STATUSCODE -ne 200; then exit 1; fi
+      - run:
+          name: Install npm 7 and node 15
+          command: |
+            set +e
+            wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash &&  sudo /opt/circleci/.nvm/nvm.sh
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install v15.14
+            node -v
+            npm -v
+      - *restore_cypress_cache
+      - run:
+          name: Getting JavaScript dependencies
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            node -v && npm -v
+            cd webapp
+            NODE_ENV=development npm install --ignore-scripts
+            cd ../tests-e2e
+            NODE_ENV=development npm install --ignore-scripts
+            npx cypress install
+      - run:
+          name: Install Incident Collaboration plugin
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            npm -v && node -v
+            make deploy
+      - run:
+          name: Run Cypress Tests
+          no_output_timeout: 30m
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            npm -v && node -v
+            export FAILURE_MESSAGE="At least one test has failed."
+            export RESULTS_OUTPUT="results-output.txt"
+            cd tests-e2e && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+      - *save_cypress_cache
+      - store_test_results:
+          path: tests-e2e/cypress/results
+      - store_artifacts:
+          path: tests-e2e/cypress/results
+      - store_artifacts:
+          path: tests-e2e/cypress/videos
 
 jobs:
+  lint:
+    executor:
+      name: default
+    resource_class: large
+    steps:
+      - checkout
+      - install-golangci-lint
+      - *restore_go_cache
+      - npm-dependencies
+      - run:
+          name: Checking code style
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            node -v && npm -v
+            make check-style
+      - run: go mod tidy -v
+      - run:
+          name: Checking diff of go mod files
+          command: |
+            git --no-pager diff --exit-code go.mod go.sum || (echo "Please run \"go mod tidy\" and commit the changes in go.mod and go.sum." && exit 1)
+      - run: make apply
+      - run:
+          name: Checking diff of generated manifest files
+          command: |
+            git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
+      - *save_go_cache
+
+  build:
+    executor:
+      name: default
+    steps:
+      - checkout
+      - npm-dependencies
+      - run:
+          name: Building Plugin Bundle
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 15
+            npm -v && node -v
+            make dist
+      - run:
+          name: Generating Release Notes
+          command: |
+            printf "Supported Mattermost Server Versions: **$(cat plugin.json | jq .min_server_version -r)+** \n## Enhancements\n\n## Fixes\n"  >> dist/release-notes.md
+            if [[ $(git tag -l | wc -l) -eq 1 ]]; then
+              git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git rev-list --max-parents=0 HEAD) HEAD >> dist/release-notes.md
+            else
+              git log --pretty='format:- %h %s' --abbrev-commit --no-decorate --no-color $(git describe --tags --abbrev=0 $(git describe --tags --abbrev=0)^)..HEAD >> dist/release-notes.md
+            fi
+      - persist_to_workspace:
+          root: dist
+          paths:
+            - "*.tar.gz"
+            - "release-notes.md"
+      - store_artifacts:
+          path: dist
+
+  deploy-ci:
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      - attach_workspace:
+          at: dist
+      - run: 'mv dist/*.tar.gz dist/$CIRCLE_PROJECT_REPONAME-ci.tar.gz'
+      - deploy:
+          filename: "dist/*.tar.gz"
+          bucket: "s3://mattermost-plugins-ci/ci/"
+
+  deploy-release:
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      - attach_workspace:
+          at: dist
+      - run: 'mv dist/*.tar.gz dist/$CIRCLE_PROJECT_REPONAME-latest.tar.gz'
+      - run: 'cp dist/$CIRCLE_PROJECT_REPONAME-latest.tar.gz dist/$CIRCLE_PROJECT_REPONAME-$CIRCLE_TAG.tar.gz'
+      - deploy:
+          filename: "dist/$CIRCLE_PROJECT_REPONAME-latest.tar.gz"
+          bucket: "s3://mattermost-plugins-ci/release/"
+      - deploy:
+          filename: "dist/$CIRCLE_PROJECT_REPONAME-$CIRCLE_TAG.tar.gz"
+          bucket: "s3://mattermost-plugins-ci/release/"
+
+  deploy-release-github:
+    docker:
+      - image: cibuilds/github:0.13
+    steps:
+      - attach_workspace:
+          at: dist
+      - run:
+          name: "Publish Release on Github"
+          command: |
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -b "$(< ./dist/release-notes.md)" -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -delete ${CIRCLE_TAG} dist/*.tar.gz
+
   test-MySQL56-Postgres96:
     docker:
       - image: circleci/golang:1.14.1-node
@@ -48,24 +320,9 @@ jobs:
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
     executor:
-      name: plugin-ci/default
+      name: default
     steps:
-      - run:
-          name: Waiting for Postgres and MySQL to be ready
-          command: |
-            for i in `seq 1 20`;
-            do
-              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres and MySQL && exit 1
-      - checkout
-      - *restore_test_cache
-      - run:
-          name: Testing
-          command: make test
-      - *save_test_cache
+      - test-with-db
 
   test-MySQL57-Postgres10:
     docker:
@@ -81,24 +338,9 @@ jobs:
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
     executor:
-      name: plugin-ci/default
+      name: default
     steps:
-      - run:
-          name: Waiting for Postgres and MySQL to be ready
-          command: |
-            for i in `seq 1 20`;
-            do
-              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres and MySQL && exit 1
-      - checkout
-      - *restore_test_cache
-      - run:
-          name: Testing
-          command: make test
-      - *save_test_cache
+      - test-with-db
 
   test-MySQL8-Postgres11:
     docker:
@@ -114,24 +356,9 @@ jobs:
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
     executor:
-      name: plugin-ci/default
+      name: default
     steps:
-      - run:
-          name: Waiting for Postgres and MySQL to be ready
-          command: |
-            for i in `seq 1 20`;
-            do
-              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres and MySQL && exit 1
-      - checkout
-      - *restore_test_cache
-      - run:
-          name: Testing
-          command: make test
-      - *save_test_cache
+      - test-with-db
 
   test-MySQL-Postgres-latest:
     docker:
@@ -148,27 +375,12 @@ jobs:
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
     executor:
-      name: plugin-ci/default
+      name: default
     steps:
-      - run:
-          name: Waiting for Postgres and MySQL to be ready
-          command: |
-            for i in `seq 1 20`;
-            do
-              nc -z localhost 5432 && nc -z 127.0.0.1 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres and MySQL && exit 1
-      - checkout
-      - *restore_test_cache
-      - run:
-          name: Testing
-          command: make test
-      - *save_test_cache
+      - test-with-db
 
   e2e-cypress-tests-cloud:
-    resource_class: large
+    resource_class: xlarge
     docker:
       - image: circleci/golang:1.14.1-node-browsers
         environment:
@@ -236,52 +448,10 @@ jobs:
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
     steps:
-      - setup_remote_docker
-      - run:
-          name: Wait for Inbucket
-          command: |
-            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
-      - run:
-          name: Wait for Elasticsearch
-          command: |
-            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - checkout
-      - run:
-          name: Set and restore Postgres DB
-          command: |
-            whoami
-            sudo apt-get update
-            sudo apt-get install libxss1
-            sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - run:
-          name: Upload license
-          command: |
-            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
-            TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-            if test $STATUSCODE -ne 200; then exit 1; fi
-      - *restore_deploy_cache
-      - run:
-          name: Install Incident Collaboration plugin
-          command: make deploy
-      - *save_deploy_cache
-      - *restore_cypress_cache
-      - run:
-          name: Run Cypress Tests
-          no_output_timeout: 30m
-          command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - *save_cypress_cache
-      - store_artifacts:
-          path: tests-e2e/cypress/videos
+      - run-e2e-tests
 
   e2e-cypress-tests-master:
-    resource_class: large
+    resource_class: xlarge
     docker:
       - image: circleci/golang:1.14.1-node-browsers
         environment:
@@ -349,51 +519,9 @@ jobs:
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
     steps:
-      - setup_remote_docker
-      - run:
-          name: Wait for Inbucket
-          command: |
-            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
-      - run:
-          name: Wait for Elasticsearch
-          command: |
-            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - checkout
-      - run:
-          name: Set and restore Postgres DB
-          command: |
-            whoami
-            sudo apt-get update
-            sudo apt-get install libxss1
-            sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - run:
-          name: Upload license
-          command: |
-            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
-            TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-            if test $STATUSCODE -ne 200; then exit 1; fi
-      - *restore_deploy_cache
-      - run:
-          name: Install Incident Collaboration plugin
-          command: make deploy
-      - *save_deploy_cache
-      - *restore_cypress_cache
-      - run:
-          name: Run Cypress Tests
-          no_output_timeout: 30m
-          command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - *save_cypress_cache
-      - store_artifacts:
-          path: tests-e2e/cypress/videos
+      - run-e2e-tests
 
-  e2e-cypress-tests-531:
+  e2e-cypress-tests-534:
     resource_class: large
     docker:
       - image: circleci/golang:1.14.1-node-browsers
@@ -444,7 +572,7 @@ jobs:
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
     environment:
-      MM_DOCKER_IMAGE_TAG: 5.31.0
+      MM_DOCKER_IMAGE_TAG: 5.34.0
       TYPE: NONE
       PULL_REQUEST:
       BROWSER: chrome
@@ -455,122 +583,57 @@ jobs:
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
     steps:
-      - setup_remote_docker
-      - run:
-          name: Wait for Inbucket
-          command: |
-            until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
-      - run:
-          name: Wait for Elasticsearch
-          command: |
-            until curl --max-time 5 --output - localhost:9200; do echo waiting for Elasticsearch; sleep 5; done;
-      - checkout
-      - run:
-          name: Set and restore Postgres DB
-          command: |
-            whoami
-            sudo apt-get update
-            sudo apt-get install libxss1
-            sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/test_data.sql
-      - run:
-          name: Upload license
-          command: |
-            TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
-            TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-            if test $STATUSCODE -ne 200; then exit 1; fi
-      - *restore_deploy_cache
-      - run:
-          name: Install Incident Collaboration plugin
-          command: make deploy
-      - *save_deploy_cache
-      - *restore_cypress_cache
-      - run:
-          name: Run Cypress Tests
-          no_output_timeout: 30m
-          command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - *save_cypress_cache
-      - store_artifacts:
-          path: tests-e2e/cypress/videos
+      - run-e2e-tests
 
 workflows:
   version: 2
   ci:
     jobs:
-      - plugin-ci/lint:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL56-Postgres96:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL57-Postgres10:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL8-Postgres11:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-MySQL-Postgres-latest:
-          filters:
-            tags:
-              only: /^v.*/
-      - e2e-cypress-tests-cloud:
-          context: matterbuild-docker
-          filters:
-            tags:
-              only: /^v.*/
-      - e2e-cypress-tests-master:
-          filters:
-            # remove this branches statement to include e2e tests on master for a PR branch
-            branches:
-              ignore: /.*/
-      - e2e-cypress-tests-531:
-          filters:
-            tags:
-              only: /^v.*/
-      - plugin-ci/build:
+      - lint
+      - test-MySQL56-Postgres96
+      - test-MySQL57-Postgres10
+      - test-MySQL8-Postgres11
+      - test-MySQL-Postgres-latest
+      # 534 is broken at the moment (sql schema mismatch with what works on cloud and master)
+      # - e2e-cypress-tests-534
+      - e2e-cypress-tests-cloud
+      - e2e-cypress-tests-master
+           # remove/comment this filters statement to include e2e tests on master for a PR branch
+#          filters:
+#            branches:
+#              ignore: /.*/
+      - build:
           context: mattermost-plugin-incident-response-production
           filters:
             tags:
               only: /^v.*/
-      - plugin-ci/deploy-ci:
+      - deploy-ci:
           filters:
             branches:
               only: master
-          context: plugin-ci
           requires:
-            - plugin-ci/lint
+            - lint
             - test-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - plugin-ci/build
-      - plugin-ci/deploy-release:
+#            - e2e-cypress-tests-534
+            - build
+      - deploy-release:
           filters:
             tags:
               only: /^v.*/
             branches:
               ignore: /.*/
-          context: plugin-ci
           requires:
-            - plugin-ci/lint
+            - lint
             - test-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - plugin-ci/build
-      - plugin-ci/deploy-release-github:
+#            - e2e-cypress-tests-534
+            - build
+      - deploy-release-github:
           filters:
             tags:
               only: /^v.*/
@@ -578,10 +641,10 @@ workflows:
               ignore: /.*/
           context: matterbuild-github-token
           requires:
-            - plugin-ci/lint
+            - lint
             - test-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-531
-            - plugin-ci/build
+#            - e2e-cypress-tests-534
+            - build

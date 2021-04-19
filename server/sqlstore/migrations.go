@@ -612,4 +612,34 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.13.0"),
+		toVersion:   semver.MustParse("0.14.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedInvitedGroupIDs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedGroupIDs to table IR_Incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET ConcatenatedInvitedGroupIDs = '' WHERE ConcatenatedInvitedGroupIDs IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column ConcatenatedInvitedGroupIDs of table IR_Incident")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedInvitedGroupIDs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedGroupIDs to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET ConcatenatedInvitedGroupIDs = '' WHERE ConcatenatedInvitedGroupIDs IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column ConcatenatedInvitedGroupIDs of table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ConcatenatedInvitedGroupIDs", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedGroupIDs to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "ConcatenatedInvitedGroupIDs", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedGroupIDs to table IR_Playbook")
+				}
+			}
+
+			return nil
+		},
+	},
 }

@@ -47,6 +47,7 @@ type Incident struct {
 	BroadcastChannelID      string               `json:"broadcast_channel_id"`
 	ReminderMessageTemplate string               `json:"reminder_message_template"`
 	InvitedUserIDs          []string             `json:"invited_user_ids"`
+	InvitedGroupIDs         []string             `json:"invited_group_ids"`
 	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
 	DefaultCommanderID      string               `json:"default_commander_id"`
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
@@ -63,6 +64,8 @@ func (i *Incident) Clone() *Incident {
 
 	newIncident.StatusPosts = append([]StatusPost(nil), i.StatusPosts...)
 	newIncident.TimelineEvents = append([]TimelineEvent(nil), i.TimelineEvents...)
+	newIncident.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
+	newIncident.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
 
 	return &newIncident
 }
@@ -85,6 +88,9 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	}
 	if old.InvitedUserIDs == nil {
 		old.InvitedUserIDs = []string{}
+	}
+	if old.InvitedGroupIDs == nil {
+		old.InvitedGroupIDs = []string{}
 	}
 	if old.TimelineEvents == nil {
 		old.TimelineEvents = []TimelineEvent{}
@@ -134,10 +140,12 @@ type UpdateOptions struct {
 }
 
 // StatusUpdateOptions encapsulates the fields that can be set when updating an incident's status
+// NOTE: changes made to this should be reflected in the client/incident StatusUpdateOptions struct
 type StatusUpdateOptions struct {
-	Status   string        `json:"status"`
-	Message  string        `json:"message"`
-	Reminder time.Duration `json:"reminder"`
+	Status      string        `json:"status"`
+	Description string        `json:"description"`
+	Message     string        `json:"message"`
+	Reminder    time.Duration `json:"reminder"`
 }
 
 // Metadata tracks ancillary metadata about an incident.

@@ -57,7 +57,9 @@ func TestIncidents(t *testing.T) {
 	c, err := icClient.New(&model.Client4{Url: server.URL})
 	require.NoError(t, err)
 
-	reset := func() {
+	reset := func(t *testing.T) {
+		t.Helper()
+
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
@@ -71,7 +73,9 @@ func TestIncidents(t *testing.T) {
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
 	}
 
-	setDefaultExpectations := func() {
+	setDefaultExpectations := func(t *testing.T) {
+		t.Helper()
+
 		configService.EXPECT().
 			IsLicensed().
 			Return(true)
@@ -84,13 +88,13 @@ func TestIncidents(t *testing.T) {
 	}
 
 	t.Run("create valid incident, unlicensed", func(t *testing.T) {
-		reset()
+		reset(t)
 
 		configService.EXPECT().
 			IsLicensed().
 			Return(false)
 
-		setDefaultExpectations()
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -123,7 +127,7 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create valid incident, but it's disabled on this team", func(t *testing.T) {
-		reset()
+		reset(t)
 
 		configService.EXPECT().
 			GetConfiguration().
@@ -131,7 +135,7 @@ func TestIncidents(t *testing.T) {
 				EnabledTeams: []string{"notthisteam"},
 			})
 
-		setDefaultExpectations()
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -164,16 +168,19 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create valid incident from dialog", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
+			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -196,16 +203,18 @@ func TestIncidents(t *testing.T) {
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
 			PlaybookID:      "playbookid1",
+			Description:     "description",
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 		}
-		retI := i
+		retI := i.Clone()
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
-		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(&retI, nil)
+		incidentService.EXPECT().CreateIncident(&i, "testUserID", true).Return(retI, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -219,16 +228,19 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create valid incident from dialog with description", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
+			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -236,9 +248,8 @@ func TestIncidents(t *testing.T) {
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey:  "playbookid1",
-				incident.DialogFieldNameKey:        "incidentName",
-				incident.DialogFieldDescriptionKey: "description",
+				incident.DialogFieldPlaybookIDKey: "playbookid1",
+				incident.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -255,6 +266,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      withid.ID,
 			Checklists:      withid.Checklists,
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -277,8 +289,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create incident from dialog - no permissions for public channels", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -286,7 +298,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -341,8 +355,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create incident from dialog - no permissions for public channels", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -350,7 +364,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: false,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -405,8 +421,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create incident from dialog - dialog request userID doesn't match requester's id", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -414,7 +430,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -459,8 +477,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: "testTeamID",
@@ -494,16 +512,19 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create incident from dialog -- user does not have permission for the original postID's channel", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
+			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -539,8 +560,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create incident from dialog -- user is not a member of the playbook", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -548,7 +569,9 @@ func TestIncidents(t *testing.T) {
 			TeamID:               "testTeamID",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"some_other_id"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -584,16 +607,19 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create valid incident", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testPlaybook := playbook.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
 			TeamID:               "testTeamID",
+			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
-			InvitedUserIDs:       []string{},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		testIncident := incident.Incident{
@@ -604,6 +630,62 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      testPlaybook.ID,
 			Checklists:      testPlaybook.Checklists,
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(testPlaybook, nil).
+			Times(1)
+
+		retI := testIncident
+		retI.ID = "incidentID"
+		retI.ChannelID = "channelID"
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
+
+		// Verify that the websocket event is published
+		poster.EXPECT().
+			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
+
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            testIncident.Name,
+			CommanderUserID: testIncident.CommanderUserID,
+			TeamID:          testIncident.TeamID,
+			Description:     testIncident.Description,
+			PlaybookID:      testIncident.PlaybookID,
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultIncident.ID)
+	})
+
+	t.Run("create valid incident, invite users enabled", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+
+		testPlaybook := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			Description:          "description",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+			InviteUsersEnabled:   true,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			Description:     "description",
+			PlaybookID:      testPlaybook.ID,
+			Checklists:      testPlaybook.Checklists,
+			InvitedUserIDs:  []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs: []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		playbookService.EXPECT().
@@ -635,8 +717,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create valid incident without playbook", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -666,8 +748,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create invalid incident - missing commander", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			TeamID: "testTeamID",
@@ -687,8 +769,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create invalid incident - missing team", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -706,8 +788,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("create invalid incident - missing name", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -728,8 +810,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get incident by channel id", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -740,6 +822,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -756,8 +839,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 		userID := "testUserID"
 
 		testIncident := incident.Incident{
@@ -781,8 +864,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get incident by channel id - not authorized", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -806,8 +889,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get private incident - not part of channel", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -838,8 +921,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get private incident - part of channel", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -852,6 +935,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -873,8 +957,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get public incident - not part of channel or team", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -886,6 +970,7 @@ func TestIncidents(t *testing.T) {
 			PlaybookID:      "",
 			Checklists:      nil,
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -908,8 +993,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get public incident - not part of channel, but part of team", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -922,6 +1007,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -945,8 +1031,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get public incident - part of channel", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -959,6 +1045,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -980,8 +1067,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get private incident metadata - not part of channel", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1012,8 +1099,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get private incident metadata - part of channel", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1056,8 +1143,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get public incident metadata - not part of channel or team", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1090,8 +1177,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get public incident metadata - not part of channel, but part of team", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1136,8 +1223,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get public incident metadata - part of channel", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1180,8 +1267,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get incidents", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		incident1 := incident.Incident{
 			ID:              "incidentID1",
@@ -1192,6 +1279,7 @@ func TestIncidents(t *testing.T) {
 			Checklists:      []playbook.Checklist{},
 			StatusPosts:     []incident.StatusPost{},
 			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
 			TimelineEvents:  []incident.TimelineEvent{},
 		}
 
@@ -1222,8 +1310,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get empty list of incidents", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
 
@@ -1235,7 +1323,7 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("get disabled list of incidents", func(t *testing.T) {
-		reset()
+		reset(t)
 
 		configService.EXPECT().
 			GetConfiguration().
@@ -1243,7 +1331,7 @@ func TestIncidents(t *testing.T) {
 				EnabledTeams: []string{"notthisteam"},
 			})
 
-		setDefaultExpectations()
+		setDefaultExpectations(t)
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
 
@@ -1259,8 +1347,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1288,8 +1376,8 @@ func TestIncidents(t *testing.T) {
 	})
 
 	t.Run("update incident status", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1306,19 +1394,20 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
 		updateOptions := incident.StatusUpdateOptions{
-			Status:   "Active",
-			Message:  "test message",
-			Reminder: 600 * time.Second,
+			Status:      "Active",
+			Message:     "test message",
+			Description: "test description",
+			Reminder:    600 * time.Second,
 		}
 		incidentService.EXPECT().UpdateStatus("incidentID", "testUserID", updateOptions).Return(nil)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test message", 600)
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test description", "test message", 600)
 		require.NoError(t, err)
 	})
 
 	t.Run("update incident status, bad status", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1334,13 +1423,13 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "Arrrrrrrctive", "test message", 600)
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "Arrrrrrrctive", "test description", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("update incident status, no permission to post", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1356,13 +1445,13 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(false)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test message", 600)
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test description", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
 	t.Run("update incident status, message empty", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1378,13 +1467,13 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "  \t   \r   \t  \r\r  ", 600)
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", icClient.StatusActive, "test description", "  \t   \r   \t  \r\r  ", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("update incident status, status empty", func(t *testing.T) {
-		reset()
-		setDefaultExpectations()
+		reset(t)
+		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1400,7 +1489,29 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "\t   \r  ", "test message", 600)
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "\t   \r  ", "test description", "test message", 600)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
+	})
+
+	t.Run("update incident status, description empty", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+
+		testIncident := incident.Incident{
+			ID:              "incidentID",
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			ChannelID:       "channelID",
+		}
+
+		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		incidentService.EXPECT().GetIncident(testIncident.ID).Return(&testIncident, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
+
+		err := c.Incidents.UpdateStatus(context.TODO(), "incidentID", "Active", "  \r \n  ", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }

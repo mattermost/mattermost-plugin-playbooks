@@ -17,7 +17,8 @@ type Playbook struct {
 	ReminderMessageTemplate     string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
-	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
+	InvitedGroupIDs             []string    `json:"invited_group_ids"`
+	InvitedUsersEnabled         bool        `json:"invited_users_enabled"`
 	DefaultCommanderID          string      `json:"default_commander_id"`
 	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
 	AnnouncementChannelID       string      `json:"announcement_channel_id"`
@@ -58,6 +59,7 @@ type PlaybookCreateOptions struct {
 	ReminderMessageTemplate     string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
+	InvitedGroupIDs             []string    `json:"invited_group_ids"`
 	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
 	DefaultCommanderID          string      `json:"default_commander_id"`
 	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`

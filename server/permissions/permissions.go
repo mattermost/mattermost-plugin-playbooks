@@ -267,6 +267,20 @@ func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Se
 		}
 	}
 
+	for _, groupID := range pbook.InvitedGroupIDs {
+		group, err := pluginAPI.Group.Get(groupID)
+		if err != nil {
+			return errors.Wrap(err, "invalid group")
+		}
+
+		if !group.AllowReference {
+			return errors.Errorf(
+				"group %s does now allow references",
+				groupID,
+			)
+		}
+	}
+
 	return nil
 }
 
@@ -295,6 +309,24 @@ func PlaybookModify(userID string, pbook, oldPlaybook *playbook.Playbook, plugin
 		filteredUsers = append(filteredUsers, userID)
 	}
 	pbook.InvitedUserIDs = filteredUsers
+
+	filteredGroups := []string{}
+	for _, groupID := range pbook.InvitedGroupIDs {
+		var group *model.Group
+		group, err := pluginAPI.Group.Get(groupID)
+		if err != nil {
+			pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			continue
+		}
+
+		if !group.AllowReference {
+			pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
+			continue
+		}
+
+		filteredGroups = append(filteredGroups, groupID)
+	}
+	pbook.InvitedGroupIDs = filteredGroups
 
 	if pbook.DefaultCommanderID != "" && !IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, pluginAPI) {
 		pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
