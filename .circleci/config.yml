@@ -176,7 +176,6 @@ commands:
             npm -v && node -v
             make deploy
       - *save_deploy_cache
-      - *restore_cypress_cache
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
@@ -187,8 +186,7 @@ commands:
             npm -v && node -v
             export FAILURE_MESSAGE="At least one test has failed."
             export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm install && cypress install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
-      - *save_cypress_cache
+            cd tests-e2e && npm install && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
       - store_test_results:
           path: tests-e2e/cypress/results
       - store_artifacts:
