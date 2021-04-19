@@ -79,7 +79,9 @@ func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
 
 	pluginConfig := h.pluginAPI.Configuration.GetPluginConfig()
 	pluginConfig["PlaybookEditorsUserIds"] = settings.PlaybookEditorsUserIds
-	h.pluginAPI.Configuration.SavePluginConfig(pluginConfig)
+	if err := h.pluginAPI.Configuration.SavePluginConfig(pluginConfig); err != nil {
+		HandleError(w, err)
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

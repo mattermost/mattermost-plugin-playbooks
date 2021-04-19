@@ -136,8 +136,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := permissions.PlaybookModify(userID, &pbook, &oldPlaybook, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	if err3 := permissions.PlaybookModify(userID, &pbook, &oldPlaybook, h.pluginAPI); err3 != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
 		return
 	}
 
@@ -174,8 +174,8 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := permissions.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	if err2 := permissions.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err2 != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}
 
