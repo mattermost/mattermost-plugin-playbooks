@@ -706,6 +706,10 @@ paths:
                     - Archived
                   description: The new status.
                   example: Active
+                description:
+                  type: string
+                  description: The current description of the incident.
+                  example: \# Summary\nA tl;dr of the current situation.
                 message:
                   type: string
                   description: The status update message.
@@ -716,13 +720,14 @@ paths:
                   example: 600
               required:
                 - status
+                - description
                 - message
       x-codeSamples:
         - lang: curl
           source: |
             curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/update-status' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
-            -d '{"status": "Resolved", "message": "Resolving incident because the issue was solved."}'
+            -d '{"status": "Resolved", "description": "Current situation has been solved, customers are satisfied.", "message": "Resolving incident because the issue was solved."}'
       responses:
         200:
           description: Incident updated.

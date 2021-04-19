@@ -449,7 +449,6 @@ describe('incident automation', () => {
                         playbookId: playbook.id,
                         incidentName,
                         commanderUserId: userId,
-                        description: 'Incident description.',
                     });
 
                     // # Navigate to the incident channel.
@@ -468,7 +467,6 @@ describe('incident automation', () => {
                     cy.getLastPostId().then((lastPostId) => {
                         cy.get(`#postMessageText_${lastPostId}`).contains(`New Incident: ~${incidentName}`);
                         cy.get(`#postMessageText_${lastPostId}`).contains('Commander: @user-1');
-                        cy.get(`#postMessageText_${lastPostId}`).contains('Description: Incident description.');
                     });
                 });
             });
