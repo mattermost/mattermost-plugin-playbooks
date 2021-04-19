@@ -603,23 +603,25 @@ workflows:
 #            branches:
 #              ignore: /.*/
       - build:
-          context: mattermost-plugin-incident-response-production
           filters:
             tags:
               only: /^v.*/
+          context: mattermost-plugin-incident-response-production
       - deploy-ci:
           filters:
             branches:
               only: master
+          context: plugin-ci
           requires:
             - lint
             - test-MySQL56-Postgres96
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-#            - e2e-cypress-tests-534
+            - e2e-cypress-tests-cloud
             - build
       - deploy-release:
+          context: plugin-ci
           filters:
             tags:
               only: /^v.*/
@@ -631,7 +633,7 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-#            - e2e-cypress-tests-534
+            - e2e-cypress-tests-cloud
             - build
       - deploy-release-github:
           filters:
@@ -646,5 +648,5 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-#            - e2e-cypress-tests-534
+            - e2e-cypress-tests-cloud
             - build
