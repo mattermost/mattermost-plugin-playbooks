@@ -670,7 +670,7 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{},
+			MemberIDs:          []string{"testuserid"},
 			BroadcastChannelID: "nonemptychannelid",
 			InviteUsersEnabled: true,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
@@ -704,7 +704,6 @@ func TestPlaybooks(t *testing.T) {
 			AllowReference: true,
 		}, nil)
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq)
 
@@ -728,7 +727,7 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{},
+			MemberIDs:          []string{"testuserid"},
 			BroadcastChannelID: "nonemptychannelid",
 			InviteUsersEnabled: false,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
@@ -786,7 +785,7 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{},
+			MemberIDs:          []string{"testuserid"},
 			BroadcastChannelID: "nonemptychannelid",
 			InviteUsersEnabled: false,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
