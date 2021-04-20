@@ -15,14 +15,14 @@ interface Props {
     onChange: (url: string) => void;
 }
 
-export const WebhookOnCreation: FC<Props> = (props: Props) => (
+export const WebhookOnArchive: FC<Props> = (props: Props) => (
     <AutomationHeader>
         <AutomationTitle>
             <Toggle
                 isChecked={props.enabled}
                 onChange={props.onToggle}
             />
-            <div>{'Send a webhook when incident created'}</div>
+            <div>{'Send a webhook when incident archived'}</div>
         </AutomationTitle>
         <SelectorWrapper>
             <TextBox
