@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import styled from 'styled-components';
 
 import {
     Content,
@@ -12,13 +13,19 @@ import {
 import {Incident} from 'src/types/incident';
 import PostText from 'src/components/post_text';
 
+const StyledContent = styled(Content)`
+    font-size: 14px;
+    margin: 8px 0 0 0;
+    padding: 20px 24px 14px 24px;
+`;
+
 const Description = (props: { incident: Incident }) => {
     let description: JSX.Element = <EmptyBody>{'There is no description available.'}</EmptyBody>;
     if (props.incident.description) {
         description = (
-            <Content>
+            <StyledContent>
                 <PostText text={props.incident.description}/>
-            </Content>
+            </StyledContent>
         );
     }
 
