@@ -7,7 +7,7 @@ export enum RHSState {
 }
 
 export enum RHSTabState {
-    ViewingSummary,
+    ViewingAbout,
     ViewingTasks,
     ViewingTimeline,
 }

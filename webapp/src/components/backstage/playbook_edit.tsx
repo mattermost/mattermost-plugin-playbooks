@@ -507,7 +507,26 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheaderText>
-                                        {'Message Template'}
+                                        {'\'Current description\' Template'}
+                                        <BackstageSubheaderDescription>
+                                            {'This templated message will give you a headstart when new incidents are created. This can be modified at the Incident level.'}
+                                        </BackstageSubheaderDescription>
+                                    </BackstageSubheaderText>
+                                    <StyledTextarea
+                                        placeholder={'Enter current description template'}
+                                        value={playbook.description}
+                                        onChange={(e) => {
+                                            setPlaybook({
+                                                ...playbook,
+                                                description: e.target.value,
+                                            });
+                                            setChangesMade(true);
+                                        }}
+                                    />
+                                </SidebarBlock>
+                                <SidebarBlock>
+                                    <BackstageSubheaderText>
+                                        {'\'Change since last update\' Template'}
                                         <BackstageSubheaderDescription>
                                             {'Add a templated message to give you a headstart. This can be modified at the Incident level.'}
                                         </BackstageSubheaderDescription>

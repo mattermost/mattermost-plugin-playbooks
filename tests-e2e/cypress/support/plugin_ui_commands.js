@@ -6,18 +6,13 @@ import * as TIMEOUTS from '../fixtures/timeouts';
 const incidentStartCommand = '/incident start';
 
 // function startIncident(incidentName) {
-Cypress.Commands.add('startIncident', (playbookName, incidentName, incidentDescription) => {
+Cypress.Commands.add('startIncident', (playbookName, incidentName) => {
     cy.get('#interactiveDialogModal').should('exist').within(() => {
         // # Select playbook
         cy.selectPlaybookFromDropdown(playbookName);
 
         // # Type incident name
         cy.findByTestId('incidentNameinput').type(incidentName, {force: true});
-
-        // # Type description, if any
-        if (incidentDescription) {
-            cy.findByTestId('incidentDescriptioninput').type(incidentDescription, {force: true});
-        }
 
         // # Submit
         cy.get('#interactiveDialogSubmit').click();
@@ -41,10 +36,10 @@ Cypress.Commands.add('openIncidentDialogFromSlashCommand', () => {
 
 // Starts incident with the `/incident start` slash command
 // function startIncidentWithSlashCommand(incidentName) {
-Cypress.Commands.add('startIncidentWithSlashCommand', (playbookName, incidentName, incidentDescription) => {
+Cypress.Commands.add('startIncidentWithSlashCommand', (playbookName, incidentName) => {
     cy.openIncidentDialogFromSlashCommand();
 
-    cy.startIncident(playbookName, incidentName, incidentDescription);
+    cy.startIncident(playbookName, incidentName);
 });
 
 // Starts incident from the incident RHS
@@ -92,6 +87,10 @@ Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) =
 
 Cypress.Commands.add('openBackstage', () => {
     cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('exist').within(() => {
+        // # Wait until the channel loads enough to show the post textbox.
+        cy.get('#post-create').should('exist');
+        cy.wait(2000);
+
         // # Click hamburger main menu
         cy.get('#sidebarHeaderDropdownButton').click();
 
@@ -124,7 +123,7 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
 Cypress.Commands.add('selectPlaybookFromDropdown', (playbookName) => {
     cy.findByTestId('autoCompleteSelector').should('exist').within(() => {
         cy.get('input').click().type(playbookName.toLowerCase());
-        cy.get('#suggestionList').contains(playbookName).click({ force: true });
+        cy.get('#suggestionList').contains(playbookName).click({force: true});
     });
 });
 

@@ -54,7 +54,7 @@ export const StyledTextarea = styled.textarea`
     transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     width: 100%;
     resize: none;
-    height: 100px;
+    height: 160px;
     background-color: rgb(var(--center-channel-bg-rgb));
     border: none;
     box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);

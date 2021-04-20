@@ -26,6 +26,9 @@ export const PresetTemplates: PresetTemplate[] = [
         template: {
             ...emptyPlaybook(),
             title: 'Incident Collaboration Playbook',
+            description: '# Summary\n\nDescribe the current situation. Be succinct.\n\n' +
+                '# Impact\n\nDescribe the known customer impact so far.',
+            reminder_message_template: '# Incident Update\n\nWhat has changed since the last update.\n\n# Change to How Customers are Affected\n\nWhat has changed since the last update.',
             checklists: [
                 {
                     title: 'Triage',

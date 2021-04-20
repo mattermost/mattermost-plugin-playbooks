@@ -25,6 +25,8 @@ import {updateStatus, toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import ShowMore from 'src/components/rhs/show_more';
 import {StatusPost} from 'src/types/incident';
+import {UpdateBody} from 'src/components/rhs/rhs_shared';
+import PostText from 'src/components/post_text';
 
 const NoRecentUpdates = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -64,24 +66,11 @@ const UpdateTimeLink = styled.a`
     }
 `;
 
-const UpdateBody = styled.div`
-    padding-right: 6px;
-
-    h1,h2,h3,h4,h5,h6 {
-        font-size: inherit;
-        font-weight: 600;
-    }
-`;
-
 const EditedIndicator = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: .87em;
     margin-top: -7px;
 `;
-
-interface Props {
-    statusPosts: StatusPost[];
-}
 
 function useAuthorInfo(userID: string) : [string, string] {
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
@@ -97,44 +86,15 @@ function useAuthorInfo(userID: string) : [string, string] {
     return [profileUrl, preferredName];
 }
 
-function usePostFromState(statusPosts: StatusPost[]) : [string, Post | null] {
-    const sortedPosts = [...statusPosts]
-        .filter((a) => a.delete_at === 0)
-        .sort((a, b) => b.create_at - a.create_at);
-
-    const postID = sortedPosts[0]?.id;
-
-    return [postID, useSelector<GlobalState, Post | null>((state) => getPost(state, postID || ''))];
+interface Props {
+    post: Post | null;
 }
 
-const LatestUpdate: FC<Props> = (props: Props) => {
+const PostCard: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
-    const [latestUpdate, setLatestUpdate] = useState<Post | null>(null);
+    const [authorProfileUrl, authorUserName] = useAuthorInfo(props.post?.user_id || '');
 
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
-    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const [authorProfileUrl, authorUserName] = useAuthorInfo(latestUpdate?.user_id || '');
-    const [postID, postFromState] = usePostFromState(props.statusPosts);
-
-    useEffect(() => {
-        const updateLatestUpdate = async () => {
-            if (postFromState) {
-                setLatestUpdate(postFromState);
-                return;
-            }
-
-            if (postID) {
-                setLatestUpdate(await Client4.getPost(postID));
-                return;
-            }
-
-            setLatestUpdate(null);
-        };
-
-        updateLatestUpdate();
-    }, [props.statusPosts]);
-
-    if (!latestUpdate) {
+    if (!props.post) {
         return (
             <NoRecentUpdates>
                 {'No recent updates. '}<a onClick={() => dispatch(updateStatus())}>{'Click here'}</a>{' to update status.'}
@@ -142,18 +102,7 @@ const LatestUpdate: FC<Props> = (props: Props) => {
         );
     }
 
-    const updateTimestamp = moment(latestUpdate.create_at).calendar(undefined, {sameDay: 'LT'}); //eslint-disable-line no-undefined
-
-    // @ts-ignore
-    const {formatText, messageHtmlToComponent} = window.PostUtils;
-
-    const markdownOptions = {
-        singleline: false,
-        mentionHighlight: true,
-        atMentions: true,
-        team,
-        channelNamesMap,
-    };
+    const updateTimestamp = moment(props.post.create_at).calendar(undefined, {sameDay: 'LT'}); //eslint-disable-line no-undefined
 
     return (
         <UpdateSection>
@@ -162,7 +111,7 @@ const LatestUpdate: FC<Props> = (props: Props) => {
                 <UpdateHeader>
                     <UpdateAuthor>{authorUserName}</UpdateAuthor>
                     <UpdateTimeLink
-                        href={`/_redirect/pl/${latestUpdate.id}`}
+                        href={`/_redirect/pl/${props.post.id}`}
                         onClick={(e) => {
                             e.preventDefault();
 
@@ -178,16 +127,15 @@ const LatestUpdate: FC<Props> = (props: Props) => {
                     </UpdateTimeLink>
                 </UpdateHeader>
                 <ShowMore
-                    text={latestUpdate.message}
+                    text={props.post.message}
                 >
-                    <UpdateBody>
-                        {messageHtmlToComponent(formatText(latestUpdate.message, markdownOptions), true, {})}
-                        {latestUpdate.edit_at !== 0 && <EditedIndicator>{'(edited)'}</EditedIndicator>}
-                    </UpdateBody>
+                    <PostText text={props.post.message}>
+                        {props.post.edit_at !== 0 && <EditedIndicator>{'(edited)'}</EditedIndicator>}
+                    </PostText>
                 </ShowMore>
             </UpdateContainer>
         </UpdateSection>
     );
 };
 
-export default LatestUpdate;
+export default PostCard;

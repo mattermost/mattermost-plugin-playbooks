@@ -64,6 +64,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
                     userId: user.id,
                     teamId,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
             });
@@ -78,6 +79,7 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
                     userId: user.id,
                     teamId,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
             });
@@ -111,6 +113,7 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
                     userId: user.id,
                     teamId,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
             });
@@ -125,6 +128,7 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
                     userId: user.id,
                     teamId,
                     message: 'ending',
+                    description: 'description',
                     status: 'Archived',
                 });
             });

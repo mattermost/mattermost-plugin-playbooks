@@ -127,3 +127,13 @@ export const SmallerProfile = styled(Profile)`
         height: 20px;
     }
 `;
+
+export const UpdateBody = styled.div`
+    padding-right: 6px;
+
+    h1,h2,h3,h4,h5,h6 {
+        font-size: inherit;
+        font-weight: 600;
+    }
+`;
+

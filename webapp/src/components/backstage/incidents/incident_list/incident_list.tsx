@@ -18,7 +18,10 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import NoContentIncidentSvg from 'src/components/assets/no_content_incidents_svg';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
+import {
+    StatusFilter,
+    StatusOption,
+} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/pagination_row';
@@ -145,6 +148,14 @@ const NoContentPage = (props: {onNewIncident: () => void}) => {
         </NoContentContainer>
     );
 };
+
+const statusOptions: StatusOption[] = [
+    {value: '', label: 'All'},
+    {value: 'Reported', label: 'Reported'},
+    {value: 'Active', label: 'Active'},
+    {value: 'Resolved', label: 'Resolved'},
+    {value: 'Archived', label: 'Archived'},
+];
 
 const BackstageIncidentList: FC = () => {
     const dispatch = useDispatch();
@@ -319,6 +330,7 @@ const BackstageIncidentList: FC = () => {
                         onSelectedChange={setCommanderId}
                     />
                     <StatusFilter
+                        options={statusOptions}
                         default={fetchParams.status}
                         onChange={setStatus}
                     />
