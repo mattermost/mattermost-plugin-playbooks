@@ -157,7 +157,14 @@ func (p *Plugin) OnActivate() error {
 
 	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 
-	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot, p.config)
+	api.NewPlaybookHandler(
+		p.handler.APIRouter,
+		p.playbookService,
+		pluginAPIClient,
+		p.bot,
+		p.bot,
+		p.config,
+	)
 	api.NewIncidentHandler(
 		p.handler.APIRouter,
 		p.incidentService,
