@@ -6,7 +6,6 @@ import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled from 'styled-components';
-import {css} from '@emotion/core';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
