@@ -48,6 +48,10 @@ func (s *service) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string
 	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 }
 
+func (s *service) GetNumPlaybooksForTeam(teamID string) (int, error) {
+	return s.store.GetNumPlaybooksForTeam(teamID)
+}
+
 func (s *service) Update(playbook Playbook, userID string) error {
 	if err := s.store.Update(playbook); err != nil {
 		return err
