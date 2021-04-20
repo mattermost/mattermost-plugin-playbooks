@@ -21,13 +21,34 @@ import {
     SecondaryButtonLargerRight,
 } from 'src/components/backstage/incidents/shared';
 
-const OuterContainer = styled.div`
-    background: rgba(var(--center-channel-color-rgb),0.03);
+const TopContainer = styled.div`
+    background: var(--center-channel-bg);
+    width: 100%;
+`;
+
+const FirstRow = styled.div`
+    display: flex;
+    align-items: center;
+    height: 60px;
+    margin: 0 32px;
+    padding-top: 24px;
+`;
+
+const SecondRow = styled.div`
+    display: flex;
+    height: 60px;
+    margin: 0;
+    padding: 10px 0 0 80px;
+    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
+`;
+
+const BottomContainer = styled.div`
+    background: rgba(var(--center-channel-color-rgb), 0.03);
     width: 100%;
     height: 100%;
 `;
 
-const Container = styled.div`
+const InnerContainer = styled.div`
     padding: 20px;
     max-width: 1120px;
     margin: 0 auto;
@@ -36,24 +57,13 @@ const Container = styled.div`
     font-weight: 600;
 `;
 
-const TopRow = styled.div`
-    display: flex;
-    align-items: center;
-`;
-
-const Row = styled.div`
-    display: flex;
-    align-items: center;
-    margin: 20px 0 0 0;
-`;
-
 const LeftArrow = styled.button`
     display: block;
     padding: 0;
     border: none;
     background: transparent;
-    font-size: 32px;
-    line-height: 32px;
+    font-size: 24px;
+    line-height: 24px;
     cursor: pointer;
     color: var(--center-channel-color-56);
 
@@ -65,22 +75,17 @@ const LeftArrow = styled.button`
 
 const Title = styled.div`
     font-size: 20px;
-    padding: 0 15px 0 0;
+    padding: 0 16px 0 24px;
     color: var(--center-channel-color);
 `;
 
-interface TabItemProps {
-    active: boolean;
-}
-
-const TabItem = styled.div<TabItemProps>`
+const TabItem = styled.div<{active: boolean}>`
     line-height: 32px;
-    padding: 0 20px;
-    margin: 0 20px;
+    padding: 10px 20px 0 20px;
     font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
 
-    box-shadow: inset 0px -2px 0px var(--center-channel-color-16);
     ${(props) => props.active && css`
         box-shadow: inset 0px -2px 0px var(--button-bg);
         color: var(--button-bg);
@@ -138,11 +143,11 @@ const IncidentBackstage = () => {
     const tabPage = <Overview incident={incident}/>;
 
     return (
-        <OuterContainer>
-            <Container>
-                <TopRow>
+        <>
+            <TopContainer>
+                <FirstRow>
                     <LeftArrow
-                        className='icon-chevron-left'
+                        className='icon-arrow-left'
                         onClick={closeIncidentDetails}
                     />
                     <Title data-testid='incident-title'>{incident.name}</Title>
@@ -151,18 +156,22 @@ const IncidentBackstage = () => {
                         <i className='icon-mattermost'/>
                         {'Mattermost Channel'}
                     </SecondaryButtonLargerRight>
-                </TopRow>
-                <Row>
+                </FirstRow>
+                <SecondRow>
                     <TabItem
                         active={tabState === IncidentBackstageTabState.ViewingOverview}
                         onClick={() => setTabState(IncidentBackstageTabState.ViewingOverview)}
                     >
                         {'Overview'}
                     </TabItem>
-                </Row>
-                {tabPage}
-            </Container>
-        </OuterContainer>
+                </SecondRow>
+            </TopContainer>
+            <BottomContainer>
+                <InnerContainer>
+                    {tabPage}
+                </InnerContainer>
+            </BottomContainer>
+        </>
     );
 };
 
