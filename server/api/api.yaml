@@ -1468,6 +1468,14 @@ paths:
                   description: Boolean that indicates whether the webhook declared in webhook_on_creation_url will be automatically sent.
                   type: boolean
                   example: true
+                webhook_on_archive_url:
+                  description: An absolute URL where a POST request will be sent as soon as the incident is archived. The allowed protocols are HTTP and HTTPS.
+                  type: string
+                  example: https://httpbin.org/post
+                webhook_on_archive_enabled:
+                  description: Boolean that indicates whether the webhook declared in webhook_on_archive_url will be automatically sent.
+                  type: boolean
+                  example: true
       x-codeSamples:
         - lang: curl
           source: |
@@ -1487,6 +1495,21 @@ paths:
                   application/json:
                     schema:
                       $ref: "#/components/schemas/WebhookOnCreationPayload"
+              responses:
+                "2XX":
+                  description: Your server returns a 2XX code if it successfully received the request.
+        incidentArchibed:
+          "{$request.body#/webhook_on_archive_url}":
+            post:
+              summary: Incident's archived outgoing webhook.
+              description: When an incident is archived with this playbook, a POST request is sent to the URL configured in webhook_on_archived_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
+              operationId: webhookOnArchive
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/WebhookOnArchivePayload"
               responses:
                 "2XX":
                   description: Your server returns a 2XX code if it successfully received the request.
@@ -1941,6 +1964,19 @@ components:
           description: Further details on where and why this error happened.
           example: Specific details about the error, depending on the case.
     WebhookOnCreationPayload:
+      allOf:
+        - $ref: "#/components/schemas/Incident"
+        - type: object
+          properties:
+            channel_url:
+              type: string
+              description: Absolute URL to the incident's channel.
+              example: http://example.com/ad-1/channels/incident-channel-name
+            details_url:
+              type: string
+              description: Absolute URL to the incident's details.
+              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID
+    WebhookOnArchivePayload:
       allOf:
         - $ref: "#/components/schemas/Incident"
         - type: object
