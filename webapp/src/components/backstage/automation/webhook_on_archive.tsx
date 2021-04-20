@@ -22,7 +22,7 @@ export const WebhookOnArchive: FC<Props> = (props: Props) => (
                 isChecked={props.enabled}
                 onChange={props.onToggle}
             />
-            <div>{'Send a webhook when incident archived'}</div>
+            <div>{'Send a webhook'}</div>
         </AutomationTitle>
         <SelectorWrapper>
             <TextBox

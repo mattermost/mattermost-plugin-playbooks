@@ -350,6 +350,18 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
+    const handleWebhookOnArchiveChange = (url: string) => {
+        if (playbook.webhook_on_archive_url !== url) {
+            setPlaybook({
+                ...playbook,
+                webhook_on_archive_url: url,
+            });
+            setChangesMade(true);
+        }
+    };
+
+
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
@@ -378,6 +390,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setPlaybook({
             ...playbook,
             webhook_on_creation_enabled: !playbook.webhook_on_creation_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleWebhookOnArchive = () => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_archive_enabled: !playbook.webhook_on_archive_enabled,
         });
         setChangesMade(true);
     };
@@ -566,6 +586,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnArchiveEnabled={playbook.webhook_on_archive_enabled}
+                                    onToggleWebhookOnArchive={handleToggleWebhookOnArchive}
+                                    webhookOnArchiveChange={handleWebhookOnArchiveChange}
+                                    webhookOnArchiveURL={playbook.webhook_on_archive_url}
                                 />
                             </TabContainer>
                         </TabsContent>

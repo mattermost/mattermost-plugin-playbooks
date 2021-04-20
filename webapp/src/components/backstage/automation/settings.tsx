@@ -95,11 +95,17 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         onChange={props.webhookOnCreationChange}
                     />
                 </Setting>
+                
+            </Section>
+            <Section>
+                <SectionTitle>
+                    {'When an incident archived'}
+                </SectionTitle>
                 <Setting id={'incident-archive__outgoing-webhook'}>
                     <WebhookOnArchive
                         enabled={props.webhookOnArchiveEnabled}
                         onToggle={props.onToggleWebhookOnArchive}
-                        url={props.webhookOnCreationURL}
+                        url={props.webhookOnArchiveURL}
                         onChange={props.webhookOnArchiveChange}
                     />
                 </Setting>
