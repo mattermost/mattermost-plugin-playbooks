@@ -36,6 +36,7 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 
 	handler.APIRouter = api
 	handler.root = root
+	handler.config = config
 
 	e20Middleware := E20LicenseRequired{config}
 

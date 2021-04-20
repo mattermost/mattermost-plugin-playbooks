@@ -67,6 +67,19 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if !h.config.IsLicensed() {
+		num, err := h.playbookService.GetNumPlaybooksForTeam(pbook.TeamID)
+		if err != nil {
+			HandleError(w, err)
+			return
+		}
+
+		if num > 0 {
+			HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers can create only one playbook per team", nil)
+			return
+		}
+	}
+
 	if pbook.ID != "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
 		return
