@@ -15,6 +15,7 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
 import {IncidentBackstageTabState} from 'src/types/backstage';
 import {Overview} from 'src/components/backstage/incidents/incident_backstage/overview/overview';
+import {Retrospective} from 'src/components/backstage/incidents/incident_backstage/retrospective/retrospective';
 import {fetchIncident, fetchIncidentMetadata} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -158,7 +159,10 @@ const IncidentBackstage = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/incidents');
     };
 
-    const tabPage = <Overview incident={incident}/>;
+    let tabPage = <Overview incident={incident}/>;
+    if (tabState === IncidentBackstageTabState.ViewingRetrospective) {
+        tabPage = <Retrospective incident={incident}/>;
+    }
 
     return (
         <OuterContainer>
