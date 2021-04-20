@@ -65,6 +65,14 @@ const RHSAbout: FC<Props> = (props: Props) => {
             style={{position: 'absolute'}}
         >
             <div className='IncidentDetails'>
+                <div>
+                    <div className='title'>
+                        {'Description'}
+                    </div>
+                    <Body>
+                        <PostText text={props.incident.description}/>
+                    </Body>
+                </div>
                 <div className='side-by-side'>
                     <div className='inner-container first-container'>
                         <div className='first-title'>{'Commander'}</div>
@@ -98,14 +106,6 @@ const RHSAbout: FC<Props> = (props: Props) => {
                         <div className='first-title'>{'Reporter'}</div>
                         <div className='second-line'>{reporterElem}</div>
                     </div>
-                </div>
-                <div>
-                    <div className='title'>
-                        {'Current Description:'}
-                    </div>
-                    <Body>
-                        <PostText text={props.incident.description}/>
-                    </Body>
                 </div>
                 <div id={'incidentRHSUpdates'}>
                     <div className='title'>

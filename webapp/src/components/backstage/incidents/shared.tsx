@@ -46,7 +46,7 @@ export const Heading = styled.div`
 `;
 
 export const Body = styled.p`
-    margin: 8px;
+    margin: 8px 0;
 `;
 
 export const EmptyBody = styled.div`
