@@ -141,12 +141,12 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	if pbook.WebhookOnArchiveURL != "" {
 		url, err := url.ParseRequestURI(pbook.WebhookOnArchiveURL)
 		if err != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, "invalid archive webhook URL", err)
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid archived webhook URL", err)
 			return
 		}
 
 		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in archive webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			msg := fmt.Sprintf("protocol in archived webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
@@ -298,12 +298,12 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	if pbook.WebhookOnArchiveURL != "" {
 		url, err2 := url.ParseRequestURI(pbook.WebhookOnArchiveURL)
 		if err2 != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, "invalid archive webhook URL", err2)
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid archived webhook URL", err2)
 			return
 		}
 
 		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in archive webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			msg := fmt.Sprintf("protocol in archived webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}

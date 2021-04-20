@@ -183,6 +183,70 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 	return nil
 }
 
+// sendWebhookOnArchive sends a POST request to the archived webhook URL.
+// It blocks until a response is received.
+func (s *ServiceImpl) sendWebhookOnArchive(theIncident *Incident) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+
+	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	channelURL := fmt.Sprintf("%s/%s/channels/%s",
+		*siteURL,
+		team.Name,
+		channel.Name,
+	)
+
+	detailsURL := fmt.Sprintf("%s/%s/%s/incidents/%s",
+		*siteURL,
+		team.Name,
+		s.configService.GetManifest().Id,
+		theIncident.ID,
+	)
+
+	payload := struct {
+		Incident
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
+	}{
+		Incident:   *theIncident,
+		ChannelURL: channelURL,
+		DetailsURL: detailsURL,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", theIncident.WebhookOnArchiveURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
 	if incdnt.DefaultCommanderID != "" {
@@ -631,6 +695,17 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		EndAt:      incidentToModify.ResolvedAt(),
 	}); err != nil {
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
+	}
+
+	if options.Status == StatusArchived {
+		if incidentToModify.WebhookOnArchiveURL != "" {
+			go func() {
+				if err = s.sendWebhookOnArchive(incidentToModify); err != nil {
+					s.pluginAPI.Log.Warn("failed to send a POST request to the archive webhook URL", "webhook URL", incidentToModify.WebhookOnArchiveURL, "error", err)
+					_, _ = s.poster.PostMessage(incidentToModify.BroadcastChannelID, "Incident archived announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+				}
+			}()
+		}
 	}
 
 	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
