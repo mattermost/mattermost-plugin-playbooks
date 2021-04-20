@@ -3,6 +3,12 @@
 
 import React, {useState} from 'react';
 import styled from 'styled-components';
+import {useSelector} from 'react-redux';
+
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {UserProfile} from 'mattermost-redux/types/users';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {Incident} from 'src/types/incident';
 import ProfileWithPosition
@@ -14,6 +20,7 @@ import {
     TabPageContainer,
     Title,
 } from 'src/components/backstage/incidents/shared';
+import {navigateToUrl} from 'src/browser_routing';
 
 const StyledContent = styled(Content)`
     padding: 10px 20px;
@@ -41,10 +48,13 @@ const Participants = (props: Props) => {
 
     return (
         <TabPageContainer>
-            <Title>{'Participants'}</Title>
+            <Title>{`Participants (${profilesInChannel.length})`}</Title>
             <StyledContent>
                 <Heading>{'Commander'}</Heading>
-                <Participant userId={props.incident.commander_user_id}/>
+                <Participant
+                    userId={props.incident.commander_user_id}
+                    isCommander={true}
+                />
                 <Heading>{'Reporter'}</Heading>
                 <Participant userId={props.incident.reporter_user_id}/>
                 <Heading>{'Channel Members'}</Heading>
@@ -61,16 +71,24 @@ const Participants = (props: Props) => {
 
 export default Participants;
 
-function Participant(props: { userId: string }) {
-    const [showMessage, setShowMessage] = useState(false);
+function Participant(props: { userId: string, isCommander?: boolean }) {
+    const [showMessage, setShowMessage] = useState(Boolean(props.isCommander));
+    const team = useSelector(getCurrentTeam);
+    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, props.userId));
 
     return (
         <ParticipantRow
             onMouseEnter={() => setShowMessage(true)}
-            onMouseLeave={() => setShowMessage(false)}
+            onMouseLeave={() => !props.isCommander && setShowMessage(false)}
         >
             <ProfileWithPosition userId={props.userId}/>
-            {showMessage && <SecondaryButtonRight>{'Message'}</SecondaryButtonRight>}
+            {showMessage && (
+                <SecondaryButtonRight
+                    onClick={() => navigateToUrl(`/${team.name}/messages/@${user.username}`)}
+                >
+                    {'Message'}
+                </SecondaryButtonRight>
+            )}
         </ParticipantRow>
     );
 }

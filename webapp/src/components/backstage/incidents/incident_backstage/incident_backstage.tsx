@@ -21,11 +21,16 @@ import {
     SecondaryButtonLargerRight,
 } from 'src/components/backstage/incidents/shared';
 
+const OuterContainer = styled.div`
+    background: rgba(var(--center-channel-color-rgb),0.03);
+    width: 100%;
+    height: 100%;
+`;
+
 const Container = styled.div`
     padding: 20px;
     max-width: 1120px;
     margin: 0 auto;
-    //border: 1px solid black;
     font-family: 'Open Sans', sans-serif;
     font-style: normal;
     font-weight: 600;
@@ -34,14 +39,12 @@ const Container = styled.div`
 const TopRow = styled.div`
     display: flex;
     align-items: center;
-    //border: 1px solid blue;
 `;
 
 const Row = styled.div`
     display: flex;
     align-items: center;
     margin: 20px 0 0 0;
-    //border: 1px solid green;
 `;
 
 const LeftArrow = styled.button`
@@ -135,29 +138,31 @@ const IncidentBackstage = () => {
     const tabPage = <Overview incident={incident}/>;
 
     return (
-        <Container>
-            <TopRow>
-                <LeftArrow
-                    className='icon-chevron-left'
-                    onClick={closeIncidentDetails}
-                />
-                <Title data-testid='incident-title'>{incident.name}</Title>
-                <Badge status={incident.current_status}/>
-                <SecondaryButtonLargerRight onClick={goToChannel}>
-                    <i className='icon-mattermost'/>
-                    {'Mattermost Channel'}
-                </SecondaryButtonLargerRight>
-            </TopRow>
-            <Row>
-                <TabItem
-                    active={tabState === IncidentBackstageTabState.ViewingOverview}
-                    onClick={() => setTabState(IncidentBackstageTabState.ViewingOverview)}
-                >
-                    {'Overview'}
-                </TabItem>
-            </Row>
-            {tabPage}
-        </Container>
+        <OuterContainer>
+            <Container>
+                <TopRow>
+                    <LeftArrow
+                        className='icon-chevron-left'
+                        onClick={closeIncidentDetails}
+                    />
+                    <Title data-testid='incident-title'>{incident.name}</Title>
+                    <Badge status={incident.current_status}/>
+                    <SecondaryButtonLargerRight onClick={goToChannel}>
+                        <i className='icon-mattermost'/>
+                        {'Mattermost Channel'}
+                    </SecondaryButtonLargerRight>
+                </TopRow>
+                <Row>
+                    <TabItem
+                        active={tabState === IncidentBackstageTabState.ViewingOverview}
+                        onClick={() => setTabState(IncidentBackstageTabState.ViewingOverview)}
+                    >
+                        {'Overview'}
+                    </TabItem>
+                </Row>
+                {tabPage}
+            </Container>
+        </OuterContainer>
     );
 };
 

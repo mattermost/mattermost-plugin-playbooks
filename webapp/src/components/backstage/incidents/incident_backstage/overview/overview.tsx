@@ -4,9 +4,6 @@
 import React from 'react';
 
 import Description from 'src/components/backstage/incidents/incident_backstage/overview/description';
-import Metrics from 'src/components/backstage/incidents/incident_backstage/overview/metrics';
-import RetrospectiveSummary
-    from 'src/components/backstage/incidents/incident_backstage/overview/retrospective_summary';
 import {Incident} from 'src/types/incident';
 import Updates from 'src/components/backstage/incidents/incident_backstage/overview/updates';
 import Participants from 'src/components/backstage/incidents/incident_backstage/overview/participants';
@@ -17,8 +14,6 @@ export const Overview = (props: {incident: Incident}) => {
         <Container>
             <Left>
                 <Description incident={props.incident}/>
-                <Metrics/>
-                <RetrospectiveSummary/>
                 <Updates incident={props.incident}/>
             </Left>
             <Right>
