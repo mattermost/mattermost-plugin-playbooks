@@ -389,7 +389,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
 
-		if !sliceContains(pb.MemberIDs, userID) {
+		if len(pb.MemberIDs) != 0 && !sliceContains(pb.MemberIDs, userID) {
 			return nil, errors.New("userID is not a member of playbook")
 		}
 

@@ -210,18 +210,16 @@ func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
 	correctPaginationOpts(&opts)
 
-	var permissionsAndFilter sq.Sqlizer
-	isAdmin := requesterInfo.UserIDtoIsAdmin[requesterInfo.UserID]
-
-	if isAdmin && requesterInfo.MemberOnly || !isAdmin {
-		permissionsAndFilter = p.store.builder.
-			Select("1").
-			Prefix("EXISTS(").
-			From("IR_PlaybookMember as pm").
-			Where("pm.PlaybookID = p.ID").
-			Where(sq.Eq{"pm.MemberID": requesterInfo.UserID}).
-			Suffix(")")
-	}
+	// Check that you are a playbook member or there are no restrictions.
+	permissionsAndFilter := sq.Expr(`(
+			EXISTS(SELECT 1
+					FROM IR_PlaybookMember as pm
+					WHERE pm.PlaybookID = p.ID
+					AND pm.MemberID = ?)
+			OR NOT EXISTS(SELECT 1
+					FROM IR_PlaybookMember as pm
+					WHERE pm.PlaybookID = p.ID)
+		)`, requesterInfo.UserID)
 
 	queryForResults := p.store.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
