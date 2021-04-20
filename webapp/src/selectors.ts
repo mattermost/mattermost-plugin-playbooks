@@ -145,3 +145,14 @@ export const getProfileSetForChannel = (state: GlobalState, channelId: string) =
     const profiles = getUsers(state);
     return sortAndInjectProfiles(profiles, profileSet);
 };
+
+const numPlaybooksByTeam = (state: GlobalState): Record<string, number> =>
+    pluginState(state).numPlaybooksByTeam;
+
+export const currentTeamNumPlaybooks = createSelector(
+    getCurrentTeamId,
+    numPlaybooksByTeam,
+    (teamId, playbooksPerTeamMap) => {
+        return playbooksPerTeamMap[teamId] || 0;
+    },
+);
