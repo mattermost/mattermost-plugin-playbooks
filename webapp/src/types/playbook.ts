@@ -23,7 +23,6 @@ export interface Playbook {
     webhook_on_creation_enabled: boolean;
     webhook_on_archive_url: string;
     webhook_on_archive_enabled: boolean;
-    
 }
 
 export interface PlaybookNoChecklist {

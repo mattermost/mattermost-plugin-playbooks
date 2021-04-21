@@ -360,8 +360,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
-
-
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,

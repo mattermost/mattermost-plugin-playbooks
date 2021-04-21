@@ -10,7 +10,6 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 import {WebhookOnCreation} from 'src/components/backstage/automation/webhook_on_creation';
 import {WebhookOnArchive} from 'src/components/backstage/automation/webhook_on_archive';
 
-
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
 import {Announcement} from 'src/components/backstage/automation/announcement';
@@ -95,7 +94,6 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         onChange={props.webhookOnCreationChange}
                     />
                 </Setting>
-                
             </Section>
             <Section>
                 <SectionTitle>
