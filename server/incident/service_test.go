@@ -526,7 +526,8 @@ func TestUpdateStatus(t *testing.T) {
 		_, err := s.CreateIncident(incdnt, "user_id", true)
 		require.NoError(t, err)
 
-		s.UpdateStatus(incdnt.ID, "user_id", options)
+		err = s.UpdateStatus(incdnt.ID, "user_id", options)
+		require.NoError(t, err)
 
 		select {
 		case payload := <-webhookChan:
