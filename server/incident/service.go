@@ -1204,6 +1204,96 @@ func (s *ServiceImpl) ChangeCreationDate(incidentID string, creationTimestamp ti
 	return s.store.ChangeCreationDate(incidentID, creationTimestamp)
 }
 
+// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
+// was invited by actorID.
+func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
+	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
+
+	if err != nil {
+		// This is not an incident channel
+		return
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve user for userID: %s; error: %s", userID, err.Error())
+		return
+	}
+
+	summary := fmt.Sprintf("@%s joined the channel", user.Username)
+	if actorID != "" {
+		actor, err2 := s.pluginAPI.User.Get(actorID)
+		if err2 != nil {
+			s.logger.Errorf("failed to resolve user for userID: %s; error: %s", actorID, err2.Error())
+			return
+		}
+
+		summary = fmt.Sprintf("@%s was added to channel by @%s", user.Username, actor.Username)
+	}
+	now := model.GetMillis()
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      now,
+		EventAt:       now,
+		EventType:     UserJoinedLeft,
+		Summary:       summary,
+		Details:       `{"action": "joined"}`,
+		SubjectUserID: userID,
+		CreatorUserID: actorID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
+	}
+
+	_ = s.sendIncidentToClient(incidentID)
+}
+
+// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
+// was removed from the channel by actorID.
+func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
+	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
+
+	if err != nil {
+		// This is not an incident channel
+		return
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve user for userID: %s; error: %s", userID, err.Error())
+		return
+	}
+
+	summary := fmt.Sprintf("@%s left the channel", user.Username)
+	if actorID != "" {
+		actor, err2 := s.pluginAPI.User.Get(actorID)
+		if err2 != nil {
+			s.logger.Errorf("failed to resolve user for userID: %s; error: %s", actorID, err2.Error())
+			return
+		}
+
+		summary = fmt.Sprintf("@%s was removed from the channel by @%s", user.Username, actor.Username)
+	}
+	now := model.GetMillis()
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      now,
+		EventAt:       now,
+		EventType:     UserJoinedLeft,
+		Summary:       summary,
+		Details:       `{"action": "left"}`,
+		SubjectUserID: userID,
+		CreatorUserID: actorID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		s.logger.Errorf("failed to create timeline event; error: %s", err.Error())
+	}
+
+	_ = s.sendIncidentToClient(incidentID)
+}
+
 func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {
 	// Incident main channel membership is required to modify incident
 	return s.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelID, model.PERMISSION_READ_CHANNEL)

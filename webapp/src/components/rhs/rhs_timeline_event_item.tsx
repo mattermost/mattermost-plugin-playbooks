@@ -164,6 +164,11 @@ const RHSTimelineEventItem = (props: Props) => {
         summaryTitle = props.event.summary;
         testid = TimelineEventType.EventFromPost;
         break;
+    case TimelineEventType.UserJoinedLeft:
+        iconClass = 'icon icon-at';
+        summaryTitle = props.event.summary;
+        testid = TimelineEventType.UserJoinedLeft;
+        break;
     }
 
     return (

@@ -209,3 +209,19 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 
 	return &model.CommandResponse{}, nil
 }
+
+func (p *Plugin) UserHasJoinedChannel(c *plugin.Context, channelMember *model.ChannelMember, actor *model.User) {
+	actorID := ""
+	if actor != nil && actor.Id != channelMember.UserId {
+		actorID = actor.Id
+	}
+	p.incidentService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
+
+func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.ChannelMember, actor *model.User) {
+	actorID := ""
+	if actor != nil && actor.Id != channelMember.UserId {
+		actorID = actor.Id
+	}
+	p.incidentService.UserHasLeftChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
