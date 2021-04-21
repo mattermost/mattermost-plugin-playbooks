@@ -23,7 +23,7 @@ import {
 import {navigateToUrl} from 'src/browser_routing';
 
 const StyledContent = styled(Content)`
-    padding: 0 20px 10px 20px;
+    padding: 8px 20px 24px 24px;
 `;
 
 const Heading = styled.div`

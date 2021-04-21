@@ -8,6 +8,7 @@ import {Incident} from 'src/types/incident';
 import Updates from 'src/components/backstage/incidents/incident_backstage/overview/updates';
 import Participants from 'src/components/backstage/incidents/incident_backstage/overview/participants';
 import {Container, Left, Right} from 'src/components/backstage/incidents/shared';
+import About from 'src/components/backstage/incidents/incident_backstage/overview/about';
 
 export const Overview = (props: {incident: Incident}) => {
     return (
@@ -17,6 +18,7 @@ export const Overview = (props: {incident: Incident}) => {
                 <Updates incident={props.incident}/>
             </Left>
             <Right>
+                <About incident={props.incident}/>
                 <Participants incident={props.incident}/>
             </Right>
         </Container>
