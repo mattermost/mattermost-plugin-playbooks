@@ -189,6 +189,49 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
+	t.Run("create playbook, unlicensed with zero pre-existing playbooks in the team", func(t *testing.T) {
+		t.Skip()
+		mockCtrl = gomock.NewController(t)
+		configService = mock_config.NewMockService(mockCtrl)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+		handler = NewHandler(client, configService)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		poster = mock_poster.NewMockPoster(mockCtrl)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(false)
+
+		configService.EXPECT().
+			GetConfiguration().
+			Return(&config.Configuration{
+				EnabledTeams: []string{},
+			})
+
+		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
+
+		playbookService.EXPECT().
+			Create(playbooktest, "testuserid").
+			Return(model.NewId(), nil).
+			Times(1)
+
+		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+			Title:          playbooktest.Title,
+			TeamID:         playbooktest.TeamID,
+			Checklists:     toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:      playbooktest.MemberIDs,
+			InvitedUserIDs: playbooktest.InvitedUserIDs,
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultPlaybook.ID)
+	})
+
 	t.Run("create playbook", func(t *testing.T) {
 		reset(t)
 
