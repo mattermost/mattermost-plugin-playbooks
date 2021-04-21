@@ -67,7 +67,7 @@
     "core-js": "3.10.2",
     "debounce": "1.2.1",
     "mattermost-redux": "5.33.1",
-    "mattermost-webapp": "https://github.com/mattermost/mattermost-webapp.git#018d1d0cec4b4b91583c187d6a7b730722fe8171",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#018d1d0cec4b4b91583c187d6a7b730722fe8171",
     "moment": "2.29.1",
     "qs": "6.10.1",
     "react": "16.13.1",
