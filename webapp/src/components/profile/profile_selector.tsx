@@ -295,7 +295,7 @@ interface ChildContainerProps {
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
-    top: ${(props) => 27 - (props.moveUp || 0)};
+    top: ${(props) => 27 - (props.moveUp || 0)}px;
 `;
 
 const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
