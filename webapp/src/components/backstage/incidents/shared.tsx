@@ -28,6 +28,7 @@ export const TabPageContainer = styled.div`
 export const Title = styled.div`
     color: var(--button-bg);
     font-size: 18px;
+    font-weight: 600;
 `;
 
 export const Content = styled.div`

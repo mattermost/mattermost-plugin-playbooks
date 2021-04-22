@@ -9,6 +9,8 @@ import {Redirect, useRouteMatch} from 'react-router-dom';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Channel} from 'mattermost-redux/types/channels';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
 import {IncidentBackstageTabState} from 'src/types/backstage';
@@ -108,7 +110,7 @@ const IncidentBackstage = () => {
     const [incident, setIncident] = useState<Incident | null>(null);
     const [incidentMetadata, setIncidentMetadata] = useState<IncidentMetadata | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-
+    const channel = useSelector<GlobalState, Channel | null>((state) => (incident ? getChannel(state, incident.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
@@ -137,6 +139,11 @@ const IncidentBackstage = () => {
         navigateToUrl(`/${incidentMetadata.team_name}/channels/${incidentMetadata.channel_name}`);
     };
 
+    let channelIcon = 'icon-mattermost';
+    if (channel) {
+        channelIcon = channel.type === 'O' ? 'icon-globe' : 'icon-lock-outline';
+    }
+
     const closeIncidentDetails = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/incidents');
     };
@@ -154,8 +161,8 @@ const IncidentBackstage = () => {
                     <Title data-testid='incident-title'>{incident.name}</Title>
                     <Badge status={incident.current_status}/>
                     <SecondaryButtonLargerRight onClick={goToChannel}>
-                        <i className='icon-mattermost'/>
-                        {'Mattermost Channel'}
+                        <i className={'icon ' + channelIcon}/>
+                        {'Go to channel'}
                     </SecondaryButtonLargerRight>
                     <ExportLink incident={incident}/>
                 </FirstRow>

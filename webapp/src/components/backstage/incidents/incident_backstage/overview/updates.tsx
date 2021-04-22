@@ -14,8 +14,8 @@ import {
 } from 'src/components/backstage/incidents/shared';
 import {usePost} from 'src/hooks';
 
-const PostBody = styled.div`
-    margin-top: 10px;
+const StyledContent = styled(Content)`
+    padding: 24px;
 `;
 
 interface Props {
@@ -25,7 +25,8 @@ interface Props {
 const Updates = (props: Props) => {
     const statusPosts = props.incident.status_posts.sort((a, b) => b.create_at - a.create_at);
 
-    let updates: JSX.Element | JSX.Element[] = <EmptyBody>{'There are no updates available.'}</EmptyBody>;
+    let updates: JSX.Element | JSX.Element[] =
+        <EmptyBody>{'There are no updates available.'}</EmptyBody>;
     if (statusPosts.length) {
         updates = statusPosts.map((sp) => (
             <PostContent
@@ -51,11 +52,9 @@ const PostContent = (props: { postId: string }) => {
     }
 
     return (
-        <Content>
-            <PostBody>
-                <PostCard post={post}/>
-            </PostBody>
-        </Content>
+        <StyledContent>
+            <PostCard post={post}/>
+        </StyledContent>
     );
 };
 
