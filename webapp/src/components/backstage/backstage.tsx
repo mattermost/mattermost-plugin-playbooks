@@ -126,6 +126,8 @@ const Backstage: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
 
+    const experimentalFeaturesEnabled = false;
+
     return (
         <BackstageContainer>
             <Switch>
@@ -134,16 +136,18 @@ const Backstage: FC = () => {
                 <Route>
                     <BackstageNavbar className='flex justify-content-between'>
                         <div className='d-flex items-center'>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/stats`}
-                                activeClassName={'active'}
-                                data-testid='statsLHSButton'
-                            >
-                                <span className='mr-3 d-flex items-center'>
-                                    <div className={'fa fa-line-chart'}/>
-                                </span>
-                                {'Stats'}
-                            </BackstageTitlebarItem>
+                            {experimentalFeaturesEnabled &&
+                                <BackstageTitlebarItem
+                                    to={`${match.url}/stats`}
+                                    activeClassName={'active'}
+                                    data-testid='statsLHSButton'
+                                >
+                                    <span className='mr-3 d-flex items-center'>
+                                        <div className={'fa fa-line-chart'}/>
+                                    </span>
+                                    {'Stats'}
+                                </BackstageTitlebarItem>
+                            }
                             <BackstageTitlebarItem
                                 to={`${match.url}/incidents`}
                                 activeClassName={'active'}
@@ -201,6 +205,12 @@ const Backstage: FC = () => {
                     </Route>
                     <Route path={`${match.url}/stats`}>
                         <StatsView/>
+                    </Route>
+                    <Route
+                        exact={true}
+                        path={`${match.url}`}
+                    >
+                        <Redirect to={`${match.url}/incidents`}/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
