@@ -21,7 +21,7 @@ const StyledContent = styled(Content)`
 
 const Description = (props: { incident: Incident }) => {
     let description: JSX.Element = <EmptyBody>{'There is no description available.'}</EmptyBody>;
-    if (props.incident.description) {
+    if (props.incident.status_posts.length > 0 && props.incident.description) {
         description = (
             <StyledContent>
                 <PostText text={props.incident.description}/>

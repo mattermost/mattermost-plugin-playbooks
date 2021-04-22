@@ -4,6 +4,7 @@
 import React, {FC} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
+import {useDispatch} from 'react-redux';
 
 import {setCommander} from 'src/client';
 import {Incident} from 'src/types/incident';
@@ -17,8 +18,8 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import PostCard from 'src/components/rhs/post_card';
 import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
-import {Body} from 'src/components/backstage/incidents/shared';
 import PostText from 'src/components/post_text';
+import {updateStatus} from 'src/actions';
 
 const Description = styled.div`
     padding: 0 0 14px 0;
@@ -28,13 +29,30 @@ const Row = styled.div`
     padding: 0 0 24px 0;
 `;
 
+const NoDescription = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    margin-bottom: 10px;
+`;
+
 interface Props {
     incident: Incident;
 }
 
 const RHSAbout: FC<Props> = (props: Props) => {
+    const dispatch = useDispatch();
     const profilesInChannel = useProfilesInCurrentChannel();
     const latestUpdatePost = useLatestUpdate(props.incident);
+
+    let description = <PostText text={props.incident.description}/>;
+    if (props.incident.status_posts.length === 0) {
+        description = (
+            <NoDescription>
+                {'No description yet. '}
+                <a onClick={() => dispatch(updateStatus())}>{'Click here'}</a>
+                {' to update status.'}
+            </NoDescription>
+        );
+    }
 
     const fetchUsers = async () => {
         return profilesInChannel;
@@ -66,9 +84,7 @@ const RHSAbout: FC<Props> = (props: Props) => {
                     <div className='title'>
                         {'Description'}
                     </div>
-                    <Body>
-                        <PostText text={props.incident.description}/>
-                    </Body>
+                    {description}
                 </Description>
                 <Row>
                     <div className='side-by-side'>

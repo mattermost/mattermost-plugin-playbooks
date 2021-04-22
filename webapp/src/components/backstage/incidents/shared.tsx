@@ -50,7 +50,8 @@ export const Body = styled.p`
 `;
 
 export const EmptyBody = styled.div`
-    margin-top: 8px;
+    margin: 16px 0 24px 0;
+    font-size: 14px;
 `;
 
 export const SecondaryButton = styled(TertiaryButton)`
