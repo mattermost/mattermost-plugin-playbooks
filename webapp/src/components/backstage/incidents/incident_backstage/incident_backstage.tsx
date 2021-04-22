@@ -20,6 +20,7 @@ import {
     Badge,
     SecondaryButtonLargerRight,
 } from 'src/components/backstage/incidents/shared';
+import ExportLink from 'src/components/backstage/incidents/incident_details/export_link';
 
 const TopContainer = styled.div`
     background: var(--center-channel-bg);
@@ -156,6 +157,7 @@ const IncidentBackstage = () => {
                         <i className='icon-mattermost'/>
                         {'Mattermost Channel'}
                     </SecondaryButtonLargerRight>
+                    <ExportLink incident={incident}/>
                 </FirstRow>
                 <SecondRow>
                     <TabItem
