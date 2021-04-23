@@ -7,8 +7,7 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import {WebhookOnCreation} from 'src/components/backstage/automation/webhook_on_creation';
-import {WebhookOnArchive} from 'src/components/backstage/automation/webhook_on_archive';
+import {WebhookInput} from 'src/components/backstage/automation/webhook_input';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
@@ -87,7 +86,7 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'incident-creation__outgoing-webhook'}>
-                    <WebhookOnCreation
+                    <WebhookInput
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
                         url={props.webhookOnCreationURL}
@@ -97,10 +96,10 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When an incident archived'}
+                    {'When an incident is archived'}
                 </SectionTitle>
                 <Setting id={'incident-archive__outgoing-webhook'}>
-                    <WebhookOnArchive
+                    <WebhookInput
                         enabled={props.webhookOnArchiveEnabled}
                         onToggle={props.onToggleWebhookOnArchive}
                         url={props.webhookOnArchiveURL}
