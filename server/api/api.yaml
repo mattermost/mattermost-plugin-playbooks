@@ -1498,7 +1498,7 @@ paths:
               responses:
                 "2XX":
                   description: Your server returns a 2XX code if it successfully received the request.
-        incidentArchibed:
+        incidentArchived:
           "{$request.body#/webhook_on_archive_url}":
             post:
               summary: Incident's archived outgoing webhook.
