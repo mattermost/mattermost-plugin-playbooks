@@ -487,6 +487,7 @@ func TestUpdateStatus(t *testing.T) {
 			Name:                "Incident Name",
 			TeamID:              teamID,
 			CommanderUserID:     "user_id",
+			ChannelID:           "channel_id",
 			WebhookOnArchiveURL: server.URL,
 		}
 
@@ -513,9 +514,6 @@ func TestUpdateStatus(t *testing.T) {
 		siteURL := "http://example.com"
 		mattermostConfig.ServiceSettings.SiteURL = &siteURL
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
-		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id"}, nil)
-		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
-		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", mock.Anything).Return(nil, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "incident-channel-name"}, nil)
@@ -523,10 +521,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, "user_id", true)
-		require.NoError(t, err)
-
-		err = s.UpdateStatus(incdnt.ID, "user_id", options)
+		err := s.UpdateStatus(incdnt.ID, "user_id", options)
 		require.NoError(t, err)
 
 		select {
