@@ -56,6 +56,7 @@ const AddNewTask = styled.button`
 const InnerContainer = styled.div`
     display: flex;
     flex-direction: column;
+    padding: 0 0 24px 0;
 `;
 
 interface Props {
