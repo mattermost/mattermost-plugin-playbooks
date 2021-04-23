@@ -13,9 +13,11 @@ import {TINY} from '../../fixtures/timeouts';
 describe('backstage incident list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
-    let newTeamName;
+    let newTeam;
+    let newTeamWithNoActiveIncidents;
     let userId;
     let playbookId;
+    let playbookOnTeamWithNoActiveIncidentsId;
 
     before(() => {
         // # Login as the sysadmin
@@ -23,11 +25,32 @@ describe('backstage incident list', () => {
 
         // # Create a new team for the welcome page test
         cy.apiCreateTeam('team', 'Team').then(({team}) => {
-            newTeamName = team.name;
+            newTeam = team;
 
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
                 cy.apiAddUserToTeam(team.id, user.id);
+            });
+        });
+
+        // # Create a new team for the welcome page test when filtering
+        cy.apiCreateTeam('team', 'Team With No Active Incidents').then(({team}) => {
+            newTeamWithNoActiveIncidents = team;
+
+            // # Add user-1 to team
+            cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
+                cy.apiAddUserToTeam(team.id, user.id);
+            });
+
+            // # Create a playbook
+            cy.apiGetCurrentUser().then((user) => {
+                cy.apiCreateTestPlaybook({
+                    teamId: team.id,
+                    title: playbookName,
+                    userId: user.id,
+                }).then((playbook) => {
+                    playbookOnTeamWithNoActiveIncidentsId = playbook.id;
+                });
             });
         });
 
@@ -61,7 +84,7 @@ describe('backstage incident list', () => {
 
     it('shows welcome page when no incidents', () => {
         // # Open backstage
-        cy.visit(`/${newTeamName}/com.mattermost.plugin-incident-management/stats`);
+        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management`);
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -70,9 +93,39 @@ describe('backstage incident list', () => {
         cy.get('#root').findByText('What are Incidents?').should('be.visible');
     });
 
+    it('shows welcome page when no incidents, even when filtering', () => {
+        // # Navigate to a filtered incident list on a team with no incidents.
+        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/incidents?status=Active`);
+
+        // * Assert welcome page title text.
+        cy.get('#root').findByText('What are Incidents?').should('be.visible');
+    });
+
+    it('does not show welcome page when filtering yields no incidents', () => {
+        // # Start the incident
+        const now = Date.now();
+        const incidentName = 'Incident (' + now + ')';
+        cy.apiStartIncident({
+            teamId: newTeamWithNoActiveIncidents.id,
+            playbookId,
+            incidentName,
+            commanderUserId: userId,
+        });
+
+        // # Navigate to a filtered incident list on a team with no active incidents.
+        cy.visit(`/${newTeamWithNoActiveIncidents.name}/com.mattermost.plugin-incident-management/incidents?status=Active`);
+
+        // * Assert welcome page is not visible.
+        cy.get('#root').findByText('What are Incidents?').should('not.be.visible');
+
+        // * Assert incident listing is visible.
+        cy.findByTestId('titleIncident').should('exist').contains('Incidents');
+        cy.findByTestId('titleIncident').contains(newTeamWithNoActiveIncidents.display_name);
+    });
+
     it('New incident works when the backstage is the first page loaded', () => {
         // # Navigate to the incidents backstage of a team with no incidents.
-        cy.visit(`/${newTeamName}/com.mattermost.plugin-incident-management/incidents`);
+        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/incidents`);
 
         // # Make sure that the Redux store is empty
         cy.reload();
@@ -81,7 +134,7 @@ describe('backstage incident list', () => {
         cy.findByText('New Incident').click();
 
         // * Verify that we are in the centre channel view, out of the backstage
-        cy.url().should('include', `/${newTeamName}/channels`);
+        cy.url().should('include', `/${newTeam.name}/channels`);
 
         // * Verify that the interactive dialog modal to create an incident is visible
         cy.get('#interactiveDialogModal').should('exist');
@@ -99,7 +152,7 @@ describe('backstage incident list', () => {
         });
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -121,7 +174,7 @@ describe('backstage incident list', () => {
         });
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -160,7 +213,7 @@ describe('backstage incident list', () => {
             cy.apiLogin('user-1');
 
             // # Open backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
             // # Switch to incidents backstage
             cy.findByTestId('incidentsLHSButton').click();

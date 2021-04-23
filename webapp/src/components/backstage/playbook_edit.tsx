@@ -95,12 +95,6 @@ const EditableTitleContainer = styled.div`
     line-height: 28px;
 `;
 
-const EditableDescriptionContainer = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-`;
-
 const RadioContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -252,14 +246,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setPlaybook({
             ...playbook,
             title,
-        });
-        setChangesMade(true);
-    };
-
-    const handleDescriptionChange = (description: string) => {
-        setPlaybook({
-            ...playbook,
-            description,
         });
         setChangesMade(true);
     };
@@ -426,14 +412,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             placeholder={'Untitled Playbook'}
                         />
                     </EditableTitleContainer>
-                    <EditableDescriptionContainer>
-                        <EditableText
-                            id='playbook-description'
-                            text={playbook.description}
-                            onChange={handleDescriptionChange}
-                            placeholder={'Playbook description'}
-                        />
-                    </EditableDescriptionContainer>
                 </EditableTexts>
                 <NavbarPadding/>
                 <PrimaryButton
@@ -507,13 +485,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheaderText>
-                                        {'\'Current description\' Template'}
+                                        {'Incident overview template'}
                                         <BackstageSubheaderDescription>
-                                            {'This templated message will give you a headstart when new incidents are created. This can be modified at the Incident level.'}
+                                            {'This message is used to describe the incident when it\'s started. As the incident progresses, use Update Status to update the description. The message is displayed in the RHS and on the Overview page.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheaderText>
                                     <StyledTextarea
-                                        placeholder={'Enter current description template'}
+                                        placeholder={'Enter incident overview template.'}
                                         value={playbook.description}
                                         onChange={(e) => {
                                             setPlaybook({
@@ -526,13 +504,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheaderText>
-                                        {'\'Change since last update\' Template'}
+                                        {'Incident update template'}
                                         <BackstageSubheaderDescription>
-                                            {'Add a templated message to give you a headstart. This can be modified at the Incident level.'}
+                                            {'This message is used to describe changes made to an active incident since the last update. The message is displayed in the RHS and Overview page.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheaderText>
                                     <StyledTextarea
-                                        placeholder={'Enter message template'}
+                                        placeholder={'Enter incident update template'}
                                         value={playbook.reminder_message_template}
                                         onChange={(e) => {
                                             setPlaybook({

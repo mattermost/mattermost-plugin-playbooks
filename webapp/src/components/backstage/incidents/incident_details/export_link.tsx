@@ -2,25 +2,38 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState} from 'react';
-
 import {useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
-
+import styled from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {OVERLAY_DELAY} from 'src/constants';
-
 import {isExportLicensed} from 'src/selectors';
 import {exportChannelUrl} from 'src/client';
 import {Banner} from 'src/components/backstage/shared';
 
 import {Incident} from 'src/types/incident';
+import {SecondaryButtonLarger} from 'src/components/backstage/incidents/shared';
 
 interface ExportLinkProps {
     incident: Incident
 }
 
 const ExportBannerTimeout = 2500;
+
+const SecondaryButtonWithSpace = styled(SecondaryButtonLarger)`
+    margin: 0 0 0 20px;
+`;
+
+const SecondaryButtonDisabled = styled(SecondaryButtonWithSpace)`
+    cursor: default;
+    border: 1px solid rgba(var(--button-bg-rgb), 0.50);
+    color: rgba(var(--button-bg-rgb), 0.50);
+
+    &:hover {
+        background: inherit;
+    }
+`;
 
 const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     //@ts-ignore plugins state is a thing
@@ -30,6 +43,7 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     const [showBanner, setShowBanner] = useState(false);
 
     const onExportClick = () => {
+        window.location.href = exportChannelUrl(props.incident.channel_id);
         setShowBanner(true);
         window.setTimeout(() => {
             setShowBanner(false);
@@ -51,20 +65,15 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     );
 
     let link = (
-        <a
-            className={'export-link'}
-            href={exportChannelUrl(props.incident.channel_id)}
-            target={'_new'}
-            onClick={onExportClick}
-        >
+        <SecondaryButtonWithSpace onClick={onExportClick}>
             {linkText}
-        </a>
+        </SecondaryButtonWithSpace>
     );
     if (!exportAvailable || !exportLicensed) {
         link = (
-            <div className={'disabled'}>
+            <SecondaryButtonDisabled>
                 {linkText}
-            </div>
+            </SecondaryButtonDisabled>
         );
     }
 
