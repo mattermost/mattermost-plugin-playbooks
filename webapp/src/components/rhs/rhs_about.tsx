@@ -3,15 +3,11 @@
 
 import React, {FC} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
-import {useSelector} from 'react-redux';
-
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import styled from 'styled-components';
+import {useDispatch} from 'react-redux';
 
 import {setCommander} from 'src/client';
-import {Incident, incidentCurrentStatus} from 'src/types/incident';
+import {Incident} from 'src/types/incident';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import Duration from '../duration';
 import './incident_details.scss';
@@ -19,21 +15,44 @@ import {
     renderThumbHorizontal,
     renderThumbVertical,
     renderView,
-    SmallerProfile,
 } from 'src/components/rhs/rhs_shared';
 import PostCard from 'src/components/rhs/post_card';
-import StatusBadge from '../backstage/incidents/status_badge';
 import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
-import {Body} from 'src/components/backstage/incidents/shared';
 import PostText from 'src/components/post_text';
+import {updateStatus} from 'src/actions';
+
+const Description = styled.div`
+    padding: 0 0 14px 0;
+`;
+
+const Row = styled.div`
+    padding: 0 0 24px 0;
+`;
+
+const NoDescription = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    margin-bottom: 10px;
+`;
 
 interface Props {
     incident: Incident;
 }
 
 const RHSAbout: FC<Props> = (props: Props) => {
+    const dispatch = useDispatch();
     const profilesInChannel = useProfilesInCurrentChannel();
     const latestUpdatePost = useLatestUpdate(props.incident);
+
+    let description = <PostText text={props.incident.description}/>;
+    if (props.incident.status_posts.length === 0) {
+        description = (
+            <NoDescription>
+                {'No description yet. '}
+                <a onClick={() => dispatch(updateStatus())}>{'Click here'}</a>
+                {' to update status.'}
+            </NoDescription>
+        );
+    }
 
     const fetchUsers = async () => {
         return profilesInChannel;
@@ -50,10 +69,6 @@ const RHSAbout: FC<Props> = (props: Props) => {
         }
     };
 
-    // eslint-disable-next-line multiline-ternary
-    const reporterElem = props.incident.reporter_user_id ?
-        <SmallerProfile userId={props.incident.reporter_user_id}/> : 'Not available.';
-
     return (
         <Scrollbars
             autoHide={true}
@@ -65,48 +80,36 @@ const RHSAbout: FC<Props> = (props: Props) => {
             style={{position: 'absolute'}}
         >
             <div className='IncidentDetails'>
-                <div className='side-by-side'>
-                    <div className='inner-container first-container'>
-                        <div className='first-title'>{'Commander'}</div>
-                        <ProfileSelector
-                            selectedUserId={props.incident.commander_user_id}
-                            placeholder={'Assign Commander'}
-                            placeholderButtonClass={'NoAssignee-button'}
-                            profileButtonClass={'Assigned-button'}
-                            enableEdit={true}
-                            getUsers={fetchUsers}
-                            onSelectedChange={onSelectedProfileChange}
-                            selfIsFirstOption={true}
-                        />
+                <Description>
+                    <div className='title'>
+                        {'Description'}
                     </div>
-                    <div className='first-title'>
-                        {'Duration'}
-                        <Duration
-                            from={props.incident.create_at}
-                            to={props.incident.end_at}
-                        />
-                    </div>
-                </div>
-                <div className='side-by-side'>
-                    <div className='inner-container first-container'>
-                        <div className='first-title'>{'Status'}</div>
-                        <div>
-                            <StatusBadge status={incidentCurrentStatus(props.incident)}/>
+                    {description}
+                </Description>
+                <Row>
+                    <div className='side-by-side'>
+                        <div className='inner-container first-container'>
+                            <div className='first-title'>{'Commander'}</div>
+                            <ProfileSelector
+                                selectedUserId={props.incident.commander_user_id}
+                                placeholder={'Assign Commander'}
+                                placeholderButtonClass={'NoAssignee-button'}
+                                profileButtonClass={'Assigned-button'}
+                                enableEdit={true}
+                                getUsers={fetchUsers}
+                                onSelectedChange={onSelectedProfileChange}
+                                selfIsFirstOption={true}
+                            />
+                        </div>
+                        <div className='first-title'>
+                            {'Duration'}
+                            <Duration
+                                from={props.incident.create_at}
+                                to={props.incident.end_at}
+                            />
                         </div>
                     </div>
-                    <div className='inner-container'>
-                        <div className='first-title'>{'Reporter'}</div>
-                        <div className='second-line'>{reporterElem}</div>
-                    </div>
-                </div>
-                <div>
-                    <div className='title'>
-                        {'Current Description:'}
-                    </div>
-                    <Body>
-                        <PostText text={props.incident.description}/>
-                    </Body>
-                </div>
+                </Row>
                 <div id={'incidentRHSUpdates'}>
                     <div className='title'>
                         {'Recent Update:'}

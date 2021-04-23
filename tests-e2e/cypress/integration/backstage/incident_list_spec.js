@@ -84,7 +84,7 @@ describe('backstage incident list', () => {
 
     it('shows welcome page when no incidents', () => {
         // # Open backstage
-        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/stats`);
+        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management`);
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -152,7 +152,7 @@ describe('backstage incident list', () => {
         });
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -174,7 +174,7 @@ describe('backstage incident list', () => {
         });
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to incidents backstage
         cy.findByTestId('incidentsLHSButton').click();
@@ -213,7 +213,7 @@ describe('backstage incident list', () => {
             cy.apiLogin('user-1');
 
             // # Open backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
+            cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
             // # Switch to incidents backstage
             cy.findByTestId('incidentsLHSButton').click();
