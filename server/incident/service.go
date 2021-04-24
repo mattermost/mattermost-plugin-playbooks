@@ -185,7 +185,7 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 
 // sendWebhookOnArchive sends a POST request to the archived webhook URL.
 // It blocks until a response is received.
-func (s *ServiceImpl) sendWebhookOnArchive(theIncident *Incident) error {
+func (s *ServiceImpl) sendWebhookOnArchive(theIncident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 
 	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
@@ -216,7 +216,7 @@ func (s *ServiceImpl) sendWebhookOnArchive(theIncident *Incident) error {
 		ChannelURL string `json:"channel_url"`
 		DetailsURL string `json:"details_url"`
 	}{
-		Incident:   *theIncident,
+		Incident:   theIncident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 	}
@@ -697,17 +697,6 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
 
-	if options.Status == StatusArchived {
-		if incidentToModify.WebhookOnArchiveURL != "" {
-			go func() {
-				if err = s.sendWebhookOnArchive(incidentToModify); err != nil {
-					s.pluginAPI.Log.Warn("failed to send a POST request to the archive webhook URL", "webhook URL", incidentToModify.WebhookOnArchiveURL, "error", err)
-					_, _ = s.poster.PostMessage(incidentToModify.BroadcastChannelID, "Incident archived announcement through the outgoing webhook failed. Contact your System Admin for more information.")
-				}
-			}()
-		}
-	}
-
 	if err2 := s.broadcastStatusUpdate(options.Message, incidentToModify, userID, post.Id); err2 != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
@@ -747,6 +736,17 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
+	}
+
+	if options.Status == StatusArchived {
+		if incidentToModify.WebhookOnArchiveURL != "" {
+			go func() {
+				if err = s.sendWebhookOnArchive(*incidentToModify); err != nil {
+					s.pluginAPI.Log.Warn("failed to send a POST request to the archive webhook URL", "webhook URL", incidentToModify.WebhookOnArchiveURL, "error", err)
+					_, _ = s.poster.PostMessage(incidentToModify.BroadcastChannelID, "Incident archived announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+				}
+			}()
+		}
 	}
 
 	return nil
