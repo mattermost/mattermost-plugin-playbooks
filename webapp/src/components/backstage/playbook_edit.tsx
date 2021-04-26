@@ -427,8 +427,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         >
                             {'Tasks'}
                             {'Preferences'}
-                            {'Permissions'}
                             {'Automation'}
+                            {'Permissions'}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -518,6 +518,30 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                 </SidebarBlock>
                             </TabContainer>
                             <TabContainer>
+                                <AutomationSettings
+                                    searchProfiles={searchUsers}
+                                    getProfiles={getUsers}
+                                    userIds={playbook.invited_user_ids}
+                                    inviteUsersEnabled={playbook.invite_users_enabled}
+                                    onToggleInviteUsers={handleToggleInviteUsers}
+                                    onAddUser={handleAddUserInvited}
+                                    onRemoveUser={handleRemoveUserInvited}
+                                    defaultCommanderEnabled={playbook.default_commander_enabled}
+                                    defaultCommanderID={playbook.default_commander_id}
+                                    onToggleDefaultCommander={handleToggleDefaultCommander}
+                                    onAssignCommander={handleAssignDefaultCommander}
+                                    teamID={playbook.team_id}
+                                    announcementChannelID={playbook.announcement_channel_id}
+                                    announcementChannelEnabled={playbook.announcement_channel_enabled}
+                                    onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
+                                    onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
+                                    webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
+                                    onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
+                                    webhookOnCreationChange={handleWebhookOnCreationChange}
+                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                />
+                            </TabContainer>
+                            <TabContainer>
                                 <SidebarBlock>
                                     <BackstageSubheader>
                                         {'Channel access'}
@@ -549,12 +573,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     </RadioContainer>
                                 </SidebarBlock>
                                 <SidebarBlock>
-                                    <BackstageSubheader>
-                                        {'Playbook access'}
-                                        <BackstageSubheaderDescription>
-                                            {'Only people who you share with can create an incident from this playbook.'}
-                                        </BackstageSubheaderDescription>
-                                    </BackstageSubheader>
                                     <SharePlaybook
                                         currentUserId={currentUserId}
                                         onAddUser={handleUsersInput}
@@ -565,30 +583,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         onClear={handleClearUsers}
                                     />
                                 </SidebarBlock>
-                            </TabContainer>
-                            <TabContainer>
-                                <AutomationSettings
-                                    searchProfiles={searchUsers}
-                                    getProfiles={getUsers}
-                                    userIds={playbook.invited_user_ids}
-                                    inviteUsersEnabled={playbook.invite_users_enabled}
-                                    onToggleInviteUsers={handleToggleInviteUsers}
-                                    onAddUser={handleAddUserInvited}
-                                    onRemoveUser={handleRemoveUserInvited}
-                                    defaultCommanderEnabled={playbook.default_commander_enabled}
-                                    defaultCommanderID={playbook.default_commander_id}
-                                    onToggleDefaultCommander={handleToggleDefaultCommander}
-                                    onAssignCommander={handleAssignDefaultCommander}
-                                    teamID={playbook.team_id}
-                                    announcementChannelID={playbook.announcement_channel_id}
-                                    announcementChannelEnabled={playbook.announcement_channel_enabled}
-                                    onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
-                                    onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
-                                    webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
-                                    onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
-                                    webhookOnCreationChange={handleWebhookOnCreationChange}
-                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
-                                />
                             </TabContainer>
                         </TabsContent>
                     </EditContent>
