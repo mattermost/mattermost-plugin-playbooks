@@ -187,16 +187,29 @@ const BackstageIncidentList: FC = () => {
         });
     }, [currentTeam.id]);
 
+    // When the component is first mounted (or the team changes), determine if there are any
+    // incidents at all, ignoring filters. Decide once if we should show the "no incidents"
+    // landing page.
+    useEffect(() => {
+        async function checkForIncidents() {
+            const incidentsReturn = await fetchIncidents({
+                team_id: currentTeam.id,
+                page: 0,
+                per_page: 1,
+            });
+
+            if (incidentsReturn.items.length === 0) {
+                setShowNoIncidents(true);
+            }
+        }
+
+        checkForIncidents();
+    }, [currentTeam.id]);
+
     useEffect(() => {
         let isCanceled = false;
         async function fetchIncidentsAsync() {
             const incidentsReturn = await fetchIncidents(fetchParams);
-
-            // Only show the no incidents welcome page if we fail to find any incidents
-            // on first load.
-            if (incidents === null && incidentsReturn.items.length === 0) {
-                setShowNoIncidents(true);
-            }
 
             if (!isCanceled) {
                 setIncidents(incidentsReturn.items);
@@ -253,12 +266,6 @@ const BackstageIncidentList: FC = () => {
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
-
-    const isFiltering = (
-        fetchParams.search_term ||
-        fetchParams.commander_user_id ||
-        (fetchParams.status && fetchParams.status !== 'all')
-    );
 
     const resetCommander = () => {
         setCommanderId();
