@@ -244,22 +244,18 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	var playbookID, name, description string
+	var playbookID, name string
 	if rawPlaybookID, ok := request.Submission[incident.DialogFieldPlaybookIDKey].(string); ok {
 		playbookID = rawPlaybookID
 	}
 	if rawName, ok := request.Submission[incident.DialogFieldNameKey].(string); ok {
 		name = rawName
 	}
-	if rawDescription, ok := request.Submission[incident.DialogFieldDescriptionKey].(string); ok {
-		description = rawDescription
-	}
 
 	payloadIncident := incident.Incident{
 		CommanderUserID: request.UserId,
 		TeamID:          request.TeamId,
 		Name:            name,
-		Description:     description,
 		PostID:          state.PostID,
 		PlaybookID:      playbookID,
 	}
@@ -401,6 +397,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		public = pb.CreatePublicIncident
 
 		newIncident.BroadcastChannelID = pb.BroadcastChannelID
+		newIncident.Description = pb.Description
 		newIncident.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 
@@ -704,6 +701,12 @@ func (h *IncidentHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	options.Description = strings.TrimSpace(options.Description)
+	if options.Description == "" {
+		HandleErrorWithCode(w, http.StatusBadRequest, "description must not be empty", errors.New("description field empty"))
+		return
+	}
+
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "message must not be empty", errors.New("message field empty"))
@@ -765,10 +768,18 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	if message, ok := request.Submission[incident.DialogFieldMessageKey]; ok {
 		options.Message = strings.TrimSpace(message.(string))
 	}
-
 	if options.Message == "" {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, incident.DialogFieldMessageKey)))
+		return
+	}
+
+	if description, ok := request.Submission[incident.DialogFieldDescriptionKey]; ok {
+		options.Description = strings.TrimSpace(description.(string))
+	}
+	if options.Description == "" {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, incident.DialogFieldDescriptionKey)))
 		return
 	}
 

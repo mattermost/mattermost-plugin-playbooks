@@ -35,6 +35,7 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
+import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
 const apiUrl = `/plugins/${pluginId}/api/v0`;
 
@@ -281,6 +282,22 @@ export async function telemetryEventForIncident(incidentID: string, action: stri
     });
 }
 
+export async function setGlobalSettings(settings: GlobalSettings) {
+    await doFetchWithoutResponse(`${apiUrl}/settings`, {
+        method: 'POST',
+        body: JSON.stringify(settings),
+    });
+}
+
+export async function fetchGlobalSettings(): Promise<GlobalSettings> {
+    const data = await doGet(`${apiUrl}/settings`);
+    if (!data) {
+        return globalSettingsSetDefaults({});
+    }
+
+    return globalSettingsSetDefaults(data);
+}
+
 export function exportChannelUrl(channelId: string) {
     const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 
@@ -330,7 +347,11 @@ export const doFetchWithResponse = async (url: string, options = {}) => {
 
     let data;
     if (response.ok) {
-        data = await response.json();
+        const contentType = response.headers.get('content-type');
+        if (contentType === 'application/json') {
+            data = await response.json();
+        }
+
         return {
             response,
             data,

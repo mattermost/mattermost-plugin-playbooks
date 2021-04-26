@@ -11,10 +11,11 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
+import path from 'path';
+
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
-import BackstageIncidentDetails from 'src/components/backstage/incidents/incident_details/incident_details';
 
 import {ErrorPageTypes} from 'src/constants';
 
@@ -22,8 +23,11 @@ import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/br
 
 import PlaybookIcon from '../assets/icons/playbook_icon';
 import IncidentIcon from '../assets/icons/incident_icon';
+import IncidentBackstage
+    from 'src/components/backstage/incidents/incident_backstage/incident_backstage';
 
 import StatsView from './stats';
+import SettingsView from './settings';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -125,6 +129,8 @@ const Backstage: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
 
+    const experimentalFeaturesEnabled = false;
+
     return (
         <BackstageContainer>
             <Switch>
@@ -133,16 +139,18 @@ const Backstage: FC = () => {
                 <Route>
                     <BackstageNavbar className='flex justify-content-between'>
                         <div className='d-flex items-center'>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/stats`}
-                                activeClassName={'active'}
-                                data-testid='statsLHSButton'
-                            >
-                                <span className='mr-3 d-flex items-center'>
-                                    <div className={'fa fa-line-chart'}/>
-                                </span>
-                                {'Stats'}
-                            </BackstageTitlebarItem>
+                            {experimentalFeaturesEnabled &&
+                                <BackstageTitlebarItem
+                                    to={`${match.url}/stats`}
+                                    activeClassName={'active'}
+                                    data-testid='statsLHSButton'
+                                >
+                                    <span className='mr-3 d-flex items-center'>
+                                        <div className={'fa fa-line-chart'}/>
+                                    </span>
+                                    {'Stats'}
+                                </BackstageTitlebarItem>
+                            }
                             <BackstageTitlebarItem
                                 to={`${match.url}/incidents`}
                                 activeClassName={'active'}
@@ -162,6 +170,16 @@ const Backstage: FC = () => {
                                     <PlaybookIcon/>
                                 </span>
                                 {'Playbooks'}
+                            </BackstageTitlebarItem>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/settings`}
+                                activeClassName={'active'}
+                                data-testid='settingsLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <div className={'fa fa-gear'}/>
+                                </span>
+                                {'Settings'}
                             </BackstageTitlebarItem>
                         </div>
                         <BackstageNavbarIcon
@@ -191,13 +209,24 @@ const Backstage: FC = () => {
                         <PlaybookList/>
                     </Route>
                     <Route path={`${match.url}/incidents/:incidentId`}>
-                        <BackstageIncidentDetails/>
+                        <IncidentBackstage/>
+                        {/*<BackstageIncidentDetails/>*/}
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
+                        {/*<Dashboard/>*/}
                     </Route>
                     <Route path={`${match.url}/stats`}>
                         <StatsView/>
+                    </Route>
+                    <Route path={`${match.url}/settings`}>
+                        <SettingsView/>
+                    </Route>
+                    <Route
+                        exact={true}
+                        path={`${match.url}`}
+                    >
+                        <Redirect to={`${match.url}/incidents`}/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>

@@ -30,12 +30,12 @@ describe('backstage playbook list', () => {
         cy.apiLogin('user-1');
 
         // # Navigate to the application
-        cy.visit('/');
+        cy.visit('/ad-1/');
     });
 
     it('has "Playbooks" and team name in heading', () => {
         // # Open backstage
-        cy.openBackstage();
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to Playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();

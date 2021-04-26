@@ -138,7 +138,7 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode, needsToS
 /**
  * Update the status of the current incident through the slash command.
  */
-Cypress.Commands.add('updateStatus', (message, reminder, status) => {
+Cypress.Commands.add('updateStatus', (message, reminder, status, description) => {
     // # Run the /incident status slash command.
     cy.executeSlashCommand('/incident update');
 
@@ -166,6 +166,15 @@ Cypress.Commands.add('updateStatus', (message, reminder, status) => {
                 cy.get('input').type(reminder, {delay: 200}).type('{enter}');
             });
         }
+
+        let actualDescription = description;
+        if (!description) {
+            actualDescription = 'description ' + Date.now();
+        }
+
+        // # remove and enter new description
+        cy.findByTestId('descriptioninput').clear();
+        cy.findByTestId('descriptioninput').type(actualDescription);
 
         // # Submit the dialog.
         cy.get('#interactiveDialogSubmit').click();

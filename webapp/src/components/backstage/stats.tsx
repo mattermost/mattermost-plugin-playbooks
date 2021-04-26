@@ -21,6 +21,8 @@ import {renderDuration} from 'src/components/duration';
 import {fetchStats} from 'src/client';
 import {Stats} from 'src/types/stats';
 
+import {BackstageHeader, BackstageHorizontalContentSquish, TeamContainer} from './styles';
+
 type SatisticCountProps = {
     title: ReactNode;
     icon: string;
@@ -169,25 +171,6 @@ const GraphBox: FC<GraphBoxProps> = (props: GraphBoxProps) => {
     );
 };
 
-const BackstageContainer = styled.div`
-    margin: 0 auto;
-    max-width: 1160px;
-    padding: 0 20px;
-`;
-
-const BackstageHeader = styled.div`
-    display: flex;
-    font-size: 2.8rem;
-    line-height: 3.6rem;
-    align-items: center;
-    padding: 4rem 0 3.2rem;
-`;
-
-const TeamContainer = styled.div`
-    opacity: 0.56;
-    margin-left: 1rem;
-`;
-
 const StatsContainers = styled.div`
     display: grid;
     column-gap: 30px;
@@ -207,7 +190,7 @@ const StatsView: FC = () => {
     }, [currentTeam.id]);
 
     return (
-        <BackstageContainer>
+        <BackstageHorizontalContentSquish>
             <BackstageHeader data-testid='titleStats'>
                 {'Statistics'}
                 <TeamContainer>
@@ -271,7 +254,7 @@ const StatsView: FC = () => {
                 />
                 <div/>
             </div>
-        </BackstageContainer>
+        </BackstageHorizontalContentSquish>
     );
 };
 

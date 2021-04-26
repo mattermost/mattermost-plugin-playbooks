@@ -1,4 +1,4 @@
-import {useEffect, useState, MutableRefObject, useRef, useCallback} from 'react';
+import {MutableRefObject, useCallback, useEffect, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
@@ -6,23 +6,24 @@ import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_help
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import {getProfilesInCurrentChannel} from 'mattermost-redux/selectors/entities/users';
+import {getProfilesInCurrentChannel, getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesInChannel} from 'mattermost-redux/actions/users';
+import {Client4} from 'mattermost-redux/client';
+import {Post} from 'mattermost-redux/types/posts';
+import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import {getProfileSetForChannel} from 'src/selectors';
+import {Incident, StatusPost} from 'src/types/incident';
+
+import {globalSettings} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     options.team = currentTeam.id;
     return useSelector<GlobalState, boolean>((state) => haveITeamPermission(state, options));
-}
-
-export enum IncidentFetchState {
-    Loading,
-    NotFound,
-    Loaded,
 }
 
 /**
@@ -117,7 +118,7 @@ export function useClientRect() {
     return [rect, ref] as const;
 }
 
-export function useProfilesInChannel() {
+export function useProfilesInCurrentChannel() {
     const dispatch = useDispatch() as DispatchFunc;
     const profilesInChannel = useSelector(getProfilesInCurrentChannel);
     const currentChannelId = useSelector(getCurrentChannelId);
@@ -131,4 +132,72 @@ export function useProfilesInChannel() {
     }, [currentChannelId, profilesInChannel]);
 
     return profilesInChannel;
+}
+
+export function useCanCreatePlaybooks() {
+    return useSelector<GlobalState, boolean>((state: GlobalState) => {
+        const playbookCreators = globalSettings(state)?.playbook_creators_user_ids;
+        if (!playbookCreators || playbookCreators.length === 0) {
+            return true;
+        }
+        return playbookCreators.includes(getCurrentUserId(state));
+    });
+}
+
+export function useProfilesInChannel(channelId: string) {
+    const dispatch = useDispatch() as DispatchFunc;
+    const profilesInChannel = useSelector((state) => getProfileSetForChannel(state as GlobalState, channelId));
+
+    useEffect(() => {
+        if (profilesInChannel.length > 0) {
+            return;
+        }
+
+        dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
+    }, [channelId, profilesInChannel]);
+
+    return profilesInChannel;
+}
+
+function useLatestPostId(statusPosts: StatusPost[]) {
+    const sortedPosts = [...statusPosts]
+        .filter((a) => a.delete_at === 0)
+        .sort((a, b) => b.create_at - a.create_at);
+
+    return sortedPosts[0]?.id;
+}
+
+function usePostFromState(postId: string) {
+    return useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postId || ''));
+}
+
+export function usePost(postId: string) {
+    const postFromState = usePostFromState(postId);
+    const [post, setPost] = useState<Post | null>(null);
+
+    useEffect(() => {
+        const updateLatestUpdate = async () => {
+            if (postFromState) {
+                setPost(postFromState);
+                return;
+            }
+
+            if (postId) {
+                const fromServer = await Client4.getPost(postId);
+                setPost(fromServer);
+                return;
+            }
+
+            setPost(null);
+        };
+
+        updateLatestUpdate();
+    }, [postFromState, postId]);
+
+    return post;
+}
+
+export function useLatestUpdate(incident: Incident) {
+    const postId = useLatestPostId(incident.status_posts);
+    return usePost(postId);
 }

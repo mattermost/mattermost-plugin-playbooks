@@ -18,7 +18,10 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import NoContentIncidentSvg from 'src/components/assets/no_content_incidents_svg';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-import {StatusFilter} from 'src/components/backstage/incidents/incident_list/status_filter';
+import {
+    StatusFilter,
+    StatusOption,
+} from 'src/components/backstage/incidents/incident_list/status_filter';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/pagination_row';
@@ -146,6 +149,14 @@ const NoContentPage = (props: {onNewIncident: () => void}) => {
     );
 };
 
+const statusOptions: StatusOption[] = [
+    {value: '', label: 'All'},
+    {value: 'Reported', label: 'Reported'},
+    {value: 'Active', label: 'Active'},
+    {value: 'Resolved', label: 'Resolved'},
+    {value: 'Archived', label: 'Archived'},
+];
+
 const BackstageIncidentList: FC = () => {
     const dispatch = useDispatch();
     const [showNoIncidents, setShowNoIncidents] = useState(false);
@@ -176,16 +187,29 @@ const BackstageIncidentList: FC = () => {
         });
     }, [currentTeam.id]);
 
+    // When the component is first mounted (or the team changes), determine if there are any
+    // incidents at all, ignoring filters. Decide once if we should show the "no incidents"
+    // landing page.
+    useEffect(() => {
+        async function checkForIncidents() {
+            const incidentsReturn = await fetchIncidents({
+                team_id: currentTeam.id,
+                page: 0,
+                per_page: 1,
+            });
+
+            if (incidentsReturn.items.length === 0) {
+                setShowNoIncidents(true);
+            }
+        }
+
+        checkForIncidents();
+    }, [currentTeam.id]);
+
     useEffect(() => {
         let isCanceled = false;
         async function fetchIncidentsAsync() {
             const incidentsReturn = await fetchIncidents(fetchParams);
-
-            // Only show the no incidents welcome page if we fail to find any incidents
-            // on first load.
-            if (incidents === null && incidentsReturn.items.length === 0) {
-                setShowNoIncidents(true);
-            }
 
             if (!isCanceled) {
                 setIncidents(incidentsReturn.items);
@@ -242,12 +266,6 @@ const BackstageIncidentList: FC = () => {
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
-
-    const isFiltering = (
-        fetchParams.search_term ||
-        fetchParams.commander_user_id ||
-        (fetchParams.status && fetchParams.status !== 'all')
-    );
 
     const resetCommander = () => {
         setCommanderId();
@@ -312,6 +330,7 @@ const BackstageIncidentList: FC = () => {
                         onSelectedChange={setCommanderId}
                     />
                     <StatusFilter
+                        options={statusOptions}
                         default={fetchParams.status}
                         onChange={setStatus}
                     />

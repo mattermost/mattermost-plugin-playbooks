@@ -14,3 +14,9 @@ export type ChannelNamesMap = {
         team_name?: string;
     } | Channel;
 };
+
+export enum IncidentBackstageTabState {
+    ViewingOverview,
+    ViewingRetrospective,
+}
+

@@ -8,6 +8,10 @@ import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getUsers} from 'mattermost-redux/selectors/entities/common';
+import {UserProfile} from 'mattermost-redux/types/users';
+import {sortByUsername} from 'mattermost-redux/utils/user_utils';
+import {$ID, IDMappedObjects} from 'mattermost-redux/types/utilities';
 
 import {pluginId} from 'src/manifest';
 import {
@@ -17,6 +21,8 @@ import {
     TimelineEventsFilterDefault,
 } from 'src/types/rhs';
 import {Incident, incidentIsActive} from 'src/types/incident';
+
+import {GlobalSettings} from './types/settings';
 
 //@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
@@ -30,6 +36,8 @@ export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
 export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myIncidentsByTeam[getCurrentTeamId(state)] === false;
+
+export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
 // reminder: myIncidentsByTeam indexes teamId->channelId->incident
 const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> =>
@@ -83,11 +91,15 @@ export const currentRHSState = (state: GlobalState): RHSState => pluginState(sta
 
 export const currentRHSTabState = (state: GlobalState): RHSTabState => {
     const channelId = getCurrentChannelId(state);
-    return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingSummary;
+    return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingAbout;
 };
 
 export const currentRHSEventsFilter = (state: GlobalState): TimelineEventsFilter => {
     const channelId = getCurrentChannelId(state);
+    return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
+};
+
+export const rhsEventsFilterForChannel = (state: GlobalState, channelId: string): TimelineEventsFilter => {
     return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
 };
 
@@ -109,4 +121,31 @@ const findLastUpdated = (incident: Incident) => {
         .filter((a) => a.delete_at === 0)
         .sort((a, b) => b.create_at - a.create_at);
     return posts.length === 0 ? 0 : posts[0].create_at;
+};
+
+const PROFILE_SET_ALL = 'all';
+
+// sortAndInjectProfiles is an unexported function copied from mattermost-redux, it is called
+// whenever a function returns a populated list of UserProfiles. Since getProfileSetForChannel is
+// new, we have to sort and inject profiles before returning the list.
+function sortAndInjectProfiles(profiles: IDMappedObjects<UserProfile>, profileSet?: 'all' | Array<$ID<UserProfile>> | Set<$ID<UserProfile>>): Array<UserProfile> {
+    let currentProfiles: UserProfile[] = [];
+
+    if (typeof profileSet === 'undefined') {
+        return currentProfiles;
+    } else if (profileSet === PROFILE_SET_ALL) {
+        currentProfiles = Object.keys(profiles).map((key) => profiles[key]);
+    } else {
+        currentProfiles = Array.from(profileSet).map((p) => profiles[p]);
+    }
+
+    currentProfiles = currentProfiles.filter((profile) => Boolean(profile));
+
+    return currentProfiles.sort(sortByUsername);
+}
+
+export const getProfileSetForChannel = (state: GlobalState, channelId: string) => {
+    const profileSet = state.entities.users.profilesInChannel[channelId];
+    const profiles = getUsers(state);
+    return sortAndInjectProfiles(profiles, profileSet);
 };

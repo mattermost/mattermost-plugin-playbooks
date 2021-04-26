@@ -39,20 +39,20 @@ describe('backstage', () => {
         cy.apiLogin('user-1');
 
         // # Navigate to the application
-        cy.visit('/');
+        cy.visit('/ad-1/');
     });
 
-    it('opens playbooks list view by default', () => {
-        // # Open the backstage
-        cy.openBackstage();
+    // it('opens statistics view by default', () => {
+    //     // # Open the backstage
+    //     cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
 
-        // * Verify that when backstage loads, the heading is visible and contains "Incident"
-        cy.findByTestId('titleStats').should('exist').contains('Statistics');
-    });
+    //     // * Verify that when backstage loads, the heading is visible and contains "Statistics"
+    //     cy.findByTestId('titleStats').should('exist').contains('Statistics');
+    // });
 
     it('switches to playbooks list view via header button', () => {
         // # Open backstage
-        cy.openBackstage();
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -63,7 +63,7 @@ describe('backstage', () => {
 
     it('switches to incidents list view via header button', () => {
         // # Open backstage
-        cy.openBackstage();
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();

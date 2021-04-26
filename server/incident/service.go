@@ -49,8 +49,8 @@ const DialogFieldPlaybookIDKey = "playbookID"
 // DialogFieldNameKey is the key for the incident name field used in OpenCreateIncidentDialog.
 const DialogFieldNameKey = "incidentName"
 
-// DialogFieldDescriptionKey is the key for the incident description field used in OpenCreateIncidentDialog.
-const DialogFieldDescriptionKey = "incidentDescription"
+// DialogFieldDescriptionKey is the key for the description textarea field used in UpdateIncidentDialog
+const DialogFieldDescriptionKey = "description"
 
 // DialogFieldMessageKey is the key for the message textarea field used in UpdateIncidentDialog
 const DialogFieldMessageKey = "message"
@@ -414,7 +414,7 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 		message = currentIncident.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdateIncidentDialog(message, currentIncident.BroadcastChannelID, currentIncident.CurrentStatus, currentIncident.PreviousReminder)
+	dialog, err := s.newUpdateIncidentDialog(currentIncident.Description, message, currentIncident.BroadcastChannelID, currentIncident.CurrentStatus, currentIncident.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -618,6 +618,8 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		})
 
 	incidentToModify.PreviousReminder = options.Reminder
+	incidentToModify.Description = options.Description
+
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
@@ -1310,13 +1312,6 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 
 	introText := fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
 
-	var descriptionDefault string
-	if postID != "" {
-		postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, postID)
-
-		descriptionDefault = fmt.Sprintf("[Original Post](%s)", postURL)
-	}
-
 	return &model.Dialog{
 		Title:            "Incident Details",
 		IntroductionText: introText,
@@ -1334,15 +1329,6 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 				MinLength:   2,
 				MaxLength:   64,
 			},
-			{
-				DisplayName: "Incident Description",
-				Name:        DialogFieldDescriptionKey,
-				Type:        "textarea",
-				Default:     descriptionDefault,
-				MinLength:   0,
-				MaxLength:   1024,
-				Optional:    true,
-			},
 		},
 		SubmitLabel:    "Start Incident",
 		NotifyOnCancel: false,
@@ -1350,7 +1336,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID, status string, reminderTimer time.Duration) (*model.Dialog, error) {
+func (s *ServiceImpl) newUpdateIncidentDialog(description, message, broadcastChannelID, status string, reminderTimer time.Duration) (*model.Dialog, error) {
 	introductionText := "Update your incident status."
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
@@ -1436,7 +1422,13 @@ func (s *ServiceImpl) newUpdateIncidentDialog(message, broadcastChannelID, statu
 				Default:     status,
 			},
 			{
-				DisplayName: "Message",
+				DisplayName: "Description",
+				Name:        DialogFieldDescriptionKey,
+				Type:        "textarea",
+				Default:     description,
+			},
+			{
+				DisplayName: "Change since last update",
 				Name:        DialogFieldMessageKey,
 				Type:        "textarea",
 				Default:     message,

@@ -26,6 +26,10 @@ export const PresetTemplates: PresetTemplate[] = [
         template: {
             ...emptyPlaybook(),
             title: 'Incident Collaboration Playbook',
+            description: '### Summary\n\nDescribe the incident so that someone without prior knowledge can ramp up quickly. Two sentences is the ideal length.\n\n' +
+                '### Impact\n\nDescribe the customer and organizational impact of this incident.',
+            reminder_message_template: '### Incident update\n\nDescribe progress and changes to the incident since the last update.\n\n' +
+                '### Change to customer impact\n\nDescribe any changes to customer impact since the last update.',
             checklists: [
                 {
                     title: 'Triage',
