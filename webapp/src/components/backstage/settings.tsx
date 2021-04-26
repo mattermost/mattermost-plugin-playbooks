@@ -22,6 +22,7 @@ import {useCanCreatePlaybooks} from 'src/hooks';
 
 import InviteUsersSelector from './automation/invite_users_selector';
 import {BackstageHeader, BackstageSubheader, RadioContainer, RadioLabel, RadioInput} from './styles';
+import SelectUsersBelow from './select_users_below';
 
 const SettingsContainer = styled.div`
     margin: 0 auto;
@@ -167,8 +168,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             </RadioContainer>
             <UserSelectorWrapper>
                 {enabled &&
-                    <InviteUsersSelector
-                        isDisabled={false}
+                    <SelectUsersBelow
                         userIds={props.settings.playbook_editors_user_ids || []}
                         onAddUser={userMaybeAdded}
                         onRemoveUser={(userid: string) => {
