@@ -208,7 +208,7 @@ const ThumbVertical = styled.div`
 const MenuList = (props: MenuListComponentProps<UserProfile>) => {
     return (
         <MenuListWrapper>
-            <MenuHeader>{'Invite Members'}</MenuHeader>
+            <MenuHeader>{'Assign Commander'}</MenuHeader>
             <StyledScrollbars
                 autoHeight={true}
                 renderThumbVertical={({style, ...thumbProps}) => <ThumbVertical {...thumbProps}/>}
