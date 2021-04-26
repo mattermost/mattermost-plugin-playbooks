@@ -174,7 +174,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             <ConfirmModal
                 show={confirmRemoveSelfOpen !== ''}
                 title={'Confirm Remove Self'}
-                message={'When you remove yourself as a playbook creator you won't be able to add yourself back. Are you sure you'd like to perform this action?'}
+                message={"When you remove yourself as a playbook creator you won't be able to add yourself back. Are you sure you'd like to perform this action?"}
                 confirmButtonText={'RemoveSelf'}
                 onConfirm={() => {
                     removeUser(confirmRemoveSelfOpen);
