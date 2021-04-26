@@ -52,13 +52,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type GlobalSettings struct {
-	PlaybookCreatorsUserIds []string `json:"playbook_creators_user_ids"`
+	PlaybookCreatorsUserIds    []string `json:"playbook_creators_user_ids"`
+	EnableExperimentalFeatures bool     `json:"enable_experimental_features"`
 }
 
 func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
 	cfg := h.config.GetConfiguration()
 	settings := GlobalSettings{
-		PlaybookCreatorsUserIds: cfg.PlaybookCreatorsUserIds,
+		PlaybookCreatorsUserIds:    cfg.PlaybookCreatorsUserIds,
+		EnableExperimentalFeatures: cfg.EnableExperimentalFeatures,
 	}
 	ReturnJSON(w, &settings, http.StatusOK)
 }
