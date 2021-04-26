@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 export interface GlobalSettings {
-    playbook_editors_user_ids: string[]
+    playbook_creators_user_ids: string[]
 }
 
 const defaults: GlobalSettings = {
-    playbook_editors_user_ids: [],
+    playbook_creators_user_ids: [],
 };
 
 export function globalSettingsSetDefaults(globalSettings?: Partial<GlobalSettings>): GlobalSettings {
@@ -15,8 +15,8 @@ export function globalSettingsSetDefaults(globalSettings?: Partial<GlobalSetting
         modifiedGlobalSettings = {};
     }
 
-    if (!globalSettings?.playbook_editors_user_ids) {
-        modifiedGlobalSettings.playbook_editors_user_ids = defaults.playbook_editors_user_ids;
+    if (!globalSettings?.playbook_creators_user_ids) {
+        modifiedGlobalSettings.playbook_creators_user_ids = defaults.playbook_creators_user_ids;
     }
 
     return {...defaults, ...globalSettings};

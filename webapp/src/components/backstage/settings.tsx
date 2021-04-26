@@ -56,31 +56,31 @@ interface PlaybookCreatorsProps {
 
 const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProps) => {
     const dispatch = useDispatch();
-    const [enabled, setEnabled] = useState<boolean>(props.settings.playbook_editors_user_ids.length !== 0);
+    const [enabled, setEnabled] = useState<boolean>(props.settings.playbook_creators_user_ids.length !== 0);
     const [confirmRemoveSelfOpen, setConfirmRemoveSelfOpen] = useState('');
     const hasPermissions = useCanCreatePlaybooks();
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
 
     const userMaybeAdded = (userid: string) => {
         // Need to ignore double adds
-        if (props.settings.playbook_editors_user_ids.includes(userid)) {
+        if (props.settings.playbook_creators_user_ids.includes(userid)) {
             return;
         }
 
         props.onChange({
             ...props.settings,
-            playbook_editors_user_ids: [...props.settings.playbook_editors_user_ids, userid],
+            playbook_creators_user_ids: [...props.settings.playbook_creators_user_ids, userid],
         });
     };
 
     const removeUser = (userid: string) => {
-        const idx = props.settings.playbook_editors_user_ids.indexOf(userid);
+        const idx = props.settings.playbook_creators_user_ids.indexOf(userid);
         if (idx < 0) {
             return;
         }
         props.onChange({
             ...props.settings,
-            playbook_editors_user_ids: [...props.settings.playbook_editors_user_ids.slice(0, idx), ...props.settings.playbook_editors_user_ids.slice(idx + 1)],
+            playbook_creators_user_ids: [...props.settings.playbook_creators_user_ids.slice(0, idx), ...props.settings.playbook_creators_user_ids.slice(idx + 1)],
         });
     };
 
@@ -97,14 +97,14 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             if (!enabled) {
                 props.onChange({
                     ...props.settings,
-                    playbook_editors_user_ids: [currentUserId],
+                    playbook_creators_user_ids: [currentUserId],
                 });
                 setEnabled(true);
             }
         } else {
             props.onChange({
                 ...props.settings,
-                playbook_editors_user_ids: [],
+                playbook_creators_user_ids: [],
             });
             setEnabled(false);
         }
@@ -115,7 +115,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             <>
                 <NoPermissionsTitle>{'Only the listed users can create playbooks:'}</NoPermissionsTitle>
                 <NoPermissionsUsers>
-                    {props.settings.playbook_editors_user_ids.map((userId) => (
+                    {props.settings.playbook_creators_user_ids.map((userId) => (
                         <NoPermissionsUserEntry
                             key={userId}
                         >
@@ -157,7 +157,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             <UserSelectorWrapper>
                 {enabled &&
                     <SelectUsersBelow
-                        userIds={props.settings.playbook_editors_user_ids}
+                        userIds={props.settings.playbook_creators_user_ids}
                         onAddUser={userMaybeAdded}
                         onRemoveUser={(userid: string) => {
                             if (userid === currentUserId) {
@@ -175,7 +175,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                 show={confirmRemoveSelfOpen !== ''}
                 title={'Confirm Remove Self'}
                 message={"When you remove yourself as a playbook creator you won't be able to add yourself back. Are you sure you'd like to perform this action?"}
-                confirmButtonText={'RemoveSelf'}
+                confirmButtonText={'Remove Self'}
                 onConfirm={() => {
                     removeUser(confirmRemoveSelfOpen);
                     setConfirmRemoveSelfOpen('');

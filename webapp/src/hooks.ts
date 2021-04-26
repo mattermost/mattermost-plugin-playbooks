@@ -136,7 +136,7 @@ export function useProfilesInCurrentChannel() {
 
 export function useCanCreatePlaybooks() {
     return useSelector<GlobalState, boolean>((state: GlobalState) => {
-        const playbookCreators = globalSettings(state)?.playbook_editors_user_ids;
+        const playbookCreators = globalSettings(state)?.playbook_creators_user_ids;
         if (!playbookCreators || playbookCreators.length === 0) {
             return true;
         }
