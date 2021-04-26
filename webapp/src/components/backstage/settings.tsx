@@ -21,9 +21,7 @@ import Profile from '../profile/profile';
 import {useCanCreatePlaybooks} from 'src/hooks';
 
 import InviteUsersSelector from './automation/invite_users_selector';
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from './automation/styles';
-import {Toggle} from './automation/toggle';
-import {BackstageHeader} from './styles';
+import {BackstageHeader, BackstageSubheader, RadioContainer, RadioLabel, RadioInput} from './styles';
 
 const SettingsContainer = styled.div`
     margin: 0 auto;
@@ -43,6 +41,12 @@ const NoPermissionsUsers = styled.div`
 
 const NoPermissionsUserEntry = styled.div`
     margin: 5px;
+`;
+
+const UserSelectorWrapper = styled.div`
+    margin-left: 24px;
+    width: 300px;
+    height: 40px;
 `;
 
 interface PlaybookCreatorsProps {
@@ -97,19 +101,24 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
         return dispatch(getProfiles(0, PROFILE_CHUNK_SIZE, {active: true}));
     };
 
-    const toggledEnable = () => {
-        if (enabled) {
+    const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {
+        console.log('HERE!~');
+        console.log(e.target.value);
+        if (e.target.value === 'enabled') {
+            if (!enabled) {
+                props.onChange({
+                    ...props.settings,
+                    playbook_editors_user_ids: [currentUserId],
+                });
+                setEnabled(true);
+            }
+        } else {
             props.onChange({
                 ...props.settings,
                 playbook_editors_user_ids: [],
             });
-        } else {
-            props.onChange({
-                ...props.settings,
-                playbook_editors_user_ids: [currentUserId],
-            });
+            setEnabled(false);
         }
-        setEnabled(!enabled);
     };
 
     if (!hasPermissions) {
@@ -130,15 +139,33 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
     }
 
     return (
-        <AutomationHeader>
-            <AutomationTitle>
-                <Toggle
-                    isChecked={enabled}
-                    onChange={toggledEnable}
-                />
-                <div>{'Restrict who can create playbooks'}</div>
-            </AutomationTitle>
-            <SelectorWrapper>
+        <>
+            <BackstageSubheader>
+                {'Playbook creation'}
+            </BackstageSubheader>
+            <RadioContainer>
+                <RadioLabel>
+                    <RadioInput
+                        type='radio'
+                        name='enabled'
+                        value='disabled'
+                        checked={!enabled}
+                        onChange={radioPressed}
+                    />
+                    {'Everyone on the server can create playbooks'}
+                </RadioLabel>
+                <RadioLabel>
+                    <RadioInput
+                        type='radio'
+                        name='enabled'
+                        value='enabled'
+                        checked={enabled}
+                        onChange={radioPressed}
+                    />
+                    {'Only selected people can create playbooks'}
+                </RadioLabel>
+            </RadioContainer>
+            <UserSelectorWrapper>
                 {enabled &&
                     <InviteUsersSelector
                         isDisabled={false}
@@ -155,19 +182,19 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                         getProfiles={getUsers}
                     />
                 }
-                <ConfirmModal
-                    show={confirmRemoveSelfOpen !== ''}
-                    title={'Confirm Remove Self'}
-                    message={'Are you sure you want to remove yourelf as a playbook creator? You will not be able to add yourself back.'}
-                    confirmButtonText={'RemoveSelf'}
-                    onConfirm={() => {
-                        removeUser(confirmRemoveSelfOpen);
-                        setConfirmRemoveSelfOpen('');
-                    }}
-                    onCancel={() => setConfirmRemoveSelfOpen('')}
-                />
-            </SelectorWrapper>
-        </AutomationHeader>
+            </UserSelectorWrapper>
+            <ConfirmModal
+                show={confirmRemoveSelfOpen !== ''}
+                title={'Confirm Remove Self'}
+                message={'Are you sure you want to remove yourelf as a playbook creator? You will not be able to add yourself back.'}
+                confirmButtonText={'RemoveSelf'}
+                onConfirm={() => {
+                    removeUser(confirmRemoveSelfOpen);
+                    setConfirmRemoveSelfOpen('');
+                }}
+                onCancel={() => setConfirmRemoveSelfOpen('')}
+            />
+        </>
     );
 };
 

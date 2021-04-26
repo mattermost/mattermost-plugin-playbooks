@@ -140,3 +140,29 @@ export const BackstageHorizontalContentSquish = styled.div`
     max-width: 1160px;
     padding: 0 20px;
 `;
+
+export const RadioContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    margin-top: 8px;
+    margin-bottom: 16px;
+`;
+
+export const RadioLabel = styled.label`
+    && {
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        font-weight: normal;
+        line-height: 20px;
+    }
+`;
+
+export const RadioInput = styled.input`
+    && {
+        width: 16px;
+        height: 16px;
+        margin: 0 8px 0 0;
+    }
+`;
