@@ -153,8 +153,8 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:           []string{},
-				PlaybookEditorsUserIds: []string{},
+				EnabledTeams:            []string{},
+				PlaybookCreatorsUserIds: []string{},
 			})
 	}
 

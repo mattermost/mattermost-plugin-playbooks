@@ -15,8 +15,8 @@ type Configuration struct {
 	// EnabledTeams a list of team IDs the plugin is enabled for
 	EnabledTeams []string
 
-	// PlaybookEditorsUserIds is a list of users that can edit playbooks
-	PlaybookEditorsUserIds []string
+	// PlaybookCreatorsUserIds is a list of users that can edit playbooks
+	PlaybookCreatorsUserIds []string
 
 	// ** The following are NOT stored on the server
 	// AdminUserIDs contains a list of user IDs that are allowed

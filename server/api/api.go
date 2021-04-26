@@ -52,13 +52,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type GlobalSettings struct {
-	PlaybookEditorsUserIds []string `json:"playbook_editors_user_ids"`
+	PlaybookCreatorsUserIds []string `json:"playbook_creators_user_ids"`
 }
 
 func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
 	cfg := h.config.GetConfiguration()
 	settings := GlobalSettings{
-		PlaybookEditorsUserIds: cfg.PlaybookEditorsUserIds,
+		PlaybookCreatorsUserIds: cfg.PlaybookCreatorsUserIds,
 	}
 	ReturnJSON(w, &settings, http.StatusOK)
 }
@@ -78,7 +78,7 @@ func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pluginConfig := h.pluginAPI.Configuration.GetPluginConfig()
-	pluginConfig["PlaybookEditorsUserIds"] = settings.PlaybookEditorsUserIds
+	pluginConfig["PlaybookCreatorsUserIds"] = settings.PlaybookCreatorsUserIds
 	if err := h.pluginAPI.Configuration.SavePluginConfig(pluginConfig); err != nil {
 		HandleError(w, err)
 	}

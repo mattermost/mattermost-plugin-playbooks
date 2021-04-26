@@ -176,7 +176,7 @@ func IsOnEnabledTeam(teamID string, cfgService config.Service) bool {
 }
 
 func isPlaybookCreator(userID string, cfgService config.Service) error {
-	playbookCreators := cfgService.GetConfiguration().PlaybookEditorsUserIds
+	playbookCreators := cfgService.GetConfiguration().PlaybookCreatorsUserIds
 	if len(playbookCreators) == 0 {
 		return nil
 	}
@@ -307,9 +307,9 @@ func PlaybookModify(userID string, pbook, oldPlaybook playbook.Playbook, pluginA
 
 func ModifySettings(userID string, config config.Service) error {
 	cfg := config.GetConfiguration()
-	if len(cfg.PlaybookEditorsUserIds) > 0 {
+	if len(cfg.PlaybookCreatorsUserIds) > 0 {
 		found := false
-		for _, candidateUserID := range cfg.PlaybookEditorsUserIds {
+		for _, candidateUserID := range cfg.PlaybookCreatorsUserIds {
 			if candidateUserID == userID {
 				found = true
 				break
@@ -317,7 +317,7 @@ func ModifySettings(userID string, config config.Service) error {
 		}
 
 		if !found {
-			return errors.Wrap(ErrNoPermissions, "not a playbook editor")
+			return errors.Wrap(ErrNoPermissions, "not a playbook creator")
 		}
 	}
 
