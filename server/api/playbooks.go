@@ -138,7 +138,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.WebhookOnArchiveURL != "" {
+	if pbook.WebhookOnArchiveEnabled {
 		url, err := url.ParseRequestURI(pbook.WebhookOnArchiveURL)
 		if err != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid archived webhook URL", err)
