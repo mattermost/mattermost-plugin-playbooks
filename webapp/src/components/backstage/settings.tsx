@@ -113,7 +113,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
     if (!hasPermissions) {
         return (
             <>
-                <NoPermissionsTitle>{'Playbook creation is currenty restricted to these users:'}</NoPermissionsTitle>
+                <NoPermissionsTitle>{'Only the listed users can create playbooks:'}</NoPermissionsTitle>
                 <NoPermissionsUsers>
                     {props.settings.playbook_editors_user_ids.map((userId) => (
                         <NoPermissionsUserEntry
@@ -141,7 +141,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                         checked={!enabled}
                         onChange={radioPressed}
                     />
-                    {'Everyone on the server can create playbooks'}
+                    {'Everyone on the server can create playbooks.'}
                 </RadioLabel>
                 <RadioLabel>
                     <RadioInput
@@ -151,7 +151,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                         checked={enabled}
                         onChange={radioPressed}
                     />
-                    {'Only selected people can create playbooks'}
+                    {'Only selected users can create playbooks.'}
                 </RadioLabel>
             </RadioContainer>
             <UserSelectorWrapper>
@@ -174,7 +174,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             <ConfirmModal
                 show={confirmRemoveSelfOpen !== ''}
                 title={'Confirm Remove Self'}
-                message={'Are you sure you want to remove yourelf as a playbook creator? You will not be able to add yourself back.'}
+                message={'When you remove yourself as a playbook creator you won't be able to add yourself back. Are you sure you'd like to perform this action?'}
                 confirmButtonText={'RemoveSelf'}
                 onConfirm={() => {
                     removeUser(confirmRemoveSelfOpen);

@@ -275,7 +275,7 @@ func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Se
 
 		if !group.AllowReference {
 			return errors.Errorf(
-				"group %s does now allow references",
+				"group %s does not allow references",
 				groupID,
 			)
 		}

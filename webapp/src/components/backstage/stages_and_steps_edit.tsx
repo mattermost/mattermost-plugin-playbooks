@@ -155,7 +155,7 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                 <BackstageSubheader>
                     {'Tasks'}
                 </BackstageSubheader>
-                <BackstageSubheaderDescription>{'Checklists allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</BackstageSubheaderDescription>
+                <BackstageSubheaderDescription>{'Checklists are groups of tasks which are assigned to and completed by members of the incident channel.'}</BackstageSubheaderDescription>
             </TitleContainer>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
