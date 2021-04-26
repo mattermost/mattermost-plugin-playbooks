@@ -58,10 +58,10 @@ export default class Plugin {
         registry.registerAdminConsoleCustomSetting('EnabledTeams', SystemConsoleEnabledTeams, {showTitle: true});
 
         // Grab global settings
-        const getStuff = async () => {
+        const getGlobalSettings = async () => {
             store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
         };
-        getStuff();
+        getGlobalSettings();
 
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);

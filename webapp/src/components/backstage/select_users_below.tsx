@@ -6,14 +6,6 @@ import Profile from '../profile/profile';
 
 import ProfileAutocomplete from './profile_autocomplete';
 
-export interface SelectUsersBelowProps {
-    userIds: string[];
-    onAddUser: (userid: string) => void;
-    onRemoveUser: (userid: string) => void;
-    searchProfiles: (term: string) => ActionFunc;
-    getProfiles: () => ActionFunc;
-}
-
 const ProfileAutocompleteContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -41,6 +33,14 @@ const BelowLineProfile = styled(Profile)`
     flex-grow: 1;
     overflow: hidden;
 `;
+
+export interface SelectUsersBelowProps {
+    userIds: string[];
+    onAddUser: (userid: string) => void;
+    onRemoveUser: (userid: string) => void;
+    searchProfiles: (term: string) => ActionFunc;
+    getProfiles: () => ActionFunc;
+}
 
 const SelectUsersBelow: FC<SelectUsersBelowProps> = (props: SelectUsersBelowProps) => {
     return (
