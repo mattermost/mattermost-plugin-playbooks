@@ -284,8 +284,10 @@ func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Se
 	return nil
 }
 
-func PlaybookModify(userID string, pbook, oldPlaybook *playbook.Playbook, pluginAPI *pluginapi.Client) error {
-	if err := PlaybookAccess(userID, *oldPlaybook, pluginAPI); err != nil {
+// DANGER This is not a complete check. There is more in the current handler for updatePlaybook
+// if you need to use this function, integrate that here first.
+func PlaybookModify(userID string, pbook, oldPlaybook playbook.Playbook, pluginAPI *pluginapi.Client) error {
+	if err := PlaybookAccess(userID, oldPlaybook, pluginAPI); err != nil {
 		return err
 	}
 
@@ -298,47 +300,6 @@ func PlaybookModify(userID string, pbook, oldPlaybook *playbook.Playbook, plugin
 			userID,
 			pbook.BroadcastChannelID,
 		)
-	}
-
-	filteredUsers := []string{}
-	for _, userID := range pbook.InvitedUserIDs {
-		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
-			continue
-		}
-		filteredUsers = append(filteredUsers, userID)
-	}
-	pbook.InvitedUserIDs = filteredUsers
-
-	filteredGroups := []string{}
-	for _, groupID := range pbook.InvitedGroupIDs {
-		var group *model.Group
-		group, err := pluginAPI.Group.Get(groupID)
-		if err != nil {
-			pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
-			continue
-		}
-
-		if !group.AllowReference {
-			pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
-			continue
-		}
-
-		filteredGroups = append(filteredGroups, groupID)
-	}
-	pbook.InvitedGroupIDs = filteredGroups
-
-	if pbook.DefaultCommanderID != "" && !IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, pluginAPI) {
-		pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
-		pbook.DefaultCommanderID = ""
-		pbook.DefaultCommanderEnabled = false
-	}
-
-	if pbook.AnnouncementChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
-		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
-		pbook.AnnouncementChannelID = ""
-		pbook.AnnouncementChannelEnabled = false
 	}
 
 	return nil

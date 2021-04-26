@@ -136,8 +136,13 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err3 := permissions.PlaybookModify(userID, &pbook, &oldPlaybook, h.pluginAPI); err3 != nil {
+	if err3 := permissions.PlaybookModify(userID, pbook, oldPlaybook, h.pluginAPI); err3 != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
+		return
+	}
+
+	if err4 := doPlaybookModificationChecks(&pbook, userID, h.pluginAPI); err4 != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err4)
 		return
 	}
 
@@ -162,6 +167,53 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// doPlaybookModificationChecks performs permissions checks that can be resolved though modification of the input.
+// This function modifys the pbook argument.
+func doPlaybookModificationChecks(pbook *playbook.Playbook, userID string, pluginAPI *pluginapi.Client) error {
+	filteredUsers := []string{}
+	for _, userID := range pbook.InvitedUserIDs {
+		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
+			continue
+		}
+		filteredUsers = append(filteredUsers, userID)
+	}
+	pbook.InvitedUserIDs = filteredUsers
+
+	filteredGroups := []string{}
+	for _, groupID := range pbook.InvitedGroupIDs {
+		var group *model.Group
+		group, err := pluginAPI.Group.Get(groupID)
+		if err != nil {
+			pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			continue
+		}
+
+		if !group.AllowReference {
+			pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
+			continue
+		}
+
+		filteredGroups = append(filteredGroups, groupID)
+	}
+	pbook.InvitedGroupIDs = filteredGroups
+
+	if pbook.DefaultCommanderID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, pluginAPI) {
+		pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
+		pbook.DefaultCommanderID = ""
+		pbook.DefaultCommanderEnabled = false
+	}
+
+	if pbook.AnnouncementChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
+		pbook.AnnouncementChannelID = ""
+		pbook.AnnouncementChannelEnabled = false
+	}
+
+	return nil
 }
 
 func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
