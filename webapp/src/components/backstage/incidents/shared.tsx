@@ -26,15 +26,18 @@ export const TabPageContainer = styled.div`
 `;
 
 export const Title = styled.div`
-    font-size: 14px;
+    color: var(--button-bg);
+    font-size: 18px;
     font-weight: 600;
 `;
 
 export const Content = styled.div`
     background: var(--center-channel-bg);
+    color: var(--center-channel-color);
     margin: 8px 0 0 0;
-    border: 1px solid grey;
     padding: 0 8px 4px;
+    border: 1px solid var(--center-channel-color-08);
+    border-radius: 8px;
 `;
 
 export const Heading = styled.div`
@@ -43,11 +46,12 @@ export const Heading = styled.div`
 `;
 
 export const Body = styled.p`
-    margin: 8px;
+    margin: 8px 0;
 `;
 
 export const EmptyBody = styled.div`
-    margin-top: 8px;
+    margin: 16px 0 24px 0;
+    font-size: 14px;
 `;
 
 export const SecondaryButton = styled(TertiaryButton)`
