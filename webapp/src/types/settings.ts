@@ -10,5 +10,14 @@ const defaults: GlobalSettings = {
 };
 
 export function globalSettingsSetDefaults(globalSettings?: Partial<GlobalSettings>): GlobalSettings {
+    let modifiedGlobalSettings = globalSettings;
+    if (!modifiedGlobalSettings) {
+        modifiedGlobalSettings = {};
+    }
+
+    if (!globalSettings?.playbook_editors_user_ids) {
+        modifiedGlobalSettings.playbook_editors_user_ids = defaults.playbook_editors_user_ids;
+    }
+
     return {...defaults, ...globalSettings};
 }
