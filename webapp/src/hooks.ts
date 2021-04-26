@@ -144,6 +144,10 @@ export function useCanCreatePlaybooks() {
     });
 }
 
+export function useExperimentalFeaturesEnabled() {
+    return useSelector<GlobalState, boolean>((state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features));
+}
+
 export function useProfilesInChannel(channelId: string) {
     const dispatch = useDispatch() as DispatchFunc;
     const profilesInChannel = useSelector((state) => getProfileSetForChannel(state as GlobalState, channelId));
