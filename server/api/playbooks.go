@@ -170,7 +170,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 }
 
 // doPlaybookModificationChecks performs permissions checks that can be resolved though modification of the input.
-// This function modifys the pbook argument.
+// This function modifies the pbook argument.
 func doPlaybookModificationChecks(pbook *playbook.Playbook, userID string, pluginAPI *pluginapi.Client) error {
 	filteredUsers := []string{}
 	for _, userID := range pbook.InvitedUserIDs {
