@@ -361,7 +361,7 @@ const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: b
                 </Button>
             }
             { !props.canCreatePlaybooks &&
-            <DescriptionWarn>{'There are no playbooks and you do not have permissions to create playbooks on this server.'}</DescriptionWarn>
+            <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks on this server."}</DescriptionWarn>
             }
         </Container>
     );
