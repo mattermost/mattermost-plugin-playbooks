@@ -23,9 +23,11 @@ import {
     INCIDENT_UPDATED,
     REMOVED_FROM_INCIDENT_CHANNEL,
     SetRHSTabState,
-    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED,
+    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED, ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
+
+import {GlobalSettings} from './types/settings';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -167,6 +169,15 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
+const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
+    switch (action.type) {
+    case RECEIVED_GLOBAL_SETTINGS:
+        return action.settings;
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -175,4 +186,5 @@ export default combineReducers({
     rhsState,
     tabStateByChannel,
     eventsFilterByChannel,
+    globalSettings,
 });

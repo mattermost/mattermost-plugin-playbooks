@@ -28,12 +28,15 @@ import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {Banner} from 'src/components/backstage/shared';
 
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
+
+import {useCanCreatePlaybooks} from 'src/hooks';
+
+import {Banner} from './styles';
 
 const DeleteBannerTimeout = 5000;
 
@@ -43,6 +46,7 @@ const PlaybookList: FC = () => {
     const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookNoChecklist | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
+    const canCreatePlaybooks = useCanCreatePlaybooks();
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
@@ -184,15 +188,20 @@ const PlaybookList: FC = () => {
     return (
         <div className='Playbook'>
             {deleteSuccessfulBanner}
-            <TemplateSelector
-                onSelect={(template: PresetTemplate) => {
-                    newPlaybook(template.title);
-                }}
-            />
+            {canCreatePlaybooks &&
+                <TemplateSelector
+                    onSelect={(template: PresetTemplate) => {
+                        newPlaybook(template.title);
+                    }}
+                />
+            }
             {
                 (playbooks?.length === 0) &&
                 <>
-                    <NoContentPage onNewPlaybook={newPlaybook}/>
+                    <NoContentPage
+                        onNewPlaybook={newPlaybook}
+                        canCreatePlaybooks={canCreatePlaybooks}
+                    />
                     <NoContentPlaybookSvg/>
                 </>
             }
@@ -214,15 +223,17 @@ const PlaybookList: FC = () => {
                                     {'(' + currentTeam.display_name + ')'}
                                 </div>
                             </div>
-                            <div className='header-button-div'>
-                                <button
-                                    className='btn btn-primary'
-                                    onClick={() => newPlaybook()}
-                                >
-                                    <i className='icon-plus mr-2'/>
-                                    {'Create a Playbook'}
-                                </button>
-                            </div>
+                            {canCreatePlaybooks &&
+                                <div className='header-button-div'>
+                                    <button
+                                        className='btn btn-primary'
+                                        onClick={() => newPlaybook()}
+                                    >
+                                        <i className='icon-plus mr-2'/>
+                                        {'Create a Playbook'}
+                                    </button>
+                                </div>
+                            }
                         </div>
                         <BackstageListHeader>
                             <div className='row'>
@@ -303,6 +314,10 @@ const Description = styled.h5`
     max-width: 800px;
 `;
 
+const DescriptionWarn = styled(Description)`
+    color: rgba(var(--error-text-color-rgb), 0.72);
+`;
+
 const Button = styled.button`
     display: inline-flex;
     background: var(--button-bg);
@@ -331,18 +346,23 @@ const Button = styled.button`
     }
 `;
 
-const NoContentPage = (props: { onNewPlaybook: () => void }) => {
+const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: boolean }) => {
     return (
         <Container>
             <Title>{'What is a Playbook?'}</Title>
-            <Description>{'A playbook is a workflow template which must be created before an incident occurs. It defines the stages and tasks associated with an incident, as well as who can use playbook to start an incident.'}</Description>
-            <Button
-                className='mt-6'
-                onClick={() => props.onNewPlaybook()}
-            >
-                <i className='icon-plus mr-2'/>
-                {'New Playbook'}
-            </Button>
+            <Description>{'A playbook is a workflow template which must be created before an incident occurs. It defines the checklists and tasks associated with an incident, as well as who can use playbook to start an incident.'}</Description>
+            { props.canCreatePlaybooks &&
+                <Button
+                    className='mt-6'
+                    onClick={() => props.onNewPlaybook()}
+                >
+                    <i className='icon-plus mr-2'/>
+                    {'New Playbook'}
+                </Button>
+            }
+            { !props.canCreatePlaybooks &&
+            <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks on this server."}</DescriptionWarn>
+            }
         </Container>
     );
 };

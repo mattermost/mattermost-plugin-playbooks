@@ -5,18 +5,35 @@ import styled, {css} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 
-export const BackstageHeader = styled.div`
-    padding: 20px 0 0 31px;
+export const Banner = styled.div`
+    color: var(--button-color);
+    background-color: var(--button-bg);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 8;
+    overflow: hidden;
+    padding: 1rem 2.4rem;
+    text-align: center;
 `;
 
-export const BackstageHeaderTitle = styled.div`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
+export const BackstageHeader = styled.div`
+    display: flex;
+    font-size: 2.8rem;
+    line-height: 3.6rem;
+    align-items: center;
+    margin: 4rem 1rem 3.2rem;
+`;
+
+export const TeamContainer = styled.div`
+    opacity: 0.56;
+    margin-left: 1rem;
 `;
 
 export const BackstageHeaderHelpText = styled.div`
+    margin-top: -3rem;
+    margin-left: 1rem;
     font-weight: normal;
     font-size: 12px;
     line-height: 16px;
@@ -24,25 +41,18 @@ export const BackstageHeaderHelpText = styled.div`
 `;
 
 export const BackstageSubheader = styled.div`
-    display: flex;
-    align-items: center;
-    height: 72px;
-    min-height: 72px;
-    padding: 0 24px;
     font-weight: 600;
     font-size: 16px;
-    border-bottom: 1px solid var(--center-channel-color-16);
-`;
-
-export const BackstageSubheaderText = styled.div`
-    font-weight: 600;
-    margin: 0 0 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
 `;
 
 export const BackstageSubheaderDescription = styled.div`
-    margin: 8px 0 0;
-    font-weight: 400;
-    color: var(--center-channel-color-64);
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    margin: 0 0 16px;
 `;
 
 export const TabContainer = styled.div`
@@ -123,4 +133,36 @@ export const StyledAsyncSelect = styled(AsyncSelect)`
 
 export const StyledSelect = styled(Select)`
     ${commonSelectStyle}
+`;
+
+export const BackstageHorizontalContentSquish = styled.div`
+    margin: 0 auto;
+    max-width: 1160px;
+    padding: 0 20px;
+`;
+
+export const RadioContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    margin-top: 8px;
+    margin-bottom: 16px;
+`;
+
+export const RadioLabel = styled.label`
+    && {
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        font-weight: normal;
+        line-height: 20px;
+    }
+`;
+
+export const RadioInput = styled.input`
+    && {
+        width: 16px;
+        height: 16px;
+        margin: 0 8px 0 0;
+    }
 `;
