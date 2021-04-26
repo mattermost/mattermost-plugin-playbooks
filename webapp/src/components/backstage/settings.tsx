@@ -56,20 +56,12 @@ interface PlaybookCreatorsProps {
 
 const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProps) => {
     const dispatch = useDispatch();
-    const [enabled, setEnabled] = useState<boolean>(Boolean(props.settings.playbook_editors_user_ids) && props.settings.playbook_editors_user_ids?.length !== 0);
+    const [enabled, setEnabled] = useState<boolean>(props.settings.playbook_editors_user_ids.length !== 0);
     const [confirmRemoveSelfOpen, setConfirmRemoveSelfOpen] = useState('');
     const hasPermissions = useCanCreatePlaybooks();
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
 
     const userMaybeAdded = (userid: string) => {
-        if (!props.settings.playbook_editors_user_ids) {
-            props.onChange({
-                ...props.settings,
-                playbook_editors_user_ids: [userid],
-            });
-            return;
-        }
-
         // Need to ignore double adds
         if (props.settings.playbook_editors_user_ids.includes(userid)) {
             return;
@@ -82,11 +74,10 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
     };
 
     const removeUser = (userid: string) => {
-        if (!props.settings.playbook_editors_user_ids) {
+        const idx = props.settings.playbook_editors_user_ids.indexOf(userid);
+        if (idx < 0) {
             return;
         }
-
-        const idx = props.settings.playbook_editors_user_ids.indexOf(userid);
         props.onChange({
             ...props.settings,
             playbook_editors_user_ids: [...props.settings.playbook_editors_user_ids.slice(0, idx), ...props.settings.playbook_editors_user_ids.slice(idx + 1)],
@@ -124,7 +115,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             <>
                 <NoPermissionsTitle>{'Playbook creation is currenty restricted to these users:'}</NoPermissionsTitle>
                 <NoPermissionsUsers>
-                    {props.settings.playbook_editors_user_ids?.map((userId) => (
+                    {props.settings.playbook_editors_user_ids.map((userId) => (
                         <NoPermissionsUserEntry
                             key={userId}
                         >
@@ -166,7 +157,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             <UserSelectorWrapper>
                 {enabled &&
                     <SelectUsersBelow
-                        userIds={props.settings.playbook_editors_user_ids || []}
+                        userIds={props.settings.playbook_editors_user_ids}
                         onAddUser={userMaybeAdded}
                         onRemoveUser={(userid: string) => {
                             if (userid === currentUserId) {

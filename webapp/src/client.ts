@@ -35,7 +35,7 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
-import {GlobalSettings} from './types/settings';
+import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
 const apiUrl = `/plugins/${pluginId}/api/v0`;
 
@@ -292,10 +292,10 @@ export async function setGlobalSettings(settings: GlobalSettings) {
 export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     const data = await doGet(`${apiUrl}/settings`);
     if (!data) {
-        return {};
+        return globalSettingsSetDefaults({});
     }
 
-    return data as GlobalSettings;
+    return globalSettingsSetDefaults(data);
 }
 
 export function exportChannelUrl(channelId: string) {
