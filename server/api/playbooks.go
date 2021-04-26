@@ -295,7 +295,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.WebhookOnArchiveURL != "" {
+	if pbook.WebhookOnArchiveEnabled {
 		url, err2 := url.ParseRequestURI(pbook.WebhookOnArchiveURL)
 		if err2 != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid archived webhook URL", err2)
