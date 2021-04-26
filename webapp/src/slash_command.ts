@@ -7,10 +7,10 @@ import {inIncidentChannel, isIncidentRHSOpen, currentRHSState} from 'src/selecto
 import {RHSState} from 'src/types/rhs';
 
 export function makeSlashCommandHook(store: Store<GlobalState>) {
-    return (message: string, args = {}) => {
-        let messageTrimmed;
+    return (message: any, args: any) => {
+        let messageTrimmed = '';
 
-        if (message) {
+        if (message && typeof message === 'string') {
             messageTrimmed = message.trim();
         }
 
