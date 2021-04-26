@@ -26,8 +26,12 @@ const ChannelSelector: FC<Props & { className?: string }> = (props: Props & { cl
     type GetChannelType = (channelID: string) => Channel
     const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
 
-    const onChange = (channel: Channel | null) => {
-        props.onChannelSelected(channel?.id);
+    const onChange = (channel: Channel | null, {action}: {action: string}) => {
+        if (action === 'clear') {
+            props.onChannelSelected('');
+        } else {
+            props.onChannelSelected(channel?.id);
+        }
     };
 
     const getOptionValue = (channel: Channel) => {

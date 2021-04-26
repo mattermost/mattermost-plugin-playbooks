@@ -14,6 +14,7 @@ import Profile from 'src/components/profile/profile';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import ChannelSelector from 'src/components/backstage/channel_selector';
+import ClearIcon from 'src/components/assets/icons/clear_icon';
 
 interface Props {
     enabled: boolean;
@@ -36,8 +37,8 @@ export const Announcement: FC<Props> = (props: Props) => (
                 id='playbook-automation-announcement'
                 onChannelSelected={props.onChannelSelected}
                 channelId={props.channelId}
-                isClearable={false}
-                selectComponents={{DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                isClearable={true}
+                selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
                 isDisabled={!props.enabled}
                 captureMenuScroll={false}
                 shouldRenderValue={props.enabled}
@@ -111,5 +112,13 @@ const MenuList = (props: MenuListComponentProps<Channel>) => {
                 {props.children}
             </StyledScrollbars>
         </MenuListWrapper>
+    );
+};
+
+const ClearIndicator = ({clearValue}: {clearValue: () => void}) => {
+    return (
+        <div onClick={clearValue}>
+            <ClearIcon/>
+        </div>
     );
 };
