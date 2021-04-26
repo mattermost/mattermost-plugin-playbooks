@@ -45,7 +45,7 @@ const NoPermissionsUserEntry = styled.div`
 
 const UserSelectorWrapper = styled.div`
     margin-left: 24px;
-    width: 300px;
+    width: 400px;
     height: 40px;
 `;
 
