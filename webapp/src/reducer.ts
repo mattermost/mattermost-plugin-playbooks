@@ -23,7 +23,7 @@ import {
     INCIDENT_UPDATED,
     REMOVED_FROM_INCIDENT_CHANNEL,
     SetRHSTabState,
-    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED, RecivedGlobalSettings, RECIVED_GLOBAL_SETTINGS,
+    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED, ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -169,9 +169,9 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const globalSettings = (state: GlobalSettings | null = null, action: RecivedGlobalSettings) => {
+const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
     switch (action.type) {
-    case RECIVED_GLOBAL_SETTINGS:
+    case RECEIVED_GLOBAL_SETTINGS:
         return action.settings;
     default:
         return state;

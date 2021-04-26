@@ -36,8 +36,8 @@ import {
     SetTriggerId,
     RECEIVED_TEAM_DISABLED,
     ReceivedTeamDisabled,
-    RECIVED_GLOBAL_SETTINGS,
-    RecivedGlobalSettings,
+    RECEIVED_GLOBAL_SETTINGS,
+    ReceivedGlobalSettings,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -177,7 +177,7 @@ export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsF
     nextState,
 });
 
-export const actionSetGlobalSettings = (settings: GlobalSettings): RecivedGlobalSettings => ({
-    type: RECIVED_GLOBAL_SETTINGS,
+export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGlobalSettings => ({
+    type: RECEIVED_GLOBAL_SETTINGS,
     settings,
 });

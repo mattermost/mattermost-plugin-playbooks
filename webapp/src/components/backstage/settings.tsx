@@ -20,7 +20,6 @@ import Profile from '../profile/profile';
 
 import {useCanCreatePlaybooks} from 'src/hooks';
 
-import InviteUsersSelector from './automation/invite_users_selector';
 import {BackstageHeader, BackstageSubheader, RadioContainer, RadioLabel, RadioInput} from './styles';
 import SelectUsersBelow from './select_users_below';
 
@@ -103,8 +102,6 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
     };
 
     const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {
-        console.log('HERE!~');
-        console.log(e.target.value);
         if (e.target.value === 'enabled') {
             if (!enabled) {
                 props.onChange({
