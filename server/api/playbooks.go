@@ -124,7 +124,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if pbook.WebhookOnCreationURL != "" {
+	if pbook.WebhookOnCreationEnabled {
 		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
