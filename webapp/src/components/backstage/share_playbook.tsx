@@ -28,8 +28,10 @@ const UserSelectorWrapper = styled.div`
     height: 40px;
 `;
 
+const selectCurrentTeamName = (state: GlobalState) => getCurrentTeam(state).name;
+
 const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
-    const currentTeamName = useSelector<GlobalState, string>((state: GlobalState) => getCurrentTeam(state).name);
+    const currentTeamName = useSelector<GlobalState, string>(selectCurrentTeamName);
     const enabled = props.playbook.member_ids.length > 0;
     const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.value === 'enabled') {
