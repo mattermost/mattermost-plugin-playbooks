@@ -210,7 +210,6 @@ const Backstage: FC = () => {
                     </Route>
                     <Route path={`${match.url}/incidents/:incidentId`}>
                         <IncidentBackstage/>
-                        {/*<BackstageIncidentDetails/>*/}
                     </Route>
                     <Route path={`${match.url}/incidents`}>
                         <BackstageIncidentList/>
