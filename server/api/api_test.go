@@ -7,10 +7,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +36,9 @@ func TestAPI(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			configService := mock_config.NewMockService(mockCtrl)
-			handler := NewHandler(configService)
+			pluginAPI := &plugintest.API{}
+			client := pluginapi.NewClient(pluginAPI)
+			handler := NewHandler(client, configService)
 
 			writer := httptest.NewRecorder()
 			tc.test(t, handler, writer)

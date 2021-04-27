@@ -4,6 +4,7 @@
 import React, {useState} from 'react';
 
 import ReactSelect, {StylesConfig} from 'react-select';
+import styled from 'styled-components';
 
 import './status_filter.scss';
 
@@ -99,10 +100,13 @@ interface DropdownProps {
     onClose: () => void;
 }
 
+const DropdownContainer = styled.div`
+    position: relative;
+`;
+
 const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
-    <div
+    <DropdownContainer
         className={`IncidentFilter status-filter-dropdown${isOpen ? ' IncidentFilter--active status-filter-dropdown--active' : ''}`}
-        css={{position: 'relative'}}
     >
         {target}
         {
@@ -114,7 +118,7 @@ const Dropdown = ({children, isOpen, target, onClose}: DropdownProps) => (
                 <Blanket onClick={onClose}/>
             </>
         }
-    </div>
+    </DropdownContainer>
 );
 
 const Menu = (props: Record<string, any>) => {
@@ -123,17 +127,11 @@ const Menu = (props: Record<string, any>) => {
     );
 };
 
-const Blanket = (props: Record<string, any>) => (
-    <div
-        css={{
-            bottom: 0,
-            left: 0,
-            top: 0,
-            right: 0,
-            position: 'fixed',
-            zIndex: 1,
-        }}
-        {...props}
-    />
-);
-
+const Blanket = styled.div`
+    bottom: 0,
+    left: 0,
+    top: 0,
+    right: 0,
+    position: 'fixed',
+    zIndex: 1,
+`;

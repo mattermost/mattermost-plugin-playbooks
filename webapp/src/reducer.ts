@@ -30,8 +30,11 @@ import {
     PlaybookDeleted,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
+    ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
+
+import {GlobalSettings} from './types/settings';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -215,6 +218,15 @@ const numPlaybooksByTeam = (state: Record<string, number> = {}, action: Playbook
     }
 };
 
+const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
+    switch (action.type) {
+    case RECEIVED_GLOBAL_SETTINGS:
+        return action.settings;
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -224,4 +236,5 @@ export default combineReducers({
     tabStateByChannel,
     eventsFilterByChannel,
     numPlaybooksByTeam,
+    globalSettings,
 });

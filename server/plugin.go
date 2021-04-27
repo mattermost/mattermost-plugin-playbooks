@@ -133,7 +133,7 @@ func (p *Plugin) OnActivate() error {
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
-	p.handler = api.NewHandler(p.config)
+	p.handler = api.NewHandler(pluginAPIClient, p.config)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)

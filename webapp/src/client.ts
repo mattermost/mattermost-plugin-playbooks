@@ -36,6 +36,7 @@ import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
+import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
 const apiUrl = `/plugins/${pluginId}/api/v0`;
 
@@ -287,6 +288,22 @@ export async function telemetryEventForIncident(incidentID: string, action: stri
         method: 'POST',
         body: JSON.stringify({action}),
     });
+}
+
+export async function setGlobalSettings(settings: GlobalSettings) {
+    await doFetchWithoutResponse(`${apiUrl}/settings`, {
+        method: 'POST',
+        body: JSON.stringify(settings),
+    });
+}
+
+export async function fetchGlobalSettings(): Promise<GlobalSettings> {
+    const data = await doGet(`${apiUrl}/settings`);
+    if (!data) {
+        return globalSettingsSetDefaults({});
+    }
+
+    return globalSettingsSetDefaults(data);
 }
 
 export function exportChannelUrl(channelId: string) {

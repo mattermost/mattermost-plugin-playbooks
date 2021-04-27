@@ -42,9 +42,12 @@ import {
     PlaybookDeleted,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedTeamNumPlaybooks,
+    RECEIVED_GLOBAL_SETTINGS,
+    ReceivedGlobalSettings,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
+import {GlobalSettings} from './types/settings';
 
 export function startIncident(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -194,4 +197,9 @@ export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsF
     type: SET_RHS_EVENTS_FILTER,
     channelId,
     nextState,
+});
+
+export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGlobalSettings => ({
+    type: RECEIVED_GLOBAL_SETTINGS,
+    settings,
 });

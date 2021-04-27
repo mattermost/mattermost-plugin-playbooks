@@ -10,9 +10,9 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {OVERLAY_DELAY} from 'src/constants';
 import {isExportLicensed} from 'src/selectors';
 import {exportChannelUrl} from 'src/client';
-import {Banner} from 'src/components/backstage/shared';
 
 import {Incident} from 'src/types/incident';
+import {Banner} from 'src/components/backstage/styles';
 import {SecondaryButtonLarger} from 'src/components/backstage/incidents/shared';
 
 interface ExportLinkProps {
