@@ -134,18 +134,22 @@ export function useProfilesInCurrentChannel() {
     return profilesInChannel;
 }
 
+const selectCanCreatePlaybooks = (state: GlobalState) => {
+    const playbookCreators = globalSettings(state)?.playbook_creators_user_ids;
+    if (!playbookCreators || playbookCreators.length === 0) {
+        return true;
+    }
+    return playbookCreators.includes(getCurrentUserId(state));
+};
+
 export function useCanCreatePlaybooks() {
-    return useSelector<GlobalState, boolean>((state: GlobalState) => {
-        const playbookCreators = globalSettings(state)?.playbook_creators_user_ids;
-        if (!playbookCreators || playbookCreators.length === 0) {
-            return true;
-        }
-        return playbookCreators.includes(getCurrentUserId(state));
-    });
+    return useSelector<GlobalState, boolean>(selectCanCreatePlaybooks);
 }
 
+const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
+
 export function useExperimentalFeaturesEnabled() {
-    return useSelector<GlobalState, boolean>((state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features));
+    return useSelector<GlobalState, boolean>(selectExperimentalFeatures);
 }
 
 export function useProfilesInChannel(channelId: string) {
