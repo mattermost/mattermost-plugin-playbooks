@@ -36,6 +36,12 @@ import {
     SetTriggerId,
     RECEIVED_TEAM_DISABLED,
     ReceivedTeamDisabled,
+    PLAYBOOK_CREATED,
+    PlaybookCreated,
+    PLAYBOOK_DELETED,
+    PlaybookDeleted,
+    RECEIVED_TEAM_NUM_PLAYBOOKS,
+    ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
     ReceivedGlobalSettings,
 } from './types/actions';
@@ -148,6 +154,22 @@ export const incidentCreated = (incident: Incident): IncidentCreated => ({
 export const incidentUpdated = (incident: Incident): IncidentUpdated => ({
     type: INCIDENT_UPDATED,
     incident,
+});
+
+export const playbookCreated = (teamID: string): PlaybookCreated => ({
+    type: PLAYBOOK_CREATED,
+    teamID,
+});
+
+export const playbookDeleted = (teamID: string): PlaybookDeleted => ({
+    type: PLAYBOOK_DELETED,
+    teamID,
+});
+
+export const receivedTeamNumPlaybooks = (teamID: string, numPlaybooks: number): ReceivedTeamNumPlaybooks => ({
+    type: RECEIVED_TEAM_NUM_PLAYBOOKS,
+    teamID,
+    numPlaybooks,
 });
 
 export const receivedTeamIncidents = (incidents: Incident[]): ReceivedTeamIncidents => ({
