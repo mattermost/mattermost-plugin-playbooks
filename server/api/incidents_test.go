@@ -62,13 +62,13 @@ func TestIncidents(t *testing.T) {
 
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
-		handler = NewHandler(configService)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+		handler = NewHandler(client, configService)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
-		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
 		telemetryService = &telemetry.NoopTelemetry{}
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
 	}

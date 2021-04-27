@@ -22,7 +22,7 @@ import {AttachToIncidentPostMenu, StartIncidentPostMenu} from './components/post
 import Backstage from './components/backstage/backstage';
 import ErrorPage from './components/error_page';
 import {
-    setToggleRHSAction,
+    setToggleRHSAction, actionSetGlobalSettings,
 } from './actions';
 import reducer from './reducer';
 import {
@@ -42,6 +42,7 @@ import RegistryWrapper from './registry_wrapper';
 import {isE20LicensedOrDevelopment} from './license';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
 import {makeUpdateMainMenu} from './make_update_main_menu';
+import {fetchGlobalSettings} from './client';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
@@ -55,6 +56,12 @@ export default class Plugin {
         store.subscribe(updateMainMenuAction);
 
         registry.registerAdminConsoleCustomSetting('EnabledTeams', SystemConsoleEnabledTeams, {showTitle: true});
+
+        // Grab global settings
+        const getGlobalSettings = async () => {
+            store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
+        };
+        getGlobalSettings();
 
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);

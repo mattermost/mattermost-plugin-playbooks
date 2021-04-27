@@ -6,7 +6,6 @@ import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled from 'styled-components';
-import {css} from '@emotion/core';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -291,6 +290,14 @@ const Blanket = styled.div`
     z-index: 1;
 `;
 
+interface ChildContainerProps {
+    moveUp?: number
+}
+
+const ChildContainer = styled.div<ChildContainerProps>`
+    top: ${(props) => 27 - (props.moveUp || 0)}px;
+`;
+
 const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
     if (!isOpen) {
         return target;
@@ -299,16 +306,15 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
     const classes = classNames('IncidentFilter', 'profile-dropdown',
         'IncidentFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
 
-    const top = 27 - (moveUp || 0);
     return (
         <ProfileDropdown className={classes}>
             {target}
-            <div
+            <ChildContainer
                 className='IncidentFilter-select incident-user-select__container'
-                css={{top: top + 'px'}}
+                moveUp={moveUp}
             >
                 {children}
-            </div>
+            </ChildContainer>
             <Blanket onClick={onClose}/>
         </ProfileDropdown>
     );
