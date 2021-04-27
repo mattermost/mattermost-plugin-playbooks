@@ -161,27 +161,6 @@ const TimelineRetro = (props: { incident: Incident }) => {
             selected: eventsFilter.ran_slash_command,
             disabled: eventsFilter.all,
         },
-        {
-            value: 'divider',
-        } as CheckboxOption,
-        {
-            display: 'Jira issue updates',
-            value: 'jira',
-            selected: eventsFilter.jira,
-            disabled: eventsFilter.all,
-        },
-        {
-            display: 'Zendesk ticket updates',
-            value: 'zendesk',
-            selected: eventsFilter.zendesk,
-            disabled: eventsFilter.all,
-        },
-        {
-            display: 'Github code changes',
-            value: 'github',
-            selected: eventsFilter.github,
-            disabled: eventsFilter.all,
-        },
     ];
 
     return (

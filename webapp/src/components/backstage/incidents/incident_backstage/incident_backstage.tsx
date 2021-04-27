@@ -187,6 +187,12 @@ const IncidentBackstage = () => {
                     >
                         {'Overview'}
                     </TabItem>
+                    <TabItem
+                        active={tabState === IncidentBackstageTabState.ViewingRetrospective}
+                        onClick={() => setTabState(IncidentBackstageTabState.ViewingRetrospective)}
+                    >
+                        {'Retrospective'}
+                    </TabItem>
                 </SecondRow>
             </TopContainer>
             <BottomContainer>

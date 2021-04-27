@@ -5,7 +5,6 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {Incident} from 'src/types/incident';
-import {useProfilesInChannel} from 'src/hooks';
 import ProfileVertical
     from 'src/components/backstage/incidents/incident_backstage/retrospective/profile_vertical';
 import {
@@ -44,11 +43,6 @@ const ColTitle = styled.div`
 `;
 
 const Learnings = (props: {incident: Incident}) => {
-    const profilesInChannel = useProfilesInChannel(props.incident.channel_id);
-    const profilesExceptCommander = profilesInChannel.filter((u) => u.id !== props.incident.commander_user_id);
-    const second = profilesExceptCommander[1];
-    const third = profilesExceptCommander[2];
-
     return (
         <TabPageContainer>
             <Header>
@@ -87,7 +81,7 @@ const Learnings = (props: {incident: Incident}) => {
                     <Line/>
                     <Line/>
 
-                    <Cell><ProfileVertical userId={second.id}/></Cell>
+                    <Cell><ProfileVertical userId={props.incident.commander_user_id}/></Cell>
                     <Line/>
                     <Cell>{'In viverra eros sit amet est tincidunt malesuada.'}</Cell>
                     <Line/>
@@ -102,7 +96,7 @@ const Learnings = (props: {incident: Incident}) => {
                     <Line/>
                     <Line/>
 
-                    <Cell><ProfileVertical userId={third.id}/></Cell>
+                    <Cell><ProfileVertical userId={props.incident.commander_user_id}/></Cell>
                     <Line/>
                     <Cell>{'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed mauris dui, imperdiet quis rutrum eget, lobortis a mauris.'}</Cell>
                     <Line/>
