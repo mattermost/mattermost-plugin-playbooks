@@ -145,7 +145,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, poster, logger, configService)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().
@@ -170,7 +170,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, poster, logger, configService)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().
@@ -1207,7 +1207,6 @@ func TestSortingPlaybooks(t *testing.T) {
 	var mockCtrl *gomock.Controller
 	var handler *Handler
 	var logger *mock_poster.MockLogger
-	var poster *mock_poster.MockPoster
 	var configService *mock_config.MockService
 	var playbookService *mock_playbook.MockService
 	var pluginAPI *plugintest.API
@@ -1237,8 +1236,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		handler = NewHandler(client, configService)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		poster = mock_poster.NewMockPoster(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, poster, logger, configService)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().
@@ -1414,7 +1412,6 @@ func TestPagingPlaybooks(t *testing.T) {
 	var handler *Handler
 	var configService *mock_config.MockService
 	var logger *mock_poster.MockLogger
-	var poster *mock_poster.MockPoster
 	var playbookService *mock_playbook.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
@@ -1441,10 +1438,9 @@ func TestPagingPlaybooks(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		poster = mock_poster.NewMockPoster(mockCtrl)
 		handler = NewHandler(client, configService)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, poster, logger, configService)
+		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
 			IsLicensed().

@@ -19,16 +19,10 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-const (
-	playbookCreatedWSEvent = "playbook_created"
-	playbookDeletedWSEvent = "playbook_deleted"
-)
-
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
-	poster          bot.Poster
 	log             bot.Logger
 	config          config.Service
 }
@@ -36,11 +30,10 @@ type PlaybookHandler struct {
 const SettingsKey = "global_settings"
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, poster bot.Poster, log bot.Logger, configService config.Service) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
 		pluginAPI:       api,
-		poster:          poster,
 		log:             log,
 		config:          configService,
 	}
@@ -103,10 +96,6 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		HandleError(w, err)
 		return
 	}
-
-	h.poster.PublishWebsocketEventToTeam(playbookCreatedWSEvent, map[string]interface{}{
-		"teamID": pbook.TeamID,
-	}, pbook.TeamID)
 
 	result := struct {
 		ID string `json:"id"`
@@ -253,10 +242,6 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		HandleError(w, err)
 		return
 	}
-
-	h.poster.PublishWebsocketEventToTeam(playbookDeletedWSEvent, map[string]interface{}{
-		"teamID": playbookToDelete.TeamID,
-	}, playbookToDelete.TeamID)
 
 	w.WriteHeader(http.StatusNoContent)
 }

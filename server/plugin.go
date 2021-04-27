@@ -162,7 +162,6 @@ func (p *Plugin) OnActivate() error {
 		p.playbookService,
 		pluginAPIClient,
 		p.bot,
-		p.bot,
 		p.config,
 	)
 	api.NewIncidentHandler(
