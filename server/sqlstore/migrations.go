@@ -631,9 +631,6 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed setting default value in column ConcatenatedInvitedGroupIDs of table IR_Playbook")
 				}
 
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnArchiveEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
-					return errors.Wrapf(err, "failed adding column WebhookOnArchiveEnabled to table IR_Playbook")
-				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Incident", "ConcatenatedInvitedGroupIDs", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedGroupIDs to table IR_Incident")
