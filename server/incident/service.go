@@ -1255,6 +1255,24 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	}
 
 	_ = s.sendIncidentToClient(incidentID)
+
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve incident for incidentID: %s; error: %s", incidentID, err.Error())
+		return
+	}
+
+	if theIncident.MessageOnJoin == "" {
+		return
+	}
+
+	go (func() {
+		time.Sleep(10 * time.Second)
+
+		s.poster.EphemeralPost(userID, channelID, &model.Post{
+			Message: theIncident.MessageOnJoin,
+		})
+	})()
 }
 
 // UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID

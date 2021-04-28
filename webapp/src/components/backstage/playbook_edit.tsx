@@ -30,7 +30,13 @@ import './playbook.scss';
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
-import {BackstageSubheader, BackstageSubheaderDescription, TabContainer, StyledTextarea, StyledSelect} from './styles';
+import {
+    BackstageSubheader,
+    BackstageSubheaderDescription,
+    TabContainer,
+    StyledTextarea,
+    StyledSelect,
+} from './styles';
 
 const SidebarHeader = styled.div`
     display: flex;
@@ -347,6 +353,24 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
+    const handleMessageOnJoinChange = (message: string) => {
+        if (playbook.message_on_join !== message) {
+            setPlaybook({
+                ...playbook,
+                message_on_join: message,
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleToggleMessageOnJoin = () => {
+        setPlaybook({
+            ...playbook,
+            message_on_join_enabled: !playbook.message_on_join_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const handleToggleInviteUsers = () => {
         setPlaybook({
             ...playbook,
@@ -555,6 +579,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    messageOnJoinEnabled={playbook.message_on_join_enabled}
+                                    onToggleMessageOnJoin={handleToggleMessageOnJoin}
+                                    messageOnJoin={playbook.message_on_join}
+                                    messageOnJoinChange={handleMessageOnJoinChange}
                                 />
                             </TabContainer>
                         </TabsContent>
