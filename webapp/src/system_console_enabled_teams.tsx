@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React, {FC, useState} from 'react';
 
 import {useSelector} from 'react-redux';
 import {getMyTeams, getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -8,10 +8,10 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {StyledAsyncSelect} from './components/backstage/styles';
+import {StyledAsyncSelect, RadioContainer, RadioLabel, RadioInput} from './components/backstage/styles';
 
 interface TeamSelectorProps {
-    teamsSlected: string[]
+    teamsSelected: string[]
     onTeamsSelected: (teams: string[]) => void;
 }
 
@@ -20,6 +20,7 @@ type GetTeamType = (teamID: string) => Team
 const TeamSelector: FC<TeamSelectorProps> = (props: TeamSelectorProps) => {
     const selectableTeams = useSelector<GlobalState, Team[]>(getMyTeams);
     const getTeamFromID = useSelector<GlobalState, GetTeamType>((state) => (teamId) => getTeam(state, teamId) || {display_name: 'Unknown Team', id: teamId});
+    const [enabled, setEnabled] = useState(Boolean(props.teamsSelected) && props.teamsSelected.length !== 0);
 
     const onChange = (teams: Team[] | null) => {
         if (!teams) {
@@ -53,18 +54,53 @@ const TeamSelector: FC<TeamSelectorProps> = (props: TeamSelectorProps) => {
         }
     };
 
+    const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.value === 'enabled') {
+            setEnabled(true);
+        } else {
+            props.onTeamsSelected([]);
+            setEnabled(false);
+        }
+    };
+
     return (
-        <StyledAsyncSelect
-            isMulti={true}
-            cacheOptions={false}
-            defaultOptions={true}
-            loadOptions={loadTeams}
-            onChange={onChange}
-            getOptionValue={getOptionValue}
-            formatOptionLabel={formatOptionLabel}
-            isClearable={false}
-            value={props.teamsSlected.map(getTeamFromID)}
-        />
+        <>
+            <RadioContainer>
+                <RadioLabel>
+                    <RadioInput
+                        type='radio'
+                        name='enabled'
+                        value='disabled'
+                        checked={!enabled}
+                        onChange={radioPressed}
+                    />
+                    {'Enable for every team.'}
+                </RadioLabel>
+                <RadioLabel>
+                    <RadioInput
+                        type='radio'
+                        name='enabled'
+                        value='enabled'
+                        checked={enabled}
+                        onChange={radioPressed}
+                    />
+                    {'Enable for selected teams only.'}
+                </RadioLabel>
+            </RadioContainer>
+            {enabled &&
+                <StyledAsyncSelect
+                    isMulti={true}
+                    cacheOptions={false}
+                    defaultOptions={true}
+                    loadOptions={loadTeams}
+                    onChange={onChange}
+                    getOptionValue={getOptionValue}
+                    formatOptionLabel={formatOptionLabel}
+                    isClearable={false}
+                    value={props.teamsSelected.map(getTeamFromID)}
+                />
+            }
+        </>
     );
 };
 
@@ -84,7 +120,7 @@ const SystemConsoleEnabledTeams: FC<SystemConsoleEnabledTeamsProps> = (props: Sy
     return (
         <TeamSelector
             onTeamsSelected={onTeamsSelected}
-            teamsSlected={props.value || []}
+            teamsSelected={props.value || []}
         />
     );
 };
