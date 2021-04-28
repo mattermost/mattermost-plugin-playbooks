@@ -166,7 +166,7 @@ const RHSTimelineEventItem = (props: Props) => {
         break;
     case TimelineEventType.UserJoinedLeft:
         iconClass = 'icon icon-account-outline';
-        summaryTitle = JSON.parse(props.event.details).details;
+        summaryTitle = JSON.parse(props.event.details).title;
         summary = props.event.summary;
         testid = TimelineEventType.UserJoinedLeft;
         break;
