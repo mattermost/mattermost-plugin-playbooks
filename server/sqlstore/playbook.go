@@ -213,18 +213,16 @@ func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
 	correctPaginationOpts(&opts)
 
-	var permissionsAndFilter sq.Sqlizer
-	isAdmin := requesterInfo.UserIDtoIsAdmin[requesterInfo.UserID]
-
-	if isAdmin && requesterInfo.MemberOnly || !isAdmin {
-		permissionsAndFilter = p.store.builder.
-			Select("1").
-			Prefix("EXISTS(").
-			From("IR_PlaybookMember as pm").
-			Where("pm.PlaybookID = p.ID").
-			Where(sq.Eq{"pm.MemberID": requesterInfo.UserID}).
-			Suffix(")")
-	}
+	// Check that you are a playbook member or there are no restrictions.
+	permissionsAndFilter := sq.Expr(`(
+			EXISTS(SELECT 1
+					FROM IR_PlaybookMember as pm
+					WHERE pm.PlaybookID = p.ID
+					AND pm.MemberID = ?)
+			OR NOT EXISTS(SELECT 1
+					FROM IR_PlaybookMember as pm
+					WHERE pm.PlaybookID = p.ID)
+		)`, requesterInfo.UserID)
 
 	queryForResults := p.store.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
@@ -270,6 +268,21 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 		HasMore:    hasMore,
 		Items:      playbooks,
 	}, nil
+}
+
+func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook").
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"TeamID": teamID})
+
+	var total int
+	if err := p.store.getBuilder(p.store.db, &total, query); err != nil {
+		return 0, errors.Wrap(err, "failed to get number of playbooks")
+	}
+
+	return total, nil
 }
 
 // Update updates a playbook

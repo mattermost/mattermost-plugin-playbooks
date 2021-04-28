@@ -475,3 +475,27 @@ func (mr *MockServiceMockRecorder) UpdateStatus(arg0, arg1, arg2 interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockService)(nil).UpdateStatus), arg0, arg1, arg2)
 }
+
+// UserHasJoinedChannel mocks base method
+func (m *MockService) UserHasJoinedChannel(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UserHasJoinedChannel", arg0, arg1, arg2)
+}
+
+// UserHasJoinedChannel indicates an expected call of UserHasJoinedChannel
+func (mr *MockServiceMockRecorder) UserHasJoinedChannel(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserHasJoinedChannel", reflect.TypeOf((*MockService)(nil).UserHasJoinedChannel), arg0, arg1, arg2)
+}
+
+// UserHasLeftChannel mocks base method
+func (m *MockService) UserHasLeftChannel(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UserHasLeftChannel", arg0, arg1, arg2)
+}
+
+// UserHasLeftChannel indicates an expected call of UserHasLeftChannel
+func (mr *MockServiceMockRecorder) UserHasLeftChannel(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserHasLeftChannel", reflect.TypeOf((*MockService)(nil).UserHasLeftChannel), arg0, arg1, arg2)
+}

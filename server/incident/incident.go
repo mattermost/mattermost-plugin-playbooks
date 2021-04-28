@@ -168,6 +168,7 @@ const (
 	AssigneeChanged   timelineEventType = "assignee_changed"
 	RanSlashCommand   timelineEventType = "ran_slash_command"
 	EventFromPost     timelineEventType = "event_from_post"
+	UserJoinedLeft    timelineEventType = "user_joined_left"
 )
 
 type TimelineEvent struct {
@@ -358,6 +359,14 @@ type Service interface {
 
 	// ChangeCreationDate changes the creation date of the specified incident.
 	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
+
+	// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
+	// was invited by actorID.
+	UserHasJoinedChannel(userID, channelID, actorID string)
+
+	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
+	// was removed from the channel by actorID.
+	UserHasLeftChannel(userID, channelID, actorID string)
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.

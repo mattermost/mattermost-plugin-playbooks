@@ -13,7 +13,7 @@ import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
 import {Announcement} from 'src/components/backstage/automation/announcement';
 
-import {BackstageHeaderHelpText, BackstageHeaderTitle} from 'src/components/backstage/styles';
+import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 
 interface Props {
     searchProfiles: (term: string) => ActionFunc;
@@ -45,12 +45,12 @@ interface Props {
 export const AutomationSettings: FC<Props> = (props: Props) => {
     return (
         <>
-            <BackstageHeaderTitle>
+            <BackstageSubheader>
                 {'Automation'}
-            </BackstageHeaderTitle>
-            <BackstageHeaderHelpText>
+            </BackstageSubheader>
+            <BackstageSubheaderDescription>
                 {'Select what actions take place after certain situations are triggered.'}
-            </BackstageHeaderHelpText>
+            </BackstageSubheaderDescription>
             <Section>
                 <SectionTitle>
                     {'When an incident starts'}

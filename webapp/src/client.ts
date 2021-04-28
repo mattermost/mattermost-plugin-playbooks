@@ -29,12 +29,14 @@ import {
     FetchPlaybooksNoChecklistReturn,
     Playbook,
     PlaybookNoChecklist,
+    FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 
 import {Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
+import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
 const apiUrl = `/plugins/${pluginId}/api/v0`;
 
@@ -148,6 +150,13 @@ export {clientHasPlaybooks};
 
 export function clientFetchPlaybook(playbookID: string) {
     return doGet(`${apiUrl}/playbooks/${playbookID}`);
+}
+
+export async function clientFetchPlaybooksCount(teamID: string) {
+    const queryParams = qs.stringify({
+        team_id: teamID,
+    }, {addQueryPrefix: true});
+    return await doGet(`${apiUrl}/playbooks/count${queryParams}`) as FetchPlaybooksCountReturn;
 }
 
 export async function savePlaybook(playbook: Playbook) {
@@ -279,6 +288,22 @@ export async function telemetryEventForIncident(incidentID: string, action: stri
         method: 'POST',
         body: JSON.stringify({action}),
     });
+}
+
+export async function setGlobalSettings(settings: GlobalSettings) {
+    await doFetchWithoutResponse(`${apiUrl}/settings`, {
+        method: 'POST',
+        body: JSON.stringify(settings),
+    });
+}
+
+export async function fetchGlobalSettings(): Promise<GlobalSettings> {
+    const data = await doGet(`${apiUrl}/settings`);
+    if (!data) {
+        return globalSettingsSetDefaults({});
+    }
+
+    return globalSettingsSetDefaults(data);
 }
 
 export function exportChannelUrl(channelId: string) {

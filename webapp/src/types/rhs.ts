@@ -20,6 +20,7 @@ export enum TimelineEventType {
     TaskStateModified = 'task_state_modified',
     RanSlashCommand = 'ran_slash_command',
     EventFromPost = 'event_from_post',
+    UserJoinedLeft = 'user_joined_left',
 }
 
 export interface TimelineEvent {
@@ -45,6 +46,7 @@ export interface TimelineEventsFilter {
     task_state_modified: boolean;
     assignee_changed: boolean;
     ran_slash_command: boolean;
+    user_joined_left: boolean;
 }
 
 export const TimelineEventsFilterDefault = {
@@ -55,14 +57,5 @@ export const TimelineEventsFilterDefault = {
     task_state_modified: false,
     assignee_changed: false,
     ran_slash_command: false,
-};
-
-export const TimelineEventsFilterAll = {
-    all: true,
-    commander_changed: false,
-    status_updated: false,
-    event_from_post: false,
-    task_state_modified: false,
-    assignee_changed: false,
-    ran_slash_command: false,
+    user_joined_left: false,
 };

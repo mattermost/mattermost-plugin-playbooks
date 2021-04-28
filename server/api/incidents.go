@@ -47,7 +47,10 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 		config:          config,
 	}
 
+	e20Middleware := E20LicenseRequired{config}
+
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
+	incidentsRouter.Use(e20Middleware.Middleware)
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
 
@@ -389,7 +392,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
 
-		if !sliceContains(pb.MemberIDs, userID) {
+		if len(pb.MemberIDs) != 0 && !sliceContains(pb.MemberIDs, userID) {
 			return nil, errors.New("userID is not a member of playbook")
 		}
 

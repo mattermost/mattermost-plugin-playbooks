@@ -21,7 +21,7 @@ import ConfirmModal from '../widgets/confirmation_modal';
 
 import {StageEditor} from './stage_edit';
 import DragHandle from './drag_handle';
-import {BackstageHeader, BackstageHeaderTitle, BackstageHeaderHelpText} from './styles';
+import {BackstageSubheader, BackstageSubheaderDescription} from './styles';
 
 const NewStage = styled.button`
     border: none;
@@ -37,6 +37,10 @@ const NewStage = styled.button`
 
 const NewStageContainer = styled.div`
     margin: 12px 32px 0 0;
+`;
+
+const TitleContainer = styled.div`
+    padding: 20px 0 0 31px;
 `;
 
 interface Props {
@@ -147,10 +151,12 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
 
     return (
         <>
-            <BackstageHeader>
-                <BackstageHeaderTitle>{'Tasks'}</BackstageHeaderTitle>
-                <BackstageHeaderHelpText>{'Checklists allow you to group your tasks. Tasks are meant to be completed by members of the incident channel.'}</BackstageHeaderHelpText>
-            </BackstageHeader>
+            <TitleContainer>
+                <BackstageSubheader>
+                    {'Tasks'}
+                </BackstageSubheader>
+                <BackstageSubheaderDescription>{'Checklists are groups of tasks which are assigned to and completed by members of the incident channel.'}</BackstageSubheaderDescription>
+            </TitleContainer>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable
                     droppableId='columns'

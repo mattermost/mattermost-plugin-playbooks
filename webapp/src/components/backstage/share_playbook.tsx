@@ -1,73 +1,91 @@
 import React, {FC} from 'react';
 
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {ActionFunc} from 'mattermost-redux/types/actions';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {useSelector} from 'react-redux';
+
 import styled from 'styled-components';
 
-import {ActionFunc} from 'mattermost-redux/types/actions';
-
-import ProfileAutocomplete from 'src/components/backstage/profile_autocomplete';
-import Profile from 'src/components/profile/profile';
 import {Playbook} from 'src/types/playbook';
 
+import SelectUsersBelow from './select_users_below';
+import {BackstageSubheader, BackstageSubheaderDescription, RadioContainer, RadioInput, RadioLabel} from './styles';
+
 export interface SharePlaybookProps {
+    currentUserId: string;
     onAddUser: (userid: string) => void;
     onRemoveUser: (userid: string) => void;
+    onClear: () => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
     playbook: Playbook;
 }
 
-const ProfileAutocompleteContainer = styled.div`
-    display: flex;
-    flex-direction: column;
+const UserSelectorWrapper = styled.div`
+    margin-left: 24px;
+    width: 400px;
+    height: 40px;
 `;
 
-const UserLine = styled.div`
-    display: flex;
-    align-items: center;
-    margin: 12px 0;
-`;
-
-const UserList = styled.div`
-    margin: 12px 0;
-`;
-
-const RemoveLink = styled.a`
-    flex-shrink: 0;
-    font-weight: normal;
-    font-size: 14px;
-    line-height: 20px;
-    color: rgba(var(--center-channel-color), 0.56);
-`;
-
-const SharePlaybookProfile = styled(Profile)`
-    flex-grow: 1;
-    overflow: hidden;
-`;
+const selectCurrentTeamName = (state: GlobalState) => getCurrentTeam(state).name;
 
 const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
+    const currentTeamName = useSelector<GlobalState, string>(selectCurrentTeamName);
+    const enabled = props.playbook.member_ids.length > 0;
+    const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.value === 'enabled') {
+            if (!enabled) {
+                props.onAddUser(props.currentUserId);
+            }
+        } else {
+            props.onClear();
+        }
+    };
     return (
-        <ProfileAutocompleteContainer>
-            <ProfileAutocomplete
-                onAddUser={props.onAddUser}
-                userIds={props.playbook.member_ids}
-                searchProfiles={props.searchProfiles}
-                getProfiles={props.getProfiles}
-            />
-            <UserList>
-                {props.playbook.member_ids.map((userId) => (
-                    <UserLine
-                        data-testid='user-line'
-                        key={userId}
-                    >
-                        <SharePlaybookProfile userId={userId}/>
-                        {
-                            props.playbook.member_ids.length > 1 &&
-                            <RemoveLink onClick={() => props.onRemoveUser(userId)}>{'Remove'}</RemoveLink>
-                        }
-                    </UserLine>
-                ))}
-            </UserList>
-        </ProfileAutocompleteContainer>
+        <>
+            <BackstageSubheader>
+                {'Playbook access'}
+            </BackstageSubheader>
+            <RadioContainer>
+                <RadioLabel>
+                    <RadioInput
+                        type='radio'
+                        name='enabled'
+                        value='disabled'
+                        checked={!enabled}
+                        onChange={radioPressed}
+                    />
+                    {'Everyone on this team ('}
+                    <b>{currentTeamName}</b>
+                    {') can access.'}
+                </RadioLabel>
+                <RadioLabel>
+                    <RadioInput
+                        type='radio'
+                        name='enabled'
+                        value='enabled'
+                        checked={enabled}
+                        onChange={radioPressed}
+                    />
+                    {'Only selected users can access.'}
+                </RadioLabel>
+            </RadioContainer>
+            {enabled &&
+                <UserSelectorWrapper>
+                    <BackstageSubheaderDescription>
+                        {'Only users who you select will be able to edit the playbook or create an incident from this playbook.'}
+                    </BackstageSubheaderDescription>
+                    <SelectUsersBelow
+                        userIds={props.playbook.member_ids}
+                        onAddUser={props.onAddUser}
+                        onRemoveUser={props.onRemoveUser}
+                        searchProfiles={props.searchProfiles}
+                        getProfiles={props.getProfiles}
+                    />
+                </UserSelectorWrapper>
+            }
+        </>
     );
 };
 

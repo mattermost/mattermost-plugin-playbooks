@@ -133,7 +133,7 @@ func (p *Plugin) OnActivate() error {
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
-	p.handler = api.NewHandler(p.config)
+	p.handler = api.NewHandler(pluginAPIClient, p.config)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
@@ -157,7 +157,13 @@ func (p *Plugin) OnActivate() error {
 
 	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
 
-	api.NewPlaybookHandler(p.handler.APIRouter, p.playbookService, pluginAPIClient, p.bot, p.config)
+	api.NewPlaybookHandler(
+		p.handler.APIRouter,
+		p.playbookService,
+		pluginAPIClient,
+		p.bot,
+		p.config,
+	)
 	api.NewIncidentHandler(
 		p.handler.APIRouter,
 		p.incidentService,
@@ -168,7 +174,7 @@ func (p *Plugin) OnActivate() error {
 		telemetryClient,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -208,4 +214,20 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	}
 
 	return &model.CommandResponse{}, nil
+}
+
+func (p *Plugin) UserHasJoinedChannel(c *plugin.Context, channelMember *model.ChannelMember, actor *model.User) {
+	actorID := ""
+	if actor != nil && actor.Id != channelMember.UserId {
+		actorID = actor.Id
+	}
+	p.incidentService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
+
+func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.ChannelMember, actor *model.User) {
+	actorID := ""
+	if actor != nil && actor.Id != channelMember.UserId {
+		actorID = actor.Id
+	}
+	p.incidentService.UserHasLeftChannel(channelMember.UserId, channelMember.ChannelId, actorID)
 }

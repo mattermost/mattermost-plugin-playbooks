@@ -27,19 +27,28 @@ type PlaybookHandler struct {
 	config          config.Service
 }
 
+const SettingsKey = "global_settings"
+
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, config config.Service) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
 		pluginAPI:       api,
 		log:             log,
-		config:          config,
+		config:          configService,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
+	if !config.PricingPlanDifferentiationEnabled {
+		e20Middleware := E20LicenseRequired{configService}
+		playbooksRouter.Use(e20Middleware.Middleware)
+	}
+
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
+
 	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
 	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("/count", handler.getPlaybookCount).Methods(http.MethodGet)
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
@@ -58,73 +67,17 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !permissions.IsOnEnabledTeam(pbook.TeamID, h.config) {
-		HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
-		return
-	}
-
 	if pbook.ID != "" {
 		HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
 		return
 	}
 
-	if pbook.BroadcastChannelID != "" &&
-		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to create posts in the channel %s",
-			userID,
-			pbook.BroadcastChannelID,
-		))
+	if err := permissions.CreatePlaybook(userID, pbook, h.config, h.pluginAPI); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
-	if !permissions.CanViewTeam(userID, pbook.TeamID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to create playbook on teamID %s",
-			userID,
-			pbook.TeamID,
-		))
-		return
-	}
-
-	for _, userID := range pbook.InvitedUserIDs {
-		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-				"invited user with ID %s does not have permission to playbook's team %s",
-				userID,
-				pbook.TeamID,
-			))
-			return
-		}
-	}
-
-	for _, groupID := range pbook.InvitedGroupIDs {
-		group, err := h.pluginAPI.Group.Get(groupID)
-		if err != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, "invalid group", err)
-			return
-		}
-
-		if !group.AllowReference {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-				"group %s does now allow references",
-				groupID,
-			))
-			return
-		}
-	}
-
-	if pbook.AnnouncementChannelID != "" &&
-		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to create posts in the channel %s",
-			userID,
-			pbook.AnnouncementChannelID,
-		))
-		return
-	}
-
-	if pbook.WebhookOnCreationURL != "" {
+	if pbook.WebhookOnCreationEnabled {
 		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
@@ -152,19 +105,6 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	// Exclude guest users
-	if isGuest, err := permissions.IsGuest(userID, h.pluginAPI); err != nil {
-		HandleError(w, err)
-		return
-	} else if isGuest {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to create playbook on teamID %s because they are a guest",
-			userID,
-			pbook.TeamID,
-		))
-		return
-	}
-
 	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
 		HandleError(w, err)
@@ -190,12 +130,8 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.hasPermissionsToPlaybook(pbook, userID) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to get playbook on teamID %s",
-			userID,
-			pbook.TeamID,
-		))
+	if err := permissions.PlaybookAccess(userID, pbook, h.pluginAPI); err != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
@@ -220,68 +156,17 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.hasPermissionsToPlaybook(oldPlaybook, userID) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to update playbook on teamID %s",
-			userID,
-			oldPlaybook.TeamID,
-		))
+	if err3 := permissions.PlaybookModify(userID, pbook, oldPlaybook, h.pluginAPI); err3 != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
 		return
 	}
 
-	if pbook.BroadcastChannelID != "" &&
-		pbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
-		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to create posts in the channel %s",
-			userID,
-			pbook.BroadcastChannelID,
-		))
+	if err4 := doPlaybookModificationChecks(&pbook, userID, h.pluginAPI); err4 != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err4)
 		return
 	}
 
-	filteredUsers := []string{}
-	for _, userID := range pbook.InvitedUserIDs {
-		if !h.pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-			h.pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
-			continue
-		}
-		filteredUsers = append(filteredUsers, userID)
-	}
-	pbook.InvitedUserIDs = filteredUsers
-
-	filteredGroups := []string{}
-	for _, groupID := range pbook.InvitedGroupIDs {
-		var group *model.Group
-		group, err = h.pluginAPI.Group.Get(groupID)
-		if err != nil {
-			h.pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
-			continue
-		}
-
-		if !group.AllowReference {
-			h.pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
-			continue
-		}
-
-		filteredGroups = append(filteredGroups, groupID)
-	}
-	pbook.InvitedGroupIDs = filteredGroups
-
-	if pbook.DefaultCommanderID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, h.pluginAPI) {
-		h.pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
-		pbook.DefaultCommanderID = ""
-		pbook.DefaultCommanderEnabled = false
-	}
-
-	if pbook.AnnouncementChannelID != "" &&
-		!h.pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
-		h.pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
-		pbook.AnnouncementChannelID = ""
-		pbook.AnnouncementChannelEnabled = false
-	}
-
-	if pbook.WebhookOnCreationURL != "" {
+	if pbook.WebhookOnCreationEnabled {
 		url, err2 := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err2 != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
@@ -318,6 +203,53 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 }
 
+// doPlaybookModificationChecks performs permissions checks that can be resolved though modification of the input.
+// This function modifies the pbook argument.
+func doPlaybookModificationChecks(pbook *playbook.Playbook, userID string, pluginAPI *pluginapi.Client) error {
+	filteredUsers := []string{}
+	for _, userID := range pbook.InvitedUserIDs {
+		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
+			continue
+		}
+		filteredUsers = append(filteredUsers, userID)
+	}
+	pbook.InvitedUserIDs = filteredUsers
+
+	filteredGroups := []string{}
+	for _, groupID := range pbook.InvitedGroupIDs {
+		var group *model.Group
+		group, err := pluginAPI.Group.Get(groupID)
+		if err != nil {
+			pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
+			continue
+		}
+
+		if !group.AllowReference {
+			pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
+			continue
+		}
+
+		filteredGroups = append(filteredGroups, groupID)
+	}
+	pbook.InvitedGroupIDs = filteredGroups
+
+	if pbook.DefaultCommanderID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, pluginAPI) {
+		pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
+		pbook.DefaultCommanderID = ""
+		pbook.DefaultCommanderEnabled = false
+	}
+
+	if pbook.AnnouncementChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
+		pbook.AnnouncementChannelID = ""
+		pbook.AnnouncementChannelEnabled = false
+	}
+
+	return nil
+}
+
 func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -328,12 +260,8 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.hasPermissionsToPlaybook(playbookToDelete, userID) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to delete playbook on teamID %s",
-			userID,
-			playbookToDelete.TeamID,
-		))
+	if err2 := permissions.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err2 != nil {
+		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}
 
@@ -435,19 +363,27 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	ReturnJSON(w, list, http.StatusOK)
 }
 
-func (h *PlaybookHandler) hasPermissionsToPlaybook(thePlaybook playbook.Playbook, userID string) bool {
-	if !permissions.CanViewTeam(userID, thePlaybook.TeamID, h.pluginAPI) {
-		return false
+func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	teamID := query.Get("team_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+		return
 	}
 
-	for _, memberID := range thePlaybook.MemberIDs {
-		if memberID == userID {
-			return true
-		}
+	count, err := h.playbookService.GetNumPlaybooksForTeam(teamID)
+	if err != nil {
+		HandleError(w, err)
+		return
 	}
 
-	// Fallback to admin role that have access to all playbooks.
-	return h.pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+	countStruct := struct {
+		Count int `json:"count"`
+	}{count}
+
+	ReturnJSON(w, countStruct, http.StatusOK)
 }
 
 func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
