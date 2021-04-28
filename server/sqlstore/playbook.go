@@ -269,6 +269,21 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 	}, nil
 }
 
+func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook").
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"TeamID": teamID})
+
+	var total int
+	if err := p.store.getBuilder(p.store.db, &total, query); err != nil {
+		return 0, errors.Wrap(err, "failed to get number of playbooks")
+	}
+
+	return total, nil
+}
+
 // Update updates a playbook
 func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	if updated.ID == "" {

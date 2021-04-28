@@ -270,11 +270,20 @@ describe('timeline', () => {
 
     describe('timeline notice', () => {
         it('shows when there are no events', () => {
+            // * See all events:
+            clickOnFilterOption('All events');
+
             // * Verify incident created message is visible in the timeline
             verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
 
             // * Delete the incident created event
             removeTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+
+            // * Verify user joined message is visible in the timeline
+            verifyTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
+
+            // * Delete the incident created event
+            removeTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
             // * Verify notice is shown
             cy.get('#rhsContainer').within(() => {
@@ -375,8 +384,8 @@ describe('timeline', () => {
             // * Verify we can see all events:
             clickOnFilterOption('All events');
 
-            // * Verify all events are shown
-            cy.findAllByTestId(/timeline-item .*/).should('have.length', 9);
+            // * Verify all events are shown (incl. one user_joined_left event)
+            cy.findAllByTestId(/timeline-item .*/).should('have.length', 10);
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
             verifyTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
@@ -426,14 +435,16 @@ const removeTimelineEvent = (expectedEventType, expectedNumberOfEvents, expected
 };
 
 const clickOnFilterOption = (option) => {
-    // # Show filter menu
-    cy.get('.icon-filter-variant').click();
+    cy.get('#rhsContainer').within(() => {
+        // # Show filter menu
+        cy.get('.icon-filter-variant').click();
 
-    cy.findByTestId('dropdownmenu').within(() => {
-        // # Click on desired filter
-        cy.findByText(option).click();
+        cy.findByTestId('dropdownmenu').within(() => {
+            // # Click on desired filter
+            cy.findByText(option).click();
+        });
+
+        // # Hide menu
+        cy.findByTestId('timeline').click();
     });
-
-    // # Hide menu
-    cy.findByTestId('timeline').click();
 };
