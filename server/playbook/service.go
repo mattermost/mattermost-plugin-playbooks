@@ -7,6 +7,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 )
 
+const (
+	playbookCreatedWSEvent = "playbook_created"
+	playbookDeletedWSEvent = "playbook_deleted"
+)
+
 type service struct {
 	store     Store
 	poster    bot.Poster
@@ -33,6 +38,10 @@ func (s *service) Create(playbook Playbook, userID string) (string, error) {
 
 	s.telemetry.CreatePlaybook(playbook, userID)
 
+	s.poster.PublishWebsocketEventToTeam(playbookCreatedWSEvent, map[string]interface{}{
+		"teamID": playbook.TeamID,
+	}, playbook.TeamID)
+
 	return newID, nil
 }
 
@@ -46,6 +55,10 @@ func (s *service) GetPlaybooks() ([]Playbook, error) {
 
 func (s *service) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error) {
 	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
+}
+
+func (s *service) GetNumPlaybooksForTeam(teamID string) (int, error) {
+	return s.store.GetNumPlaybooksForTeam(teamID)
 }
 
 func (s *service) Update(playbook Playbook, userID string) error {
@@ -68,6 +81,10 @@ func (s *service) Delete(playbook Playbook, userID string) error {
 	}
 
 	s.telemetry.DeletePlaybook(playbook, userID)
+
+	s.poster.PublishWebsocketEventToTeam(playbookDeletedWSEvent, map[string]interface{}{
+		"teamID": playbook.TeamID,
+	}, playbook.TeamID)
 
 	return nil
 }

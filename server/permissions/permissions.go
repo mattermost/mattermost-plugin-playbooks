@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -172,4 +173,153 @@ func IsOnEnabledTeam(teamID string, cfgService config.Service) bool {
 	}
 
 	return false
+}
+
+func isPlaybookCreator(userID string, cfgService config.Service) error {
+	playbookCreators := cfgService.GetConfiguration().PlaybookCreatorsUserIds
+	if len(playbookCreators) == 0 {
+		return nil
+	}
+
+	for _, candidateUserID := range playbookCreators {
+		if userID == candidateUserID {
+			return nil
+		}
+	}
+
+	return errors.Wrap(ErrNoPermissions, "create playbooks")
+}
+
+func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi.Client) error {
+	noAccessErr := errors.Wrapf(
+		ErrNoPermissions,
+		"userID %s to access playbook",
+		userID,
+	)
+
+	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
+		return errors.Wrap(noAccessErr, "no team view permission")
+	}
+
+	for _, memberID := range pbook.MemberIDs {
+		if memberID == userID {
+			return nil
+		}
+	}
+
+	return errors.Wrap(noAccessErr, "not on list of members")
+}
+
+func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client) error {
+	if err := isPlaybookCreator(userID, cfgService); err != nil {
+		return err
+	}
+
+	if !IsOnEnabledTeam(pbook.TeamID, cfgService) {
+		return errors.Wrap(ErrNoPermissions, "not enabled on this team")
+	}
+
+	// Exclude guest users
+	if isGuest, err := IsGuest(userID, pluginAPI); err != nil {
+		return err
+	} else if isGuest {
+		return errors.Errorf(
+			"userID %s does not have permission to create playbook on teamID %s because they are a guest",
+			userID,
+			pbook.TeamID,
+		)
+	}
+
+	if pbook.BroadcastChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		return errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.BroadcastChannelID,
+		)
+	}
+
+	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
+		return errors.Errorf(
+			"userID %s does not have permission to create playbook on teamID %s",
+			userID,
+			pbook.TeamID,
+		)
+	}
+
+	if pbook.AnnouncementChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		return errors.Errorf(
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.AnnouncementChannelID,
+		)
+	}
+
+	// Check all invited users have permissions to the team.
+	for _, userID := range pbook.InvitedUserIDs {
+		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			return errors.Errorf(
+				"invited user with ID %s does not have permission to playbook's team %s",
+				userID,
+				pbook.TeamID,
+			)
+		}
+	}
+
+	for _, groupID := range pbook.InvitedGroupIDs {
+		group, err := pluginAPI.Group.Get(groupID)
+		if err != nil {
+			return errors.Wrap(err, "invalid group")
+		}
+
+		if !group.AllowReference {
+			return errors.Errorf(
+				"group %s does not allow references",
+				groupID,
+			)
+		}
+	}
+
+	return nil
+}
+
+// DANGER This is not a complete check. There is more in the current handler for updatePlaybook
+// if you need to use this function, integrate that here first.
+func PlaybookModify(userID string, pbook, oldPlaybook playbook.Playbook, pluginAPI *pluginapi.Client) error {
+	if err := PlaybookAccess(userID, oldPlaybook, pluginAPI); err != nil {
+		return err
+	}
+
+	if pbook.BroadcastChannelID != "" &&
+		pbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
+		!pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		return errors.Wrapf(
+			ErrNoPermissions,
+			"userID %s does not have permission to create posts in the channel %s",
+			userID,
+			pbook.BroadcastChannelID,
+		)
+	}
+
+	return nil
+}
+
+func ModifySettings(userID string, config config.Service) error {
+	cfg := config.GetConfiguration()
+	if len(cfg.PlaybookCreatorsUserIds) > 0 {
+		found := false
+		for _, candidateUserID := range cfg.PlaybookCreatorsUserIds {
+			if candidateUserID == userID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return errors.Wrap(ErrNoPermissions, "not a playbook creator")
+		}
+	}
+
+	return nil
 }

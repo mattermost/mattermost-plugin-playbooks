@@ -22,6 +22,8 @@ import {
 } from 'src/types/rhs';
 import {Incident, incidentIsActive} from 'src/types/incident';
 
+import {GlobalSettings} from './types/settings';
+
 //@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 
@@ -34,6 +36,8 @@ export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
 export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myIncidentsByTeam[getCurrentTeamId(state)] === false;
+
+export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
 // reminder: myIncidentsByTeam indexes teamId->channelId->incident
 const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> =>
@@ -145,3 +149,14 @@ export const getProfileSetForChannel = (state: GlobalState, channelId: string) =
     const profiles = getUsers(state);
     return sortAndInjectProfiles(profiles, profileSet);
 };
+
+const numPlaybooksByTeam = (state: GlobalState): Record<string, number> =>
+    pluginState(state).numPlaybooksByTeam;
+
+export const currentTeamNumPlaybooks = createSelector(
+    getCurrentTeamId,
+    numPlaybooksByTeam,
+    (teamId, playbooksPerTeamMap) => {
+        return playbooksPerTeamMap[teamId] || 0;
+    },
+);

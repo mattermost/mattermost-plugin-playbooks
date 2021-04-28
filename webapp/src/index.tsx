@@ -22,13 +22,15 @@ import {AttachToIncidentPostMenu, StartIncidentPostMenu} from './components/post
 import Backstage from './components/backstage/backstage';
 import ErrorPage from './components/error_page';
 import {
-    setToggleRHSAction,
+    setToggleRHSAction, actionSetGlobalSettings,
 } from './actions';
 import reducer from './reducer';
 import {
     handleReconnect,
     handleWebsocketIncidentUpdated,
     handleWebsocketIncidentCreated,
+    handleWebsocketPlaybookCreated,
+    handleWebsocketPlaybookDeleted,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
     handleWebsocketPostEditedOrDeleted,
@@ -37,11 +39,14 @@ import {
 import {
     WEBSOCKET_INCIDENT_UPDATED,
     WEBSOCKET_INCIDENT_CREATED,
+    WEBSOCKET_PLAYBOOK_CREATED,
+    WEBSOCKET_PLAYBOOK_DELETED,
 } from './types/websocket_events';
 import RegistryWrapper from './registry_wrapper';
 import {isE20LicensedOrDevelopment} from './license';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
 import {makeUpdateMainMenu} from './make_update_main_menu';
+import {fetchGlobalSettings} from './client';
 
 export default class Plugin {
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
@@ -55,6 +60,12 @@ export default class Plugin {
         store.subscribe(updateMainMenuAction);
 
         registry.registerAdminConsoleCustomSetting('EnabledTeams', SystemConsoleEnabledTeams, {showTitle: true});
+
+        // Grab global settings
+        const getGlobalSettings = async () => {
+            store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
+        };
+        getGlobalSettings();
 
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);
@@ -72,6 +83,8 @@ export default class Plugin {
             r.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdated(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED, handleWebsocketPlaybookCreated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED, handleWebsocketPlaybookDeleted(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
@@ -96,10 +109,10 @@ export default class Plugin {
         const checkRegistrations = () => {
             updateMainMenuAction();
 
-            if (!registered && isE20LicensedOrDevelopment(store)) {
+            if (!registered && isE20LicensedOrDevelopment(store.getState())) {
                 unregister = doRegistrations();
                 registered = true;
-            } else if (unregister && !isE20LicensedOrDevelopment(store)) {
+            } else if (unregister && !isE20LicensedOrDevelopment(store.getState())) {
                 unregister();
                 registered = false;
             }

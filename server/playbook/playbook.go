@@ -147,14 +147,22 @@ type RequesterInfo struct {
 type Service interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.
 	Get(id string) (Playbook, error)
+
 	// Create creates a new playbook
 	Create(playbook Playbook, userID string) (string, error)
+
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
+
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
+
+	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
+	GetNumPlaybooksForTeam(teamID string) (int, error)
+
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
+
 	// Delete deletes a playbook
 	Delete(playbook Playbook, userID string) error
 }
@@ -163,14 +171,21 @@ type Service interface {
 type Store interface {
 	// Get retrieves a playbook
 	Get(id string) (Playbook, error)
+
 	// Create creates a new playbook
 	Create(playbook Playbook) (string, error)
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
+
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
+
+	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
+	GetNumPlaybooksForTeam(teamID string) (int, error)
+
 	// Update updates a playbook
 	Update(playbook Playbook) error
+
 	// Delete deletes a playbook
 	Delete(id string) error
 }

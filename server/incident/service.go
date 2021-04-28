@@ -1528,7 +1528,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog(description, message, broadcastCha
 				Default:     status,
 			},
 			{
-				DisplayName: "Current description",
+				DisplayName: "Description",
 				Name:        DialogFieldDescriptionKey,
 				Type:        "textarea",
 				Default:     description,

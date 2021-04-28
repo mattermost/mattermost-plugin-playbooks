@@ -13,12 +13,14 @@ import {isE20LicensedOrDevelopment} from './license';
 
 import {navigateToTeamPluginUrl} from './browser_routing';
 
+const experimentalFeaturesEnabled = false;
+
 export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<GlobalState>): () => Promise<void> {
     let mainMenuActionId: string | null;
 
     return async () => {
         const disable = isDisabledOnCurrentTeam(store.getState());
-        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store);
+        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store.getState());
 
         if (mainMenuActionId && !show) {
             const temp = mainMenuActionId;
@@ -30,7 +32,11 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
                 'Incident Collaboration',
                 () => {
                     const team = getCurrentTeam(store.getState());
-                    navigateToTeamPluginUrl(team.name, '/stats');
+                    if (experimentalFeaturesEnabled) {
+                        navigateToTeamPluginUrl(team.name, '/stats');
+                    } else {
+                        navigateToTeamPluginUrl(team.name, '/incidents');
+                    }
                 },
             );
         }

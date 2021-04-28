@@ -24,8 +24,17 @@ import {
     REMOVED_FROM_INCIDENT_CHANNEL,
     SetRHSTabState,
     SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED,
+    PLAYBOOK_CREATED,
+    PlaybookCreated,
+    PLAYBOOK_DELETED,
+    PlaybookDeleted,
+    ReceivedTeamNumPlaybooks,
+    RECEIVED_TEAM_NUM_PLAYBOOKS,
+    ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
+
+import {GlobalSettings} from './types/settings';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -167,6 +176,57 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
+const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | ReceivedTeamNumPlaybooks) => {
+    switch (action.type) {
+    case PLAYBOOK_CREATED: {
+        const playbookCreatedAction = action as PlaybookCreated;
+        const teamID = playbookCreatedAction.teamID;
+        const prevCount = state[teamID] || 0;
+
+        return {
+            ...state,
+            [teamID]: prevCount + 1,
+        };
+    }
+    case PLAYBOOK_DELETED: {
+        const playbookDeletedAction = action as PlaybookCreated;
+        const teamID = playbookDeletedAction.teamID;
+        const prevCount = state[teamID] || 0;
+
+        return {
+            ...state,
+            [teamID]: prevCount - 1,
+        };
+    }
+    case RECEIVED_TEAM_NUM_PLAYBOOKS: {
+        const receivedNumPlaybooksAction = action as ReceivedTeamNumPlaybooks;
+        const numPlaybooks = receivedNumPlaybooksAction.numPlaybooks;
+        const teamID = receivedNumPlaybooksAction.teamID;
+        const prevCount = state[teamID] || 0;
+
+        if (prevCount === numPlaybooks) {
+            return state;
+        }
+
+        return {
+            ...state,
+            [teamID]: numPlaybooks,
+        };
+    }
+    default:
+        return state;
+    }
+};
+
+const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
+    switch (action.type) {
+    case RECEIVED_GLOBAL_SETTINGS:
+        return action.settings;
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -175,4 +235,6 @@ export default combineReducers({
     rhsState,
     tabStateByChannel,
     eventsFilterByChannel,
+    numPlaybooksByTeam,
+    globalSettings,
 });
