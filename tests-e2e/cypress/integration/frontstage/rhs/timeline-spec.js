@@ -280,10 +280,10 @@ describe('timeline', () => {
             removeTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
 
             // * Verify user joined message is visible in the timeline
-            verifyTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson was added to channel by @user-1');
+            verifyTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
             // * Delete the incident created event
-            removeTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson was added to channel by @user-1');
+            removeTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
             // * Verify notice is shown
             cy.get('#rhsContainer').within(() => {
