@@ -97,7 +97,7 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a user joins or is added to an incident'}
+                    {'When a new member joins'}
                 </SectionTitle>
                 <Setting id={'user-joins-message'}>
                     <MessageOnJoin
