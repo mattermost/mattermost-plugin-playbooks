@@ -18,7 +18,7 @@ type Configuration struct {
 	// PlaybookCreatorsUserIds is a list of users that can edit playbooks
 	PlaybookCreatorsUserIds []string
 
-	// PlaybookCreatorsUserIds is a list of users that can edit playbooks
+	// EnableExperimentalFeatures determines if experimental features are enabled.
 	EnableExperimentalFeatures bool
 
 	// ** The following are NOT stored on the server
