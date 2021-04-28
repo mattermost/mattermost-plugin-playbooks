@@ -179,7 +179,7 @@ const RHSTimeline = (props: Props) => {
             disabled: eventsFilter.all,
         },
         {
-            display: 'Users joined/left',
+            display: 'User activities',
             value: TimelineEventType.UserJoinedLeft,
             selected: eventsFilter.user_joined_left,
             disabled: eventsFilter.all,

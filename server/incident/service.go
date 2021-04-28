@@ -1220,7 +1220,15 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 		return
 	}
 
-	summary := fmt.Sprintf("@%s joined the channel", user.Username)
+	channel, err := s.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve channel for channelID: %s; error: %s", channelID, err.Error())
+		return
+	}
+
+	title := fmt.Sprintf("@%s joined the channel", user.Username)
+
+	summary := fmt.Sprintf("@%s joined ~%s", user.Username, channel.Name)
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
@@ -1228,7 +1236,7 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 			return
 		}
 
-		summary = fmt.Sprintf("@%s was added to channel by @%s", user.Username, actor.Username)
+		summary = fmt.Sprintf("@%s added @%s to ~%s", actor.Username, user.Username, channel.Name)
 	}
 	now := model.GetMillis()
 	event := &TimelineEvent{
@@ -1237,7 +1245,7 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 		EventAt:       now,
 		EventType:     UserJoinedLeft,
 		Summary:       summary,
-		Details:       `{"action": "joined"}`,
+		Details:       fmt.Sprintf(`{"action": "joined", "title": "%s"}`, title),
 		SubjectUserID: userID,
 		CreatorUserID: actorID,
 	}
@@ -1265,7 +1273,15 @@ func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
 		return
 	}
 
-	summary := fmt.Sprintf("@%s left the channel", user.Username)
+	channel, err := s.pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve channel for channelID: %s; error: %s", channelID, err.Error())
+		return
+	}
+
+	title := fmt.Sprintf("@%s left the channel", user.Username)
+
+	summary := fmt.Sprintf("@%s left ~%s", user.Username, channel.Name)
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
@@ -1273,7 +1289,7 @@ func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
 			return
 		}
 
-		summary = fmt.Sprintf("@%s was removed from the channel by @%s", user.Username, actor.Username)
+		summary = fmt.Sprintf("@%s removed @%s from ~%s", actor.Username, user.Username, channel.Name)
 	}
 	now := model.GetMillis()
 	event := &TimelineEvent{
@@ -1282,7 +1298,7 @@ func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
 		EventAt:       now,
 		EventType:     UserJoinedLeft,
 		Summary:       summary,
-		Details:       `{"action": "left"}`,
+		Details:       fmt.Sprintf(`{"action": "left", "title": "%s"}`, title),
 		SubjectUserID: userID,
 		CreatorUserID: actorID,
 	}
