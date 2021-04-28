@@ -31,18 +31,18 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 	api := root.PathPrefix("/api/v0").Subrouter()
 	api.Use(MattermostAuthorizationRequired)
 
-	e20middleware := e20LicenseRequired{
-		config: config,
-	}
-	api.Use(e20middleware.Middleware)
 	api.Handle("{anything:.*}", http.NotFoundHandler())
 	api.NotFoundHandler = http.NotFoundHandler()
 
-	api.HandleFunc("/settings", handler.getSettings).Methods(http.MethodGet)
-	api.HandleFunc("/settings", handler.setSettings).Methods(http.MethodPost)
-
 	handler.APIRouter = api
 	handler.root = root
+
+	e20Middleware := E20LicenseRequired{config}
+
+	settingsRouter := handler.APIRouter.PathPrefix("/settings").Subrouter()
+	settingsRouter.Use(e20Middleware.Middleware)
+	settingsRouter.HandleFunc("", handler.getSettings).Methods(http.MethodGet)
+	settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPost)
 
 	return handler
 }
@@ -149,12 +149,12 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 	})
 }
 
-type e20LicenseRequired struct {
+type E20LicenseRequired struct {
 	config config.Service
 }
 
 // Middleware checks if the server is appropriately licensed.
-func (m *e20LicenseRequired) Middleware(next http.Handler) http.Handler {
+func (m *E20LicenseRequired) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !m.config.IsLicensed() {
 			http.Error(w, "E20 license required", http.StatusForbidden)

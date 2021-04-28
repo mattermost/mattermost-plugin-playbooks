@@ -14,10 +14,13 @@ import {
     incidentCreated, incidentUpdated,
     removedFromIncidentChannel,
     receivedTeamIncidents,
+    playbookCreated,
+    playbookDeleted,
 } from 'src/actions';
 import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
 import {clientId, myIncidentsMap} from 'src/selectors';
 import {Incident, isIncident, StatusPost} from 'src/types/incident';
+import {Playbook} from 'src/types/playbook';
 
 export const websocketSubscribersToIncidentUpdate = new Set<(incident: Incident) => void>();
 
@@ -83,6 +86,30 @@ export function handleWebsocketIncidentCreated(getState: GetStateFunc, dispatch:
         // Navigate to the newly created channel
         const url = `/${currentTeam.name}/channels/${incident.channel_id}`;
         navigateToUrl(url);
+    };
+}
+
+export function handleWebsocketPlaybookCreated(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const payload = JSON.parse(msg.data.payload);
+
+        dispatch(playbookCreated(payload.teamID));
+    };
+}
+
+export function handleWebsocketPlaybookDeleted(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const payload = JSON.parse(msg.data.payload);
+
+        dispatch(playbookDeleted(payload.teamID));
     };
 }
 

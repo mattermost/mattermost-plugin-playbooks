@@ -35,7 +35,10 @@
     "beforeEach": true
   },
   "settings": {
-    "import/resolver": "webpack"
+    "import/resolver": "webpack",
+    "react": {
+        "version": "detect"
+    }
   },
   "rules": {
     "array-bracket-spacing": [
@@ -330,12 +333,7 @@
     ],
     "no-self-compare": 2,
     "no-sequences": 2,
-    "no-shadow": [
-      2,
-      {
-        "hoist": "functions"
-      }
-    ],
+    "no-shadow": 0,
     "no-shadow-restricted-names": 2,
     "no-spaced-func": 2,
     "no-tabs": 0,
@@ -371,14 +369,7 @@
         "args": "after-used"
       }
     ],
-    "no-use-before-define": [
-      2,
-      {
-        "classes": false,
-        "functions": false,
-        "variables": false
-      }
-    ],
+    "no-use-before-define": 0,
     "no-useless-computed-key": 2,
     "no-useless-concat": 2,
     "no-useless-constructor": 2,
@@ -642,6 +633,7 @@
         "@typescript-eslint/prefer-interface": 0,
         "@typescript-eslint/explicit-function-return-type": 0,
         "@typescript-eslint/explicit-module-boundary-types": 0,
+        "@typescript-eslint/no-shadow": 2,
         "@typescript-eslint/indent": [
           2,
           4,

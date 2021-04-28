@@ -178,6 +178,12 @@ const RHSTimeline = (props: Props) => {
             selected: eventsFilter.ran_slash_command,
             disabled: eventsFilter.all,
         },
+        {
+            display: 'User activities',
+            value: TimelineEventType.UserJoinedLeft,
+            selected: eventsFilter.user_joined_left,
+            disabled: eventsFilter.all,
+        },
     ];
 
     let timeline = null;
