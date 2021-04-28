@@ -11,7 +11,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {StyledAsyncSelect, RadioContainer, RadioLabel, RadioInput} from './components/backstage/styles';
 
 interface TeamSelectorProps {
-    teamsSlected: string[]
+    teamsSelected: string[]
     onTeamsSelected: (teams: string[]) => void;
 }
 
@@ -20,7 +20,7 @@ type GetTeamType = (teamID: string) => Team
 const TeamSelector: FC<TeamSelectorProps> = (props: TeamSelectorProps) => {
     const selectableTeams = useSelector<GlobalState, Team[]>(getMyTeams);
     const getTeamFromID = useSelector<GlobalState, GetTeamType>((state) => (teamId) => getTeam(state, teamId) || {display_name: 'Unknown Team', id: teamId});
-    const [enabled, setEnabled] = useState(Boolean(props.teamsSlected) && props.teamsSlected.length !== 0);
+    const [enabled, setEnabled] = useState(Boolean(props.teamsSelected) && props.teamsSelected.length !== 0);
 
     const onChange = (teams: Team[] | null) => {
         if (!teams) {
@@ -74,7 +74,7 @@ const TeamSelector: FC<TeamSelectorProps> = (props: TeamSelectorProps) => {
                         checked={!enabled}
                         onChange={radioPressed}
                     />
-                    {'Incident Collaboration enabled on every team.'}
+                    {'Enable for every team.'}
                 </RadioLabel>
                 <RadioLabel>
                     <RadioInput
@@ -84,7 +84,7 @@ const TeamSelector: FC<TeamSelectorProps> = (props: TeamSelectorProps) => {
                         checked={enabled}
                         onChange={radioPressed}
                     />
-                    {'Incident Collaboration enabled on slected teams.'}
+                    {'Enable for selected teams only.'}
                 </RadioLabel>
             </RadioContainer>
             {enabled &&
@@ -97,7 +97,7 @@ const TeamSelector: FC<TeamSelectorProps> = (props: TeamSelectorProps) => {
                     getOptionValue={getOptionValue}
                     formatOptionLabel={formatOptionLabel}
                     isClearable={false}
-                    value={props.teamsSlected.map(getTeamFromID)}
+                    value={props.teamsSelected.map(getTeamFromID)}
                 />
             }
         </>
@@ -120,7 +120,7 @@ const SystemConsoleEnabledTeams: FC<SystemConsoleEnabledTeamsProps> = (props: Sy
     return (
         <TeamSelector
             onTeamsSelected={onTeamsSelected}
-            teamsSlected={props.value || []}
+            teamsSelected={props.value || []}
         />
     );
 };
