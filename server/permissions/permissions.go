@@ -201,6 +201,11 @@ func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi
 		return errors.Wrap(noAccessErr, "no team view permission")
 	}
 
+	// If the list of members is empty then the playbook is open for all.
+	if len(pbook.MemberIDs) == 0 {
+		return nil
+	}
+
 	for _, memberID := range pbook.MemberIDs {
 		if memberID == userID {
 			return nil
