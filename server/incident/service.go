@@ -108,9 +108,6 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 
 	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
 	announcementMsg += fmt.Sprintf("**Commander**: @%s\n", commander.Username)
-	if theIncident.Description != "" {
-		announcementMsg += fmt.Sprintf("**Description**: %s\n", theIncident.Description)
-	}
 
 	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
@@ -1316,12 +1313,6 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 }
 
 func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
-	channelHeader := "The channel was created by the Incident Collaboration plugin."
-
-	if incdnt.Description != "" {
-		channelHeader = incdnt.Description
-	}
-
 	channelType := model.CHANNEL_PRIVATE
 	if public {
 		channelType = model.CHANNEL_OPEN
@@ -1332,7 +1323,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		Type:        channelType,
 		DisplayName: incdnt.Name,
 		Name:        cleanChannelName(incdnt.Name),
-		Header:      channelHeader,
+		Header:      "The channel was created by the Incident Collaboration plugin.",
 	}
 
 	if channel.Name == "" {
