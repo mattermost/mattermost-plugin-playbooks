@@ -134,6 +134,11 @@ else
 	cd webapp && $(NPM) run debug:watch
 endif
 
+## Builds and installs the plugin to a server, then starts the webpack dev server on 9005
+.PHONY: watch
+dev: apply server bundle
+	cd webapp && $(NPM) run dev-server
+
 ## Installs a previous built plugin with updated webpack assets to a server.
 .PHONY: deploy-from-watch
 deploy-from-watch: bundle

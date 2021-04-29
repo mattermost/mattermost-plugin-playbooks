@@ -1,13 +1,16 @@
 const exec = require('child_process').exec;
 
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+
 const path = require('path');
 
 const PLUGIN_ID = require('../plugin.json').id;
 
 const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
+const targetIsDevServer = NPM_TARGET === 'dev-server';
 let mode = 'production';
 let devtool = 'source-map';
-if (NPM_TARGET === 'debug' || NPM_TARGET === 'debug:watch') {
+if (NPM_TARGET === 'debug' || NPM_TARGET === 'debug:watch' || targetIsDevServer) {
     mode = 'development';
     devtool = 'eval-cheap-module-source-map';
 }
@@ -34,7 +37,11 @@ if (NPM_TARGET === 'build:watch' || NPM_TARGET === 'debug:watch') {
     });
 }
 
-module.exports = {
+if (targetIsDevServer) {
+    plugins.push(new ReactRefreshWebpackPlugin());
+}
+
+let config = {
     entry: [
         './src/index.tsx',
     ],
@@ -94,3 +101,39 @@ module.exports = {
     mode,
     plugins,
 };
+
+if (targetIsDevServer) {
+    config = {
+        ...config,
+        devtool: 'eval-cheap-module-source-map',
+        devServer: {
+            hot: true,
+            injectHot: true,
+            liveReload: false,
+            overlay: false,
+            proxy: [{
+                context: () => true,
+                bypass(req) {
+                    if (req.url.indexOf('/static/plugins/com.mattermost.plugin-incident-management/') === 0) {
+                        return '/main.js'; // return the webpacked asset
+                    }
+                    return null;
+                },
+                logLevel: 'silent',
+                target: 'http://localhost:8065',
+                xfwd: true,
+                ws: true,
+            }],
+            port: 9005,
+            watchContentBase: true,
+            writeToDisk: false,
+        },
+        performance: false,
+        optimization: {
+            ...config.optimization,
+            splitChunks: false,
+        },
+    };
+}
+
+module.exports = config;
