@@ -43,7 +43,7 @@ import {
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
-    ReceivedGlobalSettings,
+    ReceivedGlobalSettings, SetHasViewedChannel, SET_HAS_VIEWED_Channel,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -202,4 +202,10 @@ export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsF
 export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGlobalSettings => ({
     type: RECEIVED_GLOBAL_SETTINGS,
     settings,
+});
+
+export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => ({
+    type: SET_HAS_VIEWED_Channel,
+    channelId,
+    hasViewed: true,
 });

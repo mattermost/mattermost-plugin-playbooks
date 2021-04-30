@@ -34,7 +34,7 @@ import {
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
     handleWebsocketPostEditedOrDeleted,
-    handleWebsocketChannelUpdated,
+    handleWebsocketChannelUpdated, handleWebsocketChannelViewed,
 } from './websocket_events';
 import {
     WEBSOCKET_INCIDENT_UPDATED,
@@ -70,7 +70,8 @@ export default class Plugin {
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);
 
-            const {toggleRHSPlugin} = r.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
+            const {toggleRHSPlugin} = r.registerRightHandSidebarComponent(RightHandSidebar,
+                <RHSTitle/>);
             const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
             // Store the toggleRHS action to use later
@@ -90,6 +91,7 @@ export default class Plugin {
             r.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_VIEWED, handleWebsocketChannelViewed(store.getState, store.dispatch));
 
             // Listen for channel changes and open the RHS when appropriate.
             store.subscribe(makeRHSOpener(store));

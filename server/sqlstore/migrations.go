@@ -658,6 +658,17 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Incident", "MessageOnJoin", "VARCHAR(2048)"); err != nil {
 					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Incident")
 				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_ViewedChannel
+					(
+						ChannelID VARCHAR(26) NOT NULL,
+						UserID    VARCHAR(26) NOT NULL,
+						INDEX     IR_ViewedChannel_ChannelID (ChannelID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_ViewedChannel")
+				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Playbook", "MessageOnJoin", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Playbook")
@@ -669,6 +680,20 @@ var migrations = []Migration{
 
 				if err := addColumnToPGTable(e, "IR_Incident", "MessageOnJoin", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Incident")
+				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_ViewedChannel
+					(
+						ChannelID TEXT NOT NULL,
+						UserID    TEXT NOT NULL
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_ViewedChannel")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_ViewedChannel_ChannelID", "IR_ViewedChannel", "ChannelID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_ViewedChannel_ChannelID")
 				}
 			}
 

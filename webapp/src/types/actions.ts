@@ -25,6 +25,7 @@ export const SET_RHS_STATE = pluginId + '_set_rhs_state';
 export const SET_RHS_TAB_STATE = pluginId + '_set_rhs_tab_state';
 export const SET_RHS_EVENTS_FILTER = pluginId + '_set_rhs_events_filter';
 export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
+export const SET_HAS_VIEWED_Channel = pluginId + '_set_has_viewed';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -107,4 +108,10 @@ export interface SetRHSEventsFilter {
 export interface ReceivedGlobalSettings {
     type: typeof RECEIVED_GLOBAL_SETTINGS;
     settings: GlobalSettings;
+}
+
+export interface SetHasViewedChannel {
+    type: typeof SET_HAS_VIEWED_Channel;
+    channelId: string;
+    hasViewed: boolean;
 }

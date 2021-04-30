@@ -367,6 +367,13 @@ type Service interface {
 	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 	// was removed from the channel by actorID.
 	UserHasLeftChannel(userID, channelID, actorID string)
+
+	// HasViewedChannelAndSet returns false if userID has not viewed channelID, true if useID has
+	// viewed channelID. The function records that userID has now viewed the channelID.
+	HasViewedChannelAndSet(userID, channelID string) bool
+
+	// SendMessageOnJoin sends the incident's (associated with channelID) message-on-join to userID
+	SendMessageOnJoin(userID, channelID string)
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -411,6 +418,13 @@ type Store interface {
 
 	// ChangeCreationDate changes the creation date of the specified incident.
 	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
+
+	// HasViewedChannel returns true if userID has viewed channelID
+	HasViewedChannel(userID, channelID string) bool
+
+	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
+	// record of that userID/channelID (i.e., will create duplicate rows)
+	SetViewedChannel(userID, channelID string) error
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.

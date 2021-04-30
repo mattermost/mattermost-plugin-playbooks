@@ -160,3 +160,5 @@ export const currentTeamNumPlaybooks = createSelector(
         return playbooksPerTeamMap[teamId] || 0;
     },
 );
+
+export const hasViewedByChannelID = (state: GlobalState) => pluginState(state).hasViewedByChannel;

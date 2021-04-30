@@ -90,6 +90,15 @@ export async function fetchIncidentByChannel(channelId: string) {
     return data as Incident;
 }
 
+export async function fetchHasViewedChannel(channelId: string) {
+    const data = await doGet(`${apiUrl}/incidents/has_viewed/${channelId}`);
+    return Boolean(data.viewed);
+}
+
+export function postMessageOnJoin(channelId: string) {
+    doPost(`${apiUrl}/incidents/message_on_join/${channelId}`);
+}
+
 export function fetchIncidentChannels(teamID: string, userID: string) {
     return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}&member_id=${userID}`);
 }
