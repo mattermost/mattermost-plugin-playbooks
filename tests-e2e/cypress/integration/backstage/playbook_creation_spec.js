@@ -43,7 +43,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit(`/${testTeam.name}/com.mattermost.plugin-incident-management`);
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -60,7 +60,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Untitled Playbook';
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit(`/${testTeam.name}/com.mattermost.plugin-incident-management`);
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -77,7 +77,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Incident Collaboration Playbook';
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit(`/${testTeam.name}/com.mattermost.plugin-incident-management`);
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -94,7 +94,7 @@ describe('playbook creation button', () => {
 
     it('shows "Remove" beside members when > 1 member', () => {
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit(`/${testTeam.name}/com.mattermost.plugin-incident-management`);
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();

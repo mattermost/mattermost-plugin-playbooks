@@ -11,7 +11,7 @@ describe('backstage playbook list', () => {
     let testUser;
 
     before(() => {
-        cy.apiInitSetup({createPlaybook: true}).then(({team, user}) => {
+        cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
         });
@@ -27,7 +27,7 @@ describe('backstage playbook list', () => {
 
     it('has "Playbooks" and team name in heading', () => {
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit(`/${testTeam.name}/com.mattermost.plugin-incident-management`);
 
         // # Switch to Playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();

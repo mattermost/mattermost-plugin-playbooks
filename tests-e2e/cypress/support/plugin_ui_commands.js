@@ -86,19 +86,18 @@ Cypress.Commands.add('startIncidentFromPostMenu', (playbookName, incidentName) =
 });
 
 Cypress.Commands.add('openBackstage', () => {
-    cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('exist').within(() => {
-        // # Wait until the channel loads enough to show the post textbox.
-        cy.get('#post-create').should('exist');
-        cy.wait(2000);
+    cy.get('#lhsHeader', {timeout: TIMEOUTS.GIGANTIC}).should('exist');
+    // # Wait until the channel loads enough to show the post textbox.
+    cy.get('#post-create').should('exist');
+    cy.wait(2000);
 
-        // # Click hamburger main menu
-        cy.get('#sidebarHeaderDropdownButton').click();
+    // # Click hamburger main menu
+    cy.get('#sidebarHeaderDropdownButton').click();
 
-        // * Dropdown menu should be visible
-        cy.get('.dropdown-menu').should('exist').within(() => {
-            // 'Incident Collaboration' button should be visible, then click
-            cy.findByText('Incident Collaboration').should('exist').click();
-        });
+    // * Dropdown menu should be visible
+    cy.get('.dropdown-menu').should('exist').within(() => {
+        // 'Incident Collaboration' button should be visible, then click
+        cy.findByText('Incident Collaboration').should('exist').click();
     });
 });
 

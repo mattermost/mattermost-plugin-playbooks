@@ -10,13 +10,15 @@ function startIncidentPatch({
     incidentPrefix = 'Incident',
     userId = '',
     teamId = '',
-    playbookId = ''}) {
+    playbookId = '',
+    incidentDescription = ''}) {
         const randomSuffix = getRandomId();
         const request_payload = {
-            incidentName: `${incidentPrefix}-${randomSuffix}`,
+            name: `${incidentPrefix}-${randomSuffix}`,
             commander_user_id: userId,
             team_id: teamId,
-            playbook_id: playbookId
+            playbook_id: playbookId,
+            description: incidentDescription,
         }
         return request_payload;
     }
@@ -24,25 +26,32 @@ function startIncidentPatch({
 /**
  * Start an incident directly via API.
  */
-Cypress.Commands.add('apiStartIncident', (
-    incidentPrefix = 'Incident',
-    userId = '',
-    teamId = '',
-    playbookId = ''
-) => {
-    const randomSuffix = getRandomId();
+ Cypress.Commands.add('apiStartIncident', (...args) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint,
         method: 'POST',
-        body: {
-            name: `${incidentPrefix}-${randomSuffix}`,
-            commander_user_id: userId,
-            team_id: teamId,
-            playbook_id: playbookId
-        },
+        body: startIncidentPatch(...args),
     }).then((response) => {
         expect(response.status).to.equal(201);
         return cy.wrap({incident: response.body});
     });
 });
+
+/**
+ * Start a test incident via API.
+ */
+Cypress.Commands.add('apiStartTestIncident', (
+    teamId,
+    userId,
+    playbookId,
+    incidentDesc,
+) => (
+    cy.apiStartIncident({
+        teamId,
+        userId,
+        playbookId,
+        incidentDesc,
+    })
+));
+    

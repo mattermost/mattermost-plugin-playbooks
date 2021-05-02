@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+const BACKSTAGE_LIST_PER_PAGE = 15;
+
 describe('resets pagination when filtering', () => {
     const incidentTimestamps = [];
 

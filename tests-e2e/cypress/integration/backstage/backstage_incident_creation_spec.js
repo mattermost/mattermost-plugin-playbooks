@@ -11,7 +11,7 @@ describe('backstage incident creation button', () => {
     let testTeam;
 
     before(() => {
-        cy.apiInitSetup({createPlaybook: true}).then(({team, playbook}) => {
+        cy.apiInitSetup().then(({team, playbook}) => {
             testTeam = team;
             playbookName = playbook.name;
         });

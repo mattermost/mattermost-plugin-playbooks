@@ -16,7 +16,7 @@ describe('preferences', () => {
 
     before(() => {
 
-        cy.apiInitSetup({createPlaybook: true}).then(({team, user, playbook}) => {
+        cy.apiInitSetup().then(({team, user, playbook}) => {
             testTeam = team;
             testUser = user;
             playbookId = playbook.id;

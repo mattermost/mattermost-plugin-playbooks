@@ -6,11 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-function createTestUsers(testUser, returnedUser, teamId) {
-    testUser = returnedUser;
-    cy.apiAddUserToTeam(teamId, testUser.id);
-}
-
 describe('invite members setting', () => {
     let testTeam;
     let testUser1;
@@ -20,7 +15,7 @@ describe('invite members setting', () => {
     let testUser4;
 
     before(() => {
-        cy.apiInitSetup({createPlaybook: true}).then(({team, user, playbook}) => {
+        cy.apiInitSetup().then(({team, user, playbook}) => {
             testTeam = team;
             testUser1 = user;
             playbookId = playbook.id;
@@ -40,6 +35,14 @@ describe('invite members setting', () => {
                 cy.apiAddUserToTeam(team.id, user4.id);
             });
         });
+    });
+
+    beforeEach(() => {
+        // # Login as test user
+        cy.apiLogin(testUser1);
+
+        // # Visit the town-square channel of the team
+        cy.visit(`/${testTeam.name}/channels/town-square`);
     });
 
     it('is disabled in a new playbook', () => {
@@ -104,7 +107,7 @@ describe('invite members setting', () => {
             cy.get('label input').should('be.checked');
 
             // # Open the invited users selector
-            cy.openInvitedUsersSelector();
+            cy.openSelector();
 
             // # Add one user
             cy.addInvitedUser(`${testUser2.username}`);
@@ -139,7 +142,7 @@ describe('invite members setting', () => {
             cy.get('label input').should('be.checked');
 
             // # Open the invited users selector
-            cy.openInvitedUsersSelector();
+            cy.openSelector();
 
             // # Add one user
             cy.addInvitedUser(`${testUser3.username}`);
@@ -183,7 +186,7 @@ describe('invite members setting', () => {
             cy.get('label input').should('be.checked');
 
             // # Open the invited users selector
-            cy.openInvitedUsersSelector();
+            cy.openSelector();
 
             // # Add a couple of users
             cy.addInvitedUser(`${testUser3.username}`);
@@ -230,7 +233,7 @@ describe('invite members setting', () => {
             cy.get('label input').should('be.checked');
 
             // # Open the invited users selector
-            cy.openInvitedUsersSelector();
+            cy.openSelector();
 
             // # Add a couple of users
             cy.addInvitedUser(`${testUser3.username}`);
@@ -273,7 +276,7 @@ describe('invite members setting', () => {
                 .should('eq', '2 MEMBERS');
 
             // # Open the invited users selector
-            cy.openInvitedUsersSelector();
+            cy.openSelector();
 
             // * Verify that the user shows in the group of invited members
             cy.findByText('INVITED MEMBERS').parent().within(() => {
@@ -319,10 +322,17 @@ describe('invite members setting', () => {
             cy.get('#root').findByText('Automation').click();
 
             // # Open the invited users selector
-            cy.openInvitedUsersSelector();
+            cy.get('#invite-users').within(() => {
+                cy.openSelector();
+            });
 
             // * Verify that there are no invited members
             cy.findByText('INVITED MEMBERS').should('not.exist');
         });
     });
 });
+
+function createTestUsers(testUser, returnedUser, teamId) {
+    testUser = returnedUser;
+    cy.apiAddUserToTeam(teamId, testUser.id);
+}
