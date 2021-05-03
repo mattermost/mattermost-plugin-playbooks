@@ -36,7 +36,7 @@ type IncidentHandler struct {
 
 // NewIncidentHandler Creates a new Plugin API handler.
 func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
-	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry, config config.Service) *IncidentHandler {
+	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry, configService config.Service) *IncidentHandler {
 	handler := &IncidentHandler{
 		incidentService: incidentService,
 		playbookService: playbookService,
@@ -44,13 +44,15 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 		poster:          poster,
 		log:             log,
 		telemetry:       telemetry,
-		config:          config,
+		config:          configService,
 	}
 
-	e20Middleware := E20LicenseRequired{config}
+	e20Middleware := E20LicenseRequired{configService}
 
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
-	incidentsRouter.Use(e20Middleware.Middleware)
+	if !config.PricingPlanDifferentiationEnabled {
+		incidentsRouter.Use(e20Middleware.Middleware)
+	}
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
 
