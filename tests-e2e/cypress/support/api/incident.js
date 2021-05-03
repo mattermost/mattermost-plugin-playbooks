@@ -11,7 +11,7 @@ function startIncidentPatch({
     userId = '',
     teamId = '',
     playbookId = '',
-    incidentDescription = ''}) {
+    incidentDescription = '',}) {
         const randomSuffix = getRandomId();
         const request_payload = {
             name: `${incidentPrefix}-${randomSuffix}`,
@@ -54,4 +54,34 @@ Cypress.Commands.add('apiStartTestIncident', (
         incidentDesc,
     })
 ));
+
+// Update an incident's status programmatically.
+Cypress.Commands.add('apiUpdateStatus', ({
+    incidentId,
+    userId,
+    channelId,
+    teamId,
+    message,
+    description,
+    status
+}) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
+        method: 'POST',
+        body: {
+            type: 'dialog_submission',
+            callback_id: '',
+            state: '',
+            user_id: userId,
+            channel_id: channelId,
+            team_id: teamId,
+            submission: {message, description, reminder: '15', status},
+            cancelled: false,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
     

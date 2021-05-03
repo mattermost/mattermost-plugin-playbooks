@@ -101,35 +101,35 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
 //     });
 // });
 
-// Update an incident's status programmatically.
-Cypress.Commands.add('apiUpdateStatus', ({
-    incidentId,
-    userId,
-    channelId,
-    teamId,
-    message,
-    description,
-    status
-}) => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
-        method: 'POST',
-        body: {
-            type: 'dialog_submission',
-            callback_id: '',
-            state: '',
-            user_id: userId,
-            channel_id: channelId,
-            team_id: teamId,
-            submission: {message, description, reminder: '15', status},
-            cancelled: false,
-        },
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        cy.wrap(response.body);
-    });
-});
+// // Update an incident's status programmatically.
+// Cypress.Commands.add('apiUpdateStatus', ({
+//     incidentId,
+//     userId,
+//     channelId,
+//     teamId,
+//     message,
+//     description,
+//     status
+// }) => {
+//     return cy.request({
+//         headers: {'X-Requested-With': 'XMLHttpRequest'},
+//         url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
+//         method: 'POST',
+//         body: {
+//             type: 'dialog_submission',
+//             callback_id: '',
+//             state: '',
+//             user_id: userId,
+//             channel_id: channelId,
+//             team_id: teamId,
+//             submission: {message, description, reminder: '15', status},
+//             cancelled: false,
+//         },
+//     }).then((response) => {
+//         expect(response.status).to.equal(200);
+//         cy.wrap(response.body);
+//     });
+// });
 
 /**
  * Restart an incident directly via API

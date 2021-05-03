@@ -11,23 +11,14 @@ describe('incident rhs > footer', () => {
     let testTeam;
     let teamId;
     let testUser;
-    let playbookId;
     let testIncident;
-    let incidentChannel;
 
     before(() => {
-        cy.apiInitSetup({createIncident: true}).then(({team, channel, user, playbook, incident}) => {
+        cy.apiInitSetup({createIncident: true}).then(({team, user, incident}) => {
             testTeam = team;
             teamId = team.id;
             testUser = user;
-            playbookId = playbook.id;
             testIncident = incident;
-            incidentChannel = channel;
-            cy.log(`TEST TEAM: ${testTeam.name}`);
-            cy.log(`CHANNEL: ${incidentChannel}`);
-            cy.log(`USER: ${testUser.name}`);
-            cy.log(`PLAYBOOK: ${playbookId}`);
-            // cy.log(`INCIDENT: ${testIncident.name}`);
         });
     });
 
@@ -63,7 +54,7 @@ describe('incident rhs > footer', () => {
         //         cy.findByTestId('tasks').click();
         //     });
 
-    it('should always say update status', () => {
+    it('should have RHS footer buttons', () => {
 
         // * Verify that the button contains Update Status
         cy.get('#incidentRHSFooter').within(() => {
