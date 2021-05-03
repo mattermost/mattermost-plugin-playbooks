@@ -605,6 +605,8 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 	return nil
 }
 
+// sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
+// It blocks until a response is received.
 func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident *Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {

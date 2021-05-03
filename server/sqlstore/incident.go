@@ -357,8 +357,7 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 	return nil
 }
 
-// TODO: fix comment
-// UpdateTimelineEvent updates (or inserts) the timeline event
+// CreateTimelineEvent creates the timeline event
 func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*incident.TimelineEvent, error) {
 	if event.IncidentID == "" {
 		return nil, errors.New("needs incident ID")
@@ -394,6 +393,7 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 	return event, nil
 }
 
+// UpdateTimelineEvent updates (or inserts) the timeline event
 func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error {
 	if event.ID == "" {
 		return errors.New("needs event ID")
