@@ -398,6 +398,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
 		}
 
+		if pb.WebhookOnStatusUpdateEnabled {
+			newIncident.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
+		}
+
 		if pb.MessageOnJoinEnabled {
 			newIncident.MessageOnJoin = pb.MessageOnJoin
 		}
