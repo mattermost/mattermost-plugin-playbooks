@@ -24,7 +24,17 @@ import {
 } from 'src/components/backstage/incidents/shared';
 import ExportLink from 'src/components/backstage/incidents/incident_details/export_link';
 
+const OuterContainer = styled.div`
+    background: var(center-channel-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+`;
+
 const TopContainer = styled.div`
+    position: sticky;
+    z-index: 2;
+    top: 0;
     background: var(--center-channel-bg);
     width: 100%;
 `;
@@ -46,9 +56,9 @@ const SecondRow = styled.div`
 `;
 
 const BottomContainer = styled.div`
+    flex-grow: 1;
     background: rgba(var(--center-channel-color-rgb), 0.03);
     width: 100%;
-    height: 100%;
 `;
 
 const InnerContainer = styled.div`
@@ -151,7 +161,7 @@ const IncidentBackstage = () => {
     const tabPage = <Overview incident={incident}/>;
 
     return (
-        <>
+        <OuterContainer>
             <TopContainer>
                 <FirstRow>
                     <LeftArrow
@@ -180,7 +190,7 @@ const IncidentBackstage = () => {
                     {tabPage}
                 </InnerContainer>
             </BottomContainer>
-        </>
+        </OuterContainer>
     );
 };
 
