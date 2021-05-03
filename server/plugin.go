@@ -175,6 +175,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
+	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
