@@ -21,6 +21,8 @@ export interface Playbook {
     announcement_channel_enabled: boolean;
     webhook_on_creation_url: string;
     webhook_on_creation_enabled: boolean;
+    webhook_on_status_update_url: string;
+    webhook_on_status_update_enabled: boolean;
     message_on_join: string;
     message_on_join_enabled: boolean;
 }
@@ -96,6 +98,8 @@ export function emptyPlaybook(): Playbook {
         announcement_channel_enabled: false,
         webhook_on_creation_url: '',
         webhook_on_creation_enabled: false,
+        webhook_on_status_update_url: '',
+        webhook_on_status_update_enabled: false,
         message_on_join: '',
         message_on_join_enabled: false,
     };
@@ -147,6 +151,8 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.announcement_channel_enabled === 'boolean' &&
         typeof arg.webhook_on_creation_url === 'string' &&
         typeof arg.webhook_on_creation_enabled === 'boolean' &&
+        typeof arg.webhook_on_status_update_url === 'string' &&
+        typeof arg.webhook_on_status_update_enabled === 'boolean' &&
         typeof arg.message_on_join === 'string' &&
         typeof arg.message_on_join_enabled === 'boolean';
 }

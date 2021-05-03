@@ -322,6 +322,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         }
     };
 
+    const handleWebhookOnStatusUpdateChange = (url: string) => {
+        if (playbook.webhook_on_status_update_url !== url) {
+            setPlaybook({
+                ...playbook,
+                webhook_on_status_update_url: url,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleMessageOnJoinChange = (message: string) => {
         if (playbook.message_on_join !== message) {
             setPlaybook({
@@ -368,6 +378,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setPlaybook({
             ...playbook,
             webhook_on_creation_enabled: !playbook.webhook_on_creation_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleWebhookOnStatusUpdate = () => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled,
         });
         setChangesMade(true);
     };
@@ -549,6 +567,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnStatusUpdateEnabled={playbook.webhook_on_status_update_enabled}
+                                    onToggleWebhookOnStatusUpdate={handleToggleWebhookOnStatusUpdate}
+                                    webhookOnStatusUpdateURL={playbook.webhook_on_status_update_url}
+                                    webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}

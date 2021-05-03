@@ -217,6 +217,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     announcementChannelEnabled,
     webhookOnCreationURL,
     webhookOnCreationEnabled,
+    webhookOnStatusUpdateURL,
+    webhookOnStatusUpdateEnabled,
     messageOnJoin,
     messageOnJoinEnabled,
 }) => {
@@ -241,6 +243,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
             announcement_channel_enabled: announcementChannelEnabled,
             webhook_on_creation_url: webhookOnCreationURL,
             webhook_on_creation_enabled: webhookOnCreationEnabled,
+            webhook_on_status_update_url: webhookOnStatusUpdateURL,
+            webhook_on_status_update_enabled: webhookOnStatusUpdateEnabled,
             message_on_join: messageOnJoin,
             message_on_join_enabled: messageOnJoinEnabled,
         },
