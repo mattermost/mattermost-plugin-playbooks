@@ -1468,6 +1468,14 @@ paths:
                   description: Boolean that indicates whether the webhook declared in webhook_on_creation_url will be automatically sent.
                   type: boolean
                   example: true
+                webhook_on_status_update_url:
+                  description: An absolute URL where a POST request will be sent as soon as the incident's status is updated. The allowed protocols are HTTP and HTTPS.
+                  type: string
+                  example: https://httpbin.org/post
+                webhook_on_status_update_enabled:
+                  description: Boolean that indicates whether the webhook declared in webhook_on_status_update_url will be automatically sent.
+                  type: boolean
+                  example: true
       x-codeSamples:
         - lang: curl
           source: |
@@ -1487,6 +1495,21 @@ paths:
                   application/json:
                     schema:
                       $ref: "#/components/schemas/WebhookOnCreationPayload"
+              responses:
+                "2XX":
+                  description: Your server returns a 2XX code if it successfully received the request.
+        incidentStatusUpdate:
+          "{$request.body#/webhook_on_status_update_url}":
+            post:
+              summary: Incident's status update outgoing webhook.
+              description: When an incident's status is updated, an incident created with this playbook. A POST request is sent to the URL configured in webhook_on_status_update_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
+              operationId: webhookOnStatusUpdate
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/WebhookOnStatusUpdatePayload"
               responses:
                 "2XX":
                   description: Your server returns a 2XX code if it successfully received the request.
@@ -1953,3 +1976,36 @@ components:
               type: string
               description: Absolute URL to the incident's details.
               example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID
+    WebhookOnStatusUpdatePayload:
+      allOf:
+        - $ref: '#/components/schemas/Incident'
+        - type: object
+          properties:
+            channel_url:
+              type: string
+              description: Absolute URL to the incident's channel.
+              example: http://example.com/ad-1/channels/incident-channel-name
+            details_url:
+              type: string
+              description: Absolute URL to the incident's details.
+              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID
+            status_update:
+              type: object
+              description: Object containing details regarding latest incident's status.
+              properties:
+                status:
+                  type: string
+                  description: The incident's latest status
+                  example: Active
+                description:
+                  type: string
+                  description: The incident's latest status description
+                  example: The incident is a race condition that occurs only on certain compilers
+                message:
+                  type: string
+                  description: The incident's latest status message
+                  example: We are currently working on the identifying the root cause
+                reminder:
+                  type: integer
+                  description: The number of seconds until the system will send a reminder to the commander to update the status. No reminder will be scheduled if reminder is 0 or omitted.
+                  example: 10
