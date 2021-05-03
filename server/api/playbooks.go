@@ -179,9 +179,9 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if pbook.WebhookOnStatusUpdateEnabled {
-		url, err := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
-		if err != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+		url, err2 := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
+		if err2 != nil {
+			HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err2)
 			return
 		}
 
