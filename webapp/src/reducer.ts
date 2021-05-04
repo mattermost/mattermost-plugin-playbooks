@@ -31,6 +31,8 @@ import {
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
+    ShowPostMenuModal, HidePostMenuModal,
+    SHOW_POST_MENU_MODAL, HIDE_POST_MENU_MODAL,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -227,6 +229,17 @@ const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlo
     }
 };
 
+const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | HidePostMenuModal) => {
+    switch (action.type) {
+    case SHOW_POST_MENU_MODAL:
+        return true;
+    case HIDE_POST_MENU_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -237,4 +250,5 @@ export default combineReducers({
     eventsFilterByChannel,
     numPlaybooksByTeam,
     globalSettings,
+    postMenuModalVisibility,
 });

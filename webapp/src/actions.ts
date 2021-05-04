@@ -44,6 +44,10 @@ import {
     ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
     ReceivedGlobalSettings,
+    SHOW_POST_MENU_MODAL,
+    ShowPostMenuModal,
+    HIDE_POST_MENU_MODAL,
+    HidePostMenuModal,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -202,4 +206,12 @@ export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsF
 export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGlobalSettings => ({
     type: RECEIVED_GLOBAL_SETTINGS,
     settings,
+});
+
+export const showPostMenuModal = (): ShowPostMenuModal => ({
+    type: SHOW_POST_MENU_MODAL,
+});
+
+export const hidePostMenuModal = (): HidePostMenuModal => ({
+    type: HIDE_POST_MENU_MODAL,
 });

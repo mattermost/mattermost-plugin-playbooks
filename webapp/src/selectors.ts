@@ -162,3 +162,6 @@ export const currentTeamNumPlaybooks = createSelector(
         return playbooksPerTeamMap[teamId] || 0;
     },
 );
+
+export const isPostMenuModalVisible = (state: GlobalState): boolean =>
+    pluginState(state).postMenuModalVisibility;
