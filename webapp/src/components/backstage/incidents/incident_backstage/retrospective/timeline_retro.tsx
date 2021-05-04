@@ -174,10 +174,12 @@ const TimelineRetro = (props: { incident: Incident }) => {
                     />
                     {'Filter'}
                 </FakeButton>
-                <PrimaryButtonNotRight>
+                {/*
+                    <PrimaryButtonNotRight>
                     <i className='icon-download-outline'/>
                     {'Export'}
-                </PrimaryButtonNotRight>
+                    </PrimaryButtonNotRight>
+                */}
             </Header>
             <Content>
                 <Timeline

@@ -10,6 +10,8 @@ import {
     TabPageContainer,
     Title,
 } from 'src/components/backstage/incidents/shared';
+import {Incident} from 'src/types/incident';
+import {updateRetrospective} from 'src/client';
 
 const Header = styled.div`
     display: flex;
@@ -22,14 +24,26 @@ const ReportTextarea = styled(StyledTextarea)`
     font-size: 12px;
 `;
 
-const Report = () => {
-    const [report, setReport] = useState('# What happened\n\n# Root cause\n\n# Recovery');
+interface Props {
+    incident: Incident;
+}
+
+const Report = (props: Props) => {
+    const [report, setReport] = useState(props.incident.retrospective);
+
+    const saveDraftPressed = () => {
+        updateRetrospective(props.incident.id, report);
+    };
 
     return (
         <TabPageContainer>
             <Header>
                 <Title>{'Report'}</Title>
-                <SecondaryButtonRight>{'Publish'}</SecondaryButtonRight>
+                <SecondaryButtonRight
+                    onClick={saveDraftPressed}
+                >
+                    {'Save Draft'}
+                </SecondaryButtonRight>
             </Header>
             <ReportTextarea
                 value={report}

@@ -40,6 +40,9 @@ const (
 	actionSetAssigneeForTask  = "set_assignee_for_task"
 	actionRunTaskSlashCommand = "run_task_slash_command"
 
+	actionUpdateRetrospective  = "update_retrospective"
+	actionPublishRetrospective = "publish_retrospective"
+
 	eventPlaybook = "playbook"
 	actionUpdate  = "update"
 	actionDelete  = "delete"
@@ -229,6 +232,18 @@ func (t *RudderTelemetry) MoveTask(incidentID, userID string) {
 func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string) {
 	properties := taskProperties(incidentID, userID)
 	properties["Action"] = actionRunTaskSlashCommand
+	t.track(eventTasks, properties)
+}
+
+func (t *RudderTelemetry) UpdateRetrospective(incidentID, userID string) {
+	properties := taskProperties(incidentID, userID)
+	properties["Action"] = actionUpdateRetrospective
+	t.track(eventTasks, properties)
+}
+
+func (t *RudderTelemetry) PublishRetrospective(incidentID, userID string) {
+	properties := taskProperties(incidentID, userID)
+	properties["Action"] = actionPublishRetrospective
 	t.track(eventTasks, properties)
 }
 

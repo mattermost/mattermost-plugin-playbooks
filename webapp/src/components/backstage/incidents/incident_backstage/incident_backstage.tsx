@@ -24,6 +24,7 @@ import {
     SecondaryButtonLargerRight,
 } from 'src/components/backstage/incidents/shared';
 import ExportLink from 'src/components/backstage/incidents/incident_details/export_link';
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -123,6 +124,7 @@ const IncidentBackstage = () => {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const channel = useSelector<GlobalState, Channel | null>((state) => (incident ? getChannel(state, incident.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -187,12 +189,14 @@ const IncidentBackstage = () => {
                     >
                         {'Overview'}
                     </TabItem>
-                    <TabItem
-                        active={tabState === IncidentBackstageTabState.ViewingRetrospective}
-                        onClick={() => setTabState(IncidentBackstageTabState.ViewingRetrospective)}
-                    >
-                        {'Retrospective'}
-                    </TabItem>
+                    {experimentalFeaturesEnabled &&
+                        <TabItem
+                            active={tabState === IncidentBackstageTabState.ViewingRetrospective}
+                            onClick={() => setTabState(IncidentBackstageTabState.ViewingRetrospective)}
+                        >
+                            {'Retrospective'}
+                        </TabItem>
+                    }
                 </SecondRow>
             </TopContainer>
             <BottomContainer>

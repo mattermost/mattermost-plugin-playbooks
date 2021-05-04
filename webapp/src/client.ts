@@ -306,6 +306,15 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
+export async function updateRetrospective(incidentID: string, updatedText: string) {
+    const data = await doPost(`${apiUrl}/incidents/${incidentID}/retrospective`,
+        JSON.stringify({
+            retrospective: updatedText,
+        }));
+
+    return data;
+}
+
 export function exportChannelUrl(channelId: string) {
     const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 
