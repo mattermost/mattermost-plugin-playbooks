@@ -47,27 +47,27 @@ func (t *NoopTelemetry) RemoveTimelineEvent(*incident.Incident, string) {
 }
 
 // AddTask does nothing.
-func (t *NoopTelemetry) AddTask(string, string) {
+func (t *NoopTelemetry) AddTask(string, string, playbook.ChecklistItem) {
 }
 
 // RemoveTask does nothing.
-func (t *NoopTelemetry) RemoveTask(string, string) {
+func (t *NoopTelemetry) RemoveTask(string, string, playbook.ChecklistItem) {
 }
 
 // RenameTask does nothing.
-func (t *NoopTelemetry) RenameTask(string, string) {
+func (t *NoopTelemetry) RenameTask(string, string, playbook.ChecklistItem) {
 }
 
 // ModifyCheckedState does nothing.
-func (t *NoopTelemetry) ModifyCheckedState(string, string, string, bool, bool) {
+func (t *NoopTelemetry) ModifyCheckedState(string, string, playbook.ChecklistItem, bool) {
 }
 
 // SetAssignee does nothing.
-func (t *NoopTelemetry) SetAssignee(string, string) {
+func (t *NoopTelemetry) SetAssignee(string, string, playbook.ChecklistItem) {
 }
 
 // MoveTask does nothing.
-func (t *NoopTelemetry) MoveTask(string, string) {
+func (t *NoopTelemetry) MoveTask(string, string, playbook.ChecklistItem) {
 }
 
 // CreatePlaybook does nothing.
@@ -87,5 +87,5 @@ func (t *NoopTelemetry) ChangeCommander(*incident.Incident, string) {
 }
 
 // RunTaskSlashCommand does nothing
-func (t *NoopTelemetry) RunTaskSlashCommand(string, string) {
+func (t *NoopTelemetry) RunTaskSlashCommand(string, string, playbook.ChecklistItem) {
 }

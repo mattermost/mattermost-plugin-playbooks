@@ -820,8 +820,6 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
-	s.telemetry.ModifyCheckedState(incidentID, userID, newState, incidentToModify.CommanderUserID == userID, itemToCheck.AssigneeID == userID)
-
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	if newState == playbook.ChecklistItemStateOpen {
@@ -840,6 +838,8 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
+
+	s.telemetry.ModifyCheckedState(incidentID, userID, itemToCheck, incidentToModify.CommanderUserID == userID)
 
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
@@ -937,6 +937,8 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		return errors.Wrapf(err, "failed to update incident; it is now in an inconsistent state")
 	}
 
+	s.telemetry.SetAssignee(incidentID, userID, itemToCheck)
+
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
 		CreateAt:      itemToCheck.AssigneeModified,
@@ -950,8 +952,6 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
-
-	s.telemetry.SetAssignee(incidentID, userID)
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
@@ -1000,6 +1000,8 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
 	}
 
+	s.telemetry.RunTaskSlashCommand(incidentID, userID, itemToRun)
+
 	eventTime := model.GetMillis()
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
@@ -1013,8 +1015,6 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return "", errors.Wrap(err, "failed to create timeline event")
 	}
-
-	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return "", err
@@ -1037,7 +1037,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.AddTask(incidentID, userID)
+	s.telemetry.AddTask(incidentID, userID, checklistItem)
 
 	return nil
 }
@@ -1049,6 +1049,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 		return err
 	}
 
+	checklistItem := incidentToModify.Checklists[checklistNumber].Items[itemNumber]
 	incidentToModify.Checklists[checklistNumber].Items = append(
 		incidentToModify.Checklists[checklistNumber].Items[:itemNumber],
 		incidentToModify.Checklists[checklistNumber].Items[itemNumber+1:]...,
@@ -1059,7 +1060,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RemoveTask(incidentID, userID)
+	s.telemetry.RemoveTask(incidentID, userID, checklistItem)
 
 	return nil
 }
@@ -1074,13 +1075,14 @@ func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumb
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
+	checklistItem := incidentToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RenameTask(incidentID, userID)
+	s.telemetry.RenameTask(incidentID, userID, checklistItem)
 
 	return nil
 }
@@ -1112,7 +1114,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.MoveTask(incidentID, userID)
+	s.telemetry.MoveTask(incidentID, userID, itemMoved)
 
 	return nil
 }

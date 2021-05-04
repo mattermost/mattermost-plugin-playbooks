@@ -97,7 +97,19 @@ var dummyIncident = &incident.Incident{
 		{
 			Title: "Checklist",
 			Items: []playbook.ChecklistItem{
-				{Title: "Test Item"},
+				{
+					ID:                     "task_id_1",
+					Title:                  "Test Item",
+					State:                  "",
+					StateModified:          1234,
+					StateModifiedPostID:    "state_modified_post_id",
+					AssigneeID:             "assignee_id",
+					AssigneeModified:       5678,
+					AssigneeModifiedPostID: "assignee_modified_post_id",
+					Command:                "command",
+					CommandLastRun:         100000,
+					Description:            "description",
+				},
 			},
 		},
 		{
@@ -119,6 +131,8 @@ var dummyIncident = &incident.Incident{
 		{ID: "timeline_event_3"},
 	},
 }
+
+var dummyTask = dummyIncident.Checklists[0].Items[0]
 
 func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, expectedAction string) {
 	t.Helper()
@@ -204,19 +218,19 @@ func TestRudderTelemetry(t *testing.T) {
 			rudderClient.EndIncident(dummyIncident, dummyUserID)
 		}},
 		"add checklist item": {eventTasks, actionAddTask, func() {
-			rudderClient.AddTask(dummyIncidentID, dummyUserID)
+			rudderClient.AddTask(dummyIncidentID, dummyUserID, dummyTask)
 		}},
 		"remove checklist item": {eventTasks, actionRemoveTask, func() {
-			rudderClient.RemoveTask(dummyIncidentID, dummyUserID)
+			rudderClient.RemoveTask(dummyIncidentID, dummyUserID, dummyTask)
 		}},
 		"rename checklist item": {eventTasks, actionRenameTask, func() {
-			rudderClient.RenameTask(dummyIncidentID, dummyUserID)
+			rudderClient.RenameTask(dummyIncidentID, dummyUserID, dummyTask)
 		}},
 		"modify checked checklist item": {eventTasks, actionModifyTaskState, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, playbook.ChecklistItemStateOpen, true, false)
+			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, dummyTask, true)
 		}},
 		"move checklist item": {eventTasks, actionMoveTask, func() {
-			rudderClient.MoveTask(dummyIncidentID, dummyUserID)
+			rudderClient.MoveTask(dummyIncidentID, dummyUserID, dummyTask)
 		}},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -350,6 +364,26 @@ func TestIncidentProperties(t *testing.T) {
 		"CurrentStatus":       dummyIncident.CurrentStatus,
 		"PreviousReminder":    dummyIncident.PreviousReminder,
 		"NumTimelineEvents":   len(dummyIncident.TimelineEvents),
+	}
+
+	require.Equal(t, expectedProperties, properties)
+}
+
+func TestTaskProperties(t *testing.T) {
+	properties := taskProperties(dummyIncidentID, dummyUserID, dummyTask)
+
+	// ID field is reserved by Rudder to uniquely identify every event
+	require.NotContains(t, properties, "ID")
+
+	expectedProperties := map[string]interface{}{
+		"IncidentID":     dummyIncidentID,
+		"UserActualID":   dummyUserID,
+		"TaskID":         dummyTask.ID,
+		"State":          dummyTask.State,
+		"AssigneeID":     dummyTask.AssigneeID,
+		"HasCommand":     true,
+		"CommandLastRun": dummyTask.CommandLastRun,
+		"HasDescription": true,
 	}
 
 	require.Equal(t, expectedProperties, properties)

@@ -184,67 +184,73 @@ func (t *RudderTelemetry) RemoveTimelineEvent(incdnt *incident.Incident, userID 
 	t.track(eventIncident, properties)
 }
 
-func taskProperties(incidentID, userID string) map[string]interface{} {
+func taskProperties(incidentID, userID string, task playbook.ChecklistItem) map[string]interface{} {
 	return map[string]interface{}{
-		"IncidentID":   incidentID,
-		"UserActualID": userID,
+		"IncidentID":     incidentID,
+		"UserActualID":   userID,
+		"TaskID":         task.ID,
+		"State":          task.State,
+		"AssigneeID":     task.AssigneeID,
+		"HasCommand":     task.Command != "",
+		"CommandLastRun": task.CommandLastRun,
+		"HasDescription": task.Description != "",
 	}
 }
 
 // AddTask tracks the creation of a new checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) AddTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) AddTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionAddTask
 	t.track(eventTasks, properties)
 }
 
 // RemoveTask tracks the removal of a checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) RemoveTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) RemoveTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRemoveTask
 	t.track(eventTasks, properties)
 }
 
 // RenameTask tracks the update of a checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) RenameTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) RenameTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRenameTask
 	t.track(eventTasks, properties)
 }
 
 // ModifyCheckedState tracks the checking and unchecking of items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionModifyTaskState
-	properties["NewState"] = newState
+	properties["NewState"] = task.State
 	properties["WasCommander"] = wasCommander
-	properties["WasAssignee"] = wasAssignee
+	properties["WasAssignee"] = task.AssigneeID == userID
 	t.track(eventTasks, properties)
 }
 
 // SetAssignee tracks the changing of an assignee on an item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) SetAssignee(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) SetAssignee(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionSetAssigneeForTask
 	t.track(eventTasks, properties)
 }
 
 // MoveTask tracks the movement of checklist items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) MoveTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) MoveTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionMoveTask
 	t.track(eventTasks, properties)
 }
 
 // RunTaskSlashCommand tracks the execution of a slash command on a checklist item.
-func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRunTaskSlashCommand
 	t.track(eventTasks, properties)
 }

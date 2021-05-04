@@ -440,26 +440,26 @@ type Telemetry interface {
 	RemoveTimelineEvent(incdnt *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
-	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
+	ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool)
 
 	// SetAssignee tracks the changing of an assignee on an item.
-	SetAssignee(incidentID, userID string)
+	SetAssignee(incidentID, userID string, task playbook.ChecklistItem)
 
 	// AddTask tracks the creation of a new checklist item.
-	AddTask(incidentID, userID string)
+	AddTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RemoveTask tracks the removal of a checklist item.
-	RemoveTask(incidentID, userID string)
+	RemoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RenameTask tracks the update of a checklist item.
-	RenameTask(incidentID, userID string)
+	RenameTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// MoveTask tracks the unchecking of checked item.
-	MoveTask(incidentID, userID string)
+	MoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunTaskSlashCommand(incidentID, userID string)
+	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
 }
 
 type JobOnceScheduler interface {
