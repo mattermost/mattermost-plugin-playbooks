@@ -283,7 +283,7 @@ type Service interface {
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
 	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
-	RemoveTimelineEvent(incidentID, eventID string) error
+	RemoveTimelineEvent(incidentID, userID, eventID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -435,6 +435,9 @@ type Telemetry interface {
 
 	// AddPostToTimeline tracks userID creating a timeline event from a post.
 	AddPostToTimeline(incdnt *Incident, userID string)
+
+	// RemoveTimelineEvent tracks userID removing a timeline event.
+	RemoveTimelineEvent(incdnt *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)

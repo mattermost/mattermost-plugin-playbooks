@@ -38,8 +38,12 @@ func (t *NoopTelemetry) UpdateStatus(*incident.Incident, string) {
 func (t *NoopTelemetry) FrontendTelemetryForIncident(*incident.Incident, string, string) {
 }
 
-// AddTimelineEventFromPost does nothing
+// AddPostToTimeline does nothing
 func (t *NoopTelemetry) AddPostToTimeline(*incident.Incident, string) {
+}
+
+// RemoveTimelineEvent does nothing
+func (t *NoopTelemetry) RemoveTimelineEvent(*incident.Incident, string) {
 }
 
 // AddTask does nothing.

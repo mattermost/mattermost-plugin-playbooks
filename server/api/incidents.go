@@ -888,9 +888,10 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
 	eventID := vars["eventID"]
 
-	if err := h.incidentService.RemoveTimelineEvent(id, eventID); err != nil {
+	if err := h.incidentService.RemoveTimelineEvent(id, userID, eventID); err != nil {
 		HandleError(w, err)
 		return
 	}

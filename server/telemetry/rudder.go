@@ -30,6 +30,7 @@ const (
 	actionChangeCommander          = "change_commander"
 	actionUpdateStatus             = "update_status"
 	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
+	actionRemoveTimelineEvent      = "remove_timeline_event"
 
 	eventTasks                = "tasks"
 	actionAddTask             = "add_task"
@@ -164,6 +165,13 @@ func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident
 func (t *RudderTelemetry) AddPostToTimeline(incdnt *incident.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionAddTimelineEventFromPost
+	t.track(eventIncident, properties)
+}
+
+// RemoveTimelineEvent tracks userID removing a timeline event.
+func (t *RudderTelemetry) RemoveTimelineEvent(incdnt *incident.Incident, userID string) {
+	properties := incidentProperties(incdnt, userID)
+	properties["Action"] = actionRemoveTimelineEvent
 	t.track(eventIncident, properties)
 }
 

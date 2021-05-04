@@ -541,7 +541,7 @@ func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary stri
 }
 
 // RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
-func (s *ServiceImpl) RemoveTimelineEvent(incidentID, eventID string) error {
+func (s *ServiceImpl) RemoveTimelineEvent(incidentID, userID, eventID string) error {
 	event, err := s.store.GetTimelineEvent(incidentID, eventID)
 	if err != nil {
 		return err
@@ -551,6 +551,13 @@ func (s *ServiceImpl) RemoveTimelineEvent(incidentID, eventID string) error {
 	if err = s.store.UpdateTimelineEvent(event); err != nil {
 		return err
 	}
+
+	incidentModified, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	s.telemetry.RemoveTimelineEvent(incidentModified, userID)
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
