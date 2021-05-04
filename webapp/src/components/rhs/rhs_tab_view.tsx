@@ -7,11 +7,15 @@ import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+
 import {RHSTabState} from 'src/types/rhs';
 import {currentIncident, currentRHSTabState} from 'src/selectors';
 import {setRHSTabState} from 'src/actions';
 import {Incident} from 'src/types/incident';
 import {telemetryEventForIncident} from 'src/client';
+
+import {useAllowTimelineViewInCurrentTeam} from 'src/hooks';
 
 const TabRow = styled.div`
     display: flex;
@@ -43,6 +47,7 @@ const RHSTabView = () => {
     const currentTabState = useSelector<GlobalState, RHSTabState>(currentRHSTabState);
     const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const incident = useSelector<GlobalState, Incident>(currentIncident);
+    const allowTimelineView = useAllowTimelineViewInCurrentTeam();
 
     const setTabState = (nextState: RHSTabState) => {
         if (currentTabState !== nextState) {
@@ -75,9 +80,15 @@ const RHSTabView = () => {
                 data-testid='timeline'
             >
                 {'Timeline'}
+                {!allowTimelineView && <PositionedUpgradeBadge/>}
             </TabItem>
         </TabRow>
     );
 };
+
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-bottom: -3px;
+    margin-left: 4px;
+`;
 
 export default RHSTabView;

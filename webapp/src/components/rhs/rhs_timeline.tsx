@@ -38,6 +38,10 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {currentRHSEventsFilter} from 'src/selectors';
 import {setRHSEventsFilter} from 'src/actions';
 
+import {useAllowTimelineViewInCurrentTeam} from 'src/hooks';
+
+import TimelineUpgradePlaceholder from 'src/components/rhs/rhs_timeline_placeholder';
+
 const Header = styled.div`
     display: flex;
     flex-direction: row;
@@ -88,6 +92,8 @@ const RHSTimeline = (props: Props) => {
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
     const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>(currentRHSEventsFilter);
 
+    const allowTimelineView = useAllowTimelineViewInCurrentTeam();
+
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
     }, [eventsFilter, allEvents]);
@@ -123,6 +129,12 @@ const RHSTimeline = (props: Props) => {
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
     }, [props.incident.timeline_events, displayPreference]);
+
+    if (!allowTimelineView) {
+        return (
+            <TimelineUpgradePlaceholder/>
+        );
+    }
 
     if (props.incident.timeline_events.length === 0) {
         return (
