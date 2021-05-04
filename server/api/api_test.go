@@ -38,6 +38,10 @@ func TestAPI(t *testing.T) {
 			configService := mock_config.NewMockService(mockCtrl)
 			pluginAPI := &plugintest.API{}
 			client := pluginapi.NewClient(pluginAPI)
+			configService.EXPECT().
+				IsPricingPlanDifferentiationEnabled().
+				Return(false)
+
 			handler := NewHandler(client, configService)
 
 			writer := httptest.NewRecorder()

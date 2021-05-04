@@ -70,6 +70,11 @@ func TestIncidents(t *testing.T) {
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		telemetryService = &telemetry.NoopTelemetry{}
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
 	}
 

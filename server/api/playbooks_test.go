@@ -141,10 +141,21 @@ func TestPlaybooks(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		handler = NewHandler(client, configService)
+
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
@@ -166,10 +177,21 @@ func TestPlaybooks(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(true)
+
 		handler = NewHandler(client, configService)
+
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(true)
+
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
@@ -190,16 +212,7 @@ func TestPlaybooks(t *testing.T) {
 	})
 
 	t.Run("create playbook, unlicensed with zero pre-existing playbooks in the team", func(t *testing.T) {
-		t.Skip()
-		mockCtrl = gomock.NewController(t)
-		configService = mock_config.NewMockService(mockCtrl)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
-		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		handler = NewHandler(client, configService)
-		logger = mock_poster.NewMockLogger(mockCtrl)
-		poster = mock_poster.NewMockPoster(mockCtrl)
-		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
+		reset(t)
 
 		configService.EXPECT().
 			IsLicensed().
@@ -209,7 +222,8 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			Return(&config.Configuration{
 				EnabledTeams: []string{},
-			})
+			}).
+			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
 
@@ -222,11 +236,12 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:          playbooktest.Title,
-			TeamID:         playbooktest.TeamID,
-			Checklists:     toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:      playbooktest.MemberIDs,
-			InvitedUserIDs: playbooktest.InvitedUserIDs,
+			Title:           playbooktest.Title,
+			TeamID:          playbooktest.TeamID,
+			Checklists:      toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:       playbooktest.MemberIDs,
+			InvitedUserIDs:  playbooktest.InvitedUserIDs,
+			InvitedGroupIDs: playbooktest.InvitedGroupIDs,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -1276,9 +1291,20 @@ func TestSortingPlaybooks(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		handler = NewHandler(client, configService)
+
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
@@ -1481,8 +1507,19 @@ func TestPagingPlaybooks(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		handler = NewHandler(client, configService)
+
 		playbookService = mock_playbook.NewMockService(mockCtrl)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
