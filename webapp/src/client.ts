@@ -31,7 +31,7 @@ import {
     PlaybookNoChecklist,
     FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
-import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
 import {Stats} from 'src/types/stats';
 
@@ -325,6 +325,16 @@ export const requestTrialLicense = async (users: number) => {
         return {data: response};
     } catch (e) {
         return {error: e.message};
+    }
+};
+
+export const postMessageToAdmins = async (messageType: AdminNotificationType) => {
+    const body = `{"message_type": "${messageType}"}`;
+    try {
+        const data = await doPost(`${apiUrl}/bot/notify-admins`, body);
+        return data;
+    } catch (error) {
+        return {error};
     }
 };
 
