@@ -39,7 +39,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
-	if !config.PricingPlanDifferentiationEnabled {
+	if !configService.IsPricingPlanDifferentiationEnabled() {
 		e20Middleware := E20LicenseRequired{configService}
 		playbooksRouter.Use(e20Middleware.Middleware)
 	}

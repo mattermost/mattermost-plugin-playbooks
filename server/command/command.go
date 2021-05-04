@@ -1398,7 +1398,7 @@ func (r *Runner) Execute() error {
 		return err
 	}
 
-	if !config.PricingPlanDifferentiationEnabled && !r.configService.IsLicensed() {
+	if !r.configService.IsPricingPlanDifferentiationEnabled() && !r.configService.IsLicensed() {
 		r.postCommandResponse("Incident Collaboration requires a Mattermost Cloud or Mattermost E20 License.")
 		return nil
 	}
