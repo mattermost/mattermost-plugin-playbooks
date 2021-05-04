@@ -4,6 +4,8 @@
 import React, {FC} from 'react';
 import styled from 'styled-components';
 
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+
 export const PrimaryButton = styled.button`
     display: inline-flex;
     align-items: center;
@@ -103,3 +105,20 @@ export const GrayTertiaryButton = styled.button`
     }
 `;
 
+export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
+
+export const UpgradeButton: FC<UpgradeButtonProps> = (props: UpgradeButtonProps) => {
+    const {children, ...rest} = props;
+    return (
+        <PrimaryButton {...rest}>
+            {children}
+            <PositionedUpgradeBadge/>
+        </PrimaryButton>
+    );
+};
+
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    position: absolute;
+    top: -4px;
+    right: -6px;
+`;
