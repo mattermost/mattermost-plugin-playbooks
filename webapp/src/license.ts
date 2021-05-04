@@ -20,3 +20,27 @@ export const isConfiguredForDevelopment = (state: GlobalState): boolean => {
 
     return config.EnableTesting === 'true' && config.EnableDeveloper === 'true';
 };
+
+export const isEnterpriseEdition = (state: GlobalState): boolean => {
+    const config = getConfig(state);
+
+    return config.BuildEnterpriseReady === 'true';
+};
+
+export const isCloud = (state: GlobalState): boolean => {
+    const license = getLicense(state);
+
+    return license?.Cloud === 'true';
+};
+
+export const isPricingPlanDifferentiationEnabled = (state: GlobalState): boolean => {
+    if (isCloud(state)) {
+        return false;
+    }
+
+    if (!isEnterpriseEdition(state)) {
+        return false;
+    }
+
+    return true;
+};

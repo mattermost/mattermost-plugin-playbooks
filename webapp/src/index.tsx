@@ -13,7 +13,6 @@ import WebsocketEvents from 'mattermost-redux/constants/websocket';
 
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
-import {PRICING_PLAN_DIFFERENTIATION_ENABLED} from 'src/constants';
 
 import {pluginId} from './manifest';
 import ChannelHeaderButton from './components/assets/icons/channel_header_button';
@@ -45,7 +44,7 @@ import {
     WEBSOCKET_PLAYBOOK_DELETED,
 } from './types/websocket_events';
 import RegistryWrapper from './registry_wrapper';
-import {isE20LicensedOrDevelopment} from './license';
+import {isE20LicensedOrDevelopment, isPricingPlanDifferentiationEnabled} from './license';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
 import {makeUpdateMainMenu} from './make_update_main_menu';
 import {fetchGlobalSettings} from './client';
@@ -112,7 +111,7 @@ export default class Plugin {
         const checkRegistrations = () => {
             updateMainMenuAction();
 
-            if (!registered && PRICING_PLAN_DIFFERENTIATION_ENABLED) {
+            if (!registered && isPricingPlanDifferentiationEnabled(store.getState())) {
                 unregister = doRegistrations();
                 registered = true;
             } else if (!registered && isE20LicensedOrDevelopment(store.getState())) {

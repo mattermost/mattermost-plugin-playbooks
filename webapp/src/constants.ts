@@ -17,8 +17,6 @@ export const BACKSTAGE_LIST_PER_PAGE = 15;
 
 export const PROFILE_CHUNK_SIZE = 200;
 
-export const PRICING_PLAN_DIFFERENTIATION_ENABLED = false;
-
 export enum AdminNotificationType {
     PLAYBOOK = 'playbook',
     VIEW_TIMELINE = 'view_timeline',
