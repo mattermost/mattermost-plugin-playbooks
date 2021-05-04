@@ -83,10 +83,14 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 var dummyIncident = &incident.Incident{
 	ID:              "id",
 	Name:            "name",
+	Description:     "description",
 	CommanderUserID: "commander_user_id",
+	ReporterUserID:  "reporter_user_id",
 	TeamID:          "team_id",
-	CreateAt:        1234,
 	ChannelID:       "channel_id_1",
+	CreateAt:        1234,
+	EndAt:           5678,
+	DeleteAt:        9999,
 	PostID:          "post_id",
 	PlaybookID:      "playbookID1",
 	Checklists: []playbook.Checklist{
@@ -96,6 +100,23 @@ var dummyIncident = &incident.Incident{
 				{Title: "Test Item"},
 			},
 		},
+		{
+			Title: "Checklist 2",
+			Items: []playbook.ChecklistItem{
+				{Title: "Test Item 2"},
+				{Title: "Test Item 3"},
+			},
+		},
+	},
+	StatusPosts: []incident.StatusPost{
+		{ID: "status_post_1", Status: incident.StatusActive},
+		{ID: "status_post_2", Status: incident.StatusReported},
+	},
+	PreviousReminder: 5 * time.Second,
+	TimelineEvents: []incident.TimelineEvent{
+		{ID: "timeline_event_1"},
+		{ID: "timeline_event_2"},
+		{ID: "timeline_event_3"},
 	},
 }
 
@@ -103,26 +124,41 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 	t.Helper()
 
 	incidentFromProperties := func(properties map[string]interface{}) *incident.Incident {
-		require.Contains(t, properties, "PostID")
-
 		require.Contains(t, properties, "IncidentID")
-		require.Contains(t, properties, "CurrentStatus")
+		require.Contains(t, properties, "HasDescription")
 		require.Contains(t, properties, "CommanderUserID")
+		require.Contains(t, properties, "ReporterUserID")
 		require.Contains(t, properties, "TeamID")
+		require.Contains(t, properties, "ChannelID")
 		require.Contains(t, properties, "CreateAt")
+		require.Contains(t, properties, "EndAt")
+		require.Contains(t, properties, "DeleteAt")
+		require.Contains(t, properties, "PostID")
+		require.Contains(t, properties, "PlaybookID")
 		require.Contains(t, properties, "NumChecklists")
 		require.Contains(t, properties, "TotalChecklistItems")
+		require.Contains(t, properties, "NumStatusPosts")
+		require.Contains(t, properties, "CurrentStatus")
+		require.Contains(t, properties, "PreviousReminder")
+		require.Contains(t, properties, "NumTimelineEvents")
 
 		return &incident.Incident{
-			ID:              properties["IncidentID"].(string),
-			Name:            dummyIncident.Name, // not included in the tracked event
-			CommanderUserID: properties["CommanderUserID"].(string),
-			TeamID:          properties["TeamID"].(string),
-			CreateAt:        int64(properties["CreateAt"].(float64)),
-			ChannelID:       "channel_id_1",
-			PostID:          properties["PostID"].(string),
-			PlaybookID:      dummyIncident.PlaybookID,
-			Checklists:      dummyIncident.Checklists, // not included as self in tracked event
+			ID:               properties["IncidentID"].(string),
+			Name:             dummyIncident.Name, // not included in the tracked event
+			Description:      dummyIncident.Description,
+			CommanderUserID:  properties["CommanderUserID"].(string),
+			ReporterUserID:   properties["ReporterUserID"].(string),
+			TeamID:           properties["TeamID"].(string),
+			CreateAt:         int64(properties["CreateAt"].(float64)),
+			EndAt:            int64(properties["EndAt"].(float64)),
+			DeleteAt:         int64(properties["DeleteAt"].(float64)),
+			ChannelID:        "channel_id_1",
+			PostID:           properties["PostID"].(string),
+			PlaybookID:       dummyIncident.PlaybookID,
+			Checklists:       dummyIncident.Checklists, // not included as self in tracked event
+			StatusPosts:      dummyIncident.StatusPosts,
+			PreviousReminder: time.Duration((properties["PreviousReminder"]).(float64)),
+			TimelineEvents:   dummyIncident.TimelineEvents,
 		}
 	}
 
@@ -298,14 +334,22 @@ func TestIncidentProperties(t *testing.T) {
 	expectedProperties := map[string]interface{}{
 		"UserActualID":        dummyUserID,
 		"IncidentID":          dummyIncident.ID,
+		"HasDescription":      true,
 		"CommanderUserID":     dummyIncident.CommanderUserID,
+		"ReporterUserID":      dummyIncident.ReporterUserID,
 		"TeamID":              dummyIncident.TeamID,
+		"ChannelID":           dummyIncident.ChannelID,
 		"CreateAt":            dummyIncident.CreateAt,
-		"PlaybookID":          dummyIncident.PlaybookID,
+		"EndAt":               dummyIncident.EndAt,
+		"DeleteAt":            dummyIncident.DeleteAt,
 		"PostID":              dummyIncident.PostID,
+		"PlaybookID":          dummyIncident.PlaybookID,
+		"NumChecklists":       2,
+		"TotalChecklistItems": 3,
+		"NumStatusPosts":      2,
 		"CurrentStatus":       dummyIncident.CurrentStatus,
-		"NumChecklists":       1,
-		"TotalChecklistItems": 1,
+		"PreviousReminder":    dummyIncident.PreviousReminder,
+		"NumTimelineEvents":   len(dummyIncident.TimelineEvents),
 	}
 
 	require.Equal(t, expectedProperties, properties)

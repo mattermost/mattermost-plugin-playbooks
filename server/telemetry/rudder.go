@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
@@ -108,14 +109,22 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 	return map[string]interface{}{
 		"UserActualID":        userID,
 		"IncidentID":          incdnt.ID,
-		"CurrentStatus":       incdnt.CurrentStatus,
+		"HasDescription":      incdnt.Description != "",
 		"CommanderUserID":     incdnt.CommanderUserID,
+		"ReporterUserID":      incdnt.ReporterUserID,
 		"TeamID":              incdnt.TeamID,
+		"ChannelID":           incdnt.ChannelID,
 		"CreateAt":            incdnt.CreateAt,
+		"EndAt":               incdnt.EndAt,
+		"DeleteAt":            incdnt.DeleteAt,
 		"PostID":              incdnt.PostID,
 		"PlaybookID":          incdnt.PlaybookID,
 		"NumChecklists":       len(incdnt.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
+		"NumStatusPosts":      len(incdnt.StatusPosts),
+		"CurrentStatus":       incdnt.CurrentStatus,
+		"PreviousReminder":    incdnt.PreviousReminder,
+		"NumTimelineEvents":   len(incdnt.TimelineEvents),
 	}
 }
 
@@ -255,15 +264,27 @@ func playbookProperties(pbook playbook.Playbook, userID string) map[string]inter
 	return map[string]interface{}{
 		"UserActualID":                userID,
 		"PlaybookID":                  pbook.ID,
+		"HasDescription":              pbook.Description != "",
 		"TeamID":                      pbook.TeamID,
+		"IsPublic":                    pbook.CreatePublicIncident,
+		"CreateAt":                    pbook.CreateAt,
+		"DeleteAt":                    pbook.DeleteAt,
 		"NumChecklists":               len(pbook.Checklists),
 		"TotalChecklistItems":         totalChecklistItems,
-		"IsPublic":                    pbook.CreatePublicIncident,
-		"NumMembers":                  len(pbook.MemberIDs),
 		"NumSlashCommands":            totalChecklistItemsWithCommands,
-		"ReminderTimerDefaultSeconds": pbook.ReminderTimerDefaultSeconds,
+		"NumMembers":                  len(pbook.MemberIDs),
 		"BroadcastChannelID":          pbook.BroadcastChannelID,
 		"UsesReminderMessageTemplate": pbook.ReminderMessageTemplate != "",
+		"ReminderTimerDefaultSeconds": pbook.ReminderTimerDefaultSeconds,
+		"NumInvitedUserIDs":           len(pbook.InvitedUserIDs),
+		"NumInvitedGroupIDs":          len(pbook.InvitedGroupIDs),
+		"InviteUsersEnabled":          pbook.InviteUsersEnabled,
+		"DefaultCommanderID":          pbook.DefaultCommanderID,
+		"DefaultCommanderEnabled":     pbook.DefaultCommanderEnabled,
+		"AnnouncementChannelID":       pbook.AnnouncementChannelID,
+		"AnnouncementChannelEnabled":  pbook.AnnouncementChannelEnabled,
+		"NumWebhookOnCreationURLs":    len(strings.Split(pbook.WebhookOnCreationURL, ",")),
+		"WebhookOnCreationEnabled":    pbook.WebhookOnCreationEnabled,
 	}
 }
 
