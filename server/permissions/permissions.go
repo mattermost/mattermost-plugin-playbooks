@@ -21,28 +21,6 @@ type RequesterInfo struct {
 	IsGuest bool
 }
 
-// ViewIncident returns nil if the userID has permissions to view incidentID
-func ViewIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return nil
-	}
-
-	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
-		return nil
-	}
-
-	channel, err := pluginAPI.Channel.Get(channelID)
-	if err != nil {
-		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", channelID)
-	}
-
-	if channel.Type == model.CHANNEL_OPEN && pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		return nil
-	}
-
-	return ErrNoPermissions
-}
-
 // ViewIncidentFromChannelID returns nil if the userID has permissions to view the incident
 // associated with channelID
 func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client) error {
