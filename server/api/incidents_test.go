@@ -64,7 +64,13 @@ func TestIncidents(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(false)
+
 		handler = NewHandler(client, configService)
+
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
@@ -812,6 +818,90 @@ func TestIncidents(t *testing.T) {
 		})
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 		require.Nil(t, resultIncident)
+	})
+
+	t.Run("create incident in unlicensed server with pricing plan differentiation enabled", func(*testing.T) {
+		mockCtrl = gomock.NewController(t)
+		configService = mock_config.NewMockService(mockCtrl)
+		pluginAPI = &plugintest.API{}
+		client = pluginapi.NewClient(pluginAPI)
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(true)
+		handler = NewHandler(client, configService)
+
+		poster = mock_poster.NewMockPoster(mockCtrl)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		playbookService = mock_playbook.NewMockService(mockCtrl)
+		incidentService = mock_incident.NewMockService(mockCtrl)
+		telemetryService = &telemetry.NoopTelemetry{}
+
+		configService.EXPECT().
+			IsPricingPlanDifferentiationEnabled().
+			Return(true)
+
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
+
+		configService.EXPECT().
+			IsLicensed().
+			Return(false)
+
+		configService.EXPECT().
+			GetConfiguration().
+			Return(&config.Configuration{
+				EnabledTeams: []string{},
+			})
+
+		testPlaybook := playbook.Playbook{
+			ID:                   "playbookid1",
+			Title:                "My Playbook",
+			TeamID:               "testTeamID",
+			Description:          "description",
+			CreatePublicIncident: true,
+			MemberIDs:            []string{"testUserID"},
+			InviteUsersEnabled:   false,
+			InvitedUserIDs:       []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+		}
+
+		testIncident := incident.Incident{
+			CommanderUserID: "testUserID",
+			TeamID:          "testTeamID",
+			Name:            "incidentName",
+			Description:     "description",
+			PlaybookID:      testPlaybook.ID,
+			Checklists:      testPlaybook.Checklists,
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(testPlaybook, nil).
+			Times(1)
+
+		retI := testIncident
+		retI.ID = "incidentID"
+		retI.ChannelID = "channelID"
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		incidentService.EXPECT().CreateIncident(&testIncident, "testUserID", true).Return(&retI, nil)
+
+		// Verify that the websocket event is published
+		poster.EXPECT().
+			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
+
+		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
+			Name:            testIncident.Name,
+			CommanderUserID: testIncident.CommanderUserID,
+			TeamID:          testIncident.TeamID,
+			Description:     testIncident.Description,
+			PlaybookID:      testIncident.PlaybookID,
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resultIncident.ID)
 	})
 
 	t.Run("get incident by channel id", func(t *testing.T) {
