@@ -35,6 +35,11 @@ const NoIncidentsItem = styled.div`
     margin-bottom: 24px;
 `;
 
+const SideBySide = styled.span`
+    display: flex;
+    align-items: center;
+`;
+
 const RHSWelcomeView = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -64,10 +69,10 @@ const RHSWelcomeView = () => {
                             <PrimaryButton
                                 onClick={() => dispatch(startIncident())}
                             >
-                                <span>
+                                <SideBySide>
                                     <i className='icon-plus icon--no-spacing mr-2'/>
                                     {'Start Incident'}
-                                </span>
+                                </SideBySide>
                             </PrimaryButton>
                         </div>
                         <p className='mt-3 mb-4 light'>
