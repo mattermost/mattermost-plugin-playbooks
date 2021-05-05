@@ -265,7 +265,7 @@ type Service interface {
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
+	CreateIncident(incdnt *Incident, playbook *playbook.Playbook, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
@@ -373,7 +373,7 @@ type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident.
+	// CreateIncident creates a new incident. If newIncident has an ID, that ID will be used.
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.

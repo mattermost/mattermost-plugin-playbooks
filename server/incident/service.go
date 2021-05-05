@@ -181,7 +181,7 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 }
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
+func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, userID string, public bool) (*Incident, error) {
 	if incdnt.DefaultCommanderID != "" {
 		// Check if the user is a member of the incident's team
 		if !permissions.IsMemberOfTeamID(incdnt.DefaultCommanderID, incdnt.TeamID, s.pluginAPI) {
@@ -192,9 +192,30 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	}
 
 	incdnt.ReporterUserID = userID
+	incdnt.ID = model.NewId()
+
+	team, err := s.pluginAPI.Team.Get(incdnt.TeamID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch team")
+	}
+
+	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+	overviewURL := ""
+	playbookURL := ""
+
+	header := "This is an incident channel. To view more information, select the shield icon then select *Tasks* or *Overview*."
+	if siteURL != "" && pb != nil {
+		overviewURL = fmt.Sprintf("%s/%s/%s/incidents/%s", siteURL, team.Name, s.configService.GetManifest().Id, incdnt.ID)
+		playbookURL = fmt.Sprintf("%s/%s/%s/playbooks/%s", siteURL, team.Name, s.configService.GetManifest().Id, pb.ID)
+		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
+			pb.Title, playbookURL, overviewURL)
+	}
 
 	// Try to create the channel first
-	channel, err := s.createIncidentChannel(incdnt, public)
+	channel, err := s.createIncidentChannel(incdnt, header, public)
 	if err != nil {
 		return nil, err
 	}
@@ -356,10 +377,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to get incident original post")
 	}
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
-	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
 	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
@@ -1312,7 +1329,7 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 	return s.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelID, model.PERMISSION_READ_CHANNEL)
 }
 
-func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
+func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, public bool) (*model.Channel, error) {
 	channelType := model.CHANNEL_PRIVATE
 	if public {
 		channelType = model.CHANNEL_OPEN
@@ -1323,7 +1340,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		Type:        channelType,
 		DisplayName: incdnt.Name,
 		Name:        cleanChannelName(incdnt.Name),
-		Header:      "The channel was created by the Incident Collaboration plugin.",
+		Header:      header,
 	}
 
 	if channel.Name == "" {
