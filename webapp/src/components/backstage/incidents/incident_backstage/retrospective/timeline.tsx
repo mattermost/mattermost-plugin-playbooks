@@ -58,17 +58,15 @@ const Timeline = (props: Props) => {
 
     return (
         <TimelineLine data-testid='timeline-view'>
-            {
-                props.filteredEvents.map((event) => (
-                    <RHSTimelineEventItem
-                        key={event.id}
-                        event={event}
-                        reportedAt={moment(props.incident.create_at)}
-                        channelNames={channelNamesMap}
-                        team={team}
-                    />
-                ))
-            }
+            {props.filteredEvents.map((event) => (
+                <RHSTimelineEventItem
+                    key={event.id}
+                    event={event}
+                    reportedAt={moment(props.incident.create_at)}
+                    channelNames={channelNamesMap}
+                    team={team}
+                />
+            ))}
         </TimelineLine>
     );
 };
