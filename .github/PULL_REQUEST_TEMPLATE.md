@@ -23,7 +23,7 @@ If this pull request addresses a Help Wanted ticket, please link the relevant Gi
 Otherwise, link the JIRA ticket.
 -->
 
-### Checklist
+#### Checklist
 <!-- Check off items as they are completed. ~~Strike through~~ items if they don't apply -->
 [ ] Telemetry updated
 [ ] Gated by experimental feature flag
