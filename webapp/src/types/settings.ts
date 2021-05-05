@@ -3,21 +3,22 @@
 
 export interface GlobalSettings {
     playbook_creators_user_ids: string[]
+    enable_experimental_features: boolean
 }
 
 const defaults: GlobalSettings = {
     playbook_creators_user_ids: [],
+    enable_experimental_features: false,
 };
 
 export function globalSettingsSetDefaults(globalSettings?: Partial<GlobalSettings>): GlobalSettings {
-    let modifiedGlobalSettings = globalSettings;
-    if (!modifiedGlobalSettings) {
-        modifiedGlobalSettings = {};
+    // If we didn't get anything just return defaults
+    if (!globalSettings) {
+        return defaults;
     }
 
-    if (!globalSettings?.playbook_creators_user_ids) {
-        modifiedGlobalSettings.playbook_creators_user_ids = defaults.playbook_creators_user_ids;
-    }
+    // Strip bad values from partial
+    const fixedGlobalSettings = Object.fromEntries(Object.entries(globalSettings).filter(([_, value]) => value !== null));
 
-    return {...defaults, ...globalSettings};
+    return {...defaults, ...fixedGlobalSettings};
 }

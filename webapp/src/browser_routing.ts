@@ -13,11 +13,7 @@ export const navigateToUrl = (urlPath: string) => {
 };
 
 export const teamPluginUrl = (teamName: string, urlPath: string) => {
-    let cleanPath = urlPath;
-    while (cleanPath.startsWith('/')) {
-        cleanPath = cleanPath.substr(1);
-    }
-    return `/${teamName}/${pluginId}/` + cleanPath;
+    return `/${teamName}/${pluginId}` + urlPath;
 };
 
 export const navigateToTeamPluginUrl = (teamName: string, urlPath: string) => {

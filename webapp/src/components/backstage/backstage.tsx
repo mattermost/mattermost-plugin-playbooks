@@ -26,6 +26,8 @@ import IncidentIcon from '../assets/icons/incident_icon';
 import IncidentBackstage
     from 'src/components/backstage/incidents/incident_backstage/incident_backstage';
 
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
+
 import StatsView from './stats';
 import SettingsView from './settings';
 
@@ -129,7 +131,7 @@ const Backstage: FC = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
 
-    const experimentalFeaturesEnabled = false;
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     return (
         <BackstageContainer>
@@ -217,9 +219,9 @@ const Backstage: FC = () => {
                     </Route>
                     <Route
                         exact={true}
-                        path={`${match.url}`}
+                        path={`${match.url}/`}
                     >
-                        <Redirect to={`${match.url}/incidents`}/>
+                        <Redirect to={experimentalFeaturesEnabled ? `${match.url}/stats` : `${match.url}/incidents`}/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
