@@ -47,10 +47,9 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 		config:          configService,
 	}
 
-	e20Middleware := E20LicenseRequired{configService}
-
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
 	if !configService.IsPricingPlanDifferentiationEnabled() {
+		e20Middleware := E20LicenseRequired{configService}
 		incidentsRouter.Use(e20Middleware.Middleware)
 	}
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)

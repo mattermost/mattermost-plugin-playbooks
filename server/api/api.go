@@ -38,10 +38,11 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 	handler.root = root
 	handler.config = config
 
-	e20Middleware := E20LicenseRequired{config}
-
 	settingsRouter := handler.APIRouter.PathPrefix("/settings").Subrouter()
-	settingsRouter.Use(e20Middleware.Middleware)
+	if !config.IsPricingPlanDifferentiationEnabled() {
+		e20Middleware := E20LicenseRequired{config}
+		settingsRouter.Use(e20Middleware.Middleware)
+	}
 	settingsRouter.HandleFunc("", handler.getSettings).Methods(http.MethodGet)
 	settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPost)
 

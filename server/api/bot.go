@@ -7,21 +7,28 @@ import (
 	"github.com/gorilla/mux"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 type BotHandler struct {
 	pluginAPI *pluginapi.Client
 	poster    bot.Poster
+	config    config.Service
 }
 
-func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster) *BotHandler {
+func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster, config config.Service) *BotHandler {
 	handler := &BotHandler{
 		pluginAPI: api,
 		poster:    poster,
+		config:    config,
 	}
 
 	botRouter := router.PathPrefix("/bot").Subrouter()
+	if !config.IsPricingPlanDifferentiationEnabled() {
+		e20Middleware := E20LicenseRequired{config}
+		botRouter.Use(e20Middleware.Middleware)
+	}
 
 	notifyAdminsRouter := botRouter.PathPrefix("/notify-admins").Subrouter()
 	notifyAdminsRouter.HandleFunc("", handler.notifyAdmins).Methods(http.MethodPost)
