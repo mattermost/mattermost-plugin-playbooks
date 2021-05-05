@@ -15,6 +15,20 @@ export const isE20LicensedOrDevelopment = (state: GlobalState): boolean => {
     return isConfiguredForDevelopment(state);
 };
 
+// isE10LicensedOrDevelopment returns true when the server is licensed with a Mattermost
+// Enterprise E10 License, or has `EnableDeveloper` and `EnableTesting` configuration settings
+// enabled, signaling a non-production, developer mode.
+export const isE10LicensedOrDevelopment = (state: GlobalState): boolean => {
+    const license = getLicense(state);
+
+    // Use the presence of a known e10 feature as a check to determine licensing.
+    if (license?.GuestAccounts === 'true') {
+        return true;
+    }
+
+    return isConfiguredForDevelopment(state);
+};
+
 export const isConfiguredForDevelopment = (state: GlobalState): boolean => {
     const config = getConfig(state);
 

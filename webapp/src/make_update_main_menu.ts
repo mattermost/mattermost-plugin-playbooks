@@ -9,7 +9,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {isDisabledOnCurrentTeam} from './selectors';
 import {isMobile} from './mobile';
-import {isE20LicensedOrDevelopment, isPricingPlanDifferentiationEnabled} from './license';
+import {isE10LicensedOrDevelopment, isPricingPlanDifferentiationEnabled} from './license';
 
 import {navigateToTeamPluginUrl} from './browser_routing';
 
@@ -21,7 +21,7 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
 
         if (!isPricingPlanDifferentiationEnabled(store.getState())) {
             const disable = isDisabledOnCurrentTeam(store.getState());
-            show = !disable && !isMobile() && isE20LicensedOrDevelopment(store.getState());
+            show = !disable && !isMobile() && isE10LicensedOrDevelopment(store.getState());
         }
 
         if (mainMenuActionId && !show) {

@@ -20,7 +20,7 @@ import {Incident, StatusPost} from 'src/types/incident';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {isE20LicensedOrDevelopment} from './license';
+import {isE10LicensedOrDevelopment} from './license';
 import {currentTeamNumPlaybooks, globalSettings} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
@@ -237,7 +237,7 @@ export function useNumPlaybooksInCurrentTeam() {
 
 function useIsAllowedInE0() {
     const numPlaybooks = useNumPlaybooksInCurrentTeam();
-    const isLicensed = useSelector(isE20LicensedOrDevelopment);
+    const isLicensed = useSelector(isE10LicensedOrDevelopment);
 
     return isLicensed || numPlaybooks === 0;
 }
