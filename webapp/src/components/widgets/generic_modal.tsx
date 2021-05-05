@@ -1,6 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import styled from 'styled-components';
 import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
@@ -20,6 +21,7 @@ type Props = {
     autoCloseOnCancelButton?: boolean;
     autoCloseOnConfirmButton?: boolean;
     enforceFocus?: boolean;
+    footer?: React.ReactNode;
 };
 
 type State = {
@@ -125,11 +127,27 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                         </div>
                     </Modal.Body>
                     <Modal.Footer>
-                        {cancelButton}
-                        {confirmButton}
+                        <FooterContainer>
+                            <Buttons>
+                                {cancelButton}
+                                {confirmButton}
+                            </Buttons>
+                            {this.props.footer}
+                        </FooterContainer>
                     </Modal.Footer>
                 </form>
             </Modal>
         );
     }
 }
+
+const Buttons = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+`;
+
+const FooterContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
