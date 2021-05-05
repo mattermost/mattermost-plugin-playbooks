@@ -6,6 +6,7 @@ import styled from 'styled-components';
 
 import {StyledTextarea} from 'src/components/backstage/styles';
 import {
+    PrimaryButtonRight,
     SecondaryButtonRight,
     TabPageContainer,
     Title,
@@ -24,32 +25,72 @@ const ReportTextarea = styled(StyledTextarea)`
     font-size: 12px;
 `;
 
-interface Props {
+interface ReportProps {
     incident: Incident;
 }
 
-const Report = (props: Props) => {
+const Report = (props: ReportProps) => {
     const [report, setReport] = useState(props.incident.retrospective);
+    const [edited, setEdited] = useState(false);
 
     const saveDraftPressed = () => {
         updateRetrospective(props.incident.id, report);
+        setEdited(false);
     };
 
     return (
         <TabPageContainer>
             <Header>
                 <Title>{'Report'}</Title>
-                <SecondaryButtonRight
-                    onClick={saveDraftPressed}
-                >
-                    {'Save Draft'}
-                </SecondaryButtonRight>
+                <SaveButton
+                    edited={edited}
+                    onSave={saveDraftPressed}
+                />
             </Header>
             <ReportTextarea
                 value={report}
-                onChange={(e) => setReport(e.target.value)}
+                onChange={(e) => {
+                    setReport(e.target.value);
+                    setEdited(true);
+                }}
             />
         </TabPageContainer>
+    );
+};
+
+interface SaveButtonProps {
+    edited: boolean
+    onSave: () => void
+}
+
+const TextContainer = styled.span`
+    width: 65px;
+    flex-grow: 1;
+`;
+
+const SaveButton = (props: SaveButtonProps) => {
+    const [saved, setSaved] = useState(false);
+
+    const doSave = () => {
+        props.onSave();
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1000);
+    };
+
+    if (props.edited || saved) {
+        return (
+            <PrimaryButtonRight
+                onClick={doSave}
+            >
+                <TextContainer>{saved ? 'Saved!' : 'Save Draft'}</TextContainer>
+            </PrimaryButtonRight>
+        );
+    }
+
+    return (
+        <SecondaryButtonRight>
+            <TextContainer>{'Save Draft'}</TextContainer>
+        </SecondaryButtonRight>
     );
 };
 
