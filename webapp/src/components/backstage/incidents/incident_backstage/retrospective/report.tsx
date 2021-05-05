@@ -21,7 +21,8 @@ const Header = styled.div`
 
 const ReportTextarea = styled(StyledTextarea)`
     margin: 8px 0 0 0;
-    height: 140px;
+    min-height: 200px;
+    resize: vertical;
     font-size: 12px;
 `;
 
