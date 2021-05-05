@@ -235,14 +235,14 @@ func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string) {
 	t.track(eventTasks, properties)
 }
 
-func (t *RudderTelemetry) UpdateRetrospective(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) UpdateRetrospective(incident *incident.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionUpdateRetrospective
 	t.track(eventTasks, properties)
 }
 
-func (t *RudderTelemetry) PublishRetrospective(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) PublishRetrospective(incident *incident.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionPublishRetrospective
 	t.track(eventTasks, properties)
 }

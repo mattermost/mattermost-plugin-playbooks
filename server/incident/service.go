@@ -1637,14 +1637,19 @@ func (s *ServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospectiv
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.UpdateRetrospective(incidentID, updaterID)
+	s.telemetry.UpdateRetrospective(incidentToModify, updaterID)
 
 	return nil
 }
 
 func (s *ServiceImpl) PublishRetrospective(incidentID, publisherID string) error {
+	incidentToPublish, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
 	//TODO: Publish the retrospective
-	s.telemetry.PublishRetrospective(incidentID, publisherID)
+	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
 
 	return nil
 }

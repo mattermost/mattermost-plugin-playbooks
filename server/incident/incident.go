@@ -466,10 +466,10 @@ type Telemetry interface {
 	RunTaskSlashCommand(incidentID, userID string)
 
 	// UpdateRetrospective event
-	UpdateRetrospective(incidentID, userID string)
+	UpdateRetrospective(incident *Incident, userID string)
 
 	// PublishRetrospective event
-	PublishRetrospective(incidentID, userID string)
+	PublishRetrospective(incident *Incident, userID string)
 }
 
 type JobOnceScheduler interface {
