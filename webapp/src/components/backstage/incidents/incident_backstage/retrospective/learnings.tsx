@@ -42,6 +42,7 @@ const ColTitle = styled.div`
     font-weight: 600;
 `;
 
+// STUB COMPONENT. NOT IN ACTIVE USE YET
 const Learnings = (props: {incident: Incident}) => {
     return (
         <TabPageContainer>

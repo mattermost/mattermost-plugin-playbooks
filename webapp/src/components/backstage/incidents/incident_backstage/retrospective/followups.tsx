@@ -38,6 +38,7 @@ const Line = styled.div`
     background: grey;
 `;
 
+// STUB COMPONENT. NOT IN ACTIVE USE YET
 const Followups = (props: { incident: Incident }) => {
     return (
         <TabPageContainer>

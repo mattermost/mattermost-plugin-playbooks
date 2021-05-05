@@ -42,6 +42,7 @@ const ProfilePic = styled.img`
     display: inline-block;
 `;
 
+// STUB COMPONENT. NOT IN ACTIVE USE YET
 const ProfileVertical = (props: Props) => {
     const dispatch = useDispatch();
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, props.userId));
@@ -54,15 +55,15 @@ const ProfileVertical = (props: Props) => {
     }, [props.userId]);
 
     let name = null;
-    let profileUri = null;
+    let profileUrl = '';
     if (user) {
         name = displayUsername(user, teamnameNameDisplaySetting);
-        profileUri = Client4.getProfilePictureUrl(props.userId, user.last_picture_update);
+        profileUrl = Client4.getProfilePictureUrl(props.userId, user.last_picture_update);
     }
 
     return (
         <Profile>
-            <ProfilePic src={profileUri || ''}/>
+            <ProfilePic src={profileUrl}/>
             <Wrapper>
                 <Name>{name}</Name>
             </Wrapper>
