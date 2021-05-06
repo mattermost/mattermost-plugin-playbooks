@@ -6,13 +6,14 @@ import styled from 'styled-components';
 
 import {StyledTextarea} from 'src/components/backstage/styles';
 import {
-    PrimaryButtonRight,
-    SecondaryButtonRight,
     TabPageContainer,
     Title,
+    SecondaryButton,
 } from 'src/components/backstage/incidents/shared';
 import {Incident} from 'src/types/incident';
-import {updateRetrospective} from 'src/client';
+import {publishRetrospective, updateRetrospective} from 'src/client';
+import {PrimaryButton} from 'src/components/assets/buttons';
+import PostText from 'src/components/post_text';
 
 const Header = styled.div`
     display: flex;
@@ -26,72 +27,115 @@ const ReportTextarea = styled(StyledTextarea)`
     font-size: 12px;
 `;
 
+const CustomPrimaryButton = styled(PrimaryButton)`
+    height: 26px;
+    font-size: 12px;
+`;
+
+const HeaderButtonsRight = styled.div`
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row-reverse;
+    > * {
+        margin-left: 10px;
+    }
+`;
+
+const PostTextContainer = styled.div`
+    margin: 8px 0 0 0;
+    padding: 10px 25px 0 16px;
+    border: 1px solid var(--center-channel-color-08);
+    border-radius: 8px;
+`;
+
 interface ReportProps {
     incident: Incident;
 }
 
 const Report = (props: ReportProps) => {
     const [report, setReport] = useState(props.incident.retrospective);
-    const [edited, setEdited] = useState(false);
+    const [editing, setEditing] = useState(false);
 
-    const saveDraftPressed = () => {
+    const savePressed = () => {
         updateRetrospective(props.incident.id, report);
-        setEdited(false);
+        setEditing(false);
+    };
+
+    const publishPressed = () => {
+        publishRetrospective(props.incident.id, report);
+        setEditing(false);
     };
 
     return (
         <TabPageContainer>
             <Header>
                 <Title>{'Report'}</Title>
-                <SaveButton
-                    edited={edited}
-                    onSave={saveDraftPressed}
-                />
+                <HeaderButtonsRight>
+                    <CustomPrimaryButton
+                        onClick={publishPressed}
+                    >
+                        <TextContainer>{'Publish'}</TextContainer>
+                    </CustomPrimaryButton>
+                    <EditButton
+                        editing={editing}
+                        onSave={savePressed}
+                        onEdit={() => setEditing(true)}
+                    />
+                </HeaderButtonsRight>
             </Header>
-            <ReportTextarea
-                value={report}
-                onChange={(e) => {
-                    setReport(e.target.value);
-                    setEdited(true);
-                }}
-            />
+            {editing &&
+                <ReportTextarea
+                    value={report}
+                    onChange={(e) => {
+                        setReport(e.target.value);
+                    }}
+                />
+            }
+            {!editing &&
+                <PostTextContainer>
+                    <PostText text={report}/>
+                </PostTextContainer>
+            }
         </TabPageContainer>
     );
 };
 
 interface SaveButtonProps {
-    edited: boolean
+    editing: boolean;
+    onEdit: () => void
     onSave: () => void
 }
 
 const TextContainer = styled.span`
+    display: flex;
+    justify-content: center;
     width: 65px;
     flex-grow: 1;
 `;
 
-const SaveButton = (props: SaveButtonProps) => {
-    const [saved, setSaved] = useState(false);
-
-    const doSave = () => {
-        props.onSave();
-        setSaved(true);
-        setTimeout(() => setSaved(false), 1000);
-    };
-
-    if (props.edited || saved) {
+const EditButton = (props: SaveButtonProps) => {
+    if (props.editing) {
         return (
-            <PrimaryButtonRight
-                onClick={doSave}
+            <SecondaryButton
+                onClick={props.onSave}
             >
-                <TextContainer>{saved ? 'Saved!' : 'Save Draft'}</TextContainer>
-            </PrimaryButtonRight>
+                <TextContainer>
+                    <i className={'fa fa-floppy-o'}/>
+                    {'Save'}
+                </TextContainer>
+            </SecondaryButton>
         );
     }
 
     return (
-        <SecondaryButtonRight>
-            <TextContainer>{'Save Draft'}</TextContainer>
-        </SecondaryButtonRight>
+        <SecondaryButton
+            onClick={props.onEdit}
+        >
+            <TextContainer>
+                <i className={'icon icon-pencil-outline'}/>
+                {'Edit'}
+            </TextContainer>
+        </SecondaryButton>
     );
 };
 

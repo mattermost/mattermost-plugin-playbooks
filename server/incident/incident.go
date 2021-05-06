@@ -372,7 +372,7 @@ type Service interface {
 	UpdateRetrospective(incidentID, userID, newRetrospective string) error
 
 	// PublishRetrospective publishes the retrospective.
-	PublishRetrospective(incidentID, userID string) error
+	PublishRetrospective(incidentID, text, userID string) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.

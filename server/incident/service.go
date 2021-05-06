@@ -1379,6 +1379,14 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, pub
 		}
 	}
 
+	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add bot to the team")
+	}
+
+	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add bot to the channel")
+	}
+
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
 	}
@@ -1659,13 +1667,27 @@ func (s *ServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospectiv
 	return nil
 }
 
-func (s *ServiceImpl) PublishRetrospective(incidentID, publisherID string) error {
+func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string) error {
 	incidentToPublish, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
-	//TODO: Publish the retrospective
+	// Update the text to keep syncronized
+	incidentToPublish.Retrospective = text
+	if err = s.store.UpdateIncident(incidentToPublish); err != nil {
+		return errors.Wrap(err, "failed to update incident")
+	}
+
+	publisherUser, err := s.pluginAPI.User.Get(publisherID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get publisher user")
+	}
+
+	if _, err := s.poster.PostMessage(incidentToPublish.ChannelID, "@channel Retrospective has been published by @%s\n%s", publisherUser.Username, text); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
 	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
 
 	return nil
