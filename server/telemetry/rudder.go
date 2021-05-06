@@ -30,6 +30,8 @@ const (
 	actionChangeCommander          = "change_commander"
 	actionUpdateStatus             = "update_status"
 	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
+	actionUpdateRetrospective      = "update_retrospective"
+	actionPublishRetrospective     = "publish_retrospective"
 
 	eventTasks                = "tasks"
 	actionAddTask             = "add_task"
@@ -39,9 +41,6 @@ const (
 	actionMoveTask            = "move_task"
 	actionSetAssigneeForTask  = "set_assignee_for_task"
 	actionRunTaskSlashCommand = "run_task_slash_command"
-
-	actionUpdateRetrospective  = "update_retrospective"
-	actionPublishRetrospective = "publish_retrospective"
 
 	eventPlaybook = "playbook"
 	actionUpdate  = "update"
