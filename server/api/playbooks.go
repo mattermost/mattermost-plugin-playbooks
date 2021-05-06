@@ -30,19 +30,25 @@ type PlaybookHandler struct {
 const SettingsKey = "global_settings"
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, config config.Service) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		playbookService: playbookService,
 		pluginAPI:       api,
 		log:             log,
-		config:          config,
+		config:          configService,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
+	if !config.PricingPlanDifferentiationEnabled {
+		e20Middleware := E20LicenseRequired{configService}
+		playbooksRouter.Use(e20Middleware.Middleware)
+	}
+
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
 
 	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
 	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("/count", handler.getPlaybookCount).Methods(http.MethodGet)
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
@@ -71,7 +77,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if pbook.WebhookOnCreationURL != "" {
+	if pbook.WebhookOnCreationEnabled {
 		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
@@ -146,7 +152,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if pbook.WebhookOnCreationURL != "" {
+	if pbook.WebhookOnCreationEnabled {
 		url, err2 := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err2 != nil {
 			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
@@ -327,6 +333,29 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	}
 
 	ReturnJSON(w, list, http.StatusOK)
+}
+
+func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	teamID := query.Get("team_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+		return
+	}
+
+	count, err := h.playbookService.GetNumPlaybooksForTeam(teamID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	countStruct := struct {
+		Count int `json:"count"`
+	}{count}
+
+	ReturnJSON(w, countStruct, http.StatusOK)
 }
 
 func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {

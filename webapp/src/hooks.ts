@@ -135,13 +135,26 @@ export function useProfilesInCurrentChannel() {
 }
 
 export function useCanCreatePlaybooks() {
-    return useSelector<GlobalState, boolean>((state: GlobalState) => {
-        const playbookCreators = globalSettings(state)?.playbook_creators_user_ids;
-        if (!playbookCreators || playbookCreators.length === 0) {
-            return true;
-        }
-        return playbookCreators.includes(getCurrentUserId(state));
-    });
+    const settings = useSelector(globalSettings);
+    const currentUserID = useSelector(getCurrentUserId);
+
+    // This is really a loading state so just assume yes
+    if (!settings) {
+        return true;
+    }
+
+    // No restrictions if length is zero
+    if (settings.playbook_creators_user_ids.length === 0) {
+        return true;
+    }
+
+    return settings.playbook_creators_user_ids.includes(currentUserID);
+}
+
+const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
+
+export function useExperimentalFeaturesEnabled() {
+    return useSelector(selectExperimentalFeatures);
 }
 
 export function useProfilesInChannel(channelId: string) {

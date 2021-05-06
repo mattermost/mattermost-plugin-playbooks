@@ -77,6 +77,21 @@ func (mr *MockStoreMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), arg0)
 }
 
+// GetNumPlaybooksForTeam mocks base method
+func (m *MockStore) GetNumPlaybooksForTeam(arg0 string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNumPlaybooksForTeam", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNumPlaybooksForTeam indicates an expected call of GetNumPlaybooksForTeam
+func (mr *MockStoreMockRecorder) GetNumPlaybooksForTeam(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumPlaybooksForTeam", reflect.TypeOf((*MockStore)(nil).GetNumPlaybooksForTeam), arg0)
+}
+
 // GetPlaybooks mocks base method
 func (m *MockStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	m.ctrl.T.Helper()

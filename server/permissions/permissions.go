@@ -21,28 +21,6 @@ type RequesterInfo struct {
 	IsGuest bool
 }
 
-// ViewIncident returns nil if the userID has permissions to view incidentID
-func ViewIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return nil
-	}
-
-	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
-		return nil
-	}
-
-	channel, err := pluginAPI.Channel.Get(channelID)
-	if err != nil {
-		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", channelID)
-	}
-
-	if channel.Type == model.CHANNEL_OPEN && pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		return nil
-	}
-
-	return ErrNoPermissions
-}
-
 // ViewIncidentFromChannelID returns nil if the userID has permissions to view the incident
 // associated with channelID
 func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client) error {
@@ -199,6 +177,11 @@ func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi
 
 	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
 		return errors.Wrap(noAccessErr, "no team view permission")
+	}
+
+	// If the list of members is empty then the playbook is open for all.
+	if len(pbook.MemberIDs) == 0 {
+		return nil
 	}
 
 	for _, memberID := range pbook.MemberIDs {
