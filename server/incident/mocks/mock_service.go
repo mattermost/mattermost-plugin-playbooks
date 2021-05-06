@@ -406,17 +406,17 @@ func (mr *MockServiceMockRecorder) RemoveReminderPost(arg0 interface{}) *gomock.
 }
 
 // RemoveTimelineEvent mocks base method
-func (m *MockService) RemoveTimelineEvent(arg0, arg1 string) error {
+func (m *MockService) RemoveTimelineEvent(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveTimelineEvent", arg0, arg1)
+	ret := m.ctrl.Call(m, "RemoveTimelineEvent", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveTimelineEvent indicates an expected call of RemoveTimelineEvent
-func (mr *MockServiceMockRecorder) RemoveTimelineEvent(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) RemoveTimelineEvent(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTimelineEvent", reflect.TypeOf((*MockService)(nil).RemoveTimelineEvent), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTimelineEvent", reflect.TypeOf((*MockService)(nil).RemoveTimelineEvent), arg0, arg1, arg2)
 }
 
 // RunChecklistItemSlashCommand mocks base method

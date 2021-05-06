@@ -28,10 +28,16 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
     return async (): Promise<void> => {
         const currentTeam = getCurrentTeam(getState());
         const currentUserId = getCurrentUserId(getState());
+
+        if (!currentTeam || !currentUserId) {
+            return;
+        }
+
         const fetched = await fetchIncidents({
             team_id: currentTeam.id,
             member_id: currentUserId,
         });
+
         dispatch(receivedTeamIncidents(fetched.items));
     };
 }
