@@ -1620,6 +1620,45 @@ func TestNukeDB(t *testing.T) {
 	}
 }
 
+func TestCheckAndSendMessageOnJoin(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		incidentStore := setupIncidentStore(t, db)
+
+		t.Run("two new users get welcome messages, one old user doesn't", func(t *testing.T) {
+			channelID := model.NewId()
+
+			oldID := model.NewId()
+			newID1 := model.NewId()
+			newID2 := model.NewId()
+
+			err := incidentStore.SetViewedChannel(oldID, channelID)
+			require.NoError(t, err)
+
+			// new users get welcome messages
+			hasViewed := incidentStore.HasViewedChannel(newID1, channelID)
+			require.False(t, hasViewed)
+			err = incidentStore.SetViewedChannel(newID1, channelID)
+			require.NoError(t, err)
+
+			hasViewed = incidentStore.HasViewedChannel(newID2, channelID)
+			require.False(t, hasViewed)
+			err = incidentStore.SetViewedChannel(newID2, channelID)
+			require.NoError(t, err)
+
+			// old user does not
+			hasViewed = incidentStore.HasViewedChannel(oldID, channelID)
+			require.True(t, hasViewed)
+
+			// new users do not, now:
+			hasViewed = incidentStore.HasViewedChannel(newID1, channelID)
+			require.True(t, hasViewed)
+			hasViewed = incidentStore.HasViewedChannel(newID2, channelID)
+			require.True(t, hasViewed)
+		})
+	}
+}
+
 func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
 	mockCtrl := gomock.NewController(t)
 
