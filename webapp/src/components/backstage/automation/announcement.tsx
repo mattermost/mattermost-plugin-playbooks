@@ -115,10 +115,8 @@ const MenuList = (props: MenuListComponentProps<Channel>) => {
     );
 };
 
-const ClearIndicator = ({clearValue}: {clearValue: () => void}) => {
-    return (
-        <div onClick={clearValue}>
-            <ClearIcon/>
-        </div>
-    );
-};
+const ClearIndicator = ({clearValue}: {clearValue: () => void}) => (
+    <div onClick={clearValue}>
+        <ClearIcon/>
+    </div>
+);
