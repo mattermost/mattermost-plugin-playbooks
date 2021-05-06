@@ -289,7 +289,7 @@ func playbookProperties(pbook playbook.Playbook, userID string) map[string]inter
 		"DefaultCommanderEnabled":     pbook.DefaultCommanderEnabled,
 		"AnnouncementChannelID":       pbook.AnnouncementChannelID,
 		"AnnouncementChannelEnabled":  pbook.AnnouncementChannelEnabled,
-		"NumWebhookOnCreationURLs":    len(strings.Split(pbook.WebhookOnCreationURL, ",")),
+		"NumWebhookOnCreationURLs":    len(strings.Split(pbook.WebhookOnCreationURL, "\n")),
 		"WebhookOnCreationEnabled":    pbook.WebhookOnCreationEnabled,
 	}
 }

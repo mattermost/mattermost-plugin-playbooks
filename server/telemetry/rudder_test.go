@@ -339,6 +339,93 @@ func TestDisableTelemetry(t *testing.T) {
 	})
 }
 
+func TestPlaybookProperties(t *testing.T) {
+	var dummyPlaybook = playbook.Playbook{
+		ID:                   "id",
+		Title:                "title",
+		Description:          "description",
+		TeamID:               "team_id",
+		CreatePublicIncident: true,
+		CreateAt:             1234,
+		DeleteAt:             9999,
+		NumStages:            2,
+		NumSteps:             3,
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Checklist",
+				Items: []playbook.ChecklistItem{
+					{
+						ID:                     "task_id_1",
+						Title:                  "Test Item",
+						State:                  "",
+						StateModified:          1234,
+						StateModifiedPostID:    "state_modified_post_id",
+						AssigneeID:             "assignee_id",
+						AssigneeModified:       5678,
+						AssigneeModifiedPostID: "assignee_modified_post_id",
+						Command:                "command",
+						CommandLastRun:         100000,
+						Description:            "description",
+					},
+				},
+			},
+			{
+				Title: "Checklist 2",
+				Items: []playbook.ChecklistItem{
+					{Title: "Test Item 2"},
+					{Title: "Test Item 3"},
+				},
+			},
+		},
+		MemberIDs:                   []string{"member_1", "member_2"},
+		BroadcastChannelID:          "broadcast_channel_id",
+		ReminderMessageTemplate:     "reminder_message_template",
+		ReminderTimerDefaultSeconds: 1000,
+		InvitedUserIDs:              []string{"invited_user_id_1", "invited_user_id_2"},
+		InvitedGroupIDs:             []string{"invited_group_id_1", "invited_group_id_2"},
+		InviteUsersEnabled:          true,
+		DefaultCommanderID:          "default_commander_id",
+		DefaultCommanderEnabled:     false,
+		AnnouncementChannelID:       "announcement_channel_id",
+		AnnouncementChannelEnabled:  true,
+		WebhookOnCreationURL:        "webhook_on_creation_url_1\nwebhook_on_creation_url_2",
+		WebhookOnCreationEnabled:    false,
+	}
+
+	properties := playbookProperties(dummyPlaybook, dummyUserID)
+
+	// ID field is reserved by Rudder to uniquely identify every event
+	require.NotContains(t, properties, "ID")
+
+	expectedProperties := map[string]interface{}{
+		"UserActualID":                dummyUserID,
+		"PlaybookID":                  dummyPlaybook.ID,
+		"HasDescription":              true,
+		"TeamID":                      dummyPlaybook.TeamID,
+		"IsPublic":                    dummyPlaybook.CreatePublicIncident,
+		"CreateAt":                    dummyPlaybook.CreateAt,
+		"DeleteAt":                    dummyPlaybook.DeleteAt,
+		"NumChecklists":               len(dummyPlaybook.Checklists),
+		"TotalChecklistItems":         3,
+		"NumSlashCommands":            1,
+		"NumMembers":                  2,
+		"BroadcastChannelID":          dummyPlaybook.BroadcastChannelID,
+		"UsesReminderMessageTemplate": true,
+		"ReminderTimerDefaultSeconds": dummyPlaybook.ReminderTimerDefaultSeconds,
+		"NumInvitedUserIDs":           len(dummyPlaybook.InvitedUserIDs),
+		"NumInvitedGroupIDs":          len(dummyPlaybook.InvitedGroupIDs),
+		"InviteUsersEnabled":          dummyPlaybook.InviteUsersEnabled,
+		"DefaultCommanderID":          dummyPlaybook.DefaultCommanderID,
+		"DefaultCommanderEnabled":     dummyPlaybook.DefaultCommanderEnabled,
+		"AnnouncementChannelID":       dummyPlaybook.AnnouncementChannelID,
+		"AnnouncementChannelEnabled":  dummyPlaybook.AnnouncementChannelEnabled,
+		"NumWebhookOnCreationURLs":    2,
+		"WebhookOnCreationEnabled":    dummyPlaybook.WebhookOnCreationEnabled,
+	}
+
+	require.Equal(t, expectedProperties, properties)
+}
+
 func TestIncidentProperties(t *testing.T) {
 	properties := incidentProperties(dummyIncident, dummyUserID)
 
