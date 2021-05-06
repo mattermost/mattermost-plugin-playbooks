@@ -35,8 +35,9 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {ChannelNamesMap} from 'src/types/backstage';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
-import {currentRHSEventsFilter} from 'src/selectors';
+import {currentRHSEventsFilter, currentIncident} from 'src/selectors';
 import {setRHSEventsFilter} from 'src/actions';
+import {telemetryEventForIncident} from 'src/client';
 
 const Header = styled.div`
     display: flex;
@@ -87,12 +88,15 @@ const RHSTimeline = (props: Props) => {
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
     const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>(currentRHSEventsFilter);
+    const incident = useSelector<GlobalState, Incident>(currentIncident);
 
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
     }, [eventsFilter, allEvents]);
 
     const selectOption = (value: string, checked: boolean) => {
+        telemetryEventForIncident(incident.id, 'timeline_tab_filter_selected');
+
         if (eventsFilter.all && value !== 'all') {
             return;
         }

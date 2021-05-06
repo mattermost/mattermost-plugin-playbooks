@@ -282,7 +282,7 @@ type Service interface {
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
 	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
-	RemoveTimelineEvent(incidentID, eventID string) error
+	RemoveTimelineEvent(incidentID, userID, eventID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -427,27 +427,30 @@ type Telemetry interface {
 	// AddPostToTimeline tracks userID creating a timeline event from a post.
 	AddPostToTimeline(incdnt *Incident, userID string)
 
+	// RemoveTimelineEvent tracks userID removing a timeline event.
+	RemoveTimelineEvent(incdnt *Incident, userID string)
+
 	// ModifyCheckedState tracks the checking and unchecking of items.
-	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
+	ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool)
 
 	// SetAssignee tracks the changing of an assignee on an item.
-	SetAssignee(incidentID, userID string)
+	SetAssignee(incidentID, userID string, task playbook.ChecklistItem)
 
 	// AddTask tracks the creation of a new checklist item.
-	AddTask(incidentID, userID string)
+	AddTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RemoveTask tracks the removal of a checklist item.
-	RemoveTask(incidentID, userID string)
+	RemoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RenameTask tracks the update of a checklist item.
-	RenameTask(incidentID, userID string)
+	RenameTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// MoveTask tracks the unchecking of checked item.
-	MoveTask(incidentID, userID string)
+	MoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunTaskSlashCommand(incidentID, userID string)
+	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
 }
 
 type JobOnceScheduler interface {
