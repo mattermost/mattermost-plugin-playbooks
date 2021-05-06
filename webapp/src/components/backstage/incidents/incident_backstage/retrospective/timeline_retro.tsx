@@ -35,7 +35,7 @@ const FakeButton = styled.div`
     display: inline-flex;
     align-items: center;
     color: var(--button-bg);
-    background: white;
+    background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
     border-radius: 4px;
     padding: 0 14px;
