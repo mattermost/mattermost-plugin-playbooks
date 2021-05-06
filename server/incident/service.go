@@ -1257,27 +1257,38 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	_ = s.sendIncidentToClient(incidentID)
 }
 
-// SendMessageOnJoin sends the incident's (associated with channelID) message-on-join to userID
-func (s *ServiceImpl) SendMessageOnJoin(userID, channelID string) {
+// CheckAndSendMessageOnJoin checks if userID has viewed channelID, and sends
+// theIncident.MessageOnJoin if it exists
+func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, channelID string) bool {
+	hasViewed := s.store.HasViewedChannel(userID, channelID)
+
+	if hasViewed {
+		return true
+	}
+
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 	if err != nil {
 		s.logger.Errorf("failed to resolve incident for channelID: %s; error: %s", channelID, err.Error())
-		return
+		return false
 	}
 
 	theIncident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		s.logger.Errorf("failed to resolve incident for incidentID: %s; error: %s", incidentID, err.Error())
-		return
+		return false
 	}
 
-	if theIncident.MessageOnJoin == "" {
-		return
+	if err = s.store.SetViewedChannel(userID, channelID); err != nil {
+		return false
 	}
 
-	s.poster.EphemeralPost(userID, channelID, &model.Post{
-		Message: theIncident.MessageOnJoin,
-	})
+	if theIncident.MessageOnJoin != "" {
+		s.poster.EphemeralPost(userID, channelID, &model.Post{
+			Message: theIncident.MessageOnJoin,
+		})
+	}
+
+	return true
 }
 
 // UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
@@ -1331,18 +1342,6 @@ func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
 	}
 
 	_ = s.sendIncidentToClient(incidentID)
-}
-
-// HasViewedChannelAndSet returns false if userID has not viewed channelID, true if useID has
-// viewed channelID. The function records that userID has now viewed the channelID.
-func (s *ServiceImpl) HasViewedChannelAndSet(userID, channelID string) bool {
-	hasViewed := s.store.HasViewedChannel(userID, channelID)
-
-	if !hasViewed {
-		s.store.SetViewedChannel(userID, channelID)
-	}
-
-	return hasViewed
 }
 
 func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {

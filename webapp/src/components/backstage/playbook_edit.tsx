@@ -17,7 +17,7 @@ import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 
 import {teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
+import {Playbook, Checklist, emptyPlaybook, defaultMessageOnJoin} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -565,7 +565,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
-                                    messageOnJoin={playbook.message_on_join}
+                                    messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
                                     messageOnJoinChange={handleMessageOnJoinChange}
                                 />
                             </TabContainer>

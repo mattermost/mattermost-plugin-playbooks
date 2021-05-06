@@ -44,7 +44,7 @@ func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Cl
 	return ErrNoPermissions
 }
 
-// EditIncident returns nil if the userID has permissions to edit incidentID
+// EditIncident returns nil if the userID has permissions to edit channelID
 func EditIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil

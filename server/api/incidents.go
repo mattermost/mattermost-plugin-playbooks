@@ -60,8 +60,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete-item", handler.getChecklistAutocompleteItem).Methods(http.MethodGet)
-	incidentsRouter.HandleFunc("/has_viewed/{channel_id:[A-Za-z0-9]+}", handler.hasViewedChannel).Methods(http.MethodGet)
-	incidentsRouter.HandleFunc("/message_on_join/{channel_id:[A-Za-z0-9]+}", handler.messageOnJoin).Methods(http.MethodPost)
+	incidentsRouter.HandleFunc("/check_and_send_message_on_join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -573,37 +572,21 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	ReturnJSON(w, incidentToGet, http.StatusOK)
 }
 
-// hasViewedChannel handles the GET /incidents/has_viewed/{channel_id} endpoint.
-func (h *IncidentHandler) hasViewedChannel(w http.ResponseWriter, r *http.Request) {
+// checkAndSendMessageOnJoin handles the GET /incidents/check_and_send_message_on_join/{channel_id} endpoint.
+func (h *IncidentHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
+	if err := permissions.EditIncident(userID, channelID, h.pluginAPI); err != nil {
 		h.log.Warnf("User %s does not have permissions for channel %s", userID, channelID)
 		HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 			errors.Errorf("record for channel id %s not found", channelID))
 		return
 	}
 
-	hasViewed := h.incidentService.HasViewedChannelAndSet(userID, channelID)
+	hasViewed := h.incidentService.CheckAndSendMessageOnJoin(userID, channelID)
 	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
-}
-
-// messageOnJoin handles the POST /incidents/message_on_join/{channel_id} endpoint.
-func (h *IncidentHandler) messageOnJoin(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	channelID := vars["channel_id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
-		h.log.Warnf("User %s does not have permissions for channel %s", userID, channelID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Not found",
-			errors.Errorf("record for channel id %s not found", channelID))
-		return
-	}
-
-	h.incidentService.SendMessageOnJoin(userID, channelID)
 }
 
 // getCommanders handles the /incidents/commanders api endpoint.

@@ -18,14 +18,12 @@ import {
     playbookDeleted, setHasViewedChannel,
 } from 'src/actions';
 import {
-    fetchHasViewedChannel,
+    fetchCheckAndSendMessageOnJoin,
     fetchIncidentByChannel,
     fetchIncidents,
-    postMessageOnJoin
 } from 'src/client';
 import {clientId, hasViewedByChannelID, myIncidentsMap} from 'src/selectors';
 import {Incident, isIncident, StatusPost} from 'src/types/incident';
-import {Playbook} from 'src/types/playbook';
 
 export const websocketSubscribersToIncidentUpdate = new Set<(incident: Incident) => void>();
 
@@ -202,10 +200,9 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
         }
 
         if (!hasViewedByChannelID(getState())[channelId]) {
-            const hasViewed = await fetchHasViewedChannel(channelId);
-            if (!hasViewed) {
+            const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
+            if (hasViewed) {
                 dispatch(setHasViewedChannel(channelId));
-                postMessageOnJoin(channelId);
             }
         }
     };

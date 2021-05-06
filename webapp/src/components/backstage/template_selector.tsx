@@ -4,7 +4,7 @@
 import React, {FC} from 'react';
 import styled from 'styled-components';
 
-import {Playbook, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
+import {Playbook, emptyPlaybook, newChecklistItem, defaultMessageOnJoin} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import AlertIcon from 'src/components/assets/icons/alert_icon';
 
@@ -30,7 +30,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 '### Impact\n\nDescribe the customer and organizational impact of this incident.',
             reminder_message_template: '### Incident update\n\nDescribe progress and changes to the incident since the last update.\n\n' +
                 '### Change to customer impact\n\nDescribe any changes to customer impact since the last update.',
-            message_on_join: 'templated message on join',
+            message_on_join: defaultMessageOnJoin,
             checklists: [
                 {
                     title: 'Triage',
