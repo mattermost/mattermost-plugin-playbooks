@@ -373,7 +373,7 @@ type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident. If newIncident has an ID, that ID will be used.
+	// CreateIncident creates a new incident. If incdnt has an ID, that ID will be used.
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
