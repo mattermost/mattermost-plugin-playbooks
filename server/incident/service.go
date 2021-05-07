@@ -108,9 +108,6 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 
 	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
 	announcementMsg += fmt.Sprintf("**Commander**: @%s\n", commander.Username)
-	if theIncident.Description != "" {
-		announcementMsg += fmt.Sprintf("**Description**: %s\n", theIncident.Description)
-	}
 
 	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
@@ -184,7 +181,7 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 }
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error) {
+func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, userID string, public bool) (*Incident, error) {
 	if incdnt.DefaultCommanderID != "" {
 		// Check if the user is a member of the incident's team
 		if !permissions.IsMemberOfTeamID(incdnt.DefaultCommanderID, incdnt.TeamID, s.pluginAPI) {
@@ -195,9 +192,30 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 	}
 
 	incdnt.ReporterUserID = userID
+	incdnt.ID = model.NewId()
+
+	team, err := s.pluginAPI.Team.Get(incdnt.TeamID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch team")
+	}
+
+	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+	overviewURL := ""
+	playbookURL := ""
+
+	header := "This is an incident channel. To view more information, select the shield icon then select *Tasks* or *Overview*."
+	if siteURL != "" && pb != nil {
+		overviewURL = fmt.Sprintf("%s/%s/%s/incidents/%s", siteURL, team.Name, s.configService.GetManifest().Id, incdnt.ID)
+		playbookURL = fmt.Sprintf("%s/%s/%s/playbooks/%s", siteURL, team.Name, s.configService.GetManifest().Id, pb.ID)
+		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
+			pb.Title, playbookURL, overviewURL)
+	}
 
 	// Try to create the channel first
-	channel, err := s.createIncidentChannel(incdnt, public)
+	channel, err := s.createIncidentChannel(incdnt, header, public)
 	if err != nil {
 		return nil, err
 	}
@@ -359,10 +377,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, userID string, public boo
 		return nil, errors.Wrapf(err, "failed to get incident original post")
 	}
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
-	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
 	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incdnt.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
@@ -541,7 +555,7 @@ func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary stri
 }
 
 // RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
-func (s *ServiceImpl) RemoveTimelineEvent(incidentID, eventID string) error {
+func (s *ServiceImpl) RemoveTimelineEvent(incidentID, userID, eventID string) error {
 	event, err := s.store.GetTimelineEvent(incidentID, eventID)
 	if err != nil {
 		return err
@@ -551,6 +565,13 @@ func (s *ServiceImpl) RemoveTimelineEvent(incidentID, eventID string) error {
 	if err = s.store.UpdateTimelineEvent(event); err != nil {
 		return err
 	}
+
+	incidentModified, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	s.telemetry.RemoveTimelineEvent(incidentModified, userID)
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
@@ -813,8 +834,6 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 
 	// Send modification message before the actual modification because we need the postID
 	// from the notification message.
-	s.telemetry.ModifyCheckedState(incidentID, userID, newState, incidentToModify.CommanderUserID == userID, itemToCheck.AssigneeID == userID)
-
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	if newState == playbook.ChecklistItemStateOpen {
@@ -833,6 +852,8 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
+
+	s.telemetry.ModifyCheckedState(incidentID, userID, itemToCheck, incidentToModify.CommanderUserID == userID)
 
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
@@ -930,6 +951,8 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 		return errors.Wrapf(err, "failed to update incident; it is now in an inconsistent state")
 	}
 
+	s.telemetry.SetAssignee(incidentID, userID, itemToCheck)
+
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
 		CreateAt:      itemToCheck.AssigneeModified,
@@ -943,8 +966,6 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return errors.Wrap(err, "failed to create timeline event")
 	}
-
-	s.telemetry.SetAssignee(incidentID, userID)
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
@@ -993,6 +1014,8 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 		return "", errors.Wrapf(err, "failed to update incident recording run of slash command")
 	}
 
+	s.telemetry.RunTaskSlashCommand(incidentID, userID, itemToRun)
+
 	eventTime := model.GetMillis()
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
@@ -1006,8 +1029,6 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
 		return "", errors.Wrap(err, "failed to create timeline event")
 	}
-
-	s.telemetry.RunTaskSlashCommand(incidentID, userID)
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return "", err
@@ -1030,7 +1051,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.AddTask(incidentID, userID)
+	s.telemetry.AddTask(incidentID, userID, checklistItem)
 
 	return nil
 }
@@ -1042,6 +1063,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 		return err
 	}
 
+	checklistItem := incidentToModify.Checklists[checklistNumber].Items[itemNumber]
 	incidentToModify.Checklists[checklistNumber].Items = append(
 		incidentToModify.Checklists[checklistNumber].Items[:itemNumber],
 		incidentToModify.Checklists[checklistNumber].Items[itemNumber+1:]...,
@@ -1052,7 +1074,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RemoveTask(incidentID, userID)
+	s.telemetry.RemoveTask(incidentID, userID, checklistItem)
 
 	return nil
 }
@@ -1067,13 +1089,14 @@ func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumb
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
 	incidentToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
+	checklistItem := incidentToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.RenameTask(incidentID, userID)
+	s.telemetry.RenameTask(incidentID, userID, checklistItem)
 
 	return nil
 }
@@ -1105,7 +1128,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	}
 
 	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
-	s.telemetry.MoveTask(incidentID, userID)
+	s.telemetry.MoveTask(incidentID, userID, itemMoved)
 
 	return nil
 }
@@ -1349,13 +1372,7 @@ func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID s
 	return s.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelID, model.PERMISSION_READ_CHANNEL)
 }
 
-func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*model.Channel, error) {
-	channelHeader := "The channel was created by the Incident Collaboration plugin."
-
-	if incdnt.Description != "" {
-		channelHeader = incdnt.Description
-	}
-
+func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, public bool) (*model.Channel, error) {
 	channelType := model.CHANNEL_PRIVATE
 	if public {
 		channelType = model.CHANNEL_OPEN
@@ -1366,7 +1383,7 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, public bool) (*mod
 		Type:        channelType,
 		DisplayName: incdnt.Name,
 		Name:        cleanChannelName(incdnt.Name),
-		Header:      channelHeader,
+		Header:      header,
 	}
 
 	if channel.Name == "" {

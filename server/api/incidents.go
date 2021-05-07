@@ -387,6 +387,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	public := true
+	var thePlaybook *playbook.Playbook
 	if newIncident.PlaybookID != "" {
 		pb, err := h.playbookService.Get(newIncident.PlaybookID)
 		if err != nil {
@@ -427,6 +428,8 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		if pb.MessageOnJoinEnabled {
 			newIncident.MessageOnJoin = pb.MessageOnJoin
 		}
+
+		thePlaybook = &pb
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -448,7 +451,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			return nil, errors.New("user is not a member of the channel containing the incident's original post")
 		}
 	}
-	return h.incidentService.CreateIncident(&newIncident, userID, public)
+	return h.incidentService.CreateIncident(&newIncident, thePlaybook, userID, public)
 }
 
 func (h *IncidentHandler) getRequesterInfo(userID string) (permissions.RequesterInfo, error) {
@@ -910,9 +913,10 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
 	eventID := vars["eventID"]
 
-	if err := h.incidentService.RemoveTimelineEvent(id, eventID); err != nil {
+	if err := h.incidentService.RemoveTimelineEvent(id, userID, eventID); err != nil {
 		HandleError(w, err)
 		return
 	}
