@@ -130,7 +130,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		testCreate.AddTextArgument("Name of the incident", "Incident name", "")
 		test.AddCommand(testCreate)
 
-		testData := model.NewAutocompleteData("bulk-data", "[ongoing] [ended] [begin] [end] [seed]", "Generate random test data in bulk")
+		testData := model.NewAutocompleteData("bulk-data", "[ongoing] [ended] [days] [seed]", "Generate random test data in bulk")
 		testData.AddTextArgument("An integer indicating how many ongoing incidents will be generated.", "Number of ongoing incidents", "")
 		testData.AddTextArgument("An integer indicating how many ended incidents will be generated.", "Number of ended incidents", "")
 		testData.AddTextArgument("Date in format 2020-01-31", "First possible creation date", "")
@@ -1117,8 +1117,8 @@ func (r *Runner) actionTestCreate(params []string) {
 }
 
 func (r *Runner) actionTestData(params []string) {
-	if len(params) < 4 {
-		r.postCommandResponse("`/incident test bulk-data` expects at least 4 arguments: [ongoing] [ended] [begin] [end]. Optionally, a fifth argument can be added: [seed].")
+	if len(params) < 3 {
+		r.postCommandResponse("`/incident test bulk-data` expects at least 3 arguments: [ongoing] [ended] [days]. Optionally, a fourth argument can be added: [seed].")
 		return
 	}
 
@@ -1134,23 +1134,34 @@ func (r *Runner) actionTestData(params []string) {
 		return
 	}
 
-	begin, err := time.ParseInLocation("2006-01-02", params[2], time.Now().Location())
+	days, err := strconv.Atoi((params[2]))
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("The provided value for the first possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[2]))
+		r.postCommandResponse(fmt.Sprintf("The provided value for days, '%s', is not an integer.", params[2]))
 		return
 	}
 
-	end, err := time.ParseInLocation("2006-01-02", params[3], time.Now().Location())
+	if days < 1 {
+		r.postCommandResponse(fmt.Sprintf("The provided value for days, '%d', is not greater than 0.", days))
+		return
+	}
+
+	begin, err := time.ParseInLocation("2006-01-02", time.Now().AddDate(0, 0, -days).Format("2006-01-02"), time.Now().Location())
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("The provided value for the last possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[3]))
+		r.warnUserAndLogErrorf("unable to parse in location on time.Now(): %v", err)
+		return
+	}
+
+	end, err := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02"), time.Now().Location())
+	if err != nil {
+		r.warnUserAndLogErrorf("unable to parse in location on time.Now(): %v", err)
 		return
 	}
 
 	seed := time.Now().Unix()
-	if len(params) > 4 {
-		parsedSeed, err := strconv.ParseInt(params[4], 10, 0)
+	if len(params) > 3 {
+		parsedSeed, err := strconv.ParseInt(params[3], 10, 0)
 		if err != nil {
-			r.postCommandResponse(fmt.Sprintf("The provided value for the random seed, '%s', is not an integer.", params[4]))
+			r.postCommandResponse(fmt.Sprintf("The provided value for the random seed, '%s', is not an integer.", params[3]))
 			return
 		}
 
@@ -1262,11 +1273,6 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 
 	if numIncidents == 0 {
 		r.postCommandResponse("Zero incidents created.")
-		return
-	}
-
-	if !end.After(begin) {
-		r.postCommandResponse("`end` must be a later date than `begin`")
 		return
 	}
 
