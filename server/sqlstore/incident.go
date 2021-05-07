@@ -211,16 +211,16 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 	}, nil
 }
 
-// CreateIncident creates a new incident.
+// CreateIncident creates a new incident. If newIncident has an ID, that ID will be used.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
 	}
-	if newIncident.ID != "" {
-		return nil, errors.New("ID should not be set")
-	}
 	incidentCopy := newIncident.Clone()
-	incidentCopy.ID = model.NewId()
+
+	if incidentCopy.ID == "" {
+		incidentCopy.ID = model.NewId()
+	}
 
 	rawIncident, err := toSQLIncident(*incidentCopy)
 	if err != nil {

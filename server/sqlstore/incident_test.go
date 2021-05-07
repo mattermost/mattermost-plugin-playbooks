@@ -894,11 +894,6 @@ func TestCreateAndGetIncident(t *testing.T) {
 				ExpectedErr: errors.New("incident is nil"),
 			},
 			{
-				Name:        "Incident should not have ID set",
-				Incident:    NewBuilder(t).WithID().ToIncident(),
-				ExpectedErr: errors.New("ID should not be set"),
-			},
-			{
 				Name:        "Incident /can/ contain checklists with no items",
 				Incident:    NewBuilder(t).WithChecklists([]int{0}).ToIncident(),
 				ExpectedErr: nil,

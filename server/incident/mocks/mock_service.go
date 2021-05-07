@@ -94,18 +94,18 @@ func (mr *MockServiceMockRecorder) ChangeCreationDate(arg0, arg1 interface{}) *g
 }
 
 // CreateIncident mocks base method
-func (m *MockService) CreateIncident(arg0 *incident.Incident, arg1 string, arg2 bool) (*incident.Incident, error) {
+func (m *MockService) CreateIncident(arg0 *incident.Incident, arg1 *playbook.Playbook, arg2 string, arg3 bool) (*incident.Incident, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateIncident", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "CreateIncident", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*incident.Incident)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateIncident indicates an expected call of CreateIncident
-func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1, arg2, arg3)
 }
 
 // EditChecklistItem mocks base method
