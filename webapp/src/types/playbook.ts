@@ -172,7 +172,7 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command_last_run === 'number';
 }
 
-export const defaultMessageOnJoin = 'Welcome. This channel was automatically created by an Incident Collaboration playbook. To view information about this incident, such as the commander\'s name, and list of tasks, select the shield icon in the channel header. You can also use the `/incident info` slash command.\n' +
+export const defaultMessageOnJoin = 'Welcome. This channel was automatically created by an Incident Collaboration playbook. To view information about this incident, such as the commander\'s name and list of tasks, select the shield icon in the channel header. You can also use the `/incident info` slash command.\n' +
     '\n' +
     'You may find the following resources helpful:\n' +
     '\n' +
