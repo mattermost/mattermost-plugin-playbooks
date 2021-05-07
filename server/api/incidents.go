@@ -134,7 +134,7 @@ func (h *IncidentHandler) checkViewPermissions(next http.Handler) http.Handler {
 			return
 		}
 
-		if err := permissions.ViewIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
+		if err := permissions.ViewIncidentFromChannelID(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
 				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -498,7 +498,7 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := permissions.ViewIncident(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
+	if err := permissions.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
@@ -518,7 +518,7 @@ func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := permissions.ViewIncident(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
+	if err := permissions.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
@@ -888,9 +888,10 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
 	eventID := vars["eventID"]
 
-	if err := h.incidentService.RemoveTimelineEvent(id, eventID); err != nil {
+	if err := h.incidentService.RemoveTimelineEvent(id, userID, eventID); err != nil {
 		HandleError(w, err)
 		return
 	}
@@ -909,7 +910,7 @@ func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r 
 		return
 	}
 
-	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI); err != nil {
+	if err = permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
@@ -934,7 +935,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err = permissions.ViewIncident(userID, channelID, h.pluginAPI); err != nil {
+	if err = permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
 		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
