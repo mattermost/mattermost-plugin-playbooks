@@ -1147,7 +1147,7 @@ func (r *Runner) actionTestData(params []string) {
 
 	begin, err := time.ParseInLocation("2006-01-02", time.Now().AddDate(0, 0, -days).Format("2006-01-02"), time.Now().Location())
 	if err != nil {
-		r.warnUserAndLogErrorf("unable to parse in location on time.Now(): %v", err)
+		r.warnUserAndLogErrorf("unable to parse in location on time.Now().AddDate: %v", err)
 		return
 	}
 
