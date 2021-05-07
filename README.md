@@ -6,7 +6,7 @@
 
  Mattermost Incident Collaboration allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html). 
 
-![Mattermost Incident Collaboration](docs/assets/incident_response_landing.png)
+![Mattermost Incident Collaboration](assets/incident_response.png)
 
 ## License
 
