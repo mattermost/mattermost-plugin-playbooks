@@ -90,20 +90,6 @@ func (mr *MockServiceMockRecorder) IsLicensed() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLicensed", reflect.TypeOf((*MockService)(nil).IsLicensed))
 }
 
-// IsPricingPlanDifferentiationEnabled mocks base method
-func (m *MockService) IsPricingPlanDifferentiationEnabled() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsPricingPlanDifferentiationEnabled")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsPricingPlanDifferentiationEnabled indicates an expected call of IsPricingPlanDifferentiationEnabled
-func (mr *MockServiceMockRecorder) IsPricingPlanDifferentiationEnabled() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPricingPlanDifferentiationEnabled", reflect.TypeOf((*MockService)(nil).IsPricingPlanDifferentiationEnabled))
-}
-
 // RegisterConfigChangeListener mocks base method
 func (m *MockService) RegisterConfigChangeListener(arg0 func()) string {
 	m.ctrl.T.Helper()

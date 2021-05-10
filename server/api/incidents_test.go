@@ -64,11 +64,6 @@ func TestIncidents(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-
-		configService.EXPECT().
-			IsPricingPlanDifferentiationEnabled().
-			Return(false)
-
 		handler = NewHandler(client, configService)
 
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -76,11 +71,6 @@ func TestIncidents(t *testing.T) {
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		telemetryService = &telemetry.NoopTelemetry{}
-
-		configService.EXPECT().
-			IsPricingPlanDifferentiationEnabled().
-			Return(false)
-
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
 	}
 
@@ -97,45 +87,6 @@ func TestIncidents(t *testing.T) {
 				EnabledTeams: []string{},
 			})
 	}
-
-	t.Run("create valid incident, unlicensed", func(t *testing.T) {
-		reset(t)
-
-		configService.EXPECT().
-			IsLicensed().
-			Return(false)
-
-		setDefaultExpectations(t)
-
-		withid := playbook.Playbook{
-			ID:                   "playbookid1",
-			Title:                "My Playbook",
-			TeamID:               "testTeamID",
-			CreatePublicIncident: true,
-			MemberIDs:            []string{"testUserID"},
-		}
-
-		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
-		}
-
-		incidentJSON, err := json.Marshal(testIncident)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/incidents", bytes.NewBuffer(incidentJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-	})
 
 	t.Run("create valid incident, but it's disabled on this team", func(t *testing.T) {
 		reset(t)
@@ -825,10 +776,6 @@ func TestIncidents(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-
-		configService.EXPECT().
-			IsPricingPlanDifferentiationEnabled().
-			Return(true)
 		handler = NewHandler(client, configService)
 
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -836,11 +783,6 @@ func TestIncidents(t *testing.T) {
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		telemetryService = &telemetry.NoopTelemetry{}
-
-		configService.EXPECT().
-			IsPricingPlanDifferentiationEnabled().
-			Return(true)
-
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
 
 		configService.EXPECT().
