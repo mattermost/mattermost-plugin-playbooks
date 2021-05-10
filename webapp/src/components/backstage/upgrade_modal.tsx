@@ -335,9 +335,8 @@ const SizedGenericModal = styled(GenericModal)`
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 72px;
-        margin-top: 36px;
-        margin-bottom: 52px;
+        margin-top: 32px;
+        margin-bottom: 48px;
         padding: 0;
     }
 `;
