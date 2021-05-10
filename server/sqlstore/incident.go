@@ -606,23 +606,28 @@ func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp 
 
 // HasViewed returns true if userID has viewed channelID
 func (s *incidentStore) HasViewedChannel(userID, channelID string) bool {
-	query := s.queryBuilder.
-		Select("COUNT(*)").
-		From("IR_ViewedChannel vc").
-		Where(sq.And{sq.Eq{"vc.ChannelID": channelID}, sq.Eq{"vc.UserID": userID}})
+	query := sq.Expr(
+		`SELECT EXISTS(SELECT *
+                         FROM IR_ViewedChannel as vc
+                        WHERE vc.ChannelID = ?
+                          AND vc.UserID = ?)
+             `, channelID, userID)
 
-	var count int
-	err := s.store.getBuilder(s.store.db, &count, query)
+	var exists bool
+	err := s.store.getBuilder(s.store.db, &exists, query)
 	if err != nil {
 		return false
 	}
 
-	return count > 0
+	return exists
 }
 
-// SetViewed records that userID has viewed channelID. NOTE: does not check if there is already a
-// record of that userID/channelID (i.e., will create duplicate rows)
+// SetViewed records that userID has viewed channelID.
 func (s *incidentStore) SetViewedChannel(userID, channelID string) error {
+	if s.HasViewedChannel(userID, channelID) {
+		return nil
+	}
+
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_ViewedChannel").
 		SetMap(map[string]interface{}{

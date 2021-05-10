@@ -670,9 +670,9 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_ViewedChannel
 					(
-						ChannelID VARCHAR(26) NOT NULL,
-						UserID    VARCHAR(26) NOT NULL,
-						INDEX     IR_ViewedChannel_ChannelID (ChannelID)
+						ChannelID     VARCHAR(26) NOT NULL,
+						UserID        VARCHAR(26) NOT NULL,
+						UNIQUE INDEX  IR_ViewedChannel_ChannelID_UserID (ChannelID, UserID)
 					)
 				` + MySQLCharset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_ViewedChannel")
@@ -700,8 +700,8 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_ViewedChannel")
 				}
 
-				if _, err := e.Exec(createPGIndex("IR_ViewedChannel_ChannelID", "IR_ViewedChannel", "ChannelID")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_ViewedChannel_ChannelID")
+				if _, err := e.Exec(createUniquePGIndex("IR_ViewedChannel_ChannelID_UserID", "IR_ViewedChannel", "ChannelID, UserID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_ViewedChannel_ChannelID_UserID")
 				}
 			}
 

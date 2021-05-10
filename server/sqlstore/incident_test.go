@@ -1618,6 +1618,7 @@ func TestNukeDB(t *testing.T) {
 func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
+		_, _ = setupSQLStore(t, db)
 		incidentStore := setupIncidentStore(t, db)
 
 		t.Run("two new users get welcome messages, one old user doesn't", func(t *testing.T) {
@@ -1628,6 +1629,12 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 			newID2 := model.NewId()
 
 			err := incidentStore.SetViewedChannel(oldID, channelID)
+			require.NoError(t, err)
+
+			// Setting multiple times is okay
+			err = incidentStore.SetViewedChannel(oldID, channelID)
+			require.NoError(t, err)
+			err = incidentStore.SetViewedChannel(oldID, channelID)
 			require.NoError(t, err)
 
 			// new users get welcome messages
@@ -1650,6 +1657,26 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 			require.True(t, hasViewed)
 			hasViewed = incidentStore.HasViewedChannel(newID2, channelID)
 			require.True(t, hasViewed)
+
+			var rows int64
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_ViewedChannel")
+			require.NoError(t, err)
+			require.Equal(t, 3, int(rows))
+
+			// cannot add a duplicate row
+			if driverName == model.DATABASE_DRIVER_POSTGRES {
+				_, err = db.Exec("INSERT INTO IR_ViewedChannel (UserID, ChannelID) VALUES ($1, $2)", oldID, channelID)
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "duplicate key value")
+			} else {
+				_, err = db.Exec("INSERT INTO IR_ViewedChannel (UserID, ChannelID) VALUES (?, ?)", oldID, channelID)
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "Duplicate entry")
+			}
+
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_ViewedChannel")
+			require.NoError(t, err)
+			require.Equal(t, 3, int(rows))
 		})
 	}
 }
