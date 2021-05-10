@@ -101,7 +101,7 @@ outer:
 		}
 	}
 	model.ParseSlackAttachment(originalPost, originalAttachments)
-	err = h.pluginAPI.Post.UpdatePost(originalPost)
+	_ = h.pluginAPI.Post.UpdatePost(originalPost)
 
 	post := &model.Post{
 		Id: requestData.PostId,
