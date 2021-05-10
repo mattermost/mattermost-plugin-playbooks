@@ -133,7 +133,7 @@ interface Props {
 }
 
 const TemplateSelector: FC<Props> = ({templates = PresetTemplates, onSelect}: Props) => {
-    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam()
+    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
 
     return (
         <BackgroundColorContainer>
