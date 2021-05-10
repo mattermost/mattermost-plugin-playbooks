@@ -104,8 +104,10 @@ const getModalData = (onHide: () => void, requestLicense: HandlerType, notifyAdm
                 {' to avoid any disruption.'}
             </span>
         ),
-        confirmButtonText: 'Purchase license now',
-        handleConfirm: () => window.open('https://customers.mattermost.com/signup', '_blank'),
+        confirmButtonText: 'Done',
+        handleConfirm: onHide,
+        // eslint-disable-next-line no-undefined
+        handleCancel: undefined,
     });
 
     const UserStartModal = Object.assign({...CommonModal}, {
