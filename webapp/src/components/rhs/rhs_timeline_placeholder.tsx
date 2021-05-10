@@ -125,7 +125,7 @@ const Button : FC<ButtonProps> = (props: ButtonProps) => {
         return null;
     }
 
-    let buttonText = 'Notify Administrator';
+    let buttonText = 'Notify System Admin';
     let handleClick : HandlerType = props.notifyAdmins;
 
     if (props.isCurrentUserAdmin) {
