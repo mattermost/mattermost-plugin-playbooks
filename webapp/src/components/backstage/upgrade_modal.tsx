@@ -122,7 +122,9 @@ const getModalData = (onHide: () => void, requestLicense: HandlerType, notifyAdm
     });
 
     const UserSuccessModal = Object.assign({...UserStartModal}, {
-        helpText: 'A notification has been sent to your administrator.',
+        illustration: <UpgradeSuccessIllustrationSvg/>,
+        titleText: 'Thank you!',
+        helpText: 'Your System Admin has been notified',
         confirmButtonText: 'Done',
         handleConfirm: onHide,
         // eslint-disable-next-line no-undefined

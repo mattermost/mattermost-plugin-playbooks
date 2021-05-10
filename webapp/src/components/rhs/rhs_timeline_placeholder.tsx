@@ -9,6 +9,7 @@ import General from 'mattermost-redux/constants/general';
 import Spinner from 'src/components/assets/icons/spinner';
 
 import UpgradeTimelineSvg from 'src/components/assets/upgrade_timeline_svg';
+import UpgradeTimelineSuccessSvg from 'src/components/assets/upgrade_timeline_success_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {getAdminAnalytics} from 'src/selectors';
 import StartTrialNotice from 'src/components/backstage/start_trial_notice';
@@ -60,17 +61,21 @@ const TimelineUpgradePlaceholder : FC = () => {
         }
     };
 
+    let illustration = <UpgradeTimelineSvg/>;
+    let titleText = 'Keep all your incident events in one place';
     let helpText = 'Make retros easy. Your timeline includes all the events in your incident, separated by type, and downloadable for offline review.';
     if (actionState === ActionState.Success) {
-        helpText = 'A notification has been sent to your administrator.';
+        illustration = <UpgradeTimelineSuccessSvg/>;
+        titleText = 'Thank you!';
+        helpText = 'Your System Admin has been notified.';
     }
 
     return (
         <UpgradeWrapper>
-            <UpgradeTimelineSvg/>
+            {illustration}
             <UpgradeContent>
                 <UpgradeHeader>
-                    <Title>{'Keep all your incident events in one place'}</Title>
+                    <Title>{titleText}</Title>
                     <HelpText>{helpText}</HelpText>
                 </UpgradeHeader>
                 <Button
