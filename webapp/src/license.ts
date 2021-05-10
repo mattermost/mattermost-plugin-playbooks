@@ -21,7 +21,7 @@ export const isE20LicensedOrDevelopment = (state: GlobalState): boolean => {
 export const isE10LicensedOrDevelopment = (state: GlobalState): boolean => {
     const license = getLicense(state);
 
-    // Use the presence of a known e10 feature as a check to determine licensing.
+    // Use the presence of a known E10 feature as a check to determine licensing.
     if (license?.GuestAccounts === 'true') {
         return true;
     }

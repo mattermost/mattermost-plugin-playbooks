@@ -110,13 +110,13 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
 	switch messageType {
 	case "playbook":
 		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
-		title = "Create multiple Playbooks in Incident Collaboration with Mattermost Enterprise E10"
-		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In E10 you can create an unlimited number of playbooks for your team.\n" + footer
+		title = "Create multiple playbooks in Incident Collaboration with Mattermost Enterprise E10"
+		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In Enterprise Edition E10 you can create an unlimited number of playbooks for your team.\n" + footer
 
 	case "message_to_timeline", "view_timeline":
 		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
-		title = "Keep all your incident events in one place with Mattermost Enterprise E10"
-		text = "Your timeline lists all the events in your incident, separated by type. You can download your timeline and use it for your retrospectives to improve how you respond to incidents. E10 includes access to timeline features such as adding messages from within the incident channel.\n" + footer
+		title = "Keep all your incident events in one place with Mattermost Enterprise Edition E10"
+		text = "Your timeline lists all the events in your incident, separated by type. You can download your timeline and use it for your retrospectives to improve how you respond to incidents. Enterprise Edition E10 includes access to timeline features such as adding messages from within the incident channel.\n" + footer
 	}
 
 	attachments := []*model.SlackAttachment{

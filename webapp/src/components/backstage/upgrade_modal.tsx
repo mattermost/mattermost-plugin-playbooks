@@ -95,7 +95,7 @@ const getModalData = (onHide: () => void, requestLicense: HandlerType, notifyAdm
         titleText: 'Your 30-day trial has started',
         helpText: (
             <span>
-                {`Your Enterprise E10 license expires on ${expiryDate}. Purchase a license at anytime through the `}
+                {`Your Enterprise E10 license expires on ${expiryDate}. You can purchase a license at any time through the `}
                 <a
                     href='https://customers.mattermost.com/signup'
                     target={'_blank'}
@@ -111,7 +111,7 @@ const getModalData = (onHide: () => void, requestLicense: HandlerType, notifyAdm
     });
 
     const UserStartModal = Object.assign({...CommonModal}, {
-        helpText: helpText + ' Notify your administrator to upgrade.',
+        helpText: helpText + ' Notify your System Admin to upgrade.',
         confirmButtonText: 'Notify Administrator',
         handleConfirm: notifyAdmins,
     });
