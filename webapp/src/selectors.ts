@@ -3,6 +3,7 @@
 
 import {createSelector} from 'reselect';
 
+import General from 'mattermost-redux/constants/general';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
@@ -12,6 +13,7 @@ import {getUsers} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {pluginId} from 'src/manifest';
 import {
@@ -165,3 +167,11 @@ export const currentTeamNumPlaybooks = createSelector(
 
 export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;
+
+export const isCurrentUserAdmin = createSelector(
+    getCurrentUser,
+    (user) => {
+        const rolesArray = user.roles.split(' ');
+        return rolesArray.includes(General.SYSTEM_ADMIN_ROLE);
+    },
+);
