@@ -33,8 +33,4 @@ type Service interface {
 
 	// IsLicensed returns true when the server is appropriately licensed to run this plugin.
 	IsLicensed() bool
-
-	// IsPricingPlanDifferentiationEnabled returns true when the server meets the criteria for which
-	// the pricing plan differentiation features must be shown
-	IsPricingPlanDifferentiationEnabled() bool
 }

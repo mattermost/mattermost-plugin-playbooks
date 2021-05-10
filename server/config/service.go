@@ -187,8 +187,3 @@ func (c *ServiceImpl) IsCloud() bool {
 func (c *ServiceImpl) IsLicensed() bool {
 	return pluginapi.IsE20LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
 }
-
-func (c *ServiceImpl) IsPricingPlanDifferentiationEnabled() bool {
-	// Disable for all cloud servers
-	return !c.IsCloud()
-}

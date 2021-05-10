@@ -25,10 +25,6 @@ func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster,
 	}
 
 	botRouter := router.PathPrefix("/bot").Subrouter()
-	if !config.IsPricingPlanDifferentiationEnabled() {
-		e20Middleware := E20LicenseRequired{config}
-		botRouter.Use(e20Middleware.Middleware)
-	}
 
 	notifyAdminsRouter := botRouter.PathPrefix("/notify-admins").Subrouter()
 	notifyAdminsRouter.HandleFunc("", handler.notifyAdmins).Methods(http.MethodPost)

@@ -1398,11 +1398,6 @@ func (r *Runner) Execute() error {
 		return err
 	}
 
-	if !r.configService.IsPricingPlanDifferentiationEnabled() && !r.configService.IsLicensed() {
-		r.postCommandResponse("Incident Collaboration requires a Mattermost Cloud or Mattermost E20 License.")
-		return nil
-	}
-
 	split := strings.Fields(r.args.Command)
 	command := split[0]
 	parameters := []string{}
