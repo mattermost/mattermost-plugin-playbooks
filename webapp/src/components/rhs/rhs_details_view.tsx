@@ -15,10 +15,13 @@ import RHSIncidentTasks from 'src/components/rhs/rhs_incident_tasks';
 import RHSFooter from 'src/components/rhs/rhs_footer';
 import {Incident} from 'src/types/incident';
 import RHSTimeline from 'src/components/rhs/rhs_timeline';
+import {useAllowTimelineViewInCurrentTeam} from 'src/hooks';
 
 const RHSDetailsView = () => {
     const incident = useSelector<GlobalState, Incident | undefined>(currentIncident);
     const currentTabState = useSelector<GlobalState, RHSTabState>(currentRHSTabState);
+    const allowTimelineView = useAllowTimelineViewInCurrentTeam();
+    const showFooter = currentTabState !== RHSTabState.ViewingTimeline || allowTimelineView;
 
     if (!incident) {
         return null;
@@ -42,7 +45,7 @@ const RHSDetailsView = () => {
             <RHSContent>
                 <RHSTabView/>
                 {currentView}
-                <RHSFooter incident={incident}/>
+                {showFooter && <RHSFooter incident={incident}/>}
             </RHSContent>
         </RHSContainer>
     );
