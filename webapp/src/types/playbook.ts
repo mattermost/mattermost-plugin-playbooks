@@ -176,5 +176,5 @@ export const defaultMessageOnJoin = 'Welcome. This channel was automatically cre
     '\n' +
     'You may find the following resources helpful:\n' +
     '\n' +
-    '`[Link to list of useful contacts](your-url-here)`\n' +
+    '`[Mattermost Incident Collaboration channel](https://community.mattermost.com/core/channels/ee-incident-response)`\n' +
     '`[Link to list of processes](your-url-here)`';
