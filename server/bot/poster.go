@@ -110,7 +110,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
 	switch messageType {
 	case "playbook":
 		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
-		title = "Create multiple playbooks in Incident Collaboration with Mattermost Enterprise E10"
+		title = "Create multiple playbooks in Incident Collaboration with Mattermost Enterprise Edition E10"
 		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In Enterprise Edition E10 you can create an unlimited number of playbooks for your team.\n" + footer
 
 	case "message_to_timeline", "view_timeline":
