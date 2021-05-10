@@ -83,6 +83,26 @@ func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	originalPost, err := h.pluginAPI.Post.GetPost(requestData.PostId)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	// Modify the button text while the license is downloading
+	originalAttachments := originalPost.Attachments()
+outer:
+	for _, attachment := range originalAttachments {
+		for _, action := range attachment.Actions {
+			if action.Id == "message" {
+				action.Name = "Requesting trial..."
+				break outer
+			}
+		}
+	}
+	model.ParseSlackAttachment(originalPost, originalAttachments)
+	err = h.pluginAPI.Post.UpdatePost(originalPost)
+
 	post := &model.Post{
 		Id: requestData.PostId,
 	}
