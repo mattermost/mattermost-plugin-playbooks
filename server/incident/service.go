@@ -1641,6 +1641,36 @@ func (s *ServiceImpl) sendIncidentToClient(incidentID string) error {
 	return nil
 }
 
+func (s *ServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospective string) error {
+	incidentToModify, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	incidentToModify.Retrospective = newRetrospective
+
+	if err = s.store.UpdateIncident(incidentToModify); err != nil {
+		return errors.Wrap(err, "failed to update incident")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(incidentUpdatedWSEvent, incidentToModify, incidentToModify.ChannelID)
+	s.telemetry.UpdateRetrospective(incidentToModify, updaterID)
+
+	return nil
+}
+
+func (s *ServiceImpl) PublishRetrospective(incidentID, publisherID string) error {
+	incidentToPublish, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	//TODO: Publish the retrospective
+	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
+
+	return nil
+}
+
 func getUserDisplayName(user *model.User) string {
 	if user == nil {
 		return ""

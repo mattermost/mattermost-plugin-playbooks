@@ -26,6 +26,7 @@ export interface Incident {
     reminder_post_id: string;
     broadcast_channel_id: string;
     timeline_events: TimelineEvent[];
+    retrospective: string;
 }
 
 export interface StatusPost {

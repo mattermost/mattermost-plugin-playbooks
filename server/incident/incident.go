@@ -52,6 +52,7 @@ type Incident struct {
 	DefaultCommanderID      string               `json:"default_commander_id"`
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
+	Retrospective           string               `json:"retrospective"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -366,6 +367,12 @@ type Service interface {
 	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 	// was removed from the channel by actorID.
 	UserHasLeftChannel(userID, channelID, actorID string)
+
+	// UpdateRetrospective updates the retrospective for the given incident.
+	UpdateRetrospective(incidentID, userID, newRetrospective string) error
+
+	// PublishRetrospective publishes the retrospective.
+	PublishRetrospective(incidentID, userID string) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -460,6 +467,12 @@ type Telemetry interface {
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
 	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
+
+	// UpdateRetrospective event
+	UpdateRetrospective(incident *Incident, userID string)
+
+	// PublishRetrospective event
+	PublishRetrospective(incident *Incident, userID string)
 }
 
 type JobOnceScheduler interface {

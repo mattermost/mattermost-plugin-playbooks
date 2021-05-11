@@ -31,6 +31,8 @@ const (
 	actionChangeCommander          = "change_commander"
 	actionUpdateStatus             = "update_status"
 	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
+	actionUpdateRetrospective      = "update_retrospective"
+	actionPublishRetrospective     = "publish_retrospective"
 	actionRemoveTimelineEvent      = "remove_timeline_event"
 
 	eventTasks                = "tasks"
@@ -252,6 +254,18 @@ func (t *RudderTelemetry) MoveTask(incidentID, userID string, task playbook.Chec
 func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRunTaskSlashCommand
+	t.track(eventTasks, properties)
+}
+
+func (t *RudderTelemetry) UpdateRetrospective(incident *incident.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
+	properties["Action"] = actionUpdateRetrospective
+	t.track(eventTasks, properties)
+}
+
+func (t *RudderTelemetry) PublishRetrospective(incident *incident.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
+	properties["Action"] = actionPublishRetrospective
 	t.track(eventTasks, properties)
 }
 

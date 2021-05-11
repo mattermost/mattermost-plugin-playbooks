@@ -89,3 +89,9 @@ func (t *NoopTelemetry) ChangeCommander(*incident.Incident, string) {
 // RunTaskSlashCommand does nothing
 func (t *NoopTelemetry) RunTaskSlashCommand(string, string, playbook.ChecklistItem) {
 }
+
+func (t *NoopTelemetry) UpdateRetrospective(incident *incident.Incident, userID string) {
+}
+
+func (t *NoopTelemetry) PublishRetrospective(incident *incident.Incident, userID string) {
+}
