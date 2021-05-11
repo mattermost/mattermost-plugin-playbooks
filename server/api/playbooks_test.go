@@ -151,7 +151,7 @@ func TestPlaybooks(t *testing.T) {
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
-			IsLicensed().
+			IsE10Licensed().
 			Return(true).
 			Times(1)
 
@@ -177,7 +177,7 @@ func TestPlaybooks(t *testing.T) {
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
-			IsLicensed().
+			IsE10Licensed().
 			Return(false)
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(1, nil)
@@ -208,7 +208,7 @@ func TestPlaybooks(t *testing.T) {
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
 		configService.EXPECT().
-			IsLicensed().
+			IsE10Licensed().
 			Return(false).
 			Times(1)
 

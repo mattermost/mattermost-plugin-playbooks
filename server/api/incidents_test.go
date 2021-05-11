@@ -78,7 +78,7 @@ func TestIncidents(t *testing.T) {
 		t.Helper()
 
 		configService.EXPECT().
-			IsLicensed().
+			IsE10Licensed().
 			Return(true)
 
 		configService.EXPECT().
@@ -786,7 +786,7 @@ func TestIncidents(t *testing.T) {
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
 
 		configService.EXPECT().
-			IsLicensed().
+			IsE10Licensed().
 			Return(false)
 
 		configService.EXPECT().
