@@ -636,6 +636,15 @@ func (s *incidentStore) SetViewedChannel(userID, channelID string) error {
 		}))
 
 	if err != nil {
+		duplicateMsg := "duplicate key value"
+		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			duplicateMsg = "Duplicate entry"
+		}
+
+		if strings.Contains(err.Error(), duplicateMsg) {
+			return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+		}
+
 		return errors.Wrapf(err, "failed to store userID and channelID")
 	}
 

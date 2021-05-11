@@ -1302,7 +1302,8 @@ func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, channelID string) bool {
 	}
 
 	if err = s.store.SetViewedChannel(userID, channelID); err != nil {
-		return false
+		// If duplicate entry, userID has viewed channelID. If not a duplicate, assume they haven't.
+		return errors.Is(err, ErrDuplicateEntry)
 	}
 
 	if theIncident.MessageOnJoin != "" {

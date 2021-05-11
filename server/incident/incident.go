@@ -260,6 +260,9 @@ var ErrIncidentActive = errors.New("incident active")
 // ErrMalformedIncident is used to indicate an incident is not valid
 var ErrMalformedIncident = errors.New("incident active")
 
+// ErrDuplicateEntry indicates the db could not make an insert because the entry already existed.
+var ErrDuplicateEntry = errors.New("duplicate entry")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
