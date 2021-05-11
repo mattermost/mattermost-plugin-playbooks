@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
+
+	"github.com/lib/pq"
+
 	"github.com/jmoiron/sqlx"
 
 	sq "github.com/Masterminds/squirrel"
@@ -636,13 +640,16 @@ func (s *incidentStore) SetViewedChannel(userID, channelID string) error {
 		}))
 
 	if err != nil {
-		duplicateMsg := "duplicate key value"
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
-			duplicateMsg = "Duplicate entry"
-		}
-
-		if strings.Contains(err.Error(), duplicateMsg) {
-			return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+			me, ok := err.(*mysql.MySQLError)
+			if ok && me.Number == 1062 {
+				return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+			}
+		} else {
+			pe, ok := err.(*pq.Error)
+			if ok && pe.Code == "23505" {
+				return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+			}
 		}
 
 		return errors.Wrapf(err, "failed to store userID and channelID")
