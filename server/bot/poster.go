@@ -92,7 +92,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
 	admins, err := b.pluginAPI.User.List(&model.UserGetOptions{
 		Role:    string(model.SYSTEM_ADMIN_ROLE_ID),
 		Page:    0,
-		PerPage: 100,
+		PerPage: 1000,
 	})
 
 	if err != nil {
