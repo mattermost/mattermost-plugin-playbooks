@@ -63,7 +63,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.config.IsLicensed() {
+	if !h.config.IsE10Licensed() {
 		num, err := h.playbookService.GetNumPlaybooksForTeam(pbook.TeamID)
 		if err != nil {
 			HandleError(w, err)

@@ -31,6 +31,9 @@ type Service interface {
 	// `EnableTesting` configuration settings enabled.
 	IsConfiguredForDevelopmentAndTesting() bool
 
-	// IsLicensed returns true when the server is appropriately licensed to run this plugin.
-	IsLicensed() bool
+	// IsE20Licensed returns true when the server is appropriately licensed to run this plugin.
+	IsE20Licensed() bool
+
+	// IsE10Licensed returns true when the server is appropriately licensed to run this plugin.
+	IsE10Licensed() bool
 }

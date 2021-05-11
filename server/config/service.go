@@ -183,7 +183,12 @@ func (c *ServiceImpl) IsCloud() bool {
 	return *license.Features.Cloud
 }
 
-// IsLicensed returns true when the server is appropriately licensed to run this plugin.
-func (c *ServiceImpl) IsLicensed() bool {
+// IsE20Licensed returns true when the server is appropriately licensed to run this plugin.
+func (c *ServiceImpl) IsE20Licensed() bool {
 	return pluginapi.IsE20LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
+}
+
+// IsE10Licensed returns true when the server is appropriately licensed to run this plugin.
+func (c *ServiceImpl) IsE10Licensed() bool {
+	return pluginapi.IsE10LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
 }
