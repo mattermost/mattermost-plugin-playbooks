@@ -130,9 +130,11 @@ export default class Plugin {
     public uninitialize() {
         if (this.removeMainMenuSub) {
             this.removeMainMenuSub();
+            delete this.removeMainMenuSub;
         }
         if (this.removeRHSListener) {
             this.removeRHSListener();
+            delete this.removeRHSListener;
         }
     }
 }
