@@ -43,7 +43,7 @@ import {
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
-    ReceivedGlobalSettings, SetHasViewedChannel, SET_HAS_VIEWED_Channel,
+    ReceivedGlobalSettings, SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -205,7 +205,7 @@ export const actionSetGlobalSettings = (settings: GlobalSettings): ReceivedGloba
 });
 
 export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => ({
-    type: SET_HAS_VIEWED_Channel,
+    type: SET_HAS_VIEWED_CHANNEL,
     channelId,
     hasViewed: true,
 });

@@ -60,7 +60,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete-item", handler.getChecklistAutocompleteItem).Methods(http.MethodGet)
-	incidentsRouter.HandleFunc("/check_and_send_message_on_join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 
 	incidentRouter := incidentsRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	incidentRouter.HandleFunc("", handler.getIncident).Methods(http.MethodGet)
@@ -75,6 +74,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
+	incidentRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -575,23 +575,6 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	ReturnJSON(w, incidentToGet, http.StatusOK)
 }
 
-// checkAndSendMessageOnJoin handles the GET /incidents/check_and_send_message_on_join/{channel_id} endpoint.
-func (h *IncidentHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	channelID := vars["channel_id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if err := permissions.EditIncident(userID, channelID, h.pluginAPI); err != nil {
-		h.log.Warnf("User %s does not have permissions for channel %s", userID, channelID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Not found",
-			errors.Errorf("record for channel id %s not found", channelID))
-		return
-	}
-
-	hasViewed := h.incidentService.CheckAndSendMessageOnJoin(userID, channelID)
-	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
-}
-
 // getCommanders handles the /incidents/commanders api endpoint.
 func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
@@ -922,6 +905,17 @@ func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// checkAndSendMessageOnJoin handles the GET /incident/{id}/check_and_send_message_on_join/{channel_id} endpoint.
+func (h *IncidentHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	channelID := vars["channel_id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	hasViewed := h.incidentService.CheckAndSendMessageOnJoin(userID, incidentID, channelID)
+	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
 }
 
 func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r *http.Request) {

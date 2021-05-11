@@ -94,17 +94,17 @@ func (mr *MockServiceMockRecorder) ChangeCreationDate(arg0, arg1 interface{}) *g
 }
 
 // CheckAndSendMessageOnJoin mocks base method
-func (m *MockService) CheckAndSendMessageOnJoin(arg0, arg1 string) bool {
+func (m *MockService) CheckAndSendMessageOnJoin(arg0, arg1, arg2 string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckAndSendMessageOnJoin", arg0, arg1)
+	ret := m.ctrl.Call(m, "CheckAndSendMessageOnJoin", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // CheckAndSendMessageOnJoin indicates an expected call of CheckAndSendMessageOnJoin
-func (mr *MockServiceMockRecorder) CheckAndSendMessageOnJoin(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) CheckAndSendMessageOnJoin(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAndSendMessageOnJoin", reflect.TypeOf((*MockService)(nil).CheckAndSendMessageOnJoin), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAndSendMessageOnJoin", reflect.TypeOf((*MockService)(nil).CheckAndSendMessageOnJoin), arg0, arg1, arg2)
 }
 
 // CreateIncident mocks base method

@@ -371,9 +371,9 @@ type Service interface {
 	// was removed from the channel by actorID.
 	UserHasLeftChannel(userID, channelID, actorID string)
 
-	// CheckAndSendMessageOnJoin returns false if userID has not viewed channelID, true if useID has
-	// viewed channelID. The function records that userID has now viewed the channelID.
-	CheckAndSendMessageOnJoin(userID, channelID string) bool
+	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
+	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+	CheckAndSendMessageOnJoin(userID, incidentID, channelID string) bool
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.

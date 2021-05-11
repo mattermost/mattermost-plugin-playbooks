@@ -90,8 +90,8 @@ export async function fetchIncidentByChannel(channelId: string) {
     return data as Incident;
 }
 
-export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
-    const data = await doGet(`${apiUrl}/incidents/check_and_send_message_on_join/${channelId}`);
+export async function fetchCheckAndSendMessageOnJoin(incidentID: string, channelId: string) {
+    const data = await doGet(`${apiUrl}/incidents/${incidentID}/check-and-send-message-on-join/${channelId}`);
     return Boolean(data.viewed);
 }
 

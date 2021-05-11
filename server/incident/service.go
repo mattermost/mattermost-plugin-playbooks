@@ -1280,9 +1280,9 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	_ = s.sendIncidentToClient(incidentID)
 }
 
-// CheckAndSendMessageOnJoin checks if userID has viewed channelID, and sends
-// theIncident.MessageOnJoin if it exists
-func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, channelID string) bool {
+// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
+// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channelID string) bool {
 	hasViewed := s.store.HasViewedChannel(userID, channelID)
 
 	if hasViewed {
@@ -1292,6 +1292,11 @@ func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, channelID string) bool {
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 	if err != nil {
 		s.logger.Errorf("failed to resolve incident for channelID: %s; error: %s", channelID, err.Error())
+		return false
+	}
+
+	if incidentID != givenIncidentID {
+		s.logger.Errorf("endpoint's incidentID does not match channelID's incidentID")
 		return false
 	}
 

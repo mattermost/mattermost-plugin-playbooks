@@ -36,7 +36,7 @@ import {
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings,
     RECEIVED_GLOBAL_SETTINGS,
-    SetHasViewedChannel, SET_HAS_VIEWED_Channel,
+    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -235,7 +235,7 @@ const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlo
 
 const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasViewedChannel) => {
     switch (action.type) {
-    case SET_HAS_VIEWED_Channel:
+    case SET_HAS_VIEWED_CHANNEL:
         return {
             ...state,
             [action.channelId]: action.hasViewed,

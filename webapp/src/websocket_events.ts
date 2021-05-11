@@ -200,13 +200,13 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
         const channelId = msg.data.channel_id;
 
         // If this isn't an incident channel, stop
-        const incidentsMap = myIncidentsMap(getState());
-        if (!incidentsMap[channelId]) {
+        const incident = myIncidentsMap(getState())[channelId];
+        if (!incident) {
             return;
         }
 
         if (!hasViewedByChannelID(getState())[channelId]) {
-            const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
+            const hasViewed = await fetchCheckAndSendMessageOnJoin(incident.id, channelId);
             if (hasViewed) {
                 dispatch(setHasViewedChannel(channelId));
             }

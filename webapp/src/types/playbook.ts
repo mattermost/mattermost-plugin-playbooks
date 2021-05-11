@@ -148,7 +148,7 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.webhook_on_creation_url === 'string' &&
         typeof arg.webhook_on_creation_enabled === 'boolean' &&
         typeof arg.message_on_join === 'string' &&
-        typeof arg.messageOnJoinEnabled === 'boolean';
+        typeof arg.message_on_join_enabled === 'boolean';
 }
 
 // eslint-disable-next-line
