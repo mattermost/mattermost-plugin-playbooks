@@ -235,27 +235,23 @@ export function useNumPlaybooksInCurrentTeam() {
     return numPlaybooks;
 }
 
-function useIsAllowedInE0() {
+// useAllowPlaybookCreationInCurrentTeam returns whether a user can create
+// a playbook in the current team
+export function useAllowPlaybookCreationInCurrentTeam() {
     const numPlaybooks = useNumPlaybooksInCurrentTeam();
     const isLicensed = useSelector(isE10LicensedOrDevelopment);
 
     return isLicensed || numPlaybooks === 0;
 }
 
-// useAllowPlaybookCreationInCurrentTeam returns whether a user can create
-// a playbook in the current team
-export function useAllowPlaybookCreationInCurrentTeam() {
-    return useIsAllowedInE0();
-}
-
 // useAllowTimelineViewInCurrentTeam returns whether a user can view the RHS
 // timeline in the current team
 export function useAllowTimelineViewInCurrentTeam() {
-    return useIsAllowedInE0();
+    return useSelector(isE10LicensedOrDevelopment);
 }
 
 // useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
 // post to the timeline in the current team
 export function useAllowAddMessageToTimelineInCurrentTeam() {
-    return useIsAllowedInE0();
+    return useSelector(isE10LicensedOrDevelopment);
 }
