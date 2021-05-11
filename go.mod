@@ -18,7 +18,6 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
-	github.com/ziutek/mymysql v1.5.4
 )
 
 replace github.com/mattermost/mattermost-plugin-incident-collaboration/client => ./client
