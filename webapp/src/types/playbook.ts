@@ -176,5 +176,5 @@ export const defaultMessageOnJoin = 'Welcome. This channel was automatically cre
     '\n' +
     'You may find the following resources helpful:\n' +
     '\n' +
-    '`[Mattermost Incident Collaboration channel](https://community.mattermost.com/core/channels/ee-incident-response)`\n' +
-    '`[Incident Collaboration documentation](https://docs.mattermost.com/administration/devops-command-center.html)`';
+    '[Mattermost Incident Collaboration channel](https://community.mattermost.com/core/channels/ee-incident-response)\n' +
+    '[Incident Collaboration documentation](https://docs.mattermost.com/administration/devops-command-center.html)';
