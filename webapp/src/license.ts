@@ -22,7 +22,7 @@ export const isE10LicensedOrDevelopment = (state: GlobalState): boolean => {
     const license = getLicense(state);
 
     // Use the presence of a known E10 feature as a check to determine licensing.
-    if (license?.GuestAccounts === 'true') {
+    if (license?.LDAP === 'true') {
         return true;
     }
 

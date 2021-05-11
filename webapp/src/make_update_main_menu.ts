@@ -17,12 +17,10 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
     let mainMenuActionId: string | null;
 
     return async () => {
-        let show = !isMobile();
+        const licenseCheck = isPricingPlanDifferentiationEnabled(store.getState()) || isE10LicensedOrDevelopment(store.getState());
 
-        if (!isPricingPlanDifferentiationEnabled(store.getState())) {
-            const disable = isDisabledOnCurrentTeam(store.getState());
-            show = !disable && !isMobile() && isE10LicensedOrDevelopment(store.getState());
-        }
+        const disable = isDisabledOnCurrentTeam(store.getState());
+        const show = !disable && !isMobile() && licenseCheck;
 
         if (mainMenuActionId && !show) {
             const temp = mainMenuActionId;
