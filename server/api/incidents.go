@@ -93,6 +93,10 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
 
+	retrospectiveRouter := incidentRouterAuthorized.PathPrefix("/retrospective").Subrouter()
+	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
+	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
+
 	telemetryRouterAuthorized := router.PathPrefix("/telemetry").Subrouter()
 	telemetryRouterAuthorized.Use(handler.checkViewPermissions)
 	telemetryRouterAuthorized.HandleFunc("/incident/{id:[A-Za-z0-9]+}", handler.telemetryForIncident).Methods(http.MethodPost)
@@ -1267,6 +1271,41 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 	h.poster.EphemeralPost(incdnt.CommanderUserID, channelID, post)
 
 	return nil
+}
+
+func (h *IncidentHandler) updateRetrospective(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var retroUpdate struct {
+		Retrospective string `json:"retrospective"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
+		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if err := h.incidentService.UpdateRetrospective(incidentID, userID, retroUpdate.Retrospective); err != nil {
+		HandleErrorWithCode(w, http.StatusInternalServerError, "unable to update retrospective", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *IncidentHandler) publishRetrospective(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.incidentService.PublishRetrospective(incidentID, userID); err != nil {
+		HandleErrorWithCode(w, http.StatusInternalServerError, "unable to publish retrospective", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.

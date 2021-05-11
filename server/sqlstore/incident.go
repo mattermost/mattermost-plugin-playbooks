@@ -57,7 +57,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
-			"AnnouncementChannelID", "WebhookOnCreationURL", "MessageOnJoin").
+			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -257,6 +257,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
 			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
+			"Retrospective":               rawIncident.Retrospective,
 			"MessageOnJoin":               rawIncident.MessageOnJoin,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
@@ -303,6 +304,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
 			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
+			"Retrospective":               rawIncident.Retrospective,
 			"MessageOnJoin":               rawIncident.MessageOnJoin,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))

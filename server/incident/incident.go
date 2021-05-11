@@ -52,6 +52,7 @@ type Incident struct {
 	DefaultCommanderID      string               `json:"default_commander_id"`
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
+	Retrospective           string               `json:"retrospective"`
 	MessageOnJoin           string               `json:"message_on_join"`
 }
 
@@ -371,6 +372,12 @@ type Service interface {
 	// was removed from the channel by actorID.
 	UserHasLeftChannel(userID, channelID, actorID string)
 
+	// UpdateRetrospective updates the retrospective for the given incident.
+	UpdateRetrospective(incidentID, userID, newRetrospective string) error
+
+	// PublishRetrospective publishes the retrospective.
+	PublishRetrospective(incidentID, userID string) error
+
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
 	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
 	CheckAndSendMessageOnJoin(userID, incidentID, channelID string) bool
@@ -475,6 +482,12 @@ type Telemetry interface {
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
 	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
+
+	// UpdateRetrospective event
+	UpdateRetrospective(incident *Incident, userID string)
+
+	// PublishRetrospective event
+	PublishRetrospective(incident *Incident, userID string)
 }
 
 type JobOnceScheduler interface {

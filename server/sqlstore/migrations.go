@@ -647,6 +647,26 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.15.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "Retrospective", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column Retrospective to table IR_Incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET Retrospective = '' WHERE Retrospective IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column Retrospective of table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "Retrospective", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column Retrospective to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.15.0"),
+		toVersion:   semver.MustParse("0.16.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "MessageOnJoin", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Playbook")
 				}
