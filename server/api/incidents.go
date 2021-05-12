@@ -74,6 +74,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
+	incidentRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -426,6 +427,10 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 
 		if pb.WebhookOnCreationEnabled {
 			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
+		}
+
+		if pb.MessageOnJoinEnabled {
+			newIncident.MessageOnJoin = pb.MessageOnJoin
 		}
 
 		thePlaybook = &pb
@@ -904,6 +909,17 @@ func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// checkAndSendMessageOnJoin handles the GET /incident/{id}/check_and_send_message_on_join/{channel_id} endpoint.
+func (h *IncidentHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	channelID := vars["channel_id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	hasViewed := h.incidentService.CheckAndSendMessageOnJoin(userID, incidentID, channelID)
+	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
 }
 
 func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r *http.Request) {
