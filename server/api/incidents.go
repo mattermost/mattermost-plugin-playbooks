@@ -691,7 +691,7 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
 // updateStatusD handles the POST /incidents/{id}/status endpoint, user has edit permissions
