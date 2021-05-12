@@ -58,17 +58,28 @@ func parseStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	}, nil
 }
 
+// HandleError logs the internal error and sends a generic error as JSON in a 500 response.
+func (h *StatsHandler) HandleError(w http.ResponseWriter, internalErr error) {
+	h.HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
+}
+
+// HandleErrorWithCode logs the internal error and sends the public facing error
+// message as JSON in a response with the provided code.
+func (h *StatsHandler) HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
+	HandleErrorWithCode(h.log, w, code, publicErrorMsg, internalErr)
+}
+
 func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	filters, err := parseStatsFilters(r.URL)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Bad filters", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad filters", err)
 		return
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, filters.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filters.TeamID))
 		return
 	}
