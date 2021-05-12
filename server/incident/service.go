@@ -1673,8 +1673,11 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
+	now := model.GetMillis()
+
 	// Update the text to keep syncronized
 	incidentToPublish.Retrospective = text
+	incidentToPublish.RetrospectivePublished = now
 	if err = s.store.UpdateIncident(incidentToPublish); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
@@ -1688,6 +1691,19 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      now,
+		EventAt:       now,
+		EventType:     PublishedRetrospective,
+		SubjectUserID: publisherID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	s.sendIncidentToClient(incidentID)
 	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
 
 	return nil

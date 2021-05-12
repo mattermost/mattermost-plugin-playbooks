@@ -30,7 +30,6 @@ const OuterContainer = styled.div`
     background: var(center-channel-bg);
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
 `;
 
 const TopContainer = styled.div`

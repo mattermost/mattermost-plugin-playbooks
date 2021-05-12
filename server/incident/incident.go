@@ -53,6 +53,7 @@ type Incident struct {
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
 	Retrospective           string               `json:"retrospective"`
+	RetrospectivePublished  int64                `json:"retrospective_published"` // The last time a retrospective was published. 0 if never published.
 }
 
 func (i *Incident) Clone() *Incident {
@@ -161,14 +162,15 @@ type Metadata struct {
 type timelineEventType string
 
 const (
-	IncidentCreated   timelineEventType = "incident_created"
-	TaskStateModified timelineEventType = "task_state_modified"
-	StatusUpdated     timelineEventType = "status_updated"
-	CommanderChanged  timelineEventType = "commander_changed"
-	AssigneeChanged   timelineEventType = "assignee_changed"
-	RanSlashCommand   timelineEventType = "ran_slash_command"
-	EventFromPost     timelineEventType = "event_from_post"
-	UserJoinedLeft    timelineEventType = "user_joined_left"
+	IncidentCreated        timelineEventType = "incident_created"
+	TaskStateModified      timelineEventType = "task_state_modified"
+	StatusUpdated          timelineEventType = "status_updated"
+	CommanderChanged       timelineEventType = "commander_changed"
+	AssigneeChanged        timelineEventType = "assignee_changed"
+	RanSlashCommand        timelineEventType = "ran_slash_command"
+	EventFromPost          timelineEventType = "event_from_post"
+	UserJoinedLeft         timelineEventType = "user_joined_left"
+	PublishedRetrospective timelineEventType = "published_retrospective"
 )
 
 type TimelineEvent struct {
