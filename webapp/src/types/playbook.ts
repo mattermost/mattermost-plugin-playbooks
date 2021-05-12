@@ -79,7 +79,7 @@ export function emptyPlaybook(): Playbook {
         title: '',
         description: '',
         team_id: '',
-        create_public_incident: false,
+        create_public_incident: true,
         checklists: [emptyChecklist()],
         member_ids: [],
         broadcast_channel_id: '',

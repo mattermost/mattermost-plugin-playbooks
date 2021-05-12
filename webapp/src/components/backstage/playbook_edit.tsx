@@ -158,7 +158,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     const [playbook, setPlaybook] = useState<Playbook>({
         ...emptyPlaybook(),
         team_id: props.currentTeam.id,
-        member_ids: [currentUserId],
     });
     const [changesMade, setChangesMade] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -188,7 +187,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     setPlaybook({
                         ...template.template,
                         team_id: props.currentTeam.id,
-                        member_ids: [currentUserId],
                     });
                     setChangesMade(true);
                 }
