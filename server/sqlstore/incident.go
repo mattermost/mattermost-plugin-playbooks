@@ -53,7 +53,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
-			"AnnouncementChannelID", "WebhookOnCreationURL").
+			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -211,16 +211,16 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 	}, nil
 }
 
-// CreateIncident creates a new incident.
+// CreateIncident creates a new incident. If newIncident has an ID, that ID will be used.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
 	}
-	if newIncident.ID != "" {
-		return nil, errors.New("ID should not be set")
-	}
 	incidentCopy := newIncident.Clone()
-	incidentCopy.ID = model.NewId()
+
+	if incidentCopy.ID == "" {
+		incidentCopy.ID = model.NewId()
+	}
 
 	rawIncident, err := toSQLIncident(*incidentCopy)
 	if err != nil {
@@ -253,6 +253,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
 			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
+			"Retrospective":               rawIncident.Retrospective,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -298,6 +299,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
 			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
+			"Retrospective":               rawIncident.Retrospective,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 

@@ -1,18 +1,22 @@
 import {MutableRefObject, useCallback, useEffect, useRef, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch, useSelector, useStore} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import {getProfilesInCurrentChannel, getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {
+    getProfilesInCurrentChannel,
+    getCurrentUserId, getUser,
+} from 'mattermost-redux/selectors/entities/users';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {getProfilesInChannel} from 'mattermost-redux/actions/users';
+import {getProfilesByIds, getProfilesInChannel} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
+import {UserProfile} from 'mattermost-redux/types/users';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel} from 'src/selectors';
@@ -175,7 +179,7 @@ export function useProfilesInChannel(channelId: string) {
     return profilesInChannel;
 }
 
-function useLatestPostId(statusPosts: StatusPost[]) {
+function getLatestPostId(statusPosts: StatusPost[]) {
     const sortedPosts = [...statusPosts]
         .filter((a) => a.delete_at === 0)
         .sort((a, b) => b.create_at - a.create_at);
@@ -183,12 +187,8 @@ function useLatestPostId(statusPosts: StatusPost[]) {
     return sortedPosts[0]?.id;
 }
 
-function usePostFromState(postId: string) {
-    return useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postId || ''));
-}
-
 export function usePost(postId: string) {
-    const postFromState = usePostFromState(postId);
+    const postFromState = useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postId || ''));
     const [post, setPost] = useState<Post | null>(null);
 
     useEffect(() => {
@@ -214,7 +214,7 @@ export function usePost(postId: string) {
 }
 
 export function useLatestUpdate(incident: Incident) {
-    const postId = useLatestPostId(incident.status_posts);
+    const postId = getLatestPostId(incident.status_posts);
     return usePost(postId);
 }
 
@@ -254,4 +254,22 @@ export function useAllowTimelineViewInCurrentTeam() {
 // post to the timeline in the current team
 export function useAllowAddMessageToTimelineInCurrentTeam() {
     return useSelector(isE10LicensedOrDevelopment);
+}
+
+export function useEnsureProfiles(userIds: string[]) {
+    const dispatch = useDispatch();
+    type StringToUserProfileFn = (id: string) => UserProfile;
+    const getUserFromStore = useSelector<GlobalState, StringToUserProfileFn>((state) => (id: string) => getUser(state, id));
+
+    const unknownIds = [];
+    for (const id of userIds) {
+        const user = getUserFromStore(id);
+        if (!user) {
+            unknownIds.push(id);
+        }
+    }
+
+    if (unknownIds.length > 0) {
+        dispatch(getProfilesByIds(userIds));
+    }
 }

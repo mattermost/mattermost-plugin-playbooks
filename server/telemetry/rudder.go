@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
@@ -30,6 +31,9 @@ const (
 	actionChangeCommander          = "change_commander"
 	actionUpdateStatus             = "update_status"
 	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
+	actionUpdateRetrospective      = "update_retrospective"
+	actionPublishRetrospective     = "publish_retrospective"
+	actionRemoveTimelineEvent      = "remove_timeline_event"
 
 	eventTasks                = "tasks"
 	actionAddTask             = "add_task"
@@ -107,14 +111,22 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 	return map[string]interface{}{
 		"UserActualID":        userID,
 		"IncidentID":          incdnt.ID,
-		"CurrentStatus":       incdnt.CurrentStatus,
+		"HasDescription":      incdnt.Description != "",
 		"CommanderUserID":     incdnt.CommanderUserID,
+		"ReporterUserID":      incdnt.ReporterUserID,
 		"TeamID":              incdnt.TeamID,
+		"ChannelID":           incdnt.ChannelID,
 		"CreateAt":            incdnt.CreateAt,
+		"EndAt":               incdnt.EndAt,
+		"DeleteAt":            incdnt.DeleteAt,
 		"PostID":              incdnt.PostID,
 		"PlaybookID":          incdnt.PlaybookID,
 		"NumChecklists":       len(incdnt.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
+		"NumStatusPosts":      len(incdnt.StatusPosts),
+		"CurrentStatus":       incdnt.CurrentStatus,
+		"PreviousReminder":    incdnt.PreviousReminder,
+		"NumTimelineEvents":   len(incdnt.TimelineEvents),
 	}
 }
 
@@ -167,68 +179,93 @@ func (t *RudderTelemetry) AddPostToTimeline(incdnt *incident.Incident, userID st
 	t.track(eventIncident, properties)
 }
 
-func taskProperties(incidentID, userID string) map[string]interface{} {
+// RemoveTimelineEvent tracks userID removing a timeline event.
+func (t *RudderTelemetry) RemoveTimelineEvent(incdnt *incident.Incident, userID string) {
+	properties := incidentProperties(incdnt, userID)
+	properties["Action"] = actionRemoveTimelineEvent
+	t.track(eventIncident, properties)
+}
+
+func taskProperties(incidentID, userID string, task playbook.ChecklistItem) map[string]interface{} {
 	return map[string]interface{}{
-		"IncidentID":   incidentID,
-		"UserActualID": userID,
+		"IncidentID":     incidentID,
+		"UserActualID":   userID,
+		"TaskID":         task.ID,
+		"State":          task.State,
+		"AssigneeID":     task.AssigneeID,
+		"HasCommand":     task.Command != "",
+		"CommandLastRun": task.CommandLastRun,
+		"HasDescription": task.Description != "",
 	}
 }
 
 // AddTask tracks the creation of a new checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) AddTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) AddTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionAddTask
 	t.track(eventTasks, properties)
 }
 
 // RemoveTask tracks the removal of a checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) RemoveTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) RemoveTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRemoveTask
 	t.track(eventTasks, properties)
 }
 
 // RenameTask tracks the update of a checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) RenameTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) RenameTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRenameTask
 	t.track(eventTasks, properties)
 }
 
 // ModifyCheckedState tracks the checking and unchecking of items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionModifyTaskState
-	properties["NewState"] = newState
+	properties["NewState"] = task.State
 	properties["WasCommander"] = wasCommander
-	properties["WasAssignee"] = wasAssignee
+	properties["WasAssignee"] = task.AssigneeID == userID
 	t.track(eventTasks, properties)
 }
 
 // SetAssignee tracks the changing of an assignee on an item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) SetAssignee(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) SetAssignee(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionSetAssigneeForTask
 	t.track(eventTasks, properties)
 }
 
 // MoveTask tracks the movement of checklist items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) MoveTask(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) MoveTask(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionMoveTask
 	t.track(eventTasks, properties)
 }
 
 // RunTaskSlashCommand tracks the execution of a slash command on a checklist item.
-func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string) {
-	properties := taskProperties(incidentID, userID)
+func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem) {
+	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRunTaskSlashCommand
+	t.track(eventTasks, properties)
+}
+
+func (t *RudderTelemetry) UpdateRetrospective(incident *incident.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
+	properties["Action"] = actionUpdateRetrospective
+	t.track(eventTasks, properties)
+}
+
+func (t *RudderTelemetry) PublishRetrospective(incident *incident.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
+	properties["Action"] = actionPublishRetrospective
 	t.track(eventTasks, properties)
 }
 
@@ -247,15 +284,27 @@ func playbookProperties(pbook playbook.Playbook, userID string) map[string]inter
 	return map[string]interface{}{
 		"UserActualID":                userID,
 		"PlaybookID":                  pbook.ID,
+		"HasDescription":              pbook.Description != "",
 		"TeamID":                      pbook.TeamID,
+		"IsPublic":                    pbook.CreatePublicIncident,
+		"CreateAt":                    pbook.CreateAt,
+		"DeleteAt":                    pbook.DeleteAt,
 		"NumChecklists":               len(pbook.Checklists),
 		"TotalChecklistItems":         totalChecklistItems,
-		"IsPublic":                    pbook.CreatePublicIncident,
-		"NumMembers":                  len(pbook.MemberIDs),
 		"NumSlashCommands":            totalChecklistItemsWithCommands,
-		"ReminderTimerDefaultSeconds": pbook.ReminderTimerDefaultSeconds,
+		"NumMembers":                  len(pbook.MemberIDs),
 		"BroadcastChannelID":          pbook.BroadcastChannelID,
 		"UsesReminderMessageTemplate": pbook.ReminderMessageTemplate != "",
+		"ReminderTimerDefaultSeconds": pbook.ReminderTimerDefaultSeconds,
+		"NumInvitedUserIDs":           len(pbook.InvitedUserIDs),
+		"NumInvitedGroupIDs":          len(pbook.InvitedGroupIDs),
+		"InviteUsersEnabled":          pbook.InviteUsersEnabled,
+		"DefaultCommanderID":          pbook.DefaultCommanderID,
+		"DefaultCommanderEnabled":     pbook.DefaultCommanderEnabled,
+		"AnnouncementChannelID":       pbook.AnnouncementChannelID,
+		"AnnouncementChannelEnabled":  pbook.AnnouncementChannelEnabled,
+		"NumWebhookOnCreationURLs":    len(strings.Split(pbook.WebhookOnCreationURL, "\n")),
+		"WebhookOnCreationEnabled":    pbook.WebhookOnCreationEnabled,
 	}
 }
 

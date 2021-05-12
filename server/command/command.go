@@ -969,7 +969,7 @@ And... yes, of course, we have emojis
 		PlaybookID:         gotplaybook.ID,
 		Checklists:         gotplaybook.Checklists,
 		BroadcastChannelID: gotplaybook.BroadcastChannelID,
-	}, r.args.UserId, true)
+	}, &gotplaybook, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
 		return
@@ -1096,7 +1096,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		Checklists:      thePlaybook.Checklists,
 	}
 
-	newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
+	newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create incident: %v", err)
 		return
@@ -1325,7 +1325,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			Checklists:      thePlaybook.Checklists,
 		}
 
-		newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
+		newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating incident: %v", err)
 			return

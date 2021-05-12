@@ -20,13 +20,6 @@ export const PrimaryButton = styled.button`
     padding: 0 20px;
     position: relative;
 
-    > span {
-        display: flex;
-        position: relative;
-        z-index: 1;
-        align-items: center;
-    }
-
     &:before {
         content: '';
         left: 0;

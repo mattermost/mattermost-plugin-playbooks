@@ -52,6 +52,7 @@ type Incident struct {
 	DefaultCommanderID      string               `json:"default_commander_id"`
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
+	Retrospective           string               `json:"retrospective"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -265,7 +266,7 @@ type Service interface {
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
+	CreateIncident(incdnt *Incident, playbook *playbook.Playbook, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
@@ -283,7 +284,7 @@ type Service interface {
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
 	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
-	RemoveTimelineEvent(incidentID, eventID string) error
+	RemoveTimelineEvent(incidentID, userID, eventID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -366,6 +367,12 @@ type Service interface {
 	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 	// was removed from the channel by actorID.
 	UserHasLeftChannel(userID, channelID, actorID string)
+
+	// UpdateRetrospective updates the retrospective for the given incident.
+	UpdateRetrospective(incidentID, userID, newRetrospective string) error
+
+	// PublishRetrospective publishes the retrospective.
+	PublishRetrospective(incidentID, userID string) error
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -373,7 +380,7 @@ type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident.
+	// CreateIncident creates a new incident. If incdnt has an ID, that ID will be used.
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
@@ -436,27 +443,36 @@ type Telemetry interface {
 	// AddPostToTimeline tracks userID creating a timeline event from a post.
 	AddPostToTimeline(incdnt *Incident, userID string)
 
+	// RemoveTimelineEvent tracks userID removing a timeline event.
+	RemoveTimelineEvent(incdnt *Incident, userID string)
+
 	// ModifyCheckedState tracks the checking and unchecking of items.
-	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
+	ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool)
 
 	// SetAssignee tracks the changing of an assignee on an item.
-	SetAssignee(incidentID, userID string)
+	SetAssignee(incidentID, userID string, task playbook.ChecklistItem)
 
 	// AddTask tracks the creation of a new checklist item.
-	AddTask(incidentID, userID string)
+	AddTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RemoveTask tracks the removal of a checklist item.
-	RemoveTask(incidentID, userID string)
+	RemoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RenameTask tracks the update of a checklist item.
-	RenameTask(incidentID, userID string)
+	RenameTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// MoveTask tracks the unchecking of checked item.
-	MoveTask(incidentID, userID string)
+	MoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunTaskSlashCommand(incidentID, userID string)
+	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
+
+	// UpdateRetrospective event
+	UpdateRetrospective(incident *Incident, userID string)
+
+	// PublishRetrospective event
+	PublishRetrospective(incident *Incident, userID string)
 }
 
 type JobOnceScheduler interface {
