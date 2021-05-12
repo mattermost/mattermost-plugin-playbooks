@@ -39,7 +39,7 @@ export const getUpgradeModalButtons = (isAdmin: boolean, state: ModalActionState
             };
         }
         return {
-            confirmButtonText: 'Notify Administrator',
+            confirmButtonText: 'Notify System Admin',
             cancelButtonText: 'Not right now',
             handleConfirm: notifyAdmins,
             handleCancel: onHide,
