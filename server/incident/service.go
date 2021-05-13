@@ -118,7 +118,7 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 
 // sendWebhookOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
-func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
+func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 
 	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
@@ -149,7 +149,7 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 		ChannelURL string `json:"channel_url"`
 		DetailsURL string `json:"details_url"`
 	}{
-		Incident:   *theIncident,
+		Incident:   theIncident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 	}
@@ -344,15 +344,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		}
 	}
 
-	if incdnt.WebhookOnCreationURL != "" {
-		go func() {
-			if err = s.sendWebhookOnCreation(incdnt); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
-				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
-			}
-		}()
-	}
-
 	event := &TimelineEvent{
 		IncidentID:    incdnt.ID,
 		CreateAt:      incdnt.CreateAt,
@@ -366,6 +357,15 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		return incdnt, errors.Wrap(err, "failed to create timeline event")
 	}
 	incdnt.TimelineEvents = append(incdnt.TimelineEvents, *event)
+
+	if incdnt.WebhookOnCreationURL != "" {
+		go func() {
+			if err = s.sendWebhookOnCreation(*incdnt); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
+				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+			}
+		}()
+	}
 
 	if incdnt.PostID == "" {
 		return incdnt, nil
