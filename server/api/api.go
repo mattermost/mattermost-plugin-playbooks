@@ -124,7 +124,7 @@ func HandleErrorWithCode(logger bot.Logger, w http.ResponseWriter, code int, pub
 	_, _ = w.Write(responseMsg)
 }
 
-// ReturnJSON writes the given pointer to object as json with a success response
+// ReturnJSON writes the given pointerToObject as json with the provided httpStatus
 func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
 	jsonBytes, err := json.Marshal(pointerToObject)
 	if err != nil {
