@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+
 	"github.com/golang/mock/gomock"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
@@ -38,7 +40,8 @@ func TestAPI(t *testing.T) {
 			configService := mock_config.NewMockService(mockCtrl)
 			pluginAPI := &plugintest.API{}
 			client := pluginapi.NewClient(pluginAPI)
-			handler := NewHandler(client, configService)
+			logger := mock_poster.NewMockLogger(mockCtrl)
+			handler := NewHandler(client, configService, logger)
 
 			writer := httptest.NewRecorder()
 			tc.test(t, handler, writer)
