@@ -175,3 +175,5 @@ export const isCurrentUserAdmin = createSelector(
         return rolesArray.includes(General.SYSTEM_ADMIN_ROLE);
     },
 );
+
+export const hasViewedByChannelID = (state: GlobalState) => pluginState(state).hasViewedByChannel;

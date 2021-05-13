@@ -48,6 +48,7 @@ import {
     ShowPostMenuModal,
     HIDE_POST_MENU_MODAL,
     HidePostMenuModal,
+    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -214,4 +215,10 @@ export const showPostMenuModal = (): ShowPostMenuModal => ({
 
 export const hidePostMenuModal = (): HidePostMenuModal => ({
     type: HIDE_POST_MENU_MODAL,
+});
+
+export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => ({
+    type: SET_HAS_VIEWED_CHANNEL,
+    channelId,
+    hasViewed: true,
 });

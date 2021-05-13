@@ -1280,6 +1280,46 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	_ = s.sendIncidentToClient(incidentID)
 }
 
+// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
+// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channelID string) bool {
+	hasViewed := s.store.HasViewedChannel(userID, channelID)
+
+	if hasViewed {
+		return true
+	}
+
+	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve incident for channelID: %s; error: %s", channelID, err.Error())
+		return false
+	}
+
+	if incidentID != givenIncidentID {
+		s.logger.Errorf("endpoint's incidentID does not match channelID's incidentID")
+		return false
+	}
+
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve incident for incidentID: %s; error: %s", incidentID, err.Error())
+		return false
+	}
+
+	if err = s.store.SetViewedChannel(userID, channelID); err != nil {
+		// If duplicate entry, userID has viewed channelID. If not a duplicate, assume they haven't.
+		return errors.Is(err, ErrDuplicateEntry)
+	}
+
+	if theIncident.MessageOnJoin != "" {
+		s.poster.EphemeralPost(userID, channelID, &model.Post{
+			Message: theIncident.MessageOnJoin,
+		})
+	}
+
+	return true
+}
+
 // UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 // was removed from the channel by actorID.
 func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {

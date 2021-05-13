@@ -169,6 +169,20 @@ func (mr *MockStoreMockRecorder) GetTimelineEvent(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimelineEvent", reflect.TypeOf((*MockStore)(nil).GetTimelineEvent), arg0, arg1)
 }
 
+// HasViewedChannel mocks base method
+func (m *MockStore) HasViewedChannel(arg0, arg1 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasViewedChannel", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasViewedChannel indicates an expected call of HasViewedChannel
+func (mr *MockStoreMockRecorder) HasViewedChannel(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasViewedChannel", reflect.TypeOf((*MockStore)(nil).HasViewedChannel), arg0, arg1)
+}
+
 // NukeDB mocks base method
 func (m *MockStore) NukeDB() error {
 	m.ctrl.T.Helper()
@@ -181,6 +195,20 @@ func (m *MockStore) NukeDB() error {
 func (mr *MockStoreMockRecorder) NukeDB() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockStore)(nil).NukeDB))
+}
+
+// SetViewedChannel mocks base method
+func (m *MockStore) SetViewedChannel(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetViewedChannel", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetViewedChannel indicates an expected call of SetViewedChannel
+func (mr *MockStoreMockRecorder) SetViewedChannel(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetViewedChannel", reflect.TypeOf((*MockStore)(nil).SetViewedChannel), arg0, arg1)
 }
 
 // UpdateIncident mocks base method

@@ -23,7 +23,11 @@ import {
     INCIDENT_UPDATED,
     REMOVED_FROM_INCIDENT_CHANNEL,
     SetRHSTabState,
-    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED,
+    SET_RHS_TAB_STATE,
+    SetRHSEventsFilter,
+    SET_RHS_EVENTS_FILTER,
+    ReceivedTeamDisabled,
+    RECEIVED_TEAM_DISABLED,
     PLAYBOOK_CREATED,
     PlaybookCreated,
     PLAYBOOK_DELETED,
@@ -33,6 +37,7 @@ import {
     ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
     ShowPostMenuModal, HidePostMenuModal,
     SHOW_POST_MENU_MODAL, HIDE_POST_MENU_MODAL,
+    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -240,6 +245,18 @@ const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | Hide
     }
 };
 
+const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasViewedChannel) => {
+    switch (action.type) {
+    case SET_HAS_VIEWED_CHANNEL:
+        return {
+            ...state,
+            [action.channelId]: action.hasViewed,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -251,4 +268,5 @@ export default combineReducers({
     numPlaybooksByTeam,
     globalSettings,
     postMenuModalVisibility,
+    hasViewedByChannel,
 });

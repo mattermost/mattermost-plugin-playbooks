@@ -5,9 +5,11 @@ go 1.14
 require (
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/mock v1.4.4
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.1
+	github.com/lib/pq v1.10.0
 	github.com/mattermost/mattermost-plugin-api v0.0.16-0.20210511094106-2ccdb8f6c9b2
 	github.com/mattermost/mattermost-plugin-incident-collaboration/client v0.3.1
 	github.com/mattermost/mattermost-server/v5 v5.3.2-0.20210430151419-e43861a6358f
