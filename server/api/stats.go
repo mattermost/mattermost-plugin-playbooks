@@ -14,6 +14,7 @@ import (
 )
 
 type StatsHandler struct {
+	*ErrorHandler
 	pluginAPI  *pluginapi.Client
 	log        bot.Logger
 	statsStore *sqlstore.StatsStore
@@ -21,9 +22,10 @@ type StatsHandler struct {
 
 func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, config config.Service) *StatsHandler {
 	handler := &StatsHandler{
-		pluginAPI:  api,
-		log:        log,
-		statsStore: statsStore,
+		ErrorHandler: &ErrorHandler{log: log},
+		pluginAPI:    api,
+		log:          log,
+		statsStore:   statsStore,
 	}
 
 	e20Middleware := E20LicenseRequired{config}
@@ -56,17 +58,6 @@ func parseStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	return &sqlstore.StatsFilters{
 		TeamID: teamID,
 	}, nil
-}
-
-// HandleError logs the internal error and sends a generic error as JSON in a 500 response.
-func (h *StatsHandler) HandleError(w http.ResponseWriter, internalErr error) {
-	h.HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
-}
-
-// HandleErrorWithCode logs the internal error and sends the public facing error
-// message as JSON in a response with the provided code.
-func (h *StatsHandler) HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
-	HandleErrorWithCode(h.log, w, code, publicErrorMsg, internalErr)
 }
 
 func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {

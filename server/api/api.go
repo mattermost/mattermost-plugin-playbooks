@@ -16,6 +16,7 @@ import (
 
 // Handler Root API handler.
 type Handler struct {
+	*ErrorHandler
 	pluginAPI *pluginapi.Client
 	APIRouter *mux.Router
 	root      *mux.Router
@@ -26,9 +27,10 @@ type Handler struct {
 // NewHandler constructs a new handler.
 func NewHandler(pluginAPI *pluginapi.Client, config config.Service, log bot.Logger) *Handler {
 	handler := &Handler{
-		pluginAPI: pluginAPI,
-		config:    config,
-		log:       log,
+		ErrorHandler: &ErrorHandler{log: log},
+		pluginAPI:    pluginAPI,
+		config:       config,
+		log:          log,
 	}
 
 	root := mux.NewRouter()
@@ -90,17 +92,6 @@ func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-// HandleError logs the internal error and sends a generic error as JSON in a 500 response.
-func (h *Handler) HandleError(w http.ResponseWriter, internalErr error) {
-	h.HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
-}
-
-// HandleErrorWithCode logs the internal error and sends the public facing error
-// message as JSON in a response with the provided code.
-func (h *Handler) HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
-	HandleErrorWithCode(h.log, w, code, publicErrorMsg, internalErr)
 }
 
 // HandleErrorWithCode logs the internal error and sends the public facing error

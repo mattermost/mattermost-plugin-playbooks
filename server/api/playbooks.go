@@ -21,6 +21,7 @@ import (
 
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
+	*ErrorHandler
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
@@ -32,6 +33,7 @@ const SettingsKey = "global_settings"
 // NewPlaybookHandler returns a new playbook api handler
 func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
+		ErrorHandler:    &ErrorHandler{log: log},
 		playbookService: playbookService,
 		pluginAPI:       api,
 		log:             log,
@@ -56,17 +58,6 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
 
 	return handler
-}
-
-// HandleError logs the internal error and sends a generic error as JSON in a 500 response.
-func (h *PlaybookHandler) HandleError(w http.ResponseWriter, internalErr error) {
-	h.HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
-}
-
-// HandleErrorWithCode logs the internal error and sends the public facing error
-// message as JSON in a response with the provided code.
-func (h *PlaybookHandler) HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
-	HandleErrorWithCode(h.log, w, code, publicErrorMsg, internalErr)
 }
 
 func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {

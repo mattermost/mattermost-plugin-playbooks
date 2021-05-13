@@ -25,6 +25,7 @@ import (
 
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
+	*ErrorHandler
 	config          config.Service
 	incidentService incident.Service
 	playbookService playbook.Service
@@ -38,6 +39,7 @@ type IncidentHandler struct {
 func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
 	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry, config config.Service) *IncidentHandler {
 	handler := &IncidentHandler{
+		ErrorHandler:    &ErrorHandler{log: log},
 		incidentService: incidentService,
 		playbookService: playbookService,
 		pluginAPI:       api,
@@ -102,17 +104,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	telemetryRouterAuthorized.HandleFunc("/incident/{id:[A-Za-z0-9]+}", handler.telemetryForIncident).Methods(http.MethodPost)
 
 	return handler
-}
-
-// HandleError logs the internal error and sends a generic error as JSON in a 500 response.
-func (h *IncidentHandler) HandleError(w http.ResponseWriter, internalErr error) {
-	h.HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
-}
-
-// HandleErrorWithCode logs the internal error and sends the public facing error
-// message as JSON in a response with the provided code.
-func (h *IncidentHandler) HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
-	HandleErrorWithCode(h.log, w, code, publicErrorMsg, internalErr)
 }
 
 func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
