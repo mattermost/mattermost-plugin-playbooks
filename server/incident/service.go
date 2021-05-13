@@ -1687,7 +1687,7 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 		return errors.Wrap(err, "failed to get publisher user")
 	}
 
-	if _, err := s.poster.PostMessage(incidentToPublish.ChannelID, "@channel Retrospective has been published by @%s\n%s", publisherUser.Username, text); err != nil {
+	if _, err = s.poster.PostMessage(incidentToPublish.ChannelID, "@channel Retrospective has been published by @%s\n%s", publisherUser.Username, text); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
@@ -1703,7 +1703,9 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.sendIncidentToClient(incidentID)
+	if err := s.sendIncidentToClient(incidentID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
 	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
 
 	return nil

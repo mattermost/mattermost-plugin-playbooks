@@ -352,17 +352,17 @@ func (mr *MockServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 interface{}
 }
 
 // PublishRetrospective mocks base method
-func (m *MockService) PublishRetrospective(arg0, arg1 string) error {
+func (m *MockService) PublishRetrospective(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PublishRetrospective", arg0, arg1)
+	ret := m.ctrl.Call(m, "PublishRetrospective", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PublishRetrospective indicates an expected call of PublishRetrospective
-func (mr *MockServiceMockRecorder) PublishRetrospective(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) PublishRetrospective(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishRetrospective", reflect.TypeOf((*MockService)(nil).PublishRetrospective), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishRetrospective", reflect.TypeOf((*MockService)(nil).PublishRetrospective), arg0, arg1, arg2)
 }
 
 // RemoveChecklistItem mocks base method
