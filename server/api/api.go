@@ -21,7 +21,6 @@ type Handler struct {
 	APIRouter *mux.Router
 	root      *mux.Router
 	config    config.Service
-	log       bot.Logger
 }
 
 // NewHandler constructs a new handler.
@@ -30,7 +29,6 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service, log bot.Logg
 		ErrorHandler: &ErrorHandler{log: log},
 		pluginAPI:    pluginAPI,
 		config:       config,
-		log:          log,
 	}
 
 	root := mux.NewRouter()
