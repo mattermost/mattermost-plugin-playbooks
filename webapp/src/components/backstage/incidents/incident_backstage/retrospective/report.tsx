@@ -55,6 +55,7 @@ interface ReportProps {
 const Report = (props: ReportProps) => {
     const [report, setReport] = useState(props.incident.retrospective);
     const [editing, setEditing] = useState(false);
+    const [publishedThisSession, setPublishedThisSession] = useState(false);
 
     const savePressed = () => {
         updateRetrospective(props.incident.id, report);
@@ -64,7 +65,20 @@ const Report = (props: ReportProps) => {
     const publishPressed = () => {
         publishRetrospective(props.incident.id, report);
         setEditing(false);
+        setPublishedThisSession(true);
     };
+
+    let publishButtonText: React.ReactNode = 'Publish';
+    if (publishedThisSession) {
+        publishButtonText = (
+            <>
+                <i className={'icon icon-check'}/>
+                {'Published'}
+            </>
+        );
+    } else if (props.incident.retrospective_published) {
+        publishButtonText = 'Re-Publish';
+    }
 
     return (
         <TabPageContainer>
@@ -74,7 +88,7 @@ const Report = (props: ReportProps) => {
                     <CustomPrimaryButton
                         onClick={publishPressed}
                     >
-                        <TextContainer>{'Publish'}</TextContainer>
+                        <TextContainer>{publishButtonText}</TextContainer>
                     </CustomPrimaryButton>
                     <EditButton
                         editing={editing}
