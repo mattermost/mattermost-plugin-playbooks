@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation, Prompt, useRouteMatch} from 'react-router-dom';
+import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
