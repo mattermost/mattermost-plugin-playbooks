@@ -191,14 +191,12 @@ const Backstage: FC = () => {
                         <PlaybookEdit
                             isNew={true}
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
                         <PlaybookEdit
                             isNew={false}
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks`}>
