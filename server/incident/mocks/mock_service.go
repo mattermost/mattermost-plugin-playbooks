@@ -93,19 +93,33 @@ func (mr *MockServiceMockRecorder) ChangeCreationDate(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeCreationDate", reflect.TypeOf((*MockService)(nil).ChangeCreationDate), arg0, arg1)
 }
 
-// CreateIncident mocks base method
-func (m *MockService) CreateIncident(arg0 *incident.Incident, arg1 string, arg2 bool) (*incident.Incident, error) {
+// CheckAndSendMessageOnJoin mocks base method
+func (m *MockService) CheckAndSendMessageOnJoin(arg0, arg1, arg2 string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateIncident", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "CheckAndSendMessageOnJoin", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CheckAndSendMessageOnJoin indicates an expected call of CheckAndSendMessageOnJoin
+func (mr *MockServiceMockRecorder) CheckAndSendMessageOnJoin(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAndSendMessageOnJoin", reflect.TypeOf((*MockService)(nil).CheckAndSendMessageOnJoin), arg0, arg1, arg2)
+}
+
+// CreateIncident mocks base method
+func (m *MockService) CreateIncident(arg0 *incident.Incident, arg1 *playbook.Playbook, arg2 string, arg3 bool) (*incident.Incident, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateIncident", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*incident.Incident)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateIncident indicates an expected call of CreateIncident
-func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) CreateIncident(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIncident", reflect.TypeOf((*MockService)(nil).CreateIncident), arg0, arg1, arg2, arg3)
 }
 
 // EditChecklistItem mocks base method
@@ -351,6 +365,20 @@ func (mr *MockServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockService)(nil).OpenUpdateStatusDialog), arg0, arg1)
 }
 
+// PublishRetrospective mocks base method
+func (m *MockService) PublishRetrospective(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PublishRetrospective", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PublishRetrospective indicates an expected call of PublishRetrospective
+func (mr *MockServiceMockRecorder) PublishRetrospective(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishRetrospective", reflect.TypeOf((*MockService)(nil).PublishRetrospective), arg0, arg1)
+}
+
 // RemoveChecklistItem mocks base method
 func (m *MockService) RemoveChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
 	m.ctrl.T.Helper()
@@ -460,6 +488,20 @@ func (m *MockService) ToggleCheckedState(arg0, arg1 string, arg2, arg3 int) erro
 func (mr *MockServiceMockRecorder) ToggleCheckedState(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleCheckedState", reflect.TypeOf((*MockService)(nil).ToggleCheckedState), arg0, arg1, arg2, arg3)
+}
+
+// UpdateRetrospective mocks base method
+func (m *MockService) UpdateRetrospective(arg0, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRetrospective", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRetrospective indicates an expected call of UpdateRetrospective
+func (mr *MockServiceMockRecorder) UpdateRetrospective(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRetrospective", reflect.TypeOf((*MockService)(nil).UpdateRetrospective), arg0, arg1, arg2)
 }
 
 // UpdateStatus mocks base method

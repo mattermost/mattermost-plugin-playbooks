@@ -52,6 +52,8 @@ type Incident struct {
 	DefaultCommanderID      string               `json:"default_commander_id"`
 	AnnouncementChannelID   string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
+	Retrospective           string               `json:"retrospective"`
+	MessageOnJoin           string               `json:"message_on_join"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -259,13 +261,16 @@ var ErrIncidentActive = errors.New("incident active")
 // ErrMalformedIncident is used to indicate an incident is not valid
 var ErrMalformedIncident = errors.New("incident active")
 
+// ErrDuplicateEntry indicates the db could not make an insert because the entry already existed.
+var ErrDuplicateEntry = errors.New("duplicate entry")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
+	CreateIncident(incdnt *Incident, playbook *playbook.Playbook, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
@@ -366,6 +371,16 @@ type Service interface {
 	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 	// was removed from the channel by actorID.
 	UserHasLeftChannel(userID, channelID, actorID string)
+
+	// UpdateRetrospective updates the retrospective for the given incident.
+	UpdateRetrospective(incidentID, userID, newRetrospective string) error
+
+	// PublishRetrospective publishes the retrospective.
+	PublishRetrospective(incidentID, userID string) error
+
+	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
+	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+	CheckAndSendMessageOnJoin(userID, incidentID, channelID string) bool
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -373,7 +388,7 @@ type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident.
+	// CreateIncident creates a new incident. If incdnt has an ID, that ID will be used.
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
@@ -410,6 +425,13 @@ type Store interface {
 
 	// ChangeCreationDate changes the creation date of the specified incident.
 	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
+
+	// HasViewedChannel returns true if userID has viewed channelID
+	HasViewedChannel(userID, channelID string) bool
+
+	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
+	// record of that userID/channelID (i.e., will create duplicate rows)
+	SetViewedChannel(userID, channelID string) error
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
@@ -460,6 +482,12 @@ type Telemetry interface {
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
 	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
+
+	// UpdateRetrospective event
+	UpdateRetrospective(incident *Incident, userID string)
+
+	// PublishRetrospective event
+	PublishRetrospective(incident *Incident, userID string)
 }
 
 type JobOnceScheduler interface {

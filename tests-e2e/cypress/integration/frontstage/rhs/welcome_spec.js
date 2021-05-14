@@ -101,7 +101,7 @@ describe('incident rhs > welcome', () => {
             });
 
             // # Click the prompt to create an incident
-            cy.get('#rhsContainer').findByText('Start Incident').click();
+            cy.get('#rhsContainer').findByText('Start Incident').click({force: true});
 
             // * Verify the incident creation dialog has opened
             cy.get('#interactiveDialogModal').should('exist').within(() => {

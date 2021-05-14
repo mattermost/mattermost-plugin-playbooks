@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Store} from 'redux';
+import {Store, Unsubscribe} from 'redux';
 import {debounce} from 'debounce';
 
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -34,7 +34,7 @@ import {
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
     handleWebsocketPostEditedOrDeleted,
-    handleWebsocketChannelUpdated,
+    handleWebsocketChannelUpdated, handleWebsocketChannelViewed,
 } from './websocket_events';
 import {
     WEBSOCKET_INCIDENT_UPDATED,
@@ -49,6 +49,9 @@ import {makeUpdateMainMenu} from './make_update_main_menu';
 import {fetchGlobalSettings} from './client';
 
 export default class Plugin {
+    removeMainMenuSub?: Unsubscribe;
+    removeRHSListener?: Unsubscribe;
+
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
         registry.registerReducer(reducer);
 
@@ -57,7 +60,7 @@ export default class Plugin {
 
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
-        store.subscribe(updateMainMenuAction);
+        this.removeMainMenuSub = store.subscribe(updateMainMenuAction);
 
         registry.registerAdminConsoleCustomSetting('EnabledTeams', SystemConsoleEnabledTeams, {showTitle: true});
 
@@ -70,7 +73,8 @@ export default class Plugin {
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);
 
-            const {toggleRHSPlugin} = r.registerRightHandSidebarComponent(RightHandSidebar, <RHSTitle/>);
+            const {toggleRHSPlugin} = r.registerRightHandSidebarComponent(RightHandSidebar,
+                <RHSTitle/>);
             const boundToggleRHSAction = (): void => store.dispatch(toggleRHSPlugin);
 
             // Store the toggleRHS action to use later
@@ -90,9 +94,13 @@ export default class Plugin {
             r.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.POST_EDITED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_UPDATED, handleWebsocketChannelUpdated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WebsocketEvents.CHANNEL_VIEWED, handleWebsocketChannelViewed(store.getState, store.dispatch));
 
             // Listen for channel changes and open the RHS when appropriate.
-            store.subscribe(makeRHSOpener(store));
+            if (this.removeRHSListener) {
+                this.removeRHSListener();
+            }
+            this.removeRHSListener = store.subscribe(makeRHSOpener(store));
 
             r.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
 
@@ -119,6 +127,17 @@ export default class Plugin {
         };
         registry.registerWebSocketEventHandler(WebsocketEvents.LICENSE_CHANGED, checkRegistrations);
         checkRegistrations();
+    }
+
+    public uninitialize() {
+        if (this.removeMainMenuSub) {
+            this.removeMainMenuSub();
+            delete this.removeMainMenuSub;
+        }
+        if (this.removeRHSListener) {
+            this.removeRHSListener();
+            delete this.removeRHSListener;
+        }
     }
 }
 

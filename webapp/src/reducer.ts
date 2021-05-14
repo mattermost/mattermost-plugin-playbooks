@@ -23,14 +23,20 @@ import {
     INCIDENT_UPDATED,
     REMOVED_FROM_INCIDENT_CHANNEL,
     SetRHSTabState,
-    SET_RHS_TAB_STATE, SetRHSEventsFilter, SET_RHS_EVENTS_FILTER, ReceivedTeamDisabled, RECEIVED_TEAM_DISABLED,
+    SET_RHS_TAB_STATE,
+    SetRHSEventsFilter,
+    SET_RHS_EVENTS_FILTER,
+    ReceivedTeamDisabled,
+    RECEIVED_TEAM_DISABLED,
     PLAYBOOK_CREATED,
     PlaybookCreated,
     PLAYBOOK_DELETED,
     PlaybookDeleted,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
-    ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
+    ReceivedGlobalSettings,
+    RECEIVED_GLOBAL_SETTINGS,
+    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
 
@@ -227,6 +233,18 @@ const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlo
     }
 };
 
+const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasViewedChannel) => {
+    switch (action.type) {
+    case SET_HAS_VIEWED_CHANNEL:
+        return {
+            ...state,
+            [action.channelId]: action.hasViewed,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -237,4 +255,5 @@ export default combineReducers({
     eventsFilterByChannel,
     numPlaybooksByTeam,
     globalSettings,
+    hasViewedByChannel,
 });
