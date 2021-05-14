@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation} from 'react-router-dom';
+import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -623,6 +623,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                 confirmButtonText={'Discard Changes'}
                 onConfirm={props.onClose}
                 onCancel={confirmCancel}
+            />
+            <Prompt
+                when={changesMade}
+                message={'Are you sure you want to discard your changes?'}
             />
         </OuterContainer>
     );
