@@ -64,10 +64,9 @@ func TestIncidents(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-		handler = NewHandler(client, configService)
-
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
+		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		telemetryService = &telemetry.NoopTelemetry{}
@@ -98,6 +97,7 @@ func TestIncidents(t *testing.T) {
 			})
 
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -385,6 +385,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create incident from dialog - dialog request userID doesn't match requester's id", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -441,6 +442,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create valid incident with missing playbookID from dialog", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		dialogRequest := model.SubmitDialogRequest{
 			TeamId: "testTeamID",
@@ -476,6 +478,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create incident from dialog -- user does not have permission for the original postID's channel", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -524,6 +527,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create incident from dialog -- user is not a member of the playbook", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		withid := playbook.Playbook{
 			ID:                   "playbookid1",
@@ -712,6 +716,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create invalid incident - missing commander", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			TeamID: "testTeamID",
@@ -733,6 +738,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create invalid incident - missing team", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -752,6 +758,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("create invalid incident - missing name", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			CommanderUserID: "testUserID",
@@ -878,6 +885,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("get incident by channel id - not found", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		userID := "testUserID"
 
 		testIncident := incident.Incident{
@@ -903,6 +911,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("get incident by channel id - not authorized", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1348,6 +1357,7 @@ func TestIncidents(t *testing.T) {
 
 	t.Run("get empty list of incidents", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		setDefaultExpectations(t)
 
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
@@ -1386,6 +1396,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1445,6 +1456,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("update incident status, bad status", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1467,6 +1479,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("update incident status, no permission to post", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1489,6 +1502,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("update incident status, message empty", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1511,6 +1525,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("update incident status, status empty", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
@@ -1533,6 +1548,7 @@ func TestIncidents(t *testing.T) {
 	t.Run("update incident status, description empty", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",

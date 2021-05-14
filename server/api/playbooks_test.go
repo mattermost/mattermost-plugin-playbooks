@@ -141,9 +141,8 @@ func TestPlaybooks(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-
-		handler = NewHandler(client, configService)
-
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -169,7 +168,8 @@ func TestPlaybooks(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-		handler = NewHandler(client, configService)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -279,6 +279,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("create playbook, as guest", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		playbookService.EXPECT().
 			Create(playbooktest, "testuserid").
@@ -301,6 +302,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("create playbook, no permissions to broadcast channel", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		broadcastChannelID := model.NewId()
 
 		playbookService.EXPECT().
@@ -469,6 +471,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("create playbook with invited users and groups, group disallowing mention", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		pbook := playbook.Playbook{
 			Title:  "My Playbook",
@@ -592,6 +595,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbooks, as guest", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		playbookResult := struct {
 			TotalCount int                 `json:"total_count"`
@@ -696,6 +700,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("update playbook but no permissions in broadcast channel", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -938,6 +943,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("delete playbook no team permission", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -952,6 +958,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("create playbook no team permission", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
@@ -969,6 +976,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbook no team permission", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -984,6 +992,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbooks no team permission", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
 
@@ -994,6 +1003,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("update playbooks no team permission", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -1024,6 +1034,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("get playbook by non-member", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		mattermostUserID = "unknownMember"
 
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
@@ -1064,6 +1075,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("update playbook by non-member", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		mattermostUserID = "unknownMember"
 
 		playbookService.EXPECT().
@@ -1113,6 +1125,7 @@ func TestPlaybooks(t *testing.T) {
 
 	t.Run("delete playbook by non-member", func(t *testing.T) {
 		reset(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		mattermostUserID = "unknownMember"
 
 		playbookService.EXPECT().
@@ -1293,7 +1306,8 @@ func TestSortingPlaybooks(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-		handler = NewHandler(client, configService)
+		logger = mock_poster.NewMockLogger(mockCtrl)
+		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
@@ -1384,6 +1398,10 @@ func TestSortingPlaybooks(t *testing.T) {
 	for _, data := range testData {
 		t.Run(data.testName, func(t *testing.T) {
 			reset(t)
+
+			if data.expectedErr != nil {
+				logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+			}
 
 			playbookResult := struct {
 				TotalCount int                 `json:"total_count"`
@@ -1494,7 +1512,7 @@ func TestPagingPlaybooks(t *testing.T) {
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
 		logger = mock_poster.NewMockLogger(mockCtrl)
-		handler = NewHandler(client, configService)
+		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 	}
@@ -1627,6 +1645,10 @@ func TestPagingPlaybooks(t *testing.T) {
 	for _, data := range testData {
 		t.Run(data.testName, func(t *testing.T) {
 			reset(t)
+
+			if data.expectedErr != nil {
+				logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+			}
 
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(

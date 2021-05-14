@@ -14,6 +14,7 @@ import (
 )
 
 type StatsHandler struct {
+	*ErrorHandler
 	pluginAPI  *pluginapi.Client
 	log        bot.Logger
 	statsStore *sqlstore.StatsStore
@@ -21,9 +22,10 @@ type StatsHandler struct {
 
 func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, config config.Service) *StatsHandler {
 	handler := &StatsHandler{
-		pluginAPI:  api,
-		log:        log,
-		statsStore: statsStore,
+		ErrorHandler: &ErrorHandler{log: log},
+		pluginAPI:    api,
+		log:          log,
+		statsStore:   statsStore,
 	}
 
 	statsRouter := router.PathPrefix("/stats").Subrouter()
@@ -60,12 +62,12 @@ func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 
 	filters, err := parseStatsFilters(r.URL)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Bad filters", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad filters", err)
 		return
 	}
 
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, filters.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filters.TeamID))
 		return
 	}
