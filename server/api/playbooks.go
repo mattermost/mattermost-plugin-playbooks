@@ -68,12 +68,12 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	if !h.config.IsE10Licensed() {
 		num, err := h.playbookService.GetNumPlaybooksForTeam(pbook.TeamID)
 		if err != nil {
-			HandleError(w, err)
+			h.HandleError(w, err)
 			return
 		}
 
 		if num > 0 {
-			HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers can create only one playbook per team", nil)
+			h.HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers can create only one playbook per team", nil)
 			return
 		}
 	}

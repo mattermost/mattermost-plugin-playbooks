@@ -12,16 +12,18 @@ import (
 )
 
 type BotHandler struct {
+	*ErrorHandler
 	pluginAPI *pluginapi.Client
 	poster    bot.Poster
 	config    config.Service
 }
 
-func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster, config config.Service) *BotHandler {
+func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster, logger bot.Logger, config config.Service) *BotHandler {
 	handler := &BotHandler{
-		pluginAPI: api,
-		poster:    poster,
-		config:    config,
+		ErrorHandler: &ErrorHandler{log: logger},
+		pluginAPI:    api,
+		poster:       poster,
+		config:       config,
 	}
 
 	botRouter := router.PathPrefix("/bot").Subrouter()
@@ -42,12 +44,12 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 
 	var payload messagePayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode message", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode message", err)
 		return
 	}
 
 	if err := h.poster.NotifyAdmins(payload.MessageType, userID); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -57,31 +59,31 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
 	}
 
 	users, ok := requestData.Context["users"].(float64)
 	if !ok {
-		HandleErrorWithCode(w, http.StatusBadRequest, "malformed context: users is not a number", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "malformed context: users is not a number", nil)
 		return
 	}
 
 	termsAccepted, ok := requestData.Context["termsAccepted"].(bool)
 	if !ok {
-		HandleErrorWithCode(w, http.StatusBadRequest, "malformed context: termsAccepted is not a boolean", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "malformed context: termsAccepted is not a boolean", nil)
 		return
 	}
 
 	receiveEmailsAccepted, ok := requestData.Context["receiveEmailsAccepted"].(bool)
 	if !ok {
-		HandleErrorWithCode(w, http.StatusBadRequest, "malformed context: receiveEmailsAccepted is not a boolean", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "malformed context: receiveEmailsAccepted is not a boolean", nil)
 		return
 	}
 
 	originalPost, err := h.pluginAPI.Post.GetPost(requestData.PostId)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -110,7 +112,7 @@ outer:
 			h.pluginAPI.Log.Warn("unable to edit the admin notification post", "post ID", post.Id)
 		}
 
-		HandleErrorWithCode(w, http.StatusInternalServerError, "unable to request the trial license", err)
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to request the trial license", err)
 		return
 	}
 

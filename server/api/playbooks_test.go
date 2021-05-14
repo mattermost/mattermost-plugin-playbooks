@@ -180,6 +180,8 @@ func TestPlaybooks(t *testing.T) {
 			IsE10Licensed().
 			Return(false)
 
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(1, nil)
 
 		testrecorder := httptest.NewRecorder()
@@ -198,12 +200,10 @@ func TestPlaybooks(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-
-		handler = NewHandler(client, configService)
-
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
+		handler = NewHandler(client, configService, logger)
 
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 

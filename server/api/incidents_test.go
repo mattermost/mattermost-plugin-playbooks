@@ -783,10 +783,9 @@ func TestIncidents(t *testing.T) {
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
 		client = pluginapi.NewClient(pluginAPI)
-		handler = NewHandler(client, configService)
-
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
+		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
 		telemetryService = &telemetry.NoopTelemetry{}
