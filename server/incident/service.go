@@ -658,6 +658,24 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
 
+	team, err := s.pluginAPI.Team.Get(incidentToModify.TeamID)
+	if err != nil {
+		return err
+	}
+
+	retrospectiveURL := fmt.Sprintf("/%s/%s/incidents/%s/retrospective",
+		team.Name,
+		s.configService.GetManifest().Id,
+		incidentToModify.ID,
+	)
+
+	// If we are resolving the incident, send the reminder to fill out the retrospective
+	if options.Status == StatusResolved && previousStatus != StatusArchived && previousStatus != StatusResolved {
+		if _, err = s.poster.PostMessage(incidentToModify.ChannelID, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
+			return errors.Wrap(err, "failed to post retro reminder to channel")
+		}
+	}
+
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(incidentID)
 
