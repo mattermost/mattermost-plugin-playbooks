@@ -133,7 +133,7 @@ func (p *Plugin) OnActivate() error {
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
-	p.handler = api.NewHandler(pluginAPIClient, p.config)
+	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
@@ -175,6 +175,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
+	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting

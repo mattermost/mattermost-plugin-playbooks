@@ -54,6 +54,7 @@ type Incident struct {
 	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
 	Retrospective           string               `json:"retrospective"`
 	RetrospectivePublished  int64                `json:"retrospective_published"` // The last time a retrospective was published. 0 if never published.
+	MessageOnJoin           string               `json:"message_on_join"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -262,6 +263,9 @@ var ErrIncidentActive = errors.New("incident active")
 // ErrMalformedIncident is used to indicate an incident is not valid
 var ErrMalformedIncident = errors.New("incident active")
 
+// ErrDuplicateEntry indicates the db could not make an insert because the entry already existed.
+var ErrDuplicateEntry = errors.New("duplicate entry")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
@@ -375,6 +379,10 @@ type Service interface {
 
 	// PublishRetrospective publishes the retrospective.
 	PublishRetrospective(incidentID, text, userID string) error
+
+	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
+	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+	CheckAndSendMessageOnJoin(userID, incidentID, channelID string) bool
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -419,6 +427,13 @@ type Store interface {
 
 	// ChangeCreationDate changes the creation date of the specified incident.
 	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
+
+	// HasViewedChannel returns true if userID has viewed channelID
+	HasViewedChannel(userID, channelID string) bool
+
+	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
+	// record of that userID/channelID (i.e., will create duplicate rows)
+	SetViewedChannel(userID, channelID string) error
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.

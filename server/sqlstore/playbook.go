@@ -48,7 +48,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
 			"DefaultCommanderID", "DefaultCommanderEnabled",
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
-			"WebhookOnCreationURL", "WebhookOnCreationEnabled").
+			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
+			"MessageOnJoin", "MessageOnJoinEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -109,6 +110,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
 			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
 			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
+			"MessageOnJoin":               rawPlaybook.MessageOnJoin,
+			"MessageOnJoinEnabled":        rawPlaybook.MessageOnJoinEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -322,6 +325,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
 			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
 			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
+			"MessageOnJoin":               rawPlaybook.MessageOnJoin,
+			"MessageOnJoinEnabled":        rawPlaybook.MessageOnJoinEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

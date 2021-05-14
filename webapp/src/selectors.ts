@@ -3,6 +3,7 @@
 
 import {createSelector} from 'reselect';
 
+import General from 'mattermost-redux/constants/general';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getLicense} from 'mattermost-redux/selectors/entities/general';
@@ -11,7 +12,8 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
-import {$ID, IDMappedObjects} from 'mattermost-redux/types/utilities';
+import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {pluginId} from 'src/manifest';
 import {
@@ -32,6 +34,8 @@ export const selectToggleRHS = (state: GlobalState): () => void => pluginState(s
 export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
 
 export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
+
+export const getAdminAnalytics = (state: GlobalState): Dictionary<number> => state.entities.admin.analytics as Dictionary<number>;
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
@@ -160,3 +164,16 @@ export const currentTeamNumPlaybooks = createSelector(
         return playbooksPerTeamMap[teamId] || 0;
     },
 );
+
+export const isPostMenuModalVisible = (state: GlobalState): boolean =>
+    pluginState(state).postMenuModalVisibility;
+
+export const isCurrentUserAdmin = createSelector(
+    getCurrentUser,
+    (user) => {
+        const rolesArray = user.roles.split(' ');
+        return rolesArray.includes(General.SYSTEM_ADMIN_ROLE);
+    },
+);
+
+export const hasViewedByChannelID = (state: GlobalState) => pluginState(state).hasViewedByChannel;

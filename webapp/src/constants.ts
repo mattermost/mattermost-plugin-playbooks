@@ -16,3 +16,9 @@ export const TEMPLATE_TITLE_KEY = 'template_title';
 export const BACKSTAGE_LIST_PER_PAGE = 15;
 
 export const PROFILE_CHUNK_SIZE = 200;
+
+export enum AdminNotificationType {
+    PLAYBOOK = 'playbook',
+    VIEW_TIMELINE = 'view_timeline',
+    MESSAGE_TO_TIMELINE = 'message_to_timeline',
+}

@@ -82,6 +82,11 @@ class RegistryWrapper {
         const id = this.registry.registerNeedsTeamRoute(...args);
         this.unregisterCallbacks.push(() => this.registry.unregisterComponent(id));
     }
+
+    registerRootComponent = (...args: any[]) => {
+        const id = this.registry.registerRootComponent(...args);
+        this.unregisterCallbacks.push(() => this.registry.unregisterComponent(id));
+    }
 }
 
 export default RegistryWrapper;

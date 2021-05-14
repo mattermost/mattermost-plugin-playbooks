@@ -11,8 +11,6 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-const PricingPlanDifferentiationEnabled = false
-
 // ServiceImpl holds access to the plugin's Configuration.
 type ServiceImpl struct {
 	api *pluginapi.Client
@@ -175,7 +173,22 @@ func (c *ServiceImpl) IsConfiguredForDevelopmentAndTesting() bool {
 		*config.ServiceSettings.EnableDeveloper
 }
 
-// IsLicensed returns true when the server is appropriately licensed to run this plugin.
-func (c *ServiceImpl) IsLicensed() bool {
+// IsCloud returns true when the server is on cloud, and false otherwise
+func (c *ServiceImpl) IsCloud() bool {
+	license := c.api.System.GetLicense()
+	if license == nil || license.Features == nil || license.Features.Cloud == nil {
+		return false
+	}
+
+	return *license.Features.Cloud
+}
+
+// IsE20Licensed returns true when the server either has an E20 license or is configured for development.
+func (c *ServiceImpl) IsE20Licensed() bool {
 	return pluginapi.IsE20LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
+}
+
+// IsE10Licensed returns true when the server either has at least an E10 license or is configured for development.
+func (c *ServiceImpl) IsE10Licensed() bool {
+	return pluginapi.IsE10LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
 }

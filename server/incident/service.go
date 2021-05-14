@@ -118,7 +118,7 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 
 // sendWebhookOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
-func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
+func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 
 	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
@@ -149,7 +149,7 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident *Incident) error {
 		ChannelURL string `json:"channel_url"`
 		DetailsURL string `json:"details_url"`
 	}{
-		Incident:   *theIncident,
+		Incident:   theIncident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 	}
@@ -344,15 +344,6 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		}
 	}
 
-	if incdnt.WebhookOnCreationURL != "" {
-		go func() {
-			if err = s.sendWebhookOnCreation(incdnt); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
-				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
-			}
-		}()
-	}
-
 	event := &TimelineEvent{
 		IncidentID:    incdnt.ID,
 		CreateAt:      incdnt.CreateAt,
@@ -366,6 +357,15 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		return incdnt, errors.Wrap(err, "failed to create timeline event")
 	}
 	incdnt.TimelineEvents = append(incdnt.TimelineEvents, *event)
+
+	if incdnt.WebhookOnCreationURL != "" {
+		go func() {
+			if err = s.sendWebhookOnCreation(*incdnt); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
+				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+			}
+		}()
+	}
 
 	if incdnt.PostID == "" {
 		return incdnt, nil
@@ -1278,6 +1278,46 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	}
 
 	_ = s.sendIncidentToClient(incidentID)
+}
+
+// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
+// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channelID string) bool {
+	hasViewed := s.store.HasViewedChannel(userID, channelID)
+
+	if hasViewed {
+		return true
+	}
+
+	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve incident for channelID: %s; error: %s", channelID, err.Error())
+		return false
+	}
+
+	if incidentID != givenIncidentID {
+		s.logger.Errorf("endpoint's incidentID does not match channelID's incidentID")
+		return false
+	}
+
+	theIncident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		s.logger.Errorf("failed to resolve incident for incidentID: %s; error: %s", incidentID, err.Error())
+		return false
+	}
+
+	if err = s.store.SetViewedChannel(userID, channelID); err != nil {
+		// If duplicate entry, userID has viewed channelID. If not a duplicate, assume they haven't.
+		return errors.Is(err, ErrDuplicateEntry)
+	}
+
+	if theIncident.MessageOnJoin != "" {
+		s.poster.EphemeralPost(userID, channelID, &model.Post{
+			Message: theIncident.MessageOnJoin,
+		})
+	}
+
+	return true
 }
 
 // UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID

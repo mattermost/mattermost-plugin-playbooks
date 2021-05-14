@@ -667,6 +667,72 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.16.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "MessageOnJoin", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Playbook")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Playbook SET MessageOnJoin = '' WHERE MessageOnJoin IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column MessageOnJoin of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "MessageOnJoinEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column MessageOnJoinEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Incident", "MessageOnJoin", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Incident")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Incident SET MessageOnJoin = '' WHERE MessageOnJoin IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column MessageOnJoin of table IR_Incident")
+				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_ViewedChannel
+					(
+						ChannelID     VARCHAR(26) NOT NULL,
+						UserID        VARCHAR(26) NOT NULL,
+						UNIQUE INDEX  IR_ViewedChannel_ChannelID_UserID (ChannelID, UserID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_ViewedChannel")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "MessageOnJoin", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "MessageOnJoinEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column MessageOnJoinEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Incident", "MessageOnJoin", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Incident")
+				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_ViewedChannel
+					(
+						ChannelID TEXT NOT NULL,
+						UserID    TEXT NOT NULL
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_ViewedChannel")
+				}
+
+				if _, err := e.Exec(createUniquePGIndex("IR_ViewedChannel_ChannelID_UserID", "IR_ViewedChannel", "ChannelID, UserID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_ViewedChannel_ChannelID_UserID")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.16.0"),
+		toVersion:   semver.MustParse("0.17.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectivePublished", "BIGINT NOT NULL DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column RetrospectivePublished to table IR_Incident")
 				}
@@ -675,7 +741,6 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column RetrospectivePublished to table IR_Incident")
 				}
 			}
-
 			return nil
 		},
 	},

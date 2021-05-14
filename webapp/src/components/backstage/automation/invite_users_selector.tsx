@@ -32,7 +32,7 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
     const [searchedUsers, setSearchedUsers] = useState<UserProfile[]>([]);
     useEnsureProfiles(props.userIds);
 
-    // Update the options whenever the passed user IDs or the search term are updated
+    // Update the options when the search term is updated
     useEffect(() => {
         const updateOptions = async (term: string) => {
             let profiles;
