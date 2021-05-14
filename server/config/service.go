@@ -188,7 +188,7 @@ func (c *ServiceImpl) IsE20Licensed() bool {
 	return pluginapi.IsE20LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
 }
 
-// IsE10Licensed returns true when the server either has an E10 license or is configured for development.
+// IsE10Licensed returns true when the server either has at least an E10 license or is configured for development.
 func (c *ServiceImpl) IsE10Licensed() bool {
 	return pluginapi.IsE10LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
 }
