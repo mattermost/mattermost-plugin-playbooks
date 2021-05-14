@@ -133,8 +133,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		testData := model.NewAutocompleteData("bulk-data", "[ongoing] [ended] [days] [seed]", "Generate random test data in bulk")
 		testData.AddTextArgument("An integer indicating how many ongoing incidents will be generated.", "Number of ongoing incidents", "")
 		testData.AddTextArgument("An integer indicating how many ended incidents will be generated.", "Number of ended incidents", "")
-		testData.AddTextArgument("Date in format 2020-01-31", "First possible creation date", "")
-		testData.AddTextArgument("Date in format 2020-01-31", "Last possible creation date", "")
+		testData.AddTextArgument("An integer n. The incidents generated will have a start date between n days ago and today.", "Range of days for the incident start date", "")
 		testData.AddTextArgument("An integer in case you need random, but reproducible, results", "Random seed (optional)", "")
 		test.AddCommand(testData)
 
@@ -1145,17 +1144,8 @@ func (r *Runner) actionTestData(params []string) {
 		return
 	}
 
-	begin, err := time.ParseInLocation("2006-01-02", time.Now().AddDate(0, 0, -days).Format("2006-01-02"), time.Now().Location())
-	if err != nil {
-		r.warnUserAndLogErrorf("unable to parse in location on time.Now().AddDate: %v", err)
-		return
-	}
-
-	end, err := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02"), time.Now().Location())
-	if err != nil {
-		r.warnUserAndLogErrorf("unable to parse in location on time.Now(): %v", err)
-		return
-	}
+	begin := time.Now().AddDate(0, 0, -days)
+	end := time.Now()
 
 	seed := time.Now().Unix()
 	if len(params) > 3 {
