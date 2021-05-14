@@ -1687,7 +1687,17 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 		return errors.Wrap(err, "failed to get publisher user")
 	}
 
-	if _, err = s.poster.PostMessage(incidentToPublish.ChannelID, "@channel Retrospective has been published by @%s\n%s", publisherUser.Username, text); err != nil {
+	team, err := s.pluginAPI.Team.Get(incidentToPublish.TeamID)
+	if err != nil {
+		return err
+	}
+
+	retrospectiveURL := fmt.Sprintf("/%s/%s/incidents/%s/retrospective",
+		team.Name,
+		s.configService.GetManifest().Id,
+		incidentToPublish.ID,
+	)
+	if _, err = s.poster.PostMessage(incidentToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, text); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
