@@ -166,3 +166,9 @@ export const RadioInput = styled.input`
         margin: 0 8px 0 0;
     }
 `;
+
+export const CenteredRow = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+`;

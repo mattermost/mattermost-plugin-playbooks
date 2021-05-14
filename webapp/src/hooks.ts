@@ -21,8 +21,11 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel} from 'src/selectors';
 import {Incident, StatusPost} from 'src/types/incident';
+import {clientFetchPlaybooksCount} from 'src/client';
+import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {globalSettings} from './selectors';
+import {isE10LicensedOrDevelopment} from './license';
+import {currentTeamNumPlaybooks, globalSettings} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -213,6 +216,44 @@ export function usePost(postId: string) {
 export function useLatestUpdate(incident: Incident) {
     const postId = getLatestPostId(incident.status_posts);
     return usePost(postId);
+}
+
+export function useNumPlaybooksInCurrentTeam() {
+    const dispatch = useDispatch();
+    const team = useSelector(getCurrentTeam);
+    const numPlaybooks = useSelector(currentTeamNumPlaybooks);
+
+    useEffect(() => {
+        const fetch = async () => {
+            const response = await clientFetchPlaybooksCount(team.id);
+            dispatch(receivedTeamNumPlaybooks(team.id, response.count));
+        };
+
+        fetch();
+    }, [team.id]);
+
+    return numPlaybooks;
+}
+
+// useAllowPlaybookCreationInCurrentTeam returns whether a user can create
+// a playbook in the current team
+export function useAllowPlaybookCreationInCurrentTeam() {
+    const numPlaybooks = useNumPlaybooksInCurrentTeam();
+    const isLicensed = useSelector(isE10LicensedOrDevelopment);
+
+    return isLicensed || numPlaybooks === 0;
+}
+
+// useAllowTimelineViewInCurrentTeam returns whether a user can view the RHS
+// timeline in the current team
+export function useAllowTimelineViewInCurrentTeam() {
+    return useSelector(isE10LicensedOrDevelopment);
+}
+
+// useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
+// post to the timeline in the current team
+export function useAllowAddMessageToTimelineInCurrentTeam() {
+    return useSelector(isE10LicensedOrDevelopment);
 }
 
 export function useEnsureProfiles(userIds: string[]) {

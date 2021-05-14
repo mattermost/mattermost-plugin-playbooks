@@ -40,11 +40,9 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service, log bot.Logg
 
 	handler.APIRouter = api
 	handler.root = root
-
-	e20Middleware := E20LicenseRequired{config}
+	handler.config = config
 
 	settingsRouter := handler.APIRouter.PathPrefix("/settings").Subrouter()
-	settingsRouter.Use(e20Middleware.Middleware)
 	settingsRouter.HandleFunc("", handler.getSettings).Methods(http.MethodGet)
 	settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPost)
 
@@ -140,22 +138,5 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 		}
 
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
-	})
-}
-
-type E20LicenseRequired struct {
-	config config.Service
-}
-
-// Middleware checks if the server is appropriately licensed.
-func (m *E20LicenseRequired) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !m.config.IsLicensed() {
-			http.Error(w, "E20 license required", http.StatusForbidden)
-
-			return
-		}
-
-		next.ServeHTTP(w, r)
 	})
 }

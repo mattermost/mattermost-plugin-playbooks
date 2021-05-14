@@ -41,10 +41,6 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
-	if !config.PricingPlanDifferentiationEnabled {
-		e20Middleware := E20LicenseRequired{configService}
-		playbooksRouter.Use(e20Middleware.Middleware)
-	}
 
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
 
@@ -67,6 +63,19 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
+	}
+
+	if !h.config.IsE10Licensed() {
+		num, err := h.playbookService.GetNumPlaybooksForTeam(pbook.TeamID)
+		if err != nil {
+			h.HandleError(w, err)
+			return
+		}
+
+		if num > 0 {
+			h.HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers can create only one playbook per team", nil)
+			return
+		}
 	}
 
 	if pbook.ID != "" {

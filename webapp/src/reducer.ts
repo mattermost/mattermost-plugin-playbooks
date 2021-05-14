@@ -34,8 +34,9 @@ import {
     PlaybookDeleted,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
-    ReceivedGlobalSettings,
-    RECEIVED_GLOBAL_SETTINGS,
+    ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
+    ShowPostMenuModal, HidePostMenuModal,
+    SHOW_POST_MENU_MODAL, HIDE_POST_MENU_MODAL,
     SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
 } from 'src/types/actions';
 import {Incident} from 'src/types/incident';
@@ -233,6 +234,17 @@ const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlo
     }
 };
 
+const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | HidePostMenuModal) => {
+    switch (action.type) {
+    case SHOW_POST_MENU_MODAL:
+        return true;
+    case HIDE_POST_MENU_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
 const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasViewedChannel) => {
     switch (action.type) {
     case SET_HAS_VIEWED_CHANNEL:
@@ -255,5 +267,6 @@ export default combineReducers({
     eventsFilterByChannel,
     numPlaybooksByTeam,
     globalSettings,
+    postMenuModalVisibility,
     hasViewedByChannel,
 });

@@ -28,10 +28,7 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 		statsStore:   statsStore,
 	}
 
-	e20Middleware := E20LicenseRequired{config}
-
 	statsRouter := router.PathPrefix("/stats").Subrouter()
-	statsRouter.Use(e20Middleware.Middleware)
 	statsRouter.HandleFunc("", handler.stats).Methods(http.MethodGet)
 
 	return handler

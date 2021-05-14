@@ -39,6 +39,10 @@ import {currentRHSEventsFilter, currentIncident} from 'src/selectors';
 import {setRHSEventsFilter} from 'src/actions';
 import {telemetryEventForIncident} from 'src/client';
 
+import {useAllowTimelineViewInCurrentTeam} from 'src/hooks';
+
+import TimelineUpgradePlaceholder from 'src/components/rhs/rhs_timeline_placeholder';
+
 const Header = styled.div`
     display: flex;
     flex-direction: row;
@@ -90,6 +94,8 @@ const RHSTimeline = (props: Props) => {
     const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>(currentRHSEventsFilter);
     const incident = useSelector<GlobalState, Incident>(currentIncident);
 
+    const allowTimelineView = useAllowTimelineViewInCurrentTeam();
+
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
     }, [eventsFilter, allEvents]);
@@ -127,6 +133,12 @@ const RHSTimeline = (props: Props) => {
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
     }, [props.incident.timeline_events, displayPreference]);
+
+    if (!allowTimelineView) {
+        return (
+            <TimelineUpgradePlaceholder/>
+        );
+    }
 
     if (props.incident.timeline_events.length === 0) {
         return (

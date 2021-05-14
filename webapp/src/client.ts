@@ -31,7 +31,7 @@ import {
     PlaybookNoChecklist,
     FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
-import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
 import {Stats} from 'src/types/stats';
 
@@ -330,6 +330,27 @@ export function exportChannelUrl(channelId: string) {
 
     return `${exportPluginUrl}/export${queryParams}`;
 }
+
+export const requestTrialLicense = async (users: number) => {
+    try {
+        const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
+            method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),
+        });
+        return {data: response};
+    } catch (e) {
+        return {error: e.message};
+    }
+};
+
+export const postMessageToAdmins = async (messageType: AdminNotificationType) => {
+    const body = `{"message_type": "${messageType}"}`;
+    try {
+        const data = await doPost(`${apiUrl}/bot/notify-admins`, body);
+        return data;
+    } catch (error) {
+        return {error};
+    }
+};
 
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
