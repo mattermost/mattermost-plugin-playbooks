@@ -647,45 +647,6 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.15.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
-					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
-				}
-				if _, err := e.Exec("UPDATE IR_Playbook SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Playbook")
-				}
-
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
-					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
-				}
-
-				if err := addColumnToMySQLTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
-					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
-				}
-				if _, err := e.Exec("UPDATE IR_Incident SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Incident")
-				}
-			} else {
-				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
-				}
-
-				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
-					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
-				}
-
-				if err := addColumnToPGTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
-					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
-				}
-			}
-
-			return nil
-		},
-	},
-	{
-		fromVersion: semver.MustParse("0.14.0"),
-		toVersion:   semver.MustParse("0.15.0"),
-		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "Retrospective", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column Retrospective to table IR_Incident")
 				}
@@ -761,6 +722,45 @@ var migrations = []Migration{
 
 				if _, err := e.Exec(createUniquePGIndex("IR_ViewedChannel_ChannelID_UserID", "IR_ViewedChannel", "ChannelID, UserID")); err != nil {
 					return errors.Wrapf(err, "failed creating index IR_ViewedChannel_ChannelID_UserID")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.16.0"),
+		toVersion:   semver.MustParse("0.17.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
 				}
 			}
 
