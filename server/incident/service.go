@@ -607,7 +607,7 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 
 // sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
-func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident *Incident) error {
+func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
@@ -634,7 +634,7 @@ func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident *Incident) error {
 		DetailsURL   string              `json:"details_url"`
 		StatusUpdate StatusUpdateOptions `json:"status_update"`
 	}{
-		Incident:   *theIncident,
+		Incident:   theIncident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 		StatusUpdate: StatusUpdateOptions{
@@ -757,7 +757,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	if incidentToModify.WebhookOnStatusUpdateURL != "" {
 		go func() {
-			if err := s.sendWebhookOnUpdateStatus(incidentToModify); err != nil {
+			if err := s.sendWebhookOnUpdateStatus(*incidentToModify); err != nil {
 				s.pluginAPI.Log.Warn("failed to send a POST request to the update status webhook URL", "webhook URL", incidentToModify.WebhookOnStatusUpdateURL, "error", err)
 				_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident update announcement through the outgoing webhook failed. Contact your System Admin for more information.")
 			}
