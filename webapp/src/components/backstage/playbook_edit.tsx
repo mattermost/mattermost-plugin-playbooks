@@ -22,6 +22,7 @@ import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/consta
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 import './playbook.scss';
 import EditableText from './editable_text';
@@ -151,6 +152,9 @@ const timerOptions = [
     {value: 14400, label: '4hr'},
     {value: 86400, label: '24hr'},
 ];
+
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
 
 const PlaybookEdit: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
@@ -600,9 +604,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     </EditContent>
                 </EditView>
             </Container>
-            <Prompt
-                when={changesMade}
-                message={'Are you sure you want to discard your changes?'}
+            <RouteLeavingGuard
+                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                shouldBlockNavigation={() => changesMade}
             />
         </OuterContainer>
     );
