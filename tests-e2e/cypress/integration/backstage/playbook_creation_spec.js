@@ -89,7 +89,7 @@ describe('playbook creation button', () => {
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('shows remove beside members when > 1 member', () => {
+    it.only('shows remove beside members when > 1 member', () => {
         // # Open backstage
         cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
@@ -101,6 +101,9 @@ describe('playbook creation button', () => {
 
         // # Click 'Permissions' tab
         cy.findByText('Permissions').should('be.visible').click().wait(TIMEOUTS.TINY);
+
+        // # Click 'only selected users can access'
+        cy.get('input[name="enabled"][value="enabled"]').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // * Verify that there is no Remove link when there is one member
         cy.findAllByTestId('user-line').should('have.length', 1);
