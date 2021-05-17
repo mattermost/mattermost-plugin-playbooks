@@ -89,7 +89,7 @@ describe('playbook creation button', () => {
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it.only('shows remove beside members when > 1 member', () => {
+    it('shows remove beside members when > 1 member', () => {
         // # Open backstage
         cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
