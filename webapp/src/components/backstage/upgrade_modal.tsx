@@ -101,23 +101,15 @@ const SizedGenericModal = styled(GenericModal)`
     height: 404px;
     padding: 0;
 
-    .GenericModal__header {
-        min-height: 48px;
-    }
-
-    .modal-content {
-        padding: 0;
-    }
-
-    &&& .close {
+    &&&.close {
         color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 
-    .GenericModal__button.confirm {
+    &&&.GenericModal__button.confirm {
         padding: 13px 20px;
     }
 
-    .modal-footer {
+    &&&.modal-footer {
         display: flex;
         align-items: center;
         justify-content: center;
