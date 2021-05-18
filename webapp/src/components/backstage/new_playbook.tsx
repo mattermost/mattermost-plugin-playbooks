@@ -9,7 +9,6 @@ import {teamPluginUrl} from 'src/browser_routing';
 
 interface Props {
     currentTeam: Team
-    onClose: () => void
 }
 
 export const NewPlaybook: FC<Props> = (props: Props) => {
@@ -22,7 +21,6 @@ export const NewPlaybook: FC<Props> = (props: Props) => {
     return (
         <PlaybookEdit
             currentTeam={props.currentTeam}
-            onClose={props.onClose}
             isNew={true}
         />
     );
