@@ -733,12 +733,12 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.17.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectivePublished", "BIGINT NOT NULL DEFAULT 0"); err != nil {
-					return errors.Wrapf(err, "failed adding column RetrospectivePublished to table IR_Incident")
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectivePublishedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectivePublishedAt to table IR_Incident")
 				}
 			} else {
-				if err := addColumnToPGTable(e, "IR_Incident", "RetrospectivePublished", "BIGINT NOT NULL DEFAULT 0"); err != nil {
-					return errors.Wrapf(err, "failed adding column RetrospectivePublished to table IR_Incident")
+				if err := addColumnToPGTable(e, "IR_Incident", "RetrospectivePublishedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectivePublishedAt to table IR_Incident")
 				}
 			}
 			return nil

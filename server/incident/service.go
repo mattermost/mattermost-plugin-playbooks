@@ -1717,7 +1717,7 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 
 	// Update the text to keep syncronized
 	incidentToPublish.Retrospective = text
-	incidentToPublish.RetrospectivePublished = now
+	incidentToPublish.RetrospectivePublishedAt = now
 	if err = s.store.UpdateIncident(incidentToPublish); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
