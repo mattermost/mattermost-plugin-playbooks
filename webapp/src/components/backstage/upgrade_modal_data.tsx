@@ -110,6 +110,14 @@ export const getUpgradeModalCopy = (
             titleText = 'Add more to your timeline';
             helpText = 'Add important messages from the incident channel to the timeline and improve context in your retrospective.';
             break;
+        case AdminNotificationType.PLAYBOOK_GRANULAR_ACCESS:
+            titleText = 'Put your team in control';
+            helpText = 'Decide who can create incidents from this playbook, giving them permissions to viewing and editing it.';
+            break;
+        case AdminNotificationType.PLAYBOOK_CREATION_RESTRICTION:
+            titleText = 'Put your team in control';
+            helpText = 'Every team structure is different. Decide which users in the team can create playbooks.';
+            break;
         }
 
         if (!isAdmin) {
