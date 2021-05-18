@@ -53,7 +53,7 @@ type Incident struct {
 	AnnouncementChannelID    string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL     string               `json:"webhook_on_creation_url"`
 	Retrospective            string               `json:"retrospective"`
-	RetrospectivePublishedAt int64                `json:"retrospective_published"` // The last time a retrospective was published. 0 if never published.
+	RetrospectivePublishedAt int64                `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
 	MessageOnJoin            string               `json:"message_on_join"`
 }
 
