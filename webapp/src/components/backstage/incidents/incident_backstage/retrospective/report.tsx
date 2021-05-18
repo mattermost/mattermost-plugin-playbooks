@@ -77,7 +77,7 @@ const Report = (props: ReportProps) => {
             </>
         );
     } else if (props.incident.retrospective_published_at) {
-        publishButtonText = 'Re-Publish';
+        publishButtonText = 'Republish';
     }
 
     return (
