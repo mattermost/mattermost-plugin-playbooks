@@ -2,29 +2,27 @@
 // See LICENSE.txt for license information.
 
 import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation} from 'react-router-dom';
+import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
+import styled from 'styled-components';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
-import styled from 'styled-components';
-
 import {Tabs, TabsContent} from 'src/components/tabs';
-
 import {PresetTemplates} from 'src/components/backstage/template_selector';
-
-import {teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {Playbook, Checklist, emptyPlaybook, defaultMessageOnJoin} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 import './playbook.scss';
 import EditableText from './editable_text';
@@ -121,7 +119,6 @@ const OuterContainer = styled.div`
 interface Props {
     isNew: boolean;
     currentTeam: Team;
-    onClose: () => void;
 }
 
 interface URLParams {
@@ -156,6 +153,9 @@ const timerOptions = [
     {value: 86400, label: '24hr'},
 ];
 
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
+
 const PlaybookEdit: FC<Props> = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -166,10 +166,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         team_id: props.currentTeam.id,
     });
     const [changesMade, setChangesMade] = useState(false);
-    const [confirmOpen, setConfirmOpen] = useState(false);
 
     const urlParams = useParams<URLParams>();
     const location = useLocation();
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -215,8 +215,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const onSave = async () => {
         await savePlaybook(setPlaybookDefaults(playbook));
-
-        props.onClose();
+        setChangesMade(false);
+        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
 
     const updateChecklist = (newChecklist: Checklist[]) => {
@@ -238,18 +238,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             title,
         });
         setChangesMade(true);
-    };
-
-    const confirmOrClose = () => {
-        if (changesMade) {
-            setConfirmOpen(true);
-        } else {
-            props.onClose();
-        }
-    };
-
-    const confirmCancel = () => {
-        setConfirmOpen(false);
     };
 
     const handlePublicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -417,7 +405,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                 <BackstageNavbarIcon
                     data-testid='icon-arrow-left'
                     className='icon-arrow-left back-icon'
-                    onClick={confirmOrClose}
+                    onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
                 />
                 <EditableTexts>
                     <EditableTitleContainer>
@@ -614,13 +602,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     </EditContent>
                 </EditView>
             </Container>
-            <ConfirmModal
-                show={confirmOpen}
-                title={'Confirm discard'}
-                message={'Are you sure you want to discard your changes?'}
-                confirmButtonText={'Discard Changes'}
-                onConfirm={props.onClose}
-                onCancel={confirmCancel}
+            <RouteLeavingGuard
+                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                shouldBlockNavigation={() => changesMade}
             />
         </OuterContainer>
     );
