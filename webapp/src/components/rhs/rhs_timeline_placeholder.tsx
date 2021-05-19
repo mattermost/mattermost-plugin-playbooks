@@ -10,6 +10,7 @@ import Spinner from 'src/components/assets/icons/spinner';
 
 import UpgradeTimelineSvg from 'src/components/assets/upgrade_timeline_svg';
 import UpgradeTimelineSuccessSvg from 'src/components/assets/upgrade_timeline_success_svg';
+import UpgradeTimelineErrorSvg from 'src/components/assets/upgrade_timeline_error_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {getAdminAnalytics, isTeamEdition} from 'src/selectors';
 import StartTrialNotice from 'src/components/backstage/start_trial_notice';
@@ -25,7 +26,8 @@ enum ActionState {
     Error,
     Success,
 }
-    type HandlerType = undefined | (() => (Promise<void> | void));
+
+type HandlerType = undefined | (() => (Promise<void> | void));
 
 const TimelineUpgradePlaceholder : FC = () => {
     const currentUser = useSelector(getCurrentUser);
@@ -43,8 +45,12 @@ const TimelineUpgradePlaceholder : FC = () => {
 
         setActionState(ActionState.Loading);
 
-        await postMessageToAdmins(AdminNotificationType.VIEW_TIMELINE, isServerTeamEdition);
-        setActionState(ActionState.Success);
+        const response = await postMessageToAdmins(AdminNotificationType.VIEW_TIMELINE, isServerTeamEdition);
+        if (response.error) {
+            setActionState(ActionState.Error);
+        } else {
+            setActionState(ActionState.Success);
+        }
     };
 
     const requestLicense = async () => {
@@ -75,6 +81,17 @@ const TimelineUpgradePlaceholder : FC = () => {
         illustration = <UpgradeTimelineSuccessSvg/>;
         titleText = 'Thank you!';
         helpText = 'Your System Admin has been notified.';
+    }
+
+    if (actionState === ActionState.Error) {
+        illustration = <UpgradeTimelineErrorSvg/>;
+        if (isCurrentUserAdmin) {
+            titleText = 'Your license could not be generated';
+            helpText = 'Please check the system logs for more information.';
+        } else {
+            titleText = 'There was an error';
+            helpText = 'We were not able to notify the System Admin.';
+        }
     }
 
     return (
@@ -131,6 +148,19 @@ const Button : FC<ButtonProps> = (props: ButtonProps) => {
     }
 
     if (props.actionState === ActionState.Success) {
+        return null;
+    }
+
+    if (props.actionState === ActionState.Error) {
+        if (props.isCurrentUserAdmin) {
+            return (
+                <PrimaryButton
+                    onClick={() => window.open('https://mattermost.com/support/')}
+                >
+                    {'Contact support'}
+                </PrimaryButton>
+            );
+        }
         return null;
     }
 

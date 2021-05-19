@@ -67,7 +67,28 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
             handleCancel: () => { /*do nothing*/ },
         };
 
+    case ModalActionState.Success:
+        return {
+            confirmButtonText: 'Done',
+            cancelButtonText: '',
+            handleConfirm: onHide,
+            // eslint-disable-next-line no-undefined
+            handleCancel: undefined,
+        };
+
     default:
+        if (isAdmin) {
+            return {
+                confirmButtonText: 'Contact support',
+                cancelButtonText: '',
+                handleConfirm: () => {
+                    window.open('https://mattermost.com/support/');
+                },
+                // eslint-disable-next-line no-undefined
+                handleCancel: undefined,
+            };
+        }
+
         return {
             confirmButtonText: 'Done',
             cancelButtonText: '',
@@ -150,9 +171,17 @@ export const getUpgradeModalCopy = (
             helpText,
         };
     default:
+        if (isAdmin) {
+            titleText = 'Your license could not be generated';
+            helpText = 'Please check the system logs for more information.';
+        } else {
+            titleText = 'There was an error';
+            helpText = 'We were not able to notify the System Admin.';
+        }
+
         return {
-            titleText: 'There was an error',
-            helpText: '',
+            titleText,
+            helpText,
         };
     }
 };

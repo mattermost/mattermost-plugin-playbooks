@@ -54,8 +54,12 @@ const UpgradeModal: FC<Props> = (props: Props) => {
 
         setActionState(ModalActionState.Loading);
 
-        await postMessageToAdmins(props.messageType, isServerTeamEdition);
-        setActionState(ModalActionState.Success);
+        const response = await postMessageToAdmins(props.messageType, isServerTeamEdition);
+        if (response.error) {
+            setActionState(ModalActionState.Error);
+        } else {
+            setActionState(ModalActionState.Success);
+        }
     };
 
     const copy = getUpgradeModalCopy(isAdmin, isServerTeamEdition, actionState, props.messageType);
