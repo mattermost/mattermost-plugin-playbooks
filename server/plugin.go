@@ -71,11 +71,10 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed save bot to config")
 	}
 
-	p.bot = bot.New(pluginAPIClient, botID, p.config)
-
 	var telemetryClient interface {
 		incident.Telemetry
 		playbook.Telemetry
+		bot.Telemetry
 		Enable() error
 		Disable() error
 	}
@@ -134,7 +133,7 @@ func (p *Plugin) OnActivate() error {
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, telemetryClient)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 

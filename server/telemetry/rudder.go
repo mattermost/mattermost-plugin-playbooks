@@ -49,6 +49,13 @@ const (
 	actionDelete  = "delete"
 
 	eventFrontend = "frontend"
+
+	eventNotifyAdmins                            = "notify_admins"
+	actionNotifyAdminsToViewTimeline             = "notify_admins_to_view_timeline"
+	actionNotifyAdminsToAddMessageToTimeline     = "notify_admins_to_add_message_to_timeline"
+	actionNotifyAdminsToCreatePlaybook           = "notify_admins_to_create_playbook"
+	actionNotifyAdminsToRestrictPlaybookCreation = "notify_admins_to_restrict_playbook_creation"
+	actionNotifyAdminsToRestrictPlaybookAccess   = "notify_admins_to_restrict_playbook_access"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -327,6 +334,47 @@ func (t *RudderTelemetry) DeletePlaybook(pbook playbook.Playbook, userID string)
 	properties := playbookProperties(pbook, userID)
 	properties["Action"] = actionDelete
 	t.track(eventPlaybook, properties)
+}
+
+func commonProperties(userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"UserActualID": userID,
+	}
+}
+
+func (t *RudderTelemetry) NotifyAdminsToViewTimeline(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionNotifyAdminsToViewTimeline
+	t.track(eventNotifyAdmins, properties)
+
+}
+
+func (t *RudderTelemetry) NotifyAdminsToAddMessageToTimeline(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionNotifyAdminsToAddMessageToTimeline
+	t.track(eventNotifyAdmins, properties)
+
+}
+
+func (t *RudderTelemetry) NotifyAdminsToCreatePlaybook(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionNotifyAdminsToCreatePlaybook
+	t.track(eventNotifyAdmins, properties)
+
+}
+
+func (t *RudderTelemetry) NotifyAdminsToRestrictPlaybookCreation(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionNotifyAdminsToRestrictPlaybookCreation
+	t.track(eventNotifyAdmins, properties)
+
+}
+
+func (t *RudderTelemetry) NotifyAdminsToRestrictPlaybookAccess(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionNotifyAdminsToRestrictPlaybookAccess
+	t.track(eventNotifyAdmins, properties)
+
 }
 
 // Enable creates a new client to track all future events. It does nothing if

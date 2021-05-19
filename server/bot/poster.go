@@ -172,6 +172,19 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		}(admin.Id)
 	}
 
+	switch messageType {
+	case "playbook":
+		b.telemetry.NotifyAdminsToCreatePlaybook(authorUserID)
+	case "view_timeline":
+		b.telemetry.NotifyAdminsToViewTimeline(authorUserID)
+	case "message_to_timeline":
+		b.telemetry.NotifyAdminsToAddMessageToTimeline(authorUserID)
+	case "playbook_granular_access":
+		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
+	case "playbook_creation_restriction":
+		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
+	}
+
 	return nil
 }
 
