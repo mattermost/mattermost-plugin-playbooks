@@ -85,7 +85,7 @@ export const getUpgradeModalCopy = (
     messageType: AdminNotificationType,
 ) : ModalContents => {
     let titleText = '';
-    let helpText = '';
+    let helpText : React.ReactNode = '';
 
     switch (state) {
     case ModalActionState.Success:
@@ -126,11 +126,11 @@ export const getUpgradeModalCopy = (
             break;
         case AdminNotificationType.PLAYBOOK_GRANULAR_ACCESS:
             titleText = 'Put your team in control';
-            helpText = 'Decide who can create incidents from this playbook, giving them permissions to viewing and editing it.';
+            helpText = 'Use permissions to manage who can view, modify, and create incidents from this playbook.';
             break;
         case AdminNotificationType.PLAYBOOK_CREATION_RESTRICTION:
             titleText = 'Put your team in control';
-            helpText = 'Every team structure is different. Decide which users in the team can create playbooks.';
+            helpText = 'Every team\'s structure is different. You can manage which users in the team can create playbooks.';
             break;
         }
 
