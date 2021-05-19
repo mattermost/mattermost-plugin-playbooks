@@ -22,6 +22,7 @@ export enum TimelineEventType {
     EventFromPost = 'event_from_post',
     UserJoinedLeft = 'user_joined_left',
     PublishedRetrospective = 'published_retrospective',
+    CanceledRetrospective = 'canceled_retrospective',
 }
 
 export interface TimelineEvent {

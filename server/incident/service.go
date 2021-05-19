@@ -658,21 +658,21 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
 
-	team, err := s.pluginAPI.Team.Get(incidentToModify.TeamID)
-	if err != nil {
-		return err
-	}
-
-	retrospectiveURL := fmt.Sprintf("/%s/%s/incidents/%s/retrospective",
-		team.Name,
-		s.configService.GetManifest().Id,
-		incidentToModify.ID,
-	)
-
 	// If we are resolving the incident, send the reminder to fill out the retrospective
-	if options.Status == StatusResolved && previousStatus != StatusArchived && previousStatus != StatusResolved {
-		if _, err = s.poster.PostMessage(incidentToModify.ChannelID, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
-			return errors.Wrap(err, "failed to post retro reminder to channel")
+	// Also start the recurring reminder if enabled.
+	if incidentToModify.RetrospectivePublishedAt == 0 &&
+		options.Status == StatusResolved &&
+		previousStatus != StatusArchived &&
+		previousStatus != StatusResolved &&
+		s.configService.GetConfiguration().EnableExperimentalFeatures {
+		if err = s.postRetrospectiveReminder(incidentToModify); err != nil {
+			return errors.Wrap(err, "couldn't post retrospective reminder")
+		}
+		s.scheduler.Cancel(RetrospectivePrefix + incidentID)
+		if incidentToModify.RetrospectiveReminderIntervalSeconds != 0 {
+			if err = s.SetReminder(RetrospectivePrefix+incidentID, time.Duration(incidentToModify.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
+				return errors.Wrap(err, "failed to set the retrospective reminder for incident")
+			}
 		}
 	}
 
@@ -711,6 +711,41 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) postRetrospectiveReminder(incident *Incident) error {
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	retrospectiveURL := fmt.Sprintf("/%s/%s/incidents/%s/retrospective",
+		team.Name,
+		s.configService.GetManifest().Id,
+		incident.ID,
+	)
+
+	attachments := []*model.SlackAttachment{
+		{
+			Actions: []*model.PostAction{
+				{
+					Type: "button",
+					Name: "No Retrospective",
+					Integration: &model.PostActionIntegration{
+						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/no-retrospective-button",
+							s.configService.GetManifest().Id,
+							incident.ID),
+					},
+				},
+			},
+		},
+	}
+
+	if _, err = s.poster.PostMessageWithAttachments(incident.ChannelID, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
+		return errors.Wrap(err, "failed to post retro reminder to channel")
 	}
 
 	return nil
@@ -1775,6 +1810,49 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
 	}
 	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
+
+	return nil
+}
+
+func (s *ServiceImpl) CancelRetrospective(incidentID, cancelerID string) error {
+	incidentToCancel, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	now := model.GetMillis()
+
+	// Update the text to keep syncronized
+	incidentToCancel.Retrospective = "No retrospective for this incident."
+	incidentToCancel.RetrospectivePublishedAt = now
+	if err = s.store.UpdateIncident(incidentToCancel); err != nil {
+		return errors.Wrap(err, "failed to update incident")
+	}
+
+	cancelerUser, err := s.pluginAPI.User.Get(cancelerID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get canceler user")
+	}
+
+	if _, err = s.poster.PostMessage(incidentToCancel.ChannelID, "@channel Retrospective has been canceled by @%s\n", cancelerUser.Username); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      now,
+		EventAt:       now,
+		EventType:     CanceledRetrospective,
+		SubjectUserID: cancelerID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	if err := s.sendIncidentToClient(incidentID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
 
 	return nil
 }

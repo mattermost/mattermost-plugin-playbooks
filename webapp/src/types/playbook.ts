@@ -23,6 +23,7 @@ export interface Playbook {
     webhook_on_creation_enabled: boolean;
     message_on_join: string;
     message_on_join_enabled: boolean;
+    retrospective_reminder_interval_seconds: number;
 }
 
 export interface PlaybookNoChecklist {
@@ -98,6 +99,7 @@ export function emptyPlaybook(): Playbook {
         webhook_on_creation_enabled: false,
         message_on_join: '',
         message_on_join_enabled: false,
+        retrospective_reminder_interval_seconds: 0,
     };
 }
 

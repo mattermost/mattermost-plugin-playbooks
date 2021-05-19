@@ -5,6 +5,7 @@ package incident
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -15,11 +16,48 @@ type Reminder struct {
 	IncidentID string `json:"incident_id"`
 }
 
+const RetrospectivePrefix = "retro_"
+
 // HandleReminder is the handler for all reminder events.
 func (s *ServiceImpl) HandleReminder(key string) {
-	incidentToModify, err := s.GetIncident(key)
+	if strings.HasPrefix(key, RetrospectivePrefix) {
+		s.handleReminderToFillRetro(strings.TrimPrefix(key, RetrospectivePrefix))
+	} else {
+		s.handleStatusUpdateReminder(key)
+	}
+}
+
+func (s *ServiceImpl) handleReminderToFillRetro(incidentID string) {
+	incidentToRemind, err := s.GetIncident(incidentID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get incident id: %s", key).Error())
+		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get incident id: %s", incidentID).Error())
+		return
+	}
+
+	// In the meantime we did publish a retrospective, so no reminder.
+	if incidentToRemind.RetrospectivePublishedAt != 0 {
+		return
+	}
+
+	if err = s.postRetrospectiveReminder(incidentToRemind); err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "couldn't post incident reminder").Error())
+		return
+	}
+
+	// Jobs can't be rescheduled within themselves with the same key. As a temporary workaround do it in a delayed goroutine
+	go func() {
+		time.Sleep(time.Second * 2)
+		if err = s.SetReminder(RetrospectivePrefix+incidentID, time.Duration(incidentToRemind.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
+			s.logger.Errorf(errors.Wrap(err, "failed to reocurr retrospective reminder").Error())
+			return
+		}
+	}()
+}
+
+func (s *ServiceImpl) handleStatusUpdateReminder(incidentID string) {
+	incidentToModify, err := s.GetIncident(incidentID)
+	if err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get incident id: %s", incidentID).Error())
 		return
 	}
 
