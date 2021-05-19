@@ -9,7 +9,7 @@ const Icon = styled.svg`
     pointer-events: none;
 `;
 
-const NoContentPlaybookSvg: FC = () => (
+const NoContentPlaybookSvg = () => (
     <Icon
         width='142'
         height='88'

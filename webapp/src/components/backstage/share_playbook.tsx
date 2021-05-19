@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {ActionFunc} from 'mattermost-redux/types/actions';
@@ -30,7 +30,7 @@ const UserSelectorWrapper = styled.div`
 
 const selectCurrentTeamName = (state: GlobalState) => getCurrentTeam(state).name;
 
-const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
+const SharePlaybook = (props: SharePlaybookProps) => {
     const currentTeamName = useSelector<GlobalState, string>(selectCurrentTeamName);
     const enabled = props.playbook.member_ids.length > 0;
     const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {

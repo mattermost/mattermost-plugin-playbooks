@@ -16,7 +16,7 @@ import WarningIcon from 'src/components/assets/icons/warning_icon';
 import {ErrorPageTypes} from 'src/constants';
 import {teamPluginUrl} from 'src/browser_routing';
 
-const ErrorPage: FC = () => {
+const ErrorPage = () => {
     useEffect(() => {
         document.body.setAttribute('class', 'sticky error');
         return () => {

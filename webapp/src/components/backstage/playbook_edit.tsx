@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -156,7 +156,7 @@ const timerOptions = [
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
-const PlaybookEdit: FC<Props> = (props: Props) => {
+const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
     const currentUserId = useSelector(getCurrentUserId);

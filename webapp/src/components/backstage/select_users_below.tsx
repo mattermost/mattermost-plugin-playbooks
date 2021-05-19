@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
@@ -42,7 +42,7 @@ export interface SelectUsersBelowProps {
     getProfiles: () => ActionFunc;
 }
 
-const SelectUsersBelow: FC<SelectUsersBelowProps> = (props: SelectUsersBelowProps) => {
+const SelectUsersBelow = (props: SelectUsersBelowProps) => {
     return (
         <ProfileAutocompleteContainer>
             <ProfileAutocomplete

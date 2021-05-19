@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {getProfiles, searchProfiles} from 'mattermost-redux/actions/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -54,7 +54,7 @@ interface PlaybookCreatorsProps {
     onChange: (newsettings: GlobalSettings) => void
 }
 
-const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProps) => {
+const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     const dispatch = useDispatch();
     const [enabled, setEnabled] = useState<boolean>(props.settings.playbook_creators_user_ids.length !== 0);
     const [confirmRemoveSelfOpen, setConfirmRemoveSelfOpen] = useState('');
@@ -186,7 +186,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
     );
 };
 
-const SettingsView: FC = () => {
+const SettingsView = () => {
     const dispatch = useDispatch();
     const settings = useSelector(globalSettings);
 

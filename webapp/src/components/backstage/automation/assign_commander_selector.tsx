@@ -1,4 +1,4 @@
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 
 import ReactSelect, {ControlProps, MenuListComponentProps} from 'react-select';
@@ -21,7 +21,7 @@ interface Props {
     isDisabled: boolean;
 }
 
-const AssignCommanderSelector: FC<Props> = (props: Props) => {
+const AssignCommanderSelector = (props: Props) => {
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const commanderUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.commanderID));

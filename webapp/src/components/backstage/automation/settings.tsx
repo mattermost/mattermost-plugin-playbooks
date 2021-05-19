@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -43,7 +43,7 @@ interface Props {
     messageOnJoinChange: (message: string) => void;
 }
 
-export const AutomationSettings: FC<Props> = (props: Props) => {
+export const AutomationSettings = (props: Props) => {
     return (
         <>
             <BackstageSubheader>

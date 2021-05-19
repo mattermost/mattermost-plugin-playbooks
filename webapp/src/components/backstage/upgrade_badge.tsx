@@ -1,11 +1,11 @@
-import React, {FC} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 interface Props {
     className?: string;
 }
 
-const UpgradeBadge: FC<Props> = (props: Props) => (
+const UpgradeBadge = (props: Props) => (
     <svg
         xmlns='http://www.w3.org/2000/svg'
         version='1.1'

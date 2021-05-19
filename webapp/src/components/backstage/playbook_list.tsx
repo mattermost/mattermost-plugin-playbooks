@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import qs from 'qs';
@@ -41,7 +41,7 @@ import {useAllowPlaybookCreationInCurrentTeam, useCanCreatePlaybooks} from 'src/
 
 const DeleteBannerTimeout = 5000;
 
-const PlaybookList: FC = () => {
+const PlaybookList = () => {
     const [playbooks, setPlaybooks] = useState<PlaybookNoChecklist[] | null>(null);
     const [totalCount, setTotalCount] = useState(0);
     const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookNoChecklist | null>(null);
@@ -301,7 +301,7 @@ const PlaybookList: FC = () => {
 
 type CreatePlaybookButtonProps = UpgradeButtonProps & {allowPlaybookCreation: boolean};
 
-const UpgradeOrPrimaryButton : FC<CreatePlaybookButtonProps> = (props: CreatePlaybookButtonProps) => {
+const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
     const {children, allowPlaybookCreation, ...rest} = props;
 
     if (allowPlaybookCreation) {

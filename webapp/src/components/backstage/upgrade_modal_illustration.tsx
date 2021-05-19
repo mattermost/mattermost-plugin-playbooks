@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -11,7 +11,7 @@ interface Props {
     state: ModalActionState;
 }
 
-const UpgradeModalIllustrationWrapper: FC<Props> = (props: Props) => {
+const UpgradeModalIllustrationWrapper = (props: Props) => {
     if (props.state === ModalActionState.Success) {
         return (
             <IllustrationWrapper>

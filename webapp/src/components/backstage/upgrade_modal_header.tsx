@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -9,7 +9,7 @@ interface Props {
     helpText: React.ReactNode;
 }
 
-const UpgradeModalHeader: FC<Props> = (props: Props) => {
+const UpgradeModalHeader = (props: Props) => {
     return (
         <Header>
             <Title>{props.titleText}</Title>

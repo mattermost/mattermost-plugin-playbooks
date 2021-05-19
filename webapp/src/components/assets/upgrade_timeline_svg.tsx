@@ -3,7 +3,7 @@
 
 import React, {FC} from 'react';
 
-const UpgradeTimelineSvg : FC = () => (
+const UpgradeTimelineSvg = () => (
     <svg
         width='400'
         height='731'

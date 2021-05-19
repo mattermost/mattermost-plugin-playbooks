@@ -3,7 +3,7 @@
 
 import React, {FC} from 'react';
 
-const UpgradeIllustrationSvg: FC = () => (
+const UpgradeIllustrationSvg = () => (
     <svg
         width='256'
         height='156'

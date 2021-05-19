@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -522,7 +522,7 @@ const FormContainer = styled.div`
     }
 `;
 
-const ChecklistItemEditModal: FC<ChecklistItemEditModalProps> = (props: ChecklistItemEditModalProps) => {
+const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
     const [title, setTitle] = useState(props.taskTitle);
     const [description, setDescription] = useState<string>(props.taskDescription);
     const [command, setCommand] = useState(props.taskCommand);

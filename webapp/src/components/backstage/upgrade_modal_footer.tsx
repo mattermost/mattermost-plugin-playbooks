@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -11,7 +11,7 @@ interface Props {
     isCurrentUserAdmin: boolean;
 }
 
-const UpgradeModalFooter : FC<Props> = (props: Props) => {
+const UpgradeModalFooter = (props: Props) => {
     if (!props.isCurrentUserAdmin) {
         return null;
     }
