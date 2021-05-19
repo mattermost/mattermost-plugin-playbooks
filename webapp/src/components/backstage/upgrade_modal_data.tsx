@@ -176,7 +176,7 @@ export const getUpgradeModalCopy = (
             helpText = 'Please check the system logs for more information.';
         } else {
             titleText = 'There was an error';
-            helpText = 'We weren't able to notify the System Admin.';
+            helpText = 'We weren\'t able to notify the System Admin.';
         }
 
         return {
