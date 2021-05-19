@@ -1,9 +1,9 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 
-const UpgradeErrorIllustrationSvg : FC = () => (
+const UpgradeErrorIllustrationSvg = () => (
     <svg
         width='512'
         height='158'
