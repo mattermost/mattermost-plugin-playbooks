@@ -1419,6 +1419,14 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, pub
 		}
 	}
 
+	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add bot to the team")
+	}
+
+	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add bot to the channel")
+	}
+
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
 	}
@@ -1699,13 +1707,55 @@ func (s *ServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospectiv
 	return nil
 }
 
-func (s *ServiceImpl) PublishRetrospective(incidentID, publisherID string) error {
+func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string) error {
 	incidentToPublish, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
-	//TODO: Publish the retrospective
+	now := model.GetMillis()
+
+	// Update the text to keep syncronized
+	incidentToPublish.Retrospective = text
+	incidentToPublish.RetrospectivePublishedAt = now
+	if err = s.store.UpdateIncident(incidentToPublish); err != nil {
+		return errors.Wrap(err, "failed to update incident")
+	}
+
+	publisherUser, err := s.pluginAPI.User.Get(publisherID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get publisher user")
+	}
+
+	team, err := s.pluginAPI.Team.Get(incidentToPublish.TeamID)
+	if err != nil {
+		return err
+	}
+
+	retrospectiveURL := fmt.Sprintf("/%s/%s/incidents/%s/retrospective",
+		team.Name,
+		s.configService.GetManifest().Id,
+		incidentToPublish.ID,
+	)
+	if _, err = s.poster.PostMessage(incidentToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, text); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      now,
+		EventAt:       now,
+		EventType:     PublishedRetrospective,
+		SubjectUserID: publisherID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	if err := s.sendIncidentToClient(incidentID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
 	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
 
 	return nil

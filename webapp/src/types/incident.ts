@@ -27,6 +27,7 @@ export interface Incident {
     broadcast_channel_id: string;
     timeline_events: TimelineEvent[];
     retrospective: string;
+    retrospective_published_at: number;
 }
 
 export interface StatusPost {
