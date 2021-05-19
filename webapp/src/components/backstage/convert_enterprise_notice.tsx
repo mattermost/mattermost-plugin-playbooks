@@ -28,7 +28,7 @@ export default ConvertEnterpriseNotice;
 
 const StyledOl = styled.ol`
     list-style-position: inside;
-    margin-left: -5px;
+    margin-left: -16px;
 `;
 
 const Subheader = styled.p`
