@@ -93,7 +93,7 @@ const ExtrasRow = styled.div`
         padding: 2px 8px;
         background: rgba(var(--center-channel-color-rgb), 0.08);
         display: flex;
-        max-width: calc(100%);
+        max-width: 100%;
     }
 `;
 
