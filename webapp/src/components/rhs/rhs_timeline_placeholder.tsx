@@ -11,8 +11,9 @@ import Spinner from 'src/components/assets/icons/spinner';
 import UpgradeTimelineSvg from 'src/components/assets/upgrade_timeline_svg';
 import UpgradeTimelineSuccessSvg from 'src/components/assets/upgrade_timeline_success_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {getAdminAnalytics} from 'src/selectors';
+import {getAdminAnalytics, isTeamEdition} from 'src/selectors';
 import StartTrialNotice from 'src/components/backstage/start_trial_notice';
+import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise_notice';
 
 import {requestTrialLicense, postMessageToAdmins} from 'src/client';
 
@@ -30,6 +31,7 @@ const TimelineUpgradePlaceholder : FC = () => {
     const currentUser = useSelector(getCurrentUser);
     const isCurrentUserAdmin = isSystemAdmin(currentUser.roles);
     const [actionState, setActionState] = useState(ActionState.Uninitialized);
+    const isServerTeamEdition = useSelector(isTeamEdition);
 
     const analytics = useSelector(getAdminAnalytics);
     const serverTotalUsers = analytics?.TOTAL_USERS || 0;
@@ -41,7 +43,7 @@ const TimelineUpgradePlaceholder : FC = () => {
 
         setActionState(ActionState.Loading);
 
-        await postMessageToAdmins(AdminNotificationType.VIEW_TIMELINE);
+        await postMessageToAdmins(AdminNotificationType.VIEW_TIMELINE, isServerTeamEdition);
         setActionState(ActionState.Success);
     };
 
@@ -63,7 +65,12 @@ const TimelineUpgradePlaceholder : FC = () => {
 
     let illustration = <UpgradeTimelineSvg/>;
     let titleText = 'Keep all your incident events in one place';
-    let helpText = 'Make retros easy. Your timeline includes all the events in your incident, separated by type, and downloadable for offline review.';
+    let helpText : React.ReactNode = 'Make retros easy. Your timeline includes all the events in your incident, separated by type, and downloadable for offline review.';
+
+    if (isCurrentUserAdmin && isServerTeamEdition) {
+        helpText = <><p>{helpText}</p><ConvertEnterpriseNotice/></>;
+    }
+
     if (actionState === ActionState.Success) {
         illustration = <UpgradeTimelineSuccessSvg/>;
         titleText = 'Thank you!';
@@ -81,10 +88,11 @@ const TimelineUpgradePlaceholder : FC = () => {
                 <Button
                     actionState={actionState}
                     isCurrentUserAdmin={isCurrentUserAdmin}
+                    isServerTeamEdition={isServerTeamEdition}
                     notifyAdmins={notifyAdmins}
                     requestLicense={requestLicense}
                 />
-                {isCurrentUserAdmin && actionState === ActionState.Uninitialized && <Footer/> }
+                {isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized && <Footer/> }
             </UpgradeContent>
         </UpgradeWrapper>
     );
@@ -112,6 +120,7 @@ const Footer = () => (
 interface ButtonProps {
     actionState: ActionState;
     isCurrentUserAdmin: boolean;
+    isServerTeamEdition: boolean;
     notifyAdmins: HandlerType;
     requestLicense: HandlerType;
 }
@@ -122,6 +131,10 @@ const Button : FC<ButtonProps> = (props: ButtonProps) => {
     }
 
     if (props.actionState === ActionState.Success) {
+        return null;
+    }
+
+    if (props.isCurrentUserAdmin && props.isServerTeamEdition) {
         return null;
     }
 
@@ -171,6 +184,7 @@ const Title = styled(CenteredRow)`
 `;
 
 const HelpText = styled(CenteredRow)`
+    flex-direction: column;
     text-align: center;
     font-weight: 400;
     font-size: 12px;

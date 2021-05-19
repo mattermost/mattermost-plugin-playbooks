@@ -342,8 +342,8 @@ export const requestTrialLicense = async (users: number) => {
     }
 };
 
-export const postMessageToAdmins = async (messageType: AdminNotificationType) => {
-    const body = `{"message_type": "${messageType}"}`;
+export const postMessageToAdmins = async (messageType: AdminNotificationType, isServerTeamEdition: boolean) => {
+    const body = `{"message_type": "${messageType}", "is_team_edition": ${isServerTeamEdition}}`;
     try {
         const data = await doPost(`${apiUrl}/bot/notify-admins`, body);
         return data;

@@ -2,6 +2,8 @@ import React from 'react';
 
 import moment from 'moment';
 
+import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise_notice';
+
 import Spinner from 'src/components/assets/icons/spinner';
 
 import {AdminNotificationType} from 'src/constants';
@@ -27,7 +29,18 @@ export interface UpgradeModalButtons {
     handleCancel : HandlerType;
 }
 
-export const getUpgradeModalButtons = (isAdmin: boolean, state: ModalActionState, requestLicense: () => void, notifyAdmins: () => void, onHide: () => void) : UpgradeModalButtons => {
+export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: boolean, state: ModalActionState, requestLicense: () => void, notifyAdmins: () => void, onHide: () => void) : UpgradeModalButtons => {
+    if (isServerTeamEdition && isAdmin) {
+        return {
+            confirmButtonText: '',
+            cancelButtonText: '',
+            // eslint-disable-next-line no-undefined
+            handleConfirm: undefined,
+            // eslint-disable-next-line no-undefined
+            handleCancel: undefined,
+        };
+    }
+
     switch (state) {
     case ModalActionState.Uninitialized:
         if (isAdmin) {
@@ -67,6 +80,7 @@ export const getUpgradeModalButtons = (isAdmin: boolean, state: ModalActionState
 
 export const getUpgradeModalCopy = (
     isAdmin: boolean,
+    isServerTeamEdition: boolean,
     state: ModalActionState,
     messageType: AdminNotificationType,
 ) : ModalContents => {
@@ -122,6 +136,13 @@ export const getUpgradeModalCopy = (
 
         if (!isAdmin) {
             helpText += ' Notify your System Admin to upgrade.';
+        } else if (isServerTeamEdition) {
+            helpText = (
+                <>
+                    <p>{helpText}</p>
+                    <ConvertEnterpriseNotice/>
+                </>
+            );
         }
 
         return {

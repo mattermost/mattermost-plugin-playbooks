@@ -7,7 +7,7 @@ import GenericModal from 'src/components/widgets/generic_modal';
 import {requestTrialLicense, postMessageToAdmins} from 'src/client';
 import UpgradeModalFooter from 'src/components/backstage/upgrade_modal_footer';
 
-import {isCurrentUserAdmin, getAdminAnalytics} from 'src/selectors';
+import {isCurrentUserAdmin, getAdminAnalytics, isTeamEdition} from 'src/selectors';
 
 import {AdminNotificationType} from 'src/constants';
 
@@ -24,6 +24,7 @@ interface Props {
 
 const UpgradeModal: FC<Props> = (props: Props) => {
     const isAdmin = useSelector(isCurrentUserAdmin);
+    const isServerTeamEdition = useSelector(isTeamEdition);
 
     const [actionState, setActionState] = useState(ModalActionState.Uninitialized);
 
@@ -53,12 +54,12 @@ const UpgradeModal: FC<Props> = (props: Props) => {
 
         setActionState(ModalActionState.Loading);
 
-        await postMessageToAdmins(props.messageType);
+        await postMessageToAdmins(props.messageType, isServerTeamEdition);
         setActionState(ModalActionState.Success);
     };
 
-    const copy = getUpgradeModalCopy(isAdmin, actionState, props.messageType);
-    const buttons = getUpgradeModalButtons(isAdmin, actionState, requestLicense, notifyAdmins, props.onHide);
+    const copy = getUpgradeModalCopy(isAdmin, isServerTeamEdition, actionState, props.messageType);
+    const buttons = getUpgradeModalButtons(isAdmin, isServerTeamEdition, actionState, requestLicense, notifyAdmins, props.onHide);
 
     return (
         <SizedGenericModal
@@ -75,6 +76,7 @@ const UpgradeModal: FC<Props> = (props: Props) => {
                 <UpgradeModalFooter
                     actionState={actionState}
                     isCurrentUserAdmin={isAdmin}
+                    isServerTeamEdition={isServerTeamEdition}
                 />
             )}
         >

@@ -83,7 +83,7 @@ func (b *Bot) PublishWebsocketEventToUser(event string, payload interface{}, use
 	})
 }
 
-func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
+func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool) error {
 	author, err := b.pluginAPI.User.Get(authorUserID)
 	if err != nil {
 		return errors.Wrap(err, "unable to find author user")
@@ -105,7 +105,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
 
 	var message, title, text string
 
-	footer := "[Learn more](example.com).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
+	footer := "[Learn more](https://mattermost.com/pricing-self-managed/).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
+	if isTeamEdition {
+		footer = "[Learn more](https://mattermost.com/pricing-self-managed/).\n\n[Convert to Enterprise Edition](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Enterprise Edition E10 or E20."
+	}
 
 	switch messageType {
 	case "playbook":
@@ -120,35 +123,41 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
 	case "playbook_granular_access":
 		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
 		title = "Configure who can access specific playbooks in Incident Collaboration with Mattermost Enterprise Edition E20"
-		text = "Playbooks are workflows that provide guidance through an incident. Enterprise Edition E20 includes settings to give permissions over specific playbooks to specific users, as well as a global setting to decide who in the team can create playbooks."
+		text = "Playbooks are workflows that provide guidance through an incident. Enterprise Edition E20 includes settings to give permissions over specific playbooks to specific users, as well as a global setting to decide who in the team can create playbooks.\n" + footer
 	case "playbook_creation_restriction":
 		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
 		title = "Configure who can create playbooks in Incident Collaboration with Mattermost Enterprise Edition E20"
-		text = "Playbooks are workflows that provide guidance through an incident. Enterprise Edition E20 includes settings to give permissions over specific playbooks to specific users, as well as a global setting to decide who in the team can create playbooks."
+		text = "Playbooks are workflows that provide guidance through an incident. Enterprise Edition E20 includes settings to give permissions over specific playbooks to specific users, as well as a global setting to decide who in the team can create playbooks.\n" + footer
+	}
+
+	actions := []*model.PostAction{
+		{
+
+			Id:    "message",
+			Name:  "Start 30-day trial",
+			Style: "primary",
+			Type:  "button",
+			Integration: &model.PostActionIntegration{
+				URL: fmt.Sprintf("/plugins/%s/api/v0/bot/notify-admins/button-start-trial",
+					b.configService.GetManifest().Id),
+				Context: map[string]interface{}{
+					"users":                 100,
+					"termsAccepted":         true,
+					"receiveEmailsAccepted": true,
+				},
+			},
+		},
+	}
+
+	if isTeamEdition {
+		actions = []*model.PostAction{}
 	}
 
 	attachments := []*model.SlackAttachment{
 		{
-			Title: title,
-			Text:  text,
-			Actions: []*model.PostAction{
-				{
-
-					Id:    "message",
-					Name:  "Start 30-day trial",
-					Style: "primary",
-					Type:  "button",
-					Integration: &model.PostActionIntegration{
-						URL: fmt.Sprintf("/plugins/%s/api/v0/bot/notify-admins/button-start-trial",
-							b.configService.GetManifest().Id),
-						Context: map[string]interface{}{
-							"users":                 100,
-							"termsAccepted":         true,
-							"receiveEmailsAccepted": true,
-						},
-					},
-				},
-			},
+			Title:   title,
+			Text:    text,
+			Actions: actions,
 		},
 	}
 
