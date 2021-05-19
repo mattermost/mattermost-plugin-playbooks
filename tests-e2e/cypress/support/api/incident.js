@@ -5,16 +5,19 @@ import {getRandomId} from '../../utils';
 import endpoints from '../endpoints.json';
 
 const incidentsEndpoint = endpoints.incidents;
+const randomSuffix = getRandomId();
 
 function startIncidentPatch({
     incidentPrefix = 'Incident',
     userId = '',
     teamId = '',
     playbookId = '',
-    incidentDescription = '',}) {
-        const randomSuffix = getRandomId();
+    incidentDescription = '',
+    incidentName = `${incidentPrefix}-${randomSuffix}`}) {
+        // const randomSuffix = getRandomId();
+        // const incidentName = `${incidentPrefix}-${randomSuffix}`;
         const request_payload = {
-            name: `${incidentPrefix}-${randomSuffix}`,
+            name: incidentName,
             commander_user_id: userId,
             team_id: teamId,
             playbook_id: playbookId,
@@ -39,19 +42,21 @@ function startIncidentPatch({
 });
 
 /**
- * Start a test incident via API.
+ * Create a test incident.
  */
-Cypress.Commands.add('apiStartTestIncident', (
+Cypress.Commands.add('apiCreateIncident', (
     teamId,
     userId,
     playbookId,
     incidentDesc,
+    incidentName,
 ) => (
     cy.apiStartIncident({
         teamId,
         userId,
         playbookId,
         incidentDesc,
+        incidentName,
     })
 ));
 
