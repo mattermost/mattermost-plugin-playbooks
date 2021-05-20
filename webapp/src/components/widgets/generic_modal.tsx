@@ -150,4 +150,5 @@ const Buttons = styled.div`
 const FooterContainer = styled.div`
     display: flex;
     flex-direction: column;
+    align-items: center;
 `;

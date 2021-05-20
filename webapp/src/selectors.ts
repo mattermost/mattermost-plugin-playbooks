@@ -6,7 +6,7 @@ import {createSelector} from 'reselect';
 import General from 'mattermost-redux/constants/general';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
-import {getLicense} from 'mattermost-redux/selectors/entities/general';
+import {getLicense, getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
@@ -177,3 +177,8 @@ export const isCurrentUserAdmin = createSelector(
 );
 
 export const hasViewedByChannelID = (state: GlobalState) => pluginState(state).hasViewedByChannel;
+
+export const isTeamEdition = createSelector(
+    getConfig,
+    (config) => config.BuildEnterpriseReady !== 'true',
+);
