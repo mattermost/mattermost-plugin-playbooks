@@ -11,9 +11,7 @@ import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 import {components, ControlProps} from 'react-select';
-
 import styled from 'styled-components';
-
 import {DraggableProvided} from 'react-beautiful-dnd';
 
 import {handleFormattedTextClick} from 'src/browser_routing';
@@ -23,7 +21,7 @@ import {
     clientEditChecklistItem,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
-import {ChecklistItemButton, ChecklistItemDescription} from 'src/components/checklist_item_input';
+import {ChecklistItemButton} from 'src/components/checklist_item_input';
 import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
@@ -32,6 +30,7 @@ import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 
 import CommandInput from './command_input';
 import GenericModal from './widgets/generic_modal';
@@ -76,6 +75,7 @@ const StyledSpinner = styled(Spinner)`
 
 const ItemContainer = styled.div`
     padding-top: 1.3rem;
+
     :first-child {
         padding-top: 0.4rem;
     }
@@ -85,18 +85,20 @@ const ExtrasRow = styled.div`
     display: flex;
     margin: 4px 0 0 32px;
     line-height: 16px;
-    >div {
+
+    > div {
         margin: 0 5px;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
         border-radius: 13px;
         padding: 2px 8px;
         background: rgba(var(--center-channel-color-rgb), 0.08);
         display: flex;
+        max-width: 100%;
     }
 `;
 
 const SmallProfile = styled(Profile)`
-    >.image {
+    > .image {
         width: 16px;
         height: 16px;
     }
@@ -307,6 +309,7 @@ const portal: HTMLElement = document.createElement('div');
 document.body.appendChild(portal);
 
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
+    const commandRef = useRef(null);
     const dispatch = useDispatch();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -379,11 +382,11 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             {...props.draggableProvided.dragHandleProps}
                         />
                         {props.checklistItem.description !== '' &&
-                            <StepDescription
-                                text={props.checklistItem.description}
-                                channelNames={channelNamesMap}
-                                team={team}
-                            />
+                        <StepDescription
+                            text={props.checklistItem.description}
+                            channelNames={channelNamesMap}
+                            team={team}
+                        />
                         }
                         <ProfileSelector
                             selectedUserId={props.checklistItem.assignee_id}
@@ -446,7 +449,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     }
                     {
                         props.checklistItem.command !== '' &&
-                        <div>
+                        <div ref={commandRef}>
                             <Run
                                 data-testid={'run'}
                                 running={running}
@@ -460,7 +463,11 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                 {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
                             </Run>
                             <Command>
-                                {props.checklistItem.command}
+                                <TextWithTooltipWhenEllipsis
+                                    id={props.checklistNum.toString(10)}
+                                    text={props.checklistItem.command}
+                                    parentRef={commandRef}
+                                />
                             </Command>
                             {running && <StyledSpinner/>}
                         </div>
