@@ -111,20 +111,20 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	}
 
 	switch messageType {
-	case "playbook":
+	case "start_trial_to_create_playbook":
 		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
 		title = "Create multiple playbooks in Incident Collaboration with Mattermost Enterprise Edition E10"
 		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In Enterprise Edition E10 you can create an unlimited number of playbooks for your team.\n" + footer
 
-	case "message_to_timeline", "view_timeline":
+	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
 		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
 		title = "Keep all your incident events in one place with Mattermost Enterprise Edition E10"
 		text = "Your timeline lists all the events in your incident, separated by type. You can download your timeline and use it for your retrospectives to improve how you respond to incidents. Enterprise Edition E10 includes access to timeline features such as adding messages from within the incident channel.\n" + footer
-	case "playbook_granular_access":
+	case "start_trial_to_restrict_playbook_access":
 		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise Edition E20"
 		text = "Playbooks are workflows that provide guidance through an incident. In Enterprise Edition E20 you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
-	case "playbook_creation_restriction":
+	case "strat_trial_to_restrict_playbook_creation":
 		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise Edition E20"
 		text = "Playbooks are workflows that provide guidance through an incident. In Enterprise Edition E20 you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
@@ -170,6 +170,19 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 				b.pluginAPI.Log.Warn("failed to send a DM to user", "user ID", adminID, "error", err)
 			}
 		}(admin.Id)
+	}
+
+	switch messageType {
+	case "start_trial_to_create_playbook":
+		b.telemetry.NotifyAdminsToCreatePlaybook(authorUserID)
+	case "start_trial_to_view_timeline":
+		b.telemetry.NotifyAdminsToViewTimeline(authorUserID)
+	case "start_trial_to_add_message_to_timeline":
+		b.telemetry.NotifyAdminsToAddMessageToTimeline(authorUserID)
+	case "start_trial_to_restrict_playbook_access":
+		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
+	case "start_trial_to_restrict_playbook_creation":
+		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
 	}
 
 	return nil

@@ -18,9 +18,9 @@ export const BACKSTAGE_LIST_PER_PAGE = 15;
 export const PROFILE_CHUNK_SIZE = 200;
 
 export enum AdminNotificationType {
-    PLAYBOOK = 'playbook',
-    VIEW_TIMELINE = 'view_timeline',
-    MESSAGE_TO_TIMELINE = 'message_to_timeline',
-    PLAYBOOK_GRANULAR_ACCESS = 'playbook_granular_access',
-    PLAYBOOK_CREATION_RESTRICTION = 'playbook_creation_restriction',
+    PLAYBOOK = 'start_trial_to_create_playbook',
+    VIEW_TIMELINE = 'start_trial_to_view_timeline',
+    MESSAGE_TO_TIMELINE = 'start_trial_to_add_message_to_timeline',
+    PLAYBOOK_GRANULAR_ACCESS = 'start_trial_to_restrict_playbook_access',
+    PLAYBOOK_CREATION_RESTRICTION = 'start_trial_to_restrict_playbook_creation',
 }

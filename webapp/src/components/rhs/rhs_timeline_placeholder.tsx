@@ -61,7 +61,7 @@ const TimelineUpgradePlaceholder : FC = () => {
         setActionState(ActionState.Loading);
 
         const requestedUsers = Math.max(serverTotalUsers, 30);
-        const response = await requestTrialLicense(requestedUsers);
+        const response = await requestTrialLicense(requestedUsers, AdminNotificationType.VIEW_TIMELINE);
         if (response.error) {
             setActionState(ActionState.Error);
         } else {
