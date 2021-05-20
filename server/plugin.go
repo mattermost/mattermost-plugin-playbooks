@@ -170,11 +170,11 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient,
 		p.bot,
 		p.bot,
-		telemetryClient,
 		p.config,
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting

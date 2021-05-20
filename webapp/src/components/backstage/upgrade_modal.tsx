@@ -39,7 +39,7 @@ const UpgradeModal: FC<Props> = (props: Props) => {
         setActionState(ModalActionState.Loading);
 
         const requestedUsers = Math.max(serverTotalUsers, 30);
-        const response = await requestTrialLicense(requestedUsers);
+        const response = await requestTrialLicense(requestedUsers, props.messageType);
         if (response.error) {
             setActionState(ModalActionState.Error);
         } else {

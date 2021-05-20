@@ -338,7 +338,16 @@ export function exportChannelUrl(channelId: string) {
     return `${exportPluginUrl}/export${queryParams}`;
 }
 
-export const requestTrialLicense = async (users: number) => {
+export async function trackRequestTrialLicense(action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/start-trial`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
+}
+
+export const requestTrialLicense = async (users: number, action: string) => {
+    trackRequestTrialLicense(action);
+
     try {
         const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
             method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),

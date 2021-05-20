@@ -56,6 +56,13 @@ const (
 	actionNotifyAdminsToCreatePlaybook           = "notify_admins_to_create_playbook"
 	actionNotifyAdminsToRestrictPlaybookCreation = "notify_admins_to_restrict_playbook_creation"
 	actionNotifyAdminsToRestrictPlaybookAccess   = "notify_admins_to_restrict_playbook_access"
+
+	eventStartTrial                            = "start_trial"
+	actionStartTrialToViewTimeline             = "start_trial_to_view_timeline"
+	actionStartTrialToAddMessageToTimeline     = "start_trial_to_add_message_to_timeline"
+	actionStartTrialToCreatePlaybook           = "start_trial_to_create_playbook"
+	actionStartTrialToRestrictPlaybookCreation = "start_trial_to_restrict_playbook_creation"
+	actionStartTrialToRestrictPlaybookAccess   = "start_trial_to_restrict_playbook_access"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -340,6 +347,36 @@ func commonProperties(userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID": userID,
 	}
+}
+
+func (t *RudderTelemetry) StartTrialToViewTimeline(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionStartTrialToViewTimeline
+	t.track(eventStartTrial, properties)
+}
+
+func (t *RudderTelemetry) StartTrialToAddMessageToTimeline(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionStartTrialToAddMessageToTimeline
+	t.track(eventStartTrial, properties)
+}
+
+func (t *RudderTelemetry) StartTrialToCreatePlaybook(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionStartTrialToCreatePlaybook
+	t.track(eventStartTrial, properties)
+}
+
+func (t *RudderTelemetry) StartTrialToRestrictPlaybookCreation(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionStartTrialToRestrictPlaybookCreation
+	t.track(eventStartTrial, properties)
+}
+
+func (t *RudderTelemetry) StartTrialToRestrictPlaybookAccess(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionStartTrialToRestrictPlaybookAccess
+	t.track(eventStartTrial, properties)
 }
 
 func (t *RudderTelemetry) NotifyAdminsToViewTimeline(userID string) {

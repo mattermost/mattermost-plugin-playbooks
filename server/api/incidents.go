@@ -32,12 +32,11 @@ type IncidentHandler struct {
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 	log             bot.Logger
-	telemetry       incident.Telemetry
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
 func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
-	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry, configService config.Service) *IncidentHandler {
+	api *pluginapi.Client, poster bot.Poster, log bot.Logger, configService config.Service) *IncidentHandler {
 	handler := &IncidentHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		incidentService: incidentService,
@@ -45,7 +44,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 		pluginAPI:       api,
 		poster:          poster,
 		log:             log,
-		telemetry:       telemetry,
 		config:          configService,
 	}
 
@@ -96,10 +94,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
 
-	telemetryRouterAuthorized := router.PathPrefix("/telemetry").Subrouter()
-	telemetryRouterAuthorized.Use(handler.checkViewPermissions)
-	telemetryRouterAuthorized.HandleFunc("/incident/{id:[A-Za-z0-9]+}", handler.telemetryForIncident).Methods(http.MethodPost)
-
 	return handler
 }
 
@@ -115,30 +109,6 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 		}
 
 		if err := permissions.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
-			if errors.Is(err, permissions.ErrNoPermissions) {
-				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-				return
-			}
-			h.HandleError(w, err)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (h *IncidentHandler) checkViewPermissions(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		userID := r.Header.Get("Mattermost-User-ID")
-
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
-		if err != nil {
-			h.HandleError(w, err)
-			return
-		}
-
-		if err := permissions.ViewIncidentFromChannelID(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -1225,37 +1195,6 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-// telemetryForIncident handles the /telemetry/incident/{id}?action=the_action endpoint. The frontend
-// can use this endpoint to track events that occur in the context of an incident
-func (h *IncidentHandler) telemetryForIncident(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var params struct {
-		Action string `json:"action"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode post body", err)
-		return
-	}
-
-	if params.Action == "" {
-		h.HandleError(w, errors.New("must provide action"))
-		return
-	}
-
-	incdnt, err := h.incidentService.GetIncident(id)
-	if err != nil {
-		h.HandleError(w, err)
-		return
-	}
-
-	h.telemetry.FrontendTelemetryForIncident(incdnt, userID, params.Action)
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {
