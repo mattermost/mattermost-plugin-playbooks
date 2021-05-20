@@ -539,6 +539,7 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 {experimentalFeaturesEnabled &&
+                                <>
                                     <SidebarBlock>
                                         <BackstageSubheader>
                                             {'Retrospective Reminder Interval'}
@@ -560,6 +561,26 @@ const PlaybookEdit = (props: Props) => {
                                             isClearable={false}
                                         />
                                     </SidebarBlock>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {'Retrospective Template'}
+                                            <BackstageSubheaderDescription>
+                                                {'Default text for the retrospective.'}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledTextarea
+                                            placeholder={'Enter retrospective template'}
+                                            value={playbook.retrospective_template}
+                                            onChange={(e) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_template: e.target.value,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                        />
+                                    </SidebarBlock>
+                                </>
                                 }
                             </TabContainer>
                             <TabContainer>

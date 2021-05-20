@@ -37,6 +37,7 @@ type Playbook struct {
 	MessageOnJoin                        string      `json:"message_on_join"`
 	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
 	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
+	RetrospectiveTemplate                string      `json:"retrospective_template"`
 }
 
 func (p Playbook) Clone() Playbook {

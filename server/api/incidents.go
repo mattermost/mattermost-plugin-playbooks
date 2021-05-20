@@ -404,6 +404,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		}
 
 		newIncident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
+		newIncident.Retrospective = pb.RetrospectiveTemplate
 
 		thePlaybook = &pb
 	}
