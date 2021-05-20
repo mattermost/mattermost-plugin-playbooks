@@ -157,7 +157,6 @@ const timerOptions = [
 
 const retrospectiveReminderOptions = [
     {value: 0, label: 'Once'},
-    {value: 10, label: '10seconds'},
     {value: 3600, label: '1hr'},
     {value: 14400, label: '4hr'},
     {value: 86400, label: '24hr'},
