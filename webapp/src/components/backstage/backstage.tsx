@@ -102,8 +102,6 @@ const BackstageTitlebarItem = styled(NavLink)`
 
 const BackstageBody = styled.div`
     z-index: 1;
-    width: 100%;
-    height: 100%;
     margin: 0 auto;
 `;
 
@@ -189,14 +187,12 @@ const Backstage: FC = () => {
                     <Route path={`${match.url}/playbooks/new`}>
                         <NewPlaybook
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
                         <PlaybookEdit
                             isNew={false}
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks`}>

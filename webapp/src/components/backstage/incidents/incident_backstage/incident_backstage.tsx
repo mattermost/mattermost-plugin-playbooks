@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Redirect, useRouteMatch} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, Link, NavLink, Switch} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -13,7 +13,6 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
-import {IncidentBackstageTabState} from 'src/types/backstage';
 import {Overview} from 'src/components/backstage/incidents/incident_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/incidents/incident_backstage/retrospective/retrospective';
 import {fetchIncident, fetchIncidentMetadata} from 'src/client';
@@ -30,7 +29,6 @@ const OuterContainer = styled.div`
     background: var(center-channel-bg);
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
 `;
 
 const TopContainer = styled.div`
@@ -94,17 +92,21 @@ const Title = styled.div`
     color: var(--center-channel-color);
 `;
 
-const TabItem = styled.div<{active: boolean}>`
-    line-height: 32px;
-    padding: 10px 20px 0 20px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
+const TabItem = styled(NavLink)`
+    && {
+        line-height: 32px;
+        padding: 10px 20px 0 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: unset;
+        color: unset;
 
-    ${(props) => props.active && css`
-        box-shadow: inset 0px -2px 0px var(--button-bg);
-        color: var(--button-bg);
-    `}
+        &.active{
+            box-shadow: inset 0px -2px 0px var(--button-bg);
+            color: var(--button-bg);
+        }
+    }
 `;
 
 interface MatchParams {
@@ -118,7 +120,6 @@ const FetchingStateType = {
 };
 
 const IncidentBackstage = () => {
-    const [tabState, setTabState] = useState(IncidentBackstageTabState.ViewingOverview);
     const [incident, setIncident] = useState<Incident | null>(null);
     const [incidentMetadata, setIncidentMetadata] = useState<IncidentMetadata | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -161,11 +162,6 @@ const IncidentBackstage = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/incidents');
     };
 
-    let tabPage = <Overview incident={incident}/>;
-    if (tabState === IncidentBackstageTabState.ViewingRetrospective) {
-        tabPage = <Retrospective incident={incident}/>;
-    }
-
     return (
         <OuterContainer>
             <TopContainer>
@@ -184,15 +180,15 @@ const IncidentBackstage = () => {
                 </FirstRow>
                 <SecondRow>
                     <TabItem
-                        active={tabState === IncidentBackstageTabState.ViewingOverview}
-                        onClick={() => setTabState(IncidentBackstageTabState.ViewingOverview)}
+                        to={`${match.url}/overview`}
+                        activeClassName={'active'}
                     >
                         {'Overview'}
                     </TabItem>
                     {experimentalFeaturesEnabled &&
                         <TabItem
-                            active={tabState === IncidentBackstageTabState.ViewingRetrospective}
-                            onClick={() => setTabState(IncidentBackstageTabState.ViewingRetrospective)}
+                            to={`${match.url}/retrospective`}
+                            activeClassName={'active'}
                         >
                             {'Retrospective'}
                         </TabItem>
@@ -201,7 +197,15 @@ const IncidentBackstage = () => {
             </TopContainer>
             <BottomContainer>
                 <InnerContainer>
-                    {tabPage}
+                    <Switch>
+                        <Route path={`${match.url}/overview`}>
+                            <Overview incident={incident}/>
+                        </Route>
+                        <Route path={`${match.url}/retrospective`}>
+                            <Retrospective incident={incident}/>
+                        </Route>
+                        <Redirect to={`${match.url}/overview`}/>
+                    </Switch>
                 </InnerContainer>
             </BottomContainer>
         </OuterContainer>

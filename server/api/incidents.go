@@ -1299,7 +1299,16 @@ func (h *IncidentHandler) publishRetrospective(w http.ResponseWriter, r *http.Re
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.PublishRetrospective(incidentID, userID); err != nil {
+	var retroUpdate struct {
+		Retrospective string `json:"retrospective"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if err := h.incidentService.PublishRetrospective(incidentID, retroUpdate.Retrospective, userID); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to publish retrospective", err)
 		return
 	}

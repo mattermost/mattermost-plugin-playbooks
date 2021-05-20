@@ -59,10 +59,10 @@ func (p *Plugin) OnActivate() error {
 	},
 		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
 	)
-
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure incident bot")
 	}
+
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"

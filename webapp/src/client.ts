@@ -316,7 +316,14 @@ export async function updateRetrospective(incidentID: string, updatedText: strin
         JSON.stringify({
             retrospective: updatedText,
         }));
+    return data;
+}
 
+export async function publishRetrospective(incidentID: string, currentText: string) {
+    const data = await doPost(`${apiUrl}/incidents/${incidentID}/retrospective/publish`,
+        JSON.stringify({
+            retrospective: currentText,
+        }));
     return data;
 }
 
