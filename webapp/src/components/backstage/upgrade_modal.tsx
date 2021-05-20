@@ -7,7 +7,7 @@ import GenericModal from 'src/components/widgets/generic_modal';
 import {requestTrialLicense, postMessageToAdmins} from 'src/client';
 import UpgradeModalFooter from 'src/components/backstage/upgrade_modal_footer';
 
-import {isCurrentUserAdmin, getAdminAnalytics} from 'src/selectors';
+import {isCurrentUserAdmin, getAdminAnalytics, isTeamEdition} from 'src/selectors';
 
 import {AdminNotificationType} from 'src/constants';
 
@@ -24,6 +24,7 @@ interface Props {
 
 const UpgradeModal: FC<Props> = (props: Props) => {
     const isAdmin = useSelector(isCurrentUserAdmin);
+    const isServerTeamEdition = useSelector(isTeamEdition);
 
     const [actionState, setActionState] = useState(ModalActionState.Uninitialized);
 
@@ -53,12 +54,16 @@ const UpgradeModal: FC<Props> = (props: Props) => {
 
         setActionState(ModalActionState.Loading);
 
-        await postMessageToAdmins(props.messageType);
-        setActionState(ModalActionState.Success);
+        const response = await postMessageToAdmins(props.messageType, isServerTeamEdition);
+        if (response.error) {
+            setActionState(ModalActionState.Error);
+        } else {
+            setActionState(ModalActionState.Success);
+        }
     };
 
-    const copy = getUpgradeModalCopy(isAdmin, actionState, props.messageType);
-    const buttons = getUpgradeModalButtons(isAdmin, actionState, requestLicense, notifyAdmins, props.onHide);
+    const copy = getUpgradeModalCopy(isAdmin, isServerTeamEdition, actionState, props.messageType);
+    const buttons = getUpgradeModalButtons(isAdmin, isServerTeamEdition, actionState, requestLicense, notifyAdmins, props.onHide);
 
     return (
         <SizedGenericModal
@@ -75,6 +80,7 @@ const UpgradeModal: FC<Props> = (props: Props) => {
                 <UpgradeModalFooter
                     actionState={actionState}
                     isCurrentUserAdmin={isAdmin}
+                    isServerTeamEdition={isServerTeamEdition}
                 />
             )}
         >
@@ -101,23 +107,15 @@ const SizedGenericModal = styled(GenericModal)`
     height: 404px;
     padding: 0;
 
-    .GenericModal__header {
-        min-height: 48px;
-    }
-
-    .modal-content {
-        padding: 0;
-    }
-
-    &&& .close {
+    &&&.close {
         color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 
-    .GenericModal__button.confirm {
+    &&&.GenericModal__button.confirm {
         padding: 13px 20px;
     }
 
-    .modal-footer {
+    &&&.modal-footer {
         display: flex;
         align-items: center;
         justify-content: center;

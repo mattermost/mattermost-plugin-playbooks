@@ -55,7 +55,7 @@ type Poster interface {
 	PublishWebsocketEventToUser(event string, payload interface{}, userID string)
 
 	// NotifyAdmins sends a DM with the message to each admins
-	NotifyAdmins(message, authorUserID string) error
+	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error
 }
 
 // New creates a new bot poster/logger.
