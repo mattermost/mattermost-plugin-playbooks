@@ -76,7 +76,7 @@ const Report = (props: ReportProps) => {
                 {'Published'}
             </>
         );
-    } else if (props.incident.retrospective_published_at) {
+    } else if (props.incident.retrospective_published_at && !props.incident.retrospective_was_canceled) {
         publishButtonText = 'Republish';
     }
 

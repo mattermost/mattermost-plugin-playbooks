@@ -54,6 +54,7 @@ type Incident struct {
 	WebhookOnCreationURL                 string               `json:"webhook_on_creation_url"`
 	Retrospective                        string               `json:"retrospective"`
 	RetrospectivePublishedAt             int64                `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
+	RetrospectiveWasCanceled             bool                 `json:"retrospective_was_canceled"`
 	MessageOnJoin                        string               `json:"message_on_join"`
 	RetrospectiveReminderIntervalSeconds int64                `json:"retrospective_reminder_interval_seconds"`
 }

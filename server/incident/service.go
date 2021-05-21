@@ -1771,6 +1771,7 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 	// Update the text to keep syncronized
 	incidentToPublish.Retrospective = text
 	incidentToPublish.RetrospectivePublishedAt = now
+	incidentToPublish.RetrospectiveWasCanceled = false
 	if err = s.store.UpdateIncident(incidentToPublish); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
@@ -1825,6 +1826,7 @@ func (s *ServiceImpl) CancelRetrospective(incidentID, cancelerID string) error {
 	// Update the text to keep syncronized
 	incidentToCancel.Retrospective = "No retrospective for this incident."
 	incidentToCancel.RetrospectivePublishedAt = now
+	incidentToCancel.RetrospectiveWasCanceled = true
 	if err = s.store.UpdateIncident(incidentToCancel); err != nil {
 		return errors.Wrap(err, "failed to update incident")
 	}
