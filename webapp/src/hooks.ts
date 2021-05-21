@@ -24,7 +24,7 @@ import {Incident, StatusPost} from 'src/types/incident';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {isE10LicensedOrDevelopment} from './license';
+import {isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
 import {currentTeamNumPlaybooks, globalSettings} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
@@ -254,6 +254,18 @@ export function useAllowTimelineViewInCurrentTeam() {
 // post to the timeline in the current team
 export function useAllowAddMessageToTimelineInCurrentTeam() {
     return useSelector(isE10LicensedOrDevelopment);
+}
+
+// useAllowPlaybookGranularAccess returns whether the access to specific playbooks
+// can be restricted to a subset of users
+export function useAllowPlaybookGranularAccess() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
+// useAllowPlaybookCreationRestriction returns whether the global feature to
+// restrict the playbook creation to a subset of users is allowed
+export function useAllowPlaybookCreationRestriction() {
+    return useSelector(isE20LicensedOrDevelopment);
 }
 
 export function useEnsureProfiles(userIds: string[]) {

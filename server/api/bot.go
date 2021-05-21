@@ -36,7 +36,8 @@ func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster,
 }
 
 type messagePayload struct {
-	MessageType string `json:"message_type"`
+	MessageType   string `json:"message_type"`
+	IsTeamEdition bool   `json:"is_team_edition"`
 }
 
 func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +49,7 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.poster.NotifyAdmins(payload.MessageType, userID); err != nil {
+	if err := h.poster.NotifyAdmins(payload.MessageType, userID, payload.IsTeamEdition); err != nil {
 		h.HandleError(w, err)
 		return
 	}

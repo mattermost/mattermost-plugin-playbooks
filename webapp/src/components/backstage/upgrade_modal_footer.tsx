@@ -9,6 +9,7 @@ import {ModalActionState} from 'src/components/backstage/upgrade_modal_data';
 interface Props {
     actionState: ModalActionState;
     isCurrentUserAdmin: boolean;
+    isServerTeamEdition: boolean;
 }
 
 const UpgradeModalFooter : FC<Props> = (props: Props) => {
@@ -17,6 +18,10 @@ const UpgradeModalFooter : FC<Props> = (props: Props) => {
     }
 
     if (props.actionState !== ModalActionState.Uninitialized) {
+        return null;
+    }
+
+    if (props.isServerTeamEdition) {
         return null;
     }
 

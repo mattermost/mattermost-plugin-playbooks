@@ -95,3 +95,48 @@ func (t *NoopTelemetry) UpdateRetrospective(incident *incident.Incident, userID 
 
 func (t *NoopTelemetry) PublishRetrospective(incident *incident.Incident, userID string) {
 }
+
+// StartTrialToViewTimeline does nothing.
+func (t *NoopTelemetry) StartTrialToViewTimeline(userID string) {
+}
+
+// StartTrialToAddMessageToTimeline does nothing.
+func (t *NoopTelemetry) StartTrialToAddMessageToTimeline(userID string) {
+}
+
+// StartTrialToCreatePlaybook does nothing.
+func (t *NoopTelemetry) StartTrialToCreatePlaybook(userID string) {
+}
+
+// StartTrialToRestrictPlaybookCreation does nothing.
+func (t *NoopTelemetry) StartTrialToRestrictPlaybookCreation(userID string) {
+}
+
+// StartTrialToRestrictPlaybookAccess does nothing.
+func (t *NoopTelemetry) StartTrialToRestrictPlaybookAccess(userID string) {
+}
+
+// NotifyAdminsToViewTimeline does nothing.
+func (t *NoopTelemetry) NotifyAdminsToViewTimeline(userID string) {
+
+}
+
+// NotifyAdminsToAddMessageToTimeline does nothing.
+func (t *NoopTelemetry) NotifyAdminsToAddMessageToTimeline(userID string) {
+
+}
+
+// NotifyAdminsToCreatePlaybook does nothing.
+func (t *NoopTelemetry) NotifyAdminsToCreatePlaybook(userID string) {
+
+}
+
+// NotifyAdminsToRestrictPlaybookCreation does nothing.
+func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookCreation(userID string) {
+
+}
+
+// NotifyAdminsToRestrictPlaybookAccess does nothing.
+func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookAccess(userID string) {
+
+}

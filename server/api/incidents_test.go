@@ -28,7 +28,6 @@ import (
 	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
 )
 
 func TestIncidents(t *testing.T) {
@@ -41,7 +40,6 @@ func TestIncidents(t *testing.T) {
 	var incidentService *mock_incident.MockService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
-	telemetryService := &telemetry.NoopTelemetry{}
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -69,15 +67,14 @@ func TestIncidents(t *testing.T) {
 		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
-		telemetryService = &telemetry.NoopTelemetry{}
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, configService)
 	}
 
 	setDefaultExpectations := func(t *testing.T) {
 		t.Helper()
 
 		configService.EXPECT().
-			IsE10Licensed().
+			IsAtLeastE10Licensed().
 			Return(true)
 
 		configService.EXPECT().
@@ -788,11 +785,10 @@ func TestIncidents(t *testing.T) {
 		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		incidentService = mock_incident.NewMockService(mockCtrl)
-		telemetryService = &telemetry.NoopTelemetry{}
-		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, telemetryService, configService)
+		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, configService)
 
 		configService.EXPECT().
-			IsE10Licensed().
+			IsAtLeastE10Licensed().
 			Return(false)
 
 		configService.EXPECT().

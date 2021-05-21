@@ -62,6 +62,34 @@ func (mr *MockServiceMockRecorder) GetManifest() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManifest", reflect.TypeOf((*MockService)(nil).GetManifest))
 }
 
+// IsAtLeastE10Licensed mocks base method
+func (m *MockService) IsAtLeastE10Licensed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAtLeastE10Licensed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsAtLeastE10Licensed indicates an expected call of IsAtLeastE10Licensed
+func (mr *MockServiceMockRecorder) IsAtLeastE10Licensed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAtLeastE10Licensed", reflect.TypeOf((*MockService)(nil).IsAtLeastE10Licensed))
+}
+
+// IsAtLeastE20Licensed mocks base method
+func (m *MockService) IsAtLeastE20Licensed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAtLeastE20Licensed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsAtLeastE20Licensed indicates an expected call of IsAtLeastE20Licensed
+func (mr *MockServiceMockRecorder) IsAtLeastE20Licensed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAtLeastE20Licensed", reflect.TypeOf((*MockService)(nil).IsAtLeastE20Licensed))
+}
+
 // IsConfiguredForDevelopmentAndTesting mocks base method
 func (m *MockService) IsConfiguredForDevelopmentAndTesting() bool {
 	m.ctrl.T.Helper()
@@ -74,34 +102,6 @@ func (m *MockService) IsConfiguredForDevelopmentAndTesting() bool {
 func (mr *MockServiceMockRecorder) IsConfiguredForDevelopmentAndTesting() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConfiguredForDevelopmentAndTesting", reflect.TypeOf((*MockService)(nil).IsConfiguredForDevelopmentAndTesting))
-}
-
-// IsE10Licensed mocks base method
-func (m *MockService) IsE10Licensed() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsE10Licensed")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsE10Licensed indicates an expected call of IsE10Licensed
-func (mr *MockServiceMockRecorder) IsE10Licensed() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsE10Licensed", reflect.TypeOf((*MockService)(nil).IsE10Licensed))
-}
-
-// IsE20Licensed mocks base method
-func (m *MockService) IsE20Licensed() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsE20Licensed")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsE20Licensed indicates an expected call of IsE20Licensed
-func (mr *MockServiceMockRecorder) IsE20Licensed() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsE20Licensed", reflect.TypeOf((*MockService)(nil).IsE20Licensed))
 }
 
 // RegisterConfigChangeListener mocks base method
