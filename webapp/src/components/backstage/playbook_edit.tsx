@@ -372,6 +372,24 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleSignalAnyKeywordsChange = (keywords: string) => {
+        if (playbook.signal_any_keywords !== keywords) {
+            setPlaybook({
+                ...playbook,
+                signal_any_keywords: keywords,
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleToggleSignalAnyKeywords = () => {
+        setPlaybook({
+            ...playbook,
+            signal_any_keywords_enabled: !playbook.signal_any_keywords_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -553,6 +571,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
                                     messageOnJoinChange={handleMessageOnJoinChange}
+                                    signalAnyKeywordsEnabled={playbook.signal_any_keywords_enabled}
+                                    onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
+                                    signalAnyKeywordsChange={handleSignalAnyKeywordsChange}
+                                    signalAnyKeywords={playbook.signal_any_keywords}
                                 />
                             </TabContainer>
                             <TabContainer>

@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import {WebhookOnCreation} from 'src/components/backstage/automation/webhook_on_creation';
+import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
@@ -41,6 +41,10 @@ interface Props {
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
+    signalAnyKeywordsEnabled: boolean;
+    onToggleSignalAnyKeywords: () => void;
+    signalAnyKeywordsChange: (keywords: string) => void;
+    signalAnyKeywords: string;
 }
 
 export const AutomationSettings: FC<Props> = (props: Props) => {
@@ -50,8 +54,26 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                 {'Automation'}
             </BackstageSubheader>
             <BackstageSubheaderDescription>
-                {'Select what actions take place after certain situations are triggered.'}
+                {'Select when to start an incident and what actions take place once an incident is started.'}
             </BackstageSubheaderDescription>
+            <Section>
+                <SectionTitle>
+                    {'Prompt to start a new incident when a user posts a message'}
+                </SectionTitle>
+                <Setting id={'signal-any-keywords'}>
+                    <PatternedInput
+                        enabled={props.signalAnyKeywordsEnabled}
+                        onToggle={props.onToggleSignalAnyKeywords}
+                        input={props.signalAnyKeywords}
+                        onChange={props.signalAnyKeywordsChange}
+                        pattern={'^((?!,,).)*$'} //pretty much everything except double commas
+                        placeholderText={'Add comma separated keywords'}
+                        textOnToggle={'Containing any of these keywords'}
+                        type={'text'}
+                        errorText={'Keywords are not valid.'}
+                    />
+                </Setting>
+            </Section>
             <Section>
                 <SectionTitle>
                     {'When an incident starts'}
@@ -87,11 +109,16 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'incident-creation__outgoing-webhook'}>
-                    <WebhookOnCreation
+                    <PatternedInput
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
-                        url={props.webhookOnCreationURL}
+                        input={props.webhookOnCreationURL}
                         onChange={props.webhookOnCreationChange}
+                        pattern={'https?://.*'}
+                        placeholderText={'Enter webhook'}
+                        textOnToggle={'Send a webhook'}
+                        type={'url'}
+                        errorText={'URL is not valid.'}
                     />
                 </Setting>
             </Section>

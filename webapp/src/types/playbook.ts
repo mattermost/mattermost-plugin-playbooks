@@ -23,6 +23,8 @@ export interface Playbook {
     webhook_on_creation_enabled: boolean;
     message_on_join: string;
     message_on_join_enabled: boolean;
+    signal_any_keywords_enabled: boolean;
+    signal_any_keywords: string;
 }
 
 export interface PlaybookNoChecklist {
@@ -98,6 +100,8 @@ export function emptyPlaybook(): Playbook {
         webhook_on_creation_enabled: false,
         message_on_join: '',
         message_on_join_enabled: false,
+        signal_any_keywords: '',
+        signal_any_keywords_enabled: false,
     };
 }
 
@@ -148,7 +152,9 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.webhook_on_creation_url === 'string' &&
         typeof arg.webhook_on_creation_enabled === 'boolean' &&
         typeof arg.message_on_join === 'string' &&
-        typeof arg.message_on_join_enabled === 'boolean';
+        typeof arg.message_on_join_enabled === 'boolean' &&
+        typeof arg.signal_any_keywords === 'string' &&
+        typeof arg.signal_any_keywords_enabled === 'boolean';
 }
 
 // eslint-disable-next-line

@@ -728,4 +728,32 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.16.0"),
+		toVersion:   semver.MustParse("0.17.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "SignalAnyKeywords", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywords to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET SignalAnyKeywords = '' WHERE SignalAnyKeywords IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column SignalAnyKeywords of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "SignalAnyKeywordsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "SignalAnyKeywords", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywords to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "SignalAnyKeywordsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
+				}
+			}
+
+			return nil
+		},
+	},
 }

@@ -49,7 +49,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"DefaultCommanderID", "DefaultCommanderEnabled",
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
 			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
-			"MessageOnJoin", "MessageOnJoinEnabled").
+			"MessageOnJoin", "MessageOnJoinEnabled", "SignalAnyKeywords", "SignalAnyKeywordsEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -112,6 +112,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":               rawPlaybook.MessageOnJoin,
 			"MessageOnJoinEnabled":        rawPlaybook.MessageOnJoinEnabled,
+			"SignalAnyKeywords":           rawPlaybook.SignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":    rawPlaybook.SignalAnyKeywordsEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -184,7 +186,7 @@ func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	var out []playbook.Playbook
 	err = p.store.selectBuilder(tx, &out, p.store.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps").
+			"DeleteAt", "NumStages", "NumSteps", "SignalAnyKeywords", "SignalAnyKeywordsEnabled").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}))
 
@@ -327,6 +329,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":               rawPlaybook.MessageOnJoin,
 			"MessageOnJoinEnabled":        rawPlaybook.MessageOnJoinEnabled,
+			"SignalAnyKeywords":           rawPlaybook.SignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":    rawPlaybook.SignalAnyKeywordsEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
