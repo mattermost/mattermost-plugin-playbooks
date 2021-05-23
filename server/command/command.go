@@ -124,6 +124,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
 
+		testGeneratePlaybooks := model.NewAutocompleteData("create-playbooks", "[total playbooks]", "Create one or more playbooks based on number of playbooks defined")
+		testGeneratePlaybooks.AddTextArgument("An integer indicating how many playbooks will be generated (at most 5).", "Number of playbooks", "")
+		test.AddCommand(testGeneratePlaybooks)
+
 		testCreate := model.NewAutocompleteData("create-incident", "[playbook ID] [timestamp] [incident name]", "Create an incident with a specific creation date")
 		testCreate.AddDynamicListArgument("List of playbooks is downloading from your incident response plugin", "api/v0/playbooks/autocomplete", true)
 		testCreate.AddTextArgument("Date in format 2020-01-31", "Creation timestamp", `/[0-9]{4}-[0-9]{2}-[0-9]{2}/`)
@@ -1050,6 +1054,8 @@ func (r *Runner) actionTest(args []string) {
 	}
 
 	switch command {
+	case "create-playbooks":
+		r.actionTestGeneratePlaybooks(params)
 	case "create-incident":
 		r.actionTestCreate(params)
 		return
@@ -1061,6 +1067,39 @@ func (r *Runner) actionTest(args []string) {
 		r.postCommandResponse(fmt.Sprintf("Command '%s' unknown.", args[0]))
 		return
 	}
+}
+
+func (r *Runner) actionTestGeneratePlaybooks(params []string) {
+	if len(params) < 1 {
+		r.postCommandResponse("The command expects one parameter: <numPlaybooks>")
+		return
+	}
+
+	numPlaybooks, err := strconv.Atoi(params[0])
+	if err != nil {
+		r.postCommandResponse("Error parsing the first argument. Must be a number.")
+		return
+	}
+
+	if numPlaybooks > 5 {
+		r.postCommandResponse("Cant generate playbooks since the number of playbook generated must be at most five")
+		return
+	}
+
+	playbookIds := make([]string, 0, numPlaybooks)
+	for i := 0; i < numPlaybooks; i++ {
+		dummyPlaybook := dummyListPlaybooks[i]
+		dummyPlaybook.TeamID = r.args.TeamId
+		newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		if err != nil {
+			r.warnUserAndLogErrorf("There was an error while creating playbook. Err: " + err.Error())
+			return
+		}
+
+		playbookIds = append(playbookIds, newPlaybookID)
+	}
+
+	r.postCommandResponse(fmt.Sprintf("Playbooks successfully created : '%s'", playbookIds))
 }
 
 func (r *Runner) actionTestCreate(params []string) {
@@ -1244,6 +1283,150 @@ var incidentNames = []string{
 	"RN performance issues",
 	"MM fails to start",
 	"MM HA sync errors",
+}
+
+var dummyListPlaybooks = []playbook.Playbook{
+	{
+		Title:       "Blank Playbook",
+		Description: "This is example of empty playbook",
+	},
+	{
+		Title: "Test playbook",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Identification",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Create Jira ticket",
+					},
+					{
+						Title: "Add on-call team members",
+						State: playbook.ChecklistItemStateClosed,
+					},
+					{
+						Title: "Identify blast radius",
+					},
+					{
+						Title: "Identify impacted services",
+					},
+					{
+						Title: "Collect server data logs",
+					},
+					{
+						Title: "Identify blast Analyze data logs",
+					},
+				},
+			},
+			{
+				Title: "Resolution",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Align on plan of attack",
+					},
+					{
+						Title: "Confirm resolution",
+					},
+				},
+			},
+			{
+				Title: "Analysis",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Writeup root-cause analysis",
+					},
+					{
+						Title: "Review post-mortem",
+					},
+				},
+			},
+		},
+	},
+	{
+		Title:       "Incident Collaboration Playbook",
+		Description: "### Describe the incident so that someone without prior knowledge can ramp up quickly. Two sentences is the ideal length.",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Triage",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Announce incident type and resources",
+					},
+					{
+						Title: "Acknowledge alert",
+					},
+					{
+						Title: "Get alert info",
+					},
+					{
+						Title: "Invite escalators",
+					},
+					{
+						Title: "Determine priority",
+					},
+					{
+						Title: "Update alert priority",
+					},
+					{
+						Title: "Update alert priority",
+					},
+					{
+						Title:   "Create a JIRA ticket",
+						Command: "/jira create",
+					},
+					{
+						Title:   "Find out who’s on call",
+						Command: "/genie whoisoncall",
+					},
+					{
+						Title: "Announce incident",
+					},
+					{
+						Title: "Invite on-call lead",
+					},
+				},
+			}, {
+				Title: "Investigation",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Perform initial investigation",
+					},
+					{
+						Title: "Escalate to other on-call members (optional)",
+					},
+					{
+						Title: "Escalate to other engineering teams (optional)",
+					},
+				},
+			}, {
+				Title: "Resolution",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Close alert",
+					},
+					{
+						Title:   "End the incident",
+						Command: "/incident end",
+					},
+					{
+						Title: "Schedule a post-mortem",
+					},
+					{
+						Title: "Record post-mortem action items",
+					},
+					{
+						Title: "Update playbook with learnings",
+					},
+					{
+						Title:   "Export channel message history",
+						Command: "/export",
+					},
+					{
+						Title: "Archive this channel",
+					},
+				},
+			},
+		},
+	},
 }
 
 // generateTestData generates `numActiveIncidents` ongoing incidents and

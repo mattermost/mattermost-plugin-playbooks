@@ -26,6 +26,8 @@ If you're uncertain whether your PR requires documentation, or you'd like some e
 
 To quickly test Mattermost Incident Collaboration, use the following test commands to create incidents populated with random data:
 
+- `/incident test create-playbooks [total playbooks]` - Provide a number of total playbooks that will be created. The command creates one or more playbooks based on the given parameter.
+
 - `/incident test create-incident [playbook ID] [timestamp] [incident name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and an incident name. The command creates an ongoing incident with the creation date set to the specified timestamp.
 
   * An example command looks like: `/incident test create-incident 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
