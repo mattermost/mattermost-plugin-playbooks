@@ -630,19 +630,12 @@ func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
 
 	payload := struct {
 		Incident
-		ChannelURL   string              `json:"channel_url"`
-		DetailsURL   string              `json:"details_url"`
-		StatusUpdate StatusUpdateOptions `json:"status_update"`
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
 	}{
 		Incident:   theIncident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
-		StatusUpdate: StatusUpdateOptions{
-			Status:      theIncident.CurrentStatus,
-			Description: theIncident.Description,
-			Message:     theIncident.ReminderMessageTemplate,
-			Reminder:    theIncident.PreviousReminder,
-		},
 	}
 
 	body, err := json.Marshal(payload)

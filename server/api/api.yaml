@@ -1989,23 +1989,3 @@ components:
               type: string
               description: Absolute URL to the incident's details.
               example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID
-            status_update:
-              type: object
-              description: Object containing details regarding latest incident's status.
-              properties:
-                status:
-                  type: string
-                  description: The incident's latest status
-                  example: Active
-                description:
-                  type: string
-                  description: The incident's latest status description
-                  example: The incident is a race condition that occurs only on certain compilers
-                message:
-                  type: string
-                  description: The incident's latest status message
-                  example: We are currently working on the identifying the root cause
-                reminder:
-                  type: integer
-                  description: The number of seconds until the system will send a reminder to the commander to update the status. No reminder will be scheduled if reminder is 0 or omitted.
-                  example: 10
