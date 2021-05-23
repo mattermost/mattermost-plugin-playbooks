@@ -1502,7 +1502,7 @@ paths:
           "{$request.body#/webhook_on_status_update_url}":
             post:
               summary: Incident's status update outgoing webhook.
-              description: When an incident's status is updated, an incident created with this playbook. A POST request is sent to the URL configured in webhook_on_status_update_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
+              description: When an incident's status is updated, a POST request is sent to the URL configured in webhook_on_status_update_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
               operationId: webhookOnStatusUpdate
               requestBody:
                 required: true
