@@ -9,18 +9,18 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {isDisabledOnCurrentTeam} from './selectors';
 import {isMobile} from './mobile';
-import {isE20LicensedOrDevelopment} from './license';
+import {isE10LicensedOrDevelopment, isPricingPlanDifferentiationEnabled} from './license';
 
 import {navigateToTeamPluginUrl} from './browser_routing';
-
-const experimentalFeaturesEnabled = false;
 
 export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<GlobalState>): () => Promise<void> {
     let mainMenuActionId: string | null;
 
     return async () => {
+        const licenseCheck = isPricingPlanDifferentiationEnabled(store.getState()) || isE10LicensedOrDevelopment(store.getState());
+
         const disable = isDisabledOnCurrentTeam(store.getState());
-        const show = !disable && !isMobile() && isE20LicensedOrDevelopment(store.getState());
+        const show = !disable && !isMobile() && licenseCheck;
 
         if (mainMenuActionId && !show) {
             const temp = mainMenuActionId;
@@ -32,11 +32,7 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
                 'Incident Collaboration',
                 () => {
                     const team = getCurrentTeam(store.getState());
-                    if (experimentalFeaturesEnabled) {
-                        navigateToTeamPluginUrl(team.name, '/stats');
-                    } else {
-                        navigateToTeamPluginUrl(team.name, '/incidents');
-                    }
+                    navigateToTeamPluginUrl(team.name, '');
                 },
             );
         }

@@ -23,6 +23,8 @@ export interface Playbook {
     webhook_on_creation_enabled: boolean;
     webhook_on_archive_url: string;
     webhook_on_archive_enabled: boolean;
+    message_on_join: string;
+    message_on_join_enabled: boolean;
 }
 
 export interface PlaybookNoChecklist {
@@ -98,6 +100,8 @@ export function emptyPlaybook(): Playbook {
         webhook_on_creation_enabled: false,
         webhook_on_archive_url: '',
         webhook_on_archive_enabled: false,
+        message_on_join: '',
+        message_on_join_enabled: false,
     };
 }
 
@@ -149,6 +153,8 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.webhook_on_creation_enabled === 'boolean' &&
         typeof arg.webhook_on_archive_url === 'string' &&
         typeof arg.webhook_on_archive_enabled === 'boolean';
+        typeof arg.message_on_join === 'string' &&
+        typeof arg.message_on_join_enabled === 'boolean';
 }
 
 // eslint-disable-next-line
@@ -171,3 +177,10 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command === 'string' &&
         typeof arg.command_last_run === 'number';
 }
+
+export const defaultMessageOnJoin = 'Welcome. This channel was automatically created by an Incident Collaboration playbook. To view information about this incident, such as the commander\'s name and list of tasks, select the shield icon in the channel header. You can also use the `/incident info` slash command.\n' +
+    '\n' +
+    'You may find the following resources helpful:\n' +
+    '\n' +
+    '[Mattermost Incident Collaboration channel](https://community.mattermost.com/core/channels/ee-incident-response)\n' +
+    '[Incident Collaboration documentation](https://docs.mattermost.com/administration/devops-command-center.html)';

@@ -219,6 +219,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     webhookOnCreationEnabled,
     webhookOnArchiveURL,
     webhookOnArchiveEnabled,
+    messageOnJoin,
+    messageOnJoinEnabled,
 }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -243,6 +245,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
             webhook_on_creation_enabled: webhookOnCreationEnabled,
             webhook_on_archive_url: webhookOnArchiveURL,
             webhook_on_archive_enabled: webhookOnArchiveEnabled,
+            message_on_join: messageOnJoin,
+            message_on_join_enabled: messageOnJoinEnabled,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

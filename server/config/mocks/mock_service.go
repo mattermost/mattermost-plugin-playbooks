@@ -62,6 +62,34 @@ func (mr *MockServiceMockRecorder) GetManifest() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManifest", reflect.TypeOf((*MockService)(nil).GetManifest))
 }
 
+// IsAtLeastE10Licensed mocks base method
+func (m *MockService) IsAtLeastE10Licensed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAtLeastE10Licensed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsAtLeastE10Licensed indicates an expected call of IsAtLeastE10Licensed
+func (mr *MockServiceMockRecorder) IsAtLeastE10Licensed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAtLeastE10Licensed", reflect.TypeOf((*MockService)(nil).IsAtLeastE10Licensed))
+}
+
+// IsAtLeastE20Licensed mocks base method
+func (m *MockService) IsAtLeastE20Licensed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAtLeastE20Licensed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsAtLeastE20Licensed indicates an expected call of IsAtLeastE20Licensed
+func (mr *MockServiceMockRecorder) IsAtLeastE20Licensed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAtLeastE20Licensed", reflect.TypeOf((*MockService)(nil).IsAtLeastE20Licensed))
+}
+
 // IsConfiguredForDevelopmentAndTesting mocks base method
 func (m *MockService) IsConfiguredForDevelopmentAndTesting() bool {
 	m.ctrl.T.Helper()
@@ -74,20 +102,6 @@ func (m *MockService) IsConfiguredForDevelopmentAndTesting() bool {
 func (mr *MockServiceMockRecorder) IsConfiguredForDevelopmentAndTesting() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConfiguredForDevelopmentAndTesting", reflect.TypeOf((*MockService)(nil).IsConfiguredForDevelopmentAndTesting))
-}
-
-// IsLicensed mocks base method
-func (m *MockService) IsLicensed() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsLicensed")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsLicensed indicates an expected call of IsLicensed
-func (mr *MockServiceMockRecorder) IsLicensed() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLicensed", reflect.TypeOf((*MockService)(nil).IsLicensed))
 }
 
 // RegisterConfigChangeListener mocks base method

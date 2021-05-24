@@ -894,11 +894,6 @@ func TestCreateAndGetIncident(t *testing.T) {
 				ExpectedErr: errors.New("incident is nil"),
 			},
 			{
-				Name:        "Incident should not have ID set",
-				Incident:    NewBuilder(t).WithID().ToIncident(),
-				ExpectedErr: errors.New("ID should not be set"),
-			},
-			{
 				Name:        "Incident /can/ contain checklists with no items",
 				Incident:    NewBuilder(t).WithChecklists([]int{0}).ToIncident(),
 				ExpectedErr: nil,
@@ -1616,6 +1611,72 @@ func TestNukeDB(t *testing.T) {
 			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_PlaybookMember")
 			require.NoError(t, err)
 			require.Equal(t, 0, int(rows))
+		})
+	}
+}
+
+func TestCheckAndSendMessageOnJoin(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		_, _ = setupSQLStore(t, db)
+		incidentStore := setupIncidentStore(t, db)
+
+		t.Run("two new users get welcome messages, one old user doesn't", func(t *testing.T) {
+			channelID := model.NewId()
+
+			oldID := model.NewId()
+			newID1 := model.NewId()
+			newID2 := model.NewId()
+
+			err := incidentStore.SetViewedChannel(oldID, channelID)
+			require.NoError(t, err)
+
+			// Setting multiple times is okay
+			err = incidentStore.SetViewedChannel(oldID, channelID)
+			require.NoError(t, err)
+			err = incidentStore.SetViewedChannel(oldID, channelID)
+			require.NoError(t, err)
+
+			// new users get welcome messages
+			hasViewed := incidentStore.HasViewedChannel(newID1, channelID)
+			require.False(t, hasViewed)
+			err = incidentStore.SetViewedChannel(newID1, channelID)
+			require.NoError(t, err)
+
+			hasViewed = incidentStore.HasViewedChannel(newID2, channelID)
+			require.False(t, hasViewed)
+			err = incidentStore.SetViewedChannel(newID2, channelID)
+			require.NoError(t, err)
+
+			// old user does not
+			hasViewed = incidentStore.HasViewedChannel(oldID, channelID)
+			require.True(t, hasViewed)
+
+			// new users do not, now:
+			hasViewed = incidentStore.HasViewedChannel(newID1, channelID)
+			require.True(t, hasViewed)
+			hasViewed = incidentStore.HasViewedChannel(newID2, channelID)
+			require.True(t, hasViewed)
+
+			var rows int64
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_ViewedChannel")
+			require.NoError(t, err)
+			require.Equal(t, 3, int(rows))
+
+			// cannot add a duplicate row
+			if driverName == model.DATABASE_DRIVER_POSTGRES {
+				_, err = db.Exec("INSERT INTO IR_ViewedChannel (UserID, ChannelID) VALUES ($1, $2)", oldID, channelID)
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "duplicate key value")
+			} else {
+				_, err = db.Exec("INSERT INTO IR_ViewedChannel (UserID, ChannelID) VALUES (?, ?)", oldID, channelID)
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "Duplicate entry")
+			}
+
+			err = db.Get(&rows, "SELECT COUNT(*) FROM IR_ViewedChannel")
+			require.NoError(t, err)
+			require.Equal(t, 3, int(rows))
 		})
 	}
 }

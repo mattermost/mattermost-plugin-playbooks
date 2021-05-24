@@ -25,32 +25,29 @@ import (
 
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
+	*ErrorHandler
 	config          config.Service
 	incidentService incident.Service
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 	log             bot.Logger
-	telemetry       incident.Telemetry
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
 func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
-	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry, config config.Service) *IncidentHandler {
+	api *pluginapi.Client, poster bot.Poster, log bot.Logger, configService config.Service) *IncidentHandler {
 	handler := &IncidentHandler{
+		ErrorHandler:    &ErrorHandler{log: log},
 		incidentService: incidentService,
 		playbookService: playbookService,
 		pluginAPI:       api,
 		poster:          poster,
 		log:             log,
-		telemetry:       telemetry,
-		config:          config,
+		config:          configService,
 	}
 
-	e20Middleware := E20LicenseRequired{config}
-
 	incidentsRouter := router.PathPrefix("/incidents").Subrouter()
-	incidentsRouter.Use(e20Middleware.Middleware)
 	incidentsRouter.HandleFunc("", handler.getIncidents).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("", handler.createIncidentFromPost).Methods(http.MethodPost)
 
@@ -74,6 +71,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
+	incidentRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 
 	channelRouter := incidentsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getIncidentByChannel).Methods(http.MethodGet)
@@ -92,9 +90,9 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
 
-	telemetryRouterAuthorized := router.PathPrefix("/telemetry").Subrouter()
-	telemetryRouterAuthorized.Use(handler.checkViewPermissions)
-	telemetryRouterAuthorized.HandleFunc("/incident/{id:[A-Za-z0-9]+}", handler.telemetryForIncident).Methods(http.MethodPost)
+	retrospectiveRouter := incidentRouterAuthorized.PathPrefix("/retrospective").Subrouter()
+	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
+	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
 
 	return handler
 }
@@ -106,40 +104,16 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 
 		incdnt, err := h.incidentService.GetIncident(vars["id"])
 		if err != nil {
-			HandleError(w, err)
+			h.HandleError(w, err)
 			return
 		}
 
 		if err := permissions.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
-				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
 			}
-			HandleError(w, err)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (h *IncidentHandler) checkViewPermissions(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		userID := r.Header.Get("Mattermost-User-ID")
-
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
-		if err != nil {
-			HandleError(w, err)
-			return
-		}
-
-		if err := permissions.ViewIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
-			if errors.Is(err, permissions.ErrNoPermissions) {
-				HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-				return
-			}
-			HandleError(w, err)
+			h.HandleError(w, err)
 			return
 		}
 
@@ -153,12 +127,12 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 
 	var incidentCreateOptions client.IncidentCreateOptions
 	if err := json.NewDecoder(r.Body).Decode(&incidentCreateOptions); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode incident create options", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode incident create options", err)
 		return
 	}
 
 	if !permissions.IsOnEnabledTeam(incidentCreateOptions.TeamID, h.config) {
-		HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
@@ -174,17 +148,17 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 	newIncident, err := h.createIncident(payloadIncident, userID)
 
 	if errors.Is(err, incident.ErrPermission) {
-		HandleErrorWithCode(w, http.StatusForbidden, "unable to create incident", err)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "unable to create incident", err)
 		return
 	}
 
 	if errors.Is(err, incident.ErrMalformedIncident) {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
 		return
 	}
 
 	if err != nil {
-		HandleError(w, errors.Wrapf(err, "unable to create incident"))
+		h.HandleError(w, errors.Wrapf(err, "unable to create incident"))
 		return
 	}
 
@@ -204,13 +178,13 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 
 	oldIncident, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	var updates incident.UpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
@@ -226,24 +200,24 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
 
 	if userID != request.UserId {
-		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
 		return
 	}
 
 	if !permissions.IsOnEnabledTeam(request.TeamId, h.config) {
-		HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
 	var state incident.DialogState
 	err := json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
 		return
 	}
 
@@ -266,7 +240,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
 	if err != nil {
 		if errors.Is(err, incident.ErrMalformedIncident) {
-			HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
 			return
 		}
 
@@ -288,7 +262,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 			return
 		}
 
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -298,7 +272,7 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}, request.UserId)
 
 	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -313,12 +287,12 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
 
 	if userID != request.UserId {
-		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
 		return
 	}
 
@@ -332,7 +306,7 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 
 	incdnt, incErr := h.incidentService.GetIncident(incidentID)
 	if incErr != nil {
-		HandleError(w, incErr)
+		h.HandleError(w, incErr)
 		return
 	}
 
@@ -343,12 +317,12 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 	var state incident.DialogStateAddToTimeline
 	err := json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
 		return
 	}
 
 	if err = h.incidentService.AddPostToTimeline(incidentID, userID, state.PostID, summary); err != nil {
-		HandleError(w, errors.Wrap(err, "failed to add post to timeline"))
+		h.HandleError(w, errors.Wrap(err, "failed to add post to timeline"))
 		return
 	}
 
@@ -386,6 +360,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 	}
 
 	public := true
+	var thePlaybook *playbook.Playbook
 	if newIncident.PlaybookID != "" {
 		pb, err := h.playbookService.Get(newIncident.PlaybookID)
 		if err != nil {
@@ -426,6 +401,12 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		if pb.WebhookOnArchiveEnabled {
 			newIncident.WebhookOnArchiveURL = pb.WebhookOnArchiveURL
 		}
+    
+		if pb.MessageOnJoinEnabled {
+			newIncident.MessageOnJoin = pb.MessageOnJoin
+		}
+
+		thePlaybook = &pb
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -447,7 +428,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			return nil, errors.New("user is not a member of the channel containing the incident's original post")
 		}
 	}
-	return h.incidentService.CreateIncident(&newIncident, userID, public)
+	return h.incidentService.CreateIncident(&newIncident, thePlaybook, userID, public)
 }
 
 func (h *IncidentHandler) getRequesterInfo(userID string) (permissions.RequesterInfo, error) {
@@ -458,14 +439,14 @@ func (h *IncidentHandler) getRequesterInfo(userID string) (permissions.Requester
 func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 	// More detailed permissions checked on DB level.
 	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
 		return
 	}
@@ -477,13 +458,13 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	results, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -498,12 +479,12 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 
 	incidentToGet, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
-	if err := permissions.ViewIncident(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
+	if err := permissions.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
 
@@ -518,19 +499,19 @@ func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Req
 
 	incidentToGet, incErr := h.incidentService.GetIncident(incidentID)
 	if incErr != nil {
-		HandleError(w, incErr)
+		h.HandleError(w, incErr)
 		return
 	}
 
-	if err := permissions.ViewIncident(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+	if err := permissions.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
 	}
 
 	incidentMetadata, err := h.incidentService.GetIncidentMetadata(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -545,7 +526,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 
 	if err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
 		h.log.Warnf("User %s does not have permissions to get incident for channel %s", userID, channelID)
-		HandleErrorWithCode(w, http.StatusNotFound, "Not found",
+		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 			errors.Errorf("incident for channel id %s not found", channelID))
 		return
 	}
@@ -553,18 +534,18 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
 	if err != nil {
 		if errors.Is(err, incident.ErrNotFound) {
-			HandleErrorWithCode(w, http.StatusNotFound, "Not found",
+			h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 				errors.Errorf("incident for channel id %s not found", channelID))
 
 			return
 		}
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	incidentToGet, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -575,12 +556,12 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
 	if teamID == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
 			teamID,
@@ -594,13 +575,13 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
 	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
+		h.HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
 	}
 
@@ -614,13 +595,13 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	filterOptions, err := parseIncidentsFilterOptions(r.URL)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
 	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
+		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
 			filterOptions.TeamID,
@@ -630,13 +611,13 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	incidents, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
-		HandleError(w, errors.Wrapf(err, "failed to get commanders"))
+		h.HandleError(w, errors.Wrapf(err, "failed to get commanders"))
 		return
 	}
 
@@ -657,33 +638,33 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		CommanderID string `json:"commander_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "could not decode request body", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "could not decode request body", err)
 		return
 	}
 
 	incdnt, err := h.incidentService.GetIncident(vars["id"])
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	// Check if the target user (params.CommanderID) has permissions
 	if err := permissions.EditIncident(params.CommanderID, incdnt.ChannelID, h.pluginAPI); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
-			HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
+			h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
 			return
 		}
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	if err := h.incidentService.ChangeCommander(vars["id"], userID, params.CommanderID); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
 }
 
 // updateStatusD handles the POST /incidents/{id}/status endpoint, user has edit permissions
@@ -693,30 +674,30 @@ func (h *IncidentHandler) status(w http.ResponseWriter, r *http.Request) {
 
 	incidentToModify, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	if !permissions.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
 		return
 	}
 
 	var options incident.StatusUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&options); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode body into StatusUpdateOptions", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode body into StatusUpdateOptions", err)
 		return
 	}
 
 	options.Description = strings.TrimSpace(options.Description)
 	if options.Description == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "description must not be empty", errors.New("description field empty"))
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "description must not be empty", errors.New("description field empty"))
 		return
 	}
 
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "message must not be empty", errors.New("message field empty"))
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "message must not be empty", errors.New("message field empty"))
 		return
 	}
 
@@ -724,7 +705,7 @@ func (h *IncidentHandler) status(w http.ResponseWriter, r *http.Request) {
 
 	options.Status = strings.TrimSpace(options.Status)
 	if options.Status == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "status must not be empty", errors.New("status field empty"))
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "status must not be empty", errors.New("status field empty"))
 		return
 	}
 	switch options.Status {
@@ -734,13 +715,13 @@ func (h *IncidentHandler) status(w http.ResponseWriter, r *http.Request) {
 	case incident.StatusResolved:
 		break
 	default:
-		HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
 		return
 	}
 
 	err = h.incidentService.UpdateStatus(incidentID, userID, options)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -756,18 +737,18 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 
 	incidentToModify, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	if !permissions.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
 		return
 	}
 
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
 
@@ -807,13 +788,13 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 	case incident.StatusResolved:
 		break
 	default:
-		HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
 		return
 	}
 
 	err = h.incidentService.UpdateStatus(incidentID, userID, options)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -825,13 +806,13 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Request) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
 	}
 
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusInternalServerError, "error getting incident",
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting incident",
 			errors.Wrapf(err, "reminderButtonUpdate failed to find incidentID for channelID: %s", requestData.ChannelId))
 		return
 	}
@@ -841,12 +822,12 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
 		}
-		HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
 		return
 	}
 
 	if err = h.incidentService.OpenUpdateStatusDialog(incidentID, requestData.TriggerId); err != nil {
-		HandleError(w, errors.New("reminderButtonUpdate failed to open update status dialog"))
+		h.HandleError(w, errors.New("reminderButtonUpdate failed to open update status dialog"))
 		return
 	}
 
@@ -858,14 +839,14 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.Request) {
 	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
 	}
 
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
 	if err != nil {
 		h.log.Errorf("reminderButtonDismiss: no incident for requestData's channelID: %s", requestData.ChannelId)
-		HandleErrorWithCode(w, http.StatusBadRequest, "no incident for requestData's channelID", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "no incident for requestData's channelID", err)
 		return
 	}
 
@@ -874,13 +855,13 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
 		}
-		HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
 		return
 	}
 
 	if err = h.incidentService.RemoveReminderPost(incidentID); err != nil {
 		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
-		HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
 		return
 	}
 
@@ -892,14 +873,26 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
 	eventID := vars["eventID"]
 
-	if err := h.incidentService.RemoveTimelineEvent(id, eventID); err != nil {
-		HandleError(w, err)
+	if err := h.incidentService.RemoveTimelineEvent(id, userID, eventID); err != nil {
+		h.HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// checkAndSendMessageOnJoin handles the GET /incident/{id}/check_and_send_message_on_join/{channel_id} endpoint.
+func (h *IncidentHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	channelID := vars["channel_id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	hasViewed := h.incidentService.CheckAndSendMessageOnJoin(userID, incidentID, channelID)
+	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
 }
 
 func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r *http.Request) {
@@ -909,18 +902,18 @@ func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r 
 
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
-	if err = permissions.ViewIncident(userID, incidentID, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
+	if err = permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
 
 	data, err := h.incidentService.GetChecklistItemAutocomplete(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -934,18 +927,18 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
-	if err = permissions.ViewIncident(userID, channelID, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
+	if err = permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
 
 	data, err := h.incidentService.GetChecklistAutocomplete(incidentID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -957,12 +950,12 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -971,17 +964,17 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 		NewState string `json:"new_state"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
 
 	if !playbook.IsValidChecklistItemState(params.NewState) {
-		HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter new state", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter new state", nil)
 		return
 	}
 
 	if err := h.incidentService.ModifyCheckedState(id, userID, params.NewState, checklistNum, itemNum); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -993,12 +986,12 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -1007,12 +1000,12 @@ func (h *IncidentHandler) itemSetAssignee(w http.ResponseWriter, r *http.Request
 		AssigneeID string `json:"assignee_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
 		return
 	}
 
 	if err := h.incidentService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -1024,19 +1017,19 @@ func (h *IncidentHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	incidentID := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	triggerID, err := h.incidentService.RunChecklistItemSlashCommand(incidentID, userID, checklistNum, itemNum)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -1048,26 +1041,26 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var checklistItem playbook.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode ChecklistItem", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode ChecklistItem", err)
 		return
 	}
 
 	checklistItem.Title = strings.TrimSpace(checklistItem.Title)
 	if checklistItem.Title == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist item title",
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist item title",
 			errors.New("checklist item title must not be blank"))
 		return
 	}
 
 	if err := h.incidentService.AddChecklistItem(id, userID, checklistNum, checklistItem); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -1081,18 +1074,18 @@ func (h *IncidentHandler) addChecklistItemDialog(w http.ResponseWriter, r *http.
 	incidentID := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 
 	request := model.SubmitDialogRequestFromJson(r.Body)
 	if request == nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
 
 	if userID != request.UserId {
-		HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
 		return
 	}
 
@@ -1111,13 +1104,13 @@ func (h *IncidentHandler) addChecklistItemDialog(w http.ResponseWriter, r *http.
 
 	checklistItem.Title = strings.TrimSpace(checklistItem.Title)
 	if checklistItem.Title == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist item title",
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist item title",
 			errors.New("checklist item title must not be blank"))
 		return
 	}
 
 	if err := h.incidentService.AddChecklistItem(incidentID, userID, checklistNum, checklistItem); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -1130,18 +1123,18 @@ func (h *IncidentHandler) itemDelete(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.incidentService.RemoveChecklistItem(id, userID, checklistNum, itemNum); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -1153,12 +1146,12 @@ func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	itemNum, err := strconv.Atoi(vars["item"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -1169,12 +1162,12 @@ func (h *IncidentHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params state", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params state", err)
 		return
 	}
 
 	if err := h.incidentService.EditChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command, params.Description); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -1186,7 +1179,7 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
 		return
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -1196,47 +1189,16 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 		NewLocation int `json:"new_location"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params", err)
 		return
 	}
 
 	if err := h.incidentService.MoveChecklistItem(id, userID, checklistNum, modificationParams.ItemNum, modificationParams.NewLocation); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-// telemetryForIncident handles the /telemetry/incident/{id}?action=the_action endpoint. The frontend
-// can use this endpoint to track events that occur in the context of an incident
-func (h *IncidentHandler) telemetryForIncident(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var params struct {
-		Action string `json:"action"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode post body", err)
-		return
-	}
-
-	if params.Action == "" {
-		HandleError(w, errors.New("must provide action"))
-		return
-	}
-
-	incdnt, err := h.incidentService.GetIncident(id)
-	if err != nil {
-		HandleError(w, err)
-		return
-	}
-
-	h.telemetry.FrontendTelemetryForIncident(incdnt, userID, params.Action)
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {
@@ -1251,6 +1213,50 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 	h.poster.EphemeralPost(incdnt.CommanderUserID, channelID, post)
 
 	return nil
+}
+
+func (h *IncidentHandler) updateRetrospective(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var retroUpdate struct {
+		Retrospective string `json:"retrospective"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if err := h.incidentService.UpdateRetrospective(incidentID, userID, retroUpdate.Retrospective); err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to update retrospective", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *IncidentHandler) publishRetrospective(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	incidentID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var retroUpdate struct {
+		Retrospective string `json:"retrospective"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if err := h.incidentService.PublishRetrospective(incidentID, retroUpdate.Retrospective, userID); err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to publish retrospective", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.

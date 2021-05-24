@@ -38,32 +38,36 @@ func (t *NoopTelemetry) UpdateStatus(*incident.Incident, string) {
 func (t *NoopTelemetry) FrontendTelemetryForIncident(*incident.Incident, string, string) {
 }
 
-// AddTimelineEventFromPost does nothing
+// AddPostToTimeline does nothing
 func (t *NoopTelemetry) AddPostToTimeline(*incident.Incident, string) {
 }
 
+// RemoveTimelineEvent does nothing
+func (t *NoopTelemetry) RemoveTimelineEvent(*incident.Incident, string) {
+}
+
 // AddTask does nothing.
-func (t *NoopTelemetry) AddTask(string, string) {
+func (t *NoopTelemetry) AddTask(string, string, playbook.ChecklistItem) {
 }
 
 // RemoveTask does nothing.
-func (t *NoopTelemetry) RemoveTask(string, string) {
+func (t *NoopTelemetry) RemoveTask(string, string, playbook.ChecklistItem) {
 }
 
 // RenameTask does nothing.
-func (t *NoopTelemetry) RenameTask(string, string) {
+func (t *NoopTelemetry) RenameTask(string, string, playbook.ChecklistItem) {
 }
 
 // ModifyCheckedState does nothing.
-func (t *NoopTelemetry) ModifyCheckedState(string, string, string, bool, bool) {
+func (t *NoopTelemetry) ModifyCheckedState(string, string, playbook.ChecklistItem, bool) {
 }
 
 // SetAssignee does nothing.
-func (t *NoopTelemetry) SetAssignee(string, string) {
+func (t *NoopTelemetry) SetAssignee(string, string, playbook.ChecklistItem) {
 }
 
 // MoveTask does nothing.
-func (t *NoopTelemetry) MoveTask(string, string) {
+func (t *NoopTelemetry) MoveTask(string, string, playbook.ChecklistItem) {
 }
 
 // CreatePlaybook does nothing.
@@ -83,5 +87,56 @@ func (t *NoopTelemetry) ChangeCommander(*incident.Incident, string) {
 }
 
 // RunTaskSlashCommand does nothing
-func (t *NoopTelemetry) RunTaskSlashCommand(string, string) {
+func (t *NoopTelemetry) RunTaskSlashCommand(string, string, playbook.ChecklistItem) {
+}
+
+func (t *NoopTelemetry) UpdateRetrospective(incident *incident.Incident, userID string) {
+}
+
+func (t *NoopTelemetry) PublishRetrospective(incident *incident.Incident, userID string) {
+}
+
+// StartTrialToViewTimeline does nothing.
+func (t *NoopTelemetry) StartTrialToViewTimeline(userID string) {
+}
+
+// StartTrialToAddMessageToTimeline does nothing.
+func (t *NoopTelemetry) StartTrialToAddMessageToTimeline(userID string) {
+}
+
+// StartTrialToCreatePlaybook does nothing.
+func (t *NoopTelemetry) StartTrialToCreatePlaybook(userID string) {
+}
+
+// StartTrialToRestrictPlaybookCreation does nothing.
+func (t *NoopTelemetry) StartTrialToRestrictPlaybookCreation(userID string) {
+}
+
+// StartTrialToRestrictPlaybookAccess does nothing.
+func (t *NoopTelemetry) StartTrialToRestrictPlaybookAccess(userID string) {
+}
+
+// NotifyAdminsToViewTimeline does nothing.
+func (t *NoopTelemetry) NotifyAdminsToViewTimeline(userID string) {
+
+}
+
+// NotifyAdminsToAddMessageToTimeline does nothing.
+func (t *NoopTelemetry) NotifyAdminsToAddMessageToTimeline(userID string) {
+
+}
+
+// NotifyAdminsToCreatePlaybook does nothing.
+func (t *NoopTelemetry) NotifyAdminsToCreatePlaybook(userID string) {
+
+}
+
+// NotifyAdminsToRestrictPlaybookCreation does nothing.
+func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookCreation(userID string) {
+
+}
+
+// NotifyAdminsToRestrictPlaybookAccess does nothing.
+func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookAccess(userID string) {
+
 }

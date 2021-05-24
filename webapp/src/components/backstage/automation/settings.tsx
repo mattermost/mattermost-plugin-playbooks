@@ -14,6 +14,7 @@ import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assi
 import {Announcement} from 'src/components/backstage/automation/announcement';
 
 import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
+import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
 
 interface Props {
     searchProfiles: (term: string) => ActionFunc;
@@ -40,6 +41,10 @@ interface Props {
     onToggleWebhookOnArchive: () => void;
     webhookOnArchiveChange: (url: string) => void;
     webhookOnArchiveURL: string;
+    messageOnJoinEnabled: boolean;
+    onToggleMessageOnJoin: () => void;
+    messageOnJoin: string;
+    messageOnJoinChange: (message: string) => void;
 }
 
 export const AutomationSettings: FC<Props> = (props: Props) => {
@@ -106,6 +111,20 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         onChange={props.webhookOnArchiveChange}
                     />
                 </Setting>
+            </Section>
+            <Section>
+                <SectionTitle>
+                    {'When a new member joins'}
+                </SectionTitle>
+                <Setting id={'user-joins-message'}>
+                    <MessageOnJoin
+                        enabled={props.messageOnJoinEnabled}
+                        onToggle={props.onToggleMessageOnJoin}
+                        message={props.messageOnJoin}
+                        onChange={props.messageOnJoinChange}
+                    />
+                </Setting>
+
             </Section>
         </>
     );

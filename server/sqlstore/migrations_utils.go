@@ -22,6 +22,21 @@ var createPGIndex = func(indexName, tableName, columns string) string {
 	`, indexName, indexName, tableName, columns)
 }
 
+// 'IF NOT EXISTS' syntax is not supported in Postgres 9.4, so we need
+// this workaround to make the migration idempotent
+var createUniquePGIndex = func(indexName, tableName, columns string) string {
+	return fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			IF to_regclass('%s') IS NULL THEN
+				CREATE UNIQUE INDEX %s ON %s (%s);
+			END IF;
+		END
+		$$;
+	`, indexName, indexName, tableName, columns)
+}
+
 var addColumnToPGTable = func(e sqlx.Ext, tableName, columnName, columnType string) error {
 	_, err := e.Exec(fmt.Sprintf(`
 		DO

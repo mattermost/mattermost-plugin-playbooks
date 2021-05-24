@@ -47,10 +47,14 @@ func TestCreateIncident(t *testing.T) {
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.display_name.app_error"})
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, "testUserID", true)
+		_, err := s.CreateIncident(incdnt, nil, "testUserID", true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -72,11 +76,15 @@ func TestCreateIncident(t *testing.T) {
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.2_or_more.app_error"})
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, "testUserID", true)
+		_, err := s.CreateIncident(incdnt, nil, "testUserID", true)
 		require.Equal(t, err, incident.ErrChannelDisplayNameInvalid)
 	})
 
@@ -110,10 +118,13 @@ func TestCreateIncident(t *testing.T) {
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
-		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id"}, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
+		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", TeamId: "team_id"}, nil)
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("CreateTeamMember", "team_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, nil)
-		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
+		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
@@ -122,7 +133,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, "user_id", true)
+		_, err := s.CreateIncident(incdnt, nil, "user_id", true)
 		require.NoError(t, err)
 	})
 
@@ -145,11 +156,15 @@ func TestCreateIncident(t *testing.T) {
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, "user_id", true)
+		_, err := s.CreateIncident(incdnt, nil, "user_id", true)
 		require.EqualError(t, err, "failed to create incident channel: : , ")
 	})
 
@@ -176,11 +191,14 @@ func TestCreateIncident(t *testing.T) {
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
-		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id"}, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
+		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", TeamId: "team_id"}, nil)
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("CreateTeamMember", "team_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, &model.AppError{Id: "api.channel.update_channel_member_roles.scheme_role.app_error"})
 		pluginAPI.On("LogWarn", "failed to promote commander to admin", "ChannelID", "channel_id", "CommanderUserID", "user_id", "err", ": , ")
-		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
+		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
@@ -189,7 +207,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, "user_id", true)
+		_, err := s.CreateIncident(incdnt, nil, "user_id", true)
 		require.NoError(t, err)
 	})
 
@@ -216,13 +234,16 @@ func TestCreateIncident(t *testing.T) {
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
 		pluginAPI.On("CreateChannel", mock.MatchedBy(func(channel *model.Channel) bool {
 			return channel.Name != ""
-		})).Return(&model.Channel{Id: "channel_id"}, nil)
+		})).Return(&model.Channel{Id: "channel_id", TeamId: "team_id"}, nil)
 
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("CreateTeamMember", "team_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, nil)
-		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
+		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
@@ -231,7 +252,7 @@ func TestCreateIncident(t *testing.T) {
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		_, err := s.CreateIncident(incdnt, "user_id", true)
+		_, err := s.CreateIncident(incdnt, nil, "user_id", true)
 		pluginAPI.AssertExpectations(t)
 		require.NoError(t, err)
 	})
@@ -280,7 +301,7 @@ func TestCreateIncident(t *testing.T) {
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
-		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"})
+		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
 		poster.EXPECT().PostMessage("channel_id", gomock.Any()).Return(&model.Post{Id: "testId"}, nil)
@@ -290,16 +311,18 @@ func TestCreateIncident(t *testing.T) {
 		siteURL := "http://example.com"
 		mattermostConfig.ServiceSettings.SiteURL = &siteURL
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
-		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id"}, nil)
+		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", TeamId: "team_id"}, nil)
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", mock.Anything).Return(nil, nil)
+		pluginAPI.On("CreateTeamMember", "team_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "incident-channel-name"}, nil)
 
 		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
 
-		createdIncident, err := s.CreateIncident(incdnt, "user_id", true)
+		createdIncident, err := s.CreateIncident(incdnt, nil, "user_id", true)
 		require.NoError(t, err)
 
 		select {
@@ -309,7 +332,7 @@ func TestCreateIncident(t *testing.T) {
 				"http://example.com/ad-1/channels/incident-channel-name",
 				payload.ChannelURL)
 			require.Equal(t,
-				"http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID",
+				"http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/"+createdIncident.ID,
 				payload.DetailsURL)
 
 		case <-time.After(time.Second * 5):

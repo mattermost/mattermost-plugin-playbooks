@@ -4,9 +4,12 @@
 import React, {FC} from 'react';
 import styled from 'styled-components';
 
-import {Playbook, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
+import {Playbook, emptyPlaybook, newChecklistItem, defaultMessageOnJoin} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import AlertIcon from 'src/components/assets/icons/alert_icon';
+import {useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
+
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 export interface PresetTemplate {
     title: string;
@@ -30,6 +33,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 '### Impact\n\nDescribe the customer and organizational impact of this incident.',
             reminder_message_template: '### Incident update\n\nDescribe progress and changes to the incident since the last update.\n\n' +
                 '### Change to customer impact\n\nDescribe any changes to customer impact since the last update.',
+            message_on_join: defaultMessageOnJoin,
             checklists: [
                 {
                     title: 'Triage',
@@ -92,6 +96,9 @@ const InnerContainer = styled.div`
 `;
 
 const Title = styled.div`
+    display: flex;
+    align-items: center;
+
     font-family: Open Sans;
     font-style: normal;
     font-weight: 600;
@@ -117,17 +124,26 @@ const TemplateItemDiv = styled.div`
     }
 `;
 
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-left: 8px;
+`;
+
 interface Props {
     templates?: PresetTemplate[];
     onSelect: (t: PresetTemplate) => void
 }
 
 const TemplateSelector: FC<Props> = ({templates = PresetTemplates, onSelect}: Props) => {
+    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
+
     return (
         <BackgroundColorContainer>
             <RootContainer>
                 <InnerContainer>
-                    <Title>{'Start a new playbook'}</Title>
+                    <Title>
+                        {'Start a new playbook'}
+                        {!allowPlaybookCreation && <PositionedUpgradeBadge/>}
+                    </Title>
                     <TemplateItemDiv>
                         {
                             templates.map((template: PresetTemplate) => (

@@ -14,6 +14,7 @@ type Bot struct {
 	pluginAPI     *pluginapi.Client
 	botUserID     string
 	logContext    LogContext
+	telemetry     Telemetry
 }
 
 // Logger interface - a logging system that will tee logs to a DM channel.
@@ -53,14 +54,31 @@ type Poster interface {
 
 	// PublishWebsocketEventToUser sends a websocket event with payload to userID.
 	PublishWebsocketEventToUser(event string, payload interface{}, userID string)
+
+	// NotifyAdmins sends a DM with the message to each admins
+	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error
+}
+
+type Telemetry interface {
+	NotifyAdminsToViewTimeline(userID string)
+	NotifyAdminsToAddMessageToTimeline(userID string)
+	NotifyAdminsToCreatePlaybook(userID string)
+	NotifyAdminsToRestrictPlaybookCreation(userID string)
+	NotifyAdminsToRestrictPlaybookAccess(userID string)
+	StartTrialToViewTimeline(userID string)
+	StartTrialToAddMessageToTimeline(userID string)
+	StartTrialToCreatePlaybook(userID string)
+	StartTrialToRestrictPlaybookCreation(userID string)
+	StartTrialToRestrictPlaybookAccess(userID string)
 }
 
 // New creates a new bot poster/logger.
-func New(api *pluginapi.Client, botUserID string, configService config.Service) *Bot {
+func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
 	return &Bot{
 		pluginAPI:     api,
 		botUserID:     botUserID,
 		configService: configService,
+		telemetry:     telemetry,
 	}
 }
 
@@ -71,5 +89,6 @@ func (b *Bot) clone() *Bot {
 		pluginAPI:     b.pluginAPI,
 		botUserID:     b.botUserID,
 		logContext:    b.logContext.copyShallow(),
+		telemetry:     b.telemetry,
 	}
 }

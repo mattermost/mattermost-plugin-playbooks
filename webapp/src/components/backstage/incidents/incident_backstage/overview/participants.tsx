@@ -57,13 +57,18 @@ const Participants = (props: Props) => {
                 />
                 <Heading>{'Reporter'}</Heading>
                 <Participant userId={props.incident.reporter_user_id}/>
-                <Heading>{'Channel Members'}</Heading>
-                {profilesExceptTwoMains.map((o) => (
-                    <Participant
-                        key={o.id}
-                        userId={o.id}
-                    />
-                ))}
+                {
+                    profilesExceptTwoMains.length > 0 &&
+                    <>
+                        <Heading>{'Channel Members'}</Heading>
+                        {profilesExceptTwoMains.map((o) => (
+                            <Participant
+                                key={o.id}
+                                userId={o.id}
+                            />
+                        ))}
+                    </>
+                }
             </StyledContent>
         </TabPageContainer>
     );

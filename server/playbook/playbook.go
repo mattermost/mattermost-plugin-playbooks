@@ -36,6 +36,8 @@ type Playbook struct {
 	WebhookOnCreationEnabled    bool        `json:"webhook_on_creation_enabled"`
 	WebhookOnArchiveURL         string      `json:"webhook_on_archive_url"`
 	WebhookOnArchiveEnabled     bool        `json:"webhook_on_archive_enabled"`
+	MessageOnJoin               string      `json:"message_on_join"`
+	MessageOnJoinEnabled        bool        `json:"message_on_join_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {

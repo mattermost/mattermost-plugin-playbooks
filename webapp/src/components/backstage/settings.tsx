@@ -11,14 +11,17 @@ import styled from 'styled-components';
 
 import {actionSetGlobalSettings} from 'src/actions';
 import {fetchGlobalSettings, setGlobalSettings} from 'src/client';
-import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 import {globalSettings} from 'src/selectors';
 import {GlobalSettings} from 'src/types/settings';
 import ConfirmModal from '../widgets/confirmation_modal';
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 import Profile from '../profile/profile';
 
-import {useCanCreatePlaybooks} from 'src/hooks';
+import {useCanCreatePlaybooks, useAllowPlaybookCreationRestriction} from 'src/hooks';
+
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
 import {BackstageHeader, BackstageSubheader, RadioContainer, RadioLabel, RadioInput} from './styles';
 import SelectUsersBelow from './select_users_below';
@@ -49,12 +52,20 @@ const UserSelectorWrapper = styled.div`
     height: 40px;
 `;
 
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-left: 8px;
+    margin-top: 2px;
+`;
+
 interface PlaybookCreatorsProps {
     settings: GlobalSettings
     onChange: (newsettings: GlobalSettings) => void
 }
 
 const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProps) => {
+    const allowPlaybookCreationRestriction = useAllowPlaybookCreationRestriction();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
     const dispatch = useDispatch();
     const [enabled, setEnabled] = useState<boolean>(props.settings.playbook_creators_user_ids.length !== 0);
     const [confirmRemoveSelfOpen, setConfirmRemoveSelfOpen] = useState('');
@@ -92,22 +103,28 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
         return dispatch(getProfiles(0, PROFILE_CHUNK_SIZE, {active: true}));
     };
 
-    const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.value === 'enabled') {
-            if (!enabled) {
-                props.onChange({
-                    ...props.settings,
-                    playbook_creators_user_ids: [currentUserId],
-                });
-                setEnabled(true);
-            }
-        } else {
+    const handleEnabled = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!allowPlaybookCreationRestriction) {
+            setShowUpgradeModal(true);
+            e.preventDefault();
+            return;
+        }
+
+        if (!enabled) {
             props.onChange({
                 ...props.settings,
-                playbook_creators_user_ids: [],
+                playbook_creators_user_ids: [currentUserId],
             });
-            setEnabled(false);
+            setEnabled(true);
         }
+    };
+
+    const handleDisabled = () => {
+        props.onChange({
+            ...props.settings,
+            playbook_creators_user_ids: [],
+        });
+        setEnabled(false);
     };
 
     if (!hasPermissions) {
@@ -139,7 +156,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                         name='enabled'
                         value='disabled'
                         checked={!enabled}
-                        onChange={radioPressed}
+                        onChange={handleDisabled}
                     />
                     {'Everyone on the server can create playbooks.'}
                 </RadioLabel>
@@ -149,9 +166,10 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                         name='enabled'
                         value='enabled'
                         checked={enabled}
-                        onChange={radioPressed}
+                        onChange={handleEnabled}
                     />
                     {'Only selected users can create playbooks.'}
+                    {!allowPlaybookCreationRestriction && <PositionedUpgradeBadge/>}
                 </RadioLabel>
             </RadioContainer>
             <UserSelectorWrapper>
@@ -181,6 +199,11 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                     setConfirmRemoveSelfOpen('');
                 }}
                 onCancel={() => setConfirmRemoveSelfOpen('')}
+            />
+            <UpgradeModal
+                messageType={AdminNotificationType.PLAYBOOK_CREATION_RESTRICTION}
+                show={showUpgradeModal}
+                onHide={() => setShowUpgradeModal(false)}
             />
         </>
     );

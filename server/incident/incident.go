@@ -25,34 +25,37 @@ const (
 // NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
 // that column needs to be added in the sqlstore code.
 type Incident struct {
-	ID                      string               `json:"id"`
-	Name                    string               `json:"name"` // Retrieved from incident channel
-	Description             string               `json:"description"`
-	CommanderUserID         string               `json:"commander_user_id"`
-	ReporterUserID          string               `json:"reporter_user_id"`
-	TeamID                  string               `json:"team_id"`
-	ChannelID               string               `json:"channel_id"`
-	CreateAt                int64                `json:"create_at"` // Retrieved from incident channel
-	EndAt                   int64                `json:"end_at"`
-	DeleteAt                int64                `json:"delete_at"` // Retrieved from incidet channel
-	ActiveStage             int                  `json:"active_stage"`
-	ActiveStageTitle        string               `json:"active_stage_title"`
-	PostID                  string               `json:"post_id"`
-	PlaybookID              string               `json:"playbook_id"`
-	Checklists              []playbook.Checklist `json:"checklists"`
-	StatusPosts             []StatusPost         `json:"status_posts"`
-	CurrentStatus           string               `json:"current_status"`
-	ReminderPostID          string               `json:"reminder_post_id"`
-	PreviousReminder        time.Duration        `json:"previous_reminder"`
-	BroadcastChannelID      string               `json:"broadcast_channel_id"`
-	ReminderMessageTemplate string               `json:"reminder_message_template"`
-	InvitedUserIDs          []string             `json:"invited_user_ids"`
-	InvitedGroupIDs         []string             `json:"invited_group_ids"`
-	TimelineEvents          []TimelineEvent      `json:"timeline_events"`
-	DefaultCommanderID      string               `json:"default_commander_id"`
-	AnnouncementChannelID   string               `json:"announcement_channel_id"`
-	WebhookOnCreationURL    string               `json:"webhook_on_creation_url"`
-	WebhookOnArchiveURL     string               `json:"webhook_on_archive_url"`
+	ID                       string               `json:"id"`
+	Name                     string               `json:"name"` // Retrieved from incident channel
+	Description              string               `json:"description"`
+	CommanderUserID          string               `json:"commander_user_id"`
+	ReporterUserID           string               `json:"reporter_user_id"`
+	TeamID                   string               `json:"team_id"`
+	ChannelID                string               `json:"channel_id"`
+	CreateAt                 int64                `json:"create_at"` // Retrieved from incident channel
+	EndAt                    int64                `json:"end_at"`
+	DeleteAt                 int64                `json:"delete_at"` // Retrieved from incidet channel
+	ActiveStage              int                  `json:"active_stage"`
+	ActiveStageTitle         string               `json:"active_stage_title"`
+	PostID                   string               `json:"post_id"`
+	PlaybookID               string               `json:"playbook_id"`
+	Checklists               []playbook.Checklist `json:"checklists"`
+	StatusPosts              []StatusPost         `json:"status_posts"`
+	CurrentStatus            string               `json:"current_status"`
+	ReminderPostID           string               `json:"reminder_post_id"`
+	PreviousReminder         time.Duration        `json:"previous_reminder"`
+	BroadcastChannelID       string               `json:"broadcast_channel_id"`
+	ReminderMessageTemplate  string               `json:"reminder_message_template"`
+	InvitedUserIDs           []string             `json:"invited_user_ids"`
+	InvitedGroupIDs          []string             `json:"invited_group_ids"`
+	TimelineEvents           []TimelineEvent      `json:"timeline_events"`
+	DefaultCommanderID       string               `json:"default_commander_id"`
+	AnnouncementChannelID    string               `json:"announcement_channel_id"`
+	WebhookOnCreationURL     string               `json:"webhook_on_creation_url"`
+  WebhookOnArchiveURL      string               `json:"webhook_on_archive_url"`
+	Retrospective            string               `json:"retrospective"`
+	RetrospectivePublishedAt int64                `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
+	MessageOnJoin            string               `json:"message_on_join"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -161,14 +164,15 @@ type Metadata struct {
 type timelineEventType string
 
 const (
-	IncidentCreated   timelineEventType = "incident_created"
-	TaskStateModified timelineEventType = "task_state_modified"
-	StatusUpdated     timelineEventType = "status_updated"
-	CommanderChanged  timelineEventType = "commander_changed"
-	AssigneeChanged   timelineEventType = "assignee_changed"
-	RanSlashCommand   timelineEventType = "ran_slash_command"
-	EventFromPost     timelineEventType = "event_from_post"
-	UserJoinedLeft    timelineEventType = "user_joined_left"
+	IncidentCreated        timelineEventType = "incident_created"
+	TaskStateModified      timelineEventType = "task_state_modified"
+	StatusUpdated          timelineEventType = "status_updated"
+	CommanderChanged       timelineEventType = "commander_changed"
+	AssigneeChanged        timelineEventType = "assignee_changed"
+	RanSlashCommand        timelineEventType = "ran_slash_command"
+	EventFromPost          timelineEventType = "event_from_post"
+	UserJoinedLeft         timelineEventType = "user_joined_left"
+	PublishedRetrospective timelineEventType = "published_retrospective"
 )
 
 type TimelineEvent struct {
@@ -260,13 +264,16 @@ var ErrIncidentActive = errors.New("incident active")
 // ErrMalformedIncident is used to indicate an incident is not valid
 var ErrMalformedIncident = errors.New("incident active")
 
+// ErrDuplicateEntry indicates the db could not make an insert because the entry already existed.
+var ErrDuplicateEntry = errors.New("duplicate entry")
+
 // Service is the incident/service interface.
 type Service interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-	CreateIncident(incdnt *Incident, userID string, public bool) (*Incident, error)
+	CreateIncident(incdnt *Incident, playbook *playbook.Playbook, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
@@ -284,7 +291,7 @@ type Service interface {
 	AddPostToTimeline(incidentID, userID, postID, summary string) error
 
 	// RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
-	RemoveTimelineEvent(incidentID, eventID string) error
+	RemoveTimelineEvent(incidentID, userID, eventID string) error
 
 	// UpdateStatus updates an incident's status.
 	UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error
@@ -367,6 +374,16 @@ type Service interface {
 	// UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 	// was removed from the channel by actorID.
 	UserHasLeftChannel(userID, channelID, actorID string)
+
+	// UpdateRetrospective updates the retrospective for the given incident.
+	UpdateRetrospective(incidentID, userID, newRetrospective string) error
+
+	// PublishRetrospective publishes the retrospective.
+	PublishRetrospective(incidentID, text, userID string) error
+
+	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
+	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+	CheckAndSendMessageOnJoin(userID, incidentID, channelID string) bool
 }
 
 // Store defines the methods the ServiceImpl needs from the interfaceStore.
@@ -374,7 +391,7 @@ type Store interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident.
+	// CreateIncident creates a new incident. If incdnt has an ID, that ID will be used.
 	CreateIncident(incdnt *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
@@ -411,6 +428,13 @@ type Store interface {
 
 	// ChangeCreationDate changes the creation date of the specified incident.
 	ChangeCreationDate(incidentID string, creationTimestamp time.Time) error
+
+	// HasViewedChannel returns true if userID has viewed channelID
+	HasViewedChannel(userID, channelID string) bool
+
+	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
+	// record of that userID/channelID (i.e., will create duplicate rows)
+	SetViewedChannel(userID, channelID string) error
 }
 
 // Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
@@ -437,27 +461,36 @@ type Telemetry interface {
 	// AddPostToTimeline tracks userID creating a timeline event from a post.
 	AddPostToTimeline(incdnt *Incident, userID string)
 
+	// RemoveTimelineEvent tracks userID removing a timeline event.
+	RemoveTimelineEvent(incdnt *Incident, userID string)
+
 	// ModifyCheckedState tracks the checking and unchecking of items.
-	ModifyCheckedState(incidentID, userID, newState string, wasCommander, wasAssignee bool)
+	ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool)
 
 	// SetAssignee tracks the changing of an assignee on an item.
-	SetAssignee(incidentID, userID string)
+	SetAssignee(incidentID, userID string, task playbook.ChecklistItem)
 
 	// AddTask tracks the creation of a new checklist item.
-	AddTask(incidentID, userID string)
+	AddTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RemoveTask tracks the removal of a checklist item.
-	RemoveTask(incidentID, userID string)
+	RemoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RenameTask tracks the update of a checklist item.
-	RenameTask(incidentID, userID string)
+	RenameTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// MoveTask tracks the unchecking of checked item.
-	MoveTask(incidentID, userID string)
+	MoveTask(incidentID, userID string, task playbook.ChecklistItem)
 
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunTaskSlashCommand(incidentID, userID string)
+	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
+
+	// UpdateRetrospective event
+	UpdateRetrospective(incident *Incident, userID string)
+
+	// PublishRetrospective event
+	PublishRetrospective(incident *Incident, userID string)
 }
 
 type JobOnceScheduler interface {

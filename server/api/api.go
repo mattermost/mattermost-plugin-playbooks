@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+
+	"github.com/gorilla/mux"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
@@ -15,6 +16,7 @@ import (
 
 // Handler Root API handler.
 type Handler struct {
+	*ErrorHandler
 	pluginAPI *pluginapi.Client
 	APIRouter *mux.Router
 	root      *mux.Router
@@ -22,10 +24,12 @@ type Handler struct {
 }
 
 // NewHandler constructs a new handler.
-func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
-	handler := &Handler{}
-	handler.config = config
-	handler.pluginAPI = pluginAPI
+func NewHandler(pluginAPI *pluginapi.Client, config config.Service, log bot.Logger) *Handler {
+	handler := &Handler{
+		ErrorHandler: &ErrorHandler{log: log},
+		pluginAPI:    pluginAPI,
+		config:       config,
+	}
 
 	root := mux.NewRouter()
 	api := root.PathPrefix("/api/v0").Subrouter()
@@ -36,11 +40,9 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service) *Handler {
 
 	handler.APIRouter = api
 	handler.root = root
-
-	e20Middleware := E20LicenseRequired{config}
+	handler.config = config
 
 	settingsRouter := handler.APIRouter.PathPrefix("/settings").Subrouter()
-	settingsRouter.Use(e20Middleware.Middleware)
 	settingsRouter.HandleFunc("", handler.getSettings).Methods(http.MethodGet)
 	settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPost)
 
@@ -52,13 +54,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type GlobalSettings struct {
-	PlaybookCreatorsUserIds []string `json:"playbook_creators_user_ids"`
+	PlaybookCreatorsUserIds    []string `json:"playbook_creators_user_ids"`
+	EnableExperimentalFeatures bool     `json:"enable_experimental_features"`
 }
 
 func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
 	cfg := h.config.GetConfiguration()
 	settings := GlobalSettings{
-		PlaybookCreatorsUserIds: cfg.PlaybookCreatorsUserIds,
+		PlaybookCreatorsUserIds:    cfg.PlaybookCreatorsUserIds,
+		EnableExperimentalFeatures: cfg.EnableExperimentalFeatures,
 	}
 	ReturnJSON(w, &settings, http.StatusOK)
 }
@@ -68,49 +72,34 @@ func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
 
 	var settings GlobalSettings
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode settings", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode settings", err)
 		return
 	}
 
 	if err := permissions.ModifySettings(userID, h.config); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
+	}
+
+	if !h.config.IsAtLeastE20Licensed() {
+		if len(settings.PlaybookCreatorsUserIds) > 0 {
+			h.HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers cannot configure specific users to access playbooks", nil)
+			return
+		}
 	}
 
 	pluginConfig := h.pluginAPI.Configuration.GetPluginConfig()
 	pluginConfig["PlaybookCreatorsUserIds"] = settings.PlaybookCreatorsUserIds
 	if err := h.pluginAPI.Configuration.SavePluginConfig(pluginConfig); err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-// ReturnJSON writes the given pointer to object as json with a success response
-func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
-	jsonBytes, err := json.Marshal(pointerToObject)
-	if err != nil {
-		HandleError(w, errors.Wrapf(err, "unable to marshal json"))
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(httpStatus)
-
-	if _, err = w.Write(jsonBytes); err != nil {
-		HandleError(w, err)
-		return
-	}
-}
-
-// HandleError logs the internal error and sends a generic error as JSON in a 500 response.
-func HandleError(w http.ResponseWriter, internalErr error) {
-	HandleErrorWithCode(w, http.StatusInternalServerError, "An internal error has occurred. Check app server logs for details.", internalErr)
-}
-
 // HandleErrorWithCode logs the internal error and sends the public facing error
 // message as JSON in a response with the provided code.
-func HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
+func HandleErrorWithCode(logger bot.Logger, w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -119,14 +108,7 @@ func HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string,
 		details = internalErr.Error()
 	}
 
-	loggedMsg, _ := json.Marshal(struct {
-		Message string `json:"message"` // A public facing message providing details about the error.
-		Details string `json:"details"` // More details, potentially sensitive, about the error.
-	}{
-		Message: publicErrorMsg,
-		Details: details,
-	})
-	logrus.Warn(string(loggedMsg))
+	logger.Warnf("public error message: %v; internal details: %v", publicErrorMsg, details)
 
 	responseMsg, _ := json.Marshal(struct {
 		Error string `json:"error"` // A public facing message providing details about the error.
@@ -134,6 +116,23 @@ func HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string,
 		Error: publicErrorMsg,
 	})
 	_, _ = w.Write(responseMsg)
+}
+
+// ReturnJSON writes the given pointerToObject as json with the provided httpStatus
+func ReturnJSON(w http.ResponseWriter, pointerToObject interface{}, httpStatus int) {
+	jsonBytes, err := json.Marshal(pointerToObject)
+	if err != nil {
+		logrus.Warnf("Unable to marshall JSON. Error details: %s", err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpStatus)
+
+	if _, err = w.Write(jsonBytes); err != nil {
+		logrus.Warnf("Unable to write to http.ResponseWriter. Error details: %s", err.Error())
+		return
+	}
 }
 
 // MattermostAuthorizationRequired checks if request is authorized.
@@ -146,22 +145,5 @@ func MattermostAuthorizationRequired(next http.Handler) http.Handler {
 		}
 
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
-	})
-}
-
-type E20LicenseRequired struct {
-	config config.Service
-}
-
-// Middleware checks if the server is appropriately licensed.
-func (m *E20LicenseRequired) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !m.config.IsLicensed() {
-			http.Error(w, "E20 license required", http.StatusForbidden)
-
-			return
-		}
-
-		next.ServeHTTP(w, r)
 	})
 }
