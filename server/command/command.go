@@ -1342,6 +1342,136 @@ var dummyListPlaybooks = []playbook.Playbook{
 		},
 	},
 	{
+		Title: "Release 2.4",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Preparation",
+				Items: []playbook.ChecklistItem{
+					{
+						Title:   "Invite Feature Team to Channel",
+						Command: "/echo ''",
+					},
+					{
+						Title: "Acknowledge Alert",
+					},
+					{
+						Title:   "Get Alert Info",
+						Command: "/announce ~release-checklist",
+					},
+					{
+						Title:   "Invite Escalators",
+						Command: "/github mvp-2.4",
+					},
+					{
+						Title: "Determine Priority",
+					},
+					{
+						Title: "Update Alert Priority",
+					},
+				},
+			},
+			{
+				Title: "Meeting",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Final Testing by QA",
+					},
+					{
+						Title: "Prepare Deployment Documentation",
+					},
+					{
+						Title: "Create New Alert for User",
+					},
+				},
+			},
+			{
+				Title: "Deployment",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Database Backup",
+					},
+					{
+						Title: "Migrate New migration File",
+					},
+					{
+						Title: "Deploy Backend API",
+					},
+					{
+						Title: "Deploy Front-end",
+					},
+					{
+						Title: "Create new tag in gitlab",
+					},
+				},
+			},
+		},
+	},
+	{
+		Title:       "Incident #4281",
+		Description: "There is error when access message from deleted channel",
+		Checklists: []playbook.Checklist{
+			{
+				Title: "Prepare the Jira card for this task",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Create new Jira Card and fill the description",
+					},
+					{
+						Title: "Set someone to be asignee for this task",
+					},
+					{
+						Title: "Set story point for this card",
+					},
+				},
+			},
+			{
+				Title: "Resolve the issue",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Check the root cause of the issue",
+					},
+					{
+						Title: "Fix the bug",
+					},
+					{
+						Title: "Testing the issue manually by programmer",
+					},
+				},
+			},
+			{
+				Title: "QA",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Create several scenario testing",
+					},
+					{
+						Title: "Implement it using cypress",
+					},
+					{
+						Title: "Run the testing and check the result",
+					},
+				},
+			},
+			{
+				Title: "Deployment",
+				Items: []playbook.ChecklistItem{
+					{
+						Title: "Merge the result to branch 'master'",
+					},
+					{
+						Title: "Create new Merge Request",
+					},
+					{
+						Title: "Run deployment pipeline",
+					},
+					{
+						Title: "Test the result in production",
+					},
+				},
+			},
+		},
+	},
+	{
 		Title:       "Incident Collaboration Playbook",
 		Description: "### Describe the incident so that someone without prior knowledge can ramp up quickly. Two sentences is the ideal length.",
 		Checklists: []playbook.Checklist{
