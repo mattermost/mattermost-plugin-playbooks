@@ -743,7 +743,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 			go func() {
 				if err = s.sendWebhookOnArchive(*incidentToModify); err != nil {
 					s.pluginAPI.Log.Warn("failed to send a POST request to the archive webhook URL", "webhook URL", incidentToModify.WebhookOnArchiveURL, "error", err)
-					_, _ = s.poster.PostMessage(incidentToModify.BroadcastChannelID, "Incident archived announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+					_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident archived announcement through the outgoing webhook failed. Contact your System Admin for more information.")
 				}
 			}()
 		}
