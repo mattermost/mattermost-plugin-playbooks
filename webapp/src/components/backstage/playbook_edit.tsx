@@ -551,7 +551,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
-                                    messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
+                                    messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
                                 />
                             </TabContainer>
