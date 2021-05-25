@@ -3,7 +3,7 @@
 
 import React, {FC} from 'react';
 
-const PlusIcon: FC = () => (
+const PlusIcon = () => (
     <i
         id='incidentRHSIconPlus'
         className='icon icon-plus'

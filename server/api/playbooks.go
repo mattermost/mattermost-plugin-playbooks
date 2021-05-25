@@ -21,6 +21,7 @@ import (
 
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
+	*ErrorHandler
 	playbookService playbook.Service
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
@@ -32,6 +33,7 @@ const SettingsKey = "global_settings"
 // NewPlaybookHandler returns a new playbook api handler
 func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
+		ErrorHandler:    &ErrorHandler{log: log},
 		playbookService: playbookService,
 		pluginAPI:       api,
 		log:             log,
@@ -39,10 +41,6 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
-	if !config.PricingPlanDifferentiationEnabled {
-		e20Middleware := E20LicenseRequired{configService}
-		playbooksRouter.Use(e20Middleware.Middleware)
-	}
 
 	playbooksRouter.HandleFunc("", handler.createPlaybook).Methods(http.MethodPost)
 
@@ -63,37 +61,37 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 	var pbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
 	if pbook.ID != "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
 		return
 	}
 
-	if err := permissions.CreatePlaybook(userID, pbook, h.config, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	if err := permissions.CreatePlaybook(userID, pbook, h.config, h.pluginAPI, h.playbookService); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
 	if pbook.WebhookOnCreationEnabled {
 		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
 			return
 		}
 
 		if url.Scheme != "http" && url.Scheme != "https" {
 			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 	}
 
 	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -112,12 +110,12 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 
 	pbook, err := h.playbookService.Get(vars["id"])
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	if err := permissions.PlaybookAccess(userID, pbook, h.pluginAPI); err != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
@@ -129,7 +127,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	userID := r.Header.Get("Mattermost-User-ID")
 	var pbook playbook.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
@@ -138,37 +136,37 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 
 	oldPlaybook, err := h.playbookService.Get(vars["id"])
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
-	if err3 := permissions.PlaybookModify(userID, pbook, oldPlaybook, h.pluginAPI); err3 != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
+	if err3 := permissions.PlaybookModify(userID, pbook, oldPlaybook, h.config, h.pluginAPI, h.playbookService); err3 != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
 		return
 	}
 
 	if err4 := doPlaybookModificationChecks(&pbook, userID, h.pluginAPI); err4 != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err4)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err4)
 		return
 	}
 
 	if pbook.WebhookOnCreationEnabled {
 		url, err2 := url.ParseRequestURI(pbook.WebhookOnCreationURL)
 		if err2 != nil {
-			HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
 			return
 		}
 
 		if url.Scheme != "http" && url.Scheme != "https" {
 			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-			HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 	}
 
 	err = h.playbookService.Update(pbook, userID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -228,18 +226,18 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 
 	playbookToDelete, err := h.playbookService.Get(vars["id"])
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
 	if err2 := permissions.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err2 != nil {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}
 
 	err = h.playbookService.Delete(playbookToDelete, userID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -252,18 +250,18 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 	opts, err := parseGetPlaybooksOptions(r.URL)
 	if err != nil {
-		HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
 		return
 	}
 	memberOnly, _ := strconv.ParseBool(params.Get("member_only"))
 
 	if teamID == "" {
-		HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
 		return
 	}
 
 	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
 			userID,
 			teamID,
@@ -273,10 +271,10 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 
 	// Exclude guest users
 	if isGuest, errg := permissions.IsGuest(userID, h.pluginAPI); errg != nil {
-		HandleError(w, errg)
+		h.HandleError(w, errg)
 		return
 	} else if isGuest {
-		HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s because they are a guest",
 			userID,
 			teamID,
@@ -293,7 +291,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -306,7 +304,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
 		return
 	}
 
@@ -319,7 +317,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, playbook.Options{})
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 
@@ -341,13 +339,13 @@ func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Reques
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
-		HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
 		return
 	}
 
 	count, err := h.playbookService.GetNumPlaybooksForTeam(teamID)
 	if err != nil {
-		HandleError(w, err)
+		h.HandleError(w, err)
 		return
 	}
 

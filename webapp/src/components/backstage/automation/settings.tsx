@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -14,6 +14,7 @@ import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assi
 import {Announcement} from 'src/components/backstage/automation/announcement';
 
 import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
+import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
 
 interface Props {
     searchProfiles: (term: string) => ActionFunc;
@@ -36,9 +37,13 @@ interface Props {
     onToggleWebhookOnCreation: () => void;
     webhookOnCreationChange: (url: string) => void;
     webhookOnCreationURL: string;
+    messageOnJoinEnabled: boolean;
+    onToggleMessageOnJoin: () => void;
+    messageOnJoin: string;
+    messageOnJoinChange: (message: string) => void;
 }
 
-export const AutomationSettings: FC<Props> = (props: Props) => {
+export const AutomationSettings = (props: Props) => {
     return (
         <>
             <BackstageSubheader>
@@ -89,6 +94,20 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         onChange={props.webhookOnCreationChange}
                     />
                 </Setting>
+            </Section>
+            <Section>
+                <SectionTitle>
+                    {'When a new member joins'}
+                </SectionTitle>
+                <Setting id={'user-joins-message'}>
+                    <MessageOnJoin
+                        enabled={props.messageOnJoinEnabled}
+                        onToggle={props.onToggleMessageOnJoin}
+                        message={props.messageOnJoin}
+                        onChange={props.messageOnJoinChange}
+                    />
+                </Setting>
+
             </Section>
         </>
     );

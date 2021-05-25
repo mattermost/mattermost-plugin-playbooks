@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 import {OptionsType, SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
 import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/channels';
@@ -20,7 +20,7 @@ export interface Props {
     placeholder?: string;
 }
 
-const ChannelSelector: FC<Props & { className?: string }> = (props: Props & { className?: string }) => {
+const ChannelSelector = (props: Props & { className?: string }) => {
     const selectableChannels = useSelector(getMyChannels);
 
     type GetChannelType = (channelID: string) => Channel

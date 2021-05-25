@@ -1,8 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import {useSelector, useDispatch} from 'react-redux';
+
+import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Post} from 'mattermost-redux/types/posts';
@@ -11,13 +13,17 @@ import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
 import IncidentPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
 
-import {addToTimeline, startIncident} from 'src/actions';
+import {addToTimeline, startIncident, showPostMenuModal} from 'src/actions';
+
+import {useAllowAddMessageToTimelineInCurrentTeam} from 'src/hooks';
+
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 interface Props {
     postId: string;
 }
 
-export const StartIncidentPostMenu: FC<Props> = (props: Props) => {
+export const StartIncidentPostMenu = (props: Props) => {
     const dispatch = useDispatch();
     const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
     if (!post || isSystemMessage(post)) {
@@ -48,15 +54,21 @@ export const StartIncidentPostMenu: FC<Props> = (props: Props) => {
     );
 };
 
-export const AttachToIncidentPostMenu: FC<Props> = (props: Props) => {
+export const AttachToIncidentPostMenu = (props: Props) => {
     const dispatch = useDispatch();
+    const allowMessage = useAllowAddMessageToTimelineInCurrentTeam();
+
     const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
     if (!post || isSystemMessage(post)) {
         return null;
     }
 
     const handleClick = () => {
-        dispatch(addToTimeline(props.postId));
+        if (allowMessage) {
+            dispatch(addToTimeline(props.postId));
+        } else {
+            dispatch(showPostMenuModal());
+        }
     };
 
     return (
@@ -73,8 +85,14 @@ export const AttachToIncidentPostMenu: FC<Props> = (props: Props) => {
                 >
                     <IncidentPostMenuIcon/>
                     {'Add to incident timeline'}
+                    {!allowMessage && <PositionedUpgradeBadge/>}
                 </button>
             </li>
         </React.Fragment>
     );
 };
+
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-left: 16px;
+    margin-bottom: -3px;
+`;

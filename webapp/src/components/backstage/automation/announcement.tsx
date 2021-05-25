@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 
 import {MenuListComponentProps} from 'react-select';
 import {Scrollbars} from 'react-custom-scrollbars';
@@ -22,7 +22,7 @@ interface Props {
     onChannelSelected: (channelID: string | undefined) => void;
 }
 
-export const Announcement: FC<Props> = (props: Props) => (
+export const Announcement = (props: Props) => (
     <AutomationHeader>
         <AutomationTitle>
             <Toggle

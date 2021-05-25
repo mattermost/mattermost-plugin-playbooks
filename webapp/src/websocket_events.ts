@@ -15,12 +15,15 @@ import {
     removedFromIncidentChannel,
     receivedTeamIncidents,
     playbookCreated,
-    playbookDeleted,
+    playbookDeleted, setHasViewedChannel,
 } from 'src/actions';
-import {fetchIncidentByChannel, fetchIncidents} from 'src/client';
-import {clientId, myIncidentsMap} from 'src/selectors';
+import {
+    fetchCheckAndSendMessageOnJoin,
+    fetchIncidentByChannel,
+    fetchIncidents,
+} from 'src/client';
+import {clientId, hasViewedByChannelID, myIncidentsMap} from 'src/selectors';
 import {Incident, isIncident, StatusPost} from 'src/types/incident';
-import {Playbook} from 'src/types/playbook';
 
 export const websocketSubscribersToIncidentUpdate = new Set<(incident: Incident) => void>();
 
@@ -28,16 +31,22 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
     return async (): Promise<void> => {
         const currentTeam = getCurrentTeam(getState());
         const currentUserId = getCurrentUserId(getState());
+
+        if (!currentTeam || !currentUserId) {
+            return;
+        }
+
         const fetched = await fetchIncidents({
             team_id: currentTeam.id,
             member_id: currentUserId,
         });
+
         dispatch(receivedTeamIncidents(fetched.items));
     };
 }
 
 export function handleWebsocketIncidentUpdated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{payload: string}>): void => {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -59,7 +68,7 @@ export function handleWebsocketIncidentUpdated(getState: GetStateFunc, dispatch:
 }
 
 export function handleWebsocketIncidentCreated(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{payload:string}>): void => {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -114,7 +123,7 @@ export function handleWebsocketPlaybookDeleted(getState: GetStateFunc, dispatch:
 }
 
 export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispatch) {
-    return async (msg: WebSocketMessage<{team_id: string, user_id: string}>) => {
+    return async (msg: WebSocketMessage<{ team_id: string, user_id: string }>) => {
         const currentUserId = getCurrentUserId(getState());
         const currentTeamId = getCurrentTeamId(getState());
         if (currentUserId === msg.data.user_id && currentTeamId === msg.data.team_id) {
@@ -131,7 +140,7 @@ export function handleWebsocketUserAdded(getState: GetStateFunc, dispatch: Dispa
 }
 
 export function handleWebsocketUserRemoved(getState: GetStateFunc, dispatch: Dispatch) {
-    return (msg: WebSocketMessage<{channel_id: string, user_id: string}>) => {
+    return (msg: WebSocketMessage<{ channel_id: string, user_id: string }>) => {
         const currentUserId = getCurrentUserId(getState());
         if (currentUserId === msg.broadcast.user_id) {
             dispatch(removedFromIncidentChannel(msg.data.channel_id));
@@ -155,9 +164,9 @@ async function getIncidentFromStatusUpdate(post: Post): Promise<Incident | null>
 }
 
 export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispatch: Dispatch) => {
-    return async (msg: WebSocketMessage<{post: string}>) => {
-        const activeIncidents = myIncidentsMap(getState());
-        if (activeIncidents[msg.broadcast.channel_id]) {
+    return async (msg: WebSocketMessage<{ post: string }>) => {
+        const incidentsMap = myIncidentsMap(getState());
+        if (incidentsMap[msg.broadcast.channel_id]) {
             const incident = await getIncidentFromStatusUpdate(JSON.parse(msg.data.post));
             if (incident) {
                 dispatch(incidentUpdated(incident));
@@ -168,12 +177,12 @@ export const handleWebsocketPostEditedOrDeleted = (getState: GetStateFunc, dispa
 };
 
 export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: Dispatch) => {
-    return async (msg: WebSocketMessage<{channel: string}>) => {
+    return async (msg: WebSocketMessage<{ channel: string }>) => {
         const channel = JSON.parse(msg.data.channel);
 
         // Ignore updates to non-incident channels.
-        const activeIncidents = myIncidentsMap(getState());
-        if (!activeIncidents[channel.id]) {
+        const incidentsMap = myIncidentsMap(getState());
+        if (!incidentsMap[channel.id]) {
             return;
         }
 
@@ -182,6 +191,25 @@ export const handleWebsocketChannelUpdated = (getState: GetStateFunc, dispatch: 
         const incident = await fetchIncidentByChannel(channel.id);
         if (incident) {
             dispatch(incidentUpdated(incident));
+        }
+    };
+};
+
+export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: Dispatch) => {
+    return async (msg: WebSocketMessage<{ channel_id: string }>) => {
+        const channelId = msg.data.channel_id;
+
+        // If this isn't an incident channel, stop
+        const incident = myIncidentsMap(getState())[channelId];
+        if (!incident) {
+            return;
+        }
+
+        if (!hasViewedByChannelID(getState())[channelId]) {
+            const hasViewed = await fetchCheckAndSendMessageOnJoin(incident.id, channelId);
+            if (hasViewed) {
+                dispatch(setHasViewedChannel(channelId));
+            }
         }
     };
 };

@@ -130,11 +130,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		testCreate.AddTextArgument("Name of the incident", "Incident name", "")
 		test.AddCommand(testCreate)
 
-		testData := model.NewAutocompleteData("bulk-data", "[ongoing] [ended] [begin] [end] [seed]", "Generate random test data in bulk")
+		testData := model.NewAutocompleteData("bulk-data", "[ongoing] [ended] [days] [seed]", "Generate random test data in bulk")
 		testData.AddTextArgument("An integer indicating how many ongoing incidents will be generated.", "Number of ongoing incidents", "")
 		testData.AddTextArgument("An integer indicating how many ended incidents will be generated.", "Number of ended incidents", "")
-		testData.AddTextArgument("Date in format 2020-01-31", "First possible creation date", "")
-		testData.AddTextArgument("Date in format 2020-01-31", "Last possible creation date", "")
+		testData.AddTextArgument("An integer n. The incidents generated will have a start date between n days ago and today.", "Range of days for the incident start date", "")
 		testData.AddTextArgument("An integer in case you need random, but reproducible, results", "Random seed (optional)", "")
 		test.AddCommand(testData)
 
@@ -969,7 +968,7 @@ And... yes, of course, we have emojis
 		PlaybookID:         gotplaybook.ID,
 		Checklists:         gotplaybook.Checklists,
 		BroadcastChannelID: gotplaybook.BroadcastChannelID,
-	}, r.args.UserId, true)
+	}, &gotplaybook, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test incident: " + err.Error())
 		return
@@ -1096,7 +1095,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		Checklists:      thePlaybook.Checklists,
 	}
 
-	newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
+	newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create incident: %v", err)
 		return
@@ -1117,8 +1116,8 @@ func (r *Runner) actionTestCreate(params []string) {
 }
 
 func (r *Runner) actionTestData(params []string) {
-	if len(params) < 4 {
-		r.postCommandResponse("`/incident test bulk-data` expects at least 4 arguments: [ongoing] [ended] [begin] [end]. Optionally, a fifth argument can be added: [seed].")
+	if len(params) < 3 {
+		r.postCommandResponse("`/incident test bulk-data` expects at least 3 arguments: [ongoing] [ended] [days]. Optionally, a fourth argument can be added: [seed].")
 		return
 	}
 
@@ -1134,23 +1133,25 @@ func (r *Runner) actionTestData(params []string) {
 		return
 	}
 
-	begin, err := time.ParseInLocation("2006-01-02", params[2], time.Now().Location())
+	days, err := strconv.Atoi((params[2]))
 	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("The provided value for the first possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[2]))
+		r.postCommandResponse(fmt.Sprintf("The provided value for days, '%s', is not an integer.", params[2]))
 		return
 	}
 
-	end, err := time.ParseInLocation("2006-01-02", params[3], time.Now().Location())
-	if err != nil {
-		r.postCommandResponse(fmt.Sprintf("The provided value for the last possible date, '%s', is not a valid date. It needs to be in the format 2020-01-31.", params[3]))
+	if days < 1 {
+		r.postCommandResponse(fmt.Sprintf("The provided value for days, '%d', is not greater than 0.", days))
 		return
 	}
+
+	begin := time.Now().AddDate(0, 0, -days)
+	end := time.Now()
 
 	seed := time.Now().Unix()
-	if len(params) > 4 {
-		parsedSeed, err := strconv.ParseInt(params[4], 10, 0)
+	if len(params) > 3 {
+		parsedSeed, err := strconv.ParseInt(params[3], 10, 0)
 		if err != nil {
-			r.postCommandResponse(fmt.Sprintf("The provided value for the random seed, '%s', is not an integer.", params[4]))
+			r.postCommandResponse(fmt.Sprintf("The provided value for the random seed, '%s', is not an integer.", params[3]))
 			return
 		}
 
@@ -1265,11 +1266,6 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		return
 	}
 
-	if !end.After(begin) {
-		r.postCommandResponse("`end` must be a later date than `begin`")
-		return
-	}
-
 	timestamps := make([]int64, 0, numIncidents)
 	for i := 0; i < numIncidents; i++ {
 		timestamp := rand.Int63n(endMillis-beginMillis) + beginMillis
@@ -1325,7 +1321,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			Checklists:      thePlaybook.Checklists,
 		}
 
-		newIncident, err := r.incidentService.CreateIncident(theIncident, r.args.UserId, true)
+		newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating incident: %v", err)
 			return
@@ -1396,11 +1392,6 @@ func (r *Runner) actionNukeDB(args []string) {
 func (r *Runner) Execute() error {
 	if err := r.isValid(); err != nil {
 		return err
-	}
-
-	if !r.configService.IsLicensed() {
-		r.postCommandResponse("Incident Collaboration requires a Mattermost Cloud or Mattermost E20 License.")
-		return nil
 	}
 
 	split := strings.Fields(r.args.Command)

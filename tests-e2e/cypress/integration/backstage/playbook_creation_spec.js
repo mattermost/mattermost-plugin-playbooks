@@ -105,6 +105,9 @@ describe('playbook creation button', () => {
         // # Click 'Permissions' tab
         cy.findByText('Permissions').should('be.visible').click().wait(TIMEOUTS.TINY);
 
+        // # Click 'only selected users can access'
+        cy.get('input[name="enabled"][value="enabled"]').should('be.visible').click().wait(TIMEOUTS.TINY);
+
         // * Verify that there is no Remove link when there is one member
         cy.findAllByTestId('user-line').should('have.length', 1);
         cy.findAllByTestId('user-line').eq(0).within(() => {

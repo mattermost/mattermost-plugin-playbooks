@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState, ReactNode} from 'react';
+import React, {useEffect, useState, ReactNode} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
 import {Line} from 'react-chartjs-2';
@@ -71,7 +71,7 @@ const Content = styled.div`
     padding: 0.3em 0 0.35em;
 `;
 
-const StatisticCount: FC<SatisticCountProps> = (props: SatisticCountProps) => {
+const StatisticCount = (props: SatisticCountProps) => {
     const match = useRouteMatch<URLParams>('/:team/:plugin');
     const titleandcontent = (
         <>
@@ -120,7 +120,7 @@ const GraphBoxContainer = styled.div`
     float: left;
 `;
 
-const GraphBox: FC<GraphBoxProps> = (props: GraphBoxProps) => {
+const GraphBox = (props: GraphBoxProps) => {
     const style = getComputedStyle(document.body);
     const centerChannelFontColor = style.getPropertyValue('--center-channel-color');
     return (
@@ -177,7 +177,7 @@ const StatsContainers = styled.div`
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 `;
 
-const StatsView: FC = () => {
+const StatsView = () => {
     const [stats, setStats] = useState<Stats|null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
