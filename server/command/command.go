@@ -1602,20 +1602,35 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		return
 	}
 
+	var playbooks []playbook.Playbook
 	if len(playbooksResult.Items) == 0 {
-		r.postCommandResponse("You are not a member of any playbook. Create at least one playbook before generating the test data.")
-		return
-	}
+		dummyPlaybook := dummyListPlaybooks[rand.Intn(len(dummyListPlaybooks))]
+		dummyPlaybook.TeamID = r.args.TeamId
+		newPlayBookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		if err != nil {
+			r.warnUserAndLogErrorf("There was an error while creating playbook. Err: " + err.Error())
+			return
+		}
 
-	playbooks := make([]playbook.Playbook, 0, len(playbooksResult.Items))
-	for _, thePlaybook := range playbooksResult.Items {
-		wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
+		newPlayBook, err := r.playbookService.Get(newPlayBookID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error getting playbook: %v", err)
 			return
 		}
 
-		playbooks = append(playbooks, wholePlaybook)
+		playbooks = make([]playbook.Playbook, 0, 1)
+		playbooks = append(playbooks, newPlayBook)
+	} else {
+		playbooks = make([]playbook.Playbook, 0, len(playbooksResult.Items))
+		for _, thePlaybook := range playbooksResult.Items {
+			wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
+			if err != nil {
+				r.warnUserAndLogErrorf("Error getting playbook: %v", err)
+				return
+			}
+
+			playbooks = append(playbooks, wholePlaybook)
+		}
 	}
 
 	tableMsg := "| Incident name | Created at | Status |\n|-	|-	|-	|\n"
