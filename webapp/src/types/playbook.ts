@@ -96,7 +96,7 @@ export function emptyPlaybook(): Playbook {
         announcement_channel_enabled: false,
         webhook_on_creation_url: '',
         webhook_on_creation_enabled: false,
-        message_on_join: '',
+        message_on_join: defaultMessageOnJoin,
         message_on_join_enabled: false,
     };
 }
