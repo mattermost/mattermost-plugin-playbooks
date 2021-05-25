@@ -1,4 +1,4 @@
-import React, {FC, useState, useRef} from 'react';
+import React, {useState, useRef} from 'react';
 import styled from 'styled-components';
 
 export interface EditableTextProps {
@@ -58,7 +58,7 @@ const ClickableI = styled.i`
     cursor: pointer;
 `;
 
-const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
+const EditableText = (props: EditableTextProps) => {
     const [editMode, setEditMode] = useState(false);
     const [text, setText] = useState(props.text);
     const textElement = useRef<HTMLInputElement>(null);

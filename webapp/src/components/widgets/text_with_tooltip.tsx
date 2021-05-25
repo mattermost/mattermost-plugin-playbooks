@@ -11,7 +11,7 @@ interface Props {
     placement?: 'top' | 'bottom' | 'right' | 'left';
 }
 
-const TextWithTooltip: React.FC<Props> = (props: Props) => {
+const TextWithTooltip = (props: Props) => {
     const ref = useRef<HTMLAnchorElement|null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 

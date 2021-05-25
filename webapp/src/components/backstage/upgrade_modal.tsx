@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
@@ -22,7 +22,7 @@ interface Props {
     onHide: () => void;
 }
 
-const UpgradeModal: FC<Props> = (props: Props) => {
+const UpgradeModal = (props: Props) => {
     const isAdmin = useSelector(isCurrentUserAdmin);
     const isServerTeamEdition = useSelector(isTeamEdition);
 

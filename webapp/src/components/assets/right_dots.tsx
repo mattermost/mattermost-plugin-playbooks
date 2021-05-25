@@ -14,7 +14,7 @@ const Icon = styled.svg`
     z-index: -1;
 `;
 
-const RightDots: FC = () => (
+const RightDots = () => (
     <Icon
         width='269'
         height='479'

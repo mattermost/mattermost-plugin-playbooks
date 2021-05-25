@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {useDispatch} from 'react-redux';
@@ -38,7 +38,7 @@ interface Props {
     incident: Incident;
 }
 
-const RHSAbout: FC<Props> = (props: Props) => {
+const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const profilesInChannel = useProfilesInCurrentChannel();
     const latestUpdatePost = useLatestUpdate(props.incident);
