@@ -342,7 +342,7 @@ jobs:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
           POSTGRES_DB: mattermost_test
-      - image: jhillyerd/inbucket:release-1.2.0
+      - image: mattermost/inbucket:release-1.2.0
       - image: minio/minio:RELEASE.2019-10-11T00-38-09Z
         command: "server /data"
         environment:
@@ -388,6 +388,7 @@ jobs:
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
+          MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
     environment:
       MM_DOCKER_IMAGE_TAG: prerelease
       TYPE: NONE
@@ -413,7 +414,7 @@ jobs:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
           POSTGRES_DB: mattermost_test
-      - image: jhillyerd/inbucket:release-1.2.0
+      - image: mattermost/inbucket:release-1.2.0
       - image: minio/minio:RELEASE.2019-10-11T00-38-09Z
         command: "server /data"
         environment:
@@ -459,6 +460,7 @@ jobs:
           MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
+          MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
@@ -484,7 +486,7 @@ jobs:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
           POSTGRES_DB: mattermost_test
-      - image: jhillyerd/inbucket:release-1.2.0
+      - image: mattermost/inbucket:release-1.2.0
       - image: minio/minio:RELEASE.2019-10-11T00-38-09Z
         command: "server /data"
         environment:

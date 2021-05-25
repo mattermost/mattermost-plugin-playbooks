@@ -488,14 +488,6 @@ describe('backstage playbook details', () => {
 
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin('sysadmin').then(() => {
-                        // # We need to increase the maximum number of users per team; otherwise,
-                        // adding a new member to the team fails in CI
-                        cy.apiUpdateConfig({
-                            TeamSettings: {
-                                MaxUsersPerTeam: 1000,
-                            },
-                        });
-
                         cy.apiCreateUser().then((result) => {
                             userToRemove = result.user;
                             cy.apiAddUserToTeam(teamId, userToRemove.id);
@@ -723,11 +715,6 @@ describe('backstage playbook details', () => {
                     cy.apiLogin('sysadmin').then(() => {
                         // # We need to increase the maximum number of users per team; otherwise,
                         // adding a new member to the team fails in CI
-                        cy.apiUpdateConfig({
-                            TeamSettings: {
-                                MaxUsersPerTeam: 1000,
-                            },
-                        });
 
                         cy.apiCreateUser().then((result) => {
                             userToRemove = result.user;
@@ -958,14 +945,6 @@ describe('backstage playbook details', () => {
                 it('removes the channel and disables the setting if the channel no longer exists', () => {
                     // # Create a playbook with a user that is later removed from the team
                     cy.apiLogin('sysadmin').then(() => {
-                        // # We need to increase the maximum number of users per team; otherwise,
-                        // adding a new member to the team fails in CI
-                        cy.apiUpdateConfig({
-                            TeamSettings: {
-                                MaxUsersPerTeam: 1000,
-                            },
-                        });
-
                         const channelDisplayName = String('Channel to delete ' + Date.now());
                         const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
                         cy.apiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {

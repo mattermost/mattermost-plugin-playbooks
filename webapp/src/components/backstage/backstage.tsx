@@ -11,11 +11,10 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
-import path from 'path';
-
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
+import {NewPlaybook} from 'src/components/backstage/new_playbook';
 
 import {ErrorPageTypes} from 'src/constants';
 
@@ -103,8 +102,6 @@ const BackstageTitlebarItem = styled(NavLink)`
 
 const BackstageBody = styled.div`
     z-index: 1;
-    width: 100%;
-    height: 100%;
     margin: 0 auto;
 `;
 
@@ -188,17 +185,14 @@ const Backstage: FC = () => {
             <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
-                        <PlaybookEdit
-                            isNew={true}
+                        <NewPlaybook
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
                         <PlaybookEdit
                             isNew={false}
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks`}>

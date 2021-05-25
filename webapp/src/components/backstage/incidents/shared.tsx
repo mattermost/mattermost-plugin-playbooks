@@ -57,7 +57,7 @@ export const EmptyBody = styled.div`
 export const SecondaryButton = styled(TertiaryButton)`
     background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
-    padding: 0 14px;
+    padding: 0 20px;
     height: 26px;
     font-size: 12px;
     margin-left: 20px;

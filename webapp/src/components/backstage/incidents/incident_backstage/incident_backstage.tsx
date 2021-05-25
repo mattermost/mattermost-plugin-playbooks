@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Redirect, useRouteMatch} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, Link, NavLink, Switch} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -13,8 +13,8 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
-import {IncidentBackstageTabState} from 'src/types/backstage';
 import {Overview} from 'src/components/backstage/incidents/incident_backstage/overview/overview';
+import {Retrospective} from 'src/components/backstage/incidents/incident_backstage/retrospective/retrospective';
 import {fetchIncident, fetchIncidentMetadata} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -23,8 +23,18 @@ import {
     SecondaryButtonLargerRight,
 } from 'src/components/backstage/incidents/shared';
 import ExportLink from 'src/components/backstage/incidents/incident_details/export_link';
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
+
+const OuterContainer = styled.div`
+    background: var(center-channel-bg);
+    display: flex;
+    flex-direction: column;
+`;
 
 const TopContainer = styled.div`
+    position: sticky;
+    z-index: 2;
+    top: 0;
     background: var(--center-channel-bg);
     width: 100%;
 `;
@@ -46,9 +56,9 @@ const SecondRow = styled.div`
 `;
 
 const BottomContainer = styled.div`
+    flex-grow: 1;
     background: rgba(var(--center-channel-color-rgb), 0.03);
     width: 100%;
-    height: 100%;
 `;
 
 const InnerContainer = styled.div`
@@ -82,17 +92,21 @@ const Title = styled.div`
     color: var(--center-channel-color);
 `;
 
-const TabItem = styled.div<{active: boolean}>`
-    line-height: 32px;
-    padding: 10px 20px 0 20px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
+const TabItem = styled(NavLink)`
+    && {
+        line-height: 32px;
+        padding: 10px 20px 0 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: unset;
+        color: unset;
 
-    ${(props) => props.active && css`
-        box-shadow: inset 0px -2px 0px var(--button-bg);
-        color: var(--button-bg);
-    `}
+        &.active{
+            box-shadow: inset 0px -2px 0px var(--button-bg);
+            color: var(--button-bg);
+        }
+    }
 `;
 
 interface MatchParams {
@@ -106,12 +120,12 @@ const FetchingStateType = {
 };
 
 const IncidentBackstage = () => {
-    const [tabState, setTabState] = useState(IncidentBackstageTabState.ViewingOverview);
     const [incident, setIncident] = useState<Incident | null>(null);
     const [incidentMetadata, setIncidentMetadata] = useState<IncidentMetadata | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const channel = useSelector<GlobalState, Channel | null>((state) => (incident ? getChannel(state, incident.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -148,10 +162,8 @@ const IncidentBackstage = () => {
         navigateToTeamPluginUrl(currentTeam.name, '/incidents');
     };
 
-    const tabPage = <Overview incident={incident}/>;
-
     return (
-        <>
+        <OuterContainer>
             <TopContainer>
                 <FirstRow>
                     <LeftArrow
@@ -168,19 +180,35 @@ const IncidentBackstage = () => {
                 </FirstRow>
                 <SecondRow>
                     <TabItem
-                        active={tabState === IncidentBackstageTabState.ViewingOverview}
-                        onClick={() => setTabState(IncidentBackstageTabState.ViewingOverview)}
+                        to={`${match.url}/overview`}
+                        activeClassName={'active'}
                     >
                         {'Overview'}
                     </TabItem>
+                    {experimentalFeaturesEnabled &&
+                        <TabItem
+                            to={`${match.url}/retrospective`}
+                            activeClassName={'active'}
+                        >
+                            {'Retrospective'}
+                        </TabItem>
+                    }
                 </SecondRow>
             </TopContainer>
             <BottomContainer>
                 <InnerContainer>
-                    {tabPage}
+                    <Switch>
+                        <Route path={`${match.url}/overview`}>
+                            <Overview incident={incident}/>
+                        </Route>
+                        <Route path={`${match.url}/retrospective`}>
+                            <Retrospective incident={incident}/>
+                        </Route>
+                        <Redirect to={`${match.url}/overview`}/>
+                    </Switch>
                 </InnerContainer>
             </BottomContainer>
-        </>
+        </OuterContainer>
     );
 };
 

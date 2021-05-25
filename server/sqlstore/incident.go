@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
+
+	"github.com/lib/pq"
+
 	"github.com/jmoiron/sqlx"
 
 	sq "github.com/Masterminds/squirrel"
@@ -53,7 +57,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
-			"AnnouncementChannelID", "WebhookOnCreationURL").
+			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -211,16 +215,16 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 	}, nil
 }
 
-// CreateIncident creates a new incident.
+// CreateIncident creates a new incident. If newIncident has an ID, that ID will be used.
 func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
 	if newIncident == nil {
 		return nil, errors.New("incident is nil")
 	}
-	if newIncident.ID != "" {
-		return nil, errors.New("ID should not be set")
-	}
 	incidentCopy := newIncident.Clone()
-	incidentCopy.ID = model.NewId()
+
+	if incidentCopy.ID == "" {
+		incidentCopy.ID = model.NewId()
+	}
 
 	rawIncident, err := toSQLIncident(*incidentCopy)
 	if err != nil {
@@ -253,6 +257,9 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
 			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
+			"Retrospective":               rawIncident.Retrospective,
+			"RetrospectivePublishedAt":    rawIncident.RetrospectivePublishedAt,
+			"MessageOnJoin":               rawIncident.MessageOnJoin,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -298,6 +305,9 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
 			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
+			"Retrospective":               rawIncident.Retrospective,
+			"RetrospectivePublishedAt":    rawIncident.RetrospectivePublishedAt,
+			"MessageOnJoin":               rawIncident.MessageOnJoin,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -597,6 +607,56 @@ func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp 
 
 	if numRows == 0 {
 		return incident.ErrNotFound
+	}
+
+	return nil
+}
+
+// HasViewed returns true if userID has viewed channelID
+func (s *incidentStore) HasViewedChannel(userID, channelID string) bool {
+	query := sq.Expr(
+		`SELECT EXISTS(SELECT *
+                         FROM IR_ViewedChannel as vc
+                        WHERE vc.ChannelID = ?
+                          AND vc.UserID = ?)
+             `, channelID, userID)
+
+	var exists bool
+	err := s.store.getBuilder(s.store.db, &exists, query)
+	if err != nil {
+		return false
+	}
+
+	return exists
+}
+
+// SetViewed records that userID has viewed channelID.
+func (s *incidentStore) SetViewedChannel(userID, channelID string) error {
+	if s.HasViewedChannel(userID, channelID) {
+		return nil
+	}
+
+	_, err := s.store.execBuilder(s.store.db, sq.
+		Insert("IR_ViewedChannel").
+		SetMap(map[string]interface{}{
+			"ChannelID": channelID,
+			"UserID":    userID,
+		}))
+
+	if err != nil {
+		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			me, ok := err.(*mysql.MySQLError)
+			if ok && me.Number == 1062 {
+				return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+			}
+		} else {
+			pe, ok := err.(*pq.Error)
+			if ok && pe.Code == "23505" {
+				return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+			}
+		}
+
+		return errors.Wrapf(err, "failed to store userID and channelID")
 	}
 
 	return nil

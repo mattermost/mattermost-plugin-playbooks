@@ -13,34 +13,15 @@ import (
 // ErrNoPermissions if the error is caused by the user not having permissions
 var ErrNoPermissions = errors.New("does not have permissions")
 
+// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
+var ErrLicensedFeature = errors.New("not covered by current server license")
+
 // RequesterInfo holds the userID and teamID that this request is regarding, and permissions
 // for the user making the request
 type RequesterInfo struct {
 	UserID  string
 	IsAdmin bool
 	IsGuest bool
-}
-
-// ViewIncident returns nil if the userID has permissions to view incidentID
-func ViewIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
-		return nil
-	}
-
-	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
-		return nil
-	}
-
-	channel, err := pluginAPI.Channel.Get(channelID)
-	if err != nil {
-		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", channelID)
-	}
-
-	if channel.Type == model.CHANNEL_OPEN && pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		return nil
-	}
-
-	return ErrNoPermissions
 }
 
 // ViewIncidentFromChannelID returns nil if the userID has permissions to view the incident
@@ -66,7 +47,7 @@ func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Cl
 	return ErrNoPermissions
 }
 
-// EditIncident returns nil if the userID has permissions to edit incidentID
+// EditIncident returns nil if the userID has permissions to edit channelID
 func EditIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
@@ -215,13 +196,60 @@ func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi
 	return errors.Wrap(noAccessErr, "not on list of members")
 }
 
-func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client) error {
+// checkPlaybookIsNotUsingE20Features features returns a non-nil error if the playbook is using E20 features
+func checkPlaybookIsNotUsingE20Features(pbook playbook.Playbook) error {
+	if len(pbook.MemberIDs) > 0 {
+		return errors.Wrap(ErrLicensedFeature, "restrict playbook editing to specific users is an E20 feature")
+	}
+
+	return nil
+}
+
+// checkPlaybookIsNotUsingE10Features features returns a non-nil error if the playbook is using E10 features
+func checkPlaybookIsNotUsingE10Features(pbook playbook.Playbook, playbookService playbook.Service) error {
+	num, err := playbookService.GetNumPlaybooksForTeam(pbook.TeamID)
+	if err != nil {
+		return err
+	}
+
+	if num > 0 {
+		return errors.Wrap(ErrLicensedFeature, "creating more than one playbook per team is an E10 feature")
+	}
+
+	return nil
+}
+
+func PlaybookLicensedFeatures(pbook playbook.Playbook, cfgService config.Service, playbookService playbook.Service) error {
+	if cfgService.IsAtLeastE20Licensed() {
+		return nil
+	}
+
+	if err := checkPlaybookIsNotUsingE20Features(pbook); err != nil {
+		return err
+	}
+
+	if cfgService.IsAtLeastE10Licensed() {
+		return nil
+	}
+
+	if err := checkPlaybookIsNotUsingE10Features(pbook, playbookService); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService playbook.Service) error {
 	if err := isPlaybookCreator(userID, cfgService); err != nil {
 		return err
 	}
 
 	if !IsOnEnabledTeam(pbook.TeamID, cfgService) {
 		return errors.Wrap(ErrNoPermissions, "not enabled on this team")
+	}
+
+	if err := PlaybookLicensedFeatures(pbook, cfgService, playbookService); err != nil {
+		return err
 	}
 
 	// Exclude guest users
@@ -291,8 +319,12 @@ func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Se
 
 // DANGER This is not a complete check. There is more in the current handler for updatePlaybook
 // if you need to use this function, integrate that here first.
-func PlaybookModify(userID string, pbook, oldPlaybook playbook.Playbook, pluginAPI *pluginapi.Client) error {
+func PlaybookModify(userID string, pbook, oldPlaybook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService playbook.Service) error {
 	if err := PlaybookAccess(userID, oldPlaybook, pluginAPI); err != nil {
+		return err
+	}
+
+	if err := PlaybookLicensedFeatures(pbook, cfgService, playbookService); err != nil {
 		return err
 	}
 

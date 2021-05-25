@@ -27,16 +27,17 @@ import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
-import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
+import {Banner} from 'src/components/backstage/styles';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
+import {PrimaryButton, UpgradeButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
-import {useCanCreatePlaybooks} from 'src/hooks';
-
-import {Banner} from './styles';
+import {useAllowPlaybookCreationInCurrentTeam, useCanCreatePlaybooks} from 'src/hooks';
 
 const DeleteBannerTimeout = 5000;
 
@@ -47,6 +48,8 @@ const PlaybookList: FC = () => {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooks();
+    const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
+    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
@@ -89,8 +92,12 @@ const PlaybookList: FC = () => {
     };
 
     const newPlaybook = (templateTitle?: string | undefined) => {
-        const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
-        navigateToTeamPluginUrl(currentTeam.name, `/playbooks/new${queryParams}`);
+        if (allowPlaybookCreation) {
+            const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
+            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/new${queryParams}`);
+        } else {
+            showUpgradeModal();
+        }
     };
 
     const hideConfirmModal = () => {
@@ -187,6 +194,11 @@ const PlaybookList: FC = () => {
 
     return (
         <div className='Playbook'>
+            <UpgradeModal
+                messageType={AdminNotificationType.PLAYBOOK}
+                show={isUpgradeModalShown}
+                onHide={hideUpgradeModal}
+            />
             {deleteSuccessfulBanner}
             {canCreatePlaybooks &&
                 <TemplateSelector
@@ -201,6 +213,7 @@ const PlaybookList: FC = () => {
                     <NoContentPage
                         onNewPlaybook={newPlaybook}
                         canCreatePlaybooks={canCreatePlaybooks}
+                        allowPlaybookCreation={allowPlaybookCreation}
                     />
                     <NoContentPlaybookSvg/>
                 </>
@@ -225,13 +238,13 @@ const PlaybookList: FC = () => {
                             </div>
                             {canCreatePlaybooks &&
                                 <div className='header-button-div'>
-                                    <button
-                                        className='btn btn-primary'
+                                    <UpgradeOrPrimaryButton
                                         onClick={() => newPlaybook()}
+                                        allowPlaybookCreation={allowPlaybookCreation}
                                     >
                                         <i className='icon-plus mr-2'/>
                                         {'Create a Playbook'}
-                                    </button>
+                                    </UpgradeOrPrimaryButton>
                                 </div>
                             }
                         </div>
@@ -284,6 +297,31 @@ const PlaybookList: FC = () => {
             }
         </div>
     );
+};
+
+type CreatePlaybookButtonProps = UpgradeButtonProps & {allowPlaybookCreation: boolean};
+
+const UpgradeOrPrimaryButton : FC<CreatePlaybookButtonProps> = (props: CreatePlaybookButtonProps) => {
+    const {children, allowPlaybookCreation, ...rest} = props;
+
+    if (allowPlaybookCreation) {
+        return <PrimaryButton {...rest}>{children}</PrimaryButton>;
+    }
+
+    return <UpgradeButton {...rest}>{children}</UpgradeButton>;
+};
+
+const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
+    const [isModalShown, setShowModal] = useState(initialState);
+
+    const showUpgradeModal = () => {
+        setShowModal(true);
+    };
+    const hideUpgradeModal = () => {
+        setShowModal(false);
+    };
+
+    return [isModalShown, showUpgradeModal, hideUpgradeModal];
 };
 
 const Container = styled.div`
@@ -346,19 +384,20 @@ const Button = styled.button`
     }
 `;
 
-const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: boolean }) => {
+const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: boolean, allowPlaybookCreation: boolean }) => {
     return (
         <Container>
             <Title>{'What is a Playbook?'}</Title>
             <Description>{'A playbook is a workflow template which must be created before an incident occurs. It defines the checklists and tasks associated with an incident, as well as who can use playbook to start an incident.'}</Description>
             { props.canCreatePlaybooks &&
-                <Button
+                <UpgradeOrPrimaryButton
                     className='mt-6'
                     onClick={() => props.onNewPlaybook()}
+                    allowPlaybookCreation={props.allowPlaybookCreation}
                 >
                     <i className='icon-plus mr-2'/>
                     {'New Playbook'}
-                </Button>
+                </UpgradeOrPrimaryButton>
             }
             { !props.canCreatePlaybooks &&
             <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks on this server."}</DescriptionWarn>

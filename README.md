@@ -6,7 +6,7 @@
 
  Mattermost Incident Collaboration allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html). 
 
-![Mattermost Incident Collaboration](docs/assets/incident_response_landing.png)
+![Mattermost Incident Collaboration](assets/incident_response.png)
 
 ## License
 
@@ -32,9 +32,9 @@ To quickly test Mattermost Incident Collaboration, use the following test comman
 
   * An example command looks like: `/incident test create-incident 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
 
-- `/incident test bulk-data [ongoing] [ended] [start date] [end date] [seed]` - Provide a number of ongoing and ended incidents, a start and end date, and an optional random seed. The command creates the given number of ongoing and ended incidents, with creation dates randomly between the start and end dates. The seed may be used to reproduce the same outcome on multiple invocations. Incident names are generated randomly.
+- `/incident test bulk-data [ongoing] [ended] [days] [seed]` - Provide a number of ongoing and ended incidents, a number of days, and an optional random seed. The command creates the given number of ongoing and ended incidents, with creation dates randomly between n days ago and the day when the command was issued. The seed may be used to reproduce the same outcome on multiple invocations. Incident names are generated randomly.
 
-  * An example command looks like: `/incident test bulk-data 10 3 2020-01-31 2020-11-22 2`
+  * An example command looks like: `/incident test bulk-data 10 3 342 2`
 
 ## Contributing
 

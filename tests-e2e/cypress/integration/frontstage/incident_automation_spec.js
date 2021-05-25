@@ -165,14 +165,6 @@ describe('incident automation', () => {
 
                 // # Create a playbook with a user that is later removed from the team
                 cy.apiLogin('sysadmin').then(() => {
-                    // # We need to increase the maximum number of users per team; otherwise,
-                    // adding a new member to the team fails in CI
-                    cy.apiUpdateConfig({
-                        TeamSettings: {
-                            MaxUsersPerTeam: 1000,
-                        },
-                    });
-
                     cy.apiCreateUser().then((result) => {
                         userToRemove = result.user;
                         cy.apiAddUserToTeam(teamId, userToRemove.id);

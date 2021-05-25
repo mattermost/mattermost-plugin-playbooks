@@ -31,7 +31,7 @@ import {
     PlaybookNoChecklist,
     FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
-import {PROFILE_CHUNK_SIZE} from 'src/constants';
+import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
 import {Stats} from 'src/types/stats';
 
@@ -88,6 +88,11 @@ export async function fetchIncidentByChannel(channelId: string) {
     }
 
     return data as Incident;
+}
+
+export async function fetchCheckAndSendMessageOnJoin(incidentID: string, channelId: string) {
+    const data = await doGet(`${apiUrl}/incidents/${incidentID}/check-and-send-message-on-join/${channelId}`);
+    return Boolean(data.viewed);
 }
 
 export function fetchIncidentChannels(teamID: string, userID: string) {
@@ -306,6 +311,22 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
+export async function updateRetrospective(incidentID: string, updatedText: string) {
+    const data = await doPost(`${apiUrl}/incidents/${incidentID}/retrospective`,
+        JSON.stringify({
+            retrospective: updatedText,
+        }));
+    return data;
+}
+
+export async function publishRetrospective(incidentID: string, currentText: string) {
+    const data = await doPost(`${apiUrl}/incidents/${incidentID}/retrospective/publish`,
+        JSON.stringify({
+            retrospective: currentText,
+        }));
+    return data;
+}
+
 export function exportChannelUrl(channelId: string) {
     const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 
@@ -316,6 +337,36 @@ export function exportChannelUrl(channelId: string) {
 
     return `${exportPluginUrl}/export${queryParams}`;
 }
+
+export async function trackRequestTrialLicense(action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/start-trial`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
+}
+
+export const requestTrialLicense = async (users: number, action: string) => {
+    trackRequestTrialLicense(action);
+
+    try {
+        const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
+            method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),
+        });
+        return {data: response};
+    } catch (e) {
+        return {error: e.message};
+    }
+};
+
+export const postMessageToAdmins = async (messageType: AdminNotificationType, isServerTeamEdition: boolean) => {
+    const body = `{"message_type": "${messageType}", "is_team_edition": ${isServerTeamEdition}}`;
+    try {
+        const response = await doPost(`${apiUrl}/bot/notify-admins`, body);
+        return {data: response};
+    } catch (e) {
+        return {error: e.message};
+    }
+};
 
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});

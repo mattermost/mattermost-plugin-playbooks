@@ -1,8 +1,11 @@
 import React, {FC, useState, useEffect} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-
-import ReactSelect, {GroupType, ControlProps, OptionsType, MenuListComponentProps} from 'react-select';
-
+import {useSelector} from 'react-redux';
+import ReactSelect, {
+    GroupType,
+    ControlProps,
+    OptionsType,
+    MenuListComponentProps,
+} from 'react-select';
 import {Scrollbars} from 'react-custom-scrollbars';
 
 import styled from 'styled-components';
@@ -10,9 +13,9 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
-import {getProfilesByIds} from 'mattermost-redux/actions/users';
 
 import Profile from 'src/components/profile/profile';
+import {useEnsureProfiles} from 'src/hooks';
 
 interface Props {
     userIds: string[];
@@ -24,16 +27,12 @@ interface Props {
 }
 
 const InviteUsersSelector: FC<Props> = (props: Props) => {
-    const dispatch = useDispatch();
     const [searchTerm, setSearchTerm] = useState('');
     const invitedUsers = useSelector<GlobalState, UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
     const [searchedUsers, setSearchedUsers] = useState<UserProfile[]>([]);
+    useEnsureProfiles(props.userIds);
 
-    useEffect(() => {
-        dispatch(getProfilesByIds(props.userIds));
-    }, [props.userIds]);
-
-    // Update the options whenever the passed user IDs or the search term are updated
+    // Update the options when the search term is updated
     useEffect(() => {
         const updateOptions = async (term: string) => {
             let profiles;
@@ -50,7 +49,7 @@ const InviteUsersSelector: FC<Props> = (props: Props) => {
         };
 
         updateOptions(searchTerm);
-    }, [props.userIds, searchTerm]);
+    }, [searchTerm]);
 
     let invitedProfiles: UserProfile[] = [];
     let nonInvitedProfiles: UserProfile[] = [];
@@ -157,7 +156,7 @@ const Remove = styled.span`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 
     :hover {
-    cursor: pointer;
+        cursor: pointer;
     }
 `;
 
