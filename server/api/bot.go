@@ -120,7 +120,7 @@ outer:
 	post.Message = "Thank you!"
 	attachments := []*model.SlackAttachment{
 		{
-			Title: "You’re currently on a free trial of our Enterprise Edition license.",
+			Title: "You’re currently on a free trial of Mattermost Enterprise.",
 			Text:  "Your free trial will expire in **30 days**. Visit our Customer Portal to purchase a license to continue using Professional and Enterprise features after your trial ends.\n[Purchase a license](https://customers.mattermost.com/signup)\n[Contact sales](https://mattermost.com/contact-us/)",
 		},
 	}

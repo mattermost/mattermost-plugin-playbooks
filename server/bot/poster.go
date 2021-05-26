@@ -107,7 +107,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 
 	footer := "[Learn more](https://mattermost.com/pricing-self-managed/).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
 	if isTeamEdition {
-		footer = "[Learn more](https://mattermost.com/pricing-self-managed/).\n\n[Convert to Starter Edition](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Mattermost Professional or Enterprise."
+		footer = "[Learn more](https://mattermost.com/pricing-self-managed/).\n\n[Convert to Mattermost Starter](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Mattermost Professional or Enterprise."
 	}
 
 	switch messageType {
