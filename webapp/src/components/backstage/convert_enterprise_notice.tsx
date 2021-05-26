@@ -17,7 +17,7 @@ const ConvertEnterpriseNotice = () => (
                     </a>
                 </li>
                 <li>
-                    {'Start a trial or upgrade to Enterprise Edition E10 or E20.'}
+                    {'Start a trial or upgrade to Mattermost Professional or Enterprise editions.'}
                 </li>
             </StyledOl>
         </p>
