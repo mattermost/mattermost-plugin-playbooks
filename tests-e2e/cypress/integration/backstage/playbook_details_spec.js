@@ -816,7 +816,7 @@ describe('backstage playbook details', () => {
 
                     // * Verify that the channel selector is disabled
                     cy.get('#announcement-channel').within(() => {
-                        cy.getStyledComponent('StyledAsyncSelect').should('have.class', 'channel-selector--is-disabled');
+                        cy.getStyledComponent('StyledSelect').should('have.class', 'channel-selector--is-disabled');
                     });
                 });
 
