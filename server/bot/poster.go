@@ -124,7 +124,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"
 		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
-	case "strat_trial_to_restrict_playbook_creation":
+	case "start_trial_to_restrict_playbook_creation":
 		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise"
 		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
