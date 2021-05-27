@@ -33,27 +33,6 @@ describe('incident rhs > footer', () => {
         cy.findByTestId('tasks').click();
         });
 
-        // describe('has navigation button', () => {
-        //     beforeEach(() => {
-        //         const now = Date.now();
-        //         const incidentName = 'Incident (' + now + ')';
-        //         const incidentChannelName = 'incident-' + now;
-
-        //         // # Start the incident
-        //         cy.apiStartIncident({
-        //             teamId,
-        //             playbookId,
-        //             incidentName,
-        //             commanderUserId: userId,
-        //         });
-
-        //         // # Navigate directly to the application and the incident channel
-        //         cy.visit(`/${testTeam.name}/channels/` + incidentChannelName);
-
-        //         // # Select the tasks tab
-        //         cy.findByTestId('tasks').click();
-        //     });
-
     it('should have RHS footer buttons', () => {
 
         // * Verify that the button contains Update Status
