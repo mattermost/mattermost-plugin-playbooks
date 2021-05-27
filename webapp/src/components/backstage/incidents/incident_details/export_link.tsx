@@ -92,7 +92,7 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     } else if (!exportLicensed) {
         tooltip = (
             <Tooltip id='exportUnlicensed'>
-                {'Exporting an incident channel requires a Mattermost Enterprise E20 license'}
+                {'Exporting an incident channel requires a Mattermost Enterprise license'}
             </Tooltip>
         );
     }
