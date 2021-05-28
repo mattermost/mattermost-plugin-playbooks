@@ -1081,7 +1081,7 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 	}
 
 	if numPlaybooks > 5 {
-		r.postCommandResponse("Cant generate playbooks since the number of playbook generated must be at most five")
+		r.postCommandResponse("Maximum number of playbooks is 5")
 		return
 	}
 
@@ -1091,7 +1091,7 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 		dummyPlaybook.TeamID = r.args.TeamId
 		newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
 		if err != nil {
-			r.warnUserAndLogErrorf("There was an error while creating playbook. Err: " + err.Error())
+			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
 			return
 		}
 
@@ -1289,7 +1289,7 @@ var incidentNames = []string{
 var dummyListPlaybooks = []playbook.Playbook{
 	{
 		Title:       "Blank Playbook",
-		Description: "This is example of empty playbook",
+		Description: "This is an example of an empty playbook",
 	},
 	{
 		Title: "Test playbook",
@@ -1409,7 +1409,7 @@ var dummyListPlaybooks = []playbook.Playbook{
 	},
 	{
 		Title:       "Incident #4281",
-		Description: "There is error when access message from deleted channel",
+		Description: "There is an error when accessing message from deleted channel",
 		Checklists: []playbook.Checklist{
 			{
 				Title: "Prepare the Jira card for this task",
@@ -1474,7 +1474,7 @@ var dummyListPlaybooks = []playbook.Playbook{
 	},
 	{
 		Title:       "Incident Collaboration Playbook",
-		Description: "### Describe the incident so that someone without prior knowledge can ramp up quickly. Two sentences is the ideal length.",
+		Description: "Sample playbook",
 		Checklists: []playbook.Checklist{
 			{
 				Title: "Triage",
@@ -1602,20 +1602,19 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 	if len(playbooksResult.Items) == 0 {
 		dummyPlaybook := dummyListPlaybooks[rand.Intn(len(dummyListPlaybooks))]
 		dummyPlaybook.TeamID = r.args.TeamId
-		newPlayBookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
 		if err != nil {
-			r.warnUserAndLogErrorf("There was an error while creating playbook. Err: " + err.Error())
+			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
 			return
 		}
 
-		newPlayBook, err := r.playbookService.Get(newPlayBookID)
+		newPlaybook, err := r.playbookService.Get(newPlaybookID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error getting playbook: %v", err)
 			return
 		}
 
-		playbooks = make([]playbook.Playbook, 0, 1)
-		playbooks = append(playbooks, newPlayBook)
+		playbooks = []playbook.Playbook{newPlaybook}
 	} else {
 		playbooks = make([]playbook.Playbook, 0, len(playbooksResult.Items))
 		for _, thePlaybook := range playbooksResult.Items {
