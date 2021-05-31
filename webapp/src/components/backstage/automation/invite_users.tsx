@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 
 import styled from 'styled-components';
 
@@ -22,7 +22,7 @@ interface Props {
     onRemoveUser: (userId: string) => void;
 }
 
-export const InviteUsers: FC<Props> = (props: Props) => {
+export const InviteUsers = (props: Props) => {
     return (
         <>
             <AutomationHeader>

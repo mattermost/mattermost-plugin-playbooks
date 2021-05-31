@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -25,7 +25,7 @@ const StepLine = styled.div`
     flex-direction: row;
 `;
 
-const StepEdit: FC<StepEditProps> = (props: StepEditProps) => {
+const StepEdit = (props: StepEditProps) => {
     const submit = (step: ChecklistItem) => {
         props.onUpdate(step);
     };

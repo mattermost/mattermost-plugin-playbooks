@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -156,7 +156,7 @@ const timerOptions = [
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
-const PlaybookEdit: FC<Props> = (props: Props) => {
+const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
     const currentUserId = useSelector(getCurrentUserId);
@@ -551,7 +551,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
-                                    messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
+                                    messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
                                 />
                             </TabContainer>

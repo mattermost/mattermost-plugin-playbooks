@@ -1,12 +1,13 @@
-import React, {FC} from 'react';
-import {OptionsType, SelectComponentsConfig, components as defaultComponents} from 'react-select';
+import React from 'react';
+import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
 import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/channels';
+import General from 'mattermost-redux/constants/general';
 
 import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {StyledAsyncSelect} from './styles';
+import {StyledSelect} from './styles';
 
 export interface Props {
     id?: string;
@@ -20,8 +21,12 @@ export interface Props {
     placeholder?: string;
 }
 
-const ChannelSelector: FC<Props & { className?: string }> = (props: Props & { className?: string }) => {
-    const selectableChannels = useSelector(getMyChannels);
+const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
+    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL,
+);
+
+const ChannelSelector = (props: Props & { className?: string }) => {
+    const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
 
     type GetChannelType = (channelID: string) => Channel
     const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
@@ -42,17 +47,16 @@ const ChannelSelector: FC<Props & { className?: string }> = (props: Props & { cl
         );
     };
 
-    const channelsLoader = (term: string, callback: (options: OptionsType<Channel>) => void) => {
+    const filterOption = (option: {label: string, value: string, data: Channel}, term: string): boolean => {
+        const channel = option.data as Channel;
+
         if (term.trim().length === 0) {
-            callback(selectableChannels);
-        } else {
-            // Implement rudimentary channel name searches.
-            callback(selectableChannels.filter((channel) => (
-                channel.name.toLowerCase().includes(term.toLowerCase()) ||
-                channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
-                channel.id.toLowerCase() === term.toLowerCase()
-            )));
+            return true;
         }
+
+        return channel.name.toLowerCase().includes(term.toLowerCase()) ||
+               channel.display_name.toLowerCase().includes(term.toLowerCase()) ||
+               channel.id.toLowerCase() === term.toLowerCase();
     };
 
     const value = props.channelId && getChannelFromID(props.channelId);
@@ -60,14 +64,13 @@ const ChannelSelector: FC<Props & { className?: string }> = (props: Props & { cl
     const components = props.selectComponents || defaultComponents;
 
     return (
-        <StyledAsyncSelect
+        <StyledSelect
             className={props.className}
             id={props.id}
             isMulti={false}
             controlShouldRenderValue={props.shouldRenderValue}
-            cacheOptions={false}
-            defaultOptions={true}
-            loadOptions={channelsLoader}
+            options={selectableChannels}
+            filterOption={filterOption}
             onChange={onChange}
             getOptionValue={getOptionValue}
             formatOptionLabel={formatOptionLabel}

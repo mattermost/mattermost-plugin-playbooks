@@ -3,7 +3,7 @@
 
 import React, {FC} from 'react';
 
-const AlertIcon: FC = () => (
+const AlertIcon = () => (
     <svg
         width='32'
         height='30'

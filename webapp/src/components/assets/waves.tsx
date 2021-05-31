@@ -19,7 +19,7 @@ const WavesSVG = styled.svg`
     }
 `;
 
-const Waves: FC = () => (
+const Waves = () => (
     <WavesSVG
         width='1600'
         height='675'

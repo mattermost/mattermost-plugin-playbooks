@@ -3,7 +3,7 @@
 
 import React, {FC} from 'react';
 
-const NoContentIncidentsSvg: FC = () => (
+const NoContentIncidentsSvg = () => (
     <svg
         width='541'
         height='413'
