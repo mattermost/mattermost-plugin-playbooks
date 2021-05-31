@@ -1098,7 +1098,19 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 		playbookIds = append(playbookIds, newPlaybookID)
 	}
 
-	r.postCommandResponse(fmt.Sprintf("Playbooks successfully created : '%s'", playbookIds))
+	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
+	if err != nil {
+		r.warnUserAndLogErrorf("unable to retrieve team: %v", err)
+		return
+	}
+
+	msg := "Playbooks successfully created"
+	for i, playbookID := range playbookIds {
+		url := fmt.Sprintf("/%s/com.mattermost.plugin-incident-management/playbooks/%s", team.Name, playbookID)
+		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[i].Title, url)
+	}
+
+	r.postCommandResponse(fmt.Sprintf("Playbooks successfully created : '%s'", msg))
 }
 
 func (r *Runner) actionTestCreate(params []string) {
