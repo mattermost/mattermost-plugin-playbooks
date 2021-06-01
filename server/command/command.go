@@ -1110,7 +1110,7 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[i].Title, url)
 	}
 
-	r.postCommandResponse(fmt.Sprintf("Playbooks successfully created : '%s'", msg))
+	r.postCommandResponse(msg)
 }
 
 func (r *Runner) actionTestCreate(params []string) {
