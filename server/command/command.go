@@ -1089,8 +1089,8 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 	for i := 0; i < numPlaybooks; i++ {
 		dummyPlaybook := dummyListPlaybooks[i]
 		dummyPlaybook.TeamID = r.args.TeamId
-		newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
-		if err != nil {
+		newPlaybookID, errCreatePlayboook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		if errCreatePlayboook != nil {
 			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
 			return
 		}
@@ -1098,8 +1098,8 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 		playbookIds = append(playbookIds, newPlaybookID)
 	}
 
-	team, err := r.pluginAPI.Team.Get(r.args.TeamId)
-	if err != nil {
+	team, errGetTeam := r.pluginAPI.Team.Get(r.args.TeamId)
+	if errGetTeam != nil {
 		r.warnUserAndLogErrorf("unable to retrieve team: %v", err)
 		return
 	}
