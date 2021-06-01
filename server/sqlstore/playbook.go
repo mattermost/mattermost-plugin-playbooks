@@ -50,7 +50,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
 			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
 			"MessageOnJoin", "MessageOnJoinEnabled",
-			"RetrospectiveReminderIntervalSeconds").
+			"RetrospectiveReminderIntervalSeconds",
+			"RetrospectiveTemplate").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -114,6 +115,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -330,6 +332,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
