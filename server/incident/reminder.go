@@ -39,6 +39,12 @@ func (s *ServiceImpl) handleReminderToFillRetro(incidentID string) {
 		return
 	}
 
+	// If we are not in the resolved state then don't remind
+	if incidentToRemind.CurrentStatus != StatusResolved &&
+		incidentToRemind.CurrentStatus != StatusArchived {
+		return
+	}
+
 	if err = s.postRetrospectiveReminder(incidentToRemind); err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "couldn't post incident reminder").Error())
 		return
