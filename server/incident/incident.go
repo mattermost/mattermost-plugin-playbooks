@@ -25,36 +25,38 @@ const (
 // NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
 // that column needs to be added in the sqlstore code.
 type Incident struct {
-	ID                       string               `json:"id"`
-	Name                     string               `json:"name"` // Retrieved from incident channel
-	Description              string               `json:"description"`
-	CommanderUserID          string               `json:"commander_user_id"`
-	ReporterUserID           string               `json:"reporter_user_id"`
-	TeamID                   string               `json:"team_id"`
-	ChannelID                string               `json:"channel_id"`
-	CreateAt                 int64                `json:"create_at"` // Retrieved from incident channel
-	EndAt                    int64                `json:"end_at"`
-	DeleteAt                 int64                `json:"delete_at"` // Retrieved from incidet channel
-	ActiveStage              int                  `json:"active_stage"`
-	ActiveStageTitle         string               `json:"active_stage_title"`
-	PostID                   string               `json:"post_id"`
-	PlaybookID               string               `json:"playbook_id"`
-	Checklists               []playbook.Checklist `json:"checklists"`
-	StatusPosts              []StatusPost         `json:"status_posts"`
-	CurrentStatus            string               `json:"current_status"`
-	ReminderPostID           string               `json:"reminder_post_id"`
-	PreviousReminder         time.Duration        `json:"previous_reminder"`
-	BroadcastChannelID       string               `json:"broadcast_channel_id"`
-	ReminderMessageTemplate  string               `json:"reminder_message_template"`
-	InvitedUserIDs           []string             `json:"invited_user_ids"`
-	InvitedGroupIDs          []string             `json:"invited_group_ids"`
-	TimelineEvents           []TimelineEvent      `json:"timeline_events"`
-	DefaultCommanderID       string               `json:"default_commander_id"`
-	AnnouncementChannelID    string               `json:"announcement_channel_id"`
-	WebhookOnCreationURL     string               `json:"webhook_on_creation_url"`
-	Retrospective            string               `json:"retrospective"`
-	RetrospectivePublishedAt int64                `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
-	MessageOnJoin            string               `json:"message_on_join"`
+	ID                                   string               `json:"id"`
+	Name                                 string               `json:"name"` // Retrieved from incident channel
+	Description                          string               `json:"description"`
+	CommanderUserID                      string               `json:"commander_user_id"`
+	ReporterUserID                       string               `json:"reporter_user_id"`
+	TeamID                               string               `json:"team_id"`
+	ChannelID                            string               `json:"channel_id"`
+	CreateAt                             int64                `json:"create_at"` // Retrieved from incident channel
+	EndAt                                int64                `json:"end_at"`
+	DeleteAt                             int64                `json:"delete_at"` // Retrieved from incidet channel
+	ActiveStage                          int                  `json:"active_stage"`
+	ActiveStageTitle                     string               `json:"active_stage_title"`
+	PostID                               string               `json:"post_id"`
+	PlaybookID                           string               `json:"playbook_id"`
+	Checklists                           []playbook.Checklist `json:"checklists"`
+	StatusPosts                          []StatusPost         `json:"status_posts"`
+	CurrentStatus                        string               `json:"current_status"`
+	ReminderPostID                       string               `json:"reminder_post_id"`
+	PreviousReminder                     time.Duration        `json:"previous_reminder"`
+	BroadcastChannelID                   string               `json:"broadcast_channel_id"`
+	ReminderMessageTemplate              string               `json:"reminder_message_template"`
+	InvitedUserIDs                       []string             `json:"invited_user_ids"`
+	InvitedGroupIDs                      []string             `json:"invited_group_ids"`
+	TimelineEvents                       []TimelineEvent      `json:"timeline_events"`
+	DefaultCommanderID                   string               `json:"default_commander_id"`
+	AnnouncementChannelID                string               `json:"announcement_channel_id"`
+	WebhookOnCreationURL                 string               `json:"webhook_on_creation_url"`
+	Retrospective                        string               `json:"retrospective"`
+	RetrospectivePublishedAt             int64                `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
+	RetrospectiveWasCanceled             bool                 `json:"retrospective_was_canceled"`
+	RetrospectiveReminderIntervalSeconds int64                `json:"retrospective_reminder_interval_seconds"`
+	MessageOnJoin                        string               `json:"message_on_join"`
 }
 
 func (i *Incident) Clone() *Incident {
@@ -172,6 +174,7 @@ const (
 	EventFromPost          timelineEventType = "event_from_post"
 	UserJoinedLeft         timelineEventType = "user_joined_left"
 	PublishedRetrospective timelineEventType = "published_retrospective"
+	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 )
 
 type TimelineEvent struct {
@@ -379,6 +382,9 @@ type Service interface {
 
 	// PublishRetrospective publishes the retrospective.
 	PublishRetrospective(incidentID, text, userID string) error
+
+	// CancelRetrospective cancels the retrospective.
+	CancelRetrospective(incidentID, userID string) error
 
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
 	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.

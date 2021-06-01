@@ -25,6 +25,8 @@ import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 import './playbook.scss';
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
+
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
@@ -153,6 +155,14 @@ const timerOptions = [
     {value: 86400, label: '24hr'},
 ];
 
+const retrospectiveReminderOptions = [
+    {value: 0, label: 'Once'},
+    {value: 3600, label: '1hr'},
+    {value: 14400, label: '4hr'},
+    {value: 86400, label: '24hr'},
+    {value: 604800, label: '7days'},
+];
+
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
@@ -174,6 +184,8 @@ const PlaybookEdit = (props: Props) => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     const [currentTab, setCurrentTab] = useState<number>(0);
+
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -526,6 +538,29 @@ const PlaybookEdit = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
+                                {experimentalFeaturesEnabled &&
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {'Retrospective Reminder Interval'}
+                                            <BackstageSubheaderDescription>
+                                                {'Reminds the channel at a specified interval to fill out the retrospective.'}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledSelect
+                                            value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                                            onChange={(option: { label: string, value: number }) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_reminder_interval_seconds: option ? option.value : option,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                            classNamePrefix='channel-selector'
+                                            options={retrospectiveReminderOptions}
+                                            isClearable={false}
+                                        />
+                                    </SidebarBlock>
+                                }
                             </TabContainer>
                             <TabContainer>
                                 <AutomationSettings
