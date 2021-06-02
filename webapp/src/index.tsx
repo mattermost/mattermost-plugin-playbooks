@@ -14,6 +14,8 @@ import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 
+import {RetrospectiveFirstReminder, RetrospectiveReminder} from './components/retrospective_reminder_posts';
+
 import {pluginId} from './manifest';
 import ChannelHeaderButton from './components/assets/icons/channel_header_button';
 import RightHandSidebar from './components/rhs/rhs_main';
@@ -108,6 +110,9 @@ export default class Plugin {
 
             r.registerNeedsTeamRoute('/error', ErrorPage);
             r.registerNeedsTeamRoute('/', Backstage);
+
+            r.registerPostTypeComponent('custom_retro_rem_first', RetrospectiveFirstReminder);
+            r.registerPostTypeComponent('custom_retro_rem', RetrospectiveReminder);
 
             return r.unregister;
         };
