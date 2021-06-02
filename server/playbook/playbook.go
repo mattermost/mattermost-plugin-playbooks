@@ -3,6 +3,7 @@ package playbook
 import (
 	"encoding/json"
 
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
@@ -17,6 +18,7 @@ type Playbook struct {
 	TeamID                      string      `json:"team_id"`
 	CreatePublicIncident        bool        `json:"create_public_incident"`
 	CreateAt                    int64       `json:"create_at"`
+	UpdatedAt                   int64       `json:"updated_at"`
 	DeleteAt                    int64       `json:"delete_at"`
 	NumStages                   int64       `json:"num_stages"`
 	NumSteps                    int64       `json:"num_steps"`
@@ -36,7 +38,7 @@ type Playbook struct {
 	WebhookOnCreationEnabled    bool        `json:"webhook_on_creation_enabled"`
 	MessageOnJoin               string      `json:"message_on_join"`
 	MessageOnJoinEnabled        bool        `json:"message_on_join_enabled"`
-	SignalAnyKeywords           string      `json:"signal_any_keywords"`
+	SignalAnyKeywords           []string    `json:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled    bool        `json:"signal_any_keywords_enabled"`
 }
 
@@ -53,6 +55,9 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.InvitedGroupIDs) != 0 {
 		newPlaybook.InvitedGroupIDs = append([]string(nil), p.InvitedGroupIDs...)
+	}
+	if len(p.SignalAnyKeywords) != 0 {
+		newPlaybook.SignalAnyKeywords = append([]string(nil), p.SignalAnyKeywords...)
 	}
 	return newPlaybook
 }
@@ -78,6 +83,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.InvitedGroupIDs == nil {
 		old.InvitedGroupIDs = []string{}
+	}
+	if old.SignalAnyKeywords == nil {
+		old.SignalAnyKeywords = []string{}
 	}
 
 	return json.Marshal(old)
@@ -164,6 +172,9 @@ type Service interface {
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
 
+	// GetSuggestedPlaybooks returns suggested playbooks for the user post
+	GetSuggestedPlaybooks(post *model.Post) []*CachedPlaybook
+
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
@@ -186,6 +197,15 @@ type Store interface {
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
+
+	// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
+	GetPlaybooksWithKeywords(opts Options) ([]Playbook, error)
+
+	// GetTimeLastUpdated retrieves time last playbook was updated at
+	GetTimeLastUpdated() (int64, error)
+
+	// GetPlaybookIDsForUser retrieves playbooks user can access
+	GetPlaybookIDsForUser(userID, teamID string) ([]string, error)
 
 	// Update updates a playbook
 	Update(playbook Playbook) error

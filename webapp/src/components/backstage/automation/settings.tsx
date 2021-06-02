@@ -44,7 +44,7 @@ interface Props {
     signalAnyKeywordsEnabled: boolean;
     onToggleSignalAnyKeywords: () => void;
     signalAnyKeywordsChange: (keywords: string) => void;
-    signalAnyKeywords: string;
+    signalAnyKeywords: string[];
 }
 
 export const AutomationSettings: FC<Props> = (props: Props) => {
@@ -64,13 +64,13 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                     <PatternedInput
                         enabled={props.signalAnyKeywordsEnabled}
                         onToggle={props.onToggleSignalAnyKeywords}
-                        input={props.signalAnyKeywords}
+                        input={props.signalAnyKeywords.join(',')}
                         onChange={props.signalAnyKeywordsChange}
-                        pattern={'^((?!,,).)*$'} //pretty much everything except double commas
+                        pattern={'[\\s\\S]*'} // pretty much everything
                         placeholderText={'Add comma separated keywords'}
                         textOnToggle={'Containing any of these keywords'}
                         type={'text'}
-                        errorText={'Keywords are not valid.'}
+                        errorText={'Keywords are not valid.'} // this should not happen
                     />
                 </Setting>
             </Section>

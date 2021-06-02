@@ -89,12 +89,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.SignalAnyKeywordsEnabled {
-		if strings.Contains(pbook.SignalAnyKeywords, ",,") {
-			msg := "invalid keywords, should be comma separated list"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
-		}
+	if len(pbook.SignalAnyKeywords) != 0 {
+		pbook.SignalAnyKeywords = getUniqueSlice(pbook.SignalAnyKeywords)
 	}
 
 	id, err := h.playbookService.Create(pbook, userID)
@@ -172,12 +168,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.SignalAnyKeywordsEnabled {
-		if strings.Contains(pbook.SignalAnyKeywords, ",,") {
-			msg := "invalid keywords, should be comma separated list"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
-		}
+	if len(pbook.SignalAnyKeywords) != 0 {
+		pbook.SignalAnyKeywords = getUniqueSlice(pbook.SignalAnyKeywords)
 	}
 
 	err = h.playbookService.Update(pbook, userID)
@@ -429,4 +421,18 @@ func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
 		Page:      page,
 		PerPage:   perPage,
 	}, nil
+}
+
+func getUniqueSlice(a []string) []string {
+	items := make(map[string]bool)
+	for _, item := range a {
+		if item != "" {
+			items[item] = true
+		}
+	}
+	res := make([]string, 0, len(items))
+	for item := range items {
+		res = append(res, item)
+	}
+	return res
 }

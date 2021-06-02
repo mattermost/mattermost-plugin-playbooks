@@ -2,14 +2,12 @@ package main
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
@@ -158,7 +156,7 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
+	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient, pluginAPIClient)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -237,48 +235,13 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 }
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
-	suggestedPlaybooks := p.getSuggestedPlaybooks(post)
+	suggestedPlaybooks := p.playbookService.GetSuggestedPlaybooks(post)
 	if len(suggestedPlaybooks) != 0 {
 		p.suggestPlaybooksToTheUser(suggestedPlaybooks, post.UserId, post.ChannelId)
 	}
 }
 
-func (p *Plugin) getSuggestedPlaybooks(post *model.Post) []*playbook.Playbook {
-	suggestedPlaybooks := []*playbook.Playbook{}
-	playbooks, err := p.playbookService.GetPlaybooks()
-	if err != nil {
-		p.API.LogError("can't get playbooks when message posted", "err", err.Error())
-		return suggestedPlaybooks
-	}
-	for i := range playbooks {
-		if !playbooks[i].SignalAnyKeywordsEnabled {
-			continue
-		}
-
-		if !isPlaybookTriggeredByMessage(&playbooks[i], post.Message) {
-			continue
-		}
-
-		if err := permissions.PlaybookAccess(post.UserId, playbooks[i], p.pluginAPI); err != nil {
-			continue
-		}
-
-		suggestedPlaybooks = append(suggestedPlaybooks, &playbooks[i])
-	}
-	return suggestedPlaybooks
-}
-
-func isPlaybookTriggeredByMessage(playbook *playbook.Playbook, message string) bool {
-	keywords := strings.Split(playbook.SignalAnyKeywords, ",")
-	for _, keyword := range keywords {
-		if strings.Contains(message, keyword) {
-			return true
-		}
-	}
-	return false
-}
-
-func (p *Plugin) suggestPlaybooksToTheUser(playbooks []*playbook.Playbook, userID, channelID string) {
+func (p *Plugin) suggestPlaybooksToTheUser(playbooks []*playbook.CachedPlaybook, userID, channelID string) {
 	message := "May be you want to run one of these playbooks \n"
 	for _, playbook := range playbooks {
 		message += playbook.Title + "\n"

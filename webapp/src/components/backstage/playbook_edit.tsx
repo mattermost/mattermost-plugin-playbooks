@@ -373,13 +373,42 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleSignalAnyKeywordsChange = (keywords: string) => {
-        if (playbook.signal_any_keywords !== keywords) {
+        const index = keywords.lastIndexOf(',');
+        let final_keywords: string[];
+        if (index === -1) {
+            final_keywords = [keywords];
+        } else {
+            const typingKeyword = keywords.substring(index + 1);
+            const alreadyTypedKeywords = keywords.substring(0, index);
+            const split_keywords = alreadyTypedKeywords.split(',').filter((keyword) => keyword);
+            const unique_keywords = [...new Set(split_keywords)];
+            final_keywords = [...unique_keywords, typingKeyword];
+        }
+
+        if (!hasSameElements(playbook.signal_any_keywords, final_keywords)) {
             setPlaybook({
                 ...playbook,
-                signal_any_keywords: keywords,
+                signal_any_keywords: [...final_keywords],
             });
             setChangesMade(true);
         }
+    };
+
+    const hasSameElements = (a: string[], b: string[]) => {
+        const setA = new Set(a);
+        const setB = new Set(b);
+
+        if (setA.size !== setB.size) {
+            return false;
+        }
+
+        for (const item of setA) {
+            if (!setB.has(item)) {
+                return false;
+            }
+        }
+
+        return true;
     };
 
     const handleToggleSignalAnyKeywords = () => {
