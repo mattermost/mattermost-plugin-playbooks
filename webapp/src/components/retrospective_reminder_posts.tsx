@@ -32,6 +32,7 @@ const Content = styled.div`
     flex-grow: 1;
     flex-direction: column;
     padding: 12px;
+    padding-left: 16px;
 `;
 
 const Header = styled.div`
