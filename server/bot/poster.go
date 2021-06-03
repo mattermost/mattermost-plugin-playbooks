@@ -36,6 +36,20 @@ func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.
 	return post, nil
 }
 
+func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {
+	post := &model.Post{
+		Message:   fmt.Sprintf(format, args...),
+		UserId:    b.botUserID,
+		ChannelId: channelID,
+		Type:      customType,
+	}
+	model.ParseSlackAttachment(post, attachments)
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
 // DM posts a simple Direct Message to the specified user
 func (b *Bot) DM(userID, format string, args ...interface{}) error {
 	return b.dm(userID, &model.Post{

@@ -327,6 +327,12 @@ export async function publishRetrospective(incidentID: string, currentText: stri
     return data;
 }
 
+export async function noRetrospective(incidentID: string) {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/no-retrospective-button`, {
+        method: 'POST',
+    });
+}
+
 export function exportChannelUrl(channelId: string) {
     const exportPluginUrl = '/plugins/com.mattermost.plugin-channel-export/api/v1';
 

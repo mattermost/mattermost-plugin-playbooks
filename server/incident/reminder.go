@@ -45,7 +45,7 @@ func (s *ServiceImpl) handleReminderToFillRetro(incidentID string) {
 		return
 	}
 
-	if err = s.postRetrospectiveReminder(incidentToRemind); err != nil {
+	if err = s.postRetrospectiveReminder(incidentToRemind, false); err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "couldn't post incident reminder").Error())
 		return
 	}

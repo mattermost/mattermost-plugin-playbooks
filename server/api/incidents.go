@@ -869,19 +869,16 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 }
 
 func (h *IncidentHandler) noRetrospectiveButton(w http.ResponseWriter, r *http.Request) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
-	if requestData == nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
-		return
-	}
+	incidentID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
 
-	incidentID, err := h.incidentService.GetIncidentIDForChannel(requestData.ChannelId)
+	incidentToCancelRetro, err := h.incidentService.GetIncident(incidentID)
 	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "no incident for requestData's channelID", err)
+		h.HandleError(w, err)
 		return
 	}
 
-	if err = permissions.EditIncident(requestData.UserId, requestData.ChannelId, h.pluginAPI); err != nil {
+	if err = permissions.EditIncident(userID, incidentToCancelRetro.ChannelID, h.pluginAPI); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
@@ -890,7 +887,7 @@ func (h *IncidentHandler) noRetrospectiveButton(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := h.incidentService.CancelRetrospective(incidentID, requestData.UserId); err != nil {
+	if err := h.incidentService.CancelRetrospective(incidentID, userID); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to cancel retrospective", err)
 		return
 	}

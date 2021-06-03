@@ -665,7 +665,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		previousStatus != StatusArchived &&
 		previousStatus != StatusResolved &&
 		s.configService.GetConfiguration().EnableExperimentalFeatures {
-		if err = s.postRetrospectiveReminder(incidentToModify); err != nil {
+		if err = s.postRetrospectiveReminder(incidentToModify, true); err != nil {
 			return errors.Wrap(err, "couldn't post retrospective reminder")
 		}
 		s.scheduler.Cancel(RetrospectivePrefix + incidentID)
@@ -716,7 +716,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	return nil
 }
 
-func (s *ServiceImpl) postRetrospectiveReminder(incident *Incident) error {
+func (s *ServiceImpl) postRetrospectiveReminder(incident *Incident, isInitial bool) error {
 	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
@@ -744,7 +744,12 @@ func (s *ServiceImpl) postRetrospectiveReminder(incident *Incident) error {
 		},
 	}
 
-	if _, err = s.poster.PostMessageWithAttachments(incident.ChannelID, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
+	customPostType := "custom_retro_rem"
+	if isInitial {
+		customPostType = "custom_retro_rem_first"
+	}
+
+	if _, err = s.poster.PostCustomMessageWithAttachments(incident.ChannelID, customPostType, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
 		return errors.Wrap(err, "failed to post retro reminder to channel")
 	}
 
