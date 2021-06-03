@@ -118,7 +118,7 @@ export const RetrospectiveFirstReminder = () => {
     return (
         <ReminderCommon
             header={'Would you like to fill out the retrospective report?'}
-            primary={'Yes, fill retrospective'}
+            primary={'Yes, start retrospective'}
             secondary={'No, skip retrospective'}
         />
     );
@@ -128,7 +128,7 @@ export const RetrospectiveReminder = () => {
     return (
         <ReminderCommon
             header={'Reminder to fill out the retrospective'}
-            primary={'Fill retrospective'}
+            primary={'Start retrospective'}
             secondary={'Skip retrospective'}
         />
     );
