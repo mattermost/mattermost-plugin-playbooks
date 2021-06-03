@@ -71,7 +71,7 @@ interface ReminderCommonProps {
 
 const ReminderCommon = (props: ReminderCommonProps) => {
     const incident = useSelector(currentIncident);
-    const reminderDuration = incident?.retrospective_reminder_interval_seconds;
+    const reminderDuration = incident?.retrospective_reminder_interval_seconds || 0;
     const currentTeam = useSelector(getCurrentTeam);
 
     let reminderText = (
