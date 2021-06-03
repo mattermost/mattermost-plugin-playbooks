@@ -44,7 +44,7 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"UpdatedAt", "DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
+			"UpdateAt", "DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
 			"DefaultCommanderID", "DefaultCommanderEnabled",
@@ -95,7 +95,7 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"TeamID":                        rawPlaybook.TeamID,
 			"CreatePublicIncident":          rawPlaybook.CreatePublicIncident,
 			"CreateAt":                      rawPlaybook.CreateAt,
-			"UpdatedAt":                     rawPlaybook.UpdatedAt,
+			"UpdateAt":                      rawPlaybook.UpdateAt,
 			"DeleteAt":                      rawPlaybook.DeleteAt,
 			"ChecklistsJSON":                rawPlaybook.ChecklistsJSON,
 			"NumStages":                     len(rawPlaybook.Checklists),
@@ -294,7 +294,7 @@ func (p *playbookStore) GetPlaybooksWithKeywords(opts playbook.Options) ([]playb
 	correctPaginationOpts(&opts)
 
 	queryForResults := p.store.builder.
-		Select("ID", "Title", "UpdatedAt", "TeamID", "ConcatenatedSignalAnyKeywords").
+		Select("ID", "Title", "UpdateAt", "TeamID", "ConcatenatedSignalAnyKeywords").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"SignalAnyKeywordsEnabled": true}).
@@ -320,22 +320,26 @@ func (p *playbookStore) GetPlaybooksWithKeywords(opts playbook.Options) ([]playb
 	return playbooks, nil
 }
 
-// GetTimeLastUpdated retrieves time last playbook was updated at
-func (p *playbookStore) GetTimeLastUpdated() (int64, error) {
+// GetTimeLastUpdated retrieves time last playbook was updated at.
+// Passed argument determins whether to include playbooks with
+// SignalAnyKeywordsEnabled flag or not.
+func (p *playbookStore) GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error) {
 	queryForResults := p.store.builder.
-		Select("MAX(UpdatedAt)").
+		Select("COALESCE(MAX(UpdateAt), 0)").
 		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"SignalAnyKeywordsEnabled": true})
+		Where(sq.Eq{"DeleteAt": 0})
+	if onlyPlaybooksWithKeywordsEnabled {
+		queryForResults = queryForResults.Where(sq.Eq{"SignalAnyKeywordsEnabled": true})
+	}
 
-	var updatedAt []int64
-	err := p.store.selectBuilder(p.store.db, &updatedAt, queryForResults)
+	var updateAt []int64
+	err := p.store.selectBuilder(p.store.db, &updateAt, queryForResults)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	} else if err != nil {
 		return 0, errors.Wrap(err, "failed to get playbooks")
 	}
-	return updatedAt[0], nil
+	return updateAt[0], nil
 }
 
 // GetPlaybookIDsForUser retrieves playbooks user can access
@@ -392,7 +396,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"Description":                   rawPlaybook.Description,
 			"TeamID":                        rawPlaybook.TeamID,
 			"CreatePublicIncident":          rawPlaybook.CreatePublicIncident,
-			"UpdatedAt":                     rawPlaybook.UpdatedAt,
+			"UpdateAt":                      rawPlaybook.UpdateAt,
 			"DeleteAt":                      rawPlaybook.DeleteAt,
 			"ChecklistsJSON":                rawPlaybook.ChecklistsJSON,
 			"NumStages":                     len(rawPlaybook.Checklists),

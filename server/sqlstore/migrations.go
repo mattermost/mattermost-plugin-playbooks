@@ -2,10 +2,10 @@ package sqlstore
 
 import (
 	"encoding/json"
-	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -761,15 +761,16 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
 				}
 
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "UpdatedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
-					return errors.Wrapf(err, "failed adding column UpdatedAt to table IR_Playbook")
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Playbook")
 				}
-				if _, err := e.Exec("UPDATE IR_Playbook SET UpdatedAt = CreateAt"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column UpdatedAt of table IR_Playbook")
+				if _, err := e.Exec("UPDATE IR_Playbook SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column UpdateAt of table IR_Playbook")
 				}
-				if _, err := e.Exec(`ALTER TABLE IR_Playbook ADD INDEX IR_Playbook_UpdatedAt (UpdatedAt)`); err != nil {
-					if !strings.Contains(err.Error(), "Duplicate key name") { // Instead of IF NOT EXISTS which is not supported
-						return errors.Wrapf(err, "failed creating index IR_Playbook_UpdatedAt")
+				if _, err := e.Exec(`ALTER TABLE IR_Playbook ADD INDEX IR_Playbook_UpdateAt (UpdateAt)`); err != nil {
+					me, ok := err.(*mysql.MySQLError)
+					if !ok || me.Number != 1061 { // not a Duplicate key name error
+						return errors.Wrapf(err, "failed creating index IR_Playbook_UpdateAt")
 					}
 				}
 			} else {
@@ -781,14 +782,14 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
 				}
 
-				if err := addColumnToPGTable(e, "IR_Playbook", "UpdatedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
-					return errors.Wrapf(err, "failed adding column UpdatedAt to table IR_Playbook")
+				if err := addColumnToPGTable(e, "IR_Playbook", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Playbook")
 				}
-				if _, err := e.Exec("UPDATE IR_Playbook SET UpdatedAt = CreateAt"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column UpdatedAt of table IR_Playbook")
+				if _, err := e.Exec("UPDATE IR_Playbook SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column UpdateAt of table IR_Playbook")
 				}
-				if _, err := e.Exec(createPGIndex("IR_Playbook_UpdatedAt", "IR_Playbook", "UpdatedAt")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_Playbook_UpdatedAt")
+				if _, err := e.Exec(createPGIndex("IR_Playbook_UpdateAt", "IR_Playbook", "UpdateAt")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Playbook_UpdateAt")
 				}
 			}
 			return nil

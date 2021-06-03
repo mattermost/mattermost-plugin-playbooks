@@ -1,6 +1,7 @@
 package playbook
 
 import (
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/pkg/errors"
 )
 
@@ -12,39 +13,44 @@ type CachedPlaybook struct {
 }
 
 type CacherImpl struct {
-	updatedAt int64
+	updateAt  int64
 	playbooks []*CachedPlaybook
 	store     Store
+	logger    pluginapi.LogService
 }
 
 type Cacher interface {
 	GetPlaybooks() []*CachedPlaybook
-	UpdatePlaybooksIfNeeded() error
 }
 
 // Ensure CacherImpl implements the Cacher interface.
 var _ Cacher = (*CacherImpl)(nil)
 
-func NewPlaybookCacher(store Store) Cacher {
+func NewPlaybookCacher(store Store, log pluginapi.LogService) Cacher {
 	return &CacherImpl{
 		store:     store,
 		playbooks: []*CachedPlaybook{},
-		updatedAt: 0,
+		updateAt:  0,
+		logger:    log,
 	}
 }
 
 // GetPlaybooks gets cached playbooks
 func (pc *CacherImpl) GetPlaybooks() []*CachedPlaybook {
+	if err := pc.updatePlaybooksIfNeeded(); err != nil {
+		pc.logger.Error("can't update playbooks", "err", err.Error())
+	}
+	// even if error occurs while updating still returning previously cached playbooks
 	return pc.playbooks
 }
 
-// UpdatePlaybooksIfNeeded caches playbooks
-func (pc *CacherImpl) UpdatePlaybooksIfNeeded() error {
-	lastUpdatedDB, err := pc.store.GetTimeLastUpdated()
+// updatePlaybooksIfNeeded caches playbooks
+func (pc *CacherImpl) updatePlaybooksIfNeeded() error {
+	lastUpdatedDB, err := pc.store.GetTimeLastUpdated(true)
 	if err != nil {
 		return errors.Wrap(err, "can't get time last updated")
 	}
-	if lastUpdatedDB > pc.updatedAt {
+	if lastUpdatedDB > pc.updateAt {
 		if err := pc.update(); err != nil {
 			return errors.Wrap(err, "can't update cache")
 		}
@@ -58,7 +64,7 @@ func (pc *CacherImpl) update() error {
 		return errors.Wrap(err, "can't get playbooks to cache")
 	}
 	pc.playbooks = make([]*CachedPlaybook, 0, len(playbooks))
-	pc.updatedAt = 0
+	pc.updateAt = 0
 	for _, playbook := range playbooks {
 		pc.playbooks = append(pc.playbooks, &CachedPlaybook{
 			ID:                playbook.ID,
@@ -66,8 +72,8 @@ func (pc *CacherImpl) update() error {
 			TeamID:            playbook.TeamID,
 			SignalAnyKeywords: playbook.SignalAnyKeywords,
 		})
-		if pc.updatedAt < playbook.UpdatedAt {
-			pc.updatedAt = playbook.UpdatedAt
+		if pc.updateAt < playbook.UpdateAt {
+			pc.updateAt = playbook.UpdateAt
 		}
 	}
 	return nil

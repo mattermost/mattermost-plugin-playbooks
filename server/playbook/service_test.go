@@ -49,7 +49,7 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		store.EXPECT().GetTimeLastUpdated().Return(int64(0), errors.New("store error"))
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(0), errors.New("store error"))
 		pluginAPI.On("LogError", "can't update playbooks", "err", mock.Anything)
 
 		playbooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID})
@@ -70,7 +70,7 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		store.EXPECT().GetTimeLastUpdated().Return(int64(1000), nil)
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(nil, errors.New("store error"))
 		pluginAPI.On("LogError", "can't update playbooks", "err", mock.Anything)
 
@@ -92,26 +92,26 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		store.EXPECT().GetTimeLastUpdated().Return(int64(1000), nil)
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 1",
-				UpdatedAt:         100,
+				UpdateAt:          100,
 				TeamID:            "",
 				SignalAnyKeywords: []string{"some", "bla"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 2",
-				UpdatedAt:         1100,
+				UpdateAt:          1100,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"bla", "something"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 3",
-				UpdatedAt:         900,
+				UpdateAt:          900,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{" some", "other"},
 			},
@@ -136,12 +136,12 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		store.EXPECT().GetTimeLastUpdated().Return(int64(1000), nil)
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 1",
-				UpdatedAt:         100,
+				UpdateAt:          100,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"some", "bla"},
 			},
@@ -170,26 +170,26 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		store.EXPECT().GetTimeLastUpdated().Return(int64(1000), nil)
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 1",
-				UpdatedAt:         100,
+				UpdateAt:          100,
 				TeamID:            "",
 				SignalAnyKeywords: []string{"some", "bla"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 2",
-				UpdatedAt:         1100,
+				UpdateAt:          1100,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"bla", "something"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 3",
-				UpdatedAt:         900,
+				UpdateAt:          900,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"some", "other"},
 			},
@@ -215,26 +215,26 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		store.EXPECT().GetTimeLastUpdated().Return(int64(1000), nil)
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 1",
-				UpdatedAt:         100,
+				UpdateAt:          100,
 				TeamID:            "",
 				SignalAnyKeywords: []string{"some", "bla"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 2",
-				UpdatedAt:         1100,
+				UpdateAt:          1100,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"bla", "something"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 3",
-				UpdatedAt:         900,
+				UpdateAt:          900,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"some", "other"},
 			},
@@ -266,27 +266,27 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		firstCall := store.EXPECT().GetTimeLastUpdated().Return(int64(1000), nil)
-		store.EXPECT().GetTimeLastUpdated().Return(int64(1100), nil).After(firstCall)
+		firstCall := store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1100), nil).After(firstCall)
 		playbooks := []playbook.Playbook{
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 1",
-				UpdatedAt:         100,
+				UpdateAt:          100,
 				TeamID:            "",
 				SignalAnyKeywords: []string{"some", "bla"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 2",
-				UpdatedAt:         1100,
+				UpdateAt:          1100,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"bla", "something"},
 			},
 			{
 				ID:                model.NewId(),
 				Title:             "playbook 3",
-				UpdatedAt:         900,
+				UpdateAt:          900,
 				TeamID:            teamID,
 				SignalAnyKeywords: []string{"some", "other"},
 			},
@@ -327,26 +327,26 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		channel := model.Channel{Id: channelID, TeamId: teamID}
 		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
-		firstCall := store.EXPECT().GetTimeLastUpdated().Return(int64(1000), nil)
-		store.EXPECT().GetTimeLastUpdated().Return(int64(1200), nil).After(firstCall)
+		firstCall := store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1200), nil).After(firstCall)
 		playbook1 := playbook.Playbook{
 			ID:                model.NewId(),
 			Title:             "playbook 1",
-			UpdatedAt:         100,
+			UpdateAt:          100,
 			TeamID:            "",
 			SignalAnyKeywords: []string{"some", "bla"},
 		}
 		playbook2 := playbook.Playbook{
 			ID:                model.NewId(),
 			Title:             "playbook 2",
-			UpdatedAt:         1100,
+			UpdateAt:          1100,
 			TeamID:            teamID,
 			SignalAnyKeywords: []string{"bla", "something"},
 		}
 		playbook3 := playbook.Playbook{
 			ID:                model.NewId(),
 			Title:             "playbook 3",
-			UpdatedAt:         900,
+			UpdateAt:          900,
 			TeamID:            teamID,
 			SignalAnyKeywords: []string{"some", "other"},
 		}
@@ -354,7 +354,7 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		playbook4 := playbook.Playbook{
 			ID:                playbook2.ID,
 			Title:             playbook2.Title,
-			UpdatedAt:         1200,
+			UpdateAt:          1200,
 			TeamID:            playbook2.TeamID,
 			SignalAnyKeywords: []string{"bla", "message"},
 		}

@@ -90,7 +90,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if len(pbook.SignalAnyKeywords) != 0 {
-		pbook.SignalAnyKeywords = getUniqueSlice(pbook.SignalAnyKeywords)
+		pbook.SignalAnyKeywords = removeDuplicates(pbook.SignalAnyKeywords)
 	}
 
 	id, err := h.playbookService.Create(pbook, userID)
@@ -169,7 +169,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if len(pbook.SignalAnyKeywords) != 0 {
-		pbook.SignalAnyKeywords = getUniqueSlice(pbook.SignalAnyKeywords)
+		pbook.SignalAnyKeywords = removeDuplicates(pbook.SignalAnyKeywords)
 	}
 
 	err = h.playbookService.Update(pbook, userID)
@@ -423,7 +423,7 @@ func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
 	}, nil
 }
 
-func getUniqueSlice(a []string) []string {
+func removeDuplicates(a []string) []string {
 	items := make(map[string]bool)
 	for _, item := range a {
 		if item != "" {

@@ -18,7 +18,7 @@ type Playbook struct {
 	TeamID                      string      `json:"team_id"`
 	CreatePublicIncident        bool        `json:"create_public_incident"`
 	CreateAt                    int64       `json:"create_at"`
-	UpdatedAt                   int64       `json:"updated_at"`
+	UpdateAt                    int64       `json:"updated_at"`
 	DeleteAt                    int64       `json:"delete_at"`
 	NumStages                   int64       `json:"num_stages"`
 	NumSteps                    int64       `json:"num_steps"`
@@ -201,8 +201,10 @@ type Store interface {
 	// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
 	GetPlaybooksWithKeywords(opts Options) ([]Playbook, error)
 
-	// GetTimeLastUpdated retrieves time last playbook was updated at
-	GetTimeLastUpdated() (int64, error)
+	// GetTimeLastUpdated retrieves time last playbook was updated at.
+	// Passed argument determins whether to include playbooks with
+	// SignalAnyKeywordsEnabled flag or not.
+	GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error)
 
 	// GetPlaybookIDsForUser retrieves playbooks user can access
 	GetPlaybookIDsForUser(userID, teamID string) ([]string, error)

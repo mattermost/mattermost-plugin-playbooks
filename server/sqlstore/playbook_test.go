@@ -235,7 +235,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(500).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2}).
 		WithMembers([]userInfo{jon, andrew, matt}).
 		ToPlaybook()
@@ -244,7 +244,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 2").
 		WithTeamID(team1id).
 		WithCreateAt(600).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
 		WithMembers([]userInfo{andrew, matt}).
@@ -255,7 +255,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithMembers([]userInfo{jon, matt, lucia}).
 		ToPlaybook()
 
@@ -264,7 +264,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(800).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{20}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -273,7 +273,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 5").
 		WithTeamID(team2id).
 		WithCreateAt(1000).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{jon, andrew}).
 		ToPlaybook()
@@ -282,7 +282,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 6").
 		WithTeamID(team2id).
 		WithCreateAt(1100).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2, 3}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -291,7 +291,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 7").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{andrew}).
 		ToPlaybook()
@@ -300,7 +300,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
 		WithTeamID(team3id).
 		WithCreateAt(1300).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
@@ -436,7 +436,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(500).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2}).
 		WithMembers([]userInfo{jon, andrew, matt}).
 		ToPlaybook()
@@ -445,7 +445,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 2").
 		WithTeamID(team1id).
 		WithCreateAt(600).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
 		WithMembers([]userInfo{andrew, matt}).
@@ -456,7 +456,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithMembers([]userInfo{jon, matt, lucia}).
 		ToPlaybook()
 
@@ -465,7 +465,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(800).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{20}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -474,7 +474,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 5").
 		WithTeamID(team2id).
 		WithCreateAt(1000).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{jon, andrew}).
 		ToPlaybook()
@@ -483,7 +483,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 6").
 		WithTeamID(team2id).
 		WithCreateAt(1100).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2, 3}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -492,7 +492,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 7").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{andrew}).
 		ToPlaybook()
@@ -501,7 +501,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
 		WithTeamID(team3id).
 		WithCreateAt(1300).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
@@ -510,7 +510,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 9 -- all access").
 		WithTeamID(team3id).
 		WithCreateAt(1600).
-		WithUpdatedAt(0).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{}).
 		ToPlaybook()
@@ -1314,33 +1314,33 @@ func TestGetTimeLastUpdated(t *testing.T) {
 		WithTitle("playbook 1").
 		WithTeamID(team1id).
 		WithKeywords([]string{"one", "two", "three"}).
-		WithUpdatedAt(400).
+		WithUpdateAt(400).
 		ToPlaybook()
 
 	pb02 := NewPBBuilder().
 		WithTitle("playbook 2").
 		WithTeamID(team1id).
-		WithUpdatedAt(500).
+		WithUpdateAt(500).
 		WithKeywords([]string{"one", "two"}).
 		ToPlaybook()
 
 	pb03 := NewPBBuilder().
 		WithTitle("playbook 3").
 		WithTeamID(team2id).
-		WithUpdatedAt(450).
+		WithUpdateAt(450).
 		ToPlaybook()
 
 	pb04 := NewPBBuilder().
 		WithTitle("playbook 4").
 		WithTeamID(team3id).
-		WithUpdatedAt(600).
+		WithUpdateAt(600).
 		WithKeywords([]string{"one"}).
 		ToPlaybook()
 
 	pb05 := NewPBBuilder().
 		WithTitle("playbook 5").
 		WithTeamID(team3id).
-		WithUpdatedAt(700).
+		WithUpdateAt(700).
 		ToPlaybook()
 
 	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05}
@@ -1363,12 +1363,16 @@ func TestGetTimeLastUpdated(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
 			require.NoError(t, err)
 			require.ElementsMatch(t, []playbook.Playbook{}, result)
+
+			lastUpdated, err := playbookStore.GetTimeLastUpdated(true)
+			require.NoError(t, err)
+			require.Equal(t, int64(0), lastUpdated)
 		})
 
 		createPlaybooks(playbookStore)
 
 		t.Run(driverName+" - get time last updated", func(t *testing.T) {
-			actual, err := playbookStore.GetTimeLastUpdated()
+			actual, err := playbookStore.GetTimeLastUpdated(true)
 
 			require.NoError(t, err)
 			require.Equal(t, expected, actual)
@@ -1603,7 +1607,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			TeamID:               model.NewId(),
 			CreatePublicIncident: false,
 			CreateAt:             timeNow,
-			UpdatedAt:            timeNow,
+			UpdateAt:             timeNow,
 			DeleteAt:             0,
 			Checklists:           []playbook.Checklist(nil),
 			MemberIDs:            []string(nil),
@@ -1705,8 +1709,8 @@ func (p *PlaybookBuilder) WithKeywords(keywords []string) *PlaybookBuilder {
 	return p
 }
 
-func (p *PlaybookBuilder) WithUpdatedAt(updatedAt int64) *PlaybookBuilder {
-	p.UpdatedAt = updatedAt
+func (p *PlaybookBuilder) WithUpdateAt(updateAt int64) *PlaybookBuilder {
+	p.UpdateAt = updateAt
 
 	return p
 }

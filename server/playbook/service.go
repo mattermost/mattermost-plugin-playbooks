@@ -28,7 +28,7 @@ func NewService(store Store, poster bot.Poster, telemetry Telemetry, api *plugin
 	return &service{
 		store:     store,
 		poster:    poster,
-		cacher:    NewPlaybookCacher(store),
+		cacher:    NewPlaybookCacher(store, api.Log),
 		telemetry: telemetry,
 		api:       api,
 	}
@@ -36,7 +36,7 @@ func NewService(store Store, poster bot.Poster, telemetry Telemetry, api *plugin
 
 func (s *service) Create(playbook Playbook, userID string) (string, error) {
 	playbook.CreateAt = model.GetMillis()
-	playbook.UpdatedAt = playbook.CreateAt
+	playbook.UpdateAt = playbook.CreateAt
 
 	newID, err := s.store.Create(playbook)
 	if err != nil {
@@ -70,7 +70,7 @@ func (s *service) GetNumPlaybooksForTeam(teamID string) (int, error) {
 }
 
 func (s *service) Update(playbook Playbook, userID string) error {
-	playbook.UpdatedAt = model.GetMillis()
+	playbook.UpdateAt = model.GetMillis()
 	if err := s.store.Update(playbook); err != nil {
 		return err
 	}
@@ -108,12 +108,7 @@ func (s *service) GetSuggestedPlaybooks(post *model.Post) []*CachedPlaybook {
 	}
 	teamID := channel.TeamId
 
-	if err := s.cacher.UpdatePlaybooksIfNeeded(); err != nil {
-		s.api.Log.Error("can't update playbooks", "err", err.Error())
-		return triggeredPlaybooks
-	}
 	playbooks := s.cacher.GetPlaybooks()
-
 	for i := range playbooks {
 		if playbooks[i].TeamID != teamID {
 			continue
