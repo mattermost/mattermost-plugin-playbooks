@@ -90,6 +90,7 @@ func TestGetIncidents(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc02 := *NewBuilder(nil).
@@ -99,6 +100,7 @@ func TestGetIncidents(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc03 := *NewBuilder(nil).
@@ -109,6 +111,7 @@ func TestGetIncidents(t *testing.T) {
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
 		WithCurrentStatus("Archived").
+		WithPlaybookID("playbook2").
 		ToIncident()
 
 	inc04 := *NewBuilder(nil).
@@ -771,6 +774,44 @@ func TestGetIncidents(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []incident.Incident{inc03, inc04, inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook1 - desc - admin",
+			RequesterInfo: permissions.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook1",
+				Direction:  "desc",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc02, inc01},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook2 - desc - admin",
+			RequesterInfo: permissions.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook2",
+				Direction:  "desc",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc03},
 			},
 			ExpectedErr: nil,
 		},
@@ -1801,6 +1842,12 @@ func (ib *IncidentBuilder) WithChannel(channel *model.Channel) *IncidentBuilder 
 
 	// Consider the incident name as authoritative.
 	channel.DisplayName = ib.i.Name
+
+	return ib
+}
+
+func (ib *IncidentBuilder) WithPlaybookID(id string) *IncidentBuilder {
+	ib.i.PlaybookID = id
 
 	return ib
 }
