@@ -15,16 +15,13 @@ import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
-
 import {ErrorPageTypes} from 'src/constants';
-
 import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
-
-import PlaybookIcon from '../assets/icons/playbook_icon';
-import IncidentIcon from '../assets/icons/incident_icon';
+import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
+import IncidentIcon from 'src/components/assets/icons/incident_icon';
 import IncidentBackstage
     from 'src/components/backstage/incidents/incident_backstage/incident_backstage';
-
+import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
 
 import StatsView from './stats';
@@ -68,7 +65,7 @@ export const BackstageNavbar = styled.div`
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
     font-family: 'compass-icons';
-    box-shadow: 0px 1px 0px var(--center-channel-color-16);
+    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
 
     font-family: 'Open Sans';
     font-style: normal;
@@ -192,12 +189,15 @@ const Backstage: FC = () => {
                             onClose={goToPlaybooks}
                         />
                     </Route>
-                    <Route path={`${match.url}/playbooks/:playbookId`}>
+                    <Route path={`${match.url}/playbooks/:playbookId/edit`}>
                         <PlaybookEdit
                             isNew={false}
                             currentTeam={currentTeam}
                             onClose={goToPlaybooks}
                         />
+                    </Route>
+                    <Route path={`${match.url}/playbooks/:playbookId`}>
+                        <PlaybookBackstage/>
                     </Route>
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>

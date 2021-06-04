@@ -146,6 +146,7 @@ export interface FetchIncidentsParams {
     search_term?: string;
     member_id?: string;
     disabled?: boolean;
+    playbook_id?: string;
 }
 
 export interface FetchPlaybooksParams {
