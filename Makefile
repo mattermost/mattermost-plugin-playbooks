@@ -135,7 +135,7 @@ else
 endif
 
 ## Builds and installs the plugin to a server, then starts the webpack dev server on 9005
-.PHONY: watch
+.PHONY: dev
 dev: apply server bundle
 	cd webapp && $(NPM) run dev-server
 
