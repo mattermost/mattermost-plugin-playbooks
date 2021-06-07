@@ -16,21 +16,21 @@ const (
 )
 
 type service struct {
-	store     Store
-	poster    bot.Poster
-	cacher    Cacher
-	telemetry Telemetry
-	api       *pluginapi.Client
+	store          Store
+	poster         bot.Poster
+	keywordsCacher KeywordsCacher
+	telemetry      Telemetry
+	api            *pluginapi.Client
 }
 
 // NewService returns a new playbook service
 func NewService(store Store, poster bot.Poster, telemetry Telemetry, api *pluginapi.Client) Service {
 	return &service{
-		store:     store,
-		poster:    poster,
-		cacher:    NewPlaybookCacher(store, api.Log),
-		telemetry: telemetry,
-		api:       api,
+		store:          store,
+		poster:         poster,
+		keywordsCacher: NewPlaybookKeywordsCacher(store, api.Log),
+		telemetry:      telemetry,
+		api:            api,
 	}
 }
 
@@ -108,7 +108,7 @@ func (s *service) GetSuggestedPlaybooks(post *model.Post) []*CachedPlaybook {
 	}
 	teamID := channel.TeamId
 
-	playbooks := s.cacher.GetPlaybooks()
+	playbooks := s.keywordsCacher.GetPlaybooks()
 	for i := range playbooks {
 		if playbooks[i].TeamID != teamID {
 			continue

@@ -12,22 +12,22 @@ type CachedPlaybook struct {
 	SignalAnyKeywords []string
 }
 
-type CacherImpl struct {
+type KeywordsCacherImpl struct {
 	updateAt  int64
 	playbooks []*CachedPlaybook
 	store     Store
 	logger    pluginapi.LogService
 }
 
-type Cacher interface {
+type KeywordsCacher interface {
 	GetPlaybooks() []*CachedPlaybook
 }
 
-// Ensure CacherImpl implements the Cacher interface.
-var _ Cacher = (*CacherImpl)(nil)
+// Ensure KeywordsCacherImpl implements the KeywordsCacher interface.
+var _ KeywordsCacher = (*KeywordsCacherImpl)(nil)
 
-func NewPlaybookCacher(store Store, log pluginapi.LogService) Cacher {
-	return &CacherImpl{
+func NewPlaybookKeywordsCacher(store Store, log pluginapi.LogService) KeywordsCacher {
+	return &KeywordsCacherImpl{
 		store:     store,
 		playbooks: []*CachedPlaybook{},
 		updateAt:  0,
@@ -36,7 +36,7 @@ func NewPlaybookCacher(store Store, log pluginapi.LogService) Cacher {
 }
 
 // GetPlaybooks gets cached playbooks
-func (pc *CacherImpl) GetPlaybooks() []*CachedPlaybook {
+func (pc *KeywordsCacherImpl) GetPlaybooks() []*CachedPlaybook {
 	if err := pc.updatePlaybooksIfNeeded(); err != nil {
 		pc.logger.Error("can't update playbooks", "err", err.Error())
 	}
@@ -45,7 +45,7 @@ func (pc *CacherImpl) GetPlaybooks() []*CachedPlaybook {
 }
 
 // updatePlaybooksIfNeeded caches playbooks
-func (pc *CacherImpl) updatePlaybooksIfNeeded() error {
+func (pc *KeywordsCacherImpl) updatePlaybooksIfNeeded() error {
 	lastUpdatedDB, err := pc.store.GetTimeLastUpdated(true)
 	if err != nil {
 		return errors.Wrap(err, "can't get time last updated")
@@ -58,7 +58,7 @@ func (pc *CacherImpl) updatePlaybooksIfNeeded() error {
 	return nil
 }
 
-func (pc *CacherImpl) update() error {
+func (pc *KeywordsCacherImpl) update() error {
 	playbooks, err := pc.store.GetPlaybooksWithKeywords(Options{})
 	if err != nil {
 		return errors.Wrap(err, "can't get playbooks to cache")
