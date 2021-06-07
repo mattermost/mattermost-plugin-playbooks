@@ -124,7 +124,7 @@ func (s *StatsStore) RunsFinishedBetweenDays(filters *StatsFilters, startDay, en
 	query := s.store.builder.
 		Select("COUNT(i.Id) as Count").
 		From("IR_Incident as i").
-		Where(sq.And{sq.Expr("i.EndAt > ?", startInMS), sq.Expr("i.EndAt < ?", endInMS)})
+		Where(sq.And{sq.Expr("i.EndAt > ?", startInMS), sq.Expr("i.EndAt <= ?", endInMS)})
 	query = applyFilters(query, filters)
 
 	var total int
@@ -193,11 +193,10 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 
 	for i := 0; i < x; i++ {
 		selectStatements = append(selectStatements,
-			fmt.Sprintf("SUM(CASE WHEN i.createat < %d AND "+
+			fmt.Sprintf("SUM(CASE WHEN i.createat <= %d AND "+
 				"i.createat > %d THEN 1 ELSE 0 END) week%d", endOfWeek, startOfWeek, i))
 
 		// use the middle of the day to get the date, just in case
-		// (timezones, daylight savings, who knows -- dates are annoying)
 		weekAsTime := time.Unix(0, (startOfWeek+day/2)*int64(time.Millisecond))
 		weeksAsStrings = append(weeksAsStrings, weekAsTime.Format("02 Jan"))
 
@@ -230,9 +229,9 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 		// an incident was active if it was created before the end of the day and ended after the
 		// start of the day (or still active)
 		selectStatements = append(selectStatements,
-			fmt.Sprintf("SUM(CASE WHEN i.createat < %d AND "+
-				"(i.endat > %d OR i.endat = 0) THEN 1 "+
-				"ELSE 0 END) day%d", endOfDay, startOfDay, i))
+			fmt.Sprintf(`SUM(CASE
+                                        WHEN i.createat <= %d AND (i.endat > %d OR i.endat = 0) THEN 1
+                                        ELSE 0 END) day%d`, endOfDay, startOfDay, i))
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
@@ -273,12 +272,13 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		// second two lines: a user was active in the same way--if they joined before the
 		// end of the day and left after the start of the day (or are still in the channel)
 		selectStatements = append(selectStatements,
-			fmt.Sprintf("COUNT( DISTINCT (CASE "+
-				"WHEN i.CreateAt < %d AND "+
-				"(i.EndAt > %d OR i.EndAt = 0) AND "+
-				"cmh.JoinTime < %d AND "+
-				"(cmh.LeaveTime > %d OR cmh.LeaveTime is NULL) "+
-				"THEN cmh.UserId END)) day%d", endOfDay, startOfDay, endOfDay, startOfDay, i))
+			fmt.Sprintf(`COUNT(DISTINCT
+                                       (CASE
+                                            WHEN i.CreateAt <= %d AND
+                                                 (i.EndAt > %d OR i.EndAt = 0) AND
+                                                 cmh.JoinTime <= %d AND
+                                                 (cmh.LeaveTime > %d OR cmh.LeaveTime is NULL) THEN cmh.UserId
+                                            END)) day%d`, endOfDay, startOfDay, endOfDay, startOfDay, i))
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
@@ -330,7 +330,11 @@ func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, err
 
 	counts := make([]int, x)
 	for i := 0; i < x; i++ {
-		counts[i] = int(cols[i].(int64))
+		val, ok := cols[i].(int64)
+		if !ok {
+			counts[i] = 0
+		}
+		counts[i] = int(val)
 	}
 
 	return counts, nil
