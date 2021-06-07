@@ -169,6 +169,7 @@ const WebappUtils = window.WebappUtils;
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<Playbook>({
@@ -179,7 +180,6 @@ const PlaybookEdit = (props: Props) => {
 
     const urlParams = useParams<URLParams>();
     const location = useLocation();
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -225,12 +225,6 @@ const PlaybookEdit = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const onSave = async () => {
-        await savePlaybook(setPlaybookDefaults(playbook));
-        setChangesMade(false);
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
-    };
-
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
             ...playbook,
@@ -250,6 +244,32 @@ const PlaybookEdit = (props: Props) => {
             title,
         });
         setChangesMade(true);
+    };
+
+    const onSave = async () => {
+        const data = await savePlaybook(setPlaybookDefaults(playbook));
+        onClose(data?.id);
+    };
+
+    const confirmOrClose = () => {
+        if (changesMade) {
+            setConfirmOpen(true);
+        } else {
+            onClose();
+        }
+    };
+
+    const confirmCancel = () => {
+        setConfirmOpen(false);
+    };
+
+    const onClose = (id?: string) => {
+        const playbookId = urlParams.playbookId || id;
+        if (playbookId) {
+            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
+        } else {
+            navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
+        }
     };
 
     const handlePublicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -432,11 +452,6 @@ const PlaybookEdit = (props: Props) => {
             <BackstageNavbar
                 data-testid='backstage-nav-bar'
             >
-                <BackstageNavbarIcon
-                    data-testid='icon-arrow-left'
-                    className='icon-arrow-left back-icon'
-                    onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                />
                 <EditableTexts>
                     <EditableTitleContainer>
                         <EditableText
@@ -455,6 +470,13 @@ const PlaybookEdit = (props: Props) => {
                 >
                     <span>
                         {'Save'}
+                    </span>
+                </PrimaryButton>
+                <PrimaryButton
+                    onClick={confirmOrClose}
+                >
+                    <span>
+                        {'Cancel'}
                     </span>
                 </PrimaryButton>
             </BackstageNavbar>
