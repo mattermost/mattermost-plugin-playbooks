@@ -385,30 +385,11 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             final_keywords = [...unique_keywords, typingKeyword];
         }
 
-        if (!hasSameElements(playbook.signal_any_keywords, final_keywords)) {
-            setPlaybook({
-                ...playbook,
-                signal_any_keywords: [...final_keywords],
-            });
-            setChangesMade(true);
-        }
-    };
-
-    const hasSameElements = (a: string[], b: string[]) => {
-        const setA = new Set(a);
-        const setB = new Set(b);
-
-        if (setA.size !== setB.size) {
-            return false;
-        }
-
-        for (const item of setA) {
-            if (!setB.has(item)) {
-                return false;
-            }
-        }
-
-        return true;
+        setPlaybook({
+            ...playbook,
+            signal_any_keywords: [...final_keywords],
+        });
+        setChangesMade(true);
     };
 
     const handleToggleSignalAnyKeywords = () => {
