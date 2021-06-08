@@ -170,7 +170,6 @@ func TestGetIncidents(t *testing.T) {
 		ToIncident()
 
 	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
-	finishedIncidentNum := []int{2, 3}
 
 	createIncidents := func(store *SQLStore, incidentStore incident.Store) {
 		t.Helper()
@@ -182,15 +181,6 @@ func TestGetIncidents(t *testing.T) {
 			require.NoError(t, err)
 
 			createdIncidents[i] = *createdIncident
-		}
-
-		for _, i := range finishedIncidentNum {
-			err := incidentStore.UpdateStatus(&incident.SQLStatusPost{
-				IncidentID: createdIncidents[i].ID,
-				PostID:     model.NewId(),
-				Status:     incident.StatusArchived,
-			})
-			require.NoError(t, err)
 		}
 	}
 
@@ -1833,6 +1823,10 @@ func (ib *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
 
 func (ib *IncidentBuilder) WithCurrentStatus(status string) *IncidentBuilder {
 	ib.i.CurrentStatus = status
+
+	if status == "Resolved" || status == "Archived" {
+		ib.i.EndAt = ib.i.CreateAt + 100
+	}
 
 	return ib
 }
