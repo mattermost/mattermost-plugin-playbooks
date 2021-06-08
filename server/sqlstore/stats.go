@@ -123,7 +123,10 @@ func (s *StatsStore) RunsFinishedBetweenDays(filters *StatsFilters, startDay, en
 	query := s.store.builder.
 		Select("COUNT(i.Id) as Count").
 		From("IR_Incident as i").
-		Where(sq.And{sq.Expr("i.EndAt > ?", startInMS), sq.Expr("i.EndAt <= ?", endInMS)})
+		Where(sq.And{
+			sq.Expr("i.EndAt > ?", startInMS),
+			sq.Expr("i.EndAt <= ?", endInMS),
+		})
 	query = applyFilters(query, filters)
 
 	var total int
