@@ -193,8 +193,13 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 
 	for i := 0; i < x; i++ {
 		selectStatements = append(selectStatements,
-			fmt.Sprintf("SUM(CASE WHEN i.createat <= %d AND "+
-				"i.createat > %d THEN 1 ELSE 0 END) week%d", endOfWeek, startOfWeek, i))
+			fmt.Sprintf(`
+                SUM(CASE
+                        WHEN i.createat <= %d AND i.createat > %d
+                            THEN 1
+                        ELSE 0
+                    END) week%d
+                 `, endOfWeek, startOfWeek, i))
 
 		// use the middle of the day to get the date, just in case
 		weekAsTime := time.Unix(0, (startOfWeek+day/2)*int64(time.Millisecond))
@@ -229,9 +234,13 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 		// an incident was active if it was created before the end of the day and ended after the
 		// start of the day (or still active)
 		selectStatements = append(selectStatements,
-			fmt.Sprintf(`SUM(CASE
-                                        WHEN i.createat <= %d AND (i.endat > %d OR i.endat = 0) THEN 1
-                                        ELSE 0 END) day%d`, endOfDay, startOfDay, i))
+			fmt.Sprintf(`
+                SUM(CASE
+                        WHEN i.createat <= %d AND (i.endat > %d OR i.endat = 0)
+                            THEN 1
+                        ELSE 0
+                    END) day%d
+                `, endOfDay, startOfDay, i))
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
@@ -272,13 +281,16 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		// second two lines: a user was active in the same way--if they joined before the
 		// end of the day and left after the start of the day (or are still in the channel)
 		selectStatements = append(selectStatements,
-			fmt.Sprintf(`COUNT(DISTINCT
-                                       (CASE
-                                            WHEN i.CreateAt <= %d AND
-                                                 (i.EndAt > %d OR i.EndAt = 0) AND
-                                                 cmh.JoinTime <= %d AND
-                                                 (cmh.LeaveTime > %d OR cmh.LeaveTime is NULL) THEN cmh.UserId
-                                            END)) day%d`, endOfDay, startOfDay, endOfDay, startOfDay, i))
+			fmt.Sprintf(`
+                COUNT(DISTINCT
+                      (CASE
+                           WHEN i.CreateAt <= %d AND
+                                (i.EndAt > %d OR i.EndAt = 0) AND
+                                cmh.JoinTime <= %d AND
+                                (cmh.LeaveTime > %d OR cmh.LeaveTime is NULL)
+                               THEN cmh.UserId
+                      END)) day%d
+                `, endOfDay, startOfDay, endOfDay, startOfDay, i))
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
