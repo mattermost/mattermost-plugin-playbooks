@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -188,18 +187,17 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 	week := day * 7
 	startOfWeek := beginningOfTodayMillis() - week
 	endOfWeek := endOfTodayMillis()
-	var selectStatements []string
 	var weeksAsStrings []string
 
+	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
-		selectStatements = append(selectStatements,
-			fmt.Sprintf(`
+		q = q.Column(`
                 SUM(CASE
-                        WHEN i.createat <= %d AND i.createat > %d
+                        WHEN i.CreateAt <= ? AND i.CreateAt > ?
                             THEN 1
                         ELSE 0
-                    END) week%d
-                 `, endOfWeek, startOfWeek, i))
+                    END)
+                 `, endOfWeek, startOfWeek)
 
 		// use the middle of the day to get the date, just in case
 		weekAsTime := time.Unix(0, (startOfWeek+day/2)*int64(time.Millisecond))
@@ -209,14 +207,12 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 		startOfWeek -= week
 	}
 
-	q := s.store.builder.
-		Select(strings.Join(selectStatements, ", ")).
-		From("IR_Incident as i")
+	q = q.From("IR_Incident as i")
 	q = applyFilters(q, filters)
 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
-		s.log.Warnf("failed to perform query: %w", err)
+		s.log.Warnf("failed to perform query: %v", err)
 		return []int{}, []string{}
 	}
 
@@ -227,20 +223,19 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
 	day := int64(86400000)
-	var selectStatements []string
 	var daysAsStrings []string
 
+	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
 		// an incident was active if it was created before the end of the day and ended after the
 		// start of the day (or still active)
-		selectStatements = append(selectStatements,
-			fmt.Sprintf(`
+		q = q.Column(`
                 SUM(CASE
-                        WHEN i.createat <= %d AND (i.endat > %d OR i.endat = 0)
+                        WHEN i.CreateAt <= ? AND (i.EndAt > ? OR i.EndAt = 0)
                             THEN 1
                         ELSE 0
-                    END) day%d
-                `, endOfDay, startOfDay, i))
+                    END)
+                `, endOfDay, startOfDay)
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
@@ -250,14 +245,12 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 		startOfDay -= day
 	}
 
-	q := s.store.builder.
-		Select(strings.Join(selectStatements, ", ")).
-		From("IR_Incident as i")
+	q = q.From("IR_Incident as i")
 	q = applyFilters(q, filters)
 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
-		s.log.Warnf("failed to perform query: %w", err)
+		s.log.Warnf("failed to perform query: %v", err)
 		return []int{}, []string{}
 	}
 
@@ -268,9 +261,9 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
 	day := int64(86400000)
-	var selectStatements []string
 	var daysAsStrings []string
 
+	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
 		// COUNT( DISTINCT( CASE: the CASE will return the userId if the row satisfies the conditions,
 		// therefore COUNT( DISTINCT will return the number of unique userIds
@@ -280,17 +273,16 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		//
 		// second two lines: a user was active in the same way--if they joined before the
 		// end of the day and left after the start of the day (or are still in the channel)
-		selectStatements = append(selectStatements,
-			fmt.Sprintf(`
+		q = q.Column(`
                 COUNT(DISTINCT
                       (CASE
-                           WHEN i.CreateAt <= %d AND
-                                (i.EndAt > %d OR i.EndAt = 0) AND
-                                cmh.JoinTime <= %d AND
-                                (cmh.LeaveTime > %d OR cmh.LeaveTime is NULL)
+                           WHEN i.CreateAt <= ? AND
+                                (i.EndAt > ? OR i.EndAt = 0) AND
+                                cmh.JoinTime <= ? AND
+                                (cmh.LeaveTime > ? OR cmh.LeaveTime is NULL)
                                THEN cmh.UserId
-                      END)) day%d
-                `, endOfDay, startOfDay, endOfDay, startOfDay, i))
+                      END))
+                `, endOfDay, startOfDay, endOfDay, startOfDay)
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
@@ -300,15 +292,14 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		startOfDay -= day
 	}
 
-	q := s.store.builder.
-		Select(strings.Join(selectStatements, ", ")).
+	q = q.
 		From("IR_Incident as i").
 		InnerJoin("ChannelMemberHistory as cmh ON i.ChannelId = cmh.ChannelId")
 	q = applyFilters(q, filters)
 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
-		s.log.Warnf("failed to perform query: %w", err)
+		s.log.Warnf("failed to perform query: %v", err)
 		return []int{}, []string{}
 	}
 
