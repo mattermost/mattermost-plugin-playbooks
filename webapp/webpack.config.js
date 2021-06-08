@@ -1,8 +1,8 @@
 const exec = require('child_process').exec;
 
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
-
 const path = require('path');
+
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
 const PLUGIN_ID = require('../plugin.json').id;
 
@@ -105,7 +105,6 @@ let config = {
 if (targetIsDevServer) {
     config = {
         ...config,
-        devtool: 'eval-cheap-module-source-map',
         devServer: {
             hot: true,
             injectHot: true,

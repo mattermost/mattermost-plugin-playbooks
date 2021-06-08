@@ -136,7 +136,7 @@ endif
 
 ## Builds and installs the plugin to a server, then starts the webpack dev server on 9005
 .PHONY: dev
-dev: apply server bundle
+dev: apply server bundle webapp/node_modules
 	cd webapp && $(NPM) run dev-server
 
 ## Installs a previous built plugin with updated webpack assets to a server.
