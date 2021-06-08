@@ -529,13 +529,13 @@ func (s *StatsStore) AverageStartToResolved(filters *StatsFilters) []int {
 }
 
 func beginningOfTodayMillis() int64 {
-	year, month, day := time.Now().Date()
-	bod := time.Date(year, month, day, 0, 0, 0, 0, time.Now().Location())
+	year, month, day := time.Now().UTC().Date()
+	bod := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 	return bod.UnixNano() / int64(time.Millisecond)
 }
 
 func endOfTodayMillis() int64 {
-	year, month, day := time.Now().Add(24 * time.Hour).Date()
-	bod := time.Date(year, month, day, 0, 0, 0, 0, time.Now().Location())
+	year, month, day := time.Now().UTC().Add(24 * time.Hour).Date()
+	bod := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 	return bod.UnixNano() / int64(time.Millisecond)
 }
