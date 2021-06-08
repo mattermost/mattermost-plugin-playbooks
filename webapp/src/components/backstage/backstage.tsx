@@ -33,6 +33,8 @@ import SettingsView from './settings';
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
 `;
 
@@ -102,7 +104,7 @@ const BackstageTitlebarItem = styled(NavLink)`
 
 const BackstageBody = styled.div`
     z-index: 1;
-    margin: 0 auto;
+    flex-grow: 1;
 `;
 
 const Backstage = () => {
