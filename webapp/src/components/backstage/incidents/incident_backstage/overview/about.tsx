@@ -44,10 +44,10 @@ const About = (props: { incident: Incident }) => {
             <Title>{'About'}</Title>
             <StyledContent>
                 <Grid>
-                    <ColTitle>{'Commander'}</ColTitle>
+                    <ColTitle>{'Owner'}</ColTitle>
                     <ColTitle>{'Duration'}</ColTitle>
                     <ColItem>
-                        <SmallProfile userId={props.incident.commander_user_id}/>
+                        <SmallProfile userId={props.incident.owner_user_id}/>
                     </ColItem>
                     <ColItem>
                         <Duration

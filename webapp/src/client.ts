@@ -13,7 +13,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
-import {CommanderInfo} from 'src/types/backstage';
+import {OwnerInfo} from 'src/types/backstage';
 import {
     FetchIncidentsParams,
     FetchPlaybooksParams,
@@ -192,20 +192,20 @@ export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInTeam(teamId, 0, 200);
 }
 
-export async function fetchCommandersInTeam(teamId: string): Promise<CommanderInfo[]> {
+export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
     const queryParams = qs.stringify({team_id: teamId}, {addQueryPrefix: true});
 
-    let data = await doGet(`${apiUrl}/incidents/commanders${queryParams}`);
+    let data = await doGet(`${apiUrl}/incidents/owners${queryParams}`);
     if (!data) {
         data = [];
     }
-    return data as CommanderInfo[];
+    return data as OwnerInfo[];
 }
 
-export async function setCommander(incidentId: string, commanderId: string) {
-    const body = `{"commander_id": "${commanderId}"}`;
+export async function setOwner(incidentId: string, ownerId: string) {
+    const body = `{"owner_id": "${ownerId}"}`;
     try {
-        const data = await doPost(`${apiUrl}/incidents/${incidentId}/commander`, body);
+        const data = await doPost(`${apiUrl}/incidents/${incidentId}/owner`, body);
         return data;
     } catch (error) {
         return {error};

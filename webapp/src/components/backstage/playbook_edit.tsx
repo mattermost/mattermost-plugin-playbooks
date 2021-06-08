@@ -304,11 +304,11 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleAssignDefaultCommander = (userId: string | undefined) => {
-        if ((userId || userId === '') && playbook.default_commander_id !== userId) {
+    const handleAssignDefaultOwner = (userId: string | undefined) => {
+        if ((userId || userId === '') && playbook.default_owner_id !== userId) {
             setPlaybook({
                 ...playbook,
-                default_commander_id: userId,
+                default_owner_id: userId,
             });
             setChangesMade(true);
         }
@@ -370,10 +370,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleDefaultCommander = () => {
+    const handleToggleDefaultOwner = () => {
         setPlaybook({
             ...playbook,
-            default_commander_enabled: !playbook.default_commander_enabled,
+            default_owner_enabled: !playbook.default_owner_enabled,
         });
         setChangesMade(true);
     };
@@ -501,7 +501,7 @@ const PlaybookEdit = (props: Props) => {
                                     <BackstageSubheader>
                                         {'Reminder Timer'}
                                         <BackstageSubheaderDescription>
-                                            {'Prompts the commander at a specified interval to update the status of the Incident.'}
+                                            {'Prompts the owner at a specified interval to update the status of the Incident.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledSelect
@@ -610,10 +610,10 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleInviteUsers={handleToggleInviteUsers}
                                     onAddUser={handleAddUserInvited}
                                     onRemoveUser={handleRemoveUserInvited}
-                                    defaultCommanderEnabled={playbook.default_commander_enabled}
-                                    defaultCommanderID={playbook.default_commander_id}
-                                    onToggleDefaultCommander={handleToggleDefaultCommander}
-                                    onAssignCommander={handleAssignDefaultCommander}
+                                    defaultOwnerEnabled={playbook.default_owner_enabled}
+                                    defaultOwnerID={playbook.default_owner_id}
+                                    onToggleDefaultOwner={handleToggleDefaultOwner}
+                                    onAssignOwner={handleAssignDefaultOwner}
                                     teamID={playbook.team_id}
                                     announcementChannelID={playbook.announcement_channel_id}
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}

@@ -27,7 +27,7 @@ describe('backstage', () => {
                         teamId: team.id,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: user.id,
+                        ownerUserId: user.id,
                     });
                 });
             });

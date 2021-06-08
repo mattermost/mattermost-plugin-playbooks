@@ -5,13 +5,14 @@
 package mock_incident
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	permissions "github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 	playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	model "github.com/mattermost/mattermost-server/v5/model"
-	reflect "reflect"
-	time "time"
 )
 
 // MockService is a mock of Service interface
@@ -79,18 +80,18 @@ func (mr *MockServiceMockRecorder) CancelRetrospective(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelRetrospective", reflect.TypeOf((*MockService)(nil).CancelRetrospective), arg0, arg1)
 }
 
-// ChangeCommander mocks base method
-func (m *MockService) ChangeCommander(arg0, arg1, arg2 string) error {
+// ChangeOwner mocks base method
+func (m *MockService) ChangeOwner(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeCommander", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ChangeOwner", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ChangeCommander indicates an expected call of ChangeCommander
-func (mr *MockServiceMockRecorder) ChangeCommander(arg0, arg1, arg2 interface{}) *gomock.Call {
+// ChangeOwner indicates an expected call of ChangeOwner
+func (mr *MockServiceMockRecorder) ChangeOwner(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeCommander", reflect.TypeOf((*MockService)(nil).ChangeCommander), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeOwner", reflect.TypeOf((*MockService)(nil).ChangeOwner), arg0, arg1, arg2)
 }
 
 // ChangeCreationDate mocks base method
@@ -180,19 +181,19 @@ func (mr *MockServiceMockRecorder) GetChecklistItemAutocomplete(arg0 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistItemAutocomplete", reflect.TypeOf((*MockService)(nil).GetChecklistItemAutocomplete), arg0)
 }
 
-// GetCommanders mocks base method
-func (m *MockService) GetCommanders(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
+// GetOwners mocks base method
+func (m *MockService) GetOwners(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) ([]incident.OwnerInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
-	ret0, _ := ret[0].([]incident.CommanderInfo)
+	ret := m.ctrl.Call(m, "GetOwners", arg0, arg1)
+	ret0, _ := ret[0].([]incident.OwnerInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCommanders indicates an expected call of GetCommanders
-func (mr *MockServiceMockRecorder) GetCommanders(arg0, arg1 interface{}) *gomock.Call {
+// GetOwners indicates an expected call of GetOwners
+func (mr *MockServiceMockRecorder) GetOwners(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommanders", reflect.TypeOf((*MockService)(nil).GetCommanders), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwners", reflect.TypeOf((*MockService)(nil).GetOwners), arg0, arg1)
 }
 
 // GetIncident mocks base method
@@ -267,18 +268,18 @@ func (mr *MockServiceMockRecorder) HandleReminder(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReminder", reflect.TypeOf((*MockService)(nil).HandleReminder), arg0)
 }
 
-// IsCommander mocks base method
-func (m *MockService) IsCommander(arg0, arg1 string) bool {
+// IsOwner mocks base method
+func (m *MockService) IsOwner(arg0, arg1 string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsCommander", arg0, arg1)
+	ret := m.ctrl.Call(m, "IsOwner", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsCommander indicates an expected call of IsCommander
-func (mr *MockServiceMockRecorder) IsCommander(arg0, arg1 interface{}) *gomock.Call {
+// IsOwner indicates an expected call of IsOwner
+func (mr *MockServiceMockRecorder) IsOwner(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCommander", reflect.TypeOf((*MockService)(nil).IsCommander), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsOwner", reflect.TypeOf((*MockService)(nil).IsOwner), arg0, arg1)
 }
 
 // ModifyCheckedState mocks base method

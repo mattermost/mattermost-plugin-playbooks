@@ -105,11 +105,11 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			PlaybookID:  withid.ID,
+			Checklists:  withid.Checklists,
 		}
 
 		incidentJSON, err := json.Marshal(testIncident)
@@ -158,7 +158,7 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			CommanderUserID: dialogRequest.UserId,
+			OwnerUserID:     dialogRequest.UserId,
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
 			PlaybookID:      "playbookid1",
@@ -218,7 +218,7 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			CommanderUserID: dialogRequest.UserId,
+			OwnerUserID:     dialogRequest.UserId,
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
 			Description:     "description",
@@ -278,11 +278,11 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			CommanderUserID: dialogRequest.UserId,
-			TeamID:          dialogRequest.TeamId,
-			Name:            "incidentName",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
+			OwnerUserID: dialogRequest.UserId,
+			TeamID:      dialogRequest.TeamId,
+			Name:        "incidentName",
+			PlaybookID:  withid.ID,
+			Checklists:  withid.Checklists,
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -344,11 +344,11 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			CommanderUserID: dialogRequest.UserId,
-			TeamID:          dialogRequest.TeamId,
-			Name:            "incidentName",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
+			OwnerUserID: dialogRequest.UserId,
+			TeamID:      dialogRequest.TeamId,
+			Name:        "incidentName",
+			PlaybookID:  withid.ID,
+			Checklists:  withid.Checklists,
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -411,11 +411,11 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		i := incident.Incident{
-			CommanderUserID: dialogRequest.UserId,
-			TeamID:          dialogRequest.TeamId,
-			Name:            "incidentName",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
+			OwnerUserID: dialogRequest.UserId,
+			TeamID:      dialogRequest.TeamId,
+			Name:        "incidentName",
+			PlaybookID:  withid.ID,
+			Checklists:  withid.Checklists,
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -586,7 +586,7 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			Description:     "description",
@@ -614,11 +614,11 @@ func TestIncidents(t *testing.T) {
 			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
-			Name:            testIncident.Name,
-			CommanderUserID: testIncident.CommanderUserID,
-			TeamID:          testIncident.TeamID,
-			Description:     testIncident.Description,
-			PlaybookID:      testIncident.PlaybookID,
+			Name:        testIncident.Name,
+			OwnerUserID: testIncident.OwnerUserID,
+			TeamID:      testIncident.TeamID,
+			Description: testIncident.Description,
+			PlaybookID:  testIncident.PlaybookID,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultIncident.ID)
@@ -641,7 +641,7 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			Description:     "description",
@@ -669,11 +669,11 @@ func TestIncidents(t *testing.T) {
 			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
-			Name:            testIncident.Name,
-			CommanderUserID: testIncident.CommanderUserID,
-			TeamID:          testIncident.TeamID,
-			Description:     testIncident.Description,
-			PlaybookID:      testIncident.PlaybookID,
+			Name:        testIncident.Name,
+			OwnerUserID: testIncident.OwnerUserID,
+			TeamID:      testIncident.TeamID,
+			Description: testIncident.Description,
+			PlaybookID:  testIncident.PlaybookID,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultIncident.ID)
@@ -684,9 +684,9 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
 		}
 
 		retI := testIncident
@@ -702,15 +702,15 @@ func TestIncidents(t *testing.T) {
 			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
-			Name:            testIncident.Name,
-			CommanderUserID: testIncident.CommanderUserID,
-			TeamID:          testIncident.TeamID,
+			Name:        testIncident.Name,
+			OwnerUserID: testIncident.OwnerUserID,
+			TeamID:      testIncident.TeamID,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultIncident.ID)
 	})
 
-	t.Run("create invalid incident - missing commander", func(t *testing.T) {
+	t.Run("create invalid incident - missing owner", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
@@ -738,15 +738,15 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
-			Name:            "incidentName",
+			OwnerUserID: "testUserID",
+			Name:        "incidentName",
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
-			Name:            testIncident.Name,
-			CommanderUserID: testIncident.CommanderUserID,
+			Name:        testIncident.Name,
+			OwnerUserID: testIncident.OwnerUserID,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 		require.Nil(t, resultIncident)
@@ -758,8 +758,8 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
@@ -767,9 +767,9 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
-			Name:            "",
-			TeamID:          testIncident.TeamID,
-			CommanderUserID: testIncident.CommanderUserID,
+			Name:        "",
+			TeamID:      testIncident.TeamID,
+			OwnerUserID: testIncident.OwnerUserID,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 		require.Nil(t, resultIncident)
@@ -810,7 +810,7 @@ func TestIncidents(t *testing.T) {
 		}
 
 		testIncident := incident.Incident{
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			Description:     "description",
@@ -838,11 +838,11 @@ func TestIncidents(t *testing.T) {
 			PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
-			Name:            testIncident.Name,
-			CommanderUserID: testIncident.CommanderUserID,
-			TeamID:          testIncident.TeamID,
-			Description:     testIncident.Description,
-			PlaybookID:      testIncident.PlaybookID,
+			Name:        testIncident.Name,
+			OwnerUserID: testIncident.OwnerUserID,
+			TeamID:      testIncident.TeamID,
+			Description: testIncident.Description,
+			PlaybookID:  testIncident.PlaybookID,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultIncident.ID)
@@ -854,7 +854,7 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
@@ -884,11 +884,11 @@ func TestIncidents(t *testing.T) {
 		userID := "testUserID"
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -909,11 +909,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -934,14 +934,14 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
-			Checklists:      nil,
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
+			PostID:      "",
+			PlaybookID:  "",
+			Checklists:  nil,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -967,7 +967,7 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
@@ -1003,7 +1003,7 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
@@ -1039,7 +1039,7 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
@@ -1077,7 +1077,7 @@ func TestIncidents(t *testing.T) {
 
 		testIncident := incident.Incident{
 			ID:              "incidentID",
-			CommanderUserID: "testUserID",
+			OwnerUserID:     "testUserID",
 			TeamID:          "testTeamID",
 			Name:            "incidentName",
 			ChannelID:       "channelID",
@@ -1112,14 +1112,14 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
-			Checklists:      nil,
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
+			PostID:      "",
+			PlaybookID:  "",
+			Checklists:  nil,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1144,14 +1144,14 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
-			Checklists:      []playbook.Checklist{},
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
+			PostID:      "",
+			PlaybookID:  "",
+			Checklists:  []playbook.Checklist{},
 		}
 
 		testIncidentMetadata := incident.Metadata{
@@ -1188,14 +1188,14 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
-			Checklists:      nil,
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
+			PostID:      "",
+			PlaybookID:  "",
+			Checklists:  nil,
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1222,14 +1222,14 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
-			Checklists:      []playbook.Checklist{},
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
+			PostID:      "",
+			PlaybookID:  "",
+			Checklists:  []playbook.Checklist{},
 		}
 
 		testIncidentMetadata := incident.Metadata{
@@ -1268,14 +1268,14 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
-			Checklists:      []playbook.Checklist{},
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
+			PostID:      "",
+			PlaybookID:  "",
+			Checklists:  []playbook.Checklist{},
 		}
 
 		testIncidentMetadata := incident.Metadata{
@@ -1313,7 +1313,7 @@ func TestIncidents(t *testing.T) {
 
 		incident1 := incident.Incident{
 			ID:              "incidentID1",
-			CommanderUserID: "testUserID1",
+			OwnerUserID:     "testUserID1",
 			TeamID:          "testTeamID1",
 			Name:            "incidentName1",
 			ChannelID:       "channelID1",
@@ -1394,11 +1394,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
@@ -1423,11 +1423,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
@@ -1454,11 +1454,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
@@ -1477,11 +1477,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
@@ -1500,11 +1500,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
@@ -1523,11 +1523,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)
@@ -1546,11 +1546,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		testIncident := incident.Incident{
-			ID:              "incidentID",
-			CommanderUserID: "testUserID",
-			TeamID:          "testTeamID",
-			Name:            "incidentName",
-			ChannelID:       "channelID",
+			ID:          "incidentID",
+			OwnerUserID: "testUserID",
+			TeamID:      "testTeamID",
+			Name:        "incidentName",
+			ChannelID:   "channelID",
 		}
 
 		incidentService.EXPECT().GetIncidentIDForChannel(testIncident.ChannelID).Return(testIncident.ID, nil)

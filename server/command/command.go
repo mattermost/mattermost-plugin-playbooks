@@ -29,7 +29,7 @@ const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Comman
 	"* `/incident check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/incident checkadd [checklist #] [item text]` - add a checklist item. \n" +
 	"* `/incident checkremove [checklist #] [item #]` - remove a checklist item. \n" +
-	"* `/incident commander [@username]` - Show or change the current commander. \n" +
+	"* `/incident owner [@username]` - Show or change the current owner. \n" +
 	"* `/incident announce ~[channels]` - Announce the current incident in other channels. \n" +
 	"* `/incident list` - List all your incidents. \n" +
 	"* `/incident info` - Show a summary of the current incident. \n" +
@@ -54,7 +54,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Incident",
 		Description:      "Incident Collaboration Plugin",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, update, restart, check, announce, list, commander, info",
+		AutoCompleteDesc: "Available commands: start, end, update, restart, check, announce, list, owner, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -62,7 +62,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	slashIncident := model.NewAutocompleteData("incident", "[command]",
-		"Available commands: start, end, update, restart, check, checkadd, checkremove, announce, list, commander, info, timeline")
+		"Available commands: start, end, update, restart, check, checkadd, checkremove, announce, list, owner, info, timeline")
 
 	start := model.NewAutocompleteData("start", "", "Starts a new incident")
 	slashIncident.AddCommand(start)
@@ -110,10 +110,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	list := model.NewAutocompleteData("list", "", "Lists all your incidents")
 	slashIncident.AddCommand(list)
 
-	commander := model.NewAutocompleteData("commander", "[@username]",
-		"Show or change the current commander")
-	commander.AddTextArgument("The desired new commander.", "[@username]", "")
-	slashIncident.AddCommand(commander)
+	owner := model.NewAutocompleteData("owner", "[@username]",
+		"Show or change the current owner")
+	owner.AddTextArgument("The desired new owner.", "[@username]", "")
+	slashIncident.AddCommand(owner)
 
 	info := model.NewAutocompleteData("info", "", "Shows a summary of the current incident")
 	slashIncident.AddCommand(info)
@@ -348,21 +348,21 @@ func (r *Runner) actionRemoveChecklistItem(args []string) {
 	}
 }
 
-func (r *Runner) actionCommander(args []string) {
+func (r *Runner) actionOwner(args []string) {
 	switch len(args) {
 	case 0:
-		r.actionShowCommander(args)
+		r.actionShowOwner(args)
 	case 1:
-		r.actionChangeCommander(args)
+		r.actionChangeOwner(args)
 	default:
-		r.postCommandResponse("/incident commander expects at most one argument.")
+		r.postCommandResponse("/incident owner expects at most one argument.")
 	}
 }
 
-func (r *Runner) actionShowCommander([]string) {
+func (r *Runner) actionShowOwner([]string) {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if errors.Is(err, incident.ErrNotFound) {
-		r.postCommandResponse("You can only see the commander from within the incident's channel.")
+		r.postCommandResponse("You can only see the owner from within the incident's channel.")
 		return
 	} else if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
@@ -375,21 +375,21 @@ func (r *Runner) actionShowCommander([]string) {
 		return
 	}
 
-	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
+	ownerUser, err := r.pluginAPI.User.Get(currentIncident.OwnerUserID)
 	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
+		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
 		return
 	}
 
-	r.postCommandResponse(fmt.Sprintf("**@%s** is the current commander for this incident.", commanderUser.Username))
+	r.postCommandResponse(fmt.Sprintf("**@%s** is the current owner for this incident.", ownerUser.Username))
 }
 
-func (r *Runner) actionChangeCommander(args []string) {
-	targetCommanderUsername := strings.TrimLeft(args[0], "@")
+func (r *Runner) actionChangeOwner(args []string) {
+	targetOwnerUsername := strings.TrimLeft(args[0], "@")
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if errors.Is(err, incident.ErrNotFound) {
-		r.postCommandResponse("You can only change the commander from within the incident's channel.")
+		r.postCommandResponse("You can only change the owner from within the incident's channel.")
 		return
 	} else if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving incident for channel %s: %v", r.args.ChannelId, err)
@@ -402,32 +402,32 @@ func (r *Runner) actionChangeCommander(args []string) {
 		return
 	}
 
-	targetCommanderUser, err := r.pluginAPI.User.GetByUsername(targetCommanderUsername)
+	targetOwnerUser, err := r.pluginAPI.User.GetByUsername(targetOwnerUsername)
 	if errors.Is(err, pluginapi.ErrNotFound) {
-		r.postCommandResponse(fmt.Sprintf("Unable to find user @%s", targetCommanderUsername))
+		r.postCommandResponse(fmt.Sprintf("Unable to find user @%s", targetOwnerUsername))
 		return
 	} else if err != nil {
-		r.warnUserAndLogErrorf("Error finding user @%s: %v", targetCommanderUsername, err)
+		r.warnUserAndLogErrorf("Error finding user @%s: %v", targetOwnerUsername, err)
 		return
 	}
 
-	if currentIncident.CommanderUserID == targetCommanderUser.Id {
-		r.postCommandResponse(fmt.Sprintf("User @%s is already commander of this incident.", targetCommanderUsername))
+	if currentIncident.OwnerUserID == targetOwnerUser.Id {
+		r.postCommandResponse(fmt.Sprintf("User @%s is already owner of this incident.", targetOwnerUsername))
 		return
 	}
 
-	_, err = r.pluginAPI.Channel.GetMember(r.args.ChannelId, targetCommanderUser.Id)
+	_, err = r.pluginAPI.Channel.GetMember(r.args.ChannelId, targetOwnerUser.Id)
 	if errors.Is(err, pluginapi.ErrNotFound) {
-		r.postCommandResponse(fmt.Sprintf("User @%s must be part of this channel to make them commander.", targetCommanderUsername))
+		r.postCommandResponse(fmt.Sprintf("User @%s must be part of this channel to make them owner.", targetOwnerUsername))
 		return
 	} else if err != nil {
-		r.warnUserAndLogErrorf("Failed to find user @%s as channel member: %v", targetCommanderUsername, err)
+		r.warnUserAndLogErrorf("Failed to find user @%s as channel member: %v", targetOwnerUsername, err)
 		return
 	}
 
-	err = r.incidentService.ChangeCommander(currentIncident.ID, r.args.UserId, targetCommanderUser.Id)
+	err = r.incidentService.ChangeOwner(currentIncident.ID, r.args.UserId, targetOwnerUser.Id)
 	if err != nil {
-		r.warnUserAndLogErrorf("Failed to change commander to @%s: %v", targetCommanderUsername, err)
+		r.warnUserAndLogErrorf("Failed to change owner to @%s: %v", targetOwnerUsername, err)
 		return
 	}
 }
@@ -454,9 +454,9 @@ func (r *Runner) actionAnnounce(args []string) {
 		return
 	}
 
-	commanderUser, err := r.pluginAPI.User.Get(currentIncident.CommanderUserID)
+	ownerUser, err := r.pluginAPI.User.Get(currentIncident.OwnerUserID)
 	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
+		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
 		return
 	}
 
@@ -477,7 +477,7 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("Cannot post to: " + channelarg)
 			continue
 		}
-		if err := r.announceChannel(targetChannel.Id, commanderUser.Username, incidentChannel.Name); err != nil {
+		if err := r.announceChannel(targetChannel.Id, ownerUser.Username, incidentChannel.Name); err != nil {
 			r.postCommandResponse("Error announcing to: " + channelarg)
 		}
 	}
@@ -531,9 +531,9 @@ func (r *Runner) actionList() {
 	now := time.Now()
 	attachments := make([]*model.SlackAttachment, len(result.Items))
 	for i, theIncident := range result.Items {
-		commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
+		owner, err := r.pluginAPI.User.Get(theIncident.OwnerUserID)
 		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving commander of incident '%s': %v", theIncident.Name, err)
+			r.warnUserAndLogErrorf("Error retrieving owner of incident '%s': %v", theIncident.Name, err)
 			return
 		}
 
@@ -547,7 +547,7 @@ func (r *Runner) actionList() {
 			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
 				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), now)},
-				{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
+				{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
 			},
 		}
 	}
@@ -589,9 +589,9 @@ func (r *Runner) actionInfo() {
 		return
 	}
 
-	commander, err := r.pluginAPI.User.Get(theIncident.CommanderUserID)
+	owner, err := r.pluginAPI.User.Get(theIncident.OwnerUserID)
 	if err != nil {
-		r.warnUserAndLogErrorf("Error retrieving commander user: %v", err)
+		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
 		return
 	}
 
@@ -612,7 +612,7 @@ func (r *Runner) actionInfo() {
 		Fields: []*model.SlackAttachmentField{
 			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
 			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())},
-			{Title: "Commander:", Value: fmt.Sprintf("@%s", commander.Username)},
+			{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
 			{Title: "Tasks:", Value: tasks},
 		},
 	}
@@ -625,8 +625,8 @@ func (r *Runner) actionInfo() {
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
-func (r *Runner) announceChannel(targetChannelID, commanderUsername, incidentChannelName string) error {
-	if _, err := r.poster.PostMessage(targetChannelID, "@%v started an incident in ~%v", commanderUsername, incidentChannelName); err != nil {
+func (r *Runner) announceChannel(targetChannelID, ownerUsername, incidentChannelName string) error {
+	if _, err := r.poster.PostMessage(targetChannelID, "@%v started an incident in ~%v", ownerUsername, incidentChannelName); err != nil {
 		return err
 	}
 
@@ -774,8 +774,8 @@ func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
 			return "@" + username + " posted a status update"
 		}
 		return "@" + username + " changed status from " + event.Summary
-	case incident.CommanderChanged:
-		return "Commander changes from " + event.Summary
+	case incident.OwnerChanged:
+		return "Owner changes from " + event.Summary
 	case incident.TaskStateModified:
 		return "@" + username + " " + event.Summary
 	case incident.AssigneeChanged:
@@ -968,7 +968,7 @@ And... yes, of course, we have emojis
 	createdIncident, err := r.incidentService.CreateIncident(&incident.Incident{
 		Name:               "Cloud Incident 4739",
 		TeamID:             r.args.TeamId,
-		CommanderUserID:    r.args.UserId,
+		OwnerUserID:        r.args.UserId,
 		PlaybookID:         gotplaybook.ID,
 		Checklists:         gotplaybook.Checklists,
 		BroadcastChannelID: gotplaybook.BroadcastChannelID,
@@ -1092,11 +1092,11 @@ func (r *Runner) actionTestCreate(params []string) {
 	incidentName := strings.Join(params[2:], " ")
 
 	theIncident := &incident.Incident{
-		Name:            incidentName,
-		CommanderUserID: r.args.UserId,
-		TeamID:          r.args.TeamId,
-		PlaybookID:      playbookID,
-		Checklists:      thePlaybook.Checklists,
+		Name:        incidentName,
+		OwnerUserID: r.args.UserId,
+		TeamID:      r.args.TeamId,
+		PlaybookID:  playbookID,
+		Checklists:  thePlaybook.Checklists,
 	}
 
 	newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
@@ -1318,11 +1318,11 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		}
 
 		theIncident := &incident.Incident{
-			Name:            incidentName,
-			CommanderUserID: r.args.UserId,
-			TeamID:          r.args.TeamId,
-			PlaybookID:      thePlaybook.ID,
-			Checklists:      thePlaybook.Checklists,
+			Name:        incidentName,
+			OwnerUserID: r.args.UserId,
+			TeamID:      r.args.TeamId,
+			PlaybookID:  thePlaybook.ID,
+			Checklists:  thePlaybook.Checklists,
 		}
 
 		newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
@@ -1433,8 +1433,8 @@ func (r *Runner) Execute() error {
 		r.actionRemoveChecklistItem(parameters)
 	case "restart":
 		r.actionRestart()
-	case "commander":
-		r.actionCommander(parameters)
+	case "owner":
+		r.actionOwner(parameters)
 	case "announce":
 		r.actionAnnounce(parameters)
 	case "list":

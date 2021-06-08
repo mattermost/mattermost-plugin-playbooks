@@ -28,7 +28,7 @@ type Incident struct {
 	ID                                   string               `json:"id"`
 	Name                                 string               `json:"name"` // Retrieved from incident channel
 	Description                          string               `json:"description"`
-	CommanderUserID                      string               `json:"commander_user_id"`
+	OwnerUserID                          string               `json:"owner_user_id"`
 	ReporterUserID                       string               `json:"reporter_user_id"`
 	TeamID                               string               `json:"team_id"`
 	ChannelID                            string               `json:"channel_id"`
@@ -49,7 +49,7 @@ type Incident struct {
 	InvitedUserIDs                       []string             `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string             `json:"invited_group_ids"`
 	TimelineEvents                       []TimelineEvent      `json:"timeline_events"`
-	DefaultCommanderID                   string               `json:"default_commander_id"`
+	DefaultOwnerID                       string               `json:"default_owner_id"`
 	AnnouncementChannelID                string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL                 string               `json:"webhook_on_creation_url"`
 	WebhookOnStatusUpdateURL             string               `json:"webhook_on_status_update_url"`
@@ -169,7 +169,7 @@ const (
 	IncidentCreated        timelineEventType = "incident_created"
 	TaskStateModified      timelineEventType = "task_state_modified"
 	StatusUpdated          timelineEventType = "status_updated"
-	CommanderChanged       timelineEventType = "commander_changed"
+	OwnerChanged           timelineEventType = "owner_changed"
 	AssigneeChanged        timelineEventType = "assignee_changed"
 	RanSlashCommand        timelineEventType = "ran_slash_command"
 	EventFromPost          timelineEventType = "event_from_post"
@@ -232,8 +232,8 @@ func (r GetIncidentsResults) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
-// CommanderInfo holds the summary information of a commander.
-type CommanderInfo struct {
+// OwnerInfo holds the summary information of a owner.
+type OwnerInfo struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 }
@@ -279,7 +279,7 @@ type Service interface {
 	CreateIncident(incdnt *Incident, playbook *playbook.Playbook, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
-	OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
+	OpenCreateIncidentDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
 	OpenUpdateStatusDialog(incidentID, triggerID string) error
@@ -309,15 +309,15 @@ type Service interface {
 	// if there is no incident associated with this channel.
 	GetIncidentIDForChannel(channelID string) (string, error)
 
-	// GetCommanders returns all the commanders of incidents selected
-	GetCommanders(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
+	// GetOwners returns all the owners of incidents selected
+	GetOwners(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]OwnerInfo, error)
 
-	// IsCommander returns true if the userID is the commander for incidentID.
-	IsCommander(incidentID string, userID string) bool
+	// IsOwner returns true if the userID is the owner for incidentID.
+	IsOwner(incidentID string, userID string) bool
 
-	// ChangeCommander processes a request from userID to change the commander for incidentID
-	// to commanderID. Changing to the same commanderID is a no-op.
-	ChangeCommander(incidentID string, userID string, commanderID string) error
+	// ChangeOwner processes a request from userID to change the owner for incidentID
+	// to ownerID. Changing to the same ownerID is a no-op.
+	ChangeOwner(incidentID string, userID string, ownerID string) error
 
 	// ModifyCheckedState modifies the state of the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already in the specified state
@@ -354,7 +354,7 @@ type Service interface {
 	// NukeDB removes all incident related data.
 	NukeDB() error
 
-	// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+	// SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
 	// reminded to update the incident's status.
 	SetReminder(incidentID string, timeInMinutes time.Duration) error
 
@@ -426,8 +426,8 @@ type Store interface {
 	// incident, excluding bots.
 	GetAllIncidentMembersCount(channelID string) (int64, error)
 
-	// GetCommanders returns the commanders of the incidents selected by options
-	GetCommanders(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]CommanderInfo, error)
+	// GetOwners returns the owners of the incidents selected by options
+	GetOwners(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]OwnerInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
@@ -455,8 +455,8 @@ type Telemetry interface {
 	// RestartIncident tracks the restart of an incident.
 	RestartIncident(incident *Incident, userID string)
 
-	// ChangeCommander tracks changes in commander.
-	ChangeCommander(incident *Incident, userID string)
+	// ChangeOwner tracks changes in owner.
+	ChangeOwner(incident *Incident, userID string)
 
 	// UpdateStatus tracks when an incident's status has been updated
 	UpdateStatus(incident *Incident, userID string)
@@ -471,7 +471,7 @@ type Telemetry interface {
 	RemoveTimelineEvent(incdnt *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
-	ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool)
+	ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasOwner bool)
 
 	// SetAssignee tracks the changing of an assignee on an item.
 	SetAssignee(incidentID, userID string, task playbook.ChecklistItem)

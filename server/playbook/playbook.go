@@ -28,8 +28,8 @@ type Playbook struct {
 	InvitedUserIDs                       []string    `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string    `json:"invited_group_ids"`
 	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`
-	DefaultCommanderID                   string      `json:"default_commander_id"`
-	DefaultCommanderEnabled              bool        `json:"default_commander_enabled"`
+	DefaultOwnerID                       string      `json:"default_owner_id"`
+	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
 	AnnouncementChannelID                string      `json:"announcement_channel_id"`
 	AnnouncementChannelEnabled           bool        `json:"announcement_channel_enabled"`
 	WebhookOnCreationURL                 string      `json:"webhook_on_creation_url"`

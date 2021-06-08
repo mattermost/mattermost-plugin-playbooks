@@ -136,10 +136,10 @@ const RHSTimelineEventItem = (props: Props) => {
         }
         testid = TimelineEventType.StatusUpdated;
         break;
-    case TimelineEventType.CommanderChanged:
+    case TimelineEventType.OwnerChanged:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Commander changed from ' + props.event.summary;
-        testid = TimelineEventType.CommanderChanged;
+        summaryTitle = 'Owner changed from ' + props.event.summary;
+        testid = TimelineEventType.OwnerChanged;
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
