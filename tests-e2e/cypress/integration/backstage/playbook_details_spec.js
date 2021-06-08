@@ -520,7 +520,7 @@ describe('backstage playbook details', () => {
                         cy.findByTestId('save_playbook').click();
 
                         // * Make sure the playbook is correctly saved
-                        cy.url().should('not.include', playbookId);
+                        cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
                         cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
@@ -749,7 +749,7 @@ describe('backstage playbook details', () => {
                         cy.findByTestId('save_playbook').click();
 
                         // * Make sure the playbook is correctly saved
-                        cy.url().should('not.include', playbookId);
+                        cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
                         cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
@@ -976,7 +976,7 @@ describe('backstage playbook details', () => {
                         cy.findByTestId('save_playbook').click();
 
                         // * Make sure the playbook is correctly saved
-                        cy.url().should('not.include', playbookId);
+                        cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
                         cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
