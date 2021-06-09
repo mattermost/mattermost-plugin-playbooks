@@ -57,7 +57,8 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
-			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds", "RetrospectiveWasCanceled").
+			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -262,6 +263,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"MessageOnJoin":                        rawIncident.MessageOnJoin,
 			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
+			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -312,6 +314,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"MessageOnJoin":                        rawIncident.MessageOnJoin,
 			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
+			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -359,7 +362,7 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 	return nil
 }
 
-// UpdateTimelineEvent updates (or inserts) the timeline event
+// CreateTimelineEvent creates the timeline event
 func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*incident.TimelineEvent, error) {
 	if event.IncidentID == "" {
 		return nil, errors.New("needs incident ID")
@@ -395,6 +398,7 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 	return event, nil
 }
 
+// UpdateTimelineEvent updates (or inserts) the timeline event
 func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error {
 	if event.ID == "" {
 		return errors.New("needs event ID")

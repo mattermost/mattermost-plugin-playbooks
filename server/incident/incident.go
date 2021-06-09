@@ -52,6 +52,7 @@ type Incident struct {
 	DefaultCommanderID                   string               `json:"default_commander_id"`
 	AnnouncementChannelID                string               `json:"announcement_channel_id"`
 	WebhookOnCreationURL                 string               `json:"webhook_on_creation_url"`
+	WebhookOnStatusUpdateURL             string               `json:"webhook_on_status_update_url"`
 	Retrospective                        string               `json:"retrospective"`
 	RetrospectivePublishedAt             int64                `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
 	RetrospectiveWasCanceled             bool                 `json:"retrospective_was_canceled"`

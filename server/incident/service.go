@@ -120,6 +120,10 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 // It blocks until a response is received.
 func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
+		return errors.New("Could not send webhook, please set siteURL")
+	}
 
 	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
 	if err != nil {
@@ -131,18 +135,9 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 		return err
 	}
 
-	channelURL := fmt.Sprintf("%s/%s/channels/%s",
-		*siteURL,
-		team.Name,
-		channel.Name,
-	)
+	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := fmt.Sprintf("%s/%s/%s/incidents/%s",
-		*siteURL,
-		team.Name,
-		s.configService.GetManifest().Id,
-		theIncident.ID,
-	)
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
 
 	payload := struct {
 		Incident
@@ -610,6 +605,64 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 	return nil
 }
 
+// sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
+// It blocks until a response is received.
+func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
+	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
+
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
+
+	payload := struct {
+		Incident
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
+	}{
+		Incident:   theIncident,
+		ChannelURL: channelURL,
+		DetailsURL: detailsURL,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", theIncident.WebhookOnStatusUpdateURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // UpdateStatus updates an incident's status.
 func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
@@ -711,6 +764,15 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
+	}
+
+	if incidentToModify.WebhookOnStatusUpdateURL != "" {
+		go func() {
+			if err := s.sendWebhookOnUpdateStatus(*incidentToModify); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the update status webhook URL", "webhook URL", incidentToModify.WebhookOnStatusUpdateURL, "error", err)
+				_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident update announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+			}
+		}()
 	}
 
 	return nil
@@ -1874,6 +1936,23 @@ func getUserDisplayName(user *model.User) string {
 	}
 
 	return fmt.Sprintf("@%s", user.Username)
+}
+
+func getChannelURL(siteURL string, teamName string, channelName string) string {
+	return fmt.Sprintf("%s/%s/channels/%s",
+		siteURL,
+		teamName,
+		channelName,
+	)
+}
+
+func getDetailsURL(siteURL string, teamName string, manifestID string, incidentID string) string {
+	return fmt.Sprintf("%s/%s/%s/incidents/%s",
+		siteURL,
+		teamName,
+		manifestID,
+		incidentID,
+	)
 }
 
 func cleanChannelName(channelName string) string {

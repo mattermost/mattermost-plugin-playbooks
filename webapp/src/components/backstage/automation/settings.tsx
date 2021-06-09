@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import {WebhookOnCreation} from 'src/components/backstage/automation/webhook_on_creation';
+import {Webhook} from 'src/components/backstage/automation/webhook';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
@@ -37,6 +37,10 @@ interface Props {
     onToggleWebhookOnCreation: () => void;
     webhookOnCreationChange: (url: string) => void;
     webhookOnCreationURL: string;
+    webhookOnStatusUpdateEnabled: boolean;
+    onToggleWebhookOnStatusUpdate: () => void;
+    webhookOnStatusUpdateURL: string;
+    webhookOnStatusUpdateChange: (url: string) => void;
     messageOnJoinEnabled: boolean;
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
@@ -87,11 +91,24 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'incident-creation__outgoing-webhook'}>
-                    <WebhookOnCreation
+                    <Webhook
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
                         url={props.webhookOnCreationURL}
                         onChange={props.webhookOnCreationChange}
+                    />
+                </Setting>
+            </Section>
+            <Section>
+                <SectionTitle>
+                    {'When an incident status is updated'}
+                </SectionTitle>
+                <Setting id={'incident-status-update__outgoing-webhook'}>
+                    <Webhook
+                        enabled={props.webhookOnStatusUpdateEnabled}
+                        onToggle={props.onToggleWebhookOnStatusUpdate}
+                        url={props.webhookOnStatusUpdateURL}
+                        onChange={props.webhookOnStatusUpdateChange}
                     />
                 </Setting>
             </Section>

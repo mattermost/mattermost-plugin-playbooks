@@ -257,7 +257,7 @@ func TestCreateIncident(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("webhook is sent", func(t *testing.T) {
+	t.Run("webhook is sent on incident create", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
 		client := pluginapi.NewClient(pluginAPI)
@@ -340,6 +340,101 @@ func TestCreateIncident(t *testing.T) {
 		}
 
 		pluginAPI.AssertExpectations(t)
+	})
+}
+
+func TestUpdateStatus(t *testing.T) {
+	t.Run("webhook is sent on incident status update", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		type webhookPayload struct {
+			incident.Incident
+			ChannelURL   string                       `json:"channel_url"`
+			DetailsURL   string                       `json:"details_url"`
+			StatusUpdate incident.StatusUpdateOptions `json:"status_update"`
+		}
+
+		webhookChan := make(chan webhookPayload)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			body, err := ioutil.ReadAll(r.Body)
+			require.NoError(t, err)
+
+			var p webhookPayload
+			err = json.Unmarshal(body, &p)
+			require.NoError(t, err)
+
+			webhookChan <- p
+		}))
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:                       "incident_id",
+			Name:                     "Incident Name",
+			TeamID:                   teamID,
+			ChannelID:                "channel_id",
+			BroadcastChannelID:       "broadcast_channel_id",
+			CommanderUserID:          "user_id",
+			CurrentStatus:            incident.StatusReported,
+			CreateAt:                 1620018358404,
+			WebhookOnStatusUpdateURL: server.URL,
+		}
+		statusUpdateOptions := incident.StatusUpdateOptions{
+			Status:      incident.StatusActive,
+			Description: "latest-description",
+			Message:     "latest-message",
+			Reminder:    0,
+		}
+		siteURL := "http://example.com"
+		channelID := "channel_id"
+
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&incident.TimelineEvent{}))
+		store.EXPECT().UpdateIncident(gomock.AssignableToTypeOf(&incident.Incident{})).Return(nil)
+		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&incident.SQLStatusPost{})).Return(nil)
+		store.EXPECT().GetIncident(gomock.Any()).Return(incdnt, nil).Times(2)
+
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), channelID)
+		poster.EXPECT().PostMessage("broadcast_channel_id", gomock.Any()).Return(&model.Post{}, nil)
+
+		scheduler.EXPECT().Cancel(incdnt.ID)
+
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		mattermostConfig.ServiceSettings.SiteURL = &siteURL
+		pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
+		pluginAPI.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Name: "channel_name"}, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
+		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.UpdateStatus(incdnt.ID, "user_id", statusUpdateOptions)
+		require.NoError(t, err)
+
+		select {
+		case payload := <-webhookChan:
+			require.Equal(t, *incdnt, payload.Incident)
+			require.Equal(t,
+				"http://example.com/team_name/channels/channel_name",
+				payload.ChannelURL)
+			require.Equal(t,
+				"http://example.com/team_name/com.mattermost.plugin-incident-management/incidents/incident_id",
+				payload.DetailsURL)
+
+		case <-time.After(time.Second * 5):
+			require.Fail(t, "did not receive webhook on status update")
+		}
 	})
 }
 

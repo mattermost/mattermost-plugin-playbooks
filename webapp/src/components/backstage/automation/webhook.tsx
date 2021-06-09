@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {FC} from 'react';
 
 import styled, {css} from 'styled-components';
 
@@ -15,7 +15,7 @@ interface Props {
     onChange: (url: string) => void;
 }
 
-export const WebhookOnCreation = (props: Props) => (
+export const Webhook: FC<Props> = (props: Props) => (
     <AutomationHeader>
         <AutomationTitle>
             <Toggle
