@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
@@ -10,9 +10,11 @@ import Spinner from 'src/components/assets/icons/spinner';
 
 import UpgradeTimelineSvg from 'src/components/assets/upgrade_timeline_svg';
 import UpgradeTimelineSuccessSvg from 'src/components/assets/upgrade_timeline_success_svg';
+import UpgradeTimelineErrorSvg from 'src/components/assets/upgrade_timeline_error_svg';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {getAdminAnalytics} from 'src/selectors';
+import {getAdminAnalytics, isTeamEdition} from 'src/selectors';
 import StartTrialNotice from 'src/components/backstage/start_trial_notice';
+import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise_notice';
 
 import {requestTrialLicense, postMessageToAdmins} from 'src/client';
 
@@ -24,12 +26,14 @@ enum ActionState {
     Error,
     Success,
 }
-    type HandlerType = undefined | (() => (Promise<void> | void));
 
-const TimelineUpgradePlaceholder : FC = () => {
+type HandlerType = undefined | (() => (Promise<void> | void));
+
+const TimelineUpgradePlaceholder = () => {
     const currentUser = useSelector(getCurrentUser);
     const isCurrentUserAdmin = isSystemAdmin(currentUser.roles);
     const [actionState, setActionState] = useState(ActionState.Uninitialized);
+    const isServerTeamEdition = useSelector(isTeamEdition);
 
     const analytics = useSelector(getAdminAnalytics);
     const serverTotalUsers = analytics?.TOTAL_USERS || 0;
@@ -41,8 +45,12 @@ const TimelineUpgradePlaceholder : FC = () => {
 
         setActionState(ActionState.Loading);
 
-        await postMessageToAdmins(AdminNotificationType.VIEW_TIMELINE);
-        setActionState(ActionState.Success);
+        const response = await postMessageToAdmins(AdminNotificationType.VIEW_TIMELINE, isServerTeamEdition);
+        if (response.error) {
+            setActionState(ActionState.Error);
+        } else {
+            setActionState(ActionState.Success);
+        }
     };
 
     const requestLicense = async () => {
@@ -53,7 +61,7 @@ const TimelineUpgradePlaceholder : FC = () => {
         setActionState(ActionState.Loading);
 
         const requestedUsers = Math.max(serverTotalUsers, 30);
-        const response = await requestTrialLicense(requestedUsers);
+        const response = await requestTrialLicense(requestedUsers, AdminNotificationType.VIEW_TIMELINE);
         if (response.error) {
             setActionState(ActionState.Error);
         } else {
@@ -63,11 +71,27 @@ const TimelineUpgradePlaceholder : FC = () => {
 
     let illustration = <UpgradeTimelineSvg/>;
     let titleText = 'Keep all your incident events in one place';
-    let helpText = 'Make retros easy. Your timeline includes all the events in your incident, separated by type, and downloadable for offline review.';
+    let helpText : React.ReactNode = 'Make retros easy. Your timeline includes all the events in your incident, separated by type, and downloadable for offline review.';
+
+    if (isCurrentUserAdmin && isServerTeamEdition) {
+        helpText = <><p>{helpText}</p><ConvertEnterpriseNotice/></>;
+    }
+
     if (actionState === ActionState.Success) {
         illustration = <UpgradeTimelineSuccessSvg/>;
         titleText = 'Thank you!';
         helpText = 'Your System Admin has been notified.';
+    }
+
+    if (actionState === ActionState.Error) {
+        illustration = <UpgradeTimelineErrorSvg/>;
+        if (isCurrentUserAdmin) {
+            titleText = 'Your license could not be generated';
+            helpText = 'Please check the system logs for more information.';
+        } else {
+            titleText = 'There was an error';
+            helpText = 'We weren\'t able to notify the System Admin.';
+        }
     }
 
     return (
@@ -81,10 +105,11 @@ const TimelineUpgradePlaceholder : FC = () => {
                 <Button
                     actionState={actionState}
                     isCurrentUserAdmin={isCurrentUserAdmin}
+                    isServerTeamEdition={isServerTeamEdition}
                     notifyAdmins={notifyAdmins}
                     requestLicense={requestLicense}
                 />
-                {isCurrentUserAdmin && actionState === ActionState.Uninitialized && <Footer/> }
+                {isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized && <Footer/> }
             </UpgradeContent>
         </UpgradeWrapper>
     );
@@ -112,16 +137,34 @@ const Footer = () => (
 interface ButtonProps {
     actionState: ActionState;
     isCurrentUserAdmin: boolean;
+    isServerTeamEdition: boolean;
     notifyAdmins: HandlerType;
     requestLicense: HandlerType;
 }
 
-const Button : FC<ButtonProps> = (props: ButtonProps) => {
+const Button = (props: ButtonProps) => {
     if (props.actionState === ActionState.Loading) {
         return <Spinner/>;
     }
 
     if (props.actionState === ActionState.Success) {
+        return null;
+    }
+
+    if (props.actionState === ActionState.Error) {
+        if (props.isCurrentUserAdmin) {
+            return (
+                <PrimaryButton
+                    onClick={() => window.open('https://mattermost.com/support/')}
+                >
+                    {'Contact support'}
+                </PrimaryButton>
+            );
+        }
+        return null;
+    }
+
+    if (props.isCurrentUserAdmin && props.isServerTeamEdition) {
         return null;
     }
 
@@ -171,6 +214,7 @@ const Title = styled(CenteredRow)`
 `;
 
 const HelpText = styled(CenteredRow)`
+    flex-direction: column;
     text-align: center;
     font-weight: 400;
     font-size: 12px;

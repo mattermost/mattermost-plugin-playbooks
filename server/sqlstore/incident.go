@@ -57,7 +57,8 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
-			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin").
+			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -240,30 +241,34 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
-			"ID":                          rawIncident.ID,
-			"Name":                        rawIncident.Name,
-			"Description":                 rawIncident.Description,
-			"CommanderUserID":             rawIncident.CommanderUserID,
-			"ReporterUserID":              rawIncident.ReporterUserID,
-			"TeamID":                      rawIncident.TeamID,
-			"ChannelID":                   rawIncident.ChannelID,
-			"CreateAt":                    rawIncident.CreateAt,
-			"EndAt":                       rawIncident.EndAt,
-			"PostID":                      rawIncident.PostID,
-			"PlaybookID":                  rawIncident.PlaybookID,
-			"ChecklistsJSON":              rawIncident.ChecklistsJSON,
-			"ReminderPostID":              rawIncident.ReminderPostID,
-			"PreviousReminder":            rawIncident.PreviousReminder,
-			"BroadcastChannelID":          rawIncident.BroadcastChannelID,
-			"ReminderMessageTemplate":     rawIncident.ReminderMessageTemplate,
-			"CurrentStatus":               rawIncident.CurrentStatus,
-			"ConcatenatedInvitedUserIDs":  rawIncident.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs": rawIncident.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
-			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
-			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
-			"Retrospective":               rawIncident.Retrospective,
-			"MessageOnJoin":               rawIncident.MessageOnJoin,
+			"ID":                                   rawIncident.ID,
+			"Name":                                 rawIncident.Name,
+			"Description":                          rawIncident.Description,
+			"CommanderUserID":                      rawIncident.CommanderUserID,
+			"ReporterUserID":                       rawIncident.ReporterUserID,
+			"TeamID":                               rawIncident.TeamID,
+			"ChannelID":                            rawIncident.ChannelID,
+			"CreateAt":                             rawIncident.CreateAt,
+			"EndAt":                                rawIncident.EndAt,
+			"PostID":                               rawIncident.PostID,
+			"PlaybookID":                           rawIncident.PlaybookID,
+			"ChecklistsJSON":                       rawIncident.ChecklistsJSON,
+			"ReminderPostID":                       rawIncident.ReminderPostID,
+			"PreviousReminder":                     rawIncident.PreviousReminder,
+			"BroadcastChannelID":                   rawIncident.BroadcastChannelID,
+			"ReminderMessageTemplate":              rawIncident.ReminderMessageTemplate,
+			"CurrentStatus":                        rawIncident.CurrentStatus,
+			"ConcatenatedInvitedUserIDs":           rawIncident.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":          rawIncident.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":                   rawIncident.DefaultCommanderID,
+			"AnnouncementChannelID":                rawIncident.AnnouncementChannelID,
+			"WebhookOnCreationURL":                 rawIncident.WebhookOnCreationURL,
+			"Retrospective":                        rawIncident.Retrospective,
+			"RetrospectivePublishedAt":             rawIncident.RetrospectivePublishedAt,
+			"MessageOnJoin":                        rawIncident.MessageOnJoin,
+			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
+			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -296,21 +301,25 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"Name":                        "",
-			"Description":                 rawIncident.Description,
-			"CommanderUserID":             rawIncident.CommanderUserID,
-			"ChecklistsJSON":              rawIncident.ChecklistsJSON,
-			"ReminderPostID":              rawIncident.ReminderPostID,
-			"PreviousReminder":            rawIncident.PreviousReminder,
-			"BroadcastChannelID":          rawIncident.BroadcastChannelID,
-			"EndAt":                       rawIncident.ResolvedAt(),
-			"ConcatenatedInvitedUserIDs":  rawIncident.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs": rawIncident.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":          rawIncident.DefaultCommanderID,
-			"AnnouncementChannelID":       rawIncident.AnnouncementChannelID,
-			"WebhookOnCreationURL":        rawIncident.WebhookOnCreationURL,
-			"Retrospective":               rawIncident.Retrospective,
-			"MessageOnJoin":               rawIncident.MessageOnJoin,
+			"Name":                                 "",
+			"Description":                          rawIncident.Description,
+			"CommanderUserID":                      rawIncident.CommanderUserID,
+			"ChecklistsJSON":                       rawIncident.ChecklistsJSON,
+			"ReminderPostID":                       rawIncident.ReminderPostID,
+			"PreviousReminder":                     rawIncident.PreviousReminder,
+			"BroadcastChannelID":                   rawIncident.BroadcastChannelID,
+			"EndAt":                                rawIncident.ResolvedAt(),
+			"ConcatenatedInvitedUserIDs":           rawIncident.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":          rawIncident.ConcatenatedInvitedGroupIDs,
+			"DefaultCommanderID":                   rawIncident.DefaultCommanderID,
+			"AnnouncementChannelID":                rawIncident.AnnouncementChannelID,
+			"WebhookOnCreationURL":                 rawIncident.WebhookOnCreationURL,
+			"Retrospective":                        rawIncident.Retrospective,
+			"RetrospectivePublishedAt":             rawIncident.RetrospectivePublishedAt,
+			"MessageOnJoin":                        rawIncident.MessageOnJoin,
+			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
+			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -358,7 +367,7 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 	return nil
 }
 
-// UpdateTimelineEvent updates (or inserts) the timeline event
+// CreateTimelineEvent creates the timeline event
 func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*incident.TimelineEvent, error) {
 	if event.IncidentID == "" {
 		return nil, errors.New("needs incident ID")
@@ -394,6 +403,7 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 	return event, nil
 }
 
+// UpdateTimelineEvent updates (or inserts) the timeline event
 func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error {
 	if event.ID == "" {
 		return errors.New("needs event ID")

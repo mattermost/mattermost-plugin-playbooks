@@ -65,6 +65,20 @@ func (mr *MockServiceMockRecorder) AddPostToTimeline(arg0, arg1, arg2, arg3 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPostToTimeline", reflect.TypeOf((*MockService)(nil).AddPostToTimeline), arg0, arg1, arg2, arg3)
 }
 
+// CancelRetrospective mocks base method
+func (m *MockService) CancelRetrospective(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelRetrospective", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelRetrospective indicates an expected call of CancelRetrospective
+func (mr *MockServiceMockRecorder) CancelRetrospective(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelRetrospective", reflect.TypeOf((*MockService)(nil).CancelRetrospective), arg0, arg1)
+}
+
 // ChangeCommander mocks base method
 func (m *MockService) ChangeCommander(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
@@ -366,17 +380,17 @@ func (mr *MockServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 interface{}
 }
 
 // PublishRetrospective mocks base method
-func (m *MockService) PublishRetrospective(arg0, arg1 string) error {
+func (m *MockService) PublishRetrospective(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PublishRetrospective", arg0, arg1)
+	ret := m.ctrl.Call(m, "PublishRetrospective", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PublishRetrospective indicates an expected call of PublishRetrospective
-func (mr *MockServiceMockRecorder) PublishRetrospective(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) PublishRetrospective(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishRetrospective", reflect.TypeOf((*MockService)(nil).PublishRetrospective), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishRetrospective", reflect.TypeOf((*MockService)(nil).PublishRetrospective), arg0, arg1, arg2)
 }
 
 // RemoveChecklistItem mocks base method

@@ -120,6 +120,10 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 // It blocks until a response is received.
 func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
+		return errors.New("Could not send webhook, please set siteURL")
+	}
 
 	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
 	if err != nil {
@@ -131,18 +135,9 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 		return err
 	}
 
-	channelURL := fmt.Sprintf("%s/%s/channels/%s",
-		*siteURL,
-		team.Name,
-		channel.Name,
-	)
+	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := fmt.Sprintf("%s/%s/%s/incidents/%s",
-		*siteURL,
-		team.Name,
-		s.configService.GetManifest().Id,
-		theIncident.ID,
-	)
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
 
 	payload := struct {
 		Incident
@@ -610,6 +605,64 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 	return nil
 }
 
+// sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
+// It blocks until a response is received.
+func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
+	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
+
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
+
+	payload := struct {
+		Incident
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
+	}{
+		Incident:   theIncident,
+		ChannelURL: channelURL,
+		DetailsURL: detailsURL,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", theIncident.WebhookOnStatusUpdateURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // UpdateStatus updates an incident's status.
 func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
@@ -658,6 +711,24 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", incidentToModify.BroadcastChannelID)
 	}
 
+	// If we are resolving the incident, send the reminder to fill out the retrospective
+	// Also start the recurring reminder if enabled.
+	if incidentToModify.RetrospectivePublishedAt == 0 &&
+		options.Status == StatusResolved &&
+		previousStatus != StatusArchived &&
+		previousStatus != StatusResolved &&
+		s.configService.GetConfiguration().EnableExperimentalFeatures {
+		if err = s.postRetrospectiveReminder(incidentToModify, true); err != nil {
+			return errors.Wrap(err, "couldn't post retrospective reminder")
+		}
+		s.scheduler.Cancel(RetrospectivePrefix + incidentID)
+		if incidentToModify.RetrospectiveReminderIntervalSeconds != 0 {
+			if err = s.SetReminder(RetrospectivePrefix+incidentID, time.Duration(incidentToModify.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
+				return errors.Wrap(err, "failed to set the retrospective reminder for incident")
+			}
+		}
+	}
+
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(incidentID)
 
@@ -693,6 +764,55 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
+	}
+
+	if incidentToModify.WebhookOnStatusUpdateURL != "" {
+		go func() {
+			if err := s.sendWebhookOnUpdateStatus(*incidentToModify); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the update status webhook URL", "webhook URL", incidentToModify.WebhookOnStatusUpdateURL, "error", err)
+				_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident update announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+			}
+		}()
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) postRetrospectiveReminder(incident *Incident, isInitial bool) error {
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	retrospectiveURL := fmt.Sprintf("/%s/%s/incidents/%s/retrospective",
+		team.Name,
+		s.configService.GetManifest().Id,
+		incident.ID,
+	)
+
+	attachments := []*model.SlackAttachment{
+		{
+			Actions: []*model.PostAction{
+				{
+					Type: "button",
+					Name: "No Retrospective",
+					Integration: &model.PostActionIntegration{
+						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/no-retrospective-button",
+							s.configService.GetManifest().Id,
+							incident.ID),
+					},
+				},
+			},
+		},
+	}
+
+	customPostType := "custom_retro_rem"
+	if isInitial {
+		customPostType = "custom_retro_rem_first"
+	}
+
+	if _, err = s.poster.PostCustomMessageWithAttachments(incident.ChannelID, customPostType, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
+		return errors.Wrap(err, "failed to post retro reminder to channel")
 	}
 
 	return nil
@@ -1419,6 +1539,14 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, pub
 		}
 	}
 
+	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add bot to the team")
+	}
+
+	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
+		return nil, errors.Wrapf(err, "failed to add bot to the channel")
+	}
+
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
 	}
@@ -1699,14 +1827,101 @@ func (s *ServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospectiv
 	return nil
 }
 
-func (s *ServiceImpl) PublishRetrospective(incidentID, publisherID string) error {
+func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string) error {
 	incidentToPublish, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
 	}
 
-	//TODO: Publish the retrospective
+	now := model.GetMillis()
+
+	// Update the text to keep syncronized
+	incidentToPublish.Retrospective = text
+	incidentToPublish.RetrospectivePublishedAt = now
+	incidentToPublish.RetrospectiveWasCanceled = false
+	if err = s.store.UpdateIncident(incidentToPublish); err != nil {
+		return errors.Wrap(err, "failed to update incident")
+	}
+
+	publisherUser, err := s.pluginAPI.User.Get(publisherID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get publisher user")
+	}
+
+	team, err := s.pluginAPI.Team.Get(incidentToPublish.TeamID)
+	if err != nil {
+		return err
+	}
+
+	retrospectiveURL := fmt.Sprintf("/%s/%s/incidents/%s/retrospective",
+		team.Name,
+		s.configService.GetManifest().Id,
+		incidentToPublish.ID,
+	)
+	if _, err = s.poster.PostMessage(incidentToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, text); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      now,
+		EventAt:       now,
+		EventType:     PublishedRetrospective,
+		SubjectUserID: publisherID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	if err := s.sendIncidentToClient(incidentID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
 	s.telemetry.PublishRetrospective(incidentToPublish, publisherID)
+
+	return nil
+}
+
+func (s *ServiceImpl) CancelRetrospective(incidentID, cancelerID string) error {
+	incidentToCancel, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve incident")
+	}
+
+	now := model.GetMillis()
+
+	// Update the text to keep syncronized
+	incidentToCancel.Retrospective = "No retrospective for this incident."
+	incidentToCancel.RetrospectivePublishedAt = now
+	incidentToCancel.RetrospectiveWasCanceled = true
+	if err = s.store.UpdateIncident(incidentToCancel); err != nil {
+		return errors.Wrap(err, "failed to update incident")
+	}
+
+	cancelerUser, err := s.pluginAPI.User.Get(cancelerID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get canceler user")
+	}
+
+	if _, err = s.poster.PostMessage(incidentToCancel.ChannelID, "@channel Retrospective has been canceled by @%s\n", cancelerUser.Username); err != nil {
+		return errors.Wrap(err, "failed to post to channel")
+	}
+
+	event := &TimelineEvent{
+		IncidentID:    incidentID,
+		CreateAt:      now,
+		EventAt:       now,
+		EventType:     CanceledRetrospective,
+		SubjectUserID: cancelerID,
+	}
+
+	if _, err = s.store.CreateTimelineEvent(event); err != nil {
+		return errors.Wrap(err, "failed to create timeline event")
+	}
+
+	if err := s.sendIncidentToClient(incidentID); err != nil {
+		s.logger.Errorf("failed send websocket event; error: %s", err.Error())
+	}
 
 	return nil
 }
@@ -1721,6 +1936,23 @@ func getUserDisplayName(user *model.User) string {
 	}
 
 	return fmt.Sprintf("@%s", user.Username)
+}
+
+func getChannelURL(siteURL string, teamName string, channelName string) string {
+	return fmt.Sprintf("%s/%s/channels/%s",
+		siteURL,
+		teamName,
+		channelName,
+	)
+}
+
+func getDetailsURL(siteURL string, teamName string, manifestID string, incidentID string) string {
+	return fmt.Sprintf("%s/%s/%s/incidents/%s",
+		siteURL,
+		teamName,
+		manifestID,
+		incidentID,
+	)
 }
 
 func cleanChannelName(channelName string) string {

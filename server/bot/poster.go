@@ -36,6 +36,20 @@ func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.
 	return post, nil
 }
 
+func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {
+	post := &model.Post{
+		Message:   fmt.Sprintf(format, args...),
+		UserId:    b.botUserID,
+		ChannelId: channelID,
+		Type:      customType,
+	}
+	model.ParseSlackAttachment(post, attachments)
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
 // DM posts a simple Direct Message to the specified user
 func (b *Bot) DM(userID, format string, args ...interface{}) error {
 	return b.dm(userID, &model.Post{
@@ -83,7 +97,7 @@ func (b *Bot) PublishWebsocketEventToUser(event string, payload interface{}, use
 	})
 }
 
-func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
+func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool) error {
 	author, err := b.pluginAPI.User.Get(authorUserID)
 	if err != nil {
 		return errors.Wrap(err, "unable to find author user")
@@ -105,42 +119,59 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
 
 	var message, title, text string
 
-	footer := "[Learn more](example.com).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
+	footer := "[Learn more](https://mattermost.com/pricing-self-managed/).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
+	if isTeamEdition {
+		footer = "[Learn more](https://mattermost.com/pricing-self-managed/).\n\n[Convert to Mattermost Starter](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Mattermost Professional or Enterprise."
+	}
 
 	switch messageType {
-	case "playbook":
+	case "start_trial_to_create_playbook":
 		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
-		title = "Create multiple playbooks in Incident Collaboration with Mattermost Enterprise Edition E10"
-		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In Enterprise Edition E10 you can create an unlimited number of playbooks for your team.\n" + footer
+		title = "Create multiple playbooks in Incident Collaboration with Mattermost Professional"
+		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In Mattermost Professional you can create an unlimited number of playbooks for your team.\n" + footer
 
-	case "message_to_timeline", "view_timeline":
+	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
 		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
-		title = "Keep all your incident events in one place with Mattermost Enterprise Edition E10"
-		text = "Your timeline lists all the events in your incident, separated by type. You can download your timeline and use it for your retrospectives to improve how you respond to incidents. Enterprise Edition E10 includes access to timeline features such as adding messages from within the incident channel.\n" + footer
+		title = "Keep all your incident events in one place with Mattermost Professional"
+		text = "Your timeline lists all the events in your incident, separated by type. You can download your timeline and use it for your retrospectives to improve how you respond to incidents. Mattermost Professional includes access to timeline features such as adding messages from within the incident channel.\n" + footer
+	case "start_trial_to_restrict_playbook_access":
+		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
+		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"
+		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+	case "start_trial_to_restrict_playbook_creation":
+		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
+		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise"
+		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+	}
+
+	actions := []*model.PostAction{
+		{
+
+			Id:    "message",
+			Name:  "Start 30-day trial",
+			Style: "primary",
+			Type:  "button",
+			Integration: &model.PostActionIntegration{
+				URL: fmt.Sprintf("/plugins/%s/api/v0/bot/notify-admins/button-start-trial",
+					b.configService.GetManifest().Id),
+				Context: map[string]interface{}{
+					"users":                 100,
+					"termsAccepted":         true,
+					"receiveEmailsAccepted": true,
+				},
+			},
+		},
+	}
+
+	if isTeamEdition {
+		actions = []*model.PostAction{}
 	}
 
 	attachments := []*model.SlackAttachment{
 		{
-			Title: title,
-			Text:  text,
-			Actions: []*model.PostAction{
-				{
-
-					Id:    "message",
-					Name:  "Start 30-day trial",
-					Style: "primary",
-					Type:  "button",
-					Integration: &model.PostActionIntegration{
-						URL: fmt.Sprintf("/plugins/%s/api/v0/bot/notify-admins/button-start-trial",
-							b.configService.GetManifest().Id),
-						Context: map[string]interface{}{
-							"users":                 100,
-							"termsAccepted":         true,
-							"receiveEmailsAccepted": true,
-						},
-					},
-				},
-			},
+			Title:   title,
+			Text:    text,
+			Actions: actions,
 		},
 	}
 
@@ -153,6 +184,19 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string) error {
 				b.pluginAPI.Log.Warn("failed to send a DM to user", "user ID", adminID, "error", err)
 			}
 		}(admin.Id)
+	}
+
+	switch messageType {
+	case "start_trial_to_create_playbook":
+		b.telemetry.NotifyAdminsToCreatePlaybook(authorUserID)
+	case "start_trial_to_view_timeline":
+		b.telemetry.NotifyAdminsToViewTimeline(authorUserID)
+	case "start_trial_to_add_message_to_timeline":
+		b.telemetry.NotifyAdminsToAddMessageToTimeline(authorUserID)
+	case "start_trial_to_restrict_playbook_access":
+		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
+	case "start_trial_to_restrict_playbook_creation":
+		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
 	}
 
 	return nil

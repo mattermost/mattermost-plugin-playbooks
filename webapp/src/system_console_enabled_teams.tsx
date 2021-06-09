@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 
 import {useSelector} from 'react-redux';
 import {getMyTeams, getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -17,7 +17,7 @@ interface TeamSelectorProps {
 
 type GetTeamType = (teamID: string) => Team
 
-const TeamSelector: FC<TeamSelectorProps> = (props: TeamSelectorProps) => {
+const TeamSelector = (props: TeamSelectorProps) => {
     const selectableTeams = useSelector<GlobalState, Team[]>(getMyTeams);
     const getTeamFromID = useSelector<GlobalState, GetTeamType>((state) => (teamId) => getTeam(state, teamId) || {display_name: 'Unknown Team', id: teamId});
     const [enabled, setEnabled] = useState(Boolean(props.teamsSelected) && props.teamsSelected.length !== 0);
@@ -111,7 +111,7 @@ interface SystemConsoleEnabledTeamsProps {
     setSaveNeeded: () => void
 }
 
-const SystemConsoleEnabledTeams: FC<SystemConsoleEnabledTeamsProps> = (props: SystemConsoleEnabledTeamsProps) => {
+const SystemConsoleEnabledTeams = (props: SystemConsoleEnabledTeamsProps) => {
     const onTeamsSelected = (teams: string[]) => {
         props.onChange(props.id, teams);
         props.setSaveNeeded();

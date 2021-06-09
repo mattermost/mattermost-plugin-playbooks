@@ -157,7 +157,7 @@ const statusOptions: StatusOption[] = [
     {value: 'Archived', label: 'Archived'},
 ];
 
-const BackstageIncidentList: FC = () => {
+const BackstageIncidentList = () => {
     const dispatch = useDispatch();
     const [showNoIncidents, setShowNoIncidents] = useState(false);
     const [incidents, setIncidents] = useState<Incident[] | null>(null);

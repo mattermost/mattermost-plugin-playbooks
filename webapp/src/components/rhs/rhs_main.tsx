@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -14,7 +14,7 @@ import {RHSState} from 'src/types/rhs';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import RHSDetailsView from 'src/components/rhs/rhs_details_view';
 
-const RightHandSidebar: FC<null> = () => {
+const RightHandSidebar = () => {
     const dispatch = useDispatch();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const inIncident = useSelector<GlobalState, boolean>(inIncidentChannel);

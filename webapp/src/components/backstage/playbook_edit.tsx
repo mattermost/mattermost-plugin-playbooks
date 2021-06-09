@@ -1,32 +1,32 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation} from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
+import styled from 'styled-components';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
-import styled from 'styled-components';
-
 import {Tabs, TabsContent} from 'src/components/tabs';
-
 import {PresetTemplates} from 'src/components/backstage/template_selector';
-
-import {teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {Playbook, Checklist, emptyPlaybook, defaultMessageOnJoin} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 import './playbook.scss';
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
+
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
@@ -121,7 +121,6 @@ const OuterContainer = styled.div`
 interface Props {
     isNew: boolean;
     currentTeam: Team;
-    onClose: () => void;
 }
 
 interface URLParams {
@@ -156,7 +155,18 @@ const timerOptions = [
     {value: 86400, label: '24hr'},
 ];
 
-const PlaybookEdit: FC<Props> = (props: Props) => {
+const retrospectiveReminderOptions = [
+    {value: 0, label: 'Once'},
+    {value: 3600, label: '1hr'},
+    {value: 14400, label: '4hr'},
+    {value: 86400, label: '24hr'},
+    {value: 604800, label: '7days'},
+];
+
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
+
+const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
     const currentUserId = useSelector(getCurrentUserId);
@@ -164,17 +174,18 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     const [playbook, setPlaybook] = useState<Playbook>({
         ...emptyPlaybook(),
         team_id: props.currentTeam.id,
-        member_ids: [currentUserId],
     });
     const [changesMade, setChangesMade] = useState(false);
-    const [confirmOpen, setConfirmOpen] = useState(false);
 
     const urlParams = useParams<URLParams>();
     const location = useLocation();
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     const [currentTab, setCurrentTab] = useState<number>(0);
+
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -194,7 +205,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     setPlaybook({
                         ...template.template,
                         team_id: props.currentTeam.id,
-                        member_ids: [currentUserId],
                     });
                     setChangesMade(true);
                 }
@@ -217,8 +227,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const onSave = async () => {
         await savePlaybook(setPlaybookDefaults(playbook));
-
-        props.onClose();
+        setChangesMade(false);
+        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
 
     const updateChecklist = (newChecklist: Checklist[]) => {
@@ -240,18 +250,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             title,
         });
         setChangesMade(true);
-    };
-
-    const confirmOrClose = () => {
-        if (changesMade) {
-            setConfirmOpen(true);
-        } else {
-            props.onClose();
-        }
-    };
-
-    const confirmCancel = () => {
-        setConfirmOpen(false);
     };
 
     const handlePublicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,7 +305,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleAssignDefaultCommander = (userId: string | undefined) => {
-        if (userId && playbook.default_commander_id !== userId) {
+        if ((userId || userId === '') && playbook.default_commander_id !== userId) {
             setPlaybook({
                 ...playbook,
                 default_commander_id: userId,
@@ -317,7 +315,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
-        if (channelId && playbook.announcement_channel_id !== channelId) {
+        if ((channelId || channelId === '') && playbook.announcement_channel_id !== channelId) {
             setPlaybook({
                 ...playbook,
                 announcement_channel_id: channelId,
@@ -331,6 +329,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             setPlaybook({
                 ...playbook,
                 webhook_on_creation_url: url,
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleWebhookOnStatusUpdateChange = (url: string) => {
+        if (playbook.webhook_on_status_update_url !== url) {
+            setPlaybook({
+                ...playbook,
+                webhook_on_status_update_url: url,
             });
             setChangesMade(true);
         }
@@ -386,6 +394,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleWebhookOnStatusUpdate = () => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -419,7 +435,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                 <BackstageNavbarIcon
                     data-testid='icon-arrow-left'
                     className='icon-arrow-left back-icon'
-                    onClick={confirmOrClose}
+                    onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
                 />
                 <EditableTexts>
                     <EditableTitleContainer>
@@ -540,6 +556,50 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
+                                {experimentalFeaturesEnabled &&
+                                <>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {'Retrospective Reminder Interval'}
+                                            <BackstageSubheaderDescription>
+                                                {'Reminds the channel at a specified interval to fill out the retrospective.'}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledSelect
+                                            value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                                            onChange={(option: { label: string, value: number }) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_reminder_interval_seconds: option ? option.value : option,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                            classNamePrefix='channel-selector'
+                                            options={retrospectiveReminderOptions}
+                                            isClearable={false}
+                                        />
+                                    </SidebarBlock>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {'Retrospective Template'}
+                                            <BackstageSubheaderDescription>
+                                                {'Default text for the retrospective.'}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledTextarea
+                                            placeholder={'Enter retrospective template'}
+                                            value={playbook.retrospective_template}
+                                            onChange={(e) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_template: e.target.value,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                        />
+                                    </SidebarBlock>
+                                </>
+                                }
                             </TabContainer>
                             <TabContainer>
                                 <AutomationSettings
@@ -563,9 +623,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnStatusUpdateEnabled={playbook.webhook_on_status_update_enabled}
+                                    onToggleWebhookOnStatusUpdate={handleToggleWebhookOnStatusUpdate}
+                                    webhookOnStatusUpdateURL={playbook.webhook_on_status_update_url}
+                                    webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
-                                    messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
+                                    messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
                                 />
                             </TabContainer>
@@ -616,13 +680,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     </EditContent>
                 </EditView>
             </Container>
-            <ConfirmModal
-                show={confirmOpen}
-                title={'Confirm discard'}
-                message={'Are you sure you want to discard your changes?'}
-                confirmButtonText={'Discard Changes'}
-                onConfirm={props.onClose}
-                onCancel={confirmCancel}
+            <RouteLeavingGuard
+                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                shouldBlockNavigation={() => changesMade}
             />
         </OuterContainer>
     );

@@ -325,8 +325,21 @@ export async function updateRetrospective(incidentID: string, updatedText: strin
         JSON.stringify({
             retrospective: updatedText,
         }));
-
     return data;
+}
+
+export async function publishRetrospective(incidentID: string, currentText: string) {
+    const data = await doPost(`${apiUrl}/incidents/${incidentID}/retrospective/publish`,
+        JSON.stringify({
+            retrospective: currentText,
+        }));
+    return data;
+}
+
+export async function noRetrospective(incidentID: string) {
+    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/no-retrospective-button`, {
+        method: 'POST',
+    });
 }
 
 export function exportChannelUrl(channelId: string) {
@@ -340,7 +353,16 @@ export function exportChannelUrl(channelId: string) {
     return `${exportPluginUrl}/export${queryParams}`;
 }
 
-export const requestTrialLicense = async (users: number) => {
+export async function trackRequestTrialLicense(action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/start-trial`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
+}
+
+export const requestTrialLicense = async (users: number, action: string) => {
+    trackRequestTrialLicense(action);
+
     try {
         const response = await Client4.doFetch(`${Client4.getBaseRoute()}/trial-license`, {
             method: 'POST', body: JSON.stringify({users, terms_accepted: true, receive_emails_accepted: true}),
@@ -351,13 +373,13 @@ export const requestTrialLicense = async (users: number) => {
     }
 };
 
-export const postMessageToAdmins = async (messageType: AdminNotificationType) => {
-    const body = `{"message_type": "${messageType}"}`;
+export const postMessageToAdmins = async (messageType: AdminNotificationType, isServerTeamEdition: boolean) => {
+    const body = `{"message_type": "${messageType}", "is_team_edition": ${isServerTeamEdition}}`;
     try {
-        const data = await doPost(`${apiUrl}/bot/notify-admins`, body);
-        return data;
-    } catch (error) {
-        return {error};
+        const response = await doPost(`${apiUrl}/bot/notify-admins`, body);
+        return {data: response};
+    } catch (e) {
+        return {error: e.message};
     }
 };
 

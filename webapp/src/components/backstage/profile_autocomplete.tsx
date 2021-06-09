@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
@@ -79,7 +79,7 @@ interface Props {
     isDisabled?: boolean;
 }
 
-const ProfileAutocomplete: FC<Props> = (props: Props) => {
+const ProfileAutocomplete = (props: Props) => {
     const onChange = (userAdded: UserProfile) => {
         props.onAddUser(userAdded.id);
     };

@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React, {useState} from 'react';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {ActionFunc} from 'mattermost-redux/types/actions';
@@ -8,6 +8,11 @@ import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
 import {Playbook} from 'src/types/playbook';
+import {useAllowPlaybookGranularAccess} from 'src/hooks';
+import {AdminNotificationType} from 'src/constants';
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
 import SelectUsersBelow from './select_users_below';
 import {BackstageSubheader, BackstageSubheaderDescription, RadioContainer, RadioInput, RadioLabel} from './styles';
@@ -30,18 +35,30 @@ const UserSelectorWrapper = styled.div`
 
 const selectCurrentTeamName = (state: GlobalState) => getCurrentTeam(state).name;
 
-const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
+const SharePlaybook = (props: SharePlaybookProps) => {
+    const allowPlaybookGranularAccess = useAllowPlaybookGranularAccess();
+    const [showModal, setShowModal] = useState(false);
+
     const currentTeamName = useSelector<GlobalState, string>(selectCurrentTeamName);
+
     const enabled = props.playbook.member_ids.length > 0;
-    const radioPressed = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.value === 'enabled') {
-            if (!enabled) {
-                props.onAddUser(props.currentUserId);
-            }
-        } else {
-            props.onClear();
+
+    const handleDisable = () => {
+        props.onClear();
+    };
+
+    const handleEnable = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!allowPlaybookGranularAccess) {
+            setShowModal(true);
+            e.preventDefault();
+            return;
+        }
+
+        if (!enabled) {
+            props.onAddUser(props.currentUserId);
         }
     };
+
     return (
         <>
             <BackstageSubheader>
@@ -54,7 +71,7 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
                         name='enabled'
                         value='disabled'
                         checked={!enabled}
-                        onChange={radioPressed}
+                        onChange={handleDisable}
                     />
                     {'Everyone on this team ('}
                     <b>{currentTeamName}</b>
@@ -66,9 +83,10 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
                         name='enabled'
                         value='enabled'
                         checked={enabled}
-                        onChange={radioPressed}
+                        onChange={handleEnable}
                     />
                     {'Only selected users can access.'}
+                    {!allowPlaybookGranularAccess && <PositionedUpgradeBadge/>}
                 </RadioLabel>
             </RadioContainer>
             {enabled &&
@@ -85,8 +103,18 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
                     />
                 </UserSelectorWrapper>
             }
+            <UpgradeModal
+                messageType={AdminNotificationType.PLAYBOOK_GRANULAR_ACCESS}
+                show={showModal}
+                onHide={() => setShowModal(false)}
+            />
         </>
     );
 };
+
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-left: 8px;
+    margin-top: 2px;
+`;
 
 export default SharePlaybook;

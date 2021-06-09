@@ -18,7 +18,7 @@
         "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
-        "header": "Incident Collaboration requires a Mattermost Cloud or Mattermost E20 License.",
+        "header": "",
         "footer": "",
         "settings": [{
             "key": "EnabledTeams",

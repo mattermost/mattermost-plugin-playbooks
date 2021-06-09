@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import moment from 'moment';
 
 interface DurationProps {
@@ -29,7 +29,7 @@ export const renderDuration = (duration: moment.Duration) => {
     return durationComponents.join(' ');
 };
 
-const Duration: FC<DurationProps> = (props: DurationProps) => {
+const Duration = (props: DurationProps) => {
     const [now, setNow] = useState(moment());
 
     useEffect(() => {

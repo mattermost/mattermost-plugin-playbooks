@@ -65,25 +65,12 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.config.IsE10Licensed() {
-		num, err := h.playbookService.GetNumPlaybooksForTeam(pbook.TeamID)
-		if err != nil {
-			h.HandleError(w, err)
-			return
-		}
-
-		if num > 0 {
-			h.HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers can create only one playbook per team", nil)
-			return
-		}
-	}
-
 	if pbook.ID != "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
 		return
 	}
 
-	if err := permissions.CreatePlaybook(userID, pbook, h.config, h.pluginAPI); err != nil {
+	if err := permissions.CreatePlaybook(userID, pbook, h.config, h.pluginAPI, h.playbookService); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
@@ -97,6 +84,20 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 		if url.Scheme != "http" && url.Scheme != "https" {
 			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
+	if pbook.WebhookOnStatusUpdateEnabled {
+		url, err := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
+		if err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
@@ -153,7 +154,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err3 := permissions.PlaybookModify(userID, pbook, oldPlaybook, h.pluginAPI); err3 != nil {
+	if err3 := permissions.PlaybookModify(userID, pbook, oldPlaybook, h.config, h.pluginAPI, h.playbookService); err3 != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
 		return
 	}
@@ -172,6 +173,20 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 
 		if url.Scheme != "http" && url.Scheme != "https" {
 			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
+	if pbook.WebhookOnStatusUpdateEnabled {
+		url, err2 := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
+		if err2 != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err2)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}

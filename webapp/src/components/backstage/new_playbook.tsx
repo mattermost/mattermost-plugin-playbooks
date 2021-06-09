@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 import {Redirect} from 'react-router-dom';
 
 import {Team} from 'mattermost-redux/types/teams';
@@ -9,10 +9,9 @@ import {teamPluginUrl} from 'src/browser_routing';
 
 interface Props {
     currentTeam: Team
-    onClose: () => void
 }
 
-export const NewPlaybook: FC<Props> = (props: Props) => {
+export const NewPlaybook = (props: Props) => {
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
 
     if (!allowPlaybookCreation) {
@@ -22,7 +21,6 @@ export const NewPlaybook: FC<Props> = (props: Props) => {
     return (
         <PlaybookEdit
             currentTeam={props.currentTeam}
-            onClose={props.onClose}
             isNew={true}
         />
     );

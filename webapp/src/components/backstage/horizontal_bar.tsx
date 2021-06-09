@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 export interface HorizontalBarProps {
@@ -26,7 +26,7 @@ const Children = styled.div`
     align-items: center;
 `;
 
-const HorizontalBar: FC<HorizontalBarProps> = (props: HorizontalBarProps) => {
+const HorizontalBar = (props: HorizontalBarProps) => {
     return (
         <Container>
             <Children>

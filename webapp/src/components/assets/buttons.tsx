@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
@@ -100,7 +100,7 @@ export const GrayTertiaryButton = styled.button`
 
 export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
 
-export const UpgradeButton: FC<UpgradeButtonProps> = (props: UpgradeButtonProps) => {
+export const UpgradeButton = (props: UpgradeButtonProps) => {
     const {children, ...rest} = props;
     return (
         <PrimaryButton {...rest}>

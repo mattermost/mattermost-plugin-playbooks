@@ -170,6 +170,16 @@ const RHSTimelineEventItem = (props: Props) => {
         summary = props.event.summary;
         testid = TimelineEventType.UserJoinedLeft;
         break;
+    case TimelineEventType.PublishedRetrospective:
+        iconClass = 'icon icon-pencil-outline';
+        summaryTitle = 'Retrospective published by ' + props.event.subject_display_name;
+        testid = TimelineEventType.PublishedRetrospective;
+        break;
+    case TimelineEventType.CanceledRetrospective:
+        iconClass = 'icon icon-cancel';
+        summaryTitle = 'Retrospective canceled by ' + props.event.subject_display_name;
+        testid = TimelineEventType.CanceledRetrospective;
+        break;
     }
 
     return (

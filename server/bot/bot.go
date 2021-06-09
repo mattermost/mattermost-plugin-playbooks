@@ -14,6 +14,7 @@ type Bot struct {
 	pluginAPI     *pluginapi.Client
 	botUserID     string
 	logContext    LogContext
+	telemetry     Telemetry
 }
 
 // Logger interface - a logging system that will tee logs to a DM channel.
@@ -35,6 +36,9 @@ type Poster interface {
 	// posting was successful. Often used to include post actions.
 	PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
 
+	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
+	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
+
 	// DM posts a simple Direct Message to the specified user.
 	DM(userID, format string, args ...interface{}) error
 
@@ -55,15 +59,29 @@ type Poster interface {
 	PublishWebsocketEventToUser(event string, payload interface{}, userID string)
 
 	// NotifyAdmins sends a DM with the message to each admins
-	NotifyAdmins(message, authorUserID string) error
+	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error
+}
+
+type Telemetry interface {
+	NotifyAdminsToViewTimeline(userID string)
+	NotifyAdminsToAddMessageToTimeline(userID string)
+	NotifyAdminsToCreatePlaybook(userID string)
+	NotifyAdminsToRestrictPlaybookCreation(userID string)
+	NotifyAdminsToRestrictPlaybookAccess(userID string)
+	StartTrialToViewTimeline(userID string)
+	StartTrialToAddMessageToTimeline(userID string)
+	StartTrialToCreatePlaybook(userID string)
+	StartTrialToRestrictPlaybookCreation(userID string)
+	StartTrialToRestrictPlaybookAccess(userID string)
 }
 
 // New creates a new bot poster/logger.
-func New(api *pluginapi.Client, botUserID string, configService config.Service) *Bot {
+func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
 	return &Bot{
 		pluginAPI:     api,
 		botUserID:     botUserID,
 		configService: configService,
+		telemetry:     telemetry,
 	}
 }
 
@@ -74,5 +92,6 @@ func (b *Bot) clone() *Bot {
 		pluginAPI:     b.pluginAPI,
 		botUserID:     b.botUserID,
 		logContext:    b.logContext.copyShallow(),
+		telemetry:     b.telemetry,
 	}
 }

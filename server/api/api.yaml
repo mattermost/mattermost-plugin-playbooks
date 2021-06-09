@@ -78,7 +78,7 @@ paths:
           example: active
           schema:
             type: string
-            default:
+            default: Reported
             enum:
               - Reported
               - Active
@@ -543,7 +543,7 @@ paths:
               type: object
               properties:
                 active_stage:
-                  type: int
+                  type: integer
                   description: Zero-based index of the stage that will be made active.
                   example: 2
       x-codeSamples:
@@ -792,6 +792,13 @@ paths:
         - BearerAuth: []
       tags:
         - Internal
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The Incident ID
       requestBody:
         description: Dialog submission payload.
         content:
@@ -1189,7 +1196,7 @@ paths:
   /incidents/{id}/checklists/{checklist}/item/{item}/run:
     put:
       summary: Run an item's slash command
-      operationId: itemSetAssignee
+      operationId: itemRun
       security:
         - BearerAuth: []
       tags:
@@ -1333,7 +1340,7 @@ paths:
           required: false
           example: true
           schema:
-            type: bool
+            type: boolean
             default: false
       x-codeSamples:
         - lang: curl
@@ -1468,6 +1475,14 @@ paths:
                   description: Boolean that indicates whether the webhook declared in webhook_on_creation_url will be automatically sent.
                   type: boolean
                   example: true
+                webhook_on_status_update_url:
+                  description: An absolute URL where a POST request will be sent as soon as the incident's status is updated. The allowed protocols are HTTP and HTTPS.
+                  type: string
+                  example: https://httpbin.org/post
+                webhook_on_status_update_enabled:
+                  description: Boolean that indicates whether the webhook declared in webhook_on_status_update_url will be automatically sent.
+                  type: boolean
+                  example: true
       x-codeSamples:
         - lang: curl
           source: |
@@ -1487,6 +1502,21 @@ paths:
                   application/json:
                     schema:
                       $ref: "#/components/schemas/WebhookOnCreationPayload"
+              responses:
+                "2XX":
+                  description: Your server returns a 2XX code if it successfully received the request.
+        incidentStatusUpdate:
+          "{$request.body#/webhook_on_status_update_url}":
+            post:
+              summary: Incident's status update outgoing webhook.
+              description: When an incident's status is updated, a POST request is sent to the URL configured in webhook_on_status_update_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
+              operationId: webhookOnStatusUpdate
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/WebhookOnStatusUpdatePayload"
               responses:
                 "2XX":
                   description: Your server returns a 2XX code if it successfully received the request.
@@ -1619,29 +1649,29 @@ components:
       scheme: bearer
   schemas:
     400:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
       description: The request is malformed.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
     403:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
       description: Access to the resource is forbidden for this user.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
     404:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
       description: Resource requested not found.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
     500:
-      description: There was an internal error in the server.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+      description: There was an internal error in the server.
     Incident:
       type: object
       properties:
@@ -1943,6 +1973,19 @@ components:
     WebhookOnCreationPayload:
       allOf:
         - $ref: "#/components/schemas/Incident"
+        - type: object
+          properties:
+            channel_url:
+              type: string
+              description: Absolute URL to the incident's channel.
+              example: http://example.com/ad-1/channels/incident-channel-name
+            details_url:
+              type: string
+              description: Absolute URL to the incident's details.
+              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID
+    WebhookOnStatusUpdatePayload:
+      allOf:
+        - $ref: '#/components/schemas/Incident'
         - type: object
           properties:
             channel_url:

@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -9,14 +9,19 @@ import {ModalActionState} from 'src/components/backstage/upgrade_modal_data';
 interface Props {
     actionState: ModalActionState;
     isCurrentUserAdmin: boolean;
+    isServerTeamEdition: boolean;
 }
 
-const UpgradeModalFooter : FC<Props> = (props: Props) => {
+const UpgradeModalFooter = (props: Props) => {
     if (!props.isCurrentUserAdmin) {
         return null;
     }
 
     if (props.actionState !== ModalActionState.Uninitialized) {
+        return null;
+    }
+
+    if (props.isServerTeamEdition) {
         return null;
     }
 

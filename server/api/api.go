@@ -81,6 +81,13 @@ func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !h.config.IsAtLeastE20Licensed() {
+		if len(settings.PlaybookCreatorsUserIds) > 0 {
+			h.HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers cannot configure specific users to access playbooks", nil)
+			return
+		}
+	}
+
 	pluginConfig := h.pluginAPI.Configuration.GetPluginConfig()
 	pluginConfig["PlaybookCreatorsUserIds"] = settings.PlaybookCreatorsUserIds
 	if err := h.pluginAPI.Configuration.SavePluginConfig(pluginConfig); err != nil {

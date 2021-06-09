@@ -11,7 +11,7 @@ type Props = {
     offText?: React.ReactNode;
 }
 
-const Toggle: React.FC<Props> = (props: Props) => {
+const Toggle = (props: Props) => {
     const {onToggle, toggled, disabled, onText, offText} = props;
     return (
         <button

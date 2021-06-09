@@ -99,12 +99,10 @@ const BackstageTitlebarItem = styled(NavLink)`
 
 const BackstageBody = styled.div`
     z-index: 1;
-    width: 100%;
-    height: 100%;
     margin: 0 auto;
 `;
 
-const Backstage: FC = () => {
+const Backstage = () => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -186,14 +184,12 @@ const Backstage: FC = () => {
                     <Route path={`${match.url}/playbooks/new`}>
                         <NewPlaybook
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId/edit`}>
                         <PlaybookEdit
                             isNew={false}
                             currentTeam={currentTeam}
-                            onClose={goToPlaybooks}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>

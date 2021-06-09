@@ -59,10 +59,10 @@ func (p *Plugin) OnActivate() error {
 	},
 		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
 	)
-
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure incident bot")
 	}
+
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
 		c.BotUserID = botID
 		c.AdminLogLevel = "debug"
@@ -71,11 +71,10 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed save bot to config")
 	}
 
-	p.bot = bot.New(pluginAPIClient, botID, p.config)
-
 	var telemetryClient interface {
 		incident.Telemetry
 		playbook.Telemetry
+		bot.Telemetry
 		Enable() error
 		Disable() error
 	}
@@ -134,7 +133,7 @@ func (p *Plugin) OnActivate() error {
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, telemetryClient)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
@@ -171,11 +170,11 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient,
 		p.bot,
 		p.bot,
-		telemetryClient,
 		p.config,
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting

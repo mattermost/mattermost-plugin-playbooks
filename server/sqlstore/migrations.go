@@ -728,4 +728,109 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.16.0"),
+		toVersion:   semver.MustParse("0.17.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectivePublishedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectivePublishedAt to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "RetrospectivePublishedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectivePublishedAt to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.17.0"),
+		toVersion:   semver.MustParse("0.18.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectiveReminderIntervalSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Incident")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RetrospectiveReminderIntervalSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectiveWasCanceled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveWasCanceled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "RetrospectiveReminderIntervalSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Incident")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "RetrospectiveReminderIntervalSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "RetrospectiveWasCanceled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveWasCanceled to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.18.0"),
+		toVersion:   semver.MustParse("0.19.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RetrospectiveTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Playbook")
+				}
+
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RetrospectiveTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Playbook")
+				}
+			}
+
+			if _, err := e.Exec("UPDATE IR_Playbook SET RetrospectiveTemplate = '' WHERE RetrospectiveTemplate IS NULL"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column RetrospectiveTemplate of table IR_Playbook")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.19.0"),
+		toVersion:   semver.MustParse("0.20.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
 }

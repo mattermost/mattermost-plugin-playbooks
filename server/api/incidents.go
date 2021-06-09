@@ -32,12 +32,11 @@ type IncidentHandler struct {
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 	log             bot.Logger
-	telemetry       incident.Telemetry
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
 func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
-	api *pluginapi.Client, poster bot.Poster, log bot.Logger, telemetry incident.Telemetry, configService config.Service) *IncidentHandler {
+	api *pluginapi.Client, poster bot.Poster, log bot.Logger, configService config.Service) *IncidentHandler {
 	handler := &IncidentHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		incidentService: incidentService,
@@ -45,7 +44,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 		pluginAPI:       api,
 		poster:          poster,
 		log:             log,
-		telemetry:       telemetry,
 		config:          configService,
 	}
 
@@ -72,6 +70,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/no-retrospective-button", handler.noRetrospectiveButton).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	incidentRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 
@@ -96,10 +95,6 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
 
-	telemetryRouterAuthorized := router.PathPrefix("/telemetry").Subrouter()
-	telemetryRouterAuthorized.Use(handler.checkViewPermissions)
-	telemetryRouterAuthorized.HandleFunc("/incident/{id:[A-Za-z0-9]+}", handler.telemetryForIncident).Methods(http.MethodPost)
-
 	return handler
 }
 
@@ -115,30 +110,6 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 		}
 
 		if err := permissions.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
-			if errors.Is(err, permissions.ErrNoPermissions) {
-				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-				return
-			}
-			h.HandleError(w, err)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (h *IncidentHandler) checkViewPermissions(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		userID := r.Header.Get("Mattermost-User-ID")
-
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
-		if err != nil {
-			h.HandleError(w, err)
-			return
-		}
-
-		if err := permissions.ViewIncidentFromChannelID(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, permissions.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -428,9 +399,16 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
 		}
 
+		if pb.WebhookOnStatusUpdateEnabled {
+			newIncident.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
+		}
+
 		if pb.MessageOnJoinEnabled {
 			newIncident.MessageOnJoin = pb.MessageOnJoin
 		}
+
+		newIncident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
+		newIncident.Retrospective = pb.RetrospectiveTemplate
 
 		thePlaybook = &pb
 	}
@@ -894,6 +872,33 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 	ReturnJSON(w, nil, http.StatusOK)
 }
 
+func (h *IncidentHandler) noRetrospectiveButton(w http.ResponseWriter, r *http.Request) {
+	incidentID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentToCancelRetro, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if err = permissions.EditIncident(userID, incidentToCancelRetro.ChannelID, h.pluginAPI); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			ReturnJSON(w, nil, http.StatusForbidden)
+			return
+		}
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
+		return
+	}
+
+	if err := h.incidentService.CancelRetrospective(incidentID, userID); err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to cancel retrospective", err)
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
+}
+
 // removeTimelineEvent handles the DELETE /incidents/{id}/timeline/{eventID} endpoint.
 // User has been authenticated to edit the incident.
 func (h *IncidentHandler) removeTimelineEvent(w http.ResponseWriter, r *http.Request) {
@@ -1227,37 +1232,6 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 }
 
-// telemetryForIncident handles the /telemetry/incident/{id}?action=the_action endpoint. The frontend
-// can use this endpoint to track events that occur in the context of an incident
-func (h *IncidentHandler) telemetryForIncident(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var params struct {
-		Action string `json:"action"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode post body", err)
-		return
-	}
-
-	if params.Action == "" {
-		h.HandleError(w, errors.New("must provide action"))
-		return
-	}
-
-	incdnt, err := h.incidentService.GetIncident(id)
-	if err != nil {
-		h.HandleError(w, err)
-		return
-	}
-
-	h.telemetry.FrontendTelemetryForIncident(incdnt, userID, params.Action)
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {
 	channel, err := h.pluginAPI.Channel.Get(incdnt.ChannelID)
 	if err != nil {
@@ -1299,7 +1273,16 @@ func (h *IncidentHandler) publishRetrospective(w http.ResponseWriter, r *http.Re
 	incidentID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.incidentService.PublishRetrospective(incidentID, userID); err != nil {
+	var retroUpdate struct {
+		Retrospective string `json:"retrospective"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
+		return
+	}
+
+	if err := h.incidentService.PublishRetrospective(incidentID, retroUpdate.Retrospective, userID); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to publish retrospective", err)
 		return
 	}
