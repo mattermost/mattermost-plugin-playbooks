@@ -90,6 +90,7 @@ func TestGetIncidents(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc02 := *NewBuilder(nil).
@@ -99,6 +100,7 @@ func TestGetIncidents(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc03 := *NewBuilder(nil).
@@ -109,6 +111,7 @@ func TestGetIncidents(t *testing.T) {
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
 		WithCurrentStatus("Archived").
+		WithPlaybookID("playbook2").
 		ToIncident()
 
 	inc04 := *NewBuilder(nil).
@@ -167,7 +170,6 @@ func TestGetIncidents(t *testing.T) {
 		ToIncident()
 
 	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
-	finishedIncidentNum := []int{2, 3}
 
 	createIncidents := func(store *SQLStore, incidentStore incident.Store) {
 		t.Helper()
@@ -179,15 +181,6 @@ func TestGetIncidents(t *testing.T) {
 			require.NoError(t, err)
 
 			createdIncidents[i] = *createdIncident
-		}
-
-		for _, i := range finishedIncidentNum {
-			err := incidentStore.UpdateStatus(&incident.SQLStatusPost{
-				IncidentID: createdIncidents[i].ID,
-				PostID:     model.NewId(),
-				Status:     incident.StatusArchived,
-			})
-			require.NoError(t, err)
 		}
 	}
 
@@ -771,6 +764,44 @@ func TestGetIncidents(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []incident.Incident{inc03, inc04, inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook1 - desc - admin",
+			RequesterInfo: permissions.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook1",
+				Direction:  "desc",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc02, inc01},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook2 - desc - admin",
+			RequesterInfo: permissions.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook2",
+				Direction:  "desc",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc03},
 			},
 			ExpectedErr: nil,
 		},
@@ -1793,6 +1824,10 @@ func (ib *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
 func (ib *IncidentBuilder) WithCurrentStatus(status string) *IncidentBuilder {
 	ib.i.CurrentStatus = status
 
+	if status == "Resolved" || status == "Archived" {
+		ib.i.EndAt = ib.i.CreateAt + 100
+	}
+
 	return ib
 }
 
@@ -1801,6 +1836,12 @@ func (ib *IncidentBuilder) WithChannel(channel *model.Channel) *IncidentBuilder 
 
 	// Consider the incident name as authoritative.
 	channel.DisplayName = ib.i.Name
+
+	return ib
+}
+
+func (ib *IncidentBuilder) WithPlaybookID(id string) *IncidentBuilder {
+	ib.i.PlaybookID = id
 
 	return ib
 }

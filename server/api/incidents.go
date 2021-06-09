@@ -1325,6 +1325,8 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
 
 	memberID := u.Query().Get("member_id")
 
+	playbookID := u.Query().Get("playbook_id")
+
 	return &incident.FilterOptions{
 		TeamID:      teamID,
 		Page:        page,
@@ -1335,6 +1337,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
 		CommanderID: commanderID,
 		SearchTerm:  searchTerm,
 		MemberID:    memberID,
+		PlaybookID:  playbookID,
 	}, nil
 }
 

@@ -41,6 +41,10 @@ type FilterOptions struct {
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
 	// not returned in relevance order).
 	SearchTerm string `url:"search_term,omitempty"`
+
+	// PlaybookID filters incidents that are derived from this playbook id.
+	// Defaults to blank (no filter).
+	PlaybookID string `url:"playbook_id,omitempty"`
 }
 
 const (

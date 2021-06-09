@@ -137,6 +137,11 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 		queryForTotal = queryForTotal.Where(membershipClause)
 	}
 
+	if options.PlaybookID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
+	}
+
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
 	if options.SearchTerm != "" {
 		column := "c.DisplayName"

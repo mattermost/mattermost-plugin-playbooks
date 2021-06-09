@@ -33,7 +33,7 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
-import {Stats} from 'src/types/stats';
+import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -286,6 +286,15 @@ export async function fetchStats(teamID: string): Promise<Stats | null> {
     }
 
     return data as Stats;
+}
+
+export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookStats> {
+    const data = await doGet(`${apiUrl}/stats/playbook?playbook_id=${playbookID}`);
+    if (!data) {
+        return EmptyPlaybookStats;
+    }
+
+    return data as PlaybookStats;
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {
