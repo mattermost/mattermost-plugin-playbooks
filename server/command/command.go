@@ -782,6 +782,10 @@ func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
 		return "@" + username + " " + event.Summary
 	case incident.RanSlashCommand:
 		return "@" + username + " " + event.Summary
+	case incident.PublishedRetrospective:
+		return "@" + username + " published retrospective"
+	case incident.CanceledRetrospective:
+		return "@" + username + " canceled retrospective"
 	default:
 		return event.Summary
 	}
