@@ -8,6 +8,7 @@ import StatusBadge from 'src/components/backstage/incidents/status_badge';
 
 export const Container = styled.div`
     display: flex;
+    height: 100%;
 `;
 
 export const Left = styled.div`
@@ -22,7 +23,7 @@ export const Right = styled.div`
 export const TabPageContainer = styled.div`
     font-size: 12px;
     font-weight: normal;
-    margin-top: 20px;
+    margin-bottom: 20px;
 `;
 
 export const Title = styled.div`
