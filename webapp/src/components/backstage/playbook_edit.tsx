@@ -406,10 +406,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     if (!props.isNew) {
         switch (fetchingState) {
-            case FetchingStateType.notFound:
-                return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)} />;
-            case FetchingStateType.loading:
-                return null;
+        case FetchingStateType.notFound:
+            return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
+        case FetchingStateType.loading:
+            return null;
         }
     }
 
@@ -433,7 +433,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         />
                     </EditableTitleContainer>
                 </EditableTexts>
-                <NavbarPadding />
+                <NavbarPadding/>
                 <PrimaryButton
                     className='mr-4'
                     data-testid='save_playbook'
