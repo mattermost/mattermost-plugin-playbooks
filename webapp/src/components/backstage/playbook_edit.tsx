@@ -373,21 +373,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleSignalAnyKeywordsChange = (keywords: string) => {
-        const index = keywords.lastIndexOf(',');
-        let final_keywords: string[];
-        if (index === -1) {
-            final_keywords = [keywords];
-        } else {
-            const typingKeyword = keywords.substring(index + 1);
-            const alreadyTypedKeywords = keywords.substring(0, index);
-            const split_keywords = alreadyTypedKeywords.split(',').filter((keyword) => keyword);
-            const unique_keywords = [...new Set(split_keywords)];
-            final_keywords = [...unique_keywords, typingKeyword];
-        }
-
         setPlaybook({
             ...playbook,
-            signal_any_keywords: [...final_keywords],
+            signal_any_keywords: keywords.split(','),
         });
         setChangesMade(true);
     };
@@ -418,10 +406,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     if (!props.isNew) {
         switch (fetchingState) {
-        case FetchingStateType.notFound:
-            return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
-        case FetchingStateType.loading:
-            return null;
+            case FetchingStateType.notFound:
+                return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)} />;
+            case FetchingStateType.loading:
+                return null;
         }
     }
 
@@ -445,7 +433,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         />
                     </EditableTitleContainer>
                 </EditableTexts>
-                <NavbarPadding/>
+                <NavbarPadding />
                 <PrimaryButton
                     className='mr-4'
                     data-testid='save_playbook'
@@ -504,7 +492,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     </BackstageSubheader>
                                     <StyledSelect
                                         value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: { label: string, value: number }) => {
+                                        onChange={(option: {label: string, value: number}) => {
                                             setPlaybook({
                                                 ...playbook,
                                                 reminder_timer_default_seconds: option ? option.value : option,
