@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
+import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
@@ -15,7 +15,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, emptyPlaybook, defaultMessageOnJoin} from 'src/types/playbook';
+import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -259,18 +259,6 @@ const PlaybookEdit = (props: Props) => {
         onClose(data?.id);
     };
 
-    const confirmOrClose = () => {
-        if (changesMade) {
-            setConfirmOpen(true);
-        } else {
-            onClose();
-        }
-    };
-
-    const confirmCancel = () => {
-        setConfirmOpen(false);
-    };
-
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
         if (playbookId) {
@@ -473,7 +461,7 @@ const PlaybookEdit = (props: Props) => {
                 <NavbarPadding/>
                 <SecondaryButtonLarger
                     className='mr-4'
-                    onClick={confirmOrClose}
+                    onClick={() => onClose()}
                 >
                     <span>
                         {'Cancel'}
