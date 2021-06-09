@@ -20,9 +20,10 @@ import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
+import {BackstageNavbar} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+import {SecondaryButton} from 'src/components/backstage/incidents/shared';
 
 import './playbook.scss';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
@@ -73,6 +74,13 @@ const SidebarBlock = styled.div`
 
 const NavbarPadding = styled.div`
     flex-grow: 1;
+`;
+
+const SecondaryButtonLarger = styled(SecondaryButton)`
+    height: 40px;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 20px;
 `;
 
 const EditableTexts = styled.div`
@@ -463,6 +471,14 @@ const PlaybookEdit = (props: Props) => {
                     </EditableTitleContainer>
                 </EditableTexts>
                 <NavbarPadding/>
+                <SecondaryButtonLarger
+                    className='mr-4'
+                    onClick={confirmOrClose}
+                >
+                    <span>
+                        {'Cancel'}
+                    </span>
+                </SecondaryButtonLarger>
                 <PrimaryButton
                     className='mr-4'
                     data-testid='save_playbook'
@@ -470,13 +486,6 @@ const PlaybookEdit = (props: Props) => {
                 >
                     <span>
                         {'Save'}
-                    </span>
-                </PrimaryButton>
-                <PrimaryButton
-                    onClick={confirmOrClose}
-                >
-                    <span>
-                        {'Cancel'}
                     </span>
                 </PrimaryButton>
             </BackstageNavbar>
