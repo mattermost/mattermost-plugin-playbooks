@@ -1,4 +1,4 @@
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 
 import ReactSelect, {ControlProps, MenuListComponentProps} from 'react-select';
@@ -12,6 +12,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import Profile from 'src/components/profile/profile';
+import ClearIcon from 'src/components/assets/icons/clear_icon';
 
 interface Props {
     commanderID: string;
@@ -21,7 +22,7 @@ interface Props {
     isDisabled: boolean;
 }
 
-const AssignCommanderSelector: FC<Props> = (props: Props) => {
+const AssignCommanderSelector = (props: Props) => {
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const commanderUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.commanderID));
@@ -48,6 +49,14 @@ const AssignCommanderSelector: FC<Props> = (props: Props) => {
         updateOptions(searchTerm);
     }, [props.commanderID, searchTerm]);
 
+    const handleSelectionChange = (userAdded: UserProfile | null, {action}: {action: string}) => {
+        if (action === 'clear') {
+            props.onAddUser('');
+        } else if (userAdded) {
+            props.onAddUser(userAdded.id);
+        }
+    };
+
     return (
         <StyledReactSelect
             closeMenuOnSelect={true}
@@ -58,16 +67,16 @@ const AssignCommanderSelector: FC<Props> = (props: Props) => {
             isMulti={false}
             value={commanderUser}
             controlShouldRenderValue={!props.isDisabled}
-            onChange={(userAdded: UserProfile) => props.onAddUser(userAdded.id)}
+            onChange={handleSelectionChange}
             getOptionValue={(user: UserProfile) => user.id}
             formatOptionLabel={(user: UserProfile) => (
                 <StyledProfile userId={user.id}/>
             )}
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
-            isClearable={false}
+            isClearable={true}
             placeholder={'Search for member'}
-            components={{DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+            components={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
                 control: (provided: ControlProps<UserProfile>) => ({
                     ...provided,
@@ -216,5 +225,13 @@ const MenuList = (props: MenuListComponentProps<UserProfile>) => {
                 {props.children}
             </StyledScrollbars>
         </MenuListWrapper>
+    );
+};
+
+const ClearIndicator = ({clearValue}: {clearValue: () => void}) => {
+    return (
+        <div onClick={clearValue}>
+            <ClearIcon/>
+        </div>
     );
 };

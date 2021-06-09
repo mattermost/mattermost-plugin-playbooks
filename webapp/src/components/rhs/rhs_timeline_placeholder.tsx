@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
@@ -29,7 +29,7 @@ enum ActionState {
 
 type HandlerType = undefined | (() => (Promise<void> | void));
 
-const TimelineUpgradePlaceholder : FC = () => {
+const TimelineUpgradePlaceholder = () => {
     const currentUser = useSelector(getCurrentUser);
     const isCurrentUserAdmin = isSystemAdmin(currentUser.roles);
     const [actionState, setActionState] = useState(ActionState.Uninitialized);
@@ -142,7 +142,7 @@ interface ButtonProps {
     requestLicense: HandlerType;
 }
 
-const Button : FC<ButtonProps> = (props: ButtonProps) => {
+const Button = (props: ButtonProps) => {
     if (props.actionState === ActionState.Loading) {
         return <Spinner/>;
     }

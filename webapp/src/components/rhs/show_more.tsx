@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -136,7 +136,7 @@ interface Props {
     text?: string;
 }
 
-const ShowMore: FC<Props> = (props: Props) => {
+const ShowMore = (props: Props) => {
     const maxHeight = 277;
 
     const textContainer = useRef<HTMLDivElement>(null);

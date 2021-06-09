@@ -105,7 +105,7 @@ const BackstageBody = styled.div`
     margin: 0 auto;
 `;
 
-const Backstage: FC = () => {
+const Backstage = () => {
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.

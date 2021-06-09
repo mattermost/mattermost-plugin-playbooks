@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
@@ -25,6 +25,8 @@ import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 
 import './playbook.scss';
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
+
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
@@ -153,10 +155,18 @@ const timerOptions = [
     {value: 86400, label: '24hr'},
 ];
 
+const retrospectiveReminderOptions = [
+    {value: 0, label: 'Once'},
+    {value: 3600, label: '1hr'},
+    {value: 14400, label: '4hr'},
+    {value: 86400, label: '24hr'},
+    {value: 604800, label: '7days'},
+];
+
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
-const PlaybookEdit: FC<Props> = (props: Props) => {
+const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
     const currentUserId = useSelector(getCurrentUserId);
@@ -174,6 +184,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     const [currentTab, setCurrentTab] = useState<number>(0);
+
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -293,7 +305,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleAssignDefaultCommander = (userId: string | undefined) => {
-        if (userId && playbook.default_commander_id !== userId) {
+        if ((userId || userId === '') && playbook.default_commander_id !== userId) {
             setPlaybook({
                 ...playbook,
                 default_commander_id: userId,
@@ -303,7 +315,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     };
 
     const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
-        if (channelId && playbook.announcement_channel_id !== channelId) {
+        if ((channelId || channelId === '') && playbook.announcement_channel_id !== channelId) {
             setPlaybook({
                 ...playbook,
                 announcement_channel_id: channelId,
@@ -544,6 +556,50 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
+                                {experimentalFeaturesEnabled &&
+                                <>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {'Retrospective Reminder Interval'}
+                                            <BackstageSubheaderDescription>
+                                                {'Reminds the channel at a specified interval to fill out the retrospective.'}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledSelect
+                                            value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                                            onChange={(option: { label: string, value: number }) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_reminder_interval_seconds: option ? option.value : option,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                            classNamePrefix='channel-selector'
+                                            options={retrospectiveReminderOptions}
+                                            isClearable={false}
+                                        />
+                                    </SidebarBlock>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {'Retrospective Template'}
+                                            <BackstageSubheaderDescription>
+                                                {'Default text for the retrospective.'}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledTextarea
+                                            placeholder={'Enter retrospective template'}
+                                            value={playbook.retrospective_template}
+                                            onChange={(e) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_template: e.target.value,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                        />
+                                    </SidebarBlock>
+                                </>
+                                }
                             </TabContainer>
                             <TabContainer>
                                 <AutomationSettings
@@ -573,7 +629,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
-                                    messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
+                                    messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
                                 />
                             </TabContainer>

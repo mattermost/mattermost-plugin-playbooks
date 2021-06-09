@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 
 import styled from 'styled-components';
 
@@ -23,7 +23,7 @@ interface Props {
     teamID: string;
 }
 
-export const AutoAssignCommander: FC<Props> = (props: Props) => {
+export const AutoAssignCommander = (props: Props) => {
     return (
         <>
             <AutomationHeader>
@@ -122,7 +122,7 @@ interface UserProps {
     isEnabled: boolean;
 }
 
-const Users: FC<UserProps> = (props: UserProps) => {
+const Users = (props: UserProps) => {
     return (
         <UserRow isEnabled={props.isEnabled}>
             {props.userIds.map((userId: string) => (

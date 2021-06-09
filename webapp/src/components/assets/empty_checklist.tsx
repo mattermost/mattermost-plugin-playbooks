@@ -1,13 +1,13 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 
 interface Props {
     theme: Record<string, string>;
 }
 
-const EmptyChecklistImage: FC<Props> = (props: Props) => (
+const EmptyChecklistImage = (props: Props) => (
     <svg
         width='215'
         height='146'

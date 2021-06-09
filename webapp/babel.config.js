@@ -40,6 +40,12 @@ const config = {
     ],
 };
 
+const NPM_TARGET = process.env.npm_lifecycle_event; //eslint-disable-line no-process-env
+const targetIsDevServer = NPM_TARGET === 'dev-server';
+if (targetIsDevServer) {
+    config.plugins.push(require.resolve('react-refresh/babel'));
+}
+
 // Jest needs module transformation
 config.env = {
     test: {

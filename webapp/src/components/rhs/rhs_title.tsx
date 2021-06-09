@@ -34,7 +34,7 @@ const Button = styled.button`
     align-items: center;
 `;
 
-const RHSTitle: FC = () => {
+const RHSTitle = () => {
     const dispatch = useDispatch();
     const incident = useSelector<GlobalState, Incident | undefined>(currentIncident);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);

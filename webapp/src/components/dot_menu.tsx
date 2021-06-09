@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useRef} from 'react';
+import React, {useState, useRef} from 'react';
 import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
@@ -85,7 +85,7 @@ interface DotMenuProps {
     buttonRight?: boolean;
 }
 
-const DotMenu: FC<DotMenuProps> = (props: DotMenuProps) => {
+const DotMenu = (props: DotMenuProps) => {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(true);

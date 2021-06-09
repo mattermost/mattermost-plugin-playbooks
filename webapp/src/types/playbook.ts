@@ -25,6 +25,8 @@ export interface Playbook {
     webhook_on_status_update_enabled: boolean;
     message_on_join: string;
     message_on_join_enabled: boolean;
+    retrospective_reminder_interval_seconds: number;
+    retrospective_template: string;
 }
 
 export interface PlaybookNoChecklist {
@@ -100,8 +102,10 @@ export function emptyPlaybook(): Playbook {
         webhook_on_creation_enabled: false,
         webhook_on_status_update_url: '',
         webhook_on_status_update_enabled: false,
-        message_on_join: '',
+        message_on_join: defaultMessageOnJoin,
         message_on_join_enabled: false,
+        retrospective_reminder_interval_seconds: 0,
+        retrospective_template: defaultRetrospectiveTemplate,
     };
 }
 
@@ -184,3 +188,24 @@ export const defaultMessageOnJoin = 'Welcome. This channel was automatically cre
     '\n' +
     '[Mattermost Incident Collaboration channel](https://community.mattermost.com/core/channels/ee-incident-response)\n' +
     '[Incident Collaboration documentation](https://docs.mattermost.com/administration/devops-command-center.html)';
+
+export const defaultRetrospectiveTemplate = `### Summary
+This should contain 2-3 sentences that gives a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.
+
+### What was the impact?
+This section describes the impact of this playbook run as experienced by internal and external customers as well as stakeholders.
+
+### What were the contributing factors?
+This playbook may be a reactive protocol to a situation that is otherwise undesirable. If that's the case, this section explains the reasons that caused the situation in the first place. There may be multiple root causes - this helps stakeholders understand why.
+
+### What was done?
+This section tells the story of how the team collaborated throughout the event to achieve the outcome. This will help future teams learn from this experience on what they could try.
+
+### What did we learn?
+This section should include perspective from everyone that was involved to celebrate the victories and identify areas for improvement. For example: What went well? What didn't go well? What should be done differently next time?
+
+### Follow-up tasks
+This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have clear owner assigned as well as due date.
+
+### Timeline Highlights
+This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;

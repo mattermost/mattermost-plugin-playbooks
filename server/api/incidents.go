@@ -70,6 +70,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/no-retrospective-button", handler.noRetrospectiveButton).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	incidentRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 
@@ -405,6 +406,9 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		if pb.MessageOnJoinEnabled {
 			newIncident.MessageOnJoin = pb.MessageOnJoin
 		}
+
+		newIncident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
+		newIncident.Retrospective = pb.RetrospectiveTemplate
 
 		thePlaybook = &pb
 	}
@@ -862,6 +866,33 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 	if err = h.incidentService.RemoveReminderPost(incidentID); err != nil {
 		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
+}
+
+func (h *IncidentHandler) noRetrospectiveButton(w http.ResponseWriter, r *http.Request) {
+	incidentID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	incidentToCancelRetro, err := h.incidentService.GetIncident(incidentID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if err = permissions.EditIncident(userID, incidentToCancelRetro.ChannelID, h.pluginAPI); err != nil {
+		if errors.Is(err, permissions.ErrNoPermissions) {
+			ReturnJSON(w, nil, http.StatusForbidden)
+			return
+		}
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
+		return
+	}
+
+	if err := h.incidentService.CancelRetrospective(incidentID, userID); err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to cancel retrospective", err)
 		return
 	}
 

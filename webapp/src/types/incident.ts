@@ -28,6 +28,8 @@ export interface Incident {
     timeline_events: TimelineEvent[];
     retrospective: string;
     retrospective_published_at: number;
+    retrospective_was_canceled: boolean;
+    retrospective_reminder_interval_seconds: number;
 }
 
 export interface StatusPost {
