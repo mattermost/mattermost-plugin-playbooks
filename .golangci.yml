@@ -36,6 +36,7 @@ linters-settings:
     enable-all: true
     disable:
       - fieldalignment
+      - unusedwrite
 
 issues:
   exclude:
