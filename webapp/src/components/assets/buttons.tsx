@@ -74,6 +74,10 @@ export const TertiaryButton = styled.button`
         background: rgba(var(--button-bg-rgb), 0.16);
     }
 
+    &:disabled {
+        color: rgba(var(--button-bg-rgb), 0.4);
+    }
+
     i {
         display: flex;
         font-size: 18px;
