@@ -878,9 +878,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -923,9 +923,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -960,9 +960,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -1466,9 +1466,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": false},
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: false,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -1726,9 +1726,9 @@ func TestSortingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:          "testuserid",
-						TeamID:          "testteamid",
-						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+						UserID:  "testuserid",
+						TeamID:  "testteamid",
+						IsAdmin: true,
 					},
 					"testteamid",
 					gomock.Any(),
@@ -1961,9 +1961,9 @@ func TestPagingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:          "testuserid",
-						TeamID:          "testteamid",
-						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+						UserID:  "testuserid",
+						TeamID:  "testteamid",
+						IsAdmin: true,
 					},
 					"testteamid",
 					gomock.Any(),

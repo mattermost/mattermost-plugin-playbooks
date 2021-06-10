@@ -310,9 +310,9 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requesterInfo := playbook.RequesterInfo{
-		UserID:          userID,
-		TeamID:          teamID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		UserID:  userID,
+		TeamID:  teamID,
+		IsAdmin: permissions.IsAdmin(userID, h.pluginAPI),
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
@@ -335,9 +335,9 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	}
 
 	requesterInfo := playbook.RequesterInfo{
-		UserID:          userID,
-		TeamID:          teamID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
+		UserID:  userID,
+		TeamID:  teamID,
+		IsAdmin: permissions.IsAdmin(userID, h.pluginAPI),
 	}
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, playbook.Options{})
