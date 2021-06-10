@@ -21,6 +21,7 @@ import StatusBadge from 'src/components/backstage/incidents/status_badge';
 import {useProfilesInChannel} from 'src/hooks';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import ProgressBar from 'src/components/backstage/playbooks/incident_list/progress_bar';
+import {findLastUpdated, findLastUpdatedWithDefault} from 'src/utils';
 
 const SmallText = styled.div`
     font-weight: 400;
@@ -56,7 +57,6 @@ const SmallStatusBadge = styled(StatusBadge)`
 
 const Row = (props: { incident: Incident }) => {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    const lastUpdatedMap = useSelector(lastUpdatedByIncidentId);
     const profilesInChannel = useProfilesInChannel(props.incident.channel_id);
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.incident.checklists);
 
@@ -82,7 +82,7 @@ const Row = (props: { incident: Incident }) => {
                 />
                 <SmallText>
                     <Duration
-                        from={lastUpdatedMap[props.incident.id]}
+                        from={findLastUpdatedWithDefault(props.incident)}
                         to={0}
                         ago={true}
                     />
@@ -98,7 +98,7 @@ const Row = (props: { incident: Incident }) => {
                     />
                 </NormalText>
                 <SmallText>
-                    {moment(props.incident.create_at).calendar()}
+                    {formatDate(props.incident.create_at)}
                 </SmallText>
             </div>
             <div className='col-sm-2'>
@@ -136,6 +136,18 @@ const tasksCompletedTotal = (checklists: Checklist[]) => {
     }
 
     return [completed, total];
+};
+
+const formatDate = (millis: number) => {
+    const mom = moment(millis);
+    if (mom.isAfter(moment().startOf('d').subtract(2, 'd'))) {
+        return mom.calendar();
+    }
+
+    if (mom.isSame(moment(), 'year')) {
+        return mom.format('MMM DD LT');
+    }
+    return mom.format('MMM DD YYYY LT');
 };
 
 export default Row;

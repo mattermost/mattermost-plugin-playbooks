@@ -257,23 +257,4 @@ const IncidentList = (props: Props) => {
     );
 };
 
-const formatDate = (mom: moment.Moment) => {
-    if (mom.isSame(moment(), 'year')) {
-        return mom.format('MMM DD LT');
-    }
-    return mom.format('MMM DD YYYY LT');
-};
-
-const endedAt = (isActive: boolean, time: number) => {
-    if (isActive) {
-        return '--';
-    }
-
-    const mom = moment(time);
-    if (mom.isSameOrAfter('2020-01-01')) {
-        return formatDate(mom);
-    }
-    return '--';
-};
-
 export default IncidentList;

@@ -25,6 +25,7 @@ import {
 import {Incident, incidentIsActive} from 'src/types/incident';
 
 import {GlobalSettings} from './types/settings';
+import {findLastUpdated} from 'src/utils';
 
 //@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
@@ -122,13 +123,6 @@ export const lastUpdatedByIncidentId = createSelector(
         return result;
     },
 );
-
-const findLastUpdated = (incident: Incident) => {
-    const posts = [...incident.status_posts]
-        .filter((a) => a.delete_at === 0)
-        .sort((a, b) => b.create_at - a.create_at);
-    return posts.length === 0 ? 0 : posts[0].create_at;
-};
 
 const PROFILE_SET_ALL = 'all';
 
