@@ -194,13 +194,26 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
-		q = q.Column(`
+		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			q = q.Column(`
+                CAST(
+                     SUM(
+                         CASE
+                             WHEN i.CreateAt <= ? AND i.CreateAt > ?
+                                 THEN 1
+                             ELSE 0
+                         END)
+                     AS UNSIGNED)
+                 `, endOfWeek, startOfWeek)
+		} else {
+			q = q.Column(`
                 SUM(CASE
                         WHEN i.CreateAt <= ? AND i.CreateAt > ?
                             THEN 1
                         ELSE 0
                     END)
                  `, endOfWeek, startOfWeek)
+		}
 
 		// use the middle of the day to get the date, just in case
 		weekAsTime := time.Unix(0, (startOfWeek+day/2)*int64(time.Millisecond))
@@ -232,13 +245,26 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	for i := 0; i < x; i++ {
 		// an incident was active if it was created before the end of the day and ended after the
 		// start of the day (or still active)
-		q = q.Column(`
+		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			q = q.Column(`
+                CAST(
+                     SUM(
+                         CASE
+                             WHEN i.CreateAt <= ? AND (i.EndAt > ? OR i.EndAt = 0)
+                                 THEN 1
+                             ELSE 0
+                         END)
+                     AS UNSIGNED)
+                `, endOfDay, startOfDay)
+		} else {
+			q = q.Column(`
                 SUM(CASE
                         WHEN i.CreateAt <= ? AND (i.EndAt > ? OR i.EndAt = 0)
                             THEN 1
                         ELSE 0
                     END)
                 `, endOfDay, startOfDay)
+		}
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
@@ -338,7 +364,7 @@ func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, err
 	for i := 0; i < x; i++ {
 		val, ok := cols[i].(int64)
 		if !ok {
-			counts[i] = 0
+			return []int{}, fmt.Errorf("column was unexpected type, wanted int64, got: %T", cols[i])
 		}
 		counts[i] = int(val)
 	}
