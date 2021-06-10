@@ -113,6 +113,9 @@ export const lastUpdatedByIncidentId = createSelector(
     (teamId, incidentsMapByTeam) => {
         const result = {} as Record<string, number>;
         const incidentMap = incidentsMapByTeam[teamId];
+        if (!incidentMap) {
+            return {};
+        }
         for (const incident of Object.values(incidentMap)) {
             result[incident.id] = findLastUpdated(incident);
         }
