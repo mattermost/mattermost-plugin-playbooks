@@ -123,6 +123,7 @@ interface Props {
 
 interface URLParams {
     playbookId?: string;
+    tabId?: string;
 }
 
 const FetchingStateType = {
@@ -173,7 +174,15 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
-    const [currentTab, setCurrentTab] = useState<number>(0);
+    let tab = 0;
+    if (urlParams.tabId) {
+        const parsedTab = parseInt(urlParams.tabId, 10);
+        if (!isNaN(parsedTab)) {
+            tab = parsedTab;
+        }
+    }
+
+    const [currentTab, setCurrentTab] = useState<number>(tab);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -406,10 +415,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     if (!props.isNew) {
         switch (fetchingState) {
-        case FetchingStateType.notFound:
-            return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
-        case FetchingStateType.loading:
-            return null;
+            case FetchingStateType.notFound:
+                return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)} />;
+            case FetchingStateType.loading:
+                return null;
         }
     }
 
@@ -433,7 +442,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                         />
                     </EditableTitleContainer>
                 </EditableTexts>
-                <NavbarPadding/>
+                <NavbarPadding />
                 <PrimaryButton
                     className='mr-4'
                     data-testid='save_playbook'

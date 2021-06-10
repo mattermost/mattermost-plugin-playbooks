@@ -1,6 +1,7 @@
 package playbook_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -14,83 +15,38 @@ import (
 	"github.com/stretchr/testify/require"
 
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
 	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 )
 
 func TestGetSuggestedPlaybooks(t *testing.T) {
-	t.Run("can't get channel", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
-
-		channelID := model.NewId()
-		pluginAPI.On("GetChannel", channelID).Return(nil, &model.AppError{Id: "model.channel.is_valid.display_name.app_error"})
-		pluginAPI.On("LogError", "can't get channel", "err", mock.Anything)
-
-		playbooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID})
-		require.Len(t, playbooks, 0)
-	})
-
 	t.Run("can't get time last updated", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
-
-		channelID := model.NewId()
-		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
+		s, store, pluginAPI, _ := getMockPlaybookService(t)
 
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(0), errors.New("store error"))
 		pluginAPI.On("LogError", "can't update playbooks", "err", mock.Anything)
 
-		playbooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID})
+		playbooks, triggers := s.GetSuggestedPlaybooks("teamID", "userID", "message")
 		require.Len(t, playbooks, 0)
+		require.Len(t, triggers, 0)
 	})
 
 	t.Run("can't get playbooks with keywords", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
-
-		channelID := model.NewId()
-		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
+		s, store, pluginAPI, _ := getMockPlaybookService(t)
 
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(nil, errors.New("store error"))
 		pluginAPI.On("LogError", "can't update playbooks", "err", mock.Anything)
 
-		playbooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID})
+		playbooks, triggers := s.GetSuggestedPlaybooks("teamID", "userID", "message")
 		require.Len(t, playbooks, 0)
+		require.Len(t, triggers, 0)
 	})
 
 	t.Run("no playbooks have been triggered", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
+		s, store, _, _ := getMockPlaybookService(t)
 
-		channelID := model.NewId()
 		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
@@ -118,23 +74,15 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		}
 		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
 
-		cachedPlaybooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID})
+		cachedPlaybooks, triggers := s.GetSuggestedPlaybooks(teamID, "userID", "message")
 		require.Len(t, cachedPlaybooks, 0)
+		require.Len(t, triggers, 0)
 	})
 
 	t.Run("can't get playbookIDs", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
+		s, store, pluginAPI, _ := getMockPlaybookService(t)
 
-		channelID := model.NewId()
 		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
@@ -152,23 +100,15 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return(nil, errors.New("store error"))
 		pluginAPI.On("LogError", "can't get playbookIDs", "userID", userID, "err", mock.Anything)
 
-		cachedPlaybooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID, UserId: userID})
+		cachedPlaybooks, triggers := s.GetSuggestedPlaybooks(teamID, "userID", "message")
 		require.Len(t, cachedPlaybooks, 0)
+		require.Len(t, triggers, 0)
 	})
 
 	t.Run("user has no playbooks", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
+		s, store, _, _ := getMockPlaybookService(t)
 
-		channelID := model.NewId()
 		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
@@ -197,23 +137,15 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
 		userID := model.NewId()
 		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{"some_dummy_id"}, nil)
-		cachedPlaybooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID, UserId: userID})
+		cachedPlaybooks, triggers := s.GetSuggestedPlaybooks(teamID, userID, "message")
 		require.Len(t, cachedPlaybooks, 0)
+		require.Len(t, triggers, 0)
 	})
 
 	t.Run("trigger single playbook", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
+		s, store, _, _ := getMockPlaybookService(t)
 
-		channelID := model.NewId()
 		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		playbooks := []playbook.Playbook{
@@ -242,7 +174,7 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
 		userID := model.NewId()
 		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks[1].ID, playbooks[2].ID}, nil)
-		cachedPlaybooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID, UserId: userID})
+		cachedPlaybooks, triggers := s.GetSuggestedPlaybooks(teamID, userID, "some message")
 		require.Len(t, cachedPlaybooks, 1)
 		require.Equal(t, cachedPlaybooks[0], &playbook.CachedPlaybook{
 			ID:                playbooks[2].ID,
@@ -250,21 +182,13 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 			TeamID:            playbooks[2].TeamID,
 			SignalAnyKeywords: playbooks[2].SignalAnyKeywords,
 		})
+		require.Equal(t, triggers, []string{"some"})
 	})
 
 	t.Run("same call should not trigger the GetPlaybooksWithKeywords second time", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
+		s, store, _, _ := getMockPlaybookService(t)
 
-		channelID := model.NewId()
 		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
 		firstCall := store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1100), nil).After(firstCall)
@@ -294,7 +218,7 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil).Times(1)
 		userID := model.NewId()
 		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks[1].ID, playbooks[2].ID}, nil).Times(2)
-		cachedPlaybooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID, UserId: userID})
+		cachedPlaybooks, triggers := s.GetSuggestedPlaybooks(teamID, userID, "some message")
 		require.Len(t, cachedPlaybooks, 1)
 		require.Equal(t, cachedPlaybooks[0], &playbook.CachedPlaybook{
 			ID:                playbooks[2].ID,
@@ -302,8 +226,9 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 			TeamID:            playbooks[2].TeamID,
 			SignalAnyKeywords: playbooks[2].SignalAnyKeywords,
 		})
+		require.Equal(t, triggers, []string{"some"})
 
-		cachedPlaybooks = s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID, UserId: userID})
+		cachedPlaybooks, triggers = s.GetSuggestedPlaybooks(teamID, userID, "some message")
 		require.Len(t, cachedPlaybooks, 1)
 		require.Equal(t, cachedPlaybooks[0], &playbook.CachedPlaybook{
 			ID:                playbooks[2].ID,
@@ -311,21 +236,13 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 			TeamID:            playbooks[2].TeamID,
 			SignalAnyKeywords: playbooks[2].SignalAnyKeywords,
 		})
+		require.Equal(t, triggers, []string{"some"})
 	})
 
 	t.Run("same call should trigger the GetPlaybooksWithKeywords", func(t *testing.T) {
-		controller := gomock.NewController(t)
-		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
-		store := mock_playbook.NewMockStore(controller)
-		poster := mock_bot.NewMockPoster(controller)
-		telemetryService := &telemetry.NoopTelemetry{}
-		s := playbook.NewService(store, poster, telemetryService, client)
+		s, store, _, _ := getMockPlaybookService(t)
 
-		channelID := model.NewId()
 		teamID := model.NewId()
-		channel := model.Channel{Id: channelID, TeamId: teamID}
-		pluginAPI.On("GetChannel", channelID).Return(&channel, nil)
 
 		firstCall := store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
 		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1200), nil).After(firstCall)
@@ -366,7 +283,7 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 
 		userID := model.NewId()
 		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks1[1].ID, playbooks1[2].ID}, nil).Times(2)
-		cachedPlaybooks := s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID, UserId: userID})
+		cachedPlaybooks, triggers := s.GetSuggestedPlaybooks(teamID, userID, "some message")
 		require.Len(t, cachedPlaybooks, 1)
 		require.Equal(t, cachedPlaybooks[0], &playbook.CachedPlaybook{
 			ID:                playbook3.ID,
@@ -374,8 +291,9 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 			TeamID:            playbook3.TeamID,
 			SignalAnyKeywords: playbook3.SignalAnyKeywords,
 		})
+		require.Equal(t, triggers, []string{"some"})
 
-		cachedPlaybooks = s.GetSuggestedPlaybooks(&model.Post{Message: "some message", ChannelId: channelID, UserId: userID})
+		cachedPlaybooks, triggers = s.GetSuggestedPlaybooks(teamID, userID, "some message")
 		require.Len(t, cachedPlaybooks, 2)
 		require.Equal(t, cachedPlaybooks[0], &playbook.CachedPlaybook{
 			ID:                playbook4.ID,
@@ -389,5 +307,232 @@ func TestGetSuggestedPlaybooks(t *testing.T) {
 			TeamID:            playbook3.TeamID,
 			SignalAnyKeywords: playbook3.SignalAnyKeywords,
 		})
+		require.ElementsMatch(t, triggers, []string{"some", "message"})
 	})
+}
+
+func TestMessageHasBeenPosted(t *testing.T) {
+	t.Run("message is ignored", func(t *testing.T) {
+		s, _, _, keywordsIgnorer := getMockPlaybookService(t)
+
+		sessionID := model.NewId()
+		post := &model.Post{UserId: model.NewId(), Message: "message", RootId: ""}
+
+		keywordsIgnorer.EXPECT().IsIgnored(post.RootId, post.UserId).Return(true)
+		s.MessageHasBeenPosted(sessionID, post)
+	})
+
+	t.Run("can't get channel", func(t *testing.T) {
+		s, _, pluginAPI, keywordsIgnorer := getMockPlaybookService(t)
+
+		sessionID := model.NewId()
+		post := &model.Post{UserId: model.NewId(), Message: "message", RootId: "", ChannelId: model.NewId()}
+
+		keywordsIgnorer.EXPECT().IsIgnored(post.RootId, post.UserId).Return(false)
+
+		pluginAPI.On("GetChannel", post.ChannelId).Return(nil, &model.AppError{Id: "someID"})
+		pluginAPI.On("LogError", "can't get channel", "err", mock.Anything)
+
+		s.MessageHasBeenPosted(sessionID, post)
+	})
+
+	t.Run("no suggestions", func(t *testing.T) {
+		s, store, pluginAPI, keywordsIgnorer := getMockPlaybookService(t)
+
+		sessionID := model.NewId()
+		post := &model.Post{UserId: model.NewId(), Message: "some message", RootId: "", ChannelId: model.NewId()}
+
+		keywordsIgnorer.EXPECT().IsIgnored(post.RootId, post.UserId).Return(false)
+
+		teamID := model.NewId()
+		pluginAPI.On("GetChannel", post.ChannelId).Return(&model.Channel{TeamId: teamID}, nil)
+
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
+		playbooks := []playbook.Playbook{
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 1",
+				UpdateAt:          100,
+				TeamID:            "",
+				SignalAnyKeywords: []string{"some", "bla"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 2",
+				UpdateAt:          1100,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{"bla", "something"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 3",
+				UpdateAt:          900,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{" some", "other"},
+			},
+		}
+		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
+		s.MessageHasBeenPosted(sessionID, post)
+		pluginAPI.AssertNotCalled(t, "GetSession", mock.Anything)
+	})
+
+	t.Run("can't get session", func(t *testing.T) {
+		s, store, pluginAPI, keywordsIgnorer := getMockPlaybookService(t)
+
+		sessionID := model.NewId()
+		userID := model.NewId()
+		post := &model.Post{UserId: userID, Message: "some message", RootId: "", ChannelId: model.NewId()}
+
+		keywordsIgnorer.EXPECT().IsIgnored(post.RootId, post.UserId).Return(false)
+
+		teamID := model.NewId()
+		pluginAPI.On("GetChannel", post.ChannelId).Return(&model.Channel{TeamId: teamID}, nil)
+
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
+		playbooks := []playbook.Playbook{
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 1",
+				UpdateAt:          100,
+				TeamID:            "",
+				SignalAnyKeywords: []string{"some", "bla"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 2",
+				UpdateAt:          1100,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{"bla", "something"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 3",
+				UpdateAt:          900,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{"some", "other"},
+			},
+		}
+		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
+		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks[1].ID, playbooks[2].ID}, nil)
+		pluginAPI.On("GetSession", sessionID).Return(nil, &model.AppError{Id: "someID"})
+		pluginAPI.On("LogError", "can't get session", "sessionID", sessionID, "err", mock.Anything)
+
+		s.MessageHasBeenPosted(sessionID, post)
+	})
+
+	t.Run("can't get team", func(t *testing.T) {
+		s, store, pluginAPI, keywordsIgnorer := getMockPlaybookService(t)
+
+		sessionID := model.NewId()
+		userID := model.NewId()
+		post := &model.Post{UserId: userID, Message: "some message", RootId: "", ChannelId: model.NewId()}
+
+		keywordsIgnorer.EXPECT().IsIgnored(post.RootId, post.UserId).Return(false)
+
+		teamID := model.NewId()
+		pluginAPI.On("GetChannel", post.ChannelId).Return(&model.Channel{TeamId: teamID}, nil)
+
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
+		playbooks := []playbook.Playbook{
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 1",
+				UpdateAt:          100,
+				TeamID:            "",
+				SignalAnyKeywords: []string{"some", "bla"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 2",
+				UpdateAt:          1100,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{"bla", "something"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 3",
+				UpdateAt:          900,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{"some", "other"},
+			},
+		}
+		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
+		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks[1].ID, playbooks[2].ID}, nil)
+		pluginAPI.On("GetSession", sessionID).Return(&model.Session{}, nil)
+		pluginAPI.On("GetTeam", teamID).Return(nil, &model.AppError{Id: "someID"})
+		pluginAPI.On("LogError", "can't get team", "teamID", teamID, "err", mock.Anything)
+
+		s.MessageHasBeenPosted(sessionID, post)
+	})
+
+	t.Run("suggest a playbook", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_playbook.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		configService := mock_config.NewMockService(controller)
+		keywordsIgnorer := mock_playbook.NewMockKeywordsIgnorer(controller)
+		s := playbook.NewService(store, poster, telemetryService, client, configService, keywordsIgnorer)
+
+		sessionID := model.NewId()
+		userID := model.NewId()
+		channelID := model.NewId()
+		post := &model.Post{UserId: userID, Message: "some message", RootId: "", ChannelId: channelID}
+
+		keywordsIgnorer.EXPECT().IsIgnored(post.RootId, post.UserId).Return(false)
+
+		teamID := model.NewId()
+		pluginAPI.On("GetChannel", channelID).Return(&model.Channel{TeamId: teamID}, nil)
+
+		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
+		playbooks := []playbook.Playbook{
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 1",
+				UpdateAt:          100,
+				TeamID:            "",
+				SignalAnyKeywords: []string{"some", "bla"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 2",
+				UpdateAt:          1100,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{"bla", "something"},
+			},
+			{
+				ID:                model.NewId(),
+				Title:             "playbook 3",
+				UpdateAt:          900,
+				TeamID:            teamID,
+				SignalAnyKeywords: []string{"some", "other"},
+			},
+		}
+		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
+		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks[1].ID, playbooks[2].ID}, nil)
+		pluginAPI.On("GetSession", sessionID).Return(&model.Session{}, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Name: "teamName"}, nil)
+
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "id"}).AnyTimes()
+		siteURL := "site"
+		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+
+		message := fmt.Sprintf("`some` is a trigger for the [%s](%s) playbook, would you like to run it?", playbooks[2].Title, fmt.Sprintf("site/teamName/id/playbooks/%s", playbooks[2].ID))
+		poster.EXPECT().EphemeralPostWithAttachments(userID, channelID, post.Id, gomock.Any(), message)
+		s.MessageHasBeenPosted(sessionID, post)
+	})
+}
+
+func getMockPlaybookService(t *testing.T) (playbook.Service, *mock_playbook.MockStore, *plugintest.API, *mock_playbook.MockKeywordsIgnorer) {
+	controller := gomock.NewController(t)
+	pluginAPI := &plugintest.API{}
+	client := pluginapi.NewClient(pluginAPI)
+	store := mock_playbook.NewMockStore(controller)
+	poster := mock_bot.NewMockPoster(controller)
+	telemetryService := &telemetry.NoopTelemetry{}
+	configService := mock_config.NewMockService(controller)
+	keywordsIgnorer := mock_playbook.NewMockKeywordsIgnorer(controller)
+	return playbook.NewService(store, poster, telemetryService, client, configService, keywordsIgnorer), store, pluginAPI, keywordsIgnorer
 }

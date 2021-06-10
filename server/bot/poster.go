@@ -59,6 +59,19 @@ func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
+// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
+func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
+	post := &model.Post{
+		Message:   fmt.Sprintf(format, args...),
+		UserId:    b.botUserID,
+		ChannelId: channelID,
+		RootId:    postID,
+	}
+
+	model.ParseSlackAttachment(post, attachments)
+	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+}
+
 // PublishWebsocketEventToTeam sends a websocket event with payload to teamID
 func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, teamID string) {
 	payloadMap := b.makePayloadMap(payload)

@@ -46,6 +46,9 @@ type Poster interface {
 	// Ephemeral sends an ephemeral message to a user.
 	EphemeralPost(userID, channelID string, post *model.Post)
 
+	// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
+	EphemeralPostWithAttachments(userID, channelID, rootPostID string, attachments []*model.SlackAttachment, format string, args ...interface{})
+
 	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID.
 	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)
 
