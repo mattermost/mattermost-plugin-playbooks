@@ -123,10 +123,6 @@ const Backstage = () => {
         navigateToUrl(`/${currentTeam.name}`);
     };
 
-    const goToPlaybooks = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
-    };
-
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     return (

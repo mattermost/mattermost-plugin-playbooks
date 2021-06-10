@@ -86,9 +86,14 @@ const PlaybookList = () => {
         fetchPlaybooks();
     }, [currentTeam.id, fetchParams]);
 
-    const editPlaybook = (playbook: PlaybookNoChecklist) => {
+    const viewPlaybook = (playbook: PlaybookNoChecklist) => {
         setSelectedPlaybook(playbook);
         navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}`);
+    };
+
+    const editPlaybook = (playbook: PlaybookNoChecklist) => {
+        setSelectedPlaybook(playbook);
+        navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}/edit`);
     };
 
     const newPlaybook = (templateTitle?: string | undefined) => {
@@ -154,7 +159,7 @@ const PlaybookList = () => {
             <div
                 className='row playbook-item'
                 key={p.id}
-                onClick={() => editPlaybook(p)}
+                onClick={() => viewPlaybook(p)}
             >
                 <a className='col-sm-4 title'>
                     <TextWithTooltip

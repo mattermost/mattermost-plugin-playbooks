@@ -170,11 +170,11 @@ export async function savePlaybook(playbook: Playbook) {
         return data;
     }
 
-    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbook.id}`, {
         method: 'PUT',
         body: JSON.stringify(playbook),
     });
-    return data;
+    return {id: playbook.id};
 }
 
 export async function deletePlaybook(playbook: PlaybookNoChecklist) {

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
+import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
@@ -15,14 +15,15 @@ import {Team} from 'mattermost-redux/types/teams';
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, emptyPlaybook, defaultMessageOnJoin} from 'src/types/playbook';
+import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
+import {BackstageNavbar} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+import {SecondaryButton} from 'src/components/backstage/incidents/shared';
 
 import './playbook.scss';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
@@ -73,6 +74,13 @@ const SidebarBlock = styled.div`
 
 const NavbarPadding = styled.div`
     flex-grow: 1;
+`;
+
+const SecondaryButtonLarger = styled(SecondaryButton)`
+    height: 40px;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 20px;
 `;
 
 const EditableTexts = styled.div`
@@ -169,6 +177,7 @@ const WebappUtils = window.WebappUtils;
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<Playbook>({
@@ -179,7 +188,6 @@ const PlaybookEdit = (props: Props) => {
 
     const urlParams = useParams<URLParams>();
     const location = useLocation();
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -225,12 +233,6 @@ const PlaybookEdit = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const onSave = async () => {
-        await savePlaybook(setPlaybookDefaults(playbook));
-        setChangesMade(false);
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
-    };
-
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
             ...playbook,
@@ -250,6 +252,20 @@ const PlaybookEdit = (props: Props) => {
             title,
         });
         setChangesMade(true);
+    };
+
+    const onSave = async () => {
+        const data = await savePlaybook(setPlaybookDefaults(playbook));
+        onClose(data?.id);
+    };
+
+    const onClose = (id?: string) => {
+        const playbookId = urlParams.playbookId || id;
+        if (playbookId) {
+            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
+        } else {
+            navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
+        }
     };
 
     const handlePublicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -432,11 +448,6 @@ const PlaybookEdit = (props: Props) => {
             <BackstageNavbar
                 data-testid='backstage-nav-bar'
             >
-                <BackstageNavbarIcon
-                    data-testid='icon-arrow-left'
-                    className='icon-arrow-left back-icon'
-                    onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                />
                 <EditableTexts>
                     <EditableTitleContainer>
                         <EditableText
@@ -448,6 +459,14 @@ const PlaybookEdit = (props: Props) => {
                     </EditableTitleContainer>
                 </EditableTexts>
                 <NavbarPadding/>
+                <SecondaryButtonLarger
+                    className='mr-4'
+                    onClick={() => onClose()}
+                >
+                    <span>
+                        {'Cancel'}
+                    </span>
+                </SecondaryButtonLarger>
                 <PrimaryButton
                     className='mr-4'
                     data-testid='save_playbook'
