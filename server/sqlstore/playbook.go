@@ -16,9 +16,10 @@ import (
 
 type sqlPlaybook struct {
 	playbook.Playbook
-	ChecklistsJSON              json.RawMessage
-	ConcatenatedInvitedUserIDs  string
-	ConcatenatedInvitedGroupIDs string
+	ChecklistsJSON                json.RawMessage
+	ConcatenatedInvitedUserIDs    string
+	ConcatenatedInvitedGroupIDs   string
+	ConcatenatedSignalAnyKeywords string
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -43,13 +44,13 @@ type playbookMembers []struct {
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
 	playbookSelect := sqlStore.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
+			"UpdateAt", "DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
 			"DefaultCommanderID", "DefaultCommanderEnabled",
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
 			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
-			"MessageOnJoin", "MessageOnJoinEnabled").
+			"MessageOnJoin", "MessageOnJoinEnabled", "ConcatenatedSignalAnyKeywords", "SignalAnyKeywordsEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -88,30 +89,33 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Insert("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"ID":                          rawPlaybook.ID,
-			"Title":                       rawPlaybook.Title,
-			"Description":                 rawPlaybook.Description,
-			"TeamID":                      rawPlaybook.TeamID,
-			"CreatePublicIncident":        rawPlaybook.CreatePublicIncident,
-			"CreateAt":                    rawPlaybook.CreateAt,
-			"DeleteAt":                    rawPlaybook.DeleteAt,
-			"ChecklistsJSON":              rawPlaybook.ChecklistsJSON,
-			"NumStages":                   len(rawPlaybook.Checklists),
-			"NumSteps":                    getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":          rawPlaybook.BroadcastChannelID,
-			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
-			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
-			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs": rawPlaybook.ConcatenatedInvitedGroupIDs,
-			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
-			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
-			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
-			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
-			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
-			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
-			"MessageOnJoin":               rawPlaybook.MessageOnJoin,
-			"MessageOnJoinEnabled":        rawPlaybook.MessageOnJoinEnabled,
+			"ID":                            rawPlaybook.ID,
+			"Title":                         rawPlaybook.Title,
+			"Description":                   rawPlaybook.Description,
+			"TeamID":                        rawPlaybook.TeamID,
+			"CreatePublicIncident":          rawPlaybook.CreatePublicIncident,
+			"CreateAt":                      rawPlaybook.CreateAt,
+			"UpdateAt":                      rawPlaybook.UpdateAt,
+			"DeleteAt":                      rawPlaybook.DeleteAt,
+			"ChecklistsJSON":                rawPlaybook.ChecklistsJSON,
+			"NumStages":                     len(rawPlaybook.Checklists),
+			"NumSteps":                      getSteps(rawPlaybook.Playbook),
+			"BroadcastChannelID":            rawPlaybook.BroadcastChannelID,
+			"ReminderMessageTemplate":       rawPlaybook.ReminderMessageTemplate,
+			"ReminderTimerDefaultSeconds":   rawPlaybook.ReminderTimerDefaultSeconds,
+			"ConcatenatedInvitedUserIDs":    rawPlaybook.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":   rawPlaybook.ConcatenatedInvitedGroupIDs,
+			"InviteUsersEnabled":            rawPlaybook.InviteUsersEnabled,
+			"DefaultCommanderID":            rawPlaybook.DefaultCommanderID,
+			"DefaultCommanderEnabled":       rawPlaybook.DefaultCommanderEnabled,
+			"AnnouncementChannelID":         rawPlaybook.AnnouncementChannelID,
+			"AnnouncementChannelEnabled":    rawPlaybook.AnnouncementChannelEnabled,
+			"WebhookOnCreationURL":          rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationEnabled":      rawPlaybook.WebhookOnCreationEnabled,
+			"MessageOnJoin":                 rawPlaybook.MessageOnJoin,
+			"MessageOnJoinEnabled":          rawPlaybook.MessageOnJoinEnabled,
+			"ConcatenatedSignalAnyKeywords": rawPlaybook.ConcatenatedSignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":      rawPlaybook.SignalAnyKeywordsEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -285,6 +289,89 @@ func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
 	return total, nil
 }
 
+// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
+func (p *playbookStore) GetPlaybooksWithKeywords(opts playbook.Options) ([]playbook.Playbook, error) {
+	correctPaginationOpts(&opts)
+
+	queryForResults := p.store.builder.
+		Select("ID", "Title", "UpdateAt", "TeamID", "ConcatenatedSignalAnyKeywords").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"SignalAnyKeywordsEnabled": true}).
+		Offset(uint64(opts.Page * opts.PerPage)).
+		Limit(uint64(opts.PerPage))
+
+	var rawPlaybooks []sqlPlaybook
+	err := p.store.selectBuilder(p.store.db, &rawPlaybooks, queryForResults)
+	if err == sql.ErrNoRows {
+		return []playbook.Playbook{}, nil
+	} else if err != nil {
+		return []playbook.Playbook{}, errors.Wrap(err, "failed to get playbooks")
+	}
+
+	playbooks := make([]playbook.Playbook, 0, len(rawPlaybooks))
+	for _, playbook := range rawPlaybooks {
+		out, err := toPlaybook(playbook)
+		if err != nil {
+			return nil, errors.Wrapf(err, "can't convert raw playbook to playbook type")
+		}
+		playbooks = append(playbooks, out)
+	}
+	return playbooks, nil
+}
+
+// GetTimeLastUpdated retrieves time last playbook was updated at.
+// Passed argument determins whether to include playbooks with
+// SignalAnyKeywordsEnabled flag or not.
+func (p *playbookStore) GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error) {
+	queryForResults := p.store.builder.
+		Select("COALESCE(MAX(UpdateAt), 0)").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0})
+	if onlyPlaybooksWithKeywordsEnabled {
+		queryForResults = queryForResults.Where(sq.Eq{"SignalAnyKeywordsEnabled": true})
+	}
+
+	var updateAt []int64
+	err := p.store.selectBuilder(p.store.db, &updateAt, queryForResults)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	} else if err != nil {
+		return 0, errors.Wrap(err, "failed to get playbooks")
+	}
+	return updateAt[0], nil
+}
+
+// GetPlaybookIDsForUser retrieves playbooks user can access
+// Notice that method is not checking weather or not user is member of a team
+func (p *playbookStore) GetPlaybookIDsForUser(userID string, teamID string) ([]string, error) {
+	// Check that you are a playbook member or there are no restrictions.
+	permissionsAndFilter := sq.Expr(`(
+		EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
+		OR NOT EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID)
+	)`, userID)
+
+	queryForResults := p.store.builder.
+		Select("ID").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"TeamID": teamID}).
+		Where(permissionsAndFilter)
+
+	var playbookIDs []string
+
+	err := p.store.selectBuilder(p.store.db, &playbookIDs, queryForResults)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrapf(err, "failed to get playbookIDs for a user - %v", userID)
+	}
+	return playbookIDs, nil
+}
+
 // Update updates a playbook
 func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	if updated.ID == "" {
@@ -305,28 +392,31 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Update("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"Title":                       rawPlaybook.Title,
-			"Description":                 rawPlaybook.Description,
-			"TeamID":                      rawPlaybook.TeamID,
-			"CreatePublicIncident":        rawPlaybook.CreatePublicIncident,
-			"DeleteAt":                    rawPlaybook.DeleteAt,
-			"ChecklistsJSON":              rawPlaybook.ChecklistsJSON,
-			"NumStages":                   len(rawPlaybook.Checklists),
-			"NumSteps":                    getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":          rawPlaybook.BroadcastChannelID,
-			"ReminderMessageTemplate":     rawPlaybook.ReminderMessageTemplate,
-			"ReminderTimerDefaultSeconds": rawPlaybook.ReminderTimerDefaultSeconds,
-			"ConcatenatedInvitedUserIDs":  rawPlaybook.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs": rawPlaybook.ConcatenatedInvitedGroupIDs,
-			"InviteUsersEnabled":          rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":          rawPlaybook.DefaultCommanderID,
-			"DefaultCommanderEnabled":     rawPlaybook.DefaultCommanderEnabled,
-			"AnnouncementChannelID":       rawPlaybook.AnnouncementChannelID,
-			"AnnouncementChannelEnabled":  rawPlaybook.AnnouncementChannelEnabled,
-			"WebhookOnCreationURL":        rawPlaybook.WebhookOnCreationURL,
-			"WebhookOnCreationEnabled":    rawPlaybook.WebhookOnCreationEnabled,
-			"MessageOnJoin":               rawPlaybook.MessageOnJoin,
-			"MessageOnJoinEnabled":        rawPlaybook.MessageOnJoinEnabled,
+			"Title":                         rawPlaybook.Title,
+			"Description":                   rawPlaybook.Description,
+			"TeamID":                        rawPlaybook.TeamID,
+			"CreatePublicIncident":          rawPlaybook.CreatePublicIncident,
+			"UpdateAt":                      rawPlaybook.UpdateAt,
+			"DeleteAt":                      rawPlaybook.DeleteAt,
+			"ChecklistsJSON":                rawPlaybook.ChecklistsJSON,
+			"NumStages":                     len(rawPlaybook.Checklists),
+			"NumSteps":                      getSteps(rawPlaybook.Playbook),
+			"BroadcastChannelID":            rawPlaybook.BroadcastChannelID,
+			"ReminderMessageTemplate":       rawPlaybook.ReminderMessageTemplate,
+			"ReminderTimerDefaultSeconds":   rawPlaybook.ReminderTimerDefaultSeconds,
+			"ConcatenatedInvitedUserIDs":    rawPlaybook.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":   rawPlaybook.ConcatenatedInvitedGroupIDs,
+			"InviteUsersEnabled":            rawPlaybook.InviteUsersEnabled,
+			"DefaultCommanderID":            rawPlaybook.DefaultCommanderID,
+			"DefaultCommanderEnabled":       rawPlaybook.DefaultCommanderEnabled,
+			"AnnouncementChannelID":         rawPlaybook.AnnouncementChannelID,
+			"AnnouncementChannelEnabled":    rawPlaybook.AnnouncementChannelEnabled,
+			"WebhookOnCreationURL":          rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationEnabled":      rawPlaybook.WebhookOnCreationEnabled,
+			"MessageOnJoin":                 rawPlaybook.MessageOnJoin,
+			"MessageOnJoinEnabled":          rawPlaybook.MessageOnJoinEnabled,
+			"ConcatenatedSignalAnyKeywords": rawPlaybook.ConcatenatedSignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":      rawPlaybook.SignalAnyKeywordsEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -432,17 +522,20 @@ func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
 	}
 
 	return &sqlPlaybook{
-		Playbook:                    origPlaybook,
-		ChecklistsJSON:              checklistsJSON,
-		ConcatenatedInvitedUserIDs:  strings.Join(origPlaybook.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs: strings.Join(origPlaybook.InvitedGroupIDs, ","),
+		Playbook:                      origPlaybook,
+		ChecklistsJSON:                checklistsJSON,
+		ConcatenatedInvitedUserIDs:    strings.Join(origPlaybook.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs:   strings.Join(origPlaybook.InvitedGroupIDs, ","),
+		ConcatenatedSignalAnyKeywords: strings.Join(origPlaybook.SignalAnyKeywords, ","),
 	}, nil
 }
 
 func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
 	p := rawPlaybook.Playbook
-	if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
-		return playbook.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+	if len(rawPlaybook.ChecklistsJSON) > 0 {
+		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
+			return playbook.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+		}
 	}
 
 	p.InvitedUserIDs = []string(nil)
@@ -455,6 +548,10 @@ func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
 		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
 	}
 
+	p.SignalAnyKeywords = []string(nil)
+	if rawPlaybook.ConcatenatedSignalAnyKeywords != "" {
+		p.SignalAnyKeywords = strings.Split(rawPlaybook.ConcatenatedSignalAnyKeywords, ",")
+	}
 	return p, nil
 }
 

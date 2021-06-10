@@ -372,6 +372,22 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleSignalAnyKeywordsChange = (keywords: string) => {
+        setPlaybook({
+            ...playbook,
+            signal_any_keywords: keywords.split(','),
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleSignalAnyKeywords = () => {
+        setPlaybook({
+            ...playbook,
+            signal_any_keywords_enabled: !playbook.signal_any_keywords_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -476,7 +492,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     </BackstageSubheader>
                                     <StyledSelect
                                         value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: { label: string, value: number }) => {
+                                        onChange={(option: {label: string, value: number}) => {
                                             setPlaybook({
                                                 ...playbook,
                                                 reminder_timer_default_seconds: option ? option.value : option,
@@ -553,6 +569,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
                                     messageOnJoinChange={handleMessageOnJoinChange}
+                                    signalAnyKeywordsEnabled={playbook.signal_any_keywords_enabled}
+                                    onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
+                                    signalAnyKeywordsChange={handleSignalAnyKeywordsChange}
+                                    signalAnyKeywords={playbook.signal_any_keywords}
                                 />
                             </TabContainer>
                             <TabContainer>

@@ -1,6 +1,9 @@
 package playbook
 
 import (
+	"strings"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -13,22 +16,27 @@ const (
 )
 
 type service struct {
-	store     Store
-	poster    bot.Poster
-	telemetry Telemetry
+	store          Store
+	poster         bot.Poster
+	keywordsCacher KeywordsCacher
+	telemetry      Telemetry
+	api            *pluginapi.Client
 }
 
 // NewService returns a new playbook service
-func NewService(store Store, poster bot.Poster, telemetry Telemetry) Service {
+func NewService(store Store, poster bot.Poster, telemetry Telemetry, api *pluginapi.Client) Service {
 	return &service{
-		store:     store,
-		poster:    poster,
-		telemetry: telemetry,
+		store:          store,
+		poster:         poster,
+		keywordsCacher: NewPlaybookKeywordsCacher(store, api.Log),
+		telemetry:      telemetry,
+		api:            api,
 	}
 }
 
 func (s *service) Create(playbook Playbook, userID string) (string, error) {
 	playbook.CreateAt = model.GetMillis()
+	playbook.UpdateAt = playbook.CreateAt
 
 	newID, err := s.store.Create(playbook)
 	if err != nil {
@@ -62,6 +70,7 @@ func (s *service) GetNumPlaybooksForTeam(teamID string) (int, error) {
 }
 
 func (s *service) Update(playbook Playbook, userID string) error {
+	playbook.UpdateAt = model.GetMillis()
 	if err := s.store.Update(playbook); err != nil {
 		return err
 	}
@@ -87,4 +96,72 @@ func (s *service) Delete(playbook Playbook, userID string) error {
 	}, playbook.TeamID)
 
 	return nil
+}
+
+func (s *service) GetSuggestedPlaybooks(post *model.Post) []*CachedPlaybook {
+	triggeredPlaybooks := []*CachedPlaybook{}
+
+	channel, channelErr := s.api.Channel.Get(post.ChannelId)
+	if channelErr != nil {
+		s.api.Log.Error("can't get channel", "err", channelErr.Error())
+		return triggeredPlaybooks
+	}
+	teamID := channel.TeamId
+
+	playbooks := s.keywordsCacher.GetPlaybooks()
+	for i := range playbooks {
+		if playbooks[i].TeamID != teamID {
+			continue
+		}
+
+		if !isPlaybookTriggeredByMessage(playbooks[i], post.Message) {
+			continue
+		}
+
+		triggeredPlaybooks = append(triggeredPlaybooks, playbooks[i])
+	}
+
+	// return early if no triggered playbooks
+	if len(triggeredPlaybooks) == 0 {
+		return triggeredPlaybooks
+	}
+
+	return s.filterPlaybooksByAccess(triggeredPlaybooks, post.UserId, teamID)
+}
+
+// filters out playbooks user has no access to
+func (s *service) filterPlaybooksByAccess(triggeredPlaybooks []*CachedPlaybook, userID, teamID string) []*CachedPlaybook {
+	filteredPlaybooks := []*CachedPlaybook{}
+	playbookIDs, err := s.store.GetPlaybookIDsForUser(userID, teamID)
+	if err != nil {
+		s.api.Log.Error("can't get playbookIDs", "userID", userID, "err", err.Error())
+		return filteredPlaybooks
+	}
+
+	playbookIDsMap := sliceToMap(playbookIDs)
+
+	for i := range triggeredPlaybooks {
+		if ok := playbookIDsMap[triggeredPlaybooks[i].ID]; ok {
+			filteredPlaybooks = append(filteredPlaybooks, triggeredPlaybooks[i])
+		}
+	}
+
+	return filteredPlaybooks
+}
+
+func isPlaybookTriggeredByMessage(playbook *CachedPlaybook, message string) bool {
+	for _, keyword := range playbook.SignalAnyKeywords {
+		if strings.Contains(message, keyword) {
+			return true
+		}
+	}
+	return false
+}
+
+func sliceToMap(strs []string) map[string]bool {
+	res := make(map[string]bool, len(strs))
+	for _, s := range strs {
+		res[s] = true
+	}
+	return res
 }

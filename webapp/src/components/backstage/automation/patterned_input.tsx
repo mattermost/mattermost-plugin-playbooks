@@ -11,31 +11,36 @@ import {Toggle} from 'src/components/backstage/automation/toggle';
 interface Props {
     enabled: boolean;
     onToggle: () => void;
-    url: string;
-    onChange: (url: string) => void;
+    textOnToggle: string;
+    placeholderText: string;
+    errorText: string;
+    input: string;
+    type: string;
+    pattern: string;
+    onChange: (updatedInput: string) => void;
 }
 
-export const WebhookOnCreation: FC<Props> = (props: Props) => (
+export const PatternedInput: FC<Props> = (props: Props) => (
     <AutomationHeader>
         <AutomationTitle>
             <Toggle
                 isChecked={props.enabled}
                 onChange={props.onToggle}
             />
-            <div>{'Send a webhook'}</div>
+            <div>{props.textOnToggle}</div>
         </AutomationTitle>
         <SelectorWrapper>
             <TextBox
                 enabled={props.enabled}
-                type={'url'}
+                type={props.type}
                 required={true}
-                value={props.enabled ? props.url : ''}
+                value={props.enabled ? props.input : ''}
                 onChange={(e) => props.onChange(e.target.value)}
-                pattern={'https?://.*'}
-                placeholder={'Enter webhook'}
+                pattern={props.pattern}
+                placeholder={props.placeholderText}
             />
             <ErrorMessage>
-                {'URL is not valid.'}
+                {props.errorText}
             </ErrorMessage>
         </SelectorWrapper>
     </AutomationHeader>

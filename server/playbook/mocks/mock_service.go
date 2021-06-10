@@ -7,6 +7,7 @@ package mock_playbook
 import (
 	gomock "github.com/golang/mock/gomock"
 	playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
 )
 
@@ -120,6 +121,20 @@ func (m *MockService) GetPlaybooksForTeam(arg0 playbook.RequesterInfo, arg1 stri
 func (mr *MockServiceMockRecorder) GetPlaybooksForTeam(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksForTeam", reflect.TypeOf((*MockService)(nil).GetPlaybooksForTeam), arg0, arg1, arg2)
+}
+
+// GetSuggestedPlaybooks mocks base method
+func (m *MockService) GetSuggestedPlaybooks(arg0 *model.Post) []*playbook.CachedPlaybook {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSuggestedPlaybooks", arg0)
+	ret0, _ := ret[0].([]*playbook.CachedPlaybook)
+	return ret0
+}
+
+// GetSuggestedPlaybooks indicates an expected call of GetSuggestedPlaybooks
+func (mr *MockServiceMockRecorder) GetSuggestedPlaybooks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuggestedPlaybooks", reflect.TypeOf((*MockService)(nil).GetSuggestedPlaybooks), arg0)
 }
 
 // Update mocks base method

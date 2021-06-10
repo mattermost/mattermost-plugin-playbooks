@@ -38,6 +38,7 @@ type Plugin struct {
 	incidentService incident.Service
 	playbookService playbook.Service
 	bot             *bot.Bot
+	pluginAPI       *pluginapi.Client
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -48,6 +49,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
+	p.pluginAPI = pluginAPIClient
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
@@ -154,7 +156,7 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
+	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient, pluginAPIClient)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -230,4 +232,19 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 		actorID = actor.Id
 	}
 	p.incidentService.UserHasLeftChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
+
+func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
+	suggestedPlaybooks := p.playbookService.GetSuggestedPlaybooks(post)
+	if len(suggestedPlaybooks) != 0 {
+		p.suggestPlaybooksToTheUser(suggestedPlaybooks, post.UserId, post.ChannelId)
+	}
+}
+
+func (p *Plugin) suggestPlaybooksToTheUser(playbooks []*playbook.CachedPlaybook, userID, channelID string) {
+	message := "May be you want to run one of these playbooks \n"
+	for _, playbook := range playbooks {
+		message += playbook.Title + "\n"
+	}
+	p.bot.EphemeralPost(userID, channelID, &model.Post{Message: message})
 }

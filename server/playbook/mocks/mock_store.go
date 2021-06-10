@@ -92,6 +92,21 @@ func (mr *MockStoreMockRecorder) GetNumPlaybooksForTeam(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumPlaybooksForTeam", reflect.TypeOf((*MockStore)(nil).GetNumPlaybooksForTeam), arg0)
 }
 
+// GetPlaybookIDsForUser mocks base method
+func (m *MockStore) GetPlaybookIDsForUser(arg0, arg1 string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPlaybookIDsForUser", arg0, arg1)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPlaybookIDsForUser indicates an expected call of GetPlaybookIDsForUser
+func (mr *MockStoreMockRecorder) GetPlaybookIDsForUser(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookIDsForUser", reflect.TypeOf((*MockStore)(nil).GetPlaybookIDsForUser), arg0, arg1)
+}
+
 // GetPlaybooks mocks base method
 func (m *MockStore) GetPlaybooks() ([]playbook.Playbook, error) {
 	m.ctrl.T.Helper()
@@ -120,6 +135,36 @@ func (m *MockStore) GetPlaybooksForTeam(arg0 playbook.RequesterInfo, arg1 string
 func (mr *MockStoreMockRecorder) GetPlaybooksForTeam(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksForTeam", reflect.TypeOf((*MockStore)(nil).GetPlaybooksForTeam), arg0, arg1, arg2)
+}
+
+// GetPlaybooksWithKeywords mocks base method
+func (m *MockStore) GetPlaybooksWithKeywords(arg0 playbook.Options) ([]playbook.Playbook, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPlaybooksWithKeywords", arg0)
+	ret0, _ := ret[0].([]playbook.Playbook)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPlaybooksWithKeywords indicates an expected call of GetPlaybooksWithKeywords
+func (mr *MockStoreMockRecorder) GetPlaybooksWithKeywords(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksWithKeywords", reflect.TypeOf((*MockStore)(nil).GetPlaybooksWithKeywords), arg0)
+}
+
+// GetTimeLastUpdated mocks base method
+func (m *MockStore) GetTimeLastUpdated(arg0 bool) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTimeLastUpdated", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTimeLastUpdated indicates an expected call of GetTimeLastUpdated
+func (mr *MockStoreMockRecorder) GetTimeLastUpdated(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeLastUpdated", reflect.TypeOf((*MockStore)(nil).GetTimeLastUpdated), arg0)
 }
 
 // Update mocks base method
