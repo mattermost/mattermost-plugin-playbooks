@@ -6,7 +6,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -202,7 +202,7 @@ var migrations = []Migration{
 			}
 
 			for _, theIncident := range incidents {
-				var checklists []playbook.Checklist
+				var checklists []app.Checklist
 				if err := json.Unmarshal(theIncident.ChecklistsJSON, &checklists); err != nil {
 					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", theIncident.ID)
 				}

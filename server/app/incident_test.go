@@ -1,4 +1,4 @@
-package incident
+package app
 
 import (
 	"encoding/json"

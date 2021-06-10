@@ -7,9 +7,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -463,7 +463,7 @@ func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	require.NoError(t, err)
 }
 
-func createIncidentChannel(t testing.TB, store *SQLStore, i *incident.Incident) {
+func createIncidentChannel(t testing.TB, store *SQLStore, i *app.Incident) {
 	t.Helper()
 
 	if i.CreateAt == 0 {

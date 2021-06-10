@@ -1,13 +1,10 @@
-package playbook
+package app
 
 import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
 )
-
-// ErrNotFound used to indicate entity not found.
-var ErrNotFound = errors.New("not found")
 
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
@@ -138,16 +135,9 @@ func (r GetPlaybooksResults) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
-// RequesterInfo holds the userID and permissions for the user making the request
-type RequesterInfo struct {
-	UserID  string
-	TeamID  string
-	IsAdmin bool
-}
-
-// Service is the playbook service for managing playbooks
+// PlaybookService is the playbook service for managing playbooks
 // userID is the user initiating the event.
-type Service interface {
+type PlaybookService interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.
 	Get(id string) (Playbook, error)
 
@@ -158,7 +148,7 @@ type Service interface {
 	GetPlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookOptions) (GetPlaybooksResults, error)
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
@@ -170,8 +160,8 @@ type Service interface {
 	Delete(playbook Playbook, userID string) error
 }
 
-// Store is an interface for storing playbooks
-type Store interface {
+// PlaybookStore is an interface for storing playbooks
+type PlaybookStore interface {
 	// Get retrieves a playbook
 	Get(id string) (Playbook, error)
 
@@ -181,7 +171,7 @@ type Store interface {
 	GetPlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookOptions) (GetPlaybooksResults, error)
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
@@ -193,9 +183,9 @@ type Store interface {
 	Delete(id string) error
 }
 
-// Telemetry defines the methods that the Playbook service needs from the RudderTelemetry.
+// PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
 // userID is the user initiating the event.
-type Telemetry interface {
+type PlaybookTelemetry interface {
 	// CreatePlaybook tracks the creation of a playbook.
 	CreatePlaybook(playbook Playbook, userID string)
 
@@ -220,4 +210,26 @@ func IsValidChecklistItemState(state string) bool {
 
 func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {
 	return checklists != nil && checklistNum >= 0 && itemNum >= 0 && checklistNum < len(checklists) && itemNum < len(checklists[checklistNum].Items)
+}
+
+// PlaybookOptions specifies the parameters when getting playbooks.
+type PlaybookOptions struct {
+	Sort      SortField
+	Direction SortDirection
+
+	// Pagination options.
+	Page    int
+	PerPage int
+}
+
+func (options *PlaybookOptions) IsValid() error {
+	switch options.Sort {
+	case SortByTitle:
+	case SortByStages:
+	case SortBySteps:
+	default:
+		return errors.New("bad parameter 'sort'")
+	}
+
+	return nil
 }

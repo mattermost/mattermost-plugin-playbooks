@@ -1,4 +1,4 @@
-package playbook
+package app
 
 import (
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -12,22 +12,22 @@ const (
 	playbookDeletedWSEvent = "playbook_deleted"
 )
 
-type service struct {
-	store     Store
+type playbookService struct {
+	store     PlaybookStore
 	poster    bot.Poster
-	telemetry Telemetry
+	telemetry PlaybookTelemetry
 }
 
-// NewService returns a new playbook service
-func NewService(store Store, poster bot.Poster, telemetry Telemetry) Service {
-	return &service{
+// NewPlaybookService returns a new playbook service
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry) PlaybookService {
+	return &playbookService{
 		store:     store,
 		poster:    poster,
 		telemetry: telemetry,
 	}
 }
 
-func (s *service) Create(playbook Playbook, userID string) (string, error) {
+func (s *playbookService) Create(playbook Playbook, userID string) (string, error) {
 	playbook.CreateAt = model.GetMillis()
 
 	newID, err := s.store.Create(playbook)
@@ -45,23 +45,23 @@ func (s *service) Create(playbook Playbook, userID string) (string, error) {
 	return newID, nil
 }
 
-func (s *service) Get(id string) (Playbook, error) {
+func (s *playbookService) Get(id string) (Playbook, error) {
 	return s.store.Get(id)
 }
 
-func (s *service) GetPlaybooks() ([]Playbook, error) {
+func (s *playbookService) GetPlaybooks() ([]Playbook, error) {
 	return s.store.GetPlaybooks()
 }
 
-func (s *service) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error) {
+func (s *playbookService) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookOptions) (GetPlaybooksResults, error) {
 	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 }
 
-func (s *service) GetNumPlaybooksForTeam(teamID string) (int, error) {
+func (s *playbookService) GetNumPlaybooksForTeam(teamID string) (int, error) {
 	return s.store.GetNumPlaybooksForTeam(teamID)
 }
 
-func (s *service) Update(playbook Playbook, userID string) error {
+func (s *playbookService) Update(playbook Playbook, userID string) error {
 	if err := s.store.Update(playbook); err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (s *service) Update(playbook Playbook, userID string) error {
 	return nil
 }
 
-func (s *service) Delete(playbook Playbook, userID string) error {
+func (s *playbookService) Delete(playbook Playbook, userID string) error {
 	if playbook.ID == "" {
 		return errors.New("can't delete a playbook without an ID")
 	}

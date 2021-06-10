@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package incident
+package app
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ type Reminder struct {
 const RetrospectivePrefix = "retro_"
 
 // HandleReminder is the handler for all reminder events.
-func (s *ServiceImpl) HandleReminder(key string) {
+func (s *IncidentServiceImpl) HandleReminder(key string) {
 	if strings.HasPrefix(key, RetrospectivePrefix) {
 		s.handleReminderToFillRetro(strings.TrimPrefix(key, RetrospectivePrefix))
 	} else {
@@ -27,7 +27,7 @@ func (s *ServiceImpl) HandleReminder(key string) {
 	}
 }
 
-func (s *ServiceImpl) handleReminderToFillRetro(incidentID string) {
+func (s *IncidentServiceImpl) handleReminderToFillRetro(incidentID string) {
 	incidentToRemind, err := s.GetIncident(incidentID)
 	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get incident id: %s", incidentID).Error())
@@ -60,7 +60,7 @@ func (s *ServiceImpl) handleReminderToFillRetro(incidentID string) {
 	}()
 }
 
-func (s *ServiceImpl) handleStatusUpdateReminder(incidentID string) {
+func (s *IncidentServiceImpl) handleStatusUpdateReminder(incidentID string) {
 	incidentToModify, err := s.GetIncident(incidentID)
 	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get incident id: %s", incidentID).Error())
@@ -113,7 +113,7 @@ func (s *ServiceImpl) handleStatusUpdateReminder(incidentID string) {
 
 // SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
 // reminded to update the incident's status.
-func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
+func (s *IncidentServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
 	if _, err := s.scheduler.ScheduleOnce(incidentID, time.Now().Add(fromNow)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
 	}
@@ -122,12 +122,12 @@ func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) erro
 }
 
 // RemoveReminder removes the pending reminder for incidentID (if any).
-func (s *ServiceImpl) RemoveReminder(incidentID string) {
+func (s *IncidentServiceImpl) RemoveReminder(incidentID string) {
 	s.scheduler.Cancel(incidentID)
 }
 
 // RemoveReminderPost will remove the reminder post in the incident channel (if any).
-func (s *ServiceImpl) RemoveReminderPost(incidentID string) error {
+func (s *IncidentServiceImpl) RemoveReminderPost(incidentID string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve incident")
@@ -137,7 +137,7 @@ func (s *ServiceImpl) RemoveReminderPost(incidentID string) error {
 }
 
 // removeReminderPost will remove the reminder post in the incident channel (if any).
-func (s *ServiceImpl) removeReminderPost(incidentToModify *Incident) error {
+func (s *IncidentServiceImpl) removeReminderPost(incidentToModify *Incident) error {
 	if incidentToModify.ReminderPostID == "" {
 		return nil
 	}

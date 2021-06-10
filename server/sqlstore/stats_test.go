@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/stretchr/testify/assert"
@@ -178,7 +178,7 @@ func TestTotalReportedIncidents(t *testing.T) {
 			WithCreateAt(123).
 			ToIncident()
 
-		incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
+		incidents := []app.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 
 		for i := range incidents {
 			_, err := incidentStore.CreateIncident(&incidents[i])

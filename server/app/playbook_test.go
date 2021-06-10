@@ -1,4 +1,4 @@
-package playbook
+package app
 
 import (
 	"encoding/json"

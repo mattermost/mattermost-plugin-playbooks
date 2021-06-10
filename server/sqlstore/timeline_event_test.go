@@ -6,7 +6,7 @@ package sqlstore
 import (
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/stretchr/testify/require"
 )
@@ -32,11 +32,11 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 
 			createIncidentChannel(t, store, inc01)
 
-			event1 := &incident.TimelineEvent{
+			event1 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt,
 				EventAt:       1234,
-				EventType:     incident.IncidentCreated,
+				EventType:     app.IncidentCreated,
 				Summary:       "this is a summary",
 				Details:       "these are the details",
 				PostID:        "testpostID",
@@ -46,11 +46,11 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 			_, err = iStore.CreateTimelineEvent(event1)
 			require.NoError(t, err)
 
-			event2 := &incident.TimelineEvent{
+			event2 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 1,
 				EventAt:       1235,
-				EventType:     incident.AssigneeChanged,
+				EventType:     app.AssigneeChanged,
 				Summary:       "this is a summary",
 				Details:       "these are the details",
 				PostID:        "testpostID2",
@@ -60,11 +60,11 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 			_, err = iStore.CreateTimelineEvent(event2)
 			require.NoError(t, err)
 
-			event3 := &incident.TimelineEvent{
+			event3 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 2,
 				EventAt:       1236,
-				EventType:     incident.StatusUpdated,
+				EventType:     app.StatusUpdated,
 				Summary:       "this is a summary",
 				Details:       "these are the details",
 				PostID:        "testpostID3",
@@ -74,11 +74,11 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 			_, err = iStore.CreateTimelineEvent(event3)
 			require.NoError(t, err)
 
-			event4 := &incident.TimelineEvent{
+			event4 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 3,
 				EventAt:       123734,
-				EventType:     incident.StatusUpdated,
+				EventType:     app.StatusUpdated,
 				Summary:       "this is a summary",
 				Details:       "these are the details",
 				PostID:        "testpostID4",
@@ -121,33 +121,33 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 
 			createIncidentChannel(t, store, inc01)
 
-			event1 := &incident.TimelineEvent{
+			event1 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt,
 				EventAt:       createAt,
-				EventType:     incident.IncidentCreated,
+				EventType:     app.IncidentCreated,
 				PostID:        "testpostID",
 				SubjectUserID: "testuserID",
 			}
 			_, err = iStore.CreateTimelineEvent(event1)
 			require.NoError(t, err)
 
-			event2 := &incident.TimelineEvent{
+			event2 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 1,
 				EventAt:       createAt + 1,
-				EventType:     incident.AssigneeChanged,
+				EventType:     app.AssigneeChanged,
 				PostID:        "testpostID2",
 				SubjectUserID: "testuserID",
 			}
 			_, err = iStore.CreateTimelineEvent(event2)
 			require.NoError(t, err)
 
-			event3 := &incident.TimelineEvent{
+			event3 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 2,
 				EventAt:       createAt + 2,
-				EventType:     incident.StatusUpdated,
+				EventType:     app.StatusUpdated,
 				Summary:       "this is a summary",
 				Details:       "these are the details",
 				PostID:        "testpostID3",
@@ -157,11 +157,11 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			_, err = iStore.CreateTimelineEvent(event3)
 			require.NoError(t, err)
 
-			event4 := &incident.TimelineEvent{
+			event4 := &app.TimelineEvent{
 				IncidentID:    incdnt.ID,
 				CreateAt:      createAt + 3,
 				EventAt:       createAt + 3,
-				EventType:     incident.StatusUpdated,
+				EventType:     app.StatusUpdated,
 				PostID:        "testpostID4",
 				SubjectUserID: "testuserID",
 			}
@@ -178,7 +178,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			require.Equal(t, *event4, retIncident.TimelineEvents[3])
 
 			event3.DeleteAt = model.GetMillis()
-			event3.EventType = incident.AssigneeChanged
+			event3.EventType = app.AssigneeChanged
 			event3.Summary = "new summary"
 			event3.Details = "new details"
 			event3.PostID = "23abc34"

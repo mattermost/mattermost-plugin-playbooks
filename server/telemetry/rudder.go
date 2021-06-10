@@ -4,8 +4,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+
 	"github.com/pkg/errors"
 	rudder "github.com/rudderlabs/analytics-go"
 )
@@ -116,7 +116,7 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 	})
 }
 
-func incidentProperties(incdnt *incident.Incident, userID string) map[string]interface{} {
+func incidentProperties(incdnt *app.Incident, userID string) map[string]interface{} {
 	totalChecklistItems := 0
 	for _, checklist := range incdnt.Checklists {
 		totalChecklistItems += len(checklist.Items)
@@ -145,7 +145,7 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 }
 
 // CreateIncident tracks the creation of the incident passed.
-func (t *RudderTelemetry) CreateIncident(incdnt *incident.Incident, userID string, public bool) {
+func (t *RudderTelemetry) CreateIncident(incdnt *app.Incident, userID string, public bool) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionCreate
 	properties["Public"] = public
@@ -153,54 +153,54 @@ func (t *RudderTelemetry) CreateIncident(incdnt *incident.Incident, userID strin
 }
 
 // EndIncident tracks the end of the incident passed.
-func (t *RudderTelemetry) EndIncident(incdnt *incident.Incident, userID string) {
+func (t *RudderTelemetry) EndIncident(incdnt *app.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionEnd
 	t.track(eventIncident, properties)
 }
 
 // RestartIncident tracks the restart of the incident.
-func (t *RudderTelemetry) RestartIncident(incdnt *incident.Incident, userID string) {
+func (t *RudderTelemetry) RestartIncident(incdnt *app.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionRestart
 	t.track(eventIncident, properties)
 }
 
 // ChangeOwner tracks changes in owner
-func (t *RudderTelemetry) ChangeOwner(incdnt *incident.Incident, userID string) {
+func (t *RudderTelemetry) ChangeOwner(incdnt *app.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionChangeOwner
 	t.track(eventIncident, properties)
 }
 
-func (t *RudderTelemetry) UpdateStatus(incdnt *incident.Incident, userID string) {
+func (t *RudderTelemetry) UpdateStatus(incdnt *app.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionUpdateStatus
 	properties["ReminderTimerSeconds"] = int(incdnt.PreviousReminder)
 	t.track(eventIncident, properties)
 }
 
-func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *incident.Incident, userID, action string) {
+func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *app.Incident, userID, action string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = action
 	t.track(eventFrontend, properties)
 }
 
 // AddPostToTimeline tracks userID creating a timeline event from a post.
-func (t *RudderTelemetry) AddPostToTimeline(incdnt *incident.Incident, userID string) {
+func (t *RudderTelemetry) AddPostToTimeline(incdnt *app.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionAddTimelineEventFromPost
 	t.track(eventIncident, properties)
 }
 
 // RemoveTimelineEvent tracks userID removing a timeline event.
-func (t *RudderTelemetry) RemoveTimelineEvent(incdnt *incident.Incident, userID string) {
+func (t *RudderTelemetry) RemoveTimelineEvent(incdnt *app.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
 	properties["Action"] = actionRemoveTimelineEvent
 	t.track(eventIncident, properties)
 }
 
-func taskProperties(incidentID, userID string, task playbook.ChecklistItem) map[string]interface{} {
+func taskProperties(incidentID, userID string, task app.ChecklistItem) map[string]interface{} {
 	return map[string]interface{}{
 		"IncidentID":     incidentID,
 		"UserActualID":   userID,
@@ -215,7 +215,7 @@ func taskProperties(incidentID, userID string, task playbook.ChecklistItem) map[
 
 // AddTask tracks the creation of a new checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) AddTask(incidentID, userID string, task playbook.ChecklistItem) {
+func (t *RudderTelemetry) AddTask(incidentID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionAddTask
 	t.track(eventTasks, properties)
@@ -223,7 +223,7 @@ func (t *RudderTelemetry) AddTask(incidentID, userID string, task playbook.Check
 
 // RemoveTask tracks the removal of a checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) RemoveTask(incidentID, userID string, task playbook.ChecklistItem) {
+func (t *RudderTelemetry) RemoveTask(incidentID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRemoveTask
 	t.track(eventTasks, properties)
@@ -231,7 +231,7 @@ func (t *RudderTelemetry) RemoveTask(incidentID, userID string, task playbook.Ch
 
 // RenameTask tracks the update of a checklist item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) RenameTask(incidentID, userID string, task playbook.ChecklistItem) {
+func (t *RudderTelemetry) RenameTask(incidentID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRenameTask
 	t.track(eventTasks, properties)
@@ -239,7 +239,7 @@ func (t *RudderTelemetry) RenameTask(incidentID, userID string, task playbook.Ch
 
 // ModifyCheckedState tracks the checking and unchecking of items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasOwner bool) {
+func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, task app.ChecklistItem, wasOwner bool) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionModifyTaskState
 	properties["NewState"] = task.State
@@ -250,7 +250,7 @@ func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, task pla
 
 // SetAssignee tracks the changing of an assignee on an item by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) SetAssignee(incidentID, userID string, task playbook.ChecklistItem) {
+func (t *RudderTelemetry) SetAssignee(incidentID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionSetAssigneeForTask
 	t.track(eventTasks, properties)
@@ -258,32 +258,32 @@ func (t *RudderTelemetry) SetAssignee(incidentID, userID string, task playbook.C
 
 // MoveTask tracks the movement of checklist items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) MoveTask(incidentID, userID string, task playbook.ChecklistItem) {
+func (t *RudderTelemetry) MoveTask(incidentID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionMoveTask
 	t.track(eventTasks, properties)
 }
 
 // RunTaskSlashCommand tracks the execution of a slash command on a checklist item.
-func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem) {
+func (t *RudderTelemetry) RunTaskSlashCommand(incidentID, userID string, task app.ChecklistItem) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionRunTaskSlashCommand
 	t.track(eventTasks, properties)
 }
 
-func (t *RudderTelemetry) UpdateRetrospective(incident *incident.Incident, userID string) {
+func (t *RudderTelemetry) UpdateRetrospective(incident *app.Incident, userID string) {
 	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionUpdateRetrospective
 	t.track(eventTasks, properties)
 }
 
-func (t *RudderTelemetry) PublishRetrospective(incident *incident.Incident, userID string) {
+func (t *RudderTelemetry) PublishRetrospective(incident *app.Incident, userID string) {
 	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionPublishRetrospective
 	t.track(eventTasks, properties)
 }
 
-func playbookProperties(pbook playbook.Playbook, userID string) map[string]interface{} {
+func playbookProperties(pbook app.Playbook, userID string) map[string]interface{} {
 	totalChecklistItems := 0
 	totalChecklistItemsWithCommands := 0
 	for _, checklist := range pbook.Checklists {
@@ -323,21 +323,21 @@ func playbookProperties(pbook playbook.Playbook, userID string) map[string]inter
 }
 
 // CreatePlaybook tracks the creation of a playbook.
-func (t *RudderTelemetry) CreatePlaybook(pbook playbook.Playbook, userID string) {
+func (t *RudderTelemetry) CreatePlaybook(pbook app.Playbook, userID string) {
 	properties := playbookProperties(pbook, userID)
 	properties["Action"] = actionCreate
 	t.track(eventPlaybook, properties)
 }
 
 // UpdatePlaybook tracks the update of a playbook.
-func (t *RudderTelemetry) UpdatePlaybook(pbook playbook.Playbook, userID string) {
+func (t *RudderTelemetry) UpdatePlaybook(pbook app.Playbook, userID string) {
 	properties := playbookProperties(pbook, userID)
 	properties["Action"] = actionUpdate
 	t.track(eventPlaybook, properties)
 }
 
 // DeletePlaybook tracks the deletion of a playbook.
-func (t *RudderTelemetry) DeletePlaybook(pbook playbook.Playbook, userID string) {
+func (t *RudderTelemetry) DeletePlaybook(pbook app.Playbook, userID string) {
 	properties := playbookProperties(pbook, userID)
 	properties["Action"] = actionDelete
 	t.track(eventPlaybook, properties)

@@ -9,11 +9,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
@@ -153,14 +151,14 @@ type Runner struct {
 	pluginAPI       *pluginapi.Client
 	logger          bot.Logger
 	poster          bot.Poster
-	incidentService incident.Service
-	playbookService playbook.Service
+	incidentService app.IncidentService
+	playbookService app.PlaybookService
 	configService   config.Service
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service, configService config.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService app.IncidentService, playbookService app.PlaybookService, configService config.Service) *Runner {
 	return &Runner{
 		context:         ctx,
 		args:            args,
@@ -205,21 +203,23 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	if !permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
+	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
 		r.postCommandResponse("Must be a member of the team to start incidents.")
 		return
 	}
 
-	requesterInfo := playbook.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
-		playbook.Options{
-			Sort:      playbook.SortByTitle,
-			Direction: playbook.DirectionAsc,
+		app.PlaybookOptions{
+			Sort:      app.SortByTitle,
+			Direction: app.DirectionAsc,
+			Page:      0,
+			PerPage:   app.PerPageDefault,
 		})
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
@@ -258,7 +258,7 @@ func (r *Runner) actionCheck(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only check/uncheck an item from within the incident's channel.")
 			return
 		}
@@ -286,7 +286,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only add an item from within the incident's channel.")
 			return
 		}
@@ -304,7 +304,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 	}
 
 	combineargs := strings.Join(args[1:], " ")
-	if err := r.incidentService.AddChecklistItem(incidentID, r.args.UserId, checklist, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incidentID, r.args.UserId, checklist, app.ChecklistItem{
 		Title: combineargs,
 	}); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
@@ -333,7 +333,7 @@ func (r *Runner) actionRemoveChecklistItem(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only remove an item from within the incident's channel.")
 			return
 		}
@@ -360,7 +360,7 @@ func (r *Runner) actionOwner(args []string) {
 
 func (r *Runner) actionShowOwner([]string) {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if errors.Is(err, incident.ErrNotFound) {
+	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("You can only see the owner from within the incident's channel.")
 		return
 	} else if err != nil {
@@ -387,7 +387,7 @@ func (r *Runner) actionChangeOwner(args []string) {
 	targetOwnerUsername := strings.TrimLeft(args[0], "@")
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if errors.Is(err, incident.ErrNotFound) {
+	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("You can only change the owner from within the incident's channel.")
 		return
 	} else if err != nil {
@@ -439,7 +439,7 @@ func (r *Runner) actionAnnounce(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only announce from within the incident's channel.")
 			return
 		}
@@ -472,7 +472,7 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("Channel not found: " + channelarg)
 			continue
 		}
-		if !permissions.CanPostToChannel(r.args.UserId, targetChannel.Id, r.pluginAPI) {
+		if !app.CanPostToChannel(r.args.UserId, targetChannel.Id, r.pluginAPI) {
 			r.postCommandResponse("Cannot post to: " + channelarg)
 			continue
 		}
@@ -501,19 +501,20 @@ func (r *Runner) actionList() {
 		return
 	}
 
-	requesterInfo, err := permissions.GetRequesterInfo(r.args.UserId, r.pluginAPI)
+	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error resolving permissions: %v", err)
 		return
 	}
 
-	options := incident.FilterOptions{
+	options := app.IncidentFilterOptions{
 		TeamID:    r.args.TeamId,
 		MemberID:  r.args.UserId,
+		Page:      0,
 		PerPage:   10,
-		Sort:      incident.SortByCreateAt,
-		Direction: incident.DirectionDesc,
-		Statuses:  []string{incident.StatusReported, incident.StatusActive, incident.StatusResolved},
+		Sort:      app.SortByCreateAt,
+		Direction: app.DirectionDesc,
+		Statuses:  []string{app.StatusReported, app.StatusActive, app.StatusResolved},
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
@@ -562,7 +563,7 @@ func (r *Runner) actionList() {
 
 func (r *Runner) actionInfo() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if errors.Is(err, incident.ErrNotFound) {
+	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("You can only see the details of an incident from within the incident's channel.")
 		return
 	} else if err != nil {
@@ -599,7 +600,7 @@ func (r *Runner) actionInfo() {
 		for _, item := range checklist.Items {
 			icon := ":white_large_square: "
 			timestamp := ""
-			if item.State == playbook.ChecklistItemStateClosed {
+			if item.State == app.ChecklistItemStateClosed {
 				icon = ":white_check_mark: "
 				timestamp = " (" + timeutils.GetTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
 			}
@@ -639,7 +640,7 @@ func (r *Runner) actionEnd() {
 func (r *Runner) actionUpdate() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only update an incident from within the incident's channel.")
 			return
 		}
@@ -647,8 +648,8 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	if err = permissions.EditIncident(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
+	if err = app.EditIncident(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
 		}
@@ -658,7 +659,7 @@ func (r *Runner) actionUpdate() {
 
 	err = r.incidentService.OpenUpdateStatusDialog(incidentID, r.args.TriggerId)
 	switch {
-	case errors.Is(err, incident.ErrIncidentNotActive):
+	case errors.Is(err, app.ErrIncidentNotActive):
 		r.postCommandResponse("This incident has already been closed.")
 		return
 	case err != nil:
@@ -683,15 +684,15 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
-	isGuest, err := permissions.IsGuest(r.args.UserId, r.pluginAPI)
+	isGuest, err := app.IsGuest(r.args.UserId, r.pluginAPI)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 
-	requesterInfo := permissions.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
-		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
 		IsGuest: isGuest,
 	}
 
@@ -704,7 +705,7 @@ func (r *Runner) actionAdd(args []string) {
 func (r *Runner) actionTimeline() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only run the timeline command from within an incident channel.")
 			return
 		}
@@ -736,15 +737,15 @@ func (r *Runner) actionTimeline() {
 
 	var reported time.Time
 	for _, e := range incidentToRead.TimelineEvents {
-		if e.EventType == incident.IncidentCreated {
+		if e.EventType == app.IncidentCreated {
 			reported = timeutils.GetTimeForMillis(e.EventAt)
 			break
 		}
 	}
 	for _, e := range incidentToRead.TimelineEvents {
-		if e.EventType == incident.AssigneeChanged ||
-			e.EventType == incident.TaskStateModified ||
-			e.EventType == incident.RanSlashCommand {
+		if e.EventType == app.AssigneeChanged ||
+			e.EventType == app.TaskStateModified ||
+			e.EventType == app.RanSlashCommand {
 			continue
 		}
 
@@ -758,7 +759,7 @@ func (r *Runner) actionTimeline() {
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{Message: message})
 }
 
-func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
+func (r *Runner) summaryMessage(event app.TimelineEvent) string {
 	var username string
 	user, err := r.pluginAPI.User.Get(event.SubjectUserID)
 	if err == nil {
@@ -766,32 +767,32 @@ func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
 	}
 
 	switch event.EventType {
-	case incident.IncidentCreated:
+	case app.IncidentCreated:
 		return "Incident Reported by @" + username
-	case incident.StatusUpdated:
+	case app.StatusUpdated:
 		if event.Summary == "" {
 			return "@" + username + " posted a status update"
 		}
 		return "@" + username + " changed status from " + event.Summary
-	case incident.OwnerChanged:
+	case app.OwnerChanged:
 		return "Owner changes from " + event.Summary
-	case incident.TaskStateModified:
+	case app.TaskStateModified:
 		return "@" + username + " " + event.Summary
-	case incident.AssigneeChanged:
+	case app.AssigneeChanged:
 		return "@" + username + " " + event.Summary
-	case incident.RanSlashCommand:
+	case app.RanSlashCommand:
 		return "@" + username + " " + event.Summary
-	case incident.PublishedRetrospective:
+	case app.PublishedRetrospective:
 		return "@" + username + " published retrospective"
-	case incident.CanceledRetrospective:
+	case app.CanceledRetrospective:
 		return "@" + username + " canceled retrospective"
 	default:
 		return event.Summary
 	}
 }
 
-func (r *Runner) timeSince(event incident.TimelineEvent, reported time.Time) string {
-	if event.EventType == incident.IncidentCreated {
+func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
+	if event.EventType == app.IncidentCreated {
 		return ""
 	}
 	eventAt := timeutils.GetTimeForMillis(event.EventAt)
@@ -844,20 +845,20 @@ And... yes, of course, we have emojis
 
 :muscle: :sunglasses: :tada: :confetti_ball: :balloon: :cowboy_hat_face: :nail_care:`
 
-	testPlaybook := playbook.Playbook{
+	testPlaybook := app.Playbook{
 		Title:  "testing playbook",
 		TeamID: r.args.TeamId,
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "Identification",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title:       "Create Jira ticket",
 						Description: longDescription,
 					},
 					{
 						Title: "Add on-call team members",
-						State: playbook.ChecklistItemStateClosed,
+						State: app.ChecklistItemStateClosed,
 					},
 					{
 						Title:       "Identify blast radius",
@@ -876,7 +877,7 @@ And... yes, of course, we have emojis
 			},
 			{
 				Title: "Resolution",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Align on plan of attack",
 					},
@@ -887,7 +888,7 @@ And... yes, of course, we have emojis
 			},
 			{
 				Title: "Analysis",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Writeup root-cause analysis",
 					},
@@ -964,7 +965,7 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	createdIncident, err := r.incidentService.CreateIncident(&incident.Incident{
+	createdIncident, err := r.incidentService.CreateIncident(&app.Incident{
 		Name:               "Cloud Incident 4739",
 		TeamID:             r.args.TeamId,
 		OwnerUserID:        r.args.UserId,
@@ -977,34 +978,34 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should be checked and second",
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should be deleted",
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should not say this.",
-		State: playbook.ChecklistItemStateClosed,
+		State: app.ChecklistItemStateClosed,
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, playbook.ChecklistItemStateClosed, 0, 0); err != nil {
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, app.ChecklistItemStateClosed, 0, 0); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, playbook.ChecklistItemStateOpen, 0, 2); err != nil {
+	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, app.ChecklistItemStateOpen, 0, 2); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
@@ -1090,7 +1091,7 @@ func (r *Runner) actionTestCreate(params []string) {
 
 	incidentName := strings.Join(params[2:], " ")
 
-	theIncident := &incident.Incident{
+	theIncident := &app.Incident{
 		Name:        incidentName,
 		OwnerUserID: r.args.UserId,
 		TeamID:      r.args.TeamId,
@@ -1275,13 +1276,16 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		timestamps = append(timestamps, timestamp)
 	}
 
-	requesterInfo := playbook.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
 	}
 
-	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, playbook.Options{})
+	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, app.PlaybookOptions{
+		Page:    0,
+		PerPage: app.PerPageDefault,
+	})
 	if err != nil {
 		r.warnUserAndLogErrorf("Error getting playbooks: %v", err)
 		return
@@ -1292,7 +1296,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		return
 	}
 
-	playbooks := make([]playbook.Playbook, 0, len(playbooksResult.Items))
+	playbooks := make([]app.Playbook, 0, len(playbooksResult.Items))
 	for _, thePlaybook := range playbooksResult.Items {
 		wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
 		if err != nil {
@@ -1304,7 +1308,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 	}
 
 	tableMsg := "| Incident name | Created at | Status |\n|-	|-	|-	|\n"
-	incidents := make([]*incident.Incident, 0, numIncidents)
+	incidents := make([]*app.Incident, 0, numIncidents)
 	for i := 0; i < numIncidents; i++ {
 		thePlaybook := playbooks[rand.Intn(len(playbooks))]
 
@@ -1315,7 +1319,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			incidentName = fmt.Sprintf("[%s] %s", companyName, incidentName)
 		}
 
-		theIncident := &incident.Incident{
+		theIncident := &app.Incident{
 			Name:        incidentName,
 			OwnerUserID: r.args.UserId,
 			TeamID:      r.args.TeamId,
@@ -1352,8 +1356,8 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 	}
 
 	for i := 0; i < numEndedIncidents; i++ {
-		err := r.incidentService.UpdateStatus(incidents[i].ID, r.args.UserId, incident.StatusUpdateOptions{
-			Status:  incident.StatusArchived,
+		err := r.incidentService.UpdateStatus(incidents[i].ID, r.args.UserId, app.StatusUpdateOptions{
+			Status:  app.StatusArchived,
 			Message: "This is now archived.",
 		})
 		if err != nil {
@@ -1411,7 +1415,7 @@ func (r *Runner) Execute() error {
 		return nil
 	}
 
-	if !permissions.IsOnEnabledTeam(r.args.TeamId, r.configService) {
+	if !app.IsOnEnabledTeam(r.args.TeamId, r.configService) {
 		r.postCommandResponse("Not enabled on this team.")
 		return nil
 	}
