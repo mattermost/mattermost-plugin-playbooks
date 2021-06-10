@@ -256,6 +256,7 @@ const PlaybookEdit = (props: Props) => {
 
     const onSave = async () => {
         const data = await savePlaybook(setPlaybookDefaults(playbook));
+        setChangesMade(false);
         onClose(data?.id);
     };
 
