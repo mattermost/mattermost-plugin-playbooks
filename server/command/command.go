@@ -214,7 +214,6 @@ func (r *Runner) actionStart(args []string) {
 		UserID:          r.args.UserId,
 		TeamID:          r.args.TeamId,
 		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
-		MemberOnly:      true,
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
@@ -1280,7 +1279,6 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		UserID:          r.args.UserId,
 		TeamID:          r.args.TeamId,
 		UserIDtoIsAdmin: map[string]bool{r.args.UserId: permissions.IsAdmin(r.args.UserId, r.pluginAPI)},
-		MemberOnly:      true,
 	}
 
 	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, playbook.Options{})

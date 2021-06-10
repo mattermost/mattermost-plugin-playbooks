@@ -145,7 +145,6 @@ const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
     const result = await clientFetchPlaybooks(teamID, {
         page: 0,
         per_page: 1,
-        member_only: true,
     }) as FetchPlaybooksNoChecklistReturn;
 
     return result.items?.length > 0;

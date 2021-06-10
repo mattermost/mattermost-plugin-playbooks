@@ -70,9 +70,6 @@ type PlaybookCreateOptions struct {
 // PlaybookListOptions specifies the optional parameters to the
 // PlaybooksService.List method.
 type PlaybookListOptions struct {
-	// MemberOnly filters playbooks to those for which the current user is a member.
-	MemberOnly bool `url:"member_only,omitempty"`
-
 	Sort      Sort          `url:"sort,omitempty"`
 	Direction SortDirection `url:"direction,omitempty"`
 }
