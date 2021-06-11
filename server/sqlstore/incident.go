@@ -259,13 +259,13 @@ func (s *incidentStore) GetIncidents(requesterInfo app.RequesterInfo, options ap
 	incidents := make([]app.Incident, 0, len(rawIncidents))
 	incidentIDs := make([]string, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
-		var asIncident *app.Incident
-		asIncident, err = s.toIncident(rawIncident)
+		var incident *app.Incident
+		incident, err = s.toIncident(rawIncident)
 		if err != nil {
 			return nil, err
 		}
-		incidents = append(incidents, *asIncident)
-		incidentIDs = append(incidentIDs, asIncident.ID)
+		incidents = append(incidents, *incident)
+		incidentIDs = append(incidentIDs, incident.ID)
 	}
 
 	var statusPosts incidentStatusPosts
@@ -299,18 +299,18 @@ func (s *incidentStore) GetIncidents(requesterInfo app.RequesterInfo, options ap
 	}, nil
 }
 
-// CreateIncident creates a new incident. If newIncident has an ID, that ID will be used.
-func (s *incidentStore) CreateIncident(newIncident *app.Incident) (out *app.Incident, err error) {
-	if newIncident == nil {
+// CreateIncident creates a new incident. If incident has an ID, that ID will be used.
+func (s *incidentStore) CreateIncident(incident *app.Incident) (*app.Incident, error) {
+	if incident == nil {
 		return nil, errors.New("incident is nil")
 	}
-	incidentCopy := newIncident.Clone()
+	incident = incident.Clone()
 
-	if incidentCopy.ID == "" {
-		incidentCopy.ID = model.NewId()
+	if incident.ID == "" {
+		incident.ID = model.NewId()
 	}
 
-	rawIncident, err := toSQLIncident(*incidentCopy)
+	rawIncident, err := toSQLIncident(*incident)
 	if err != nil {
 		return nil, err
 	}
@@ -358,19 +358,19 @@ func (s *incidentStore) CreateIncident(newIncident *app.Incident) (out *app.Inci
 		return nil, errors.Wrapf(err, "failed to store new incident")
 	}
 
-	return incidentCopy, nil
+	return incident, nil
 }
 
 // UpdateIncident updates an incident.
-func (s *incidentStore) UpdateIncident(newIncident *app.Incident) error {
-	if newIncident == nil {
+func (s *incidentStore) UpdateIncident(incident *app.Incident) error {
+	if incident == nil {
 		return errors.New("incident is nil")
 	}
-	if newIncident.ID == "" {
+	if incident.ID == "" {
 		return errors.New("ID should not be empty")
 	}
 
-	rawIncident, err := toSQLIncident(*newIncident)
+	rawIncident, err := toSQLIncident(*incident)
 	if err != nil {
 		return err
 	}
@@ -527,14 +527,14 @@ func (s *incidentStore) UpdateTimelineEvent(event *app.TimelineEvent) error {
 }
 
 // GetIncident gets an incident by ID.
-func (s *incidentStore) GetIncident(incidentID string) (out *app.Incident, err error) {
+func (s *incidentStore) GetIncident(incidentID string) (*app.Incident, error) {
 	if incidentID == "" {
 		return nil, errors.New("ID cannot be empty")
 	}
 
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return out, errors.Wrap(err, "could not begin transaction")
+		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
@@ -546,8 +546,9 @@ func (s *incidentStore) GetIncident(incidentID string) (out *app.Incident, err e
 		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
 	}
 
-	if out, err = s.toIncident(rawIncident); err != nil {
-		return out, err
+	incident, err := s.toIncident(rawIncident)
+	if err != nil {
+		return nil, err
 	}
 
 	var statusPosts incidentStatusPosts
@@ -558,7 +559,7 @@ func (s *incidentStore) GetIncident(incidentID string) (out *app.Incident, err e
 
 	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
-		return out, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
+		return nil, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
 	}
 
 	timelineEvents, err := s.getTimelineEventsForIncident(tx, []string{incidentID})
@@ -567,16 +568,16 @@ func (s *incidentStore) GetIncident(incidentID string) (out *app.Incident, err e
 	}
 
 	if err = tx.Commit(); err != nil {
-		return out, errors.Wrap(err, "could not commit transaction")
+		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
 	for _, p := range statusPosts {
-		out.StatusPosts = append(out.StatusPosts, p.StatusPost)
+		incident.StatusPosts = append(incident.StatusPosts, p.StatusPost)
 	}
 
-	out.TimelineEvents = append(out.TimelineEvents, timelineEvents...)
+	incident.TimelineEvents = append(incident.TimelineEvents, timelineEvents...)
 
-	return out, nil
+	return incident, nil
 }
 
 func (s *incidentStore) getTimelineEventsForIncident(q sqlx.Queryer, incidentIDs []string) ([]app.TimelineEvent, error) {
@@ -791,36 +792,36 @@ func (s *incidentStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqlizer 
 }
 
 func (s *incidentStore) toIncident(rawIncident sqlIncident) (*app.Incident, error) {
-	i := rawIncident.Incident
-	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
+	incident := rawIncident.Incident
+	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &incident.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: %s", rawIncident.ID)
 	}
 
-	i.InvitedUserIDs = []string(nil)
+	incident.InvitedUserIDs = []string(nil)
 	if rawIncident.ConcatenatedInvitedUserIDs != "" {
-		i.InvitedUserIDs = strings.Split(rawIncident.ConcatenatedInvitedUserIDs, ",")
+		incident.InvitedUserIDs = strings.Split(rawIncident.ConcatenatedInvitedUserIDs, ",")
 	}
 
-	i.InvitedGroupIDs = []string(nil)
+	incident.InvitedGroupIDs = []string(nil)
 	if rawIncident.ConcatenatedInvitedGroupIDs != "" {
-		i.InvitedGroupIDs = strings.Split(rawIncident.ConcatenatedInvitedGroupIDs, ",")
+		incident.InvitedGroupIDs = strings.Split(rawIncident.ConcatenatedInvitedGroupIDs, ",")
 	}
 
-	return &i, nil
+	return &incident, nil
 }
 
-func toSQLIncident(origIncident app.Incident) (*sqlIncident, error) {
-	newChecklists := populateChecklistIDs(origIncident.Checklists)
+func toSQLIncident(incident app.Incident) (*sqlIncident, error) {
+	newChecklists := populateChecklistIDs(incident.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
+		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", incident.ID)
 	}
 
 	return &sqlIncident{
-		Incident:                    origIncident,
+		Incident:                    incident,
 		ChecklistsJSON:              checklistsJSON,
-		ConcatenatedInvitedUserIDs:  strings.Join(origIncident.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs: strings.Join(origIncident.InvitedGroupIDs, ","),
+		ConcatenatedInvitedUserIDs:  strings.Join(incident.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs: strings.Join(incident.InvitedGroupIDs, ","),
 	}, nil
 }
 

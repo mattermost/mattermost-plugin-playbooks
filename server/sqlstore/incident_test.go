@@ -1853,14 +1853,14 @@ func setupIncidentStore(t *testing.T, db *sqlx.DB) app.IncidentStore {
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToIncident()
 type IncidentBuilder struct {
-	t testing.TB
-	i *app.Incident
+	t        testing.TB
+	incident *app.Incident
 }
 
 func NewBuilder(t testing.TB) *IncidentBuilder {
 	return &IncidentBuilder{
 		t: t,
-		i: &app.Incident{
+		incident: &app.Incident{
 			Name:          "base incident",
 			OwnerUserID:   model.NewId(),
 			TeamID:        model.NewId(),
@@ -1876,41 +1876,41 @@ func NewBuilder(t testing.TB) *IncidentBuilder {
 }
 
 func (ib *IncidentBuilder) WithName(name string) *IncidentBuilder {
-	ib.i.Name = name
+	ib.incident.Name = name
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithDescription(desc string) *IncidentBuilder {
-	ib.i.Description = desc
+	ib.incident.Description = desc
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithID() *IncidentBuilder {
-	ib.i.ID = model.NewId()
+	ib.incident.ID = model.NewId()
 
 	return ib
 }
 
 func (ib *IncidentBuilder) ToIncident() *app.Incident {
-	return ib.i
+	return ib.incident
 }
 
 func (ib *IncidentBuilder) WithCreateAt(createAt int64) *IncidentBuilder {
-	ib.i.CreateAt = createAt
+	ib.incident.CreateAt = createAt
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithDeleteAt(deleteAt int64) *IncidentBuilder {
-	ib.i.DeleteAt = deleteAt
+	ib.incident.DeleteAt = deleteAt
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuilder {
-	ib.i.Checklists = make([]app.Checklist, len(itemsPerChecklist))
+	ib.incident.Checklists = make([]app.Checklist, len(itemsPerChecklist))
 
 	for i, numItems := range itemsPerChecklist {
 		var items []app.ChecklistItem
@@ -1921,7 +1921,7 @@ func (ib *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuil
 			})
 		}
 
-		ib.i.Checklists[i] = app.Checklist{
+		ib.incident.Checklists[i] = app.Checklist{
 			ID:    model.NewId(),
 			Title: fmt.Sprint("Checklist ", i),
 			Items: items,
@@ -1932,38 +1932,38 @@ func (ib *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuil
 }
 
 func (ib *IncidentBuilder) WithOwnerUserID(id string) *IncidentBuilder {
-	ib.i.OwnerUserID = id
+	ib.incident.OwnerUserID = id
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
-	ib.i.TeamID = id
+	ib.incident.TeamID = id
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithCurrentStatus(status string) *IncidentBuilder {
-	ib.i.CurrentStatus = status
+	ib.incident.CurrentStatus = status
 
 	if status == "Resolved" || status == "Archived" {
-		ib.i.EndAt = ib.i.CreateAt + 100
+		ib.incident.EndAt = ib.incident.CreateAt + 100
 	}
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithChannel(channel *model.Channel) *IncidentBuilder {
-	ib.i.ChannelID = channel.Id
+	ib.incident.ChannelID = channel.Id
 
 	// Consider the incident name as authoritative.
-	channel.DisplayName = ib.i.Name
+	channel.DisplayName = ib.incident.Name
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithPlaybookID(id string) *IncidentBuilder {
-	ib.i.PlaybookID = id
+	ib.incident.PlaybookID = id
 
 	return ib
 }

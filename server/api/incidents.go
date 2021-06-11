@@ -135,16 +135,17 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
-	payloadIncident := app.Incident{
-		OwnerUserID: incidentCreateOptions.OwnerUserID,
-		TeamID:      incidentCreateOptions.TeamID,
-		Name:        incidentCreateOptions.Name,
-		Description: incidentCreateOptions.Description,
-		PostID:      incidentCreateOptions.PostID,
-		PlaybookID:  incidentCreateOptions.PlaybookID,
-	}
-
-	newIncident, err := h.createIncident(payloadIncident, userID)
+	incident, err := h.createIncident(
+		app.Incident{
+			OwnerUserID: incidentCreateOptions.OwnerUserID,
+			TeamID:      incidentCreateOptions.TeamID,
+			Name:        incidentCreateOptions.Name,
+			Description: incidentCreateOptions.Description,
+			PostID:      incidentCreateOptions.PostID,
+			PlaybookID:  incidentCreateOptions.PlaybookID,
+		},
+		userID,
+	)
 
 	if errors.Is(err, app.ErrPermission) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "unable to create incident", err)
@@ -162,11 +163,11 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 	}
 
 	h.poster.PublishWebsocketEventToUser(app.IncidentCreatedWSEvent, map[string]interface{}{
-		"incident": newIncident,
+		"incident": incident,
 	}, userID)
 
-	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", newIncident.ID))
-	ReturnJSON(w, &newIncident, http.StatusCreated)
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", incident.ID))
+	ReturnJSON(w, &incident, http.StatusCreated)
 }
 
 // Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status.
@@ -228,15 +229,16 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		name = rawName
 	}
 
-	payloadIncident := app.Incident{
-		OwnerUserID: request.UserId,
-		TeamID:      request.TeamId,
-		Name:        name,
-		PostID:      state.PostID,
-		PlaybookID:  playbookID,
-	}
-
-	newIncident, err := h.createIncident(payloadIncident, request.UserId)
+	incident, err := h.createIncident(
+		app.Incident{
+			OwnerUserID: request.UserId,
+			TeamID:      request.TeamId,
+			Name:        name,
+			PostID:      state.PostID,
+			PlaybookID:  playbookID,
+		},
+		request.UserId,
+	)
 	if err != nil {
 		if errors.Is(err, app.ErrMalformedIncident) {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
@@ -267,15 +269,15 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 
 	h.poster.PublishWebsocketEventToUser(app.IncidentCreatedWSEvent, map[string]interface{}{
 		"client_id": state.ClientID,
-		"incident":  newIncident,
+		"incident":  incident,
 	}, request.UserId)
 
-	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
+	if err := h.postIncidentCreatedMessage(incident, request.ChannelId); err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", newIncident.ID))
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", incident.ID))
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -328,40 +330,40 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *IncidentHandler) createIncident(newIncident app.Incident, userID string) (*app.Incident, error) {
-	if newIncident.ID != "" {
+func (h *IncidentHandler) createIncident(incident app.Incident, userID string) (*app.Incident, error) {
+	if incident.ID != "" {
 		return nil, errors.Wrap(app.ErrMalformedIncident, "incident already has an id")
 	}
 
-	if newIncident.ChannelID != "" {
+	if incident.ChannelID != "" {
 		return nil, errors.Wrap(app.ErrMalformedIncident, "incident channel already has an id")
 	}
 
-	if newIncident.CreateAt != 0 {
+	if incident.CreateAt != 0 {
 		return nil, errors.Wrap(app.ErrMalformedIncident, "incident channel already has created at date")
 	}
 
-	if newIncident.TeamID == "" {
+	if incident.TeamID == "" {
 		return nil, errors.Wrap(app.ErrMalformedIncident, "missing team id of incident")
 	}
 
-	if newIncident.OwnerUserID == "" {
+	if incident.OwnerUserID == "" {
 		return nil, errors.Wrap(app.ErrMalformedIncident, "missing owner user id of incident")
 	}
 
-	if newIncident.Name == "" {
+	if incident.Name == "" {
 		return nil, errors.Wrap(app.ErrMalformedIncident, "missing name of incident")
 	}
 
 	// Owner should have permission to the team
-	if !app.CanViewTeam(newIncident.OwnerUserID, newIncident.TeamID, h.pluginAPI) {
+	if !app.CanViewTeam(incident.OwnerUserID, incident.TeamID, h.pluginAPI) {
 		return nil, errors.Wrap(app.ErrPermission, "owner user does not have permissions for the team")
 	}
 
 	public := true
 	var thePlaybook *app.Playbook
-	if newIncident.PlaybookID != "" {
-		pb, err := h.playbookService.Get(newIncident.PlaybookID)
+	if incident.PlaybookID != "" {
+		pb, err := h.playbookService.Get(incident.PlaybookID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
@@ -370,43 +372,43 @@ func (h *IncidentHandler) createIncident(newIncident app.Incident, userID string
 			return nil, errors.New("userID is not a member of playbook")
 		}
 
-		newIncident.Checklists = pb.Checklists
+		incident.Checklists = pb.Checklists
 		public = pb.CreatePublicIncident
 
-		newIncident.BroadcastChannelID = pb.BroadcastChannelID
-		newIncident.Description = pb.Description
-		newIncident.ReminderMessageTemplate = pb.ReminderMessageTemplate
-		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+		incident.BroadcastChannelID = pb.BroadcastChannelID
+		incident.Description = pb.Description
+		incident.ReminderMessageTemplate = pb.ReminderMessageTemplate
+		incident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 
-		newIncident.InvitedUserIDs = []string{}
-		newIncident.InvitedGroupIDs = []string{}
+		incident.InvitedUserIDs = []string{}
+		incident.InvitedGroupIDs = []string{}
 		if pb.InviteUsersEnabled {
-			newIncident.InvitedUserIDs = pb.InvitedUserIDs
-			newIncident.InvitedGroupIDs = pb.InvitedGroupIDs
+			incident.InvitedUserIDs = pb.InvitedUserIDs
+			incident.InvitedGroupIDs = pb.InvitedGroupIDs
 		}
 
 		if pb.DefaultOwnerEnabled {
-			newIncident.DefaultOwnerID = pb.DefaultOwnerID
+			incident.DefaultOwnerID = pb.DefaultOwnerID
 		}
 
 		if pb.AnnouncementChannelEnabled {
-			newIncident.AnnouncementChannelID = pb.AnnouncementChannelID
+			incident.AnnouncementChannelID = pb.AnnouncementChannelID
 		}
 
 		if pb.WebhookOnCreationEnabled {
-			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
+			incident.WebhookOnCreationURL = pb.WebhookOnCreationURL
 		}
 
 		if pb.WebhookOnStatusUpdateEnabled {
-			newIncident.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
+			incident.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
 		}
 
 		if pb.MessageOnJoinEnabled {
-			newIncident.MessageOnJoin = pb.MessageOnJoin
+			incident.MessageOnJoin = pb.MessageOnJoin
 		}
 
-		newIncident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
-		newIncident.Retrospective = pb.RetrospectiveTemplate
+		incident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
+		incident.Retrospective = pb.RetrospectiveTemplate
 
 		thePlaybook = &pb
 	}
@@ -417,12 +419,12 @@ func (h *IncidentHandler) createIncident(newIncident app.Incident, userID string
 		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
 		permissionMessage = "You are not able to create a public channel"
 	}
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, newIncident.TeamID, permission) {
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, incident.TeamID, permission) {
 		return nil, errors.Wrap(app.ErrPermission, permissionMessage)
 	}
 
-	if newIncident.PostID != "" {
-		post, err := h.pluginAPI.Post.GetPost(newIncident.PostID)
+	if incident.PostID != "" {
+		post, err := h.pluginAPI.Post.GetPost(incident.PostID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get incident original post")
 		}
@@ -430,7 +432,7 @@ func (h *IncidentHandler) createIncident(newIncident app.Incident, userID string
 			return nil, errors.New("user is not a member of the channel containing the incident's original post")
 		}
 	}
-	return h.incidentService.CreateIncident(&newIncident, thePlaybook, userID, public)
+	return h.incidentService.CreateIncident(&incident, thePlaybook, userID, public)
 }
 
 func (h *IncidentHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
