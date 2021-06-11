@@ -19,16 +19,16 @@ export interface PresetTemplate {
 
 export const PresetTemplates: PresetTemplate[] = [
     {
-        title: 'Blank Playbook',
+        title: 'Blank',
         icon: <FileIcon/>,
         template: emptyPlaybook(),
     },
     {
-        title: 'Incident Collaboration Playbook',
+        title: 'Service Outage Incident',
         icon: <AlertIcon/>,
         template: {
             ...emptyPlaybook(),
-            title: 'Incident Collaboration Playbook',
+            title: 'Service Outage Incident',
             description: '### Summary\n\nDescribe the incident so that someone without prior knowledge can ramp up quickly. Two sentences is the ideal length.\n\n' +
                 '### Impact\n\nDescribe the customer and organizational impact of this incident.',
             reminder_message_template: '### Incident update\n\nDescribe progress and changes to the incident since the last update.\n\n' +
@@ -62,7 +62,7 @@ export const PresetTemplates: PresetTemplate[] = [
                     title: 'Resolution',
                     items: [
                         newChecklistItem('Close alert'),
-                        newChecklistItem('End the incident', '', '/incident end'),
+                        newChecklistItem('End the incident', '', '/playbook end'),
                         newChecklistItem('Schedule a post-mortem'),
                         newChecklistItem('Record post-mortem action items'),
                         newChecklistItem('Update playbook with learnings'),
@@ -141,7 +141,7 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect}: Props) => {
             <RootContainer>
                 <InnerContainer>
                     <Title>
-                        {'Start a new playbook'}
+                        {'Create a playbook'}
                         {!allowPlaybookCreation && <PositionedUpgradeBadge/>}
                     </Title>
                     <TemplateItemDiv>

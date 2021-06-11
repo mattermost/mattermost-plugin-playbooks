@@ -158,7 +158,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
                         checked={!enabled}
                         onChange={handleDisabled}
                     />
-                    {'Everyone on the server can create playbooks.'}
+                    {'Everyone in this workspace can create playbooks.'}
                 </RadioLabel>
                 <RadioLabel>
                     <RadioInput
@@ -191,9 +191,9 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
             </UserSelectorWrapper>
             <ConfirmModal
                 show={confirmRemoveSelfOpen !== ''}
-                title={'Confirm Remove Self'}
-                message={"When you remove yourself as a playbook creator you won't be able to add yourself back. Are you sure you'd like to perform this action?"}
-                confirmButtonText={'Remove Self'}
+                title={'Remove from playbook'}
+                message={'After you remove your own access to this playbook, you won\'t be able to add yourself back. Are you sure you\'d like to perform this action?'}
+                confirmButtonText={'Remove'}
                 onConfirm={() => {
                     removeUser(confirmRemoveSelfOpen);
                     setConfirmRemoveSelfOpen('');

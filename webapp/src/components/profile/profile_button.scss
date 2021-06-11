@@ -1,4 +1,4 @@
-.IncidentProfileButton {
+.PlaybookRunProfileButton {
     font-weight: 600;
     height: 40px;
     padding: 0 4px 0 12px;
@@ -20,7 +20,7 @@
         color: var(--center-channel-color-72);
     }
 
-    .IncidentProfile {
+    .PlaybookRunProfile {
         &:active {
             background: var(--button-bg-08);
             color: var(--button-bg);

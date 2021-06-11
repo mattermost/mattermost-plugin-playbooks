@@ -141,20 +141,19 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	case "start_trial_to_create_playbook":
 		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
 		title = "Create multiple playbooks in Incident Collaboration with Mattermost Professional"
-		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In Mattermost Professional you can create an unlimited number of playbooks for your team.\n" + footer
-
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. Each playbook can be customized and refined over time, to improve time to resolution. In Mattermost Professional you can create an unlimited number of playbooks for your team.\n" + footer
 	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
 		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
-		title = "Keep all your incident events in one place with Mattermost Professional"
-		text = "Your timeline lists all the events in your incident, separated by type. You can download your timeline and use it for your retrospectives to improve how you respond to incidents. Mattermost Professional includes access to timeline features such as adding messages from within the incident channel.\n" + footer
+		title = "Keep a complete record of the playbook run timeline"
+		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook."
 	case "start_trial_to_restrict_playbook_access":
 		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
 	case "start_trial_to_restrict_playbook_creation":
 		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
 	}
 
 	actions := []*model.PostAction{

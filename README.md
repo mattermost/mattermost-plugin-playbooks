@@ -24,15 +24,15 @@ If you're uncertain whether your PR requires documentation, or you'd like some e
 
 ## Generating test data
 
-To quickly test Mattermost Incident Collaboration, use the following test commands to create incidents populated with random data:
+To quickly test Mattermost Incident Collaboration, use the following test commands to create playbook runs populated with random data:
 
-- `/incident test create-incident [playbook ID] [timestamp] [incident name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and an incident name. The command creates an ongoing incident with the creation date set to the specified timestamp.
+- `/playbook test create-incident [playbook ID] [timestamp] [incident name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and a run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
 
-  * An example command looks like: `/incident test create-incident 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
+  * An example command looks like: `/playbook test create-incident 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
 
-- `/incident test bulk-data [ongoing] [ended] [days] [seed]` - Provide a number of ongoing and ended incidents, a number of days, and an optional random seed. The command creates the given number of ongoing and ended incidents, with creation dates randomly between n days ago and the day when the command was issued. The seed may be used to reproduce the same outcome on multiple invocations. Incident names are generated randomly.
+- `/playbook test bulk-data [ongoing] [ended] [days] [seed]` - Provide a number of ongoing and ended playbook runs, a number of days, and an optional random seed. The command creates the given number of ongoing and ended playbook runs, with creation dates randomly between `n` days ago and the day when the command was issued. The seed may be used to reproduce the same outcome on multiple invocations. Names are generated randomly.
 
-  * An example command looks like: `/incident test bulk-data 10 3 342 2`
+  * An example command looks like: `/playbook test bulk-data 10 3 342 2`
 
 ## Contributing
 

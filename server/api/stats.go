@@ -41,13 +41,13 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 }
 
 type Stats struct {
-	TotalReportedIncidents                int `json:"total_reported_incidents"`
-	TotalActiveIncidents                  int `json:"total_active_incidents"`
-	TotalActiveParticipants               int `json:"total_active_participants"`
-	AverageDurationActiveIncidentsMinutes int `json:"average_duration_active_incidents_minutes"`
+	TotalReportedPlaybookRuns                int `json:"total_reported_playbook_runs"`
+	TotalActivePlaybookRuns                  int `json:"total_active_playbook_runs"`
+	TotalActiveParticipants                  int `json:"total_active_participants"`
+	AverageDurationActivePlaybookRunsMinutes int `json:"average_duration_active_playbook_runs_minutes"`
 
-	ActiveIncidents        []int `json:"active_incidents"`
-	PeopleInIncidents      []int `json:"people_in_incidents"`
+	ActivePlaybookRuns     []int `json:"active_playbook_runs"`
+	PeopleInPlaybookRuns   []int `json:"people_in_playbook_runs"`
 	AverageStartToActive   []int `json:"average_start_to_active"`
 	AverageStartToResolved []int `json:"average_start_to_resolved"`
 }
@@ -103,13 +103,13 @@ func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stats := Stats{
-		TotalReportedIncidents:                h.statsStore.TotalReportedIncidents(filters),
-		TotalActiveIncidents:                  h.statsStore.TotalActiveIncidents(filters),
-		TotalActiveParticipants:               h.statsStore.TotalActiveParticipants(filters),
-		AverageDurationActiveIncidentsMinutes: h.statsStore.AverageDurationActiveIncidentsMinutes(filters),
+		TotalReportedPlaybookRuns:                h.statsStore.TotalReportedPlaybookRuns(filters),
+		TotalActivePlaybookRuns:                  h.statsStore.TotalActivePlaybookRuns(filters),
+		TotalActiveParticipants:                  h.statsStore.TotalActiveParticipants(filters),
+		AverageDurationActivePlaybookRunsMinutes: h.statsStore.AverageDurationActivePlaybookRunsMinutes(filters),
 
-		ActiveIncidents:        h.statsStore.CountActiveIncidentsByDay(filters),
-		PeopleInIncidents:      h.statsStore.UniquePeopleInIncidents(filters),
+		ActivePlaybookRuns:     h.statsStore.CountActivePlaybookRunsByDay(filters),
+		PeopleInPlaybookRuns:   h.statsStore.UniquePeopleInPlaybookRuns(filters),
 		AverageStartToActive:   h.statsStore.AverageStartToActive(filters),
 		AverageStartToResolved: h.statsStore.AverageStartToResolved(filters),
 	}
@@ -150,7 +150,7 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeParticipantsPerDay, activeParticipantsPerDayLabels := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
 	ReturnJSON(w, &PlaybookStats{
-		RunsInProgress:                 h.statsStore.TotalInProgressIncidents(filters),
+		RunsInProgress:                 h.statsStore.TotalInProgressPlaybookRuns(filters),
 		ParticipantsActive:             h.statsStore.TotalActiveParticipants(filters),
 		RunsFinishedPrev30Days:         runsFinishedLast30Days,
 		RunsFinishedPercentageChange:   percentageChange,

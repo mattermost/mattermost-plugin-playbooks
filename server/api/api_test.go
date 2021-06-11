@@ -59,40 +59,40 @@ func requireErrorWithStatusCode(t *testing.T, err error, statusCode int) {
 	require.Equal(t, statusCode, errResponse.StatusCode)
 }
 
-func toAPIIncident(internalIncident app.Incident) icClient.Incident {
-	var apiIncident icClient.Incident
+func toAPIPlaybookRun(internalPlaybookRun app.PlaybookRun) icClient.PlaybookRun {
+	var apiPlaybookRun icClient.PlaybookRun
 
-	incidentBytes, _ := json.Marshal(internalIncident)
-	err := json.Unmarshal(incidentBytes, &apiIncident)
+	playbookRunBytes, _ := json.Marshal(internalPlaybookRun)
+	err := json.Unmarshal(playbookRunBytes, &apiPlaybookRun)
 	if err != nil {
 		panic(err)
 	}
 
-	return apiIncident
+	return apiPlaybookRun
 }
 
-func toInternalIncident(apiIncident icClient.Incident) app.Incident {
-	var internalIncident app.Incident
+func toInternalPlaybookRun(apiPlaybookRun icClient.PlaybookRun) app.PlaybookRun {
+	var internalPlaybookRun app.PlaybookRun
 
-	incidentBytes, _ := json.Marshal(apiIncident)
-	err := json.Unmarshal(incidentBytes, &internalIncident)
+	playbookRunBytes, _ := json.Marshal(apiPlaybookRun)
+	err := json.Unmarshal(playbookRunBytes, &internalPlaybookRun)
 	if err != nil {
 		panic(err)
 	}
 
-	return internalIncident
+	return internalPlaybookRun
 }
 
-func toInternalIncidentMetadata(apiIncidentMetadata icClient.IncidentMetadata) app.Metadata {
-	var internalIncidentMetadata app.Metadata
+func toInternalPlaybookRunMetadata(apiPlaybookRunMetadata icClient.PlaybookRunMetadata) app.Metadata {
+	var internalPlaybookRunMetadata app.Metadata
 
-	incidentBytes, _ := json.Marshal(apiIncidentMetadata)
-	err := json.Unmarshal(incidentBytes, &internalIncidentMetadata)
+	playbookRunBytes, _ := json.Marshal(apiPlaybookRunMetadata)
+	err := json.Unmarshal(playbookRunBytes, &internalPlaybookRunMetadata)
 	if err != nil {
 		panic(err)
 	}
 
-	return internalIncidentMetadata
+	return internalPlaybookRunMetadata
 }
 
 func toAPIPlaybook(internalPlaybook app.Playbook) icClient.Playbook {

@@ -8,18 +8,19 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {
+    PrimaryButtonRight,
+} from 'src/components/backstage/playbook_runs/shared';
+
 import {clientFetchPlaybook, fetchPlaybookStats} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {
-    PrimaryButtonRight,
-} from 'src/components/backstage/incidents/shared';
 import {Playbook} from 'src/types/playbook';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';
 import Profiles from 'src/components/assets/icons/profiles';
 import LineGraph from 'src/components/backstage/playbooks/line_graph';
-import IncidentList from 'src/components/backstage/playbooks/incident_list/incident_list';
+import PlaybookRunList from 'src/components/backstage/playbooks/playbook_run_list/playbook_run_list';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
@@ -310,7 +311,7 @@ const PlaybookBackstage = () => {
                             />
                         </GraphBox>
                     </BottomRow>
-                    <IncidentList playbook={playbook}/>
+                    <PlaybookRunList playbook={playbook}/>
                 </BottomInnerContainer>
             </BottomContainer>
         </OuterContainer>

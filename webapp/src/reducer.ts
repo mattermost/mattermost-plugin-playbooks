@@ -3,6 +3,8 @@
 
 import {combineReducers} from 'redux';
 
+import {PlaybookRun} from 'src/types/playbook_run';
+
 import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
@@ -12,16 +14,16 @@ import {
     SetRHSOpen,
     SET_CLIENT_ID,
     SetClientId,
-    INCIDENT_CREATED,
-    IncidentCreated,
-    RECEIVED_TEAM_INCIDENTS,
-    ReceivedTeamIncidents,
+    PLAYBOOK_RUN_CREATED,
+    PlaybookRunCreated,
+    RECEIVED_TEAM_PLAYBOOK_RUNS,
+    ReceivedTeamPlaybookRuns,
     SetRHSState,
     SET_RHS_STATE,
-    RemovedFromIncidentChannel,
-    IncidentUpdated,
-    INCIDENT_UPDATED,
-    REMOVED_FROM_INCIDENT_CHANNEL,
+    RemovedFromChannel,
+    PlaybookRunUpdated,
+    PLAYBOOK_RUN_UPDATED,
+    REMOVED_FROM_CHANNEL,
     SetRHSTabState,
     SET_RHS_TAB_STATE,
     SetRHSEventsFilter,
@@ -39,7 +41,6 @@ import {
     SHOW_POST_MENU_MODAL, HIDE_POST_MENU_MODAL,
     SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
 } from 'src/types/actions';
-import {Incident} from 'src/types/incident';
 
 import {GlobalSettings} from './types/settings';
 
@@ -70,7 +71,7 @@ function clientId(state = '', action: SetClientId) {
     }
 }
 
-function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
+function rhsState(state = RHSState.ViewingPlaybookRun, action: SetRHSState) {
     switch (action.type) {
     case SET_RHS_STATE:
         return action.nextState;
@@ -79,46 +80,46 @@ function rhsState(state = RHSState.ViewingIncident, action: SetRHSState) {
     }
 }
 
-// myIncidentsByTeam is a map of teamId->{channelId->incidents} for which the current user is an incident member. Note
+// myPlaybookRunsByTeam is a map of teamId->{channelId->playbookRuns} for which the current user is an playbook run member. Note
 // that it is lazy loaded on team change, but will also track incremental updates as provided by
 // websocket events.
 // Aditnally it handles the plugin being disabled on the team
-const myIncidentsByTeam = (
-    state: Record<string, Record<string, Incident>> = {},
-    action: IncidentCreated | IncidentUpdated | ReceivedTeamIncidents | RemovedFromIncidentChannel | ReceivedTeamDisabled,
+const myPlaybookRunsByTeam = (
+    state: Record<string, Record<string, PlaybookRun>> = {},
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | ReceivedTeamDisabled,
 ) => {
     switch (action.type) {
-    case INCIDENT_CREATED: {
-        const incidentCreatedAction = action as IncidentCreated;
-        const incident = incidentCreatedAction.incident;
-        const teamId = incident.team_id;
+    case PLAYBOOK_RUN_CREATED: {
+        const playbookRunCreatedAction = action as PlaybookRunCreated;
+        const playbookRun = playbookRunCreatedAction.playbookRun;
+        const teamId = playbookRun.team_id;
         return {
             ...state,
             [teamId]: {
                 ...state[teamId],
-                [incident.channel_id]: incident,
+                [playbookRun.channel_id]: playbookRun,
             },
         };
     }
-    case INCIDENT_UPDATED: {
-        const incidentUpdated = action as IncidentUpdated;
-        const incident = incidentUpdated.incident;
-        const teamId = incident.team_id;
+    case PLAYBOOK_RUN_UPDATED: {
+        const playbookRunUpdated = action as PlaybookRunUpdated;
+        const playbookRun = playbookRunUpdated.playbookRun;
+        const teamId = playbookRun.team_id;
         return {
             ...state,
             [teamId]: {
                 ...state[teamId],
-                [incident.channel_id]: incident,
+                [playbookRun.channel_id]: playbookRun,
             },
         };
     }
-    case RECEIVED_TEAM_INCIDENTS: {
-        const receivedTeamIncidentsAction = action as ReceivedTeamIncidents;
-        const incidents = receivedTeamIncidentsAction.incidents;
-        if (incidents.length === 0) {
+    case RECEIVED_TEAM_PLAYBOOK_RUNS: {
+        const receivedTeamPlaybookRunsAction = action as ReceivedTeamPlaybookRuns;
+        const playbookRuns = receivedTeamPlaybookRunsAction.playbookRuns;
+        if (playbookRuns.length === 0) {
             return state;
         }
-        const teamId = incidents[0].team_id;
+        const teamId = playbookRuns[0].team_id;
         const newState = {
             ...state,
             [teamId]: {
@@ -126,14 +127,14 @@ const myIncidentsByTeam = (
             },
         };
 
-        for (const incident of incidents) {
-            newState[teamId][incident.channel_id] = incident;
+        for (const playbookRun of playbookRuns) {
+            newState[teamId][playbookRun.channel_id] = playbookRun;
         }
 
         return newState;
     }
-    case REMOVED_FROM_INCIDENT_CHANNEL: {
-        const removedFromChannelAction = action as RemovedFromIncidentChannel;
+    case REMOVED_FROM_CHANNEL: {
+        const removedFromChannelAction = action as RemovedFromChannel;
         const channelId = removedFromChannelAction.channelId;
         const teamId = Object.keys(state).find((t) => Boolean(state[t][channelId]));
         if (!teamId) {
@@ -261,7 +262,7 @@ export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
-    myIncidentsByTeam,
+    myPlaybookRunsByTeam,
     rhsState,
     tabStateByChannel,
     eventsFilterByChannel,

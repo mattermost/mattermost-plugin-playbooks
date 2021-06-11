@@ -23,7 +23,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
-import {SecondaryButton} from 'src/components/backstage/incidents/shared';
+import {SecondaryButton} from 'src/components/backstage/playbook_runs/shared';
 
 import './playbook.scss';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
@@ -144,13 +144,13 @@ const FetchingStateType = {
 // setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
 const setPlaybookDefaults = (playbook: Playbook) => ({
     ...playbook,
-    title: playbook.title.trim() || 'Untitled Playbook',
+    title: playbook.title.trim() || 'Untitled playbook',
     checklists: playbook.checklists.map((checklist) => ({
         ...checklist,
-        title: checklist.title || 'Untitled Checklist',
+        title: checklist.title || 'Untitled checklist',
         items: checklist.items.map((item) => ({
             ...item,
-            title: item.title || 'Untitled Step',
+            title: item.title || 'Untitled task',
         })),
     })),
 });
@@ -272,7 +272,7 @@ const PlaybookEdit = (props: Props) => {
     const handlePublicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPlaybook({
             ...playbook,
-            create_public_incident: e.target.value === 'public',
+            create_public_playbook_run: e.target.value === 'public',
         });
         setChangesMade(true);
     };
@@ -455,7 +455,7 @@ const PlaybookEdit = (props: Props) => {
                             id='playbook-name'
                             text={playbook.title}
                             onChange={handleTitleChange}
-                            placeholder={'Untitled Playbook'}
+                            placeholder={'Untitled playbook'}
                         />
                     </EditableTitleContainer>
                 </EditableTexts>
@@ -485,9 +485,9 @@ const PlaybookEdit = (props: Props) => {
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {'Tasks'}
-                            {'Preferences'}
-                            {'Automation'}
+                            {'Checklists'}
+                            {'Templates'}
+                            {'Actions'}
                             {'Permissions'}
                         </Tabs>
                     </TabsHeader>
@@ -502,9 +502,9 @@ const PlaybookEdit = (props: Props) => {
                             <TabContainer>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Broadcast Channel'}
+                                        {'Broadcast channel'}
                                         <BackstageSubheaderDescription>
-                                            {'Broadcast the incident status to an additional channel. All status posts will be shared automatically with both the incident and broadcast channel.'}
+                                            {'Updates will be automatically posted as a message to the configured channel below in addition to the primary channel.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <ChannelSelector
@@ -519,9 +519,9 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Reminder Timer'}
+                                        {'Reminder timer'}
                                         <BackstageSubheaderDescription>
-                                            {'Prompts the owner at a specified interval to update the status of the Incident.'}
+                                            {'Prompts the owner at a specified interval to provide a status update.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledSelect
@@ -540,13 +540,13 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Incident overview template'}
+                                        {'Description'}
                                         <BackstageSubheaderDescription>
-                                            {'This message is used to describe the incident when it\'s started. As the incident progresses, use Update Status to update the description. The message is displayed in the RHS and on the Overview page.'}
+                                            {'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledTextarea
-                                        placeholder={'Enter incident overview template.'}
+                                        placeholder={'Use Markdown to create a template.'}
                                         value={playbook.description}
                                         onChange={(e) => {
                                             setPlaybook({
@@ -559,13 +559,13 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Incident update template'}
+                                        {'Status updates'}
                                         <BackstageSubheaderDescription>
-                                            {'This message is used to describe changes made to an active incident since the last update. The message is displayed in the RHS and Overview page.'}
+                                            {'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledTextarea
-                                        placeholder={'Enter incident update template'}
+                                        placeholder={'Use Markdown to create a template.'}
                                         value={playbook.reminder_message_template}
                                         onChange={(e) => {
                                             setPlaybook({
@@ -658,7 +658,7 @@ const PlaybookEdit = (props: Props) => {
                                     <BackstageSubheader>
                                         {'Channel access'}
                                         <BackstageSubheaderDescription>
-                                            {'Determine the type of incident channel this playbook creates when starting an incident.'}
+                                            {'Determine the type of channel this playbook creates.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <RadioContainer>
@@ -667,7 +667,7 @@ const PlaybookEdit = (props: Props) => {
                                                 type='radio'
                                                 name='public'
                                                 value={'public'}
-                                                checked={playbook.create_public_incident}
+                                                checked={playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
                                             {'Public'}
@@ -677,7 +677,7 @@ const PlaybookEdit = (props: Props) => {
                                                 type='radio'
                                                 name='public'
                                                 value={'private'}
-                                                checked={!playbook.create_public_incident}
+                                                checked={!playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
                                             {'Private'}

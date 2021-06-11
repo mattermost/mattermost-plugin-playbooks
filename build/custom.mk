@@ -8,8 +8,8 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/config/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/config Service
 	mockgen -destination server/bot/mocks/mock_logger.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot Logger
 	mockgen -destination server/bot/mocks/mock_poster.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot Poster
-	mockgen -destination server/app/mocks/mock_incident_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app IncidentService
-	mockgen -destination server/app/mocks/mock_incident_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app IncidentStore
+	mockgen -destination server/app/mocks/mock_playbook_run_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app PlaybookRunService
+	mockgen -destination server/app/mocks/mock_playbook_run_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app PlaybookRunStore
 	mockgen -destination server/app/mocks/mock_job_once_scheduler.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app JobOnceScheduler
 	mockgen -destination server/app/mocks/mock_playbook_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app PlaybookService
 	mockgen -destination server/app/mocks/mock_playbook_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app PlaybookStore

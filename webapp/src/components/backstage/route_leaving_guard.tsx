@@ -52,9 +52,9 @@ const RouteLeavingGuard = (props: Props) => {
             />
             <ConfirmModal
                 show={modalVisible}
-                title={'Confirm discard'}
+                title={'Discard changes'}
                 message={'Are you sure you want to discard your changes?'}
-                confirmButtonText={'Discard Changes'}
+                confirmButtonText={'Discard'}
                 onConfirm={handleConfirmNavigationClick}
                 onCancel={closeModal}
             />

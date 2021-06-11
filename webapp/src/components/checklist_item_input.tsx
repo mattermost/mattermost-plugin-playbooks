@@ -38,7 +38,7 @@ export const ChecklistItemCommand = (props: ChecklistItemCommandProps) => {
             }}
         >
             <i className='icon-plus'/>
-            {'Add a Slash Command'}
+            {'Add a slash command'}
         </TertiaryButton>
     );
 
@@ -88,7 +88,7 @@ export const ChecklistItemDescription = (props: ChecklistItemDescriptionProps) =
             }}
         >
             <i className='icon-plus icon-12 icon--no-spacing mr-1'/>
-            {'Add Optional Description'}
+            {'Add optional description'}
         </GrayTertiaryButton>
     );
     if (descriptionOpen) {

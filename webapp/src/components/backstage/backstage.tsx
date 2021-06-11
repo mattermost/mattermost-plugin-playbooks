@@ -11,16 +11,20 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
+import IncidentIcon from 'src/components/assets/icons/incident_icon';
+
+import PlaybookRunBackstage
+    from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
+
+import BackstagePlaybookRunList from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
+
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
-import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-import IncidentIcon from 'src/components/assets/icons/incident_icon';
-import IncidentBackstage
-    from 'src/components/backstage/incidents/incident_backstage/incident_backstage';
+
 import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
@@ -143,14 +147,14 @@ const Backstage = () => {
                         </BackstageTitlebarItem>
                     }
                     <BackstageTitlebarItem
-                        to={`${match.url}/incidents`}
+                        to={`${match.url}/runs`}
                         activeClassName={'active'}
-                        data-testid='incidentsLHSButton'
+                        data-testid='playbookRunsLHSButton'
                     >
                         <span className='mr-3 d-flex items-center'>
                             <IncidentIcon/>
                         </span>
-                        {'Incidents'}
+                        {'Runs'}
                     </BackstageTitlebarItem>
                     <BackstageTitlebarItem
                         to={`${match.url}/playbooks`}
@@ -197,11 +201,11 @@ const Backstage = () => {
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
                     </Route>
-                    <Route path={`${match.url}/incidents/:incidentId`}>
-                        <IncidentBackstage/>
+                    <Route path={`${match.url}/runs/:playbookRunId`}>
+                        <PlaybookRunBackstage/>
                     </Route>
-                    <Route path={`${match.url}/incidents`}>
-                        <BackstageIncidentList/>
+                    <Route path={`${match.url}/runs`}>
+                        <BackstagePlaybookRunList/>
                         {/*<Dashboard/>*/}
                     </Route>
                     <Route path={`${match.url}/stats`}>
@@ -214,7 +218,7 @@ const Backstage = () => {
                         exact={true}
                         path={`${match.url}/`}
                     >
-                        <Redirect to={experimentalFeaturesEnabled ? `${match.url}/stats` : `${match.url}/incidents`}/>
+                        <Redirect to={experimentalFeaturesEnabled ? `${match.url}/stats` : `${match.url}/runs`}/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>

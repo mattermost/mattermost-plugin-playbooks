@@ -37,7 +37,7 @@ describe('playbook creation button', () => {
 
     it('opens playbook creation page with New Playbook button', () => {
         const url = 'com.mattermost.plugin-incident-management/playbooks/new';
-        const playbookName = 'Untitled Playbook';
+        const playbookName = 'Untitled playbook';
 
         // # Open backstage
         cy.visit('/ad-1/com.mattermost.plugin-incident-management');
@@ -46,15 +46,15 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'New Playbook' button
-        cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Create playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('opens playbook creation page with "Blank Playbook" template option', () => {
+    it('opens playbook creation page with "Blank" template option', () => {
         const url = 'com.mattermost.plugin-incident-management/playbooks/new';
-        const playbookName = 'Untitled Playbook';
+        const playbookName = 'Untitled playbook';
 
         // # Open backstage
         cy.visit('/ad-1/com.mattermost.plugin-incident-management');
@@ -62,16 +62,16 @@ describe('playbook creation button', () => {
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'Blank Playbook'
-        cy.findByText('Blank Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        // # Click 'Blank'
+        cy.findByText('Blank').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('opens Incident Collaboration Playbook page from its template option', () => {
-        const url = 'playbooks/new?template_title=Incident%20Collaboration%20Playbook';
-        const playbookName = 'Incident Collaboration Playbook';
+    it('opens Service Outage Incident page from its template option', () => {
+        const url = 'playbooks/new?template_title=Service%20Outage%20Incident';
+        const playbookName = 'Service Outage Incident';
 
         // # Open backstage
         cy.visit('/ad-1/com.mattermost.plugin-incident-management');
@@ -79,13 +79,13 @@ describe('playbook creation button', () => {
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'Incident Collaboration Playbook'
-        cy.findByText('Incident Collaboration Playbook')
+        // # Click 'Service Outage Incident'
+        cy.findByText('Service Outage Incident')
             .should('be.visible')
             .click()
             .wait(TIMEOUTS.TINY);
 
-        // * Verify a new 'Incident Response Playbook' creation page is opened
+        // * Verify a new 'Service Outage Incident' creation page is opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
@@ -96,8 +96,8 @@ describe('playbook creation button', () => {
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'New Playbook' button
-        cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        // # Click 'Create playbook' button
+        cy.findByText('Create playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // # Click 'Permissions' tab
         cy.findByText('Permissions').should('be.visible').click().wait(TIMEOUTS.TINY);

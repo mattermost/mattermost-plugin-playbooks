@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 export interface Stats {
-    total_reported_incidents: number
-    total_active_incidents: number
+    total_reported_playbook_runs: number
+    total_active_playbook_runs: number
     total_active_participants: number
-    average_duration_active_incidents_minutes: number
-    active_incidents: number[]
-    people_in_incidents: number[]
+    average_duration_active_playbook_runs_minutes: number
+    active_playbook_runs: number[]
+    people_in_playbook_runs: number[]
     average_start_to_active: number[]
     average_start_to_resolved: number[]
 }

@@ -188,23 +188,23 @@ var migrations = []Migration{
 				}
 			}
 
-			getIncidentsQuery := sqlStore.builder.
+			getPlaybookRunsQuery := sqlStore.builder.
 				Select("ID", "ActiveStage", "ChecklistsJSON").
 				From("IR_Incident")
 
-			var incidents []struct {
+			var playbookRuns []struct {
 				ID             string
 				ActiveStage    int
 				ChecklistsJSON json.RawMessage
 			}
-			if err := sqlStore.selectBuilder(e, &incidents, getIncidentsQuery); err != nil {
-				return errors.Wrapf(err, "failed getting incidents to update their ActiveStageTitle")
+			if err := sqlStore.selectBuilder(e, &playbookRuns, getPlaybookRunsQuery); err != nil {
+				return errors.Wrapf(err, "failed getting playbook runs to update their ActiveStageTitle")
 			}
 
-			for _, incident := range incidents {
+			for _, playbookRun := range playbookRuns {
 				var checklists []app.Checklist
-				if err := json.Unmarshal(incident.ChecklistsJSON, &checklists); err != nil {
-					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", incident.ID)
+				if err := json.Unmarshal(playbookRun.ChecklistsJSON, &checklists); err != nil {
+					return errors.Wrapf(err, "failed to unmarshal checklists json for playbook run id: '%s'", playbookRun.ID)
 				}
 
 				numChecklists := len(checklists)
@@ -212,18 +212,18 @@ var migrations = []Migration{
 					continue
 				}
 
-				if incident.ActiveStage < 0 || incident.ActiveStage >= numChecklists {
-					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", incident.ActiveStage, incident.ID, numChecklists)
+				if playbookRun.ActiveStage < 0 || playbookRun.ActiveStage >= numChecklists {
+					sqlStore.log.Warnf("index %d out of bounds, playbook ru n'%s' has %d stages: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
 					continue
 				}
 
-				incidentUpdate := sqlStore.builder.
+				playbookRunUpdate := sqlStore.builder.
 					Update("IR_Incident").
-					Set("ActiveStageTitle", checklists[incident.ActiveStage].Title).
-					Where(sq.Eq{"ID": incident.ID})
+					Set("ActiveStageTitle", checklists[playbookRun.ActiveStage].Title).
+					Where(sq.Eq{"ID": playbookRun.ID})
 
-				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
-					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", incident.ID)
+				if _, err := sqlStore.execBuilder(e, playbookRunUpdate); err != nil {
+					return errors.Errorf("failed updating the ActiveStageTitle field of playbook run '%s'", playbookRun.ID)
 				}
 			}
 
